@@ -34,9 +34,9 @@ class InsertULIDSQL(SQLEmitter):
             f"""
             -- SET ROLE {settings.DB_NAME}_writer;
             DECLARE
-                related_object_id VARCHAR(26) := uno.generate_ulid();
+                db_object_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
-                NEW.id = related_object_id;
+                NEW.id = db_object_id;
                 RETURN NEW;
             END;
             """
@@ -59,11 +59,11 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
             f"""
             DECLARE
                 object_type_id VARCHAR(26);
-                related_object_id VARCHAR(26) := uno.generate_ulid();
+                db_object_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
                 /*
-                Function used to insert a record into the related_object table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the related_object table.
+                Function used to insert a record into the db_object table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the db_object table.
                 */
                 SELECT id
                     FROM uno.object_type
@@ -71,16 +71,16 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
                     INTO object_type_id;
 
                 SET ROLE {settings.DB_NAME}_writer;
-                INSERT INTO uno.related_object (id, object_type_id)
-                    VALUES (related_object_id, object_type_id);
-                NEW.id = related_object_id;
+                INSERT INTO uno.db_object (id, object_type_id)
+                    VALUES (db_object_id, object_type_id);
+                NEW.id = db_object_id;
                 RETURN NEW;
             END;
             """
         )
 
         return self.create_sql_function(
-            "insert_related_object",
+            "insert_db_object",
             function_string,
             timing="BEFORE",
             operation="INSERT",
@@ -93,7 +93,7 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
 class InsertRelatedObjectTriggerSQL(SQLEmitter):
     def emit_sql(self) -> str:
         return self.create_sql_trigger(
-            "insert_related_object",
+            "insert_db_object",
             timing="BEFORE",
             operation="INSERT",
             for_each="ROW",

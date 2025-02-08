@@ -51,9 +51,7 @@ class ObjectType(Base):
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
 
     # relationships
-    related_objects: Mapped[List["DBObject"]] = relationship(
-        back_populates="object_type"
-    )
+    db_objects: Mapped[List["DBObject"]] = relationship(back_populates="object_type")
 
     def __str__(self) -> str:
         return f"{self.schema_name}.{self.table_name}"
@@ -64,7 +62,7 @@ class DBObject(Base):
     allowing for a single point of reference for attributes, queries, workflows, and reports
     """
 
-    __tablename__ = "related_object"
+    __tablename__ = "db_object"
     __table_args__ = {
         "schema": "uno",
         "comment": textwrap.dedent(
@@ -94,7 +92,7 @@ class DBObject(Base):
     )
 
     # relationships
-    object_type: Mapped[ObjectType] = relationship(back_populates="related_objects")
+    object_type: Mapped[ObjectType] = relationship(back_populates="db_objects")
 
     def __str__(self) -> str:
         return f"{self.object_type_id}"

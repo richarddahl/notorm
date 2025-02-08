@@ -11,7 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     UniqueConstraint,
-    func,
+    text,
 )
 
 from sqlalchemy.dialects.postgresql import (
@@ -58,12 +58,6 @@ class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
         InsertRelatedObjectFunctionSQL,
     ]
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        index=True,
-        doc="Primary Key",
-        server_default=func.generate_ulid(),
-    )
     accessor: Mapped[str_255] = mapped_column()
     label: Mapped[str] = mapped_column()
     data_type: Mapped[str_26] = mapped_column()
@@ -245,14 +239,6 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        # server_default=func.uno.insert_related_object("uno", "user"),
-        doc="Primary Key",
-        info={"edge": "HAS_ID"},
-    )
     field_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.filterfield.id", ondelete="CASCADE"),
         index=True,
@@ -290,7 +276,7 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     timestamp_value: Mapped[Optional[datetime.datetime]] = mapped_column()
     string_value: Mapped[Optional[str_255]] = mapped_column()
     object_value_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         index=True,
         nullable=True,
         info={"edge": "HAS_OBJECT_VALUE"},
@@ -303,7 +289,7 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     """
     fields: Mapped["Field"] = relationship(back_populates="filtervalues")
-    # related_object: Mapped["DBObject"] = relationship(
+    # db_object: Mapped["DBObject"] = relationship(
     #    viewonly=True,
     #    back_populates="filtervalue",
     #    foreign_keys=[object_value_id],
@@ -328,14 +314,7 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        # server_default=func.uno.insert_related_object("uno", "user"),
-        doc="Primary Key",
-        info={"edge": "HAS_ID"},
-    )
+
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
     queries_object_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
@@ -343,7 +322,7 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
         info={"edge": "QUERIES_ObjectType"},
     )
     show_results_with_object: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         doc="Indicates if the results of the query should be returned with objects from the queries table type.",
     )
     include_values: Mapped[Include] = mapped_column(

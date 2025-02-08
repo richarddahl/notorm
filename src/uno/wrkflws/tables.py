@@ -9,12 +9,15 @@ from typing import Optional
 from sqlalchemy import (
     ForeignKey,
     Index,
-    func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import (
     ENUM,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from uno.db.base import Base, str_26, str_255
+from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 
 from uno.wrkflws.enums import (  # type: ignore
     WorkflowRecordStatus,
@@ -24,11 +27,8 @@ from uno.wrkflws.enums import (  # type: ignore
     WorkflowTrigger,
 )
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin
 
-
-class Workflow(Base):
+class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": "uno",
@@ -36,12 +36,6 @@ class Workflow(Base):
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
 
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        index=True,
-        doc="Primary Key",
-        server_default=func.generate_ulid(),
-    )
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
@@ -57,7 +51,7 @@ class Workflow(Base):
         doc="The type of event that triggers execution of the workflow",
     )
     repeat_every: Mapped[int] = mapped_column(
-        # server_default=text("0"), doc="Repeat every x days"
+        server_default=text("0"), doc="Repeat every x days"
     )
     flag: Mapped[WorkflowFlag] = mapped_column(
         ENUM(
@@ -70,7 +64,7 @@ class Workflow(Base):
         doc="Flag indicating the importance of the workflow",
     )
     due_within: Mapped[int] = mapped_column(
-        # server_default=text("7"), doc="Due within x days"
+        server_default=text("7"), doc="Due within x days"
     )
     db_event: Mapped[WorkflowDBEvent] = mapped_column(
         ENUM(
@@ -83,11 +77,11 @@ class Workflow(Base):
         doc="The database event that triggers the workflow, if applicable",
     )
     auto_run: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         doc="Indicates if the workflow should be run automatically",
     )
     record_required: Mapped[bool] = mapped_column(
-        # server_default=text("false"), doc="Indicats if a Workflow Record is required"
+        server_default=text("false"), doc="Indicats if a Workflow Record is required"
     )
     limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
@@ -117,7 +111,7 @@ class Workflow(Base):
         # info={"edge": "IS_COMPLETED_BY_objectfunction"},
     )
     process_child_value: Mapped[bool] = mapped_column(
-        # server_default=text("true"),
+        server_default=text("true"),
         doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
     )
     Index(
@@ -134,21 +128,13 @@ class Workflow(Base):
     # Relationships
 
 
-class WorkflowEvent(Base, BaseFieldMixin):
+class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflowevent"
     __table_args__ = {
         "schema": "uno",
         "comment": "Manually created or trigger created workflow activities",
     }
 
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        # server_default=func.uno.insert_related_object("uno", "user"),
-        doc="Primary Key",
-        info={"edge": "HAS_ID"},
-    )
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow.id", ondelete="CASCADE"),
         index=True,
@@ -156,7 +142,7 @@ class WorkflowEvent(Base, BaseFieldMixin):
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "IS_EVENT_FOR"},
     )
@@ -167,21 +153,13 @@ class WorkflowEvent(Base, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowRecord(Base, BaseFieldMixin):
+class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflowrecord"
     __table_args__ = {
         "schema": "uno",
         "comment": "Records of workflow events",
     }
 
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        # server_default=func.uno.insert_related_object("uno", "user"),
-        doc="Primary Key",
-        info={"edge": "HAS_ID"},
-    )
     workflowevent_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflowevent.id", ondelete="CASCADE"),
         index=True,
@@ -211,21 +189,21 @@ class WorkflowRecord(Base, BaseFieldMixin):
         doc="User defined or auto-generated comment on the workflow execution",
     )
     workflowrecord_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "RECORDS_EXECUTION"},
     )
     # ForeignKeyConstraint(
     #    ["workflowrecord_id"],
-    #    ["uno.related_object.id"],
-    #    name="fk_workflowrecord_record_related_object_id",
+    #    ["uno.db_object.id"],
+    #    name="fk_workflowrecord_record_db_object_id",
     #    ondelete="CASCADE",
     # )
 
     # Relationships
 
 
-class ObjectFunction(Base):
+class ObjectFunction(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "objectfunction"
     __table_args__ = {
         "schema": "uno",
@@ -234,12 +212,6 @@ class ObjectFunction(Base):
     }
     # Columns
 
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        index=True,
-        doc="Primary Key",
-        server_default=func.generate_ulid(),
-    )
     label: Mapped[str] = mapped_column(doc="Label of the function")
     documentation: Mapped[Optional[str]] = mapped_column(
         doc="Documentation of the function"

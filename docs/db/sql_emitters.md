@@ -92,7 +92,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_INSERT_RELATED_OBJECT_FUNCTION
+## ::: uno.db.management.db_manager_sql.CREATE_INSERT_db_object_FUNCTION
 
     handler: python
     options:

@@ -21,30 +21,30 @@ from uno.db.base import str_26
 
 class RelatedObjectPKMixin:
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        # #server_default=func.uno.insert_related_object(),
+        # #server_default=func.uno.insert_db_object(),
         doc="Primary Key and Related Object",
         info={"edge": "HAS_ID"},
     )
 
     @declared_attr
-    def related_object(self) -> Mapped[DBObject]:
-        return relationship(back_populates="related_object")
+    def db_object(self) -> Mapped[DBObject]:
+        return relationship(back_populates="db_object")
 
 
 class BaseFieldMixin:
     is_active: Mapped[bool] = mapped_column(
-        # server_default=text("true"),
+        server_default=text("true"),
         doc="Indicates if the record is active",
     )
     is_deleted: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         doc="Indicates if the record has been deleted",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         doc="Time the record was created",
         info={"editable": False},
     )
@@ -55,7 +55,7 @@ class BaseFieldMixin:
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         server_onupdate=func.current_timestamp(),
     )
     modified_by_id: Mapped[str_26] = mapped_column(
@@ -75,36 +75,36 @@ class BaseFieldMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def group(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def owner(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def modified_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def deleted_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
 
 class AuditMixin:
     is_active: Mapped[bool] = mapped_column(
-        # server_default=text("true"),
+        server_default=text("true"),
         doc="Indicates if the record is active",
     )
     is_deleted: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         doc="Indicates if the record has been deleted",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         doc="Time the record was created",
         info={"editable": False},
     )
@@ -115,7 +115,7 @@ class AuditMixin:
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         server_onupdate=func.current_timestamp(),
     )
     modified_by_id: Mapped[str_26] = mapped_column(
@@ -135,36 +135,36 @@ class AuditMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def group(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def owner(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def modified_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def deleted_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
 
 class AuditMixin:
     is_active: Mapped[bool] = mapped_column(
-        # server_default=text("true"),
+        server_default=text("true"),
         doc="Indicates if the record is active",
     )
     is_deleted: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         doc="Indicates if the record has been deleted",
     )
     created_at: Mapped[datetime.datetime] = mapped_column(
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         doc="Time the record was created",
         info={"editable": False},
     )
@@ -175,7 +175,7 @@ class AuditMixin:
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         server_onupdate=func.current_timestamp(),
     )
     modified_by_id: Mapped[str_26] = mapped_column(
@@ -195,20 +195,20 @@ class AuditMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def group(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def owner(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def modified_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")
 
     @declared_attr
     def deleted_by(self) -> Mapped[DBObject]:
-        return relationship("DBObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="db_object")

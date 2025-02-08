@@ -194,7 +194,7 @@ class User(Base, RelatedObjectPKMixin):
         return f"<User {self.email}>"
 
 
-class Permission(Base):
+class Permission(Base, RelatedObjectPKMixin):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
@@ -220,12 +220,6 @@ class Permission(Base):
     )
     sql_emitters = [InsertObjectTypeRecordSQL]
 
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        index=True,
-        doc="Primary Key",
-        server_default=func.generate_ulid(),
-    )
     object_type_id: Mapped[ObjectType] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,

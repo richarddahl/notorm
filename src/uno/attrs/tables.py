@@ -240,7 +240,7 @@ attribute_object_value = Table(
     Column(
         "object_value_id",
         VARCHAR(26),
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
         primary_key=True,

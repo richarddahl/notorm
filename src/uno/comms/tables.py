@@ -61,7 +61,7 @@ class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
     subject: Mapped[str_255] = mapped_column(doc="Subject of the message")
     body: Mapped[str_255] = mapped_column(doc="Body of the message")
     sent_at: Mapped[datetime.datetime] = mapped_column(
-        # server_default=func.current_timestamp(),
+        server_default=func.current_timestamp(),
         doc="Time the message was sent",
     )
 
@@ -92,7 +92,7 @@ class MessageAddressedTo(Base, RelatedObjectPKMixin, BaseFieldMixin):
         info={"edge": "WAS_SENT_TO"},
     )
     read: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         nullable=False,
     )
     read_at: Mapped[datetime.datetime] = mapped_column()
@@ -123,7 +123,7 @@ class MessageCopiedTo(Base):
         info={"edge": "WAS_CCD_TO"},
     )
     read: Mapped[bool] = mapped_column(
-        # server_default=text("false"),
+        server_default=text("false"),
         nullable=False,
     )
     read_at: Mapped[datetime.datetime] = mapped_column()
@@ -139,14 +139,6 @@ class Attachment(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        # server_default=func.uno.insert_related_object("uno", "user"),
-        doc="Primary Key",
-        info={"edge": "HAS_ID"},
-    )
     name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
     file: Mapped[str_255] = mapped_column(doc="Path to the file")
 
