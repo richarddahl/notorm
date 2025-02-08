@@ -9,7 +9,7 @@ build-backend = "hatchling.build"
 
 # Basic Project Information
 [project]
-name = "uno"
+name = "notorm"
 dynamic = ["version"]
 description = 'uno is not an orm'
 readme = "README.md"
