@@ -64,6 +64,11 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
                 /*
                 Function used to insert a record into the db_object table, when a record is inserted
                 into a table that has a PK that is a FKDefinition to the db_object table.
+                Set as a trigger on the table, so that the db_object record is created when the
+                record is created.
+
+                NOT USING sqlalchemy server_default, because triggers have access to TG_TABLE_SCHEMA
+                and TG_TABLE_NAME making it simpler to get the object_type_id.
                 */
                 SELECT id
                     FROM uno.object_type
