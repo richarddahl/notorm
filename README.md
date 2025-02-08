@@ -1,7 +1,7 @@
-# uno
+# notorm
 
-[![PyPI - Version](https://img.shields.io/pypi/v/uno.svg)](https://pypi.org/project/uno)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/uno.svg)](https://pypi.org/project/uno)
+[![PyPI - Version](https://img.shields.io/pypi/v/notorm.svg)](https://pypi.org/project/notorm)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/notorm.svg)](https://pypi.org/project/notorm)
 
 -----
 
@@ -14,16 +14,18 @@
 ## Installation
 
 ```console
-pip install uno
+pip install notorm
 ```
 
 ## License
 
-`uno` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`notorm` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
 
 
 ## Introduction
 
-Why `uno`
+Why `notorm`
+
+"uno" is already a project at pypi, the actual name of this library: UNO is Not an ORM.
 
 It's meant as an homage to GNU of course.
