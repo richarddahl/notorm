@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+site_name: uno
+theme:
+   name: material
+plugins:
+   - search
+   - mkdocstrings
+nav:
+   - Home: index.md
+   - About: about.md
+   - License: license.md
+   - FAQ: faq.md
+   - Getting Started: getting_started.md
+   - Structure: structure.md
+   - Commands: commands.md
+   - DB:
+      - Schemas: db/models.md
+      - SQL Emitters: db/sql_emitters.md
+      - Schema SchemaMixins: db/model_mixin.md
+   #   - DB Operation:
+   #      - UnoDB: db/unodb.md
+   #      - UnoObj: db/models.md
+   #      - UnoMask: db/masks.md
+   #- Capabilities:
+   #   - Authorization:
+   #      - Enums: auth/enums.md
+   #      - Schemas: auth/models.md
+   #      - Tables: auth/tables.md
+   #   - Filtering:
+   #      - Enums: filters/enums.md
+   #      - Schemas: filters/models.md
+   #      - Tables: filters/tables.md
+   #   - Mwssaging:
+   #      - Enums: messaging/enums.md
+   #      - Schemas: messaging/models.md
+   #      - Tables: messaging/tables.md
+   #   - Reporting:
+   #      - Enums: reporting/enums.md
+   #      - Schemas: reporting/models.md
+   #      - Tables: reporting/tables.md
+   #   - Workflow:
+   #      - Enums: workflow/enums.md
+   #      - Schemas: workflow/models.md
+   #      - Tables: workflow/tables.md
+   #   - Attributes:
+   #      - Enums: attributes/enums.md
+   #      - Schemas: attributes/models.md
+   #      - Tables: attributes/tables.md

@@ -1,0 +1,12 @@
+
+services:
+  db:
+    container_name: "postgres16"
+    image: pg16_uno
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 'postgreSQLR0ck%'
+    ports:
+      - "5432:5432"
+    volumes:
+      - ../.pgdata:/var/lib/postgresql/data

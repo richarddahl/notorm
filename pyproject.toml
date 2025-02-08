@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+# Basic Project Information
+[project]
+name = "uno"
+dynamic = ["version"]
+description = 'uno is not an orm'
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+keywords = []
+authors = [{ name = "Richard Dahl", email = "richard@dahl.us" }]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "babel",
+  "fastapi",
+  "jinja2",
+  "PyJWT",
+  "psycopg",
+  "pydantic[email]",
+  "pydantic-settings",
+  "python-multipart",
+  "pytz",
+  "uvicorn",
+  "sqlalchemy[asyncio]",
+  "sqlalchemy-stubs",
+]
+
+[project.urls]
+Documentation = "https://github.com/richarddahl/notorm#readme"
+Issues = "https://github.com/richarddahl/notorm/issues"
+Source = "https://github.com/richarddahl/notorm"
+
+[tool.hatch.version]
+path = "src/uno/__about__.py"
+
+
+# Default Environment
+[tool.hatch.envs.default.scripts]
+main = "uvicorn uno.main:app {args: --reload}"
+createdb = "python src/uno/cmd/create_db.py"
+dropdb = "python uno/cmd/drop_db.py"
+
+
+#Development Environment
+[tool.hatch.envs.dev.scripts]
+createdb = "ENV=dev python src/uno/cmd/create_db.py"
+dropdb = "ENV=dev python src/uno/cmd/drop_db.py"
+
+
+# Testing Environment
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+  "pytest_asyncio",
+  "asyncio",
+  "httpx",
+  "requests",
+]
+
+[tool.coverage.run]
+source_pkgs = ["uno", "tests"]
+branch = true
+parallel = true
+omit = ["src/uno/__about__.py"]
+
+[tool.coverage.paths]
+uno = ["src/uno", "*/uno/src/uno"]
+tests = ["tests", "*/uno/tests"]
+
+[tool.coverage.report]
+exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
+
+[tool.hatch.envs.test.scripts]
+test = "ENV=test pytest --tb=no --capture=tee-sys --show-capture=all"
+testv = "ENV=test pytest --tb=short --capture=tee-sys --show-capture=all"
+testV = "ENV=test pytest --capture=tee-sys --show-capture=all"
+test-cov = "ENV=test coverage run -m pytest"
+cov-report = ["ENV=test", "- coverage combine", "coverage report"]
+cov = ["ENV=test", "test-cov", "cov-report"]
+createdb = "ENV=test python src/uno/cmd/create_db.py"
+dropdb = "ENV=test python src/uno/cmd/drop_db.py"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+
+
+# Documentation Environement
+[tool.hatch.envs.docs]
+dependencies = [
+  "mkdocs>=1.0.0",
+  "mkdocs-material>=7.0.0",
+  "mkdocstrings>=0.15.0",
+  "mkdocs-autorefs",
+  "mkdocs-material-extensions",
+  "mkdocstrings-python",
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8001"
+
+
+# Types Environment
+[tool.hatch.envs.types]
+extra-dependencies = ["mypy>=1.0.0"]
+
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/uno tests}"
