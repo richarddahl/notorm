@@ -15,7 +15,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.objs.tables import RelatedObject
+from uno.objs.tables import DBObject
 from uno.db.base import str_26
 
 
@@ -30,7 +30,7 @@ class RelatedObjectPKMixin:
     )
 
     @declared_attr
-    def related_object(self) -> Mapped[RelatedObject]:
+    def related_object(self) -> Mapped[DBObject]:
         return relationship(back_populates="related_object")
 
 
@@ -75,23 +75,23 @@ class BaseFieldMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("RelatedObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def group(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def group(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def owner(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def owner(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def modified_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def modified_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def deleted_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def deleted_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
 
 class AuditMixin:
@@ -135,23 +135,23 @@ class AuditMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("RelatedObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def group(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def group(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def owner(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def owner(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def modified_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def modified_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def deleted_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def deleted_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
 
 class AuditMixin:
@@ -195,20 +195,20 @@ class AuditMixin:
 
     @declared_attr
     def tenant(self) -> Mapped["Tenant"]:
-        return relationship("RelatedObject", back_populates="related_object")
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def group(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def group(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def owner(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def owner(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def modified_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def modified_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")
 
     @declared_attr
-    def deleted_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
+    def deleted_by(self) -> Mapped[DBObject]:
+        return relationship("DBObject", back_populates="related_object")

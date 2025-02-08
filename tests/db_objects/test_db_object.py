@@ -5,7 +5,7 @@
 from sqlalchemy import inspect, Integer
 from sqlalchemy.dialects.postgresql import VARCHAR
 
-from uno.objs.tables import RelatedObject
+from uno.objs.tables import DBObject
 
 from uno.db.sql_emitters import AlterGrantSQL
 
@@ -23,15 +23,15 @@ class TestRelatedObject:
     schema = "uno"
 
     def test_related_object_structure(self):
-        assert RelatedObject.verbose_name == "Related Object"
-        assert RelatedObject.verbose_name_plural == "Related Objects"
-        assert AlterGrantSQL in RelatedObject.sql_emitters
-        # assert InsertObjectTypeRecordSQL in RelatedObject.sql_emitters
-        assert RelatedObject.__name__ == "RelatedObject"
-        assert RelatedObject.__module__ == "uno.objs.tables"
-        assert RelatedObject.__table_args__.get("schema") == "uno"
-        assert RelatedObject.__tablename__ == "related_object"
-        assert list(RelatedObject.__table__.columns.keys()) == [
+        assert DBObject.verbose_name == "Related Object"
+        assert DBObject.verbose_name_plural == "Related Objects"
+        assert AlterGrantSQL in DBObject.sql_emitters
+        # assert InsertObjectTypeRecordSQL in DBObject.sql_emitters
+        assert DBObject.__name__ == "DBObject"
+        assert DBObject.__module__ == "uno.objs.tables"
+        assert DBObject.__table_args__.get("schema") == "uno"
+        assert DBObject.__tablename__ == "related_object"
+        assert list(DBObject.__table__.columns.keys()) == [
             "id",
             "object_type_id",
         ]

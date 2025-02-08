@@ -303,13 +303,13 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     """
     fields: Mapped["Field"] = relationship(back_populates="filtervalues")
-    # related_object: Mapped["RelatedObject"] = relationship(
+    # related_object: Mapped["DBObject"] = relationship(
     #    viewonly=True,
     #    back_populates="filtervalue",
     #    foreign_keys=[object_value_id],
     #    doc="Object value",
     # )
-    object_value: Mapped["RelatedObject"] = relationship(
+    object_value: Mapped["DBObject"] = relationship(
         back_populates="filter_object_values",
         foreign_keys=[object_value_id],
         doc="Object value",

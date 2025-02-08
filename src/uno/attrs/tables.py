@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
-from uno.objs.tables import ObjectType, RelatedObject
+from uno.objs.tables import ObjectType, DBObject
 from uno.objs.sql_emitters import (
     InsertObjectTypeRecordSQL,
     InsertRelatedObjectFunctionSQL,
@@ -56,7 +56,7 @@ class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
     initial_comment: Mapped[str] = mapped_column()
 
     # Relationships
-    obj: Mapped[RelatedObject] = relationship(back_populates="attribute_types")
+    obj: Mapped[DBObject] = relationship(back_populates="attribute_types")
     parent: Mapped["AttributeType"] = relationship(
         remote_side=[id], back_populates="children"
     )
@@ -157,7 +157,7 @@ class AttributeValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     text: Mapped[str] = mapped_column()
 
     # Relationships
-    obj: Mapped[RelatedObject] = relationship(back_populates="attribute_values")
+    obj: Mapped[DBObject] = relationship(back_populates="attribute_values")
 
 
 class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
@@ -183,12 +183,12 @@ class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
     follow_up_required: Mapped[bool] = mapped_column()
 
     # Relationships
-    obj: Mapped[RelatedObject] = relationship(back_populates="attribute_values")
+    obj: Mapped[DBObject] = relationship(back_populates="attribute_values")
     attribute_type: Mapped[AttributeType] = relationship(back_populates="attributes")
     attribute_values: Mapped[Optional[list[AttributeValue]]] = relationship(
         back_populates="attributes"
     )
-    object_values: Mapped[Optional[list[RelatedObject]]] = relationship(
+    object_values: Mapped[Optional[list[DBObject]]] = relationship(
         back_populates="attributes"
     )
 

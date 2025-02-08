@@ -51,7 +51,7 @@ class ObjectType(Base):
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
 
     # relationships
-    related_objects: Mapped[List["RelatedObject"]] = relationship(
+    related_objects: Mapped[List["DBObject"]] = relationship(
         back_populates="object_type"
     )
 
@@ -59,7 +59,7 @@ class ObjectType(Base):
         return f"{self.schema_name}.{self.table_name}"
 
 
-class RelatedObject(Base):
+class DBObject(Base):
     """Related Objects are used for the pk of many objects in the database,
     allowing for a single point of reference for attributes, queries, workflows, and reports
     """
