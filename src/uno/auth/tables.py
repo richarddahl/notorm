@@ -26,6 +26,7 @@ from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
+from uno.db.graphs import VertexDef, EdgeDef
 
 from uno.objs.tables import ObjectType
 from uno.objs.sql_emitters import (
@@ -54,6 +55,10 @@ class Tenant(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "comment": "Application end-user tenants",
         },
     )
+    verbose_name = "Tenant"
+    verbose_name_plural = "Tenants"
+    # include_in_graph = False
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
@@ -103,6 +108,10 @@ class User(Base, RelatedObjectPKMixin):
             "info": {"audit_type": "history"},
         },
     )
+    verbose_name = "User"
+    verbose_name_plural = "Users"
+    # include_in_graph = False
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
@@ -218,6 +227,10 @@ class Permission(Base, RelatedObjectPKMixin):
             "info": {"rls_policy": "superuser", "vertex": False},
         },
     )
+    verbose_name = "Permission"
+    verbose_name_plural = "Permissions"
+    # include_in_graph = False
+
     sql_emitters = [InsertObjectTypeRecordSQL]
 
     object_type_id: Mapped[ObjectType] = mapped_column(
@@ -258,6 +271,10 @@ class Role(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "admin", "vertex": False},
         },
     )
+    verbose_name = "Role"
+    verbose_name_plural = "Roles"
+    # include_in_graph = False
+
     sql_emitters = [InsertObjectTypeRecordSQL]
 
     # Columns
@@ -289,6 +306,9 @@ class RolePermission(Base):
             "info": {"rls_policy": "none"},
         },
     )
+    verbose_name = "Role Permission"
+    verbose_name_plural = "Role Permissions"
+    include_in_graph = False
 
     # Columns
     role_id: Mapped[str_26] = mapped_column(
@@ -324,6 +344,10 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "admin"},
         },
     )
+    verbose_name = "Group"
+    verbose_name_plural = "Groups"
+    # include_in_graph = False
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         ValidateGroupInsert,
@@ -356,7 +380,7 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class UserGroup(Base):
-    __tablename__ = "user_group_role"
+    __tablename__ = "user__group__role"
     __table_args__ = (
         {
             "comment": """
@@ -366,6 +390,10 @@ class UserGroup(Base):
             "info": {"rls_policy": "admin", "vertex": False},
         },
     )
+    verbose_name = "User Group Role"
+    verbose_name_plural = "User Group Roles"
+    include_in_graph = False
+
     sql_emitters = [InsertObjectTypeRecordSQL]
 
     # Columns

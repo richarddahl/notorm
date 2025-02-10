@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import (
 from uno.routers import Router, RouterDef
 
 from uno.db.sql_emitters import SQLEmitter
+from uno.db.graphs import VertexDef, EdgeDef
 
 from uno.config import settings
 
@@ -98,6 +99,10 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
+    # Graph related attributes
+    include_in_graph: ClassVar[bool] = True
+    edge_defs: ClassVar[list[EdgeDef]] = []
+
     # Router related attributes
     routers: ClassVar[list[Router]] = []
     router_defs: ClassVar[dict[str, RouterDef]] = {
@@ -129,13 +134,20 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        cls.create_graph()
-        cls.create_vectors()
-        cls.create_routers()
+
+    #    cls.create_vectors()
+    #    cls.create_routers()
 
     @classmethod
-    def create_graph(cls) -> None:
-        pass
+    def create_vertex(cls) -> None:
+        return VertexDef(
+            table_name=cls.__tablename__, label=cls.verbose_name.replace(" ", "")
+        ).emit_sql()
+
+    @classmethod
+    def create_edges(cls) -> None:
+        for edge_def in cls.edge_defs:
+            edge_def.emit_sql()
 
     @classmethod
     def create_vectors(cls) -> None:

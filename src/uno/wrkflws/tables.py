@@ -35,6 +35,9 @@ class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
         "comment": "User-defined workflows",
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
+    verbose_name = "Workflow"
+    verbose_name_plural = "Workflows"
+    include_in_graph = False
 
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
@@ -106,7 +109,7 @@ class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
         # info={"edge": "HAS_workflowrecord_OF_ObjectType"},
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.objectfunction.id", ondelete="SET NULL"),
+        ForeignKey("uno.object_function.id", ondelete="SET NULL"),
         index=True,
         # info={"edge": "IS_COMPLETED_BY_objectfunction"},
     )
@@ -129,11 +132,14 @@ class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "workflowevent"
+    __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": "uno",
         "comment": "Manually created or trigger created workflow activities",
     }
+    verbose_name = "Workflow Event"
+    verbose_name_plural = "Workflow Events"
+    include_in_graph = False
 
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow.id", ondelete="CASCADE"),
@@ -154,14 +160,17 @@ class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "workflowrecord"
+    __tablename__ = "workflow_record"
     __table_args__ = {
         "schema": "uno",
         "comment": "Records of workflow events",
     }
+    verbose_name = "Workflow Record"
+    verbose_name_plural = "Workflow Records"
+    include_in_graph = False
 
     workflowevent_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.workflowevent.id", ondelete="CASCADE"),
+        ForeignKey("uno.workflow_event.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "IS_RECORD_OF"},
     )
@@ -204,12 +213,16 @@ class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class ObjectFunction(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "objectfunction"
+    __tablename__ = "object_function"
     __table_args__ = {
         "schema": "uno",
         "comment": "Functions that can be called by user-defined workflows and reports",
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
+    verbose_name = "Object Function"
+    verbose_name_plural = "Object Functions"
+    include_in_graph = False
+
     # Columns
 
     label: Mapped[str] = mapped_column(doc="Label of the function")

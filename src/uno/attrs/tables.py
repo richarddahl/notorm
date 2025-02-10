@@ -39,6 +39,9 @@ class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "comment": "Defines the type of attribute that can be associated with an object",
         },
     )
+    verbose_name = "Attribute Type"
+    verbose_name_plural = "Attribute Types"
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
@@ -71,7 +74,7 @@ class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
 
-class AttributeTypeAppliesTo(Base, BaseFieldMixin):
+class AttributeTypeAppliesTo(Base):
     __tablename__ = "attribute_type__applies_to"
     __table_args__ = (
         {
@@ -79,6 +82,9 @@ class AttributeTypeAppliesTo(Base, BaseFieldMixin):
             "comment": "Defines the type of database objects to which an attribute is applied",
         },
     )
+    verbose_name = "Attribute Type Applies To"
+    verbose_name_plural = "Attribute Type Applies To"
+    include_in_graph = False
 
     # Columns
     attribute_type_id: Mapped[str_26] = mapped_column(
@@ -114,6 +120,9 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
             "comment": "Defines the type of database objects that provide the values for an attribute",
         },
     )
+    verbose_name = "Attribute Type Value Type"
+    verbose_name_plural = "Attribute Type Value Types"
+    include_in_graph = False
 
     # Columns
     attribute_type_id: Mapped[str_26] = mapped_column(
@@ -148,6 +157,9 @@ class AttributeValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "comment": "Defines the values available for attribute",
         },
     )
+    verbose_name = "Attribute Value"
+    verbose_name_plural = "Attribute Values"
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
@@ -168,6 +180,9 @@ class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "comment": "Attributes define characteristics of objects",
         },
     )
+    verbose_name = "Attribute"
+    verbose_name_plural = "Attributes"
+
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
@@ -193,65 +208,71 @@ class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
 
-attribute_attribute_value = Table(
-    "attribute__attribute_value",
-    Base.metadata,
-    Column(
-        "attribute_id",
-        VARCHAR(26),
+class AttributeAttributeValue(Base, BaseFieldMixin):
+    __tablename__ = "attribute__attribute_value"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "Association table between Attribute and AttributeValue",
+        },
+    )
+    verbose_name = "Attribute Attribute Value"
+    verbose_name_plural = "Attribute Attribute Values"
+    include_in_graph = False
+
+    # Columns
+    attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
         primary_key=True,
+        index=True,
         info={"start_vertex": True},
-    ),
-    Column(
-        "attribute_value_id",
-        VARCHAR(26),
+    )
+    attribute_value_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_value.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
         primary_key=True,
+        index=True,
         info={"end_vertex": True},
-    ),
-    Index(
-        "ix_attribute_id__attribute_value_id",
-        "attribute_id",
-        "attribute_value_id",
-    ),
-    schema="uno",
-    comment="Association table between Attribute and AttributeValue",
-    info={"edge": "HAS_ATTRIBUTE_VALUE", "audited": True},
-)
+    )
+
+    # Relationships
+    attribute: Mapped[Attribute] = relationship(
+        back_populates="attribute_attribute_values",
+    )
+    attribute_value: Mapped[AttributeValue] = relationship(
+        back_populates="attribute_attribute_values",
+    )
 
 
-attribute_object_value = Table(
-    "attribute__object_value",
-    Base.metadata,
-    Column(
-        "attribute_id",
-        VARCHAR(26),
+class AttributeObjectValue(Base, BaseFieldMixin):
+    __tablename__ = "attribute__object_value"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "Association table between Attribute and Object Value (Meta)",
+        },
+    )
+    verbose_name = "Attribute Object Value"
+    verbose_name_plural = "Attribute Object Values"
+    include_in_graph = False
+
+    # Columns
+    attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
         primary_key=True,
+        index=True,
         info={"start_vertex": True},
-    ),
-    Column(
-        "object_value_id",
-        VARCHAR(26),
+    )
+    object_value_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.db_object.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
         primary_key=True,
+        index=True,
         info={"end_vertex": True},
-    ),
-    Index(
-        "ix_attribute_id__object_value_id",
-        "attribute_id",
-        "object_value_id",
-    ),
-    schema="uno",
-    comment="Association table between Attribute and Object Value (Meta)",
-    info={"edge": "HAS_OBJECT_VALUE", "audited": True},
-)
+    )
+
+    # Relationships
+    attribute: Mapped[Attribute] = relationship(
+        back_populates="attribute_object_values",
+    )
+    object_value: Mapped[DBObject] = relationship(
+        back_populates="attribute_object_values",
+    )

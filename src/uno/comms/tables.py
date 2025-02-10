@@ -8,6 +8,7 @@ from typing import Optional
 
 from sqlalchemy import (
     ForeignKey,
+    Identity,
     func,
     text,
 )
@@ -32,6 +33,10 @@ class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
         "schema": "uno",
         "comment": "Messages are used to communicate between users",
     }
+    verbose_name = "Message"
+    verbose_name_plural = "Messages"
+    # include_in_graph = False
+
     sql_emitters = [
         AlterGrantSQL,
         RecordVersionAuditSQL,
@@ -68,13 +73,15 @@ class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class MessageAddressedTo(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "message_addressed_to"
+class MessageAddressedTo(Base):
+    __tablename__ = "message__addressed_to"
     __table_args__ = {
         "schema": "uno",
-        "comment": "Messages addressed to users",
-        "info": {"rls_policy": False, "vertex": False},
+        "comment": "User addressed on a message",
     }
+    verbose_name = "Message Addressed To"
+    verbose_name_plural = "Messages Addressed To"
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -101,11 +108,14 @@ class MessageAddressedTo(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class MessageCopiedTo(Base):
-    __tablename__ = "message_copied_to"
+    __tablename__ = "message__copied_to"
     __table_args__ = {
         "schema": "uno",
-        "comment": "Messages copied to users",
+        "comment": "User copied on a message",
     }
+    verbose_name = "Message Copied To"
+    verbose_name_plural = "Messages Copied To"
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -131,14 +141,24 @@ class MessageCopiedTo(Base):
     # Relationships
 
 
-class Attachment(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Attachment(Base):
     __tablename__ = "attachment"
     __table_args__ = {
         "schema": "uno",
         "comment": "Files attached to db objects",
     }
+    verbose_name = "Attachment"
+    verbose_name_plural = "Attachments"
+    # include_in_graph = False
 
     # Columns
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
     name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
     file: Mapped[str_255] = mapped_column(doc="Path to the file")
 
@@ -146,11 +166,14 @@ class Attachment(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class MessageAttachment(Base):
-    __tablename__ = "message_attachment"
+    __tablename__ = "message__attachment"
     __table_args__ = {
         "schema": "uno",
         "comment": "Attachments to messages",
     }
+    verbose_name = "Message Attachment"
+    verbose_name_plural = "Message Attachements"
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(

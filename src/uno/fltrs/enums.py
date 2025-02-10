@@ -5,36 +5,45 @@ import enum
 # Filter Enumerations
 
 
-class GraphType(str, enum.Enum):
+class FilterType(str, enum.Enum):
     """
-    Enumeration class for querying the database.
+    Enumeration class for Uno filter types.
 
-    This class represents the two type of fields that can be used in a query.
+    This class represents the different filter types that can be used in the Uno framework.
+    Each filter type is represented by a string value.
 
-    Attributes:
-        VERTEX (str): The field is a vertex.
-        EDGE (str): The field is an edge.
-        PROPERTY (str): The field is a property of a vertex or edge.
     """
 
     EDGE = "Edge"
-    VERTEX = "Vertex"
     PROPERTY = "Property"
 
 
-class EdgeDirection(str, enum.Enum):
+class DataType(str, enum.Enum):
     """
-    Enumeration class for querying the database.
+    Enumeration class for Uno data types.
 
-    This class represents the direction of an edge to a vertex.
+    This class represents the different data types that can be used in the Uno framework.
 
     Attributes:
-        FROM (str): The edge is from the vertex.
-        TO (str): The edge is to the vertex.
+        STRING (str): Represents the string data type.
+        INTEGER (str): Represents the integer data type.
+        FLOAT (str): Represents the float data type.
+        BOOLEAN (str): Represents the boolean data type.
+        DATE (str): Represents the date data type.
+        TIME (str): Represents the time data type.
+        DATETIME (str): Represents the datetime data type.
+        BINARY (str): Represents the binary data type.
+        JSON (str): Represents the JSON data type.
     """
 
-    FROM = "From"
-    TO = "To"
+    INTEGER = "Integer"
+    FLOAT = "Float"
+    NUMERIC = "Numeric"
+    BOOLEAN = "Boolean"
+    STRING = "String"
+    DATE = "Date"
+    TIME = "Time"
+    DATETIME = "DateTime"
 
 
 class Include(str, enum.Enum):

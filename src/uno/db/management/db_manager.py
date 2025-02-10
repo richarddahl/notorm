@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import sys
 import io
 import textwrap
+import importlib
 
 from sqlalchemy import text, create_engine, Engine
 
@@ -21,13 +23,10 @@ from uno.db.management.sql_emitters import (
 )
 
 from uno.db.base import Base
-import uno.auth.tables as auth_tables  # noqa: F401 (imported so Base will load the tables)
-import uno.attrs.tables as attrs_tables  # noqa: F401 (imported so Base will load the tables)
-import uno.objs.tables as relatedobjects_tables  # noqa: F401 (imported so Base will load the tables)
-import uno.comms.tables as communications_tables  # noqa: F401 (imported so Base will load the tables)
-import uno.fltrs.tables as filters_tables  # noqa: F401 (imported so Base will load the tables)
-
 from uno.config import settings
+
+for module in json.loads(settings.INSTALLED_APPS):
+    importlib.import_module(f"{module}.tables")
 
 
 class DBManager:
@@ -46,8 +45,15 @@ class DBManager:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             for base in Base.registry.mappers:
+                print(f"Creating the table: {base.class_.__tablename__}\n")
                 conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
+
+                # Emit the SQL for the table
                 conn.execute(text(base.class_.emit_sql()))
+
+                # Emit the SQL for the vertex definition
+                if base.class_.include_in_graph:
+                    conn.execute(text(base.class_.create_vertex()))
                 conn.commit()
             conn.close()
         eng.dispose()

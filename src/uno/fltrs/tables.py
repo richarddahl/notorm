@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import textwrap
+
 from typing import Optional
 from decimal import Decimal
 
@@ -11,6 +13,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     UniqueConstraint,
+    Identity,
     text,
 )
 
@@ -29,46 +32,121 @@ from uno.objs.sql_emitters import (
 )
 
 from uno.fltrs.enums import (
-    GraphType,
-    EdgeDirection,
+    FilterType,
     Include,
     Match,
     Lookup,
 )
 
 
-class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filterfield"
+class Vertex(Base):
+    __tablename__ = "vertex"
     __table_args__ = (
-        UniqueConstraint(
-            "label",
-            "graph_type",
-            name="uq_label_graph_type",
-        ),
         {
             "schema": "uno",
-            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
-            "info": {"rls_policy": False, "in_graph": False},
+            "comment": "A vertex in a graph, representing a table in the relational db.",
         },
     )
-    sql_emitters = [
-        AlterGrantSQL,
-        RecordVersionAuditSQL,
-        InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
-    ]
-    # Columns
-    accessor: Mapped[str_255] = mapped_column()
-    label: Mapped[str] = mapped_column()
-    data_type: Mapped[str_26] = mapped_column()
-    graph_type: Mapped[GraphType] = mapped_column(
-        ENUM(
-            GraphType,
-            name="graphtype",
-            create_type=True,
-            schema="uno",
-        ),
-        default=GraphType.PROPERTY,
+    verbose_name = "Vertex"
+    verbose_name_plural = "Vertices"
+    include_in_graph = False
+
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    object_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
+        doc="The object type of the vertex.",
+    )
+    accessor: Mapped[str] = mapped_column(
+        doc="The relational accessor for the vertex.",
+    )
+    label: Mapped[str_255] = mapped_column(
+        unique=True,
+        index=True,
+        doc="The Graph label of the vertex.",
+    )
+
+
+class Property(Base):
+    __tablename__ = "property"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "A property of a vertex in a graph.",
+        },
+    )
+    verbose_name = "Property"
+    verbose_name_plural = "Properties"
+    include_in_graph = False
+
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    object_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+        index=True,
+        doc="The object type of the property.",
+    )
+    accessor: Mapped[str] = mapped_column(
+        doc="The relational accessor for the property.",
+    )
+    label: Mapped[str_255] = mapped_column(
+        unique=True,
+        index=True,
+        doc="The Graph label of the Property.",
+    )
+    data_type: Mapped[str_26] = mapped_column(
+        doc="The data type of the property.",
+    )
+
+
+class Edge(Base, RelatedObjectPKMixin, BaseFieldMixin):
+    __tablename__ = "edge"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "An edge in a graph, representing a relationship between two tables in the relational db.",
+        },
+    )
+    verbose_name = "Edge"
+    verbose_name_plural = "Edges"
+    include_in_graph = False
+
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    start_vertex_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+        index=True,
+        doc="The start vertex of the edge.",
+    )
+    end_vertex_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+        index=True,
+        doc="The end vertex of the edge.",
+    )
+    label: Mapped[str_255] = mapped_column(
+        unique=True,
+        index=True,
+        doc="The Graph label of the edge.",
+    )
+    accessor: Mapped[str] = mapped_column(
+        doc="The relational accessor for the edge.",
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -82,56 +160,201 @@ class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
 
-class FilterFieldObjectType(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filterfield_ObjectType"
+class Path(Base):
+    __tablename__ = "path"
     __table_args__ = (
         UniqueConstraint(
-            "filterfield_id",
-            "object_type_id",
-            "direction",
-            name="uq_filterfield_ObjectType_direction",
+            "start_edge_id",
+            "end_edge_id",
+            name="uq_start_edge_id_end_edge_id",
         ),
-        Index(
-            "ix_filterfield_id_object_type_id_direction",
-            "filterfield_id",
-            "object_type_id",
-            "direction",
+        # CheckConstraint(
+        #    textwrap.dedent(
+        #        """
+        #        parent_path_id IS NOT NULL AND start_edge_id = path.parent_path_id.end_edge_id
+        #        """
+        #    ),
+        #    name="ck_start_edge_id_end_edge_id",
+        # ),
+        {
+            "schema": "uno",
+            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+        },
+    )
+    verbose_name = "Path"
+    verbose_name_plural = "Paths"
+    include_in_graph = False
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    start_edge_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.edge.id", ondelete="CASCADE"),
+        index=True,
+        doc="The start edge of the path.",
+    )
+    end_edge_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.edge.id", ondelete="CASCADE"),
+        index=True,
+        doc="The end edge of the path.",
+    )
+    parent_path_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("uno.path.id", ondelete="CASCADE"),
+        index=True,
+        doc="The parent path of the path.",
+    )
+
+
+class Filter(Base):
+    __tablename__ = "filter"
+    __table_args__ = (
+        # UniqueConstraint(
+        #    "start_edge_id",
+        #    "end_edge_id",
+        #    name="uq_start_edge_id_end_edge_id",
+        # ),
+        {
+            "schema": "uno",
+            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+        },
+    )
+    verbose_name = "Filter"
+    verbose_name_plural = "Filters"
+    include_in_graph = False
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    filter_type: Mapped[FilterType] = mapped_column(
+        ENUM(
+            FilterType,
+            name="filtertype",
+            create_type=True,
+            schema="uno",
         ),
+        default=FilterType.PROPERTY,
+    )
+    property_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.property.id", ondelete="CASCADE"),
+        index=True,
+        doc="The property associated with the filter.",
+    )
+    edge_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.edge.id", ondelete="CASCADE"),
+        index=True,
+        doc="The edge associated with the filter.",
+    )
+
+
+class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
+    __tablename__ = "filter_field"
+    __table_args__ = (
+        # UniqueConstraint(
+        #    "label",
+        #    # "graph_type",
+        #    name="uq_label_graph_type",
+        # ),
+        {
+            "schema": "uno",
+            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+            "info": {"rls_policy": False, "in_graph": False},
+        },
+    )
+    verbose_name = "Filter Field"
+    verbose_name_plural = "Filter Fields"
+    include_in_graph = False
+
+    sql_emitters = [
+        AlterGrantSQL,
+        RecordVersionAuditSQL,
+        InsertObjectTypeRecordSQL,
+        InsertRelatedObjectFunctionSQL,
+    ]
+    # Columns
+    vertex_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+        index=True,
+        doc="The vertex associated with the filter field.",
+        info={"edge": "HAS_VERTEX"},
+    )
+    accessor: Mapped[str_255] = mapped_column()
+    label: Mapped[str] = mapped_column()
+    data_type: Mapped[str_26] = mapped_column()
+    # graph_type: Mapped[GraphType] = mapped_column(
+    #    ENUM(
+    #        GraphType,
+    #        name="graphtype",
+    #        create_type=True,
+    #        schema="uno",
+    #    ),
+    #    default=GraphType.PROPERTY,
+    # )
+    lookups: Mapped[list[Lookup]] = mapped_column(
+        ARRAY(
+            ENUM(
+                Lookup,
+                name="lookup",
+                create_type=True,
+                schema="uno",
+            )
+        )
+    )
+
+
+class FilterFieldObjectType(Base, RelatedObjectPKMixin, BaseFieldMixin):
+    __tablename__ = "filter_field__object_type"
+    __table_args__ = (
+        # UniqueConstraint(
+        #    "filterfield_id",
+        #    "object_type_id",
+        #    "direction",
+        #    name="uq_filterfield_ObjectType_direction",
+        # ),
+        # Index(
+        #    "ix_filterfield_id_object_type_id_direction",
+        #    "filterfield_id",
+        #    "object_type_id",
+        #    #    "direction",
+        # ),
         {
             "schema": "uno",
             "comment": "A FilterField associated with a ObjectType.",
             "info": {"rls_policy": False, "in_graph": False},
         },
     )
+    verbose_name = "Filter Field ObjectType"
+    verbose_name_plural = "Filter Field ObjectTypes"
+    include_in_graph = False
 
     # Columns
     filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filterfield.id", ondelete="CASCADE"),
+        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         doc="The filterfield associated with a object_type.",
     )
-    object_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        doc="The object_type associated with a filterfield.",
-    )
-    direction: Mapped[str_26] = mapped_column(
-        ENUM(
-            EdgeDirection,
-            name="edgedirection",
-            create_type=True,
-            schema="uno",
-        ),
-        primary_key=True,
-        # server_default=EdgeDirection.FROM.name,
-        doc="The direction of the edge.",
-    )
+
+    # direction: Mapped[str_26] = mapped_column(
+    #    ENUM(
+    #        EdgeDirection,
+    #        name="edgedirection",
+    #        create_type=True,
+    #        schema="uno",
+    #    ),
+    #    primary_key=True,
+    #    # server_default=EdgeDirection.FROM.name,
+    #    doc="The direction of the edge.",
+    # )
 
 
 class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filterkey"
+    __tablename__ = "filter_key"
     __table_args__ = (
         UniqueConstraint(
             "from_filterfield_id",
@@ -151,16 +374,19 @@ class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": False, "in_graph": False},
         },
     )
+    verbose_name = "Filter Key"
+    verbose_name_plural = "Filter Keys"
+    include_in_graph = False
 
     # Columns
     from_filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filterfield.id", ondelete="CASCADE"),
+        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         doc="The filterkey from which the filter key starts.",
     )
     to_filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filterfield.id", ondelete="CASCADE"),
+        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         doc="The filterfield at which the filter key ends.",
@@ -170,15 +396,15 @@ class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
         primary_key=True,
         doc="The accessor for the filter key.",
     )
-    graph_type: Mapped[GraphType] = mapped_column(
-        ENUM(
-            GraphType,
-            name="graphtype",
-            create_type=True,
-            schema="uno",
-        ),
-        default=GraphType.PROPERTY,
-    )
+    # graph_type: Mapped[GraphType] = mapped_column(
+    #    ENUM(
+    #        GraphType,
+    #        name="graphtype",
+    #        create_type=True,
+    #        schema="uno",
+    #    ),
+    #    default=GraphType.PROPERTY,
+    # )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -192,7 +418,7 @@ class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filtervalue"
+    __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
             "field_id",
@@ -237,10 +463,13 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
+    verbose_name = "Filter Value"
+    verbose_name_plural = "Filter Values"
+    include_in_graph = False
 
     # Columns
     field_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filterfield.id", ondelete="CASCADE"),
+        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
         info={"edge": "FILTERS_FIELD"},
@@ -312,6 +541,9 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
+    verbose_name = "Query"
+    verbose_name_plural = "Queries"
+    include_in_graph = False
 
     # Columns
 
@@ -368,7 +600,7 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class QueryFilterValue(Base):
-    __tablename__ = "query_filtervalue"
+    __tablename__ = "query__filter_value"
     __table_args__ = (
         Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
         {
@@ -377,6 +609,9 @@ class QueryFilterValue(Base):
             "info": {"rls_policy": False, "vertex": False},
         },
     )
+    verbose_name = "Query Filter Value"
+    verbose_name_plural = "Query Filter Values"
+    include_in_graph = False
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -386,7 +621,7 @@ class QueryFilterValue(Base):
         info={"edge": "IS_QUERIED_THROUGH"},
     )
     filtervalue_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filtervalue.id", ondelete="CASCADE"),
+        ForeignKey("uno.filter_value.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         info={"edge": "QUERIES_FILTERVALUE"},
@@ -402,7 +637,7 @@ class QueryFilterValue(Base):
 
 
 class QuerySubquery(Base):
-    __tablename__ = "query_subquery"
+    __tablename__ = "query__subquery"
     __table_args__ = (
         Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
         {
@@ -411,6 +646,9 @@ class QuerySubquery(Base):
             "info": {"rls_policy": False, "vertex": False},
         },
     )
+    verbose_name = "Query Subquery"
+    verbose_name_plural = "Query Subqueries"
+    include_in_graph = False
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
