@@ -122,47 +122,8 @@ class RecordFieldAuditSQL(SQLEmitter):
 
 
 @dataclass
-class InsertTableOperation(SQLEmitter):
+class GetPermissibleGroupsFunctionSQL(SQLEmitter):
     def emit_sql(self) -> str:
-        return f"{self.emit_create_table_record_sql()}\n{self.emit_get_permissions_function_sql()}"
-
-    def emit_create_table_record_sql(self) -> str:
-        function_string = """
-            BEGIN
-                /*
-                Function to create a new TableOperation record when a new ObjectType is inserted.
-                Records are created for each object_type with the following combinations of permissions:
-                    [SELECT]
-                    [SELECT, INSERT]
-                    [SELECT, UPDATE]
-                    [SELECT, INSERT, UPDATE]
-                    [SELECT, INSERT, UPDATE, DELETE]
-                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a object_type is deleted.
-                */
-                INSERT INTO uno.table_operation(object_type_id, operations)
-                    VALUES (NEW.id, ARRAY['SELECT']::uno.sqloperation[]);
-                INSERT INTO uno.table_operation(object_type_id, operations)
-                    VALUES (NEW.id, ARRAY['SELECT', 'INSERT']::uno.sqloperation[]);
-                INSERT INTO uno.table_operation(object_type_id, operations)
-                    VALUES (NEW.id, ARRAY['SELECT', 'UPDATE']::uno.sqloperation[]);
-                INSERT INTO uno.table_operation(object_type_id, operations)
-                    VALUES (NEW.id, ARRAY['SELECT', 'INSERT', 'UPDATE']::uno.sqloperation[]);
-                INSERT INTO uno.table_operation(object_type_id, operations)
-                    VALUES (NEW.id, ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']::uno.sqloperation[]);
-                RETURN NEW;
-            END;
-            """
-
-        return self.create_sql_function(
-            "create_table_operations",
-            function_string,
-            timing="AFTER",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=True,
-        )
-
-    def emit_get_permissions_function_sql(self) -> str:
         function_string = """
             DECLARE
                 user_id TEXT := current_setting('rls_var.user_id', true)::TEXT;
@@ -173,7 +134,7 @@ class InsertTableOperation(SQLEmitter):
                 JOIN uno.user_group_role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
                 JOIN uno.role on ugr.role_id = role.id
                 JOIN uno.role_table_operation rto ON rto.role_id = role.id
-                JOIN uno.table_operation tp ON tp.id = rto.table_operation_id
+                JOIN uno.permission tp ON tp.id = rto.table_operation_id
                 JOIN uno.object_type tt ON tt.id = tp.object_type_id
                 WHERE tt.name = object_type
                 INTO permissible_groups;

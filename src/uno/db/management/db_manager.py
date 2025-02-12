@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import sys
 import io
 import textwrap
@@ -22,11 +21,19 @@ from uno.db.management.sql_emitters import (
     TablePrivilegeSQL,
 )
 
+
 from uno.db.base import Base
 from uno.config import settings
 
-for module in json.loads(settings.INSTALLED_APPS):
-    importlib.import_module(f"{module}.tables")
+# for module in json.loads(settings.INSTALLED_APPS):
+#    importlib.import_module(f"{module}.tables")
+import uno.objs.tables as objs_tables
+import uno.attrs.tables as attrs_tables
+import uno.auth.tables as auth_tables
+import uno.comms.tables as comms_tables
+import uno.fltrs.tables as fltrs_tables
+import uno.rprts.tables as rprts_tables
+import uno.wrkflws.tables as wrkflws_tables
 
 
 class DBManager:
@@ -44,7 +51,16 @@ class DBManager:
         # Connect to the new database to create the Graph functions and triggers
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            # Must emit the sql for the object type table first
+            # So that the triggger function can be fired each time
+            # a new table is created to add the corresponding permissions
+
+            conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
+            conn.execute(text(objs_tables.ObjectType.emit_sql()))
+
             for base in Base.registry.mappers:
+                if base.class_.__name__ == "ObjectType":
+                    continue  # Already emitted above
                 print(f"Creating the table: {base.class_.__tablename__}\n")
                 conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
 
@@ -307,6 +323,7 @@ class DBManager:
         # Connect to the new database to create the Auth functions and triggers
         # Create the tables
         print("Creating the database tables\n")
+
         Base.metadata.create_all(bind=conn)
 
         print("Setting the table privileges\n")

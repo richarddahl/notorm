@@ -35,7 +35,6 @@ class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Message"
     verbose_name_plural = "Messages"
-    # include_in_graph = False
 
     sql_emitters = [
         AlterGrantSQL,
@@ -81,7 +80,8 @@ class MessageAddressedTo(Base):
     }
     verbose_name = "Message Addressed To"
     verbose_name_plural = "Messages Addressed To"
-    include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -117,6 +117,8 @@ class MessageCopiedTo(Base):
     verbose_name_plural = "Messages Copied To"
     include_in_graph = False
 
+    sql_emitters = []
+
     # Columns
     message_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.message.id", ondelete="CASCADE"),
@@ -137,58 +139,5 @@ class MessageCopiedTo(Base):
         nullable=False,
     )
     read_at: Mapped[datetime.datetime] = mapped_column()
-
-    # Relationships
-
-
-class Attachment(Base):
-    __tablename__ = "attachment"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Files attached to db objects",
-    }
-    verbose_name = "Attachment"
-    verbose_name_plural = "Attachments"
-    # include_in_graph = False
-
-    # Columns
-    id: Mapped[int] = mapped_column(
-        Identity(),
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the vertex.",
-    )
-    name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
-    file: Mapped[str_255] = mapped_column(doc="Path to the file")
-
-    # Relationships
-
-
-class MessageAttachment(Base):
-    __tablename__ = "message__attachment"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Attachments to messages",
-    }
-    verbose_name = "Message Attachment"
-    verbose_name_plural = "Message Attachements"
-    include_in_graph = False
-
-    # Columns
-    message_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.message.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        nullable=False,
-        info={"edge": "WAS_ATTACHED_TO"},
-    )
-    attachment_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attachment.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        nullable=False,
-        info={"edge": "HAS_ATTACHMENT"},
-    )
 
     # Relationships

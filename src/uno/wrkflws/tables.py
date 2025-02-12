@@ -19,6 +19,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 
+from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
+
 from uno.wrkflws.enums import (  # type: ignore
     WorkflowRecordStatus,
     WorkflowRecordState,
@@ -37,7 +39,9 @@ class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Workflow"
     verbose_name_plural = "Workflows"
-    include_in_graph = False
+    # include_in_graph = False
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
 
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
@@ -139,7 +143,9 @@ class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Workflow Event"
     verbose_name_plural = "Workflow Events"
-    include_in_graph = False
+    # include_in_graph = False
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
 
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow.id", ondelete="CASCADE"),
@@ -167,7 +173,9 @@ class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Workflow Record"
     verbose_name_plural = "Workflow Records"
-    include_in_graph = False
+    # include_in_graph = False
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
 
     workflowevent_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow_event.id", ondelete="CASCADE"),
@@ -221,7 +229,9 @@ class ObjectFunction(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Object Function"
     verbose_name_plural = "Object Functions"
-    include_in_graph = False
+    # include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
 

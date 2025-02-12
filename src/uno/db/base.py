@@ -96,9 +96,12 @@ class Base(AsyncAttrs, DeclarativeBase):
         }
     )
     metadata = metadata
+
+    # Metadata related attributes
     verbose_name: ClassVar[str]
     verbose_name_plural: ClassVar[str]
 
+    # SQL related attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Graph related attributes

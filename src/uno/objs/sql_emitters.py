@@ -104,3 +104,36 @@ class InsertRelatedObjectTriggerSQL(SQLEmitter):
             for_each="ROW",
             db_function=True,
         )
+
+
+@dataclass
+class InsertPermissionSQL(SQLEmitter):
+    def emit_sql(self) -> str:
+        function_string = """
+            BEGIN
+                /*
+                Function to create a new Permission record when a new ObjectType is inserted.
+                Records are created for each object_type with each of the following permissions:
+                    SELECT, INSERT, UPDATE, DELETE
+                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a object_type is deleted.
+                */
+                INSERT INTO uno.permission(object_type_id, operation)
+                    VALUES (NEW.id, 'SELECT'::uno.sqloperation);
+                INSERT INTO uno.permission(object_type_id, operation)
+                    VALUES (NEW.id, 'INSERT'::uno.sqloperation);
+                INSERT INTO uno.permission(object_type_id, operation)
+                    VALUES (NEW.id, 'UPDATE'::uno.sqloperation);
+                INSERT INTO uno.permission(object_type_id, operation)
+                    VALUES (NEW.id, 'DELETE'::uno.sqloperation);
+                RETURN NEW;
+            END;
+            """
+
+        return self.create_sql_function(
+            "create_permissions",
+            function_string,
+            timing="AFTER",
+            operation="INSERT",
+            include_trigger=True,
+            db_function=True,
+        )

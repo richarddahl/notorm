@@ -6,7 +6,7 @@ import textwrap
 
 from typing import List
 
-from sqlalchemy import UniqueConstraint, ForeignKey, func
+from sqlalchemy import UniqueConstraint, ForeignKey, func, Identity
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
@@ -14,7 +14,7 @@ from uno.db.sql_emitters import AlterGrantSQL
 
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
 
-from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
+from uno.objs.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
 
 
 class ObjectType(Base):
@@ -33,13 +33,14 @@ class ObjectType(Base):
             "info": {"rls_policy": "superuser"},
         },
     )
+    verbose_name = "Table Type"
+    verbose_name_plural = "Table Types"
+
     sql_emitters = [
-        InsertObjectTypeRecordSQL,
+        InsertPermissionSQL,
         AlterGrantSQL,
         # SuperuserRLSSQL,
     ]
-    verbose_name = "Table Type"
-    verbose_name_plural = "Table Types"
 
     id: Mapped[str_26] = mapped_column(
         primary_key=True,
@@ -73,7 +74,6 @@ class DBObject(Base):
         ),
     }
     sql_emitters = [
-        InsertObjectTypeRecordSQL,
         AlterGrantSQL,
     ]
     verbose_name = "Related Object"
@@ -96,3 +96,56 @@ class DBObject(Base):
 
     def __str__(self) -> str:
         return f"{self.object_type_id}"
+
+
+class Attachment(Base):
+    __tablename__ = "attachment"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Files attached to db objects",
+    }
+    verbose_name = "Attachment"
+    verbose_name_plural = "Attachments"
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
+
+    # Columns
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
+    name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
+    file: Mapped[str_255] = mapped_column(doc="Path to the file")
+
+    # Relationships
+
+
+class MessageDBObject(Base):
+    __tablename__ = "message__dbobject"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Attachments to DBObjects",
+    }
+    verbose_name = "Message DBObject"
+    verbose_name_plural = "Message DBObjects"
+
+    sql_emitters = []
+
+    # Columns
+    message_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.message.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+        nullable=False,
+        info={"edge": "WAS_ATTACHED_TO"},
+    )
+    db_object_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+        nullable=False,
+        info={"edge": "HAS_ATTACHMENT"},
+    )

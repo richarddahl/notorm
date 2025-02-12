@@ -11,7 +11,7 @@ from uno.db.schemas import (
     SchemaDef,
     ListSchema,
     SelectSchema,
-    InsertSchema,
+    CreateSchema,
     UpdateSchema,
     DeleteSchema,
 )
@@ -20,11 +20,11 @@ from uno.db.routers import RouterDef
 from uno.auth.enums import TenantType
 
 
-class UserInsertSchemaDef(SchemaDef):
-    name: str = "UserInsert"
+class UserCreateSchemaDef(SchemaDef):
+    name: str = "UserCreate"
     table_name: str = "uno.user"
-    doc: str = "Schema to insert a new User into the database"
-    base: type[BaseModel] = InsertSchema
+    doc: str = "Schema to Create a new User into the database"
+    base: type[BaseModel] = CreateSchema
     data_type: SchemaDataType = SchemaDataType.NATIVE
     exclude_fields: list[str] = [
         "id",
@@ -42,7 +42,7 @@ class UserInsertSchemaDef(SchemaDef):
         endpoint="post",
         multiple=False,
         include_in_schema=True,
-        summary="Insert a new User",
+        summary="Create a new User",
         description="Insert a new User into the database",
         tags=["auth"],
     )
@@ -131,6 +131,25 @@ class UserDeleteSchemaDef(SchemaDef):
         include_in_schema=True,
         summary="Delete a User",
         description="Delete a User from the database",
+        tags=["auth"],
+    )
+
+
+class UserImportSchemaDef(SchemaDef):
+    name: str = "UserImport"
+    table_name: str = "uno.user"
+    doc: str = "Schema to import a User into the database"
+    base: type[BaseModel] = DeleteSchema
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+    router_def: ClassVar[RouterDef] = RouterDef(
+        path_suffix="/{id}",
+        path_objs="/user",
+        method="PUT",
+        endpoint="put",
+        multiple=False,
+        include_in_schema=True,
+        summary="Import a User",
+        description="Import a User into the database",
         tags=["auth"],
     )
 

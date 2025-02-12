@@ -87,7 +87,7 @@ class SelectSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class InsertSchema(BaseModel):
+class CreateSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -106,7 +106,7 @@ class SchemaDef(BaseModel):
     data_type: SchemaDataType = SchemaDataType.NATIVE
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
-    router_def: ClassVar[RouterDef] = None
+    router_def: ClassVar[RouterDef | None] = None
 
     model_config = ConfigDict(extra="forbid")
 

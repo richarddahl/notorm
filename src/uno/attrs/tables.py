@@ -28,8 +28,6 @@ from uno.objs.sql_emitters import (
 from uno.auth.rls_sql_emitters import RLSSQL
 from uno.fltrs.tables import Query
 
-from uno.attrs.enums import AttributePurpose, AttributeDataType
-
 
 class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "attribute_type"
@@ -86,6 +84,8 @@ class AttributeTypeAppliesTo(Base):
     verbose_name_plural = "Attribute Type Applies To"
     include_in_graph = False
 
+    sql_emitters = []
+
     # Columns
     attribute_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
@@ -123,6 +123,8 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
     verbose_name = "Attribute Type Value Type"
     verbose_name_plural = "Attribute Type Value Types"
     include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     attribute_type_id: Mapped[str_26] = mapped_column(
@@ -220,6 +222,8 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
     verbose_name_plural = "Attribute Attribute Values"
     include_in_graph = False
 
+    sql_emitters = []
+
     # Columns
     attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
@@ -254,6 +258,8 @@ class AttributeObjectValue(Base, BaseFieldMixin):
     verbose_name = "Attribute Object Value"
     verbose_name_plural = "Attribute Object Values"
     include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     attribute_id: Mapped[str_26] = mapped_column(

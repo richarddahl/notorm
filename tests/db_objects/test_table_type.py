@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 
 from uno.objs.tables import ObjectType
 
-from uno.auth.sql_emitters import InsertTableOperation
+from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
 
 from tests.conftest import (
     print_indices,

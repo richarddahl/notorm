@@ -2,17 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import importlib
-
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from uno.config import settings
-
-from uno.db.base import Base
 
 
 import uno.attrs.tables as attrs_tables

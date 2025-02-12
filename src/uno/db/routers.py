@@ -53,11 +53,7 @@ class RouterDef:
     async def get_by_id(
         self,
         id: str,
-        request: Request,
-        # authorization: Annotated[str, Header()],
-        # db: AsyncSession = Depends(get_db),
     ):
-        # await db.execute(func.uno.authorize_user(authorization))
         result = await db.execute(select(self.table).filter_by(id=id))
         obj = result.scalar()
         if obj is None:
@@ -79,6 +75,9 @@ class RouterDef:
         return self.response_model
 
     def patch(self):
+        return self.response_model
+
+    def put(self):
         return self.response_model
 
     def delete(self):

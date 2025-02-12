@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     UniqueConstraint,
+    Identity,
     func,
     text,
 )
@@ -47,11 +48,12 @@ from uno.auth.rls_sql_emitters import (
 )
 from uno.auth.enums import TenantType
 from uno.auth.schemas import (
-    UserInsertSchemaDef,
+    UserCreateSchemaDef,
     UserListShemaDef,
     UserSelectSchemaDef,
     UserUpdateSchemaDef,
     UserDeleteSchemaDef,
+    UserImportSchemaDef,
 )
 
 
@@ -126,45 +128,14 @@ class User(Base, RelatedObjectPKMixin):
         RecordVersionAuditSQL,
     ]
     schema_defs = [
-        UserInsertSchemaDef(),
+        UserCreateSchemaDef(),
         UserListShemaDef(),
         UserSelectSchemaDef(),
         UserUpdateSchemaDef(),
         UserDeleteSchemaDef(),
+        UserImportSchemaDef(),
     ]
-    """
-    router_defs: ClassVar[dict[str, RouterDef]] = {
-        "Insert": RouterDef(
-            method="POST",
-            router="post",
-            response_model="UserInsert",
-        ),
-        "List": RouterDef(
-            method="GET",
-            router="get",
-            multiple=True,
-            response_model="UserInsert",
-        ),
-        "Update": RouterDef(
-            path_suffix="{id}",
-            method="PUT",
-            router="put",
-            response_model="UserInsert",
-        ),
-        "Select": RouterDef(
-            path_suffix="{id}",
-            method="GET",
-            router="get_by_id",
-            response_model="UserInsert",
-        ),
-        "Delete": RouterDef(
-            path_suffix="{id}",
-            method="DELETE",
-            router="delete",
-            response_model="UserInsert",
-        ),
-    }
-    """
+
     # Columns
     email: Mapped[str_255] = mapped_column(
         unique=True, index=True, doc="Email address, used as login ID"
@@ -250,51 +221,52 @@ class User(Base, RelatedObjectPKMixin):
         return f"<User {self.email}>"
 
 
-class Permission(Base, RelatedObjectPKMixin):
+class Permission(Base):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
             "object_type_id",
-            "operations",
-            name="uq_ObjectType_operations",
+            "operation",
+            name="uq_objecttype_operation",
         ),
         {
-            "schema": "uno",
             "comment": """
                 Permissions for each table.
-                Created automatically by the DB via a trigger when a Table using role access is created.
-                Records are created for each table with the following combinations of permissions:
-                    [SELECT]
-                    [SELECT, INSERT]
-                    [SELECT, UPDATE]
-                    [SELECT, INSERT, UPDATE]
-                    [SELECT, INSERT, UPDATE, DELETE]
-                Deleted automatically by the DB via the FK Constraints ondelete when a object_type is deleted.
+                Deleted automatically by the DB via the FK Constraints
+                ondelete when a object_type is deleted.
             """,
-            "info": {"rls_policy": "superuser", "vertex": False},
+            "schema": "uno",
         },
     )
     verbose_name = "Permission"
     verbose_name_plural = "Permissions"
-    # include_in_graph = False
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
+    # Columns
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the vertex.",
+    )
     object_type_id: Mapped[str] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+        primary_key=True,
         index=True,
-        info={"edge": "HAS_ObjectType"},
+        doc="Table the permission is for",
+        info={"edge": "PROVIDES_PERMISSION_FOR_OBJECT_TYPE"},
     )
-    operations: Mapped[list[SQLOperation]] = mapped_column(
-        ARRAY(
-            ENUM(
-                SQLOperation,
-                name="sqloperation",
-                create_type=True,
-                schema="uno",
-            )
+    operation: Mapped[SQLOperation] = mapped_column(
+        ENUM(
+            SQLOperation,
+            name="sqloperation",
+            create_type=True,
+            schema="uno",
         ),
-        doc="Operations that are permissible",
+        primary_key=True,
+        doc="Operation that is permissible",
     )
 
     # Relationships
@@ -320,12 +292,10 @@ class Role(Base, RelatedObjectPKMixin, BaseFieldMixin):
                 by functionality, department, etc... to users.
             """,
             "schema": "uno",
-            "info": {"rls_policy": "admin", "vertex": False},
         },
     )
     verbose_name = "Role"
     verbose_name_plural = "Roles"
-    # include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -348,19 +318,19 @@ class Role(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
 
 class RolePermission(Base):
-    __tablename__ = "role_permission"
+    __tablename__ = "role__permission"
     __table_args__ = (
         {
             "comment": """
                 Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
             """,
             "schema": "uno",
-            "info": {"rls_policy": "none"},
         },
     )
     verbose_name = "Role Permission"
     verbose_name_plural = "Role Permissions"
-    include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     role_id: Mapped[str_26] = mapped_column(
@@ -398,7 +368,6 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     verbose_name = "Group"
     verbose_name_plural = "Groups"
-    # include_in_graph = False
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -431,22 +400,50 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
         return f"<Group {self.name}>"
 
 
-class UserGroup(Base):
-    __tablename__ = "user__group__role"
+class GroupRole(Base, RelatedObjectPKMixin, BaseFieldMixin):
+    __tablename__ = "group_role"
+    __table_args__ = (
+        {
+            "comment": "Assigned by admin users to assign roles to groups.",
+            "schema": "uno",
+        },
+    )
+    verbose_name = "Group Permission"
+    verbose_name_plural = "Group Permissions"
+    include_in_graph = False
+
+    sql_emitters = []
+
+    # Columns
+    group_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.group.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        info={"edge": "HAS_GROUP"},
+    )
+    role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.role.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        info={"edge": "HAS_ROLE"},
+    )
+
+
+class UserGroupRole(Base):
+    __tablename__ = "user__group_role"
     __table_args__ = (
         {
             "comment": """
                 Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
             """,
             "schema": "uno",
-            "info": {"rls_policy": "admin", "vertex": False},
         },
     )
     verbose_name = "User Group Role"
     verbose_name_plural = "User Group Roles"
     include_in_graph = False
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
     # Columns
     user_id: Mapped[str_26] = mapped_column(
@@ -456,17 +453,10 @@ class UserGroup(Base):
         primary_key=True,
         info={"edge": "HAS_USER"},
     )
-    group_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.group.id", ondelete="CASCADE"),
+    group_role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.group_role.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
         primary_key=True,
-        info={"edge": "HAS_GROUP"},
-    )
-    role_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.role.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        primary_key=True,
-        info={"property": True},
+        info={"edge": "HAS_GROUP_ROLE"},
     )

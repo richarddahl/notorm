@@ -31,6 +31,7 @@ from uno.objs.sql_emitters import (
     InsertRelatedObjectFunctionSQL,
 )
 
+
 from uno.fltrs.enums import (
     FilterType,
     Include,
@@ -50,6 +51,8 @@ class Vertex(Base):
     verbose_name = "Vertex"
     verbose_name_plural = "Vertices"
     include_in_graph = False
+
+    sql_emitters = []
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -85,6 +88,8 @@ class Property(Base):
     verbose_name = "Property"
     verbose_name_plural = "Properties"
     include_in_graph = False
+
+    sql_emitters = []
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -122,6 +127,8 @@ class Edge(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name = "Edge"
     verbose_name_plural = "Edges"
     include_in_graph = False
+
+    sql_emitters = []
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -185,6 +192,8 @@ class Path(Base):
     verbose_name_plural = "Paths"
     include_in_graph = False
 
+    sql_emitters = []
+
     id: Mapped[int] = mapped_column(
         primary_key=True,
         unique=True,
@@ -224,6 +233,8 @@ class Filter(Base):
     verbose_name = "Filter"
     verbose_name_plural = "Filters"
     include_in_graph = False
+
+    sql_emitters = []
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -269,6 +280,8 @@ class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name = "Filter Field"
     verbose_name_plural = "Filter Fields"
     include_in_graph = False
+
+    sql_emitters = []
 
     sql_emitters = [
         AlterGrantSQL,
@@ -332,6 +345,8 @@ class FilterFieldObjectType(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name_plural = "Filter Field ObjectTypes"
     include_in_graph = False
 
+    sql_emitters = []
+
     # Columns
     filterfield_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
@@ -377,6 +392,8 @@ class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name = "Filter Key"
     verbose_name_plural = "Filter Keys"
     include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     from_filterfield_id: Mapped[str_26] = mapped_column(
@@ -467,6 +484,8 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name_plural = "Filter Values"
     include_in_graph = False
 
+    sql_emitters = [InsertObjectTypeRecordSQL]
+
     # Columns
     field_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
@@ -545,6 +564,8 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
     verbose_name_plural = "Queries"
     include_in_graph = False
 
+    sql_emitters = [InsertObjectTypeRecordSQL]
+
     # Columns
 
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
@@ -613,6 +634,8 @@ class QueryFilterValue(Base):
     verbose_name_plural = "Query Filter Values"
     include_in_graph = False
 
+    sql_emitters = []
+
     # Columns
     query_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.query.id", ondelete="CASCADE"),
@@ -649,6 +672,8 @@ class QuerySubquery(Base):
     verbose_name = "Query Subquery"
     verbose_name_plural = "Query Subqueries"
     include_in_graph = False
+
+    sql_emitters = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
