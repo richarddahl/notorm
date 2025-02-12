@@ -55,16 +55,6 @@ class General(BaseSettings):
     SUPERUSER_HANDLE: str
     SUPERUSER_FULL_NAME: str
 
-    # Installed Apps
-    INSTALLED_APPS: str = """[
-        "uno.auth",
-        "uno.attrs",
-        "uno.objs",
-        "uno.comms",
-        "uno.fltrs",
-        "uno.wrkflws"
-    ]"""
-
 
 class Prod(General):
     model_config = SettingsConfigDict(case_sensitive=False, env_file=".env")

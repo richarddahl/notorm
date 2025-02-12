@@ -5,7 +5,7 @@
 import textwrap
 import datetime
 
-from typing import Optional
+from typing import Optional, ClassVar
 
 from sqlalchemy import (
     CheckConstraint,
@@ -27,6 +27,7 @@ from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
 from uno.db.graphs import VertexDef, EdgeDef
+from uno.db.routers import RouterDef
 
 from uno.objs.tables import ObjectType
 from uno.objs.sql_emitters import (
@@ -45,6 +46,13 @@ from uno.auth.rls_sql_emitters import (
     TenantRLSSQL,
 )
 from uno.auth.enums import TenantType
+from uno.auth.schemas import (
+    UserInsertSchemaDef,
+    UserListShemaDef,
+    UserSelectSchemaDef,
+    UserUpdateSchemaDef,
+    UserDeleteSchemaDef,
+)
 
 
 class Tenant(Base, RelatedObjectPKMixin, BaseFieldMixin):
@@ -117,7 +125,46 @@ class User(Base, RelatedObjectPKMixin):
         InsertRelatedObjectFunctionSQL,
         RecordVersionAuditSQL,
     ]
-
+    schema_defs = [
+        UserInsertSchemaDef(),
+        UserListShemaDef(),
+        UserSelectSchemaDef(),
+        UserUpdateSchemaDef(),
+        UserDeleteSchemaDef(),
+    ]
+    """
+    router_defs: ClassVar[dict[str, RouterDef]] = {
+        "Insert": RouterDef(
+            method="POST",
+            router="post",
+            response_model="UserInsert",
+        ),
+        "List": RouterDef(
+            method="GET",
+            router="get",
+            multiple=True,
+            response_model="UserInsert",
+        ),
+        "Update": RouterDef(
+            path_suffix="{id}",
+            method="PUT",
+            router="put",
+            response_model="UserInsert",
+        ),
+        "Select": RouterDef(
+            path_suffix="{id}",
+            method="GET",
+            router="get_by_id",
+            response_model="UserInsert",
+        ),
+        "Delete": RouterDef(
+            path_suffix="{id}",
+            method="DELETE",
+            router="delete",
+            response_model="UserInsert",
+        ),
+    }
+    """
     # Columns
     email: Mapped[str_255] = mapped_column(
         unique=True, index=True, doc="Email address, used as login ID"
@@ -233,7 +280,7 @@ class Permission(Base, RelatedObjectPKMixin):
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
-    object_type_id: Mapped[ObjectType] = mapped_column(
+    object_type_id: Mapped[str] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "HAS_ObjectType"},
@@ -248,6 +295,11 @@ class Permission(Base, RelatedObjectPKMixin):
             )
         ),
         doc="Operations that are permissible",
+    )
+
+    # Relationships
+    object_type: Mapped[ObjectType] = relationship(
+        back_populates="permissions",
     )
 
     def __str__(self) -> str:

@@ -18,10 +18,6 @@ class SchemaConfigError(UnoError):
     pass
 
 
-class RegistryError(UnoError):
-    pass
-
-
 class SchemaFieldListError(UnoError):
     pass
 

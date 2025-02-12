@@ -6,9 +6,11 @@ import datetime
 
 from enum import Enum
 from decimal import Decimal
-from typing import AsyncIterator, Annotated, ClassVar
 
-from sqlalchemy import MetaData
+from typing import AsyncIterator, Annotated, ClassVar
+from fastapi import FastAPI
+
+from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import registry, DeclarativeBase
 from sqlalchemy.dialects.postgresql import (
     BIGINT,
@@ -28,10 +30,10 @@ from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
 )
 
-from uno.routers import Router, RouterDef
-
+from uno.db.routers import RouterDef
 from uno.db.sql_emitters import SQLEmitter
 from uno.db.graphs import VertexDef, EdgeDef
+from uno.db.schemas import SchemaDef
 
 from uno.config import settings
 
@@ -51,7 +53,7 @@ metadata = MetaData(
     schema=settings.DB_NAME,
 )
 
-
+sync_engine = create_engine(settings.DB_URL)
 # Create the database engine
 engine = create_async_engine(settings.DB_URL)
 
@@ -103,40 +105,20 @@ class Base(AsyncAttrs, DeclarativeBase):
     include_in_graph: ClassVar[bool] = True
     edge_defs: ClassVar[list[EdgeDef]] = []
 
+    # schema related attributes
+    schema_defs: ClassVar[list[SchemaDef]] = []
+
     # Router related attributes
-    routers: ClassVar[list[Router]] = []
-    router_defs: ClassVar[dict[str, RouterDef]] = {
-        "Insert": RouterDef(
-            method="POST",
-            router="post",
-        ),
-        "List": RouterDef(
-            method="GET",
-            router="get",
-            multiple=True,
-        ),
-        "Update": RouterDef(
-            path_suffix="{id}",
-            method="PUT",
-            router="put",
-        ),
-        "Select": RouterDef(
-            path_suffix="{id}",
-            method="GET",
-            router="get_by_id",
-        ),
-        "Delete": RouterDef(
-            path_suffix="{id}",
-            method="DELETE",
-            router="delete",
-        ),
-    }
+    router_defs: ClassVar[dict[str, RouterDef]] = {}
 
-    def __init_subclass__(cls) -> None:
-        super().__init_subclass__()
-
-    #    cls.create_vectors()
-    #    cls.create_routers()
+    @classmethod
+    def create_schemas(cls, app: FastAPI) -> None:
+        for schema_def in cls.schema_defs:
+            setattr(
+                cls,
+                schema_def.name,
+                schema_def.create_schema(cls.__table__, app),
+            )
 
     @classmethod
     def create_vertex(cls) -> None:
@@ -149,29 +131,9 @@ class Base(AsyncAttrs, DeclarativeBase):
         for edge_def in cls.edge_defs:
             edge_def.emit_sql()
 
-    @classmethod
-    def create_vectors(cls) -> None:
-        pass
-
-    @classmethod
-    def create_routers(cls) -> None:
-        for router_def in cls.router_defs.values():
-            cls.routers.append(
-                Router(
-                    table=cls.__table__,
-                    model=cls,
-                    method=router_def.method,
-                    router=router_def.router,
-                    path_objs="",
-                    path_module=cls.__tablename__,
-                    path_suffix=router_def.path_suffix,
-                    multiple=router_def.multiple,
-                    include_in_schema=router_def.include_in_schema,
-                    tags=[cls.__class__.__name__],
-                    summary=router_def.summary,
-                    description=router_def.description,
-                )
-            )
+    # @classmethod
+    # def create_vectors(cls) -> None:
+    #    pass
 
     @classmethod
     def emit_sql(cls) -> str:

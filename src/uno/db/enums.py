@@ -45,19 +45,36 @@ class SelectResultType(str, enum.Enum):
     SCALAR = "scalar"
 
 
-class MaskType(str, enum.Enum):
+class SchemaOperationType(str, enum.Enum):
+    """
+    Enumeration representing the operation types for database schema operations.
+
+    Attributes:
+        SELECT (str): Schema used for a SELECT operation.
+        INSERT (str): Schema used for an INSERT operation.
+        UPDATE (str): Schema used for an UPDATE operation.
+        DELETE (str): Schema used for a DELETE operation.
+    """
+
+    SELECT = "select"
+    INSERT = "insert"
+    UPDATE = "update"
+    DELETE = "delete"
+
+
+class SchemaDataType(str, enum.Enum):
     """
     Enumeration representing the data types for mask configurations.
 
     Attributes:
-        NATIVE (str): Native (python) data type.
+        NATIVE (str): Native (python) data.
         STRING (str): Babel formatted (localized) string.
-        ELEMENT (str): HTML Form Element Dictionary.
+        HTML (str): HTML Form Element JSON.
     """
 
     NATIVE = "native"
     STRING = "string"
-    ELEMENT = "element"
+    HTML = "html"
 
 
 class SQLOperation(str, enum.Enum):
