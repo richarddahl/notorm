@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from sqlalchemy import Column, Table
 
 from uno.db.enums import SchemaOperationType, SchemaDataType
-from uno.db.routers import RouterDef
+from uno.routers import RouterDef
 
 from uno.errors import (
     SchemaConfigError,
@@ -99,17 +99,18 @@ class DeleteSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SchemaDef(BaseModel):
-    name: str
-    doc: str = ""
-    base: type[BaseModel] = SelectSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
-    exclude_fields: list[str] | None = []
-    include_fields: list[str] | None = []
+class Schema(BaseModel):
+    name: ClassVar[str]
+    doc: ClassVar[str] = ""
+    base: ClassVar[type[BaseModel]] = SelectSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
+    exclude_fields: ClassVar[list[str] | None] = []
+    include_fields: ClassVar[list[str] | None] = []
     router_def: ClassVar[RouterDef | None] = None
 
     model_config = ConfigDict(extra="forbid")
 
+    @classmethod
     def create_schema(self, table: Table, app: FastAPI) -> Type[BaseModel]:
         schema = create_model(
             self.name,
@@ -123,6 +124,7 @@ class SchemaDef(BaseModel):
         self.router_def.add_to_app(schema, table, app)
         return schema
 
+    @classmethod
     def create_field(
         self,
         column: Column,
@@ -165,6 +167,7 @@ class SchemaDef(BaseModel):
             return (field_type | None, field)
         return (field_type, field)
 
+    @classmethod
     def suss_fields(self, table: Table) -> dict[str, Any]:
         if self.include_fields and self.exclude_fields:
             raise SchemaFieldListError(

@@ -28,7 +28,7 @@ from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
 from uno.db.graphs import VertexDef, EdgeDef
-from uno.db.routers import RouterDef
+from uno.routers import RouterDef
 
 from uno.objs.tables import ObjectType
 from uno.objs.sql_emitters import (
@@ -48,12 +48,12 @@ from uno.auth.rls_sql_emitters import (
 )
 from uno.auth.enums import TenantType
 from uno.auth.schemas import (
-    UserCreateSchemaDef,
-    UserListShemaDef,
-    UserSelectSchemaDef,
-    UserUpdateSchemaDef,
-    UserDeleteSchemaDef,
-    UserImportSchemaDef,
+    UserCreateSchema,
+    UserListSchema,
+    UserSelectSchema,
+    UserUpdateSchema,
+    UserDeleteSchema,
+    UserImportSchema,
 )
 
 
@@ -128,12 +128,12 @@ class User(Base, RelatedObjectPKMixin):
         RecordVersionAuditSQL,
     ]
     schema_defs = [
-        UserCreateSchemaDef(),
-        UserListShemaDef(),
-        UserSelectSchemaDef(),
-        UserUpdateSchemaDef(),
-        UserDeleteSchemaDef(),
-        UserImportSchemaDef(),
+        UserCreateSchema,
+        UserListSchema,
+        UserSelectSchema,
+        UserUpdateSchema,
+        UserDeleteSchema,
+        UserImportSchema,
     ]
 
     # Columns

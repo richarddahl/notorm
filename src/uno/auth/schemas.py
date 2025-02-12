@@ -7,8 +7,8 @@ from typing import ClassVar
 from pydantic import BaseModel
 
 from uno.db.enums import SchemaDataType
-from uno.db.schemas import (
-    SchemaDef,
+from uno.schemas import (
+    Schema,
     ListSchema,
     SelectSchema,
     CreateSchema,
@@ -16,17 +16,17 @@ from uno.db.schemas import (
     DeleteSchema,
 )
 
-from uno.db.routers import RouterDef
+from uno.routers import RouterDef
 from uno.auth.enums import TenantType
 
 
-class UserCreateSchemaDef(SchemaDef):
-    name: str = "UserCreate"
-    table_name: str = "uno.user"
-    doc: str = "Schema to Create a new User into the database"
-    base: type[BaseModel] = CreateSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
-    exclude_fields: list[str] = [
+class UserCreateSchema(Schema):
+    name: ClassVar[str] = "UserCreate"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to Create a new User into the database"
+    base: ClassVar[type[BaseModel]] = CreateSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
+    exclude_fields: ClassVar[list[str]] = [
         "id",
         "created_at",
         "owner_id",
@@ -48,13 +48,19 @@ class UserCreateSchemaDef(SchemaDef):
     )
 
 
-class UserListShemaDef(SchemaDef):
-    name: str = "UserList"
-    table_name: str = "uno.user"
-    doc: str = "Schema to list Users from the database"
-    base: type[BaseModel] = ListSchema
-    data_type: SchemaDataType = SchemaDataType.HTML
-    include_fields: list[str] = ["id", "email", "handle", "full_name", "is_active"]
+class UserListSchema(Schema):
+    name: ClassVar[str] = "UserList"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to list Users from the database"
+    base: ClassVar[type[BaseModel]] = ListSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.HTML
+    include_fields: ClassVar[list[str]] = [
+        "id",
+        "email",
+        "handle",
+        "full_name",
+        "is_active",
+    ]
     router_def: ClassVar[RouterDef] = RouterDef(
         path_suffix="",
         path_objs="/user",
@@ -68,13 +74,13 @@ class UserListShemaDef(SchemaDef):
     )
 
 
-class UserSelectSchemaDef(SchemaDef):
-    name: str = "UserSelect"
-    table_name: str = "uno.user"
-    doc: str = "Schema to select a User from the database"
-    base: type[BaseModel] = SelectSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
-    exclude_fields: list[str] = []
+class UserSelectSchema(Schema):
+    name: ClassVar[str] = "UserSelect"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to select a User from the database"
+    base: ClassVar[type[BaseModel]] = SelectSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
+    exclude_fields: ClassVar[list[str]] = []
     router_def: ClassVar[RouterDef] = RouterDef(
         path_suffix="/{id}",
         path_objs="/user",
@@ -88,13 +94,13 @@ class UserSelectSchemaDef(SchemaDef):
     )
 
 
-class UserUpdateSchemaDef(SchemaDef):
-    name: str = "UserUpdate"
-    table_name: str = "uno.user"
-    doc: str = "Schema to update a User in the database"
-    base: type[BaseModel] = UpdateSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
-    exclude_fields: list[str] = [
+class UserUpdateSchema(Schema):
+    name: ClassVar[str] = "UserUpdate"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to update a User in the database"
+    base: ClassVar[type[BaseModel]] = UpdateSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
+    exclude_fields: ClassVar[list[str]] = [
         "id",
         "created_at",
         "modified_at",
@@ -115,13 +121,13 @@ class UserUpdateSchemaDef(SchemaDef):
     )
 
 
-class UserDeleteSchemaDef(SchemaDef):
-    name: str = "UserDelete"
-    table_name: str = "uno.user"
-    doc: str = "Schema to delete a User from the database"
-    base: type[BaseModel] = DeleteSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
-    include_fields: list[str] = ["id"]
+class UserDeleteSchema(Schema):
+    name: ClassVar[str] = "UserDelete"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to delete a User from the database"
+    base: ClassVar[type[BaseModel]] = DeleteSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
+    include_fields: ClassVar[list[str]] = ["id"]
     router_def: ClassVar[RouterDef] = RouterDef(
         path_suffix="/{id}",
         path_objs="/user",
@@ -135,12 +141,12 @@ class UserDeleteSchemaDef(SchemaDef):
     )
 
 
-class UserImportSchemaDef(SchemaDef):
-    name: str = "UserImport"
-    table_name: str = "uno.user"
-    doc: str = "Schema to import a User into the database"
-    base: type[BaseModel] = DeleteSchema
-    data_type: SchemaDataType = SchemaDataType.NATIVE
+class UserImportSchema(Schema):
+    name: ClassVar[str] = "UserImport"
+    table_name: ClassVar[str] = "uno.user"
+    doc: ClassVar[str] = "Schema to import a User into the database"
+    base: ClassVar[type[BaseModel]] = DeleteSchema
+    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
     router_def: ClassVar[RouterDef] = RouterDef(
         path_suffix="/{id}",
         path_objs="/user",
@@ -152,64 +158,3 @@ class UserImportSchemaDef(SchemaDef):
         description="Import a User into the database",
         tags=["auth"],
     )
-
-
-"""
-class TenantSchema(BaseModel):
-    name: str
-    tenant_type: TenantType
-
-    tenant_users: list["UserSchema"]
-
-
-class UserSchema(BaseModel):
-    email: str
-    handle: str
-    full_name: str
-    tenant_id: Optional[str]
-    is_superuser: bool
-    is_tenant_admin: bool
-    is_active: bool
-    created_at: datetime.datetime
-    owner_id: Optional[str]
-    modified_at: datetime.datetime
-    modified_by_id: str
-    deleted_at: Optional[datetime.datetime]
-    deleted_by_id: Optional[str]
-
-    tenant: Optional[TenantSchema]
-    default_group: Optional["GroupSchema"]
-
-
-class PermissionSchema(BaseModel):
-    object_type_id: str
-    operations: list[SQLOperation]
-
-    object_type: ObjectType
-
-
-class RoleSchema(BaseModel):
-    tenant_id: str
-    name: str
-    description: str
-
-    tenant: TenantSchema
-
-
-class RolePermissionSchema(BaseModel):
-    role_id: str
-    permission_id: str
-
-
-class GroupSchema(BaseModel):
-    tenant_id: str
-    name: str
-    users_default_group: list["UserSchema"]
-
-
-class UserGroupSchema(BaseModel):
-    user_id: str
-    group_id: str
-    role_id: str
-
-"""

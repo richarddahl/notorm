@@ -30,10 +30,11 @@ from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
 )
 
-from uno.db.routers import RouterDef
+from uno.schemas import Schema
+from uno.routers import RouterDef
+
 from uno.db.sql_emitters import SQLEmitter
 from uno.db.graphs import VertexDef, EdgeDef
-from uno.db.schemas import SchemaDef
 
 from uno.config import settings
 
@@ -109,7 +110,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     edge_defs: ClassVar[list[EdgeDef]] = []
 
     # schema related attributes
-    schema_defs: ClassVar[list[SchemaDef]] = []
+    schema_defs: ClassVar[list[Schema]] = []
 
     # Router related attributes
     router_defs: ClassVar[dict[str, RouterDef]] = {}
