@@ -113,17 +113,17 @@ class DeleteSchema(BaseModel):
 
 
 class Schema(BaseModel):
-    name: ClassVar[str]
-    doc: ClassVar[str] = ""
-    base: ClassVar[type[BaseModel]] = SelectSchema
-    data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
-    exclude_fields: ClassVar[list[str] | None] = []
-    include_fields: ClassVar[list[str] | None] = []
-    router_def: ClassVar[Router | None] = None
+    name: str
+    table_name: str
+    doc: str = ""
+    base: Type[BaseModel] = SelectSchema
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+    exclude_fields: list[str] | None = []
+    include_fields: list[str] | None = []
+    router: Router | None = None
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    @classmethod
     def create_schema(self, table: Table, app: FastAPI) -> Type[BaseModel]:
         schema = create_model(
             self.name,
@@ -134,10 +134,9 @@ class Schema(BaseModel):
             __slots__=None,
             **self.suss_fields(table),
         )
-        self.router_def.add_to_app(schema, table, app)
+        self.router.add_to_app(schema, table, app)
         return schema
 
-    @classmethod
     def create_field(
         self,
         column: Column,
@@ -180,7 +179,6 @@ class Schema(BaseModel):
             return (field_type | None, field)
         return (field_type, field)
 
-    @classmethod
     def suss_fields(self, table: Table) -> dict[str, Any]:
         if self.include_fields and self.exclude_fields:
             raise SchemaFieldListError(
