@@ -19,13 +19,13 @@ from uno.objs.tables import DBObject
 from uno.db.base import str_26
 
 
-class RelatedObjectPKMixin:
+class DBObjectPKMixin:
     id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         # #server_default=func.uno.insert_db_object(),
-        doc="Primary Key and Related Object",
+        doc="Primary Key and DB Object",
         info={"edge": "HAS_ID"},
     )
 

@@ -28,7 +28,7 @@ class TestObjectType:
         The constraints, index_definitions, and field_definitions are tested in other methods.
         """
         assert ObjectType.__name__ == "ObjectType"
-        assert ObjectType.__module__ == "uno.relatedobjects.models"
+        assert ObjectType.__module__ == "uno.objs.models"
         assert ObjectType.schema_name == "uno"
         assert ObjectType.table_name == "object_type"
         assert ObjectType.table_name_plural == "object_types"

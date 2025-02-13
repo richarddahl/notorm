@@ -103,7 +103,7 @@ class GraphBase:
         return f"{textwrap.dedent(fnct_string)}\n{textwrap.dedent(trggr_string)}"
 
 
-class PropertyDef(GraphBase):
+class GraphProperty(GraphBase):
     # table_name: str <- GraphBase
     # schema_name: str <- GraphBase
 
@@ -139,19 +139,12 @@ class PropertyDef(GraphBase):
 
 
 @dataclass
-class VertexDef(GraphBase):
+class GraphNode(GraphBase):
     table_name: str
     label: str
     schema_name: str = "uno"
     column_name: str = "id"
-    properties: list[PropertyDef] = None
-    # lookups: list[Lookup] = related_lookups
-
-    # def label(self) -> str:
-    #    return convert_snake_to_capital_word(self.table.name)
-    #
-    #    def column(self) -> Column:
-    #        return self.table.columns[self.column_name]
+    properties: list[GraphProperty] = None
 
     def emit_sql(self) -> str:
         """
@@ -166,43 +159,58 @@ class VertexDef(GraphBase):
         Returns:
             str: The complete SQL script as a single string.
         """
-        sql = self.create_vertex_label_sql()
-        # sql += f"\n{self.insert_vertex_sql()}"
-        # sql += f"\n{self.update_vertext_sql()}"
-        # sql += f"\n{self.delete_vertext_sql()}"
-        # sql += f"\n{self.truncate_vertext_sql()}"
+        sql = self.create_node_label_and_record_sql()
+        # sql += f"\n{self.insert_node_sql()}"
+        # sql += f"\n{self.update_nodet_sql()}"
+        # sql += f"\n{self.delete_nodet_sql()}"
+        # sql += f"\n{self.truncate_nodet_sql()}"
         # sql += f"\n{self.create_filter_field_sql()}"
         return textwrap.dedent(sql)
 
-    def create_vertex_label_sql(self) -> str:
+    def create_node_label_and_record_sql(self) -> str:
         query = SQL(
             """
             DO $$
+            DECLARE
+                object_type_id INT;
             BEGIN
-                SET ROLE {};
+                SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
-                WHERE name = {}) THEN
-                    PERFORM ag_catalog.create_vlabel('graph', {});
-                    EXECUTE format('CREATE INDEX ON graph.{} (id);');
+                WHERE name = {label}) THEN
+                    PERFORM ag_catalog.create_vlabel('graph', {label});
+                    EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
                 END IF;
+
+                SELECT id
+                    FROM uno.object_type
+                    WHERE schema_name = {schema_name} AND table_name = {table_name}
+                    INTO object_type_id;
+                
+                IF object_type_id IS NULL THEN
+                    RAISE EXCEPTION 'Object Type not found for table. Ensure the table is defined in uno.object_type.';
+                END IF; 
+
+                INSERT INTO uno.node (id, accessor, label)
+                    VALUES (object_type_id, {table_name}, {label});
             END $$;
             """
         ).format(
-            Identifier(ADMIN_ROLE),
-            Literal(self.label),
-            Literal(self.label),
-            Identifier(self.label),
+            admin_role=Identifier(ADMIN_ROLE),
+            label=Literal(self.label),
+            label_ident=Identifier(self.label),
+            schema_name=Literal(self.schema_name),
+            table_name=Literal(self.table_name),
         )
         return query.as_string()
 
-    def insert_vertex_sql(self) -> str:
+    def insert_node_sql(self) -> str:
         """
-        Generates SQL code to create a function and trigger for inserting a new vertex record
+        Generates SQL code to create a function and trigger for inserting a new node record
         when a new relational table record is inserted.
 
         The function constructs the SQL statements required to:
-        - Create a new vertex with the specified label and properties.
-        - Create edges for the vertex if any are defined.
+        - Create a new node with the specified label and properties.
+        - Create edges for the node if any are defined.
 
         Returns:
             str: The generated SQL code for the insert function and trigger.
@@ -237,18 +245,18 @@ class VertexDef(GraphBase):
         )
 
         return self.create_sql_function(
-            "insert_vertex",
+            "insert_node",
             function_string,
             operation="INSERT",
             include_trigger=True,
             db_function=False,
         )
 
-    def update_vertext_sql(self) -> str:
+    def update_node_sql(self) -> str:
         """
-        Generates SQL code for creating an update function and trigger for a vertex record.
+        Generates SQL code for creating an update function and trigger for a node record.
 
-        This method constructs the SQL code necessary to update an existing vertex record
+        This method constructs the SQL code necessary to update an existing node record
         in a graph database when its corresponding relational table record is updated. The
         generated SQL includes the necessary property updates and edge updates if they exist.
 
@@ -281,16 +289,16 @@ class VertexDef(GraphBase):
             """
         return textwrap.dedent(
             self.create_sql_function(
-                "update_vertex",
+                "update_node",
                 function_string,
                 include_trigger=True,
                 db_function=False,
             )
         )
 
-    def delete_vertext_sql(self) -> str:
+    def delete_node_sql(self) -> str:
         """
-        Generates SQL code for creating a function and trigger to delete a vertex record
+        Generates SQL code for creating a function and trigger to delete a node record
         from a graph database when its corresponding relational table record is deleted.
 
         Returns:
@@ -309,7 +317,7 @@ class VertexDef(GraphBase):
             """
         return textwrap.dedent(
             self.create_sql_function(
-                "delete_vertex",
+                "delete_node",
                 function_string,
                 operation="DELETE",
                 include_trigger=True,
@@ -317,7 +325,7 @@ class VertexDef(GraphBase):
             )
         )
 
-    def truncate_vertext_sql(self) -> str:
+    def truncate_node_sql(self) -> str:
         """
         Generates SQL function and trigger for truncating a relation table.
 
@@ -343,7 +351,7 @@ class VertexDef(GraphBase):
 
         return textwrap.dedent(
             self.create_sql_function(
-                "truncate_vertex",
+                "truncate_node",
                 function_string,
                 operation="TRUNCATE",
                 for_each="STATEMENT",
@@ -353,21 +361,15 @@ class VertexDef(GraphBase):
         )
 
 
-class EdgeDef(GraphBase):
+@dataclass
+class GraphEdge(GraphBase):
     label: str
-    table: Table
-    to_column: Column
-    start_vertex_label: str
-    end_vertex_label: str
-    lookups: list[Lookup] = related_lookups
-    in_vertex: bool = True
+    start_node_label: str
+    end_node_label: str
+    # lookups: list[Lookup] = related_lookups
+    # properties: list[GraphProperty] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def accessor(self) -> str:
-        return self.to_column.name
-
-    def properties(self) -> list[PropertyDef]:
+    def properties(self) -> list[GraphProperty]:
         """
         Retrieves a list of PropertySqlEmitter objects for the current table.
 
@@ -376,13 +378,29 @@ class EdgeDef(GraphBase):
             the properties of the table's columns that are not foreign keys.
         """
         props = []
-        if not self.in_vertex:
+        if not self.in_node:
             for column in self.table.columns:
                 if not column.foreign_keys:
-                    props.append(PropertyDef(table=self.table, column=column))
+                    props.append(GraphProperty(table=self.table, column=column))
         return props
 
-    def create_label_sql(self) -> str:
+    def emit_sql(self) -> str:
+        """
+        Generates a complete SQL script by combining various SQL components.
+
+        This method constructs a SQL script by sequentially appending the results
+        of several helper methods that generate specific parts of the SQL script.
+        The final script includes SQL for creating labels, insert functions and
+        triggers, update functions and triggers, delete functions and triggers,
+        truncate functions and triggers, and filter fields.
+
+        Returns:
+            str: The complete SQL script as a single string.
+        """
+        sql = self.create_edge_label_and_record_sql()
+        return textwrap.dedent(sql)
+
+    def create_edge_label_and_record_sql(self) -> str:
         """
         Generates a SQL statement to create a label in the AgensGraph database if it does not already exist.
 
@@ -390,18 +408,28 @@ class EdgeDef(GraphBase):
             str: A SQL statement that checks for the existence of a label in the ag_catalog.ag_label table.
                  If the label does not exist, it creates the label and an index on the 'graph' schema_name.
         """
-        return textwrap.dedent(
-            f"""
+        return (
+            SQL(
+                """
             DO $$
+            DECLARE
+                object_type_id INT;
             BEGIN
-                SET ROLE {settings.DB_NAME}_admin;
+                SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label
-                    WHERE name = '{self.label}') THEN
-                        PERFORM ag_catalog.create_elabel('graph', '{self.label}');
-                        CREATE INDEX ON graph."{self.label}" (start_id, end_id);
+                    WHERE name = {label}) THEN
+                        PERFORM ag_catalog.create_elabel('graph', {label});
+                        CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                 END IF;
             END $$;
             """
+            )
+            .format(
+                admin_role=Identifier(ADMIN_ROLE),
+                label=Literal(self.label),
+                label_ident=Identifier(self.label),
+            )
+            .as_string()
         )
 
     def insert_edge_sql(self) -> str:
@@ -421,8 +449,8 @@ class EdgeDef(GraphBase):
         function_string = f"""
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.start_vertex.label} {{id: %s}})
-                    MATCH (w:{self.end_vertex.label} {{id: %s}})
+                    MATCH (v:{self.start_node.label} {{id: %s}})
+                    MATCH (w:{self.end_node.label} {{id: %s}})
                     CREATE (v)-[e:{self.label} {{{prop_key_str}}}]->(w)
                 $graph$) AS (a agtype);', quote_nullable(NEW.id), quote_nullable(NEW.id){prop_val_str});
             BEGIN
@@ -437,7 +465,7 @@ class EdgeDef(GraphBase):
         Generates the SQL string for creating an update function and trigger in a graph database.
 
         This function constructs a SQL query that:
-        - Matches a start vertex and an end vertex based on their labels and IDs.
+        - Matches a start node and an end node based on their labels and IDs.
         - Deletes an existing relationship between the vertices.
         - Creates a new relationship between the vertices with updated properties.
 
@@ -456,13 +484,13 @@ class EdgeDef(GraphBase):
             )
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_vertex.label} {{id: %s}})
-                MATCH (w:{self.end_vertex.label} {{id: %s}})
+                MATCH (v:{self.start_node.label} {{id: %s}})
+                MATCH (w:{self.end_node.label} {{id: %s}})
                 MATCH (v)-[o:{self.label}] ->(w)
                 DELETE o
                 CREATE (v)-[e:{self.label}] ->(w)
                 {prop_key_str}
-            $graph$) AS (e agtype);', {self.start_vertex.data_type}, {self.end_vertex.data_type}{prop_val_str});
+            $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type}{prop_val_str});
             """
         return textwrap.dedent(function_string)
 
@@ -489,11 +517,11 @@ class EdgeDef(GraphBase):
         """
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_vertex.label} {{id: %s}})
-                MATCH (w:{self.end_vertex.label} {{id: %s}})
+                MATCH (v:{self.start_node.label} {{id: %s}})
+                MATCH (w:{self.end_node.label} {{id: %s}})
                 MATCH (v)-[o:{self.label}] ->(w)
                 DELETE o
-            $graph$) AS (e agtype);', {self.start_vertex.data_type}, {self.end_vertex.data_type});
+            $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """
         return textwrap.dedent(function_string)
 
@@ -514,19 +542,19 @@ class EdgeDef(GraphBase):
 
         This method constructs a SQL string that uses the `cypher` function to
         match and delete a relationship between two vertices in a graph. The
-        vertices and relationship are specified by the `start_vertex`,
-        `end_vertex`, and `label` attributes of the class instance.
+        vertices and relationship are specified by the `start_node`,
+        `end_node`, and `label` attributes of the class instance.
 
         Returns:
             str: The formatted SQL command string.
         """
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_vertex.label} {{id: %s}})
-                MATCH (w:{self.end_vertex.label} {{id: %s}})
+                MATCH (v:{self.start_node.label} {{id: %s}})
+                MATCH (w:{self.end_node.label} {{id: %s}})
                 MATCH (v)-[o:{self.label}] ->(w)
                 DELETE o
-            $graph$) AS (e agtype);', {self.start_vertex.data_type}, {self.end_vertex.data_type});
+            $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """
 
         return textwrap.dedent(
@@ -542,9 +570,9 @@ class EdgeDef(GraphBase):
 
 
 # class Path(GraphBase):
-#    from_vertex: Vertex
+#    from_node: Node
 #    edge: Edge
-#    to_vertex: Vertex
+#    to_node: Node
 #    parent_path: "Path"
 #
 #    model_config = ConfigDict(arbitrary_types_allowed=True)

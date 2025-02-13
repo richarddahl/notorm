@@ -24,11 +24,11 @@ from sqlalchemy.dialects.postgresql import (
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 from uno.objs.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertRelatedObjectFunctionSQL,
+    InsertDBObjectFunctionSQL,
 )
 
 
@@ -40,40 +40,41 @@ from uno.fltrs.enums import (
 )
 
 
-class Vertex(Base):
-    __tablename__ = "vertex"
+class Node(Base):
+    __tablename__ = "node"
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "A vertex in a graph, representing a table in the relational db.",
+            "comment": "A node in a graph, representing a table in the relational db.",
         },
     )
-    verbose_name = "Vertex"
+    verbose_name = "Node"
     verbose_name_plural = "Vertices"
     include_in_graph = False
 
     sql_emitters = []
 
+    # id: Mapped[int] = mapped_column(
+    #    Identity(),
+    #    primary_key=True,
+    #    unique=True,
+    #    index=True,
+    #    doc="The id of the node.",
+    # )
     id: Mapped[int] = mapped_column(
-        Identity(),
+        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
-    )
-    object_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        unique=True,
-        index=True,
-        doc="The object type of the vertex.",
+        doc="The object type of the node.",
     )
     accessor: Mapped[str] = mapped_column(
-        doc="The relational accessor for the vertex.",
+        doc="The relational accessor for the node.",
     )
-    label: Mapped[str_255] = mapped_column(
+    label: Mapped[str] = mapped_column(
         unique=True,
         index=True,
-        doc="The Graph label of the vertex.",
+        doc="The Graph label of the node.",
     )
 
 
@@ -82,7 +83,7 @@ class Property(Base):
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "A property of a vertex in a graph.",
+            "comment": "A property of a node in a graph.",
         },
     )
     verbose_name = "Property"
@@ -96,9 +97,9 @@ class Property(Base):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
+        doc="The id of the node.",
     )
-    object_type_id: Mapped[str_26] = mapped_column(
+    object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,
         doc="The object type of the property.",
@@ -116,7 +117,7 @@ class Property(Base):
     )
 
 
-class Edge(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Edge(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "edge"
     __table_args__ = (
         {
@@ -135,17 +136,17 @@ class Edge(Base, RelatedObjectPKMixin, BaseFieldMixin):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
+        doc="The id of the node.",
     )
-    start_vertex_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+    start_node_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.node.id", ondelete="CASCADE"),
         index=True,
-        doc="The start vertex of the edge.",
+        doc="The start node of the edge.",
     )
-    end_vertex_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+    end_node_id: Mapped[int] = mapped_column(
+        ForeignKey("uno.node.id", ondelete="CASCADE"),
         index=True,
-        doc="The end vertex of the edge.",
+        doc="The end node of the edge.",
     )
     label: Mapped[str_255] = mapped_column(
         unique=True,
@@ -198,7 +199,7 @@ class Path(Base):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
+        doc="The id of the node.",
     )
     start_edge_id: Mapped[int] = mapped_column(
         ForeignKey("uno.edge.id", ondelete="CASCADE"),
@@ -240,7 +241,7 @@ class Filter(Base):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
+        doc="The id of the node.",
     )
     filter_type: Mapped[FilterType] = mapped_column(
         ENUM(
@@ -263,7 +264,7 @@ class Filter(Base):
     )
 
 
-class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class FilterField(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "filter_field"
     __table_args__ = (
         # UniqueConstraint(
@@ -287,13 +288,13 @@ class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
         AlterGrantSQL,
         RecordVersionAuditSQL,
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
     # Columns
-    vertex_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.vertex.id", ondelete="CASCADE"),
+    node_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.node.id", ondelete="CASCADE"),
         index=True,
-        doc="The vertex associated with the filter field.",
+        doc="The node associated with the filter field.",
         info={"edge": "HAS_VERTEX"},
     )
     accessor: Mapped[str_255] = mapped_column()
@@ -320,7 +321,7 @@ class FilterField(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
 
-class FilterFieldObjectType(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class FilterFieldObjectType(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "filter_field__object_type"
     __table_args__ = (
         # UniqueConstraint(
@@ -368,7 +369,7 @@ class FilterFieldObjectType(Base, RelatedObjectPKMixin, BaseFieldMixin):
     # )
 
 
-class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class FilterKey(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "filter_key"
     __table_args__ = (
         UniqueConstraint(
@@ -434,7 +435,7 @@ class FilterKey(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
 
 
-class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
@@ -482,7 +483,7 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     verbose_name = "Filter Value"
     verbose_name_plural = "Filter Values"
-    include_in_graph = False
+    # include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -551,7 +552,7 @@ class FilterValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     """
 
 
-class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Query(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "query"
     __table_args__ = (
         {
@@ -562,7 +563,7 @@ class Query(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     verbose_name = "Query"
     verbose_name_plural = "Queries"
-    include_in_graph = False
+    # include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -627,7 +628,7 @@ class QueryFilterValue(Base):
         {
             "schema": "uno",
             "comment": "The filter values associated with a query.",
-            "info": {"rls_policy": False, "vertex": False},
+            "info": {"rls_policy": False, "node": False},
         },
     )
     verbose_name = "Query Filter Value"
@@ -666,7 +667,7 @@ class QuerySubquery(Base):
         {
             "schema": "uno",
             "comment": "The subqueries associated with a query",
-            "info": {"rls_policy": False, "vertex": False},
+            "info": {"rls_policy": False, "node": False},
         },
     )
     verbose_name = "Query Subquery"

@@ -31,10 +31,10 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from uno.schemas import Schema
-from uno.routers import RouterDef
+from uno.routers import Router
 
 from uno.db.sql_emitters import SQLEmitter
-from uno.db.graphs import VertexDef, EdgeDef
+from uno.db.graphs import GraphNode, GraphEdge
 
 from uno.config import settings
 
@@ -107,33 +107,32 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     # Graph related attributes
     include_in_graph: ClassVar[bool] = True
-    edge_defs: ClassVar[list[EdgeDef]] = []
+    edges: ClassVar[list[GraphEdge]] = []
 
     # schema related attributes
-    schema_defs: ClassVar[list[Schema]] = []
-
-    # Router related attributes
-    router_defs: ClassVar[dict[str, RouterDef]] = {}
+    schemas: ClassVar[list[Schema]] = []
 
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:
-        for schema_def in cls.schema_defs:
+        for schema in cls.schemas:
             setattr(
                 cls,
-                schema_def.name,
-                schema_def.create_schema(cls.__table__, app),
+                schema.name,
+                schema.create_schema(cls.__table__, app),
             )
 
     @classmethod
-    def create_vertex(cls) -> None:
-        return VertexDef(
+    def create_node(cls) -> None:
+        return GraphNode(
             table_name=cls.__tablename__, label=cls.verbose_name.replace(" ", "")
         ).emit_sql()
 
     @classmethod
     def create_edges(cls) -> None:
-        for edge_def in cls.edge_defs:
-            edge_def.emit_sql()
+        edge_sql = ""
+        for edge in cls.edges:
+            edge_sql += edge.emit_sql()
+        return edge_sql
 
     # @classmethod
     # def create_vectors(cls) -> None:

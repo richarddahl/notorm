@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 
 from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
 
@@ -30,7 +30,7 @@ from uno.wrkflws.enums import (  # type: ignore
 )
 
 
-class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": "uno",
@@ -135,7 +135,7 @@ class Workflow(Base, RelatedObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": "uno",
@@ -165,7 +165,7 @@ class WorkflowEvent(Base, RelatedObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class WorkflowRecord(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "workflow_record"
     __table_args__ = {
         "schema": "uno",
@@ -220,7 +220,7 @@ class WorkflowRecord(Base, RelatedObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class ObjectFunction(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class ObjectFunction(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "object_function"
     __table_args__ = {
         "schema": "uno",
@@ -229,7 +229,7 @@ class ObjectFunction(Base, RelatedObjectPKMixin, BaseFieldMixin):
     }
     verbose_name = "Object Function"
     verbose_name_plural = "Object Functions"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 

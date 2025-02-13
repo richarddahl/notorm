@@ -39,14 +39,15 @@ class ObjectType(Base):
     sql_emitters = [
         InsertPermissionSQL,
         AlterGrantSQL,
-        # SuperuserRLSSQL,
     ]
+    include_in_graph = False
 
-    id: Mapped[str_26] = mapped_column(
+    id: Mapped[int] = mapped_column(
+        Identity(),
         primary_key=True,
+        unique=True,
         index=True,
-        doc="Primary Key",
-        server_default=func.generate_ulid(),
+        doc="The id of the object_type.",
     )
     schema_name: Mapped[str_255] = mapped_column(doc="Schema of the table")
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
@@ -59,7 +60,7 @@ class ObjectType(Base):
 
 
 class DBObject(Base):
-    """Related Objects are used for the pk of many objects in the database,
+    """DB Objects are used for the pk of many objects in the database,
     allowing for a single point of reference for attributes, queries, workflows, and reports
     """
 
@@ -68,16 +69,18 @@ class DBObject(Base):
         "schema": "uno",
         "comment": textwrap.dedent(
             """
-            Related Objects are used for the pk of many objects in the database,
+            DB Objects are used for the pk of many objects in the database,
             allowing for a single point of reference for attributes, queries, workflows, and reports
             """
         ),
     }
+    verbose_name = "DB Object"
+    verbose_name_plural = "DB Objects"
+
     sql_emitters = [
+        InsertObjectTypeRecordSQL,
         AlterGrantSQL,
     ]
-    verbose_name = "Related Object"
-    verbose_name_plural = "Related Objects"
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -85,7 +88,7 @@ class DBObject(Base):
         doc="Primary Key",
         index=True,
     )
-    object_type_id: Mapped[str_26] = mapped_column(
+    object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "HAS_OBJECT_TYPE"},
@@ -110,12 +113,11 @@ class Attachment(Base):
     sql_emitters = [InsertObjectTypeRecordSQL]
 
     # Columns
-    id: Mapped[int] = mapped_column(
-        Identity(),
+    id: Mapped[str_26] = mapped_column(
         primary_key=True,
-        unique=True,
+        doc="Primary Key",
         index=True,
-        doc="The id of the vertex.",
+        server_default=func.generate_ulid(),
     )
     name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
     file: Mapped[str_255] = mapped_column(doc="Path to the file")
@@ -123,20 +125,22 @@ class Attachment(Base):
     # Relationships
 
 
-class MessageDBObject(Base):
-    __tablename__ = "message__dbobject"
+class AttachmentDBObject(Base):
+    __tablename__ = "attachment__dbobject"
     __table_args__ = {
         "schema": "uno",
         "comment": "Attachments to DBObjects",
     }
-    verbose_name = "Message DBObject"
-    verbose_name_plural = "Message DBObjects"
+    verbose_name = "Attachment DBObject"
+    verbose_name_plural = "Attachment DBObjects"
 
     sql_emitters = []
 
+    include_in_graph = False
+
     # Columns
-    message_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.message.id", ondelete="CASCADE"),
+    attachment_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.attachment.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         nullable=False,

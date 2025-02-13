@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.graphs import VertexDef, EdgeDef
+from uno.db.graphs import GraphNode, GraphEdge
 
 
-UserVertex = VertexDef(
+UserNode = GraphNode(
     table_name="user",
     label="User",
 )

@@ -24,16 +24,15 @@ from sqlalchemy.orm import (
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
-from uno.db.graphs import VertexDef, EdgeDef
-from uno.routers import RouterDef
+from uno.db.graphs import GraphNode, GraphEdge
 
 from uno.objs.tables import ObjectType
 from uno.objs.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertRelatedObjectFunctionSQL,
+    InsertDBObjectFunctionSQL,
 )
 
 from uno.auth.sql_emitters import (
@@ -57,7 +56,7 @@ from uno.auth.schemas import (
 )
 
 
-class Tenant(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -67,12 +66,19 @@ class Tenant(Base, RelatedObjectPKMixin, BaseFieldMixin):
     )
     verbose_name = "Tenant"
     verbose_name_plural = "Tenants"
-    # include_in_graph = False
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
         InsertGroupForTenant,
+    ]
+
+    edges: ClassVar[list[GraphEdge]] = [
+        GraphEdge(
+            label="BELONGS_TO_TENANT",
+            start_node_label="User",
+            end_node_label="User",
+        ),
     ]
 
     # Columns
@@ -97,7 +103,7 @@ class Tenant(Base, RelatedObjectPKMixin, BaseFieldMixin):
         return f"<Tenant {self.name}>"
 
 
-class User(Base, RelatedObjectPKMixin):
+class User(Base, DBObjectPKMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -120,14 +126,13 @@ class User(Base, RelatedObjectPKMixin):
     )
     verbose_name = "User"
     verbose_name_plural = "Users"
-    # include_in_graph = False
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
         RecordVersionAuditSQL,
     ]
-    schema_defs = [
+    schemas = [
         UserCreateSchema,
         UserListSchema,
         UserSelectSchema,
@@ -241,6 +246,8 @@ class Permission(Base):
     verbose_name = "Permission"
     verbose_name_plural = "Permissions"
 
+    include_in_graph = False
+
     sql_emitters = []
 
     # Columns
@@ -249,9 +256,9 @@ class Permission(Base):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the vertex.",
+        doc="The id of the node.",
     )
-    object_type_id: Mapped[str] = mapped_column(
+    object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
@@ -281,7 +288,7 @@ class Permission(Base):
         return f"<TablePermission {self.object_type} - {self.actions}>"
 
 
-class Role(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Role(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -330,8 +337,10 @@ class RolePermission(Base):
     verbose_name = "Role Permission"
     verbose_name_plural = "Role Permissions"
 
-    sql_emitters = []
-
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        InsertDBObjectFunctionSQL,
+    ]
     # Columns
     role_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.role.id", ondelete="CASCADE"),
@@ -355,7 +364,7 @@ class RolePermission(Base):
         return f"<RolePermission {self.role_id} - {self.permission_id}>"
 
 
-class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Group(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -373,7 +382,7 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
         InsertObjectTypeRecordSQL,
         ValidateGroupInsert,
         DefaultGroupTenant,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
 
     # Columns
@@ -400,7 +409,7 @@ class Group(Base, RelatedObjectPKMixin, BaseFieldMixin):
         return f"<Group {self.name}>"
 
 
-class GroupRole(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class GroupRole(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "group_role"
     __table_args__ = (
         {

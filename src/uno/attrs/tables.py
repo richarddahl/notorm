@@ -18,18 +18,18 @@ from sqlalchemy.orm import (
 from sqlalchemy.dialects.postgresql import VARCHAR
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.objs.tables import ObjectType, DBObject
 from uno.objs.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertRelatedObjectFunctionSQL,
+    InsertDBObjectFunctionSQL,
 )
 from uno.auth.rls_sql_emitters import RLSSQL
 from uno.fltrs.tables import Query
 
 
-class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class AttributeType(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "attribute_type"
     __table_args__ = (
         {
@@ -42,7 +42,7 @@ class AttributeType(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
 
     # Columns
@@ -93,7 +93,7 @@ class AttributeTypeAppliesTo(Base):
         index=True,
         info={"edge": "APPLIES_TO"},
     )
-    applicable_object_type_id: Mapped[str_26] = mapped_column(
+    applicable_object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
@@ -133,7 +133,7 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
         index=True,
         info={"edge": "IS_DESCRIBED_BY"},
     )
-    value_object_type_id: Mapped[str_26] = mapped_column(
+    value_object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
@@ -151,7 +151,7 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
     )
 
 
-class AttributeValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class AttributeValue(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "attribute_value"
     __table_args__ = (
         {
@@ -164,7 +164,7 @@ class AttributeValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
 
     # Columns
@@ -174,7 +174,7 @@ class AttributeValue(Base, RelatedObjectPKMixin, BaseFieldMixin):
     obj: Mapped[DBObject] = relationship(back_populates="attribute_values")
 
 
-class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Attribute(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "attribute"
     __table_args__ = (
         {
@@ -187,7 +187,7 @@ class Attribute(Base, RelatedObjectPKMixin, BaseFieldMixin):
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
 
     # Columns
@@ -229,13 +229,13 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        info={"start_vertex": True},
+        info={"start_node": True},
     )
     attribute_value_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_value.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        info={"end_vertex": True},
+        info={"end_node": True},
     )
 
     # Relationships
@@ -266,13 +266,13 @@ class AttributeObjectValue(Base, BaseFieldMixin):
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        info={"start_vertex": True},
+        info={"start_node": True},
     )
     object_value_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.db_object.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        info={"end_vertex": True},
+        info={"end_node": True},
     )
 
     # Relationships

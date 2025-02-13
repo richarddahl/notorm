@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sqlalchemy import inspect, Integer
-from sqlalchemy.dialects.postgresql import VARCHAR
+from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import VARCHAR, BIGINT
 
 from uno.objs.tables import DBObject
 
@@ -19,12 +19,12 @@ from tests.conftest import (
 )
 
 
-class TestRelatedObject:
+class TestDBObject:
     schema = "uno"
 
     def test_db_object_structure(self):
-        assert DBObject.verbose_name == "Related Object"
-        assert DBObject.verbose_name_plural == "Related Objects"
+        assert DBObject.verbose_name == "DB Object"
+        assert DBObject.verbose_name_plural == "DB Objects"
         assert AlterGrantSQL in DBObject.sql_emitters
         # assert InsertObjectTypeRecordSQL in DBObject.sql_emitters
         assert DBObject.__name__ == "DBObject"
@@ -112,4 +112,4 @@ class TestRelatedObject:
         )
         assert column is not None
         assert column.get("nullable") is False
-        assert isinstance(column.get("type"), VARCHAR)
+        assert isinstance(column.get("type"), BIGINT)

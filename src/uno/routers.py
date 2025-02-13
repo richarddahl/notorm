@@ -19,7 +19,7 @@ get_db = None
 
 
 @dataclass
-class RouterDef:
+class Router:
     path_prefix: str = "/api"
     path_module: str = ""
     path_suffix: str = ""

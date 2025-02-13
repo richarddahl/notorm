@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from sqlalchemy import Column, Table
 
 from uno.db.enums import SchemaOperationType, SchemaDataType
-from uno.routers import RouterDef
+from uno.routers import Router
 
 from uno.errors import (
     SchemaConfigError,
@@ -44,6 +44,19 @@ from uno.utilities import (  # type: ignore
     obj_to_okui,
 )
 
+
+
+@dataclass
+class ViewSQL(SQLEmitter):
+    def emit_sql(self, schema_name: str, field_list: list[str]) -> str:
+        return textwrap.dedent(
+            f"""
+            SET ROLE {settings.DB_USER}_admin;
+            CREATE OR REPLACE VIEW {self.schema_name}.{self.table_name}_{schema_name} AS 
+            SELECT {field_list}
+            FROM {self.schema_name}.{self.table_name};
+            """
+        )
 
 class UnoStringSchema(UnoSchema):
     """
@@ -106,7 +119,7 @@ class Schema(BaseModel):
     data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
     exclude_fields: ClassVar[list[str] | None] = []
     include_fields: ClassVar[list[str] | None] = []
-    router_def: ClassVar[RouterDef | None] = None
+    router_def: ClassVar[Router | None] = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -192,6 +205,19 @@ class Schema(BaseModel):
         #        )
         return fields
 
+
+"""
+    @classmethod
+    def create_view(cls) -> None:
+        cls.sql_emitters.append(ViewSQL().emit_sql())
+
+    @classmethod
+    def emit_sql(cls) -> str:
+        if cls.schema_operation_type != SchemaOperationType.SELECT:
+            return ""
+        return "\n".join(
+            [f"{sql_emitter().emit_sql()}" for sql_emitter in cls.sql_emitters]
+        )
     async def is_insert(self) -> bool:
         for key in self.model_dump().keys():
             if not hasattr(self, key):
@@ -222,3 +248,5 @@ class Schema(BaseModel):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__} - {self.format_unique_constraints()}"
+
+"""

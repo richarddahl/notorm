@@ -67,9 +67,11 @@ class DBManager:
                 # Emit the SQL for the table
                 conn.execute(text(base.class_.emit_sql()))
 
-                # Emit the SQL for the vertex definition
+                # Emit the SQL for the node definition
                 if base.class_.include_in_graph:
-                    conn.execute(text(base.class_.create_vertex()))
+                    conn.execute(text(base.class_.create_node()))
+                if base.class_.edges:
+                    conn.execute(text(base.class_.create_edges()))
                 conn.commit()
             conn.close()
         eng.dispose()

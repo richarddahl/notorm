@@ -18,16 +18,16 @@ from sqlalchemy.dialects.postgresql import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 from uno.objs.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertRelatedObjectFunctionSQL,
+    InsertDBObjectFunctionSQL,
 )
 from uno.comms.enums import MessageImportance
 
 
-class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
+class Message(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "message"
     __table_args__ = {
         "schema": "uno",
@@ -40,7 +40,7 @@ class Message(Base, RelatedObjectPKMixin, BaseFieldMixin):
         AlterGrantSQL,
         RecordVersionAuditSQL,
         InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
+        InsertDBObjectFunctionSQL,
     ]
     # Columns
     sender_id: Mapped[str_26] = mapped_column(
@@ -82,6 +82,7 @@ class MessageAddressedTo(Base):
     verbose_name_plural = "Messages Addressed To"
 
     sql_emitters = []
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -141,3 +142,33 @@ class MessageCopiedTo(Base):
     read_at: Mapped[datetime.datetime] = mapped_column()
 
     # Relationships
+
+
+class MessageDBObject(Base):
+    __tablename__ = "message__dbobject"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Messages to DBObjects",
+    }
+    verbose_name = "Message DBObject"
+    verbose_name_plural = "Message DBObjects"
+
+    sql_emitters = []
+
+    include_in_graph = False
+
+    # Columns
+    message_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.message.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+        nullable=False,
+        info={"edge": "IS_COMMUNICATING_ABOUT"},
+    )
+    db_object_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+        index=True,
+        primary_key=True,
+        nullable=False,
+        info={"edge": "IS_COMMUNICATED_VIA"},
+    )

@@ -53,12 +53,12 @@ class InsertULIDSQL(SQLEmitter):
 
 
 @dataclass
-class InsertRelatedObjectFunctionSQL(SQLEmitter):
+class InsertDBObjectFunctionSQL(SQLEmitter):
     def emit_sql(self) -> str:
         function_string = textwrap.dedent(
             f"""
             DECLARE
-                object_type_id VARCHAR(26);
+                object_type_id int;
                 db_object_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
                 /*
@@ -95,7 +95,7 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
 
 
 @dataclass
-class InsertRelatedObjectTriggerSQL(SQLEmitter):
+class InsertDBObjectTriggerSQL(SQLEmitter):
     def emit_sql(self) -> str:
         return self.create_sql_trigger(
             "insert_db_object",

@@ -16,7 +16,7 @@ from uno.schemas import (
     DeleteSchema,
 )
 
-from uno.routers import RouterDef
+from uno.routers import Router
 from uno.auth.enums import TenantType
 
 
@@ -35,7 +35,7 @@ class UserCreateSchema(Schema):
         "deleted_at",
         "deleted_by_id",
     ]
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="",
         path_objs="/user",
         method="POST",
@@ -61,7 +61,7 @@ class UserListSchema(Schema):
         "full_name",
         "is_active",
     ]
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="",
         path_objs="/user",
         method="GET",
@@ -81,7 +81,7 @@ class UserSelectSchema(Schema):
     base: ClassVar[type[BaseModel]] = SelectSchema
     data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
     exclude_fields: ClassVar[list[str]] = []
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="/{id}",
         path_objs="/user",
         method="GET",
@@ -108,7 +108,7 @@ class UserUpdateSchema(Schema):
         "deleted_at",
         "deleted_by_id",
     ]
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="/{id}",
         path_objs="/user",
         method="PATCH",
@@ -128,7 +128,7 @@ class UserDeleteSchema(Schema):
     base: ClassVar[type[BaseModel]] = DeleteSchema
     data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
     include_fields: ClassVar[list[str]] = ["id"]
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="/{id}",
         path_objs="/user",
         method="DELETE",
@@ -147,7 +147,7 @@ class UserImportSchema(Schema):
     doc: ClassVar[str] = "Schema to import a User into the database"
     base: ClassVar[type[BaseModel]] = DeleteSchema
     data_type: ClassVar[SchemaDataType] = SchemaDataType.NATIVE
-    router_def: ClassVar[RouterDef] = RouterDef(
+    router_def: ClassVar[Router] = Router(
         path_suffix="/{id}",
         path_objs="/user",
         method="PUT",
