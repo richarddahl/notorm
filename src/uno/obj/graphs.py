@@ -36,3 +36,32 @@ db_object_node = GraphNode(
     table_name="db_object",
     label="DBObject",
 )
+
+db_object_edges = [
+    GraphEdge(
+        label="HAS_ATTRIBUTE",
+        start_node_label="DBObject",
+        end_node_label="Attribute",
+        accessor="attributes",
+    ),
+    GraphEdge(
+        label="HAS_ATTACHMENT",
+        start_node_label="DBObject",
+        end_node_label="Attachment",
+        accessor="attachments",
+    ),
+]
+
+attachment_node = GraphNode(
+    table_name="attachment",
+    label="Attachment",
+)
+
+attachment_edges = [
+    GraphEdge(
+        label="IS_ATTACHMENT_FOR",
+        start_node_label="Attachment",
+        end_node_label="DBObject",
+        accessor="attachments",
+    ),
+]

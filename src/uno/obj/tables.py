@@ -15,7 +15,14 @@ from uno.sql_emitters import AlterGrantSQL
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
 
 from uno.obj.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
-from uno.obj.graphs import object_type_node, object_type_edges, db_object_node
+from uno.obj.graphs import (
+    object_type_node,
+    object_type_edges,
+    db_object_node,
+    db_object_edges,
+    attachment_node,
+    attachment_edges,
+)
 
 
 class ObjectType(Base):
@@ -93,6 +100,7 @@ class DBObject(Base):
     ]
 
     graph_node = db_object_node
+    graph_edges = db_object_edges
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -124,6 +132,9 @@ class Attachment(Base):
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
+    graph_node = attachment_node
+    graph_edges = attachment_edges
+
     # Columns
     id: Mapped[str_26] = mapped_column(
         primary_key=True,
@@ -147,8 +158,6 @@ class AttachmentDBObject(Base):
     display_name_plural = "Attachment DBObjects"
 
     sql_emitters = []
-
-    # include_in_graph = False
 
     # Columns
     attachment_id: Mapped[str_26] = mapped_column(

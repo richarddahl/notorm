@@ -21,12 +21,20 @@ from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 
 from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
-from uno.wkflw.enums import (  # type: ignore
+from uno.wkflw.enums import (
     WorkflowRecordStatus,
     WorkflowRecordState,
     WorkflowFlag,
     WorkflowDBEvent,
     WorkflowTrigger,
+)
+from uno.wkflw.graphs import (
+    workflow_node,
+    workflow_edges,
+    workflow_event_node,
+    workflow_event_edges,
+    workflow_record_node,
+    workflow_record_edges,
 )
 
 
@@ -39,10 +47,13 @@ class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
     }
     display_name = "Workflow"
     display_name_plural = "Workflows"
-    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
+    graph_node = workflow_node
+    graph_edges = workflow_edges
+
+    # Columns
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
@@ -143,10 +154,13 @@ class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
     }
     display_name = "Workflow Event"
     display_name_plural = "Workflow Events"
-    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
+    graph_node = workflow_event_node
+    graph_edges = workflow_event_edges
+
+    # Columns
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow.id", ondelete="CASCADE"),
         index=True,
@@ -173,10 +187,13 @@ class WorkflowRecord(Base, DBObjectPKMixin, BaseFieldMixin):
     }
     display_name = "Workflow Record"
     display_name_plural = "Workflow Records"
-    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
+    graph_node = workflow_record_node
+    graph_edges = workflow_record_edges
+
+    # Columns
     workflowevent_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow_event.id", ondelete="CASCADE"),
         index=True,
@@ -243,6 +260,5 @@ class ObjectFunction(Base, DBObjectPKMixin, BaseFieldMixin):
     function_object_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,
-        # info={"edge": "IS_OF_ObjectType"},
     )
     # Relationships
