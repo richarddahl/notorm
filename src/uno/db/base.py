@@ -34,7 +34,7 @@ from uno.schemas import Schema
 from uno.routers import Router
 
 from uno.db.sql_emitters import SQLEmitter
-from uno.db.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphNode, GraphEdge
 
 from uno.config import settings
 
@@ -99,15 +99,15 @@ class Base(AsyncAttrs, DeclarativeBase):
     metadata = metadata
 
     # Metadata related attributes
-    verbose_name: ClassVar[str]
-    verbose_name_plural: ClassVar[str]
+    display_name: ClassVar[str]
+    display_name_plural: ClassVar[str]
 
     # SQL related attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Graph related attributes
-    include_in_graph: ClassVar[bool] = True
-    edges: ClassVar[list[GraphEdge]] = []
+    graph_node: ClassVar[GraphNode] = None
+    graph_edges: ClassVar[list[GraphEdge]] = []
 
     # schema related attributes
     schemas: ClassVar[list[Schema]] = []
@@ -123,14 +123,13 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     @classmethod
     def create_node(cls) -> None:
-        return GraphNode(
-            table_name=cls.__tablename__, label=cls.verbose_name.replace(" ", "")
-        ).emit_sql()
+        if cls.graph_node:
+            return cls.graph_node.emit_sql()
 
     @classmethod
     def create_edges(cls) -> None:
         edge_sql = ""
-        for edge in cls.edges:
+        for edge in cls.graph_edges:
             edge_sql += edge.emit_sql()
         return edge_sql
 

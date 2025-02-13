@@ -26,13 +26,13 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
-from uno.objs.sql_emitters import (
+from uno.obj.sql_emitters import (
     InsertObjectTypeRecordSQL,
     InsertDBObjectFunctionSQL,
 )
 
 
-from uno.fltrs.enums import (
+from uno.grph.enums import (
     FilterType,
     Include,
     Match,
@@ -48,33 +48,76 @@ class Node(Base):
             "comment": "A node in a graph, representing a table in the relational db.",
         },
     )
-    verbose_name = "Node"
-    verbose_name_plural = "Vertices"
-    include_in_graph = False
+    display_name = "Node"
+    display_name_plural = "Nodes"
 
     sql_emitters = []
 
-    # id: Mapped[int] = mapped_column(
-    #    Identity(),
-    #    primary_key=True,
-    #    unique=True,
-    #    index=True,
-    #    doc="The id of the node.",
-    # )
-    id: Mapped[int] = mapped_column(
+    object_type_id: Mapped[int] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         primary_key=True,
         unique=True,
         index=True,
         doc="The object type of the node.",
     )
-    accessor: Mapped[str] = mapped_column(
+    accessor: Mapped[str_255] = mapped_column(
         doc="The relational accessor for the node.",
     )
-    label: Mapped[str] = mapped_column(
+    label: Mapped[str_255] = mapped_column(
         unique=True,
         index=True,
         doc="The Graph label of the node.",
+    )
+
+
+class Edge(Base):
+    __tablename__ = "edge"
+    __table_args__ = (
+        UniqueConstraint(
+            "start_node_label",
+            "label",
+            "end_node_label",
+            name="uq_start_node_label_label_end_node_label",
+        ),
+        Index(
+            "ix_start_node_label_label_end_node_label",
+            "start_node_label",
+            "label",
+            "end_node_label",
+        ),
+        {
+            "schema": "uno",
+            "comment": "An edge in a graph, representing a relationship between two tables in the relational db.",
+        },
+    )
+    display_name = "Edge"
+    display_name_plural = "Edges"
+
+    sql_emitters = []
+
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the node.",
+    )
+    start_node_label: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.node.label", ondelete="CASCADE"),
+        index=True,
+        doc="The object type of the start node.",
+    )
+    label: Mapped[str_255] = mapped_column(
+        index=True,
+        doc="The Graph label of the edge.",
+    )
+    end_node_label: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.node.label", ondelete="CASCADE"),
+        index=True,
+        doc="The object type of the end node.",
+    )
+    accessor: Mapped[str] = mapped_column(
+        doc="The relational accessor for the edge.",
     )
 
 
@@ -86,9 +129,8 @@ class Property(Base):
             "comment": "A property of a node in a graph.",
         },
     )
-    verbose_name = "Property"
-    verbose_name_plural = "Properties"
-    include_in_graph = False
+    display_name = "Property"
+    display_name_plural = "Properties"
 
     sql_emitters = []
 
@@ -117,57 +159,7 @@ class Property(Base):
     )
 
 
-class Edge(Base, DBObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "edge"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "An edge in a graph, representing a relationship between two tables in the relational db.",
-        },
-    )
-    verbose_name = "Edge"
-    verbose_name_plural = "Edges"
-    include_in_graph = False
-
-    sql_emitters = []
-
-    id: Mapped[int] = mapped_column(
-        Identity(),
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the node.",
-    )
-    start_node_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.node.id", ondelete="CASCADE"),
-        index=True,
-        doc="The start node of the edge.",
-    )
-    end_node_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.node.id", ondelete="CASCADE"),
-        index=True,
-        doc="The end node of the edge.",
-    )
-    label: Mapped[str_255] = mapped_column(
-        unique=True,
-        index=True,
-        doc="The Graph label of the edge.",
-    )
-    accessor: Mapped[str] = mapped_column(
-        doc="The relational accessor for the edge.",
-    )
-    lookups: Mapped[list[Lookup]] = mapped_column(
-        ARRAY(
-            ENUM(
-                Lookup,
-                name="lookup",
-                create_type=True,
-                schema="uno",
-            )
-        )
-    )
-
-
+'''
 class Path(Base):
     __tablename__ = "path"
     __table_args__ = (
@@ -189,9 +181,9 @@ class Path(Base):
             "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
         },
     )
-    verbose_name = "Path"
-    verbose_name_plural = "Paths"
-    include_in_graph = False
+    display_name = "Path"
+    display_name_plural = "Paths"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -216,24 +208,20 @@ class Path(Base):
         index=True,
         doc="The parent path of the path.",
     )
+'''
 
 
 class Filter(Base):
     __tablename__ = "filter"
     __table_args__ = (
-        # UniqueConstraint(
-        #    "start_edge_id",
-        #    "end_edge_id",
-        #    name="uq_start_edge_id_end_edge_id",
-        # ),
         {
             "schema": "uno",
             "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
         },
     )
-    verbose_name = "Filter"
-    verbose_name_plural = "Filters"
-    include_in_graph = False
+    display_name = "Filter"
+    display_name_plural = "Filters"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -278,9 +266,9 @@ class FilterField(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": False, "in_graph": False},
         },
     )
-    verbose_name = "Filter Field"
-    verbose_name_plural = "Filter Fields"
-    include_in_graph = False
+    display_name = "Filter Field"
+    display_name_plural = "Filter Fields"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -292,7 +280,7 @@ class FilterField(Base, DBObjectPKMixin, BaseFieldMixin):
     ]
     # Columns
     node_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.node.id", ondelete="CASCADE"),
+        ForeignKey("uno.node.object_type_id", ondelete="CASCADE"),
         index=True,
         doc="The node associated with the filter field.",
         info={"edge": "HAS_VERTEX"},
@@ -342,9 +330,9 @@ class FilterFieldObjectType(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": False, "in_graph": False},
         },
     )
-    verbose_name = "Filter Field ObjectType"
-    verbose_name_plural = "Filter Field ObjectTypes"
-    include_in_graph = False
+    display_name = "Filter Field ObjectType"
+    display_name_plural = "Filter Field ObjectTypes"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -390,9 +378,9 @@ class FilterKey(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": False, "in_graph": False},
         },
     )
-    verbose_name = "Filter Key"
-    verbose_name_plural = "Filter Keys"
-    include_in_graph = False
+    display_name = "Filter Key"
+    display_name_plural = "Filter Keys"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -481,9 +469,9 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
-    verbose_name = "Filter Value"
-    verbose_name_plural = "Filter Values"
-    # include_in_graph = False
+    display_name = "Filter Value"
+    display_name_plural = "Filter Values"
+    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -561,9 +549,9 @@ class Query(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
-    verbose_name = "Query"
-    verbose_name_plural = "Queries"
-    # include_in_graph = False
+    display_name = "Query"
+    display_name_plural = "Queries"
+    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -631,9 +619,9 @@ class QueryFilterValue(Base):
             "info": {"rls_policy": False, "node": False},
         },
     )
-    verbose_name = "Query Filter Value"
-    verbose_name_plural = "Query Filter Values"
-    include_in_graph = False
+    display_name = "Query Filter Value"
+    display_name_plural = "Query Filter Values"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -670,9 +658,9 @@ class QuerySubquery(Base):
             "info": {"rls_policy": False, "node": False},
         },
     )
-    verbose_name = "Query Subquery"
-    verbose_name_plural = "Query Subqueries"
-    include_in_graph = False
+    display_name = "Query Subquery"
+    display_name_plural = "Query Subqueries"
+    # include_in_graph = False
 
     sql_emitters = []
 

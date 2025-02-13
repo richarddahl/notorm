@@ -10,19 +10,19 @@ from fastapi.templating import Jinja2Templates
 from uno.config import settings
 
 
-import uno.attrs.tables as attrs_tables
+import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
-import uno.comms.tables as comms_tables
-import uno.fltrs.tables as fltrs_tables
-import uno.objs.tables as objs_tables
-import uno.rprts.tables as rprts_tables
-import uno.wrkflws.tables as wrkflws_tables
+import uno.msg.tables as comms_tables
+import uno.grph.tables as fltrs_tables
+import uno.obj.tables as objs_tables
+import uno.rprt.tables as rprts_tables
+import uno.wkflw.tables as wrkflws_tables
 
 
 tags_metadata = [
     {
         "name": "0kui",
-        "description": "Zero Knowledge User Interface routers.",
+        "description": "Zero Knowledge User Interface.",
         "externalDocs": {
             "description": "uno 0kui docs",
             "url": "http://localhost:8001/okui/",

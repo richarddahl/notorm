@@ -27,10 +27,10 @@ from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
-from uno.db.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphNode, GraphEdge
 
-from uno.objs.tables import ObjectType
-from uno.objs.sql_emitters import (
+from uno.obj.tables import ObjectType
+from uno.obj.sql_emitters import (
     InsertObjectTypeRecordSQL,
     InsertDBObjectFunctionSQL,
 )
@@ -46,14 +46,8 @@ from uno.auth.rls_sql_emitters import (
     TenantRLSSQL,
 )
 from uno.auth.enums import TenantType
-from uno.auth.schemas import (
-    UserCreateSchema,
-    UserListSchema,
-    UserSelectSchema,
-    UserUpdateSchema,
-    UserDeleteSchema,
-    UserImportSchema,
-)
+from uno.auth.schemas import user_schemas
+from uno.auth.graphs import tenant_node, tenant_edges, user_node, user_edges, group_node
 
 
 class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
@@ -64,8 +58,8 @@ class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
             "comment": "Application end-user tenants",
         },
     )
-    verbose_name = "Tenant"
-    verbose_name_plural = "Tenants"
+    display_name = "Tenant"
+    display_name_plural = "Tenants"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -73,11 +67,15 @@ class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
         InsertGroupForTenant,
     ]
 
+    graph_node = tenant_node
+    graph_edges = tenant_edges
+
     edges: ClassVar[list[GraphEdge]] = [
         GraphEdge(
-            label="BELONGS_TO_TENANT",
-            start_node_label="User",
+            label="HAS_USER",
+            start_node_label="Tenant",
             end_node_label="User",
+            accessor="tenant_users",
         ),
     ]
 
@@ -90,10 +88,15 @@ class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
     )
 
     # Relationships
-    tenant_users: Mapped[list["User"]] = relationship(
+    users: Mapped[list["User"]] = relationship(
         back_populates="tenant",
         foreign_keys="User.tenant_id",
         doc="Users that belong to the tenant",
+    )
+    groups: Mapped[list["Group"]] = relationship(
+        back_populates="tenant",
+        foreign_keys="Group.tenant_id",
+        doc="Groups that belong to the tenant",
     )
 
     def __str__(self) -> str:
@@ -124,22 +127,18 @@ class User(Base, DBObjectPKMixin):
             "info": {"audit_type": "history"},
         },
     )
-    verbose_name = "User"
-    verbose_name_plural = "Users"
+    display_name = "User"
+    display_name_plural = "Users"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertDBObjectFunctionSQL,
         RecordVersionAuditSQL,
     ]
-    schemas = [
-        UserCreateSchema,
-        UserListSchema,
-        UserSelectSchema,
-        UserUpdateSchema,
-        UserDeleteSchema,
-        UserImportSchema,
-    ]
+    schemas = user_schemas
+
+    graph_node = user_node
+    graph_edges = user_edges
 
     # Columns
     email: Mapped[str_255] = mapped_column(
@@ -153,25 +152,21 @@ class User(Base, DBObjectPKMixin):
         ForeignKey("uno.tenant.id", ondelete="CASCADE"),
         index=True,
         nullable=True,
-        info={"edge": "WORKS_FOR"},
     )
     default_group_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("uno.group.id", ondelete="SET NULL"),
         index=True,
         nullable=True,
-        info={"edge": "HAS_DEFAULT_GROUP"},
     )
     is_superuser: Mapped[bool] = mapped_column(
         server_default=text("false"),
         index=True,
         doc="Superuser status",
-        info={"column_security": "Secret"},
     )
     is_tenant_admin: Mapped[bool] = mapped_column(
         server_default=text("false"),
         index=True,
         doc="Tenant admin status",
-        info={"column_security": "Secret"},
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -180,12 +175,10 @@ class User(Base, DBObjectPKMixin):
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp(),
         doc="Time the record was created",
-        info={"editable": False},
     )
     owner_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "IS_OWNED_BY"},
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
@@ -218,6 +211,21 @@ class User(Base, DBObjectPKMixin):
         foreign_keys=[default_group_id],
         doc="Default group for the user",
     )
+    owner: Mapped["User"] = relationship(
+        back_populates="owned_users",
+        foreign_keys=[owner_id],
+        doc="User that owns this user",
+    )
+    modified_by: Mapped["User"] = relationship(
+        back_populates="modified_users",
+        foreign_keys=[modified_by_id],
+        doc="User that last modified this user",
+    )
+    deleted_by: Mapped["User"] = relationship(
+        back_populates="deleted_users",
+        foreign_keys=[deleted_by_id],
+        doc="User that deleted this user",
+    )
 
     def __str__(self) -> str:
         return self.email
@@ -243,10 +251,8 @@ class Permission(Base):
             "schema": "uno",
         },
     )
-    verbose_name = "Permission"
-    verbose_name_plural = "Permissions"
-
-    include_in_graph = False
+    display_name = "Permission"
+    display_name_plural = "Permissions"
 
     sql_emitters = []
 
@@ -301,8 +307,8 @@ class Role(Base, DBObjectPKMixin, BaseFieldMixin):
             "schema": "uno",
         },
     )
-    verbose_name = "Role"
-    verbose_name_plural = "Roles"
+    display_name = "Role"
+    display_name_plural = "Roles"
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -316,6 +322,17 @@ class Role(Base, DBObjectPKMixin, BaseFieldMixin):
     )
     name: Mapped[str_255] = mapped_column(doc="Role name")
     description: Mapped[str] = mapped_column(doc="Role description")
+
+    # Relationships
+    permissions: Mapped[list[Permission]] = relationship(
+        back_populates="roles",
+        secondary="uno.role__permission",
+        doc="Permissions assigned to the role",
+    )
+    tenants: Mapped[list[Tenant]] = relationship(
+        back_populates="roles",
+        doc="Tenants that have this role",
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -334,8 +351,8 @@ class RolePermission(Base):
             "schema": "uno",
         },
     )
-    verbose_name = "Role Permission"
-    verbose_name_plural = "Role Permissions"
+    display_name = "Role Permission"
+    display_name_plural = "Role Permissions"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -375,8 +392,8 @@ class Group(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "admin"},
         },
     )
-    verbose_name = "Group"
-    verbose_name_plural = "Groups"
+    display_name = "Group"
+    display_name_plural = "Groups"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -385,8 +402,9 @@ class Group(Base, DBObjectPKMixin, BaseFieldMixin):
         InsertDBObjectFunctionSQL,
     ]
 
-    # Columns
+    graph_node = group_node
 
+    # Columns
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.tenant.id", ondelete="CASCADE"),
         index=True,
@@ -396,9 +414,14 @@ class Group(Base, DBObjectPKMixin, BaseFieldMixin):
     name: Mapped[str_255] = mapped_column(doc="Group name")
 
     # Relationships
-    users_default_group: Mapped[list["User"]] = relationship(
+    users: Mapped[list["User"]] = relationship(
+        back_populates="groups",
+        secondary="uno.user__group_role",
+        doc="Users that belong to the group",
+    )
+    default_group_users: Mapped[list["User"]] = relationship(
         back_populates="default_group",
-        foreign_keys="User.default_group_id",
+        foreign_keys="user.default_group_id",
         doc="Users that have this group as their default group",
     )
 
@@ -417,9 +440,8 @@ class GroupRole(Base, DBObjectPKMixin, BaseFieldMixin):
             "schema": "uno",
         },
     )
-    verbose_name = "Group Permission"
-    verbose_name_plural = "Group Permissions"
-    include_in_graph = False
+    display_name = "Group Permission"
+    display_name_plural = "Group Permissions"
 
     sql_emitters = []
 
@@ -448,9 +470,9 @@ class UserGroupRole(Base):
             "schema": "uno",
         },
     )
-    verbose_name = "User Group Role"
-    verbose_name_plural = "User Group Roles"
-    include_in_graph = False
+    display_name = "User Group Role"
+    display_name_plural = "User Group Roles"
+    # include_in_graph = False
 
     sql_emitters = []
 

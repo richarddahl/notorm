@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+
+from uno.graphs import GraphNode, GraphEdge
+
+
+object_type_node = GraphNode(
+    table_name="object_type",
+    label="ObjectType",
+)
+
+object_type_edges = [
+    GraphEdge(
+        label="HAS_OBJECT",
+        start_node_label="ObjectType",
+        end_node_label="DBObject",
+        accessor="db_objects",
+    ),
+    GraphEdge(
+        label="IS_DESCRIBED_BY",
+        start_node_label="ObjectType",
+        end_node_label="AttributeType",
+        accessor="described_attribute_types",
+    ),
+    GraphEdge(
+        label="IS_VALUE_TYPE_FOR",
+        start_node_label="ObjectType",
+        end_node_label="AttributeType",
+        accessor="value_type_attribute_types",
+    ),
+]
+
+
+db_object_node = GraphNode(
+    table_name="db_object",
+    label="DBObject",
+)

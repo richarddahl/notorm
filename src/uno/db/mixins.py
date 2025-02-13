@@ -15,7 +15,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.objs.tables import DBObject
+from uno.obj.tables import DBObject
 from uno.db.base import str_26
 
 

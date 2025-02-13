@@ -14,7 +14,8 @@ from uno.db.sql_emitters import AlterGrantSQL
 
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
 
-from uno.objs.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
+from uno.obj.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
+from uno.obj.graphs import object_type_node, object_type_edges, db_object_node
 
 
 class ObjectType(Base):
@@ -33,14 +34,17 @@ class ObjectType(Base):
             "info": {"rls_policy": "superuser"},
         },
     )
-    verbose_name = "Table Type"
-    verbose_name_plural = "Table Types"
+    display_name = "Table Type"
+    display_name_plural = "Table Types"
 
     sql_emitters = [
+        InsertObjectTypeRecordSQL,
         InsertPermissionSQL,
         AlterGrantSQL,
     ]
-    include_in_graph = False
+
+    graph_node = object_type_node
+    graph_edges = object_type_edges
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -54,6 +58,12 @@ class ObjectType(Base):
 
     # relationships
     db_objects: Mapped[List["DBObject"]] = relationship(back_populates="object_type")
+    described_attribute_types: Mapped[List["AttributeType"]] = relationship(
+        back_populates="describes"
+    )
+    value_type_attribute_types: Mapped[List["AttributeType"]] = relationship(
+        back_populates="value_types"
+    )
 
     def __str__(self) -> str:
         return f"{self.schema_name}.{self.table_name}"
@@ -74,13 +84,15 @@ class DBObject(Base):
             """
         ),
     }
-    verbose_name = "DB Object"
-    verbose_name_plural = "DB Objects"
+    display_name = "DB Object"
+    display_name_plural = "DB Objects"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         AlterGrantSQL,
     ]
+
+    graph_node = db_object_node
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -107,8 +119,8 @@ class Attachment(Base):
         "schema": "uno",
         "comment": "Files attached to db objects",
     }
-    verbose_name = "Attachment"
-    verbose_name_plural = "Attachments"
+    display_name = "Attachment"
+    display_name_plural = "Attachments"
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -131,12 +143,12 @@ class AttachmentDBObject(Base):
         "schema": "uno",
         "comment": "Attachments to DBObjects",
     }
-    verbose_name = "Attachment DBObject"
-    verbose_name_plural = "Attachment DBObjects"
+    display_name = "Attachment DBObject"
+    display_name_plural = "Attachment DBObjects"
 
     sql_emitters = []
 
-    include_in_graph = False
+    # include_in_graph = False
 
     # Columns
     attachment_id: Mapped[str_26] = mapped_column(

@@ -8,7 +8,6 @@ from typing import Optional
 
 from sqlalchemy import (
     ForeignKey,
-    Identity,
     func,
     text,
 )
@@ -20,11 +19,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
-from uno.objs.sql_emitters import (
+from uno.obj.sql_emitters import (
     InsertObjectTypeRecordSQL,
     InsertDBObjectFunctionSQL,
 )
-from uno.comms.enums import MessageImportance
+from uno.msg.enums import MessageImportance
+from uno.msg.graphs import message_node, message_edges
 
 
 class Message(Base, DBObjectPKMixin, BaseFieldMixin):
@@ -33,8 +33,8 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
         "schema": "uno",
         "comment": "Messages are used to communicate between users",
     }
-    verbose_name = "Message"
-    verbose_name_plural = "Messages"
+    display_name = "Message"
+    display_name_plural = "Messages"
 
     sql_emitters = [
         AlterGrantSQL,
@@ -42,16 +42,18 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
         InsertObjectTypeRecordSQL,
         InsertDBObjectFunctionSQL,
     ]
+
+    graph_node = message_node
+    graph_edges = message_edges
+
     # Columns
     sender_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "WAS_SENT_BY"},
     )
-    previous_message_id: Mapped[Optional[str_26]] = mapped_column(
+    parent_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("uno.message.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "HAS_PREVIOUS_MESSAGE"},
     )
     flag: Mapped[MessageImportance] = mapped_column(
         ENUM(
@@ -70,6 +72,15 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
     )
 
     # Relationships
+    sender: Mapped["User"] = relationship(
+        back_populates="sent_messages",
+    )
+    parent: Mapped["Message"] = relationship(
+        back_populates="children",
+    )
+    children: Mapped["Message"] = relationship(
+        back_populates="parent",
+    )
 
 
 class MessageAddressedTo(Base):
@@ -78,11 +89,11 @@ class MessageAddressedTo(Base):
         "schema": "uno",
         "comment": "User addressed on a message",
     }
-    verbose_name = "Message Addressed To"
-    verbose_name_plural = "Messages Addressed To"
+    display_name = "Message Addressed To"
+    display_name_plural = "Messages Addressed To"
 
     sql_emitters = []
-    include_in_graph = False
+    # include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -97,7 +108,7 @@ class MessageAddressedTo(Base):
         index=True,
         primary_key=True,
         nullable=False,
-        info={"edge": "WAS_SENT_TO"},
+        info={"edge": "RECEIEVED"},
     )
     read: Mapped[bool] = mapped_column(
         server_default=text("false"),
@@ -114,9 +125,9 @@ class MessageCopiedTo(Base):
         "schema": "uno",
         "comment": "User copied on a message",
     }
-    verbose_name = "Message Copied To"
-    verbose_name_plural = "Messages Copied To"
-    include_in_graph = False
+    display_name = "Message Copied To"
+    display_name_plural = "Messages Copied To"
+    # include_in_graph = False
 
     sql_emitters = []
 
@@ -126,14 +137,14 @@ class MessageCopiedTo(Base):
         index=True,
         primary_key=True,
         nullable=False,
-        info={"edge": "WAS_CCD_ON"},
+        info={"edge": "WAS_COPIED"},
     )
     copied_to_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         nullable=False,
-        info={"edge": "WAS_CCD_TO"},
+        info={"edge": "RECEIEVED_COPY"},
     )
     read: Mapped[bool] = mapped_column(
         server_default=text("false"),
@@ -150,12 +161,12 @@ class MessageDBObject(Base):
         "schema": "uno",
         "comment": "Messages to DBObjects",
     }
-    verbose_name = "Message DBObject"
-    verbose_name_plural = "Message DBObjects"
+    display_name = "Message DBObject"
+    display_name_plural = "Message DBObjects"
 
     sql_emitters = []
 
-    include_in_graph = False
+    # include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(

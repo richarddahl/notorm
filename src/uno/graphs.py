@@ -4,26 +4,23 @@
 
 import textwrap
 
-from typing import Type
 from dataclasses import dataclass
 from datetime import datetime, date, time
 from decimal import Decimal
 
 
-from psycopg.sql import SQL, Identifier, Literal, Placeholder, quote
+from psycopg.sql import SQL, Identifier, Literal
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import ConfigDict, computed_field
 
-from sqlalchemy import Table, Column
+from sqlalchemy import Column
 
-from uno.fltrs.enums import (
-    FilterType,
+from uno.grph.enums import (
     Lookup,
     related_lookups,
     numeric_lookups,
     string_lookups,
 )
-from uno.utilities import convert_snake_to_capital_word
 from uno.config import settings
 
 
@@ -190,7 +187,7 @@ class GraphNode(GraphBase):
                     RAISE EXCEPTION 'Object Type not found for table. Ensure the table is defined in uno.object_type.';
                 END IF; 
 
-                INSERT INTO uno.node (id, accessor, label)
+                INSERT INTO uno.node (object_type_id, accessor, label)
                     VALUES (object_type_id, {table_name}, {label});
             END $$;
             """
@@ -366,7 +363,7 @@ class GraphEdge(GraphBase):
     label: str
     start_node_label: str
     end_node_label: str
-    # lookups: list[Lookup] = related_lookups
+    accessor: str
     # properties: list[GraphProperty] = None
 
     def properties(self) -> list[GraphProperty]:
@@ -397,10 +394,10 @@ class GraphEdge(GraphBase):
         Returns:
             str: The complete SQL script as a single string.
         """
-        sql = self.create_edge_label_and_record_sql()
+        sql = self.create_edge_label_and_filter_record_sql()
         return textwrap.dedent(sql)
 
-    def create_edge_label_and_record_sql(self) -> str:
+    def create_edge_label_and_filter_record_sql(self) -> str:
         """
         Generates a SQL statement to create a label in the AgensGraph database if it does not already exist.
 
@@ -412,8 +409,6 @@ class GraphEdge(GraphBase):
             SQL(
                 """
             DO $$
-            DECLARE
-                object_type_id INT;
             BEGIN
                 SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label
@@ -421,6 +416,9 @@ class GraphEdge(GraphBase):
                         PERFORM ag_catalog.create_elabel('graph', {label});
                         CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                 END IF;
+
+                INSERT INTO uno.edge (start_node_label, label, end_node_label, accessor)
+                    VALUES ({start_node_label}, {label}, {end_node_label}, {accessor});
             END $$;
             """
             )
@@ -428,6 +426,9 @@ class GraphEdge(GraphBase):
                 admin_role=Identifier(ADMIN_ROLE),
                 label=Literal(self.label),
                 label_ident=Identifier(self.label),
+                start_node_label=Literal(self.start_node_label),
+                end_node_label=Literal(self.end_node_label),
+                accessor=Literal(self.accessor),
             )
             .as_string()
         )

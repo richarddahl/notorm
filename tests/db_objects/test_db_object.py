@@ -5,7 +5,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR, BIGINT
 
-from uno.objs.tables import DBObject
+from uno.obj.tables import DBObject
 
 from uno.db.sql_emitters import AlterGrantSQL
 
@@ -23,12 +23,12 @@ class TestDBObject:
     schema = "uno"
 
     def test_db_object_structure(self):
-        assert DBObject.verbose_name == "DB Object"
-        assert DBObject.verbose_name_plural == "DB Objects"
+        assert DBObject.display_name == "DB Object"
+        assert DBObject.display_name_plural == "DB Objects"
         assert AlterGrantSQL in DBObject.sql_emitters
         # assert InsertObjectTypeRecordSQL in DBObject.sql_emitters
         assert DBObject.__name__ == "DBObject"
-        assert DBObject.__module__ == "uno.objs.tables"
+        assert DBObject.__module__ == "uno.obj.tables"
         assert DBObject.__table_args__.get("schema") == "uno"
         assert DBObject.__tablename__ == "db_object"
         assert list(DBObject.__table__.columns.keys()) == [

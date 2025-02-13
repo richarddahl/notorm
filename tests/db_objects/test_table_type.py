@@ -5,9 +5,9 @@
 from sqlalchemy import inspect, Integer
 from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 
-from uno.objs.tables import ObjectType
+from uno.obj.tables import ObjectType
 
-from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
+from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
 from tests.conftest import (
     print_indices,
@@ -28,12 +28,12 @@ class TestObjectType:
         The constraints, index_definitions, and field_definitions are tested in other methods.
         """
         assert ObjectType.__name__ == "ObjectType"
-        assert ObjectType.__module__ == "uno.objs.models"
+        assert ObjectType.__module__ == "uno.obj.models"
         assert ObjectType.schema_name == "uno"
         assert ObjectType.table_name == "object_type"
         assert ObjectType.table_name_plural == "object_types"
-        assert ObjectType.verbose_name == "Table Type"
-        assert ObjectType.verbose_name_plural == "Table Types"
+        assert ObjectType.display_name == "Table Type"
+        assert ObjectType.display_name_plural == "Table Types"
         assert list(ObjectType.field_definitions.keys()) == ["id", "db_schema", "name"]
         # assert ObjectType.constraint_definitions == [
         #    UniqueDefinition(

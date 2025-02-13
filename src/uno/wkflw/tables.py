@@ -19,9 +19,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
 
-from uno.objs.sql_emitters import InsertObjectTypeRecordSQL
+from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
-from uno.wrkflws.enums import (  # type: ignore
+from uno.wkflw.enums import (  # type: ignore
     WorkflowRecordStatus,
     WorkflowRecordState,
     WorkflowFlag,
@@ -37,9 +37,9 @@ class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
         "comment": "User-defined workflows",
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
-    verbose_name = "Workflow"
-    verbose_name_plural = "Workflows"
-    # include_in_graph = False
+    display_name = "Workflow"
+    display_name_plural = "Workflows"
+    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -141,9 +141,9 @@ class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
         "schema": "uno",
         "comment": "Manually created or trigger created workflow activities",
     }
-    verbose_name = "Workflow Event"
-    verbose_name_plural = "Workflow Events"
-    # include_in_graph = False
+    display_name = "Workflow Event"
+    display_name_plural = "Workflow Events"
+    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -171,9 +171,9 @@ class WorkflowRecord(Base, DBObjectPKMixin, BaseFieldMixin):
         "schema": "uno",
         "comment": "Records of workflow events",
     }
-    verbose_name = "Workflow Record"
-    verbose_name_plural = "Workflow Records"
-    # include_in_graph = False
+    display_name = "Workflow Record"
+    display_name_plural = "Workflow Records"
+    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
@@ -227,9 +227,9 @@ class ObjectFunction(Base, DBObjectPKMixin, BaseFieldMixin):
         "comment": "Functions that can be called by user-defined workflows and reports",
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
-    verbose_name = "Object Function"
-    verbose_name_plural = "Object Functions"
-    include_in_graph = False
+    display_name = "Object Function"
+    display_name_plural = "Object Functions"
+    # include_in_graph = False
 
     sql_emitters = []
 
