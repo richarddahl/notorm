@@ -5,11 +5,11 @@
 from uno.db.enums import SchemaDataType
 from uno.schemas import (
     Schema,
-    ListSchema,
-    SelectSchema,
-    CreateSchema,
-    UpdateSchema,
-    DeleteSchema,
+    ListSchemaBase,
+    SelectSchemaBase,
+    CreateSchemaBase,
+    UpdateSchemaBase,
+    DeleteSchemaBase,
 )
 
 from uno.routers import Router
@@ -20,7 +20,7 @@ user_schemas = [
         name="UserCreate",
         table_name="uno.user",
         doc="Schema to Create a new User into the database",
-        base=CreateSchema,
+        base=CreateSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[
             "id",
@@ -47,7 +47,7 @@ user_schemas = [
         name="UserList",
         table_name="uno.user",
         doc="Schema to list Users from the database",
-        base=ListSchema,
+        base=ListSchemaBase,
         data_type=SchemaDataType.HTML,
         include_fields=[
             "id",
@@ -72,7 +72,7 @@ user_schemas = [
         name="UserSelect",
         table_name="uno.user",
         doc="Schema to select a User from the database",
-        base=SelectSchema,
+        base=SelectSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[],
         router=Router(
@@ -91,7 +91,7 @@ user_schemas = [
         name="UserUpdate",
         table_name="uno.user",
         doc="Schema to update a User in the database",
-        base=UpdateSchema,
+        base=UpdateSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[
             "id",
@@ -117,7 +117,7 @@ user_schemas = [
         name="UserDelete",
         table_name="uno.user",
         doc="Schema to delete a User from the database",
-        base=DeleteSchema,
+        base=DeleteSchemaBase,
         data_type=SchemaDataType.NATIVE,
         include_fields=["id"],
         router=Router(
@@ -136,7 +136,7 @@ user_schemas = [
         name="UserImport",
         table_name="uno.user",
         doc="Schema to import a User into the database",
-        base=DeleteSchema,
+        base=DeleteSchemaBase,
         data_type=SchemaDataType.NATIVE,
         router=Router(
             path_suffix="/{id}",

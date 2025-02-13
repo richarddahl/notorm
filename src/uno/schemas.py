@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Type, ClassVar
+from typing import Any, Type
 
 from pydantic import (
     BaseModel,
@@ -92,23 +92,23 @@ class UnoHTMLSchema(UnoSchema):
 '''
 
 
-class ListSchema(BaseModel):
+class ListSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SelectSchema(BaseModel):
+class SelectSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CreateSchema(BaseModel):
+class CreateSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class UpdateSchema(BaseModel):
+class UpdateSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class DeleteSchema(BaseModel):
+class DeleteSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -116,7 +116,7 @@ class Schema(BaseModel):
     name: str
     table_name: str
     doc: str = ""
-    base: Type[BaseModel] = SelectSchema
+    base: Type[BaseModel] = SelectSchemaBase
     data_type: SchemaDataType = SchemaDataType.NATIVE
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
