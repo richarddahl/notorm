@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR, BIGINT
 
 from uno.obj.tables import DBObject
 
-from uno.db.sql_emitters import AlterGrantSQL
+from uno.sql_emitters import AlterGrantSQL
 
 from tests.conftest import (
     print_indices,

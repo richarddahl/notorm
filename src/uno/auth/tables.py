@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
-from uno.db.sql_emitters import RecordVersionAuditSQL
+from uno.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
 from uno.graphs import GraphNode, GraphEdge
 

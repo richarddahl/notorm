@@ -25,7 +25,7 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
-from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
+from uno.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 from uno.obj.sql_emitters import (
     InsertObjectTypeRecordSQL,
     InsertDBObjectFunctionSQL,

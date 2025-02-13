@@ -6,7 +6,7 @@ import textwrap
 
 from pydantic.dataclasses import dataclass
 
-from uno.db.sql_emitters import SQLEmitter
+from uno.sql_emitters import SQLEmitter
 
 from uno.config import settings
 

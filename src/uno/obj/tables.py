@@ -10,7 +10,7 @@ from sqlalchemy import UniqueConstraint, ForeignKey, func, Identity
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
-from uno.db.sql_emitters import AlterGrantSQL
+from uno.sql_emitters import AlterGrantSQL
 
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
 

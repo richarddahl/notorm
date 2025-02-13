@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import (
 from uno.schemas import Schema
 from uno.routers import Router
 
-from uno.db.sql_emitters import SQLEmitter
+from uno.sql_emitters import SQLEmitter
 from uno.graphs import GraphNode, GraphEdge
 
 from uno.config import settings
