@@ -12,35 +12,29 @@ attribute_type_node = GraphNode(
 
 attribute_type_edges = [
     GraphEdge(
+        table_name="attribute_type",
         label="IS_CHILD_OF",
-        start_node_label="AttributeType",
-        end_node_label="AttributeType",
+        destination_table_name="attribute_type",
         accessor="parent",
     ),
     GraphEdge(
+        table_name="attribute_type",
         label="HAS_CHILDREN",
-        start_node_label="AttributeType",
-        end_node_label="AttributeType",
+        destination_table_name="attribute_type",
         accessor="children",
     ),
     GraphEdge(
+        table_name="attribute_type",
         label="DESCRIBES",
-        start_node_label="AttributeType",
-        end_node_label="ObjectType",
+        destination_table_name="object_type",
         accessor="describes",
     ),
     GraphEdge(
+        table_name="attribute_type",
         label="HAS_VALUE_TYPE",
-        start_node_label="AttributeType",
-        end_node_label="ObjectType",
+        destination_table_name="object_type",
         accessor="values",
     ),
-    # GraphNode(
-    #    label="DETERMINES_APPLICABILITY",
-    #    start_node_label="AttributeType",
-    #    end_node_label="Query",
-    #    accessor="determining_query",
-    # ),
 ]
 
 attribute_value_node = GraphNode(

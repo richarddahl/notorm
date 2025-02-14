@@ -22,7 +22,7 @@ from uno.obj.sql_emitters import (
 )
 
 from uno.auth.rls_sql_emitters import RLSSQL
-from uno.grph.tables import Query
+from uno.fltr.tables import Query
 
 from uno.attr.graphs import (
     attribute_type_node,

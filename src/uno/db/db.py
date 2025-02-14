@@ -58,7 +58,7 @@ class UnoDB:
             if column.primary_key:
                 self.pk_fields.append(column.name)
 
-    def #server_default_columns(self) -> list[str]:
+    def server_default_columns(self) -> list[str]:
         """
         Retrieves the columns with server defaults for the table associated with the given class.
 

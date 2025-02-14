@@ -31,14 +31,15 @@ from uno.obj.sql_emitters import (
     InsertDBObjectFunctionSQL,
 )
 
-from uno.grph.enums import (
+from uno.fltr.enums import (
     FilterType,
+    DataType,
     Include,
     Match,
     Lookup,
 )
 
-
+'''
 class Node(Base):
     __tablename__ = "node"
     __table_args__ = (
@@ -75,14 +76,14 @@ class Edge(Base):
         UniqueConstraint(
             "start_node_label",
             "label",
-            "end_node_label",
-            name="uq_start_node_label_label_end_node_label",
+            "destination_table_name",
+            name="uq_start_node_label_label_destination_table_name",
         ),
         Index(
-            "ix_start_node_label_label_end_node_label",
+            "ix_start_node_label_label_destination_table_name",
             "start_node_label",
             "label",
-            "end_node_label",
+            "destination_table_name",
         ),
         {
             "schema": "uno",
@@ -114,7 +115,7 @@ class Edge(Base):
         index=True,
         doc="The Graph label of the edge.",
     )
-    end_node_label: Mapped[str_255] = mapped_column(
+    destination_table_name: Mapped[str_255] = mapped_column(
         ForeignKey("uno.node.label", ondelete="CASCADE"),
         index=True,
         doc="The object type of the end node.",
@@ -166,7 +167,6 @@ class Property(Base):
     )
 
 
-'''
 class Path(Base):
     __tablename__ = "path"
     __table_args__ = (
@@ -221,6 +221,11 @@ class Path(Base):
 class Filter(Base):
     __tablename__ = "filter"
     __table_args__ = (
+        UniqueConstraint(
+            "table_name",
+            "label",
+            name="uq_table_name_label",
+        ),
         {
             "schema": "uno",
             "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
@@ -228,7 +233,6 @@ class Filter(Base):
     )
     display_name = "Filter"
     display_name_plural = "Filters"
-    # include_in_graph = False
 
     sql_emitters = []
 
@@ -247,6 +251,42 @@ class Filter(Base):
         ),
         default=FilterType.PROPERTY,
     )
+    data_type: Mapped[str] = mapped_column(
+        # ENUM(
+        #    DataType,
+        #    name="datatype",
+        #    create_type=True,
+        #    schema="uno",
+        # ),
+        doc="The data type of the filter.",
+    )
+    table_name: Mapped[str_255] = mapped_column(
+        index=True,
+        doc="The table name of the filter.",
+    )
+    destination_table_name: Mapped[Optional[str_255]] = mapped_column(
+        index=True,
+        doc="The destination table name of the filter.",
+    )
+    label: Mapped[str_255] = mapped_column(
+        index=True,
+        doc="The GraphEdge or GraphProperty label of the filter.",
+    )
+    accessor: Mapped[str_255] = mapped_column(
+        doc="The relational accessor for the filter.",
+    )
+    lookups: Mapped[list[Lookup]] = mapped_column(
+        ARRAY(
+            ENUM(
+                Lookup,
+                name="lookup",
+                create_type=True,
+                schema="uno",
+            )
+        ),
+        doc="The lookups for the filter.",
+    )
+    """
     property_id: Mapped[int] = mapped_column(
         ForeignKey("uno.property.id", ondelete="CASCADE"),
         index=True,
@@ -257,184 +297,14 @@ class Filter(Base):
         index=True,
         doc="The edge associated with the filter.",
     )
-
-
-class FilterField(Base, DBObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filter_field"
-    __table_args__ = (
-        # UniqueConstraint(
-        #    "label",
-        #    # "graph_type",
-        #    name="uq_label_graph_type",
-        # ),
-        {
-            "schema": "uno",
-            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
-            "info": {"rls_policy": False, "in_graph": False},
-        },
-    )
-    display_name = "Filter Field"
-    display_name_plural = "Filter Fields"
-    # include_in_graph = False
-
-    sql_emitters = []
-
-    sql_emitters = [
-        AlterGrantSQL,
-        RecordVersionAuditSQL,
-        InsertObjectTypeRecordSQL,
-        InsertDBObjectFunctionSQL,
-    ]
-    # Columns
-    node_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.node.object_type_id", ondelete="CASCADE"),
-        index=True,
-        doc="The node associated with the filter field.",
-        info={"edge": "HAS_VERTEX"},
-    )
-    accessor: Mapped[str_255] = mapped_column()
-    label: Mapped[str] = mapped_column()
-    data_type: Mapped[str_26] = mapped_column()
-    # graph_type: Mapped[GraphType] = mapped_column(
-    #    ENUM(
-    #        GraphType,
-    #        name="graphtype",
-    #        create_type=True,
-    #        schema="uno",
-    #    ),
-    #    default=GraphType.PROPERTY,
-    # )
-    lookups: Mapped[list[Lookup]] = mapped_column(
-        ARRAY(
-            ENUM(
-                Lookup,
-                name="lookup",
-                create_type=True,
-                schema="uno",
-            )
-        )
-    )
-
-
-class FilterFieldObjectType(Base, DBObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filter_field__object_type"
-    __table_args__ = (
-        # UniqueConstraint(
-        #    "filterfield_id",
-        #    "object_type_id",
-        #    "direction",
-        #    name="uq_filterfield_ObjectType_direction",
-        # ),
-        # Index(
-        #    "ix_filterfield_id_object_type_id_direction",
-        #    "filterfield_id",
-        #    "object_type_id",
-        #    #    "direction",
-        # ),
-        {
-            "schema": "uno",
-            "comment": "A FilterField associated with a ObjectType.",
-            "info": {"rls_policy": False, "in_graph": False},
-        },
-    )
-    display_name = "Filter Field ObjectType"
-    display_name_plural = "Filter Field ObjectTypes"
-    # include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        doc="The filterfield associated with a object_type.",
-    )
-
-    # direction: Mapped[str_26] = mapped_column(
-    #    ENUM(
-    #        EdgeDirection,
-    #        name="edgedirection",
-    #        create_type=True,
-    #        schema="uno",
-    #    ),
-    #    primary_key=True,
-    #    # server_default=EdgeDirection.FROM.name,
-    #    doc="The direction of the edge.",
-    # )
-
-
-class FilterKey(Base, DBObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "filter_key"
-    __table_args__ = (
-        UniqueConstraint(
-            "from_filterfield_id",
-            "to_filterfield_id",
-            "accessor",
-            name="uq_from_to_accessor",
-        ),
-        Index(
-            "ix_from_filterfield_id_to_filterfield_id_accessor",
-            "from_filterfield_id",
-            "to_filterfield_id",
-            "accessor",
-        ),
-        {
-            "schema": "uno",
-            "comment": "A filterable path from one table to itself or another.",
-            "info": {"rls_policy": False, "in_graph": False},
-        },
-    )
-    display_name = "Filter Key"
-    display_name_plural = "Filter Keys"
-    # include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    from_filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        doc="The filterkey from which the filter key starts.",
-    )
-    to_filterfield_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        doc="The filterfield at which the filter key ends.",
-    )
-    accessor: Mapped[str] = mapped_column(
-        index=True,
-        primary_key=True,
-        doc="The accessor for the filter key.",
-    )
-    # graph_type: Mapped[GraphType] = mapped_column(
-    #    ENUM(
-    #        GraphType,
-    #        name="graphtype",
-    #        create_type=True,
-    #        schema="uno",
-    #    ),
-    #    default=GraphType.PROPERTY,
-    # )
-    lookups: Mapped[list[Lookup]] = mapped_column(
-        ARRAY(
-            ENUM(
-                Lookup,
-                name="lookup",
-                create_type=True,
-                schema="uno",
-            )
-        )
-    )
+    """
 
 
 class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
     __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
-            "field_id",
+            "filter_id",
             "lookup",
             "include",
             "match",
@@ -451,7 +321,7 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
         ),
         Index(
             "ix_filtervalue__unique_together",
-            "field_id",
+            "filter_id",
             "lookup",
             "include",
             "match",
@@ -473,21 +343,18 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
         {
             "comment": "User definable values for use in queries.",
             "schema": "uno",
-            "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
     display_name = "Filter Value"
     display_name_plural = "Filter Values"
-    # #include_in_graph = False
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
     # Columns
-    field_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_field.id", ondelete="CASCADE"),
+    filter_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.filter.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        info={"edge": "FILTERS_FIELD"},
     )
     lookup: Mapped[Lookup] = mapped_column(
         ENUM(

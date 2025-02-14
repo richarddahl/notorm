@@ -70,15 +70,6 @@ class Tenant(Base, DBObjectPKMixin, BaseFieldMixin):
     graph_node = tenant_node
     graph_edges = tenant_edges
 
-    edges: ClassVar[list[GraphEdge]] = [
-        GraphEdge(
-            label="HAS_USER",
-            start_node_label="Tenant",
-            end_node_label="User",
-            accessor="tenant_users",
-        ),
-    ]
-
     # Columns
     name: Mapped[str_255] = mapped_column(unique=True, doc="Tenant name")
     tenant_type: Mapped[TenantType] = mapped_column(
@@ -139,6 +130,7 @@ class User(Base, DBObjectPKMixin):
 
     graph_node = user_node
     graph_edges = user_edges
+    exclude_from_properties = ["is_superuser", "is_tenant_admin"]
 
     # Columns
     email: Mapped[str_255] = mapped_column(

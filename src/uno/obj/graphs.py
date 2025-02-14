@@ -12,21 +12,21 @@ object_type_node = GraphNode(
 
 object_type_edges = [
     GraphEdge(
+        table_name="object_type",
         label="HAS_OBJECT",
-        start_node_label="ObjectType",
-        end_node_label="DBObject",
+        destination_table_name="db_object",
         accessor="db_objects",
     ),
     GraphEdge(
+        table_name="object_type",
         label="IS_DESCRIBED_BY",
-        start_node_label="ObjectType",
-        end_node_label="AttributeType",
+        destination_table_name="attribute_type",
         accessor="described_attribute_types",
     ),
     GraphEdge(
+        table_name="object_type",
         label="IS_VALUE_TYPE_FOR",
-        start_node_label="ObjectType",
-        end_node_label="AttributeType",
+        destination_table_name="attribute_type",
         accessor="value_type_attribute_types",
     ),
 ]
@@ -39,18 +39,18 @@ db_object_node = GraphNode(
 
 db_object_edges = [
     GraphEdge(
+        table_name="db_object",
         label="HAS_ATTRIBUTE",
-        start_node_label="DBObject",
-        end_node_label="Attribute",
+        destination_table_name="attribute",
         accessor="attributes",
-        secondary_table_name="attribute__dbobject",
+        secondary_table_name="uno.attribute__object_value",
     ),
     GraphEdge(
+        table_name="db_object",
         label="HAS_ATTACHMENT",
-        start_node_label="DBObject",
-        end_node_label="Attachment",
+        destination_table_name="attachment",
         accessor="attachments",
-        secondary_table_name="attachment__dbobject",
+        secondary_table_name="uno.attachment__db_object",
     ),
 ]
 
@@ -61,9 +61,9 @@ attachment_node = GraphNode(
 
 attachment_edges = [
     GraphEdge(
+        table_name="attachment",
         label="IS_ATTACHMENT_FOR",
-        start_node_label="Attachment",
-        end_node_label="DBObject",
+        destination_table_name="db_object",
         accessor="attachments",
     ),
 ]

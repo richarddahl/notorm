@@ -31,7 +31,7 @@ import uno.obj.tables as objs_tables
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
 import uno.msg.tables as comms_tables
-import uno.grph.tables as fltrs_tables
+import uno.fltr.tables as fltrs_tables
 import uno.rprt.tables as rprts_tables
 import uno.wkflw.tables as wrkflws_tables
 
@@ -74,10 +74,13 @@ class DBManager:
             for base in Base.registry.mappers:
                 # Emit the SQL for the node definition
                 if base.class_.graph_node:
-                    conn.execute(text(base.class_.create_node()))
+                    base.class_.create_properties()
+                    for prop in base.class_.graph_properties:
+                        conn.execute(text(prop.emit_sql()))
+                    conn.execute(text(base.class_.graph_node.emit_sql()))
             for base in Base.registry.mappers:
-                if base.class_.graph_edges:
-                    conn.execute(text(base.class_.create_edges()))
+                for edge in base.class_.graph_edges:
+                    conn.execute(text(edge.emit_sql()))
                 conn.commit()
             conn.close()
         eng.dispose()

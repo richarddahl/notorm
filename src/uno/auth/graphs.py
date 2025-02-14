@@ -11,21 +11,21 @@ tenant_node = GraphNode(
 
 tenant_edges = [
     GraphEdge(
+        table_name="tenant",
         label="HAS_USER",
-        start_node_label="Tenant",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="users",
     ),
     GraphEdge(
+        table_name="tenant",
         label="HAS_GROUP",
-        start_node_label="Tenant",
-        end_node_label="Group",
+        destination_table_name="group",
         accessor="groups",
     ),
     GraphEdge(
+        table_name="tenant",
         label="HAS_OBJECT",
-        start_node_label="Tenant",
-        end_node_label="DBObject",
+        destination_table_name="db_object",
         accessor="db_objects",
     ),
 ]
@@ -38,33 +38,33 @@ user_node = GraphNode(
 
 user_edges = [
     GraphEdge(
+        table_name="user",
         label="WORKS_FOR",
-        start_node_label="User",
-        end_node_label="Tenant",
+        destination_table_name="tenant",
         accessor="tenant",
     ),
     GraphEdge(
+        table_name="user",
         label="HAS_DEFAULT_GROUP",
-        start_node_label="User",
-        end_node_label="Group",
+        destination_table_name="group",
         accessor="default_group",
     ),
     GraphEdge(
+        table_name="user",
         label="IS_OWNED_BY",
-        start_node_label="User",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="owner",
     ),
     GraphEdge(
+        table_name="user",
         label="WAS_LAST_MODIFIED_BY",
-        start_node_label="User",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="modified_by",
     ),
     GraphEdge(
+        table_name="user",
         label="WAS_DELETED_BY",
-        start_node_label="User",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="deleted_by",
     ),
 ]
@@ -76,21 +76,21 @@ role_node = GraphNode(
 
 role_edges = [
     GraphEdge(
+        table_name="role",
         label="HAS_USER",
-        start_node_label="Role",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="users",
     ),
     GraphEdge(
+        table_name="role",
         label="HAS_GROUP",
-        start_node_label="Role",
-        end_node_label="Group",
+        destination_table_name="group",
         accessor="groups",
     ),
     GraphEdge(
+        table_name="role",
         label="HAS_TENANT",
-        start_node_label="Role",
-        end_node_label="Tenant",
+        destination_table_name="tenant",
         accessor="tenants",
     ),
 ]
@@ -102,15 +102,15 @@ group_node = GraphNode(
 
 group_edges = [
     GraphEdge(
+        table_name="group",
         label="HAS_USER",
-        start_node_label="Group",
-        end_node_label="User",
+        destination_table_name="user",
         accessor="users",
     ),
     GraphEdge(
+        table_name="group",
         label="HAS_OBJECT",
-        start_node_label="Group",
-        end_node_label="DBObject",
+        destination_table_name="db_object",
         accessor="db_objects",
     ),
 ]

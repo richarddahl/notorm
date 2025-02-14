@@ -117,10 +117,10 @@ class DBObject(Base):
     # relationships
     object_type: Mapped[ObjectType] = relationship(back_populates="db_objects")
     attributes: Mapped[List["Attribute"]] = relationship(
-        back_populates="db_object", secondary="uno.attribute__dbobject"
+        back_populates="db_object", secondary="uno.attribute__object_value"
     )
     attachments: Mapped[List["Attachment"]] = relationship(
-        back_populates="db_objects", secondary="uno.attachment__dbobject"
+        back_populates="db_objects", secondary="uno.attribute__object_value"
     )
 
     def __str__(self) -> str:
@@ -155,7 +155,7 @@ class Attachment(Base):
 
 
 class AttachmentDBObject(Base):
-    __tablename__ = "attachment__dbobject"
+    __tablename__ = "attachment__db_object"
     __table_args__ = {
         "schema": "uno",
         "comment": "Attachments to DBObjects",

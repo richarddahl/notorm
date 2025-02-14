@@ -34,16 +34,19 @@ class DataType(str, enum.Enum):
         DATETIME (str): Represents the datetime data type.
         BINARY (str): Represents the binary data type.
         JSON (str): Represents the JSON data type.
+        OBJECT (str): Represents an object in the DB.
     """
 
-    INTEGER = "Integer"
-    FLOAT = "Float"
-    NUMERIC = "Numeric"
-    BOOLEAN = "Boolean"
-    STRING = "String"
-    DATE = "Date"
-    TIME = "Time"
-    DATETIME = "DateTime"
+    INTEGER = "int"
+    FLOAT = "float"
+    NUMERIC = "decimal"
+    BOOLEAN = "bool"
+    STRING = "str"
+    DATE = "date"
+    TIME = "time"
+    DATETIME = "datetime"
+    JSON = "JSON"
+    OBJECT = "object"
 
 
 class Include(str, enum.Enum):

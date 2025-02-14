@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import AsyncIterator, Annotated, ClassVar
 from fastapi import FastAPI
 
-from sqlalchemy import MetaData, create_engine, ForeignKey
+from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import registry, DeclarativeBase
 from sqlalchemy.dialects.postgresql import (
     BIGINT,
@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import (
     ARRAY,
     VARCHAR,
 )
+from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -33,6 +34,7 @@ from sqlalchemy.ext.asyncio import (
 from uno.schemas import SchemaDef
 from uno.sql_emitters import SQLEmitter
 from uno.graphs import GraphNode, GraphEdge, GraphProperty
+from uno.utilities import convert_snake_to_title
 
 from uno.config import settings
 
@@ -105,32 +107,45 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     # Graph attributes
     graph_node: ClassVar[GraphNode] = None
-    graph_edges: ClassVar[list[GraphEdge]] = []
-    graph_properties: ClassVar[dict[str, GraphProperty]] = {}
+    graph_edges: ClassVar[dict[str, GraphEdge]] = []
+    graph_properties: ClassVar[dict[str, GraphProperty]] = []
+    exclude_from_properties: ClassVar[list[str]] = []
+    filters: ClassVar[dict[str, dict[str, str]]] = {}
 
     # schema attributes
-    schemas: ClassVar[list[SchemaDef]] = []
+    schema_defs: ClassVar[list[SchemaDef]] = []
 
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:
-        for schema in cls.schemas:
+        for schema_def in cls.schema_defs:
             setattr(
                 cls,
-                schema.name,
-                schema.create_schema(cls.__table__, app),
+                schema_def.name,
+                schema_def.create_schema(cls.__table__, app),
             )
 
     @classmethod
-    def create_node(cls) -> None:
-        if cls.graph_node:
-            return cls.graph_node.emit_sql()
-
-    @classmethod
-    def create_edges(cls) -> None:
-        edge_sql = ""
-        for edge in cls.graph_edges:
-            edge_sql += edge.emit_sql()
-        return edge_sql
+    def create_properties(cls) -> None:
+        cls.graph_properties = []
+        if not cls.graph_node:
+            return
+        for column in cls.__table__.columns:
+            if column.name in cls.exclude_from_properties:
+                continue
+            if column.foreign_keys and column.primary_key:
+                continue
+            if type(column.type) == NullType:
+                data_type = "str"
+            else:
+                data_type = column.type.python_type.__name__
+            cls.graph_properties.append(
+                GraphProperty(
+                    table_name=cls.__table__.name,
+                    label=convert_snake_to_title(column.name),
+                    accessor=column.name,
+                    data_type=data_type,
+                )
+            )
 
     # @classmethod
     # def create_vectors(cls) -> None:
