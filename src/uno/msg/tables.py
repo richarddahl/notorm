@@ -81,6 +81,10 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
     children: Mapped["Message"] = relationship(
         back_populates="parent",
     )
+    addressed_to: Mapped["User"] = relationship(
+        back_populates="addressed_messages",
+        secondary="uno.message__addressed_to",
+    )
 
 
 class MessageAddressedTo(Base):

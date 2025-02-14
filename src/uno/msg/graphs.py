@@ -11,22 +11,33 @@ message_node = GraphNode(
 
 message_edges = [
     GraphEdge(
+        table_name="message",
         label="WAS_SENT_BY",
         start_node_label="Message",
         end_node_label="User",
         accessor="sender",
     ),
     GraphEdge(
-        label="HAS_PARENT",
+        table_name="message",
+        label="IS_PARENT_OF",
         start_node_label="Message",
         end_node_label="Message",
         accessor="parent",
     ),
     GraphEdge(
-        label="HAS_CHILDREN",
+        table_name="message",
+        label="IS_CHILD_OF",
         start_node_label="Message",
         end_node_label="Message",
         accessor="children",
+    ),
+    GraphEdge(
+        table_name="message",
+        label="WAS_SENT_TO",
+        start_node_label="Message",
+        end_node_label="User",
+        accessor="addressed_to",
+        secondary_table_name="uno.message__addressed_to",
     ),
     # GraphEdge(
     #    label="HAS_ATTACHMENT",

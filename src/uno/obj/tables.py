@@ -116,6 +116,12 @@ class DBObject(Base):
 
     # relationships
     object_type: Mapped[ObjectType] = relationship(back_populates="db_objects")
+    attributes: Mapped[List["Attribute"]] = relationship(
+        back_populates="db_object", secondary="uno.attribute__dbobject"
+    )
+    attachments: Mapped[List["Attachment"]] = relationship(
+        back_populates="db_objects", secondary="uno.attachment__dbobject"
+    )
 
     def __str__(self) -> str:
         return f"{self.object_type_id}"

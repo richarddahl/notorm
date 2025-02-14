@@ -43,12 +43,14 @@ db_object_edges = [
         start_node_label="DBObject",
         end_node_label="Attribute",
         accessor="attributes",
+        secondary_table_name="attribute__dbobject",
     ),
     GraphEdge(
         label="HAS_ATTACHMENT",
         start_node_label="DBObject",
         end_node_label="Attachment",
         accessor="attachments",
+        secondary_table_name="attachment__dbobject",
     ),
 ]
 

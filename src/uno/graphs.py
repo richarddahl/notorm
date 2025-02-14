@@ -4,16 +4,16 @@
 
 import textwrap
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, date, time
 from decimal import Decimal
 
 
 from psycopg.sql import SQL, Identifier, Literal
 
-from pydantic import ConfigDict, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
-from sqlalchemy import Column
+from sqlalchemy import Table
 
 from uno.grph.enums import (
     Lookup,
@@ -22,13 +22,15 @@ from uno.grph.enums import (
     string_lookups,
 )
 from uno.config import settings
-
+from uno.utilities import convert_snake_to_title
 
 ADMIN_ROLE = f"{settings.DB_NAME}_admin"
 
 
-@dataclass
-class GraphBase:
+class GraphBase(BaseModel):
+    table_name: str = None
+    schema_name: str = "uno"
+
     def create_sql_trigger(
         self,
         function_name: str,
@@ -101,25 +103,14 @@ class GraphBase:
 
 
 class GraphProperty(GraphBase):
-    # table_name: str <- GraphBase
-    # schema_name: str <- GraphBase
-
-    # accessor: str <- computed_field
-    # lookups: Lookup <- computed_field
-
-    column: Column
+    name: str
+    accessor: str
+    data_type: str
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @computed_field
-    def accessor(self) -> str:
-        return self.column.name
-
-    @computed_field
     def lookups(self) -> Lookup:
-        if self.column.foreign_keys:
-            return related_lookups
-        if self.column.type.python_type in [
+        if self.python_type in [
             int,
             float,
             Decimal,
@@ -130,33 +121,56 @@ class GraphProperty(GraphBase):
             return numeric_lookups
         return string_lookups
 
-    @computed_field
-    def label(self) -> str:
-        return self.column.name.replace("_id", " ").replace("_", " ").title()
+    def __str__(self):
+        return f"""
+            Table Name: {self.table_name}
+            Name: {self.name}
+            Accessor: {self.accessor}
+            Data Type: {self.data_type}
+       """
 
 
-@dataclass
 class GraphNode(GraphBase):
-    table_name: str
     label: str
-    schema_name: str = "uno"
-    column_name: str = "id"
-    properties: list[GraphProperty] = None
+
+    @computed_field
+    def properties(self) -> dict[str, GraphProperty]:
+        from uno.db.base import Base
+
+        table = Base.metadata.tables[self.table_name]
+        props = {}
+        for column in table.columns:
+            if column.foreign_keys and column.primary_key:
+                continue
+            props.update(
+                {
+                    column.name: GraphProperty(
+                        table_name=self.table_name,
+                        name=convert_snake_to_title(column.name),
+                        accessor=column.name,
+                        data_type=column.type.python_type.__name__,
+                    )
+                }
+            )
+        return props
 
     def emit_sql(self) -> str:
         """
-        Generates a complete SQL script by combining various SQL components.
+        Generates a complete SQL script by combining various SQL
+        components.
 
-        This method constructs a SQL script by sequentially appending the results
-        of several helper methods that generate specific parts of the SQL script.
-        The final script includes SQL for creating labels, insert functions and
-        triggers, update functions and triggers, delete functions and triggers,
-        truncate functions and triggers, and filter fields.
+        This method constructs a SQL script by sequentially appending
+        the results of several helper methods that generate specific
+        parts of the SQL script.
+        The final script includes SQL for creating labels, insert
+        functions and triggers, update functions and triggers,
+        delete functions and triggers, truncate functions and
+        triggers, and filter fields.
 
         Returns:
             str: The complete SQL script as a single string.
         """
-        sql = self.create_node_label_and_record_sql()
+        sql = self.create_node_label()
         # sql += f"\n{self.insert_node_sql()}"
         # sql += f"\n{self.update_nodet_sql()}"
         # sql += f"\n{self.delete_nodet_sql()}"
@@ -164,12 +178,14 @@ class GraphNode(GraphBase):
         # sql += f"\n{self.create_filter_field_sql()}"
         return textwrap.dedent(sql)
 
-    def create_node_label_and_record_sql(self) -> str:
+    def create_node_label(self) -> str:
         query = SQL(
             """
             DO $$
+            /*
             DECLARE
                 object_type_id INT;
+            */
             BEGIN
                 SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
@@ -177,7 +193,7 @@ class GraphNode(GraphBase):
                     PERFORM ag_catalog.create_vlabel('graph', {label});
                     EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
                 END IF;
-
+            /*
                 SELECT id
                     FROM uno.object_type
                     WHERE schema_name = {schema_name} AND table_name = {table_name}
@@ -189,6 +205,7 @@ class GraphNode(GraphBase):
 
                 INSERT INTO uno.node (object_type_id, accessor, label)
                     VALUES (object_type_id, {table_name}, {label});
+            */
             END $$;
             """
         ).format(
@@ -214,9 +231,6 @@ class GraphNode(GraphBase):
         """
         prop_key_str = ""
         prop_val_str = ""
-        edge_str = ""
-        # if self.edges:
-        #    edge_str = "\n".join([edge.insert_edge_sql() for edge in self.edges])
 
         if self.properties:
             prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
@@ -358,27 +372,34 @@ class GraphNode(GraphBase):
         )
 
 
-@dataclass
 class GraphEdge(GraphBase):
     label: str
     start_node_label: str
     end_node_label: str
     accessor: str
-    # properties: list[GraphProperty] = None
+    secondary_table_name: str = None
 
-    def properties(self) -> list[GraphProperty]:
-        """
-        Retrieves a list of PropertySqlEmitter objects for the current table.
+    @computed_field
+    def properties(self) -> dict[str, GraphProperty]:
+        if not self.secondary_table_name:
+            return {}
+        from uno.db.base import Base
 
-        Returns:
-            list[PropertySqlEmitter]: A list of PropertySqlEmitter objects representing
-            the properties of the table's columns that are not foreign keys.
-        """
-        props = []
-        if not self.in_node:
-            for column in self.table.columns:
-                if not column.foreign_keys:
-                    props.append(GraphProperty(table=self.table, column=column))
+        table = Base.metadata.tables[self.secondary_table_name]
+        props = {}
+        for column in table.columns:
+            if column.foreign_keys and column.primary_key:
+                continue
+            props.update(
+                {
+                    column.name: GraphProperty(
+                        table_name=self.table_name,
+                        name=convert_snake_to_title(column.name),
+                        accessor=column.name,
+                        data_type=column.type.python_type.__name__,
+                    )
+                }
+            )
         return props
 
     def emit_sql(self) -> str:
@@ -399,11 +420,14 @@ class GraphEdge(GraphBase):
 
     def create_edge_label_and_filter_record_sql(self) -> str:
         """
-        Generates a SQL statement to create a label in the AgensGraph database if it does not already exist.
+        Generates a SQL statement to create a label in the Apache AGE
+        database if it does not already exist.
 
         Returns:
-            str: A SQL statement that checks for the existence of a label in the ag_catalog.ag_label table.
-                 If the label does not exist, it creates the label and an index on the 'graph' schema_name.
+            str: A SQL statement that checks for the existence of a
+            label in the ag_catalog.ag_label table.
+                 If the label does not exist, it creates the label and
+                 an index on the 'graph' schema_name.
         """
         return (
             SQL(
@@ -416,9 +440,10 @@ class GraphEdge(GraphBase):
                         PERFORM ag_catalog.create_elabel('graph', {label});
                         CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                 END IF;
-
+            /*
                 INSERT INTO uno.edge (start_node_label, label, end_node_label, accessor)
                     VALUES ({start_node_label}, {label}, {end_node_label}, {accessor});
+            */
             END $$;
             """
             )
