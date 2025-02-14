@@ -112,7 +112,7 @@ class DeleteSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class Schema(BaseModel):
+class SchemaDef(BaseModel):
     name: str
     table_name: str
     doc: str = ""

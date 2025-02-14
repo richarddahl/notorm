@@ -60,7 +60,7 @@ class ObjectType(Base):
         index=True,
         doc="The id of the object_type.",
     )
-    schema_name: Mapped[str_255] = mapped_column(doc="Schema of the table")
+    schema_name: Mapped[str_255] = mapped_column(doc="SchemaDef of the table")
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
 
     # relationships

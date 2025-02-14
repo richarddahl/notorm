@@ -31,7 +31,6 @@ from uno.obj.sql_emitters import (
     InsertDBObjectFunctionSQL,
 )
 
-
 from uno.grph.enums import (
     FilterType,
     Include,
@@ -96,12 +95,16 @@ class Edge(Base):
     sql_emitters = []
 
     id: Mapped[int] = mapped_column(
-        Identity(),
         primary_key=True,
         unique=True,
         index=True,
         doc="The id of the node.",
     )
+    # object_type_id: Mapped[int] = mapped_column(
+    #    ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+    #    index=True,
+    #    doc="The object type of the node.",
+    # )
     start_node_label: Mapped[str_255] = mapped_column(
         ForeignKey("uno.node.label", ondelete="CASCADE"),
         index=True,
@@ -126,7 +129,7 @@ class Property(Base):
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "A property of a node in a graph.",
+            "comment": "A property of a node or an edge in a graph.",
         },
     )
     display_name = "Property"
@@ -141,16 +144,20 @@ class Property(Base):
         index=True,
         doc="The id of the node.",
     )
-    object_type_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+    node_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("uno.node.object_type_id", ondelete="CASCADE"),
         index=True,
-        doc="The object type of the property.",
+        doc="The node associated with the property.",
+    )
+    edge_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("uno.edge.id", ondelete="CASCADE"),
+        index=True,
+        doc="The edge associated with the property.",
     )
     accessor: Mapped[str] = mapped_column(
         doc="The relational accessor for the property.",
     )
-    label: Mapped[str_255] = mapped_column(
-        unique=True,
+    name: Mapped[str_255] = mapped_column(
         index=True,
         doc="The Graph label of the Property.",
     )

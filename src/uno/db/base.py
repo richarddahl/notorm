@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import AsyncIterator, Annotated, ClassVar
 from fastapi import FastAPI
 
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData, create_engine, ForeignKey
 from sqlalchemy.orm import registry, DeclarativeBase
 from sqlalchemy.dialects.postgresql import (
     BIGINT,
@@ -30,11 +30,9 @@ from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
 )
 
-from uno.schemas import Schema
-from uno.routers import Router
-
+from uno.schemas import SchemaDef
 from uno.sql_emitters import SQLEmitter
-from uno.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphNode, GraphEdge, GraphProperty
 
 from uno.config import settings
 
@@ -98,19 +96,20 @@ class Base(AsyncAttrs, DeclarativeBase):
     )
     metadata = metadata
 
-    # Metadata related attributes
+    # Metadata attributes
     display_name: ClassVar[str]
     display_name_plural: ClassVar[str]
 
-    # SQL related attributes
+    # SQL attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
-    # Graph related attributes
+    # Graph attributes
     graph_node: ClassVar[GraphNode] = None
     graph_edges: ClassVar[list[GraphEdge]] = []
+    graph_properties: ClassVar[dict[str, GraphProperty]] = {}
 
-    # schema related attributes
-    schemas: ClassVar[list[Schema]] = []
+    # schema attributes
+    schemas: ClassVar[list[SchemaDef]] = []
 
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:

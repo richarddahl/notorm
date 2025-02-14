@@ -127,7 +127,6 @@ class MessageCopiedTo(Base):
     }
     display_name = "Message Copied To"
     display_name_plural = "Messages Copied To"
-    # include_in_graph = False
 
     sql_emitters = []
 
@@ -165,8 +164,6 @@ class MessageDBObject(Base):
     display_name_plural = "Message DBObjects"
 
     sql_emitters = []
-
-    # include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(

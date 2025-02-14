@@ -4,7 +4,7 @@
 
 from uno.db.enums import SchemaDataType
 from uno.schemas import (
-    Schema,
+    SchemaDef,
     ListSchemaBase,
     SelectSchemaBase,
     CreateSchemaBase,
@@ -16,10 +16,10 @@ from uno.routers import Router
 
 
 user_schemas = [
-    Schema(
+    SchemaDef(
         name="UserCreate",
         table_name="uno.user",
-        doc="Schema to Create a new User into the database",
+        doc="SchemaDef to Create a new User into the database",
         base=CreateSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[
@@ -43,10 +43,10 @@ user_schemas = [
             tags=["auth"],
         ),
     ),
-    Schema(
+    SchemaDef(
         name="UserList",
         table_name="uno.user",
-        doc="Schema to list Users from the database",
+        doc="SchemaDef to list Users from the database",
         base=ListSchemaBase,
         data_type=SchemaDataType.HTML,
         include_fields=[
@@ -68,10 +68,10 @@ user_schemas = [
             tags=["auth"],
         ),
     ),
-    Schema(
+    SchemaDef(
         name="UserSelect",
         table_name="uno.user",
-        doc="Schema to select a User from the database",
+        doc="SchemaDef to select a User from the database",
         base=SelectSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[],
@@ -87,10 +87,10 @@ user_schemas = [
             tags=["auth"],
         ),
     ),
-    Schema(
+    SchemaDef(
         name="UserUpdate",
         table_name="uno.user",
-        doc="Schema to update a User in the database",
+        doc="SchemaDef to update a User in the database",
         base=UpdateSchemaBase,
         data_type=SchemaDataType.NATIVE,
         exclude_fields=[
@@ -113,10 +113,10 @@ user_schemas = [
             tags=["auth"],
         ),
     ),
-    Schema(
+    SchemaDef(
         name="UserDelete",
         table_name="uno.user",
-        doc="Schema to delete a User from the database",
+        doc="SchemaDef to delete a User from the database",
         base=DeleteSchemaBase,
         data_type=SchemaDataType.NATIVE,
         include_fields=["id"],
@@ -132,10 +132,10 @@ user_schemas = [
             tags=["auth"],
         ),
     ),
-    Schema(
+    SchemaDef(
         name="UserImport",
         table_name="uno.user",
-        doc="Schema to import a User into the database",
+        doc="SchemaDef to import a User into the database",
         base=DeleteSchemaBase,
         data_type=SchemaDataType.NATIVE,
         router=Router(
