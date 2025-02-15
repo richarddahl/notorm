@@ -115,7 +115,6 @@ class User(Base, DBObjectPKMixin):
         {
             "schema": "uno",
             "comment": "Application users",
-            "info": {"audit_type": "history"},
         },
     )
     display_name = "User"
@@ -126,11 +125,12 @@ class User(Base, DBObjectPKMixin):
         InsertDBObjectFunctionSQL,
         RecordVersionAuditSQL,
     ]
-    schemas = user_schemas
+    schema_defs = user_schemas
 
     graph_node = user_node
     graph_edges = user_edges
     exclude_from_properties = ["is_superuser", "is_tenant_admin"]
+    graph_properties = []
 
     # Columns
     email: Mapped[str_255] = mapped_column(

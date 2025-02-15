@@ -224,7 +224,8 @@ class Filter(Base):
         UniqueConstraint(
             "table_name",
             "label",
-            name="uq_table_name_label",
+            "destination_table_name",
+            name="uq_table_name_label_destination_table_name",
         ),
         {
             "schema": "uno",

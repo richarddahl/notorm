@@ -118,21 +118,29 @@ class Base(AsyncAttrs, DeclarativeBase):
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
-            setattr(
-                cls,
-                schema_def.name,
-                schema_def.create_schema(cls.__table__, app),
-            )
+            schema_def.create_schema(cls, app)
 
     @classmethod
     def create_properties(cls) -> None:
+        """
+        Creates and assigns graph properties to the class.
+
+        This method initializes the `graph_properties` attribute as an empty list.
+        It then iterates over the columns of the class's table, filtering out columns
+        that are either in the `exclude_from_properties` list or are foreign keys
+        but not primary keys. For each remaining column, it determines the data type
+        and creates a `GraphProperty` object, which is appended to the `graph_properties` list.
+
+        Returns:
+            None
+        """
         cls.graph_properties = []
         if not cls.graph_node:
             return
         for column in cls.__table__.columns:
             if column.name in cls.exclude_from_properties:
                 continue
-            if column.foreign_keys and column.primary_key:
+            if column.foreign_keys and not column.primary_key:
                 continue
             if type(column.type) == NullType:
                 data_type = "str"
@@ -146,6 +154,59 @@ class Base(AsyncAttrs, DeclarativeBase):
                     data_type=data_type,
                 )
             )
+
+    @classmethod
+    def set_filters(cls) -> None:
+        """
+        Sets filters for the class based on its graph properties and edges.
+
+        This method iterates over the class's `graph_properties` and `graph_edges`
+        attributes to populate the `filters` dictionary with relevant filter
+        configurations.
+
+        For each property in `graph_properties`, a filter is created with the
+        following keys:
+            - "table_name": The name of the table associated with the property.
+            - "filter_type": Set to "PROPERTY".
+            - "data_type": The data type of the property.
+            - "label": The label of the property.
+            - "accessor": The accessor for the property.
+            - "lookups": The lookups for the property.
+
+        For each edge in `graph_edges`, a filter is created with the following keys:
+            - "table_name": The name of the table associated with the edge.
+            - "filter_type": Set to "EDGE".
+            - "data_type": Set to "object".
+            - "label": The label of the edge.
+            - "destination_table_name": The name of the destination table for the edge.
+            - "accessor": The accessor for the edge.
+            - "lookups": The lookups for the edge.
+
+        Returns:
+            None
+        """
+        cls.filters = {}
+        if not cls.graph_node:
+            return
+        for property in cls.graph_properties:
+            cls.filters[property.display] = {
+                # "table_name": property.table_name,
+                # "filter_type": "PROPERTY",
+                "data_type": property.data_type,
+                "label": property.label,
+                # "accessor": property.accessor,
+                "lookups": property.lookups,
+            }
+        for edge in cls.graph_edges:
+            cls.filters[edge.display] = {
+                # "table_name": edge.table_name,
+                # "filter_type": "EDGE",
+                "data_type": "object",
+                "label": edge.label,
+                # "destination_table_name": edge.destination_table_name,
+                # "accessor": edge.accessor,
+                "lookups": edge.lookups,
+            }
 
     # @classmethod
     # def create_vectors(cls) -> None:

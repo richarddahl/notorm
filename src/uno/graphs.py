@@ -111,7 +111,9 @@ class GraphProperty(GraphBase):
     accessor: str
     data_type: str
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    @computed_field
+    def display(self) -> str:
+        return convert_snake_to_title(self.label)
 
     @computed_field
     def lookups(self) -> Lookup:
@@ -125,14 +127,6 @@ class GraphProperty(GraphBase):
         ]:
             return numeric_lookups
         return string_lookups
-
-    # def __str__(self):
-    #    return f"""
-    #        Table Name: {self.table_name}
-    #        Name: {self.label}
-    #        Accessor: {self.accessor}
-    #        Data Type: {self.data_type}
-    #   """
 
     def emit_sql(self) -> str:
         """
@@ -159,7 +153,6 @@ class GraphProperty(GraphBase):
                 BEGIN
                     INSERT INTO uno.filter(filter_type, data_type, table_name, label, accessor, lookups)
                         VALUES ({filter_type}, {data_type}, {table_name}, {label}, {accessor}, {lookups});
-                        -- ON CONFLICT (table_name, label) DO NOTHING;
                 END $$;
                 """
             )
@@ -397,6 +390,11 @@ class GraphEdge(GraphBase):
     destination_table_name: str
     accessor: str
     secondary_table_name: str = None
+    lookups: list[Lookup] = related_lookups
+
+    @computed_field
+    def display(self) -> str:
+        return f"{convert_snake_to_title(self.label)} ({convert_snake_to_title(self.destination_table_name)})"
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
@@ -407,7 +405,7 @@ class GraphEdge(GraphBase):
         table = Base.metadata.tables[self.secondary_table_name]
         props = {}
         for column in table.columns:
-            if column.foreign_keys and column.primary_key:
+            if column.foreign_keys and not column.primary_key:
                 continue
             props.update(
                 {
@@ -452,7 +450,7 @@ class GraphEdge(GraphBase):
                 destination_table_name=Literal(self.destination_table_name),
                 label_ident=Identifier(self.label),
                 accessor=Literal(self.accessor),
-                lookups=Literal(related_lookups),
+                lookups=Literal(self.lookups),
             )
             .as_string()
         )

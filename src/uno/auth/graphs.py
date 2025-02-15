@@ -12,21 +12,39 @@ tenant_node = GraphNode(
 tenant_edges = [
     GraphEdge(
         table_name="tenant",
-        label="HAS_USER",
+        label="EMPLOYS",
         destination_table_name="user",
         accessor="users",
     ),
     GraphEdge(
         table_name="tenant",
-        label="HAS_GROUP",
+        label="OWNS",
         destination_table_name="group",
         accessor="groups",
     ),
     GraphEdge(
         table_name="tenant",
-        label="HAS_OBJECT",
+        label="OWNS",
         destination_table_name="db_object",
         accessor="db_objects",
+    ),
+    GraphEdge(
+        table_name="tenant",
+        label="IS_OWNED_BY",
+        destination_table_name="user",
+        accessor="owner",
+    ),
+    GraphEdge(
+        table_name="tenant",
+        label="WAS_LAST_MODIFIED_BY",
+        destination_table_name="user",
+        accessor="modified_by",
+    ),
+    GraphEdge(
+        table_name="tenant",
+        label="WAS_DELETED_BY",
+        destination_table_name="user",
+        accessor="deleted_by",
     ),
 ]
 
@@ -45,7 +63,7 @@ user_edges = [
     ),
     GraphEdge(
         table_name="user",
-        label="HAS_DEFAULT_GROUP",
+        label="HAS_DEFAULT",
         destination_table_name="group",
         accessor="default_group",
     ),
@@ -93,6 +111,24 @@ role_edges = [
         destination_table_name="tenant",
         accessor="tenants",
     ),
+    GraphEdge(
+        table_name="role",
+        label="IS_OWNED_BY",
+        destination_table_name="user",
+        accessor="owner",
+    ),
+    GraphEdge(
+        table_name="role",
+        label="WAS_LAST_MODIFIED_BY",
+        destination_table_name="user",
+        accessor="modified_by",
+    ),
+    GraphEdge(
+        table_name="role",
+        label="WAS_DELETED_BY",
+        destination_table_name="user",
+        accessor="deleted_by",
+    ),
 ]
 
 group_node = GraphNode(
@@ -112,5 +148,23 @@ group_edges = [
         label="HAS_OBJECT",
         destination_table_name="db_object",
         accessor="db_objects",
+    ),
+    GraphEdge(
+        table_name="group",
+        label="IS_OWNED_BY",
+        destination_table_name="user",
+        accessor="owner",
+    ),
+    GraphEdge(
+        table_name="group",
+        label="WAS_LAST_MODIFIED_BY",
+        destination_table_name="user",
+        accessor="modified_by",
+    ),
+    GraphEdge(
+        table_name="group",
+        label="WAS_DELETED_BY",
+        destination_table_name="user",
+        accessor="deleted_by",
     ),
 ]

@@ -82,6 +82,14 @@ class DBManager:
                 for edge in base.class_.graph_edges:
                     conn.execute(text(edge.emit_sql()))
                 conn.commit()
+
+                if base.class_.graph_node:
+                    base.class_.set_filters()
+                    print(f"Filters for {base.class_.__tablename__}")
+                    for filter in base.class_.filters.values():
+                        print(filter)
+                    print("")
+
             conn.close()
         eng.dispose()
 

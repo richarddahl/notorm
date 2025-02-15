@@ -19,7 +19,7 @@ attribute_type_edges = [
     ),
     GraphEdge(
         table_name="attribute_type",
-        label="HAS_CHILDREN",
+        label="IS_PARENT_OF",
         destination_table_name="attribute_type",
         accessor="children",
     ),

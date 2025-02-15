@@ -7,16 +7,27 @@ from pydantic import (
     ConfigDict,
     create_model,
     model_validator,
+    computed_field,
 )
 from pydantic.fields import Field
 from pydantic_core import PydanticUndefined
 
+from sqlalchemy import Column, Table
+from sqlalchemy.orm import DeclarativeBase
+
 from fastapi import FastAPI
 
-from sqlalchemy import Column, Table
+from uno.db.enums import SchemaDataType
+from uno.routers import (
+    SchemaRouter,
+    PostRouter,
+    ListRouter,
+    SelectRouter,
+    PatchRouter,
+    DeleteRouter,
+    PutRouter,
+)
 
-from uno.db.enums import SchemaOperationType, SchemaDataType
-from uno.routers import Router
 
 from uno.errors import (
     SchemaConfigError,
@@ -112,30 +123,44 @@ class DeleteSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ImportSchemaBase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
 class SchemaDef(BaseModel):
-    name: str
-    table_name: str
-    doc: str = ""
-    base: Type[BaseModel] = SelectSchemaBase
+    schema_type: str
+    schema_base: BaseModel
+    router: SchemaRouter
     data_type: SchemaDataType = SchemaDataType.NATIVE
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
-    router: Router | None = None
 
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    model_config = ConfigDict(extra="forbid")
 
-    def create_schema(self, table: Table, app: FastAPI) -> Type[BaseModel]:
+    def create_schema(self, klass: DeclarativeBase, app: FastAPI) -> Type[BaseModel]:
+        if self.exclude_fields and self.include_fields:
+            raise SchemaConfigError(
+                "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
+                "INCLUDE_EXCLUDE_FIELDS_CONFLICT",
+            )
+
+        schema_name = f"{klass.__name__}{self.schema_type.capitalize()}"
+
         schema = create_model(
-            self.name,
-            __doc__=self.doc,
-            __base__=self.base,
+            schema_name,
+            __doc__=self.format_doc(klass),
+            __base__=self.schema_base,
             __validators__=None,
             __cls_kwargs__=None,
             __slots__=None,
-            **self.suss_fields(table),
+            **self.suss_fields(klass.__table__),
         )
-        self.router.add_to_app(schema, table, app)
-        return schema
+        self.router(klass=klass).add_to_app(schema, app)
+        setattr(
+            klass,
+            schema_name,
+            schema,
+        )
 
     def create_field(
         self,
@@ -216,35 +241,66 @@ class SchemaDef(BaseModel):
         return "\n".join(
             [f"{sql_emitter().emit_sql()}" for sql_emitter in cls.sql_emitters]
         )
-    async def is_insert(self) -> bool:
-        for key in self.model_dump().keys():
-            if not hasattr(self, key):
-                return False
-        return True
-
-    async def save(self) -> bool:
-        if await self.is_insert():
-            await self.db.insert(self.model_dump(exclude=await self.insert_excludes()))
-            return True
-        return True
-
-    def format_unique_constraints(self) -> str:
-        # return "NOT IMPLEMENTED YET"
-        return ", ".join(
-            [
-                f"{unique_constraint}: {getattr(self, unique_constraint, "Not Set")}"
-                for unique_constraint in self.db.unique_constraints()
-            ]
-        )
-
-    def update_excludes(self) -> list[str]:
-        return [
-            field_def
-            for field_def in self.model_fields
-            if not hasattr(field_def, "server_onupdate")
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.__class__.__name__} - {self.format_unique_constraints()}"
 
 """
+
+
+class CreateSchemaDef(SchemaDef):
+    schema_type: str = "create"
+    schema_base: BaseModel = CreateSchemaBase
+    router: SchemaRouter = PostRouter
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to Create a {klass.display_name}"
+
+
+class ListSchemaDef(SchemaDef):
+    schema_type: str = "list"
+    schema_base: BaseModel = ListSchemaBase
+    router: SchemaRouter = ListRouter
+    data_type: SchemaDataType = SchemaDataType.HTML
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to List {klass.display_name_plural}"
+
+
+class SelectSchemaDef(SchemaDef):
+    schema_type: str = "select"
+    schema_base: BaseModel = SelectSchemaBase
+    router: SchemaRouter = SelectRouter
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to Select a {klass.display_name}"
+
+
+class UpdateSchemaDef(SchemaDef):
+    schema_type: str = "update"
+    schema_base: BaseModel = UpdateSchemaBase
+    router: SchemaRouter = PatchRouter
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to Update a {klass.display_name}"
+
+
+class DeleteSchemaDef(SchemaDef):
+    schema_type: str = "delete"
+    schema_base: BaseModel = DeleteSchemaBase
+    router: SchemaRouter = DeleteRouter
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+    include_fields: list[str] = ["id"]
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to Delete a {klass.display_name}"
+
+
+class ImportSchemaDef(SchemaDef):
+    schema_type: str = "import"
+    schema_base: BaseModel = ImportSchemaBase
+    router: SchemaRouter = PutRouter
+    data_type: SchemaDataType = SchemaDataType.NATIVE
+
+    def format_doc(self, klass: DeclarativeBase) -> str:
+        return f"Schema to Import a {klass.display_name}"

@@ -2,26 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.enums import SchemaDataType
 from uno.schemas import (
-    SchemaDef,
-    ListSchemaBase,
-    SelectSchemaBase,
-    CreateSchemaBase,
-    UpdateSchemaBase,
-    DeleteSchemaBase,
+    CreateSchemaDef,
+    DeleteSchemaDef,
+    ImportSchemaDef,
+    ListSchemaDef,
+    SelectSchemaDef,
+    UpdateSchemaDef,
 )
 
-from uno.routers import Router
-
-
 user_schemas = [
-    SchemaDef(
-        name="UserCreate",
-        table_name="uno.user",
-        doc="SchemaDef to Create a new User into the database",
-        base=CreateSchemaBase,
-        data_type=SchemaDataType.NATIVE,
+    CreateSchemaDef(
         exclude_fields=[
             "id",
             "created_at",
@@ -31,68 +22,18 @@ user_schemas = [
             "deleted_at",
             "deleted_by_id",
         ],
-        router=Router(
-            path_suffix="",
-            path_objs="/user",
-            method="POST",
-            endpoint="post",
-            multiple=False,
-            include_in_schema=True,
-            summary="Create a new User",
-            description="Insert a new User into the database",
-            tags=["auth"],
-        ),
     ),
-    SchemaDef(
-        name="UserList",
-        table_name="uno.user",
-        doc="SchemaDef to list Users from the database",
-        base=ListSchemaBase,
-        data_type=SchemaDataType.HTML,
+    ListSchemaDef(
         include_fields=[
             "id",
             "email",
             "handle",
-            "full_name",
+            "full_schema_type",
             "is_active",
         ],
-        router=Router(
-            path_suffix="",
-            path_objs="/user",
-            method="GET",
-            endpoint="get",
-            multiple=True,
-            include_in_schema=True,
-            summary="Select list of Users",
-            description="Select a list of Users from the database",
-            tags=["auth"],
-        ),
     ),
-    SchemaDef(
-        name="UserSelect",
-        table_name="uno.user",
-        doc="SchemaDef to select a User from the database",
-        base=SelectSchemaBase,
-        data_type=SchemaDataType.NATIVE,
-        exclude_fields=[],
-        router=Router(
-            path_suffix="/{id}",
-            path_objs="/user",
-            method="GET",
-            endpoint="get_by_id",
-            multiple=False,
-            include_in_schema=True,
-            summary="Select a User",
-            description="Select a User from the database",
-            tags=["auth"],
-        ),
-    ),
-    SchemaDef(
-        name="UserUpdate",
-        table_name="uno.user",
-        doc="SchemaDef to update a User in the database",
-        base=UpdateSchemaBase,
-        data_type=SchemaDataType.NATIVE,
+    SelectSchemaDef(),
+    UpdateSchemaDef(
         exclude_fields=[
             "id",
             "created_at",
@@ -101,53 +42,7 @@ user_schemas = [
             "deleted_at",
             "deleted_by_id",
         ],
-        router=Router(
-            path_suffix="/{id}",
-            path_objs="/user",
-            method="PATCH",
-            endpoint="patch",
-            multiple=False,
-            include_in_schema=True,
-            summary="Update a User",
-            description="Update a User in the database",
-            tags=["auth"],
-        ),
     ),
-    SchemaDef(
-        name="UserDelete",
-        table_name="uno.user",
-        doc="SchemaDef to delete a User from the database",
-        base=DeleteSchemaBase,
-        data_type=SchemaDataType.NATIVE,
-        include_fields=["id"],
-        router=Router(
-            path_suffix="/{id}",
-            path_objs="/user",
-            method="DELETE",
-            endpoint="delete",
-            multiple=False,
-            include_in_schema=True,
-            summary="Delete a User",
-            description="Delete a User from the database",
-            tags=["auth"],
-        ),
-    ),
-    SchemaDef(
-        name="UserImport",
-        table_name="uno.user",
-        doc="SchemaDef to import a User into the database",
-        base=DeleteSchemaBase,
-        data_type=SchemaDataType.NATIVE,
-        router=Router(
-            path_suffix="/{id}",
-            path_objs="/user",
-            method="PUT",
-            endpoint="put",
-            multiple=False,
-            include_in_schema=True,
-            summary="Import a User",
-            description="Import a User into the database",
-            tags=["auth"],
-        ),
-    ),
+    DeleteSchemaDef(),
+    ImportSchemaDef(),
 ]
