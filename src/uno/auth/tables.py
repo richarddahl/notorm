@@ -46,7 +46,7 @@ from uno.auth.rls_sql_emitters import (
     TenantRLSSQL,
 )
 from uno.auth.enums import TenantType
-from uno.auth.schemas import user_schemas
+from uno.auth.schemas import user_schema_defs
 from uno.auth.graphs import tenant_node, tenant_edges, user_node, user_edges, group_node
 
 
@@ -125,7 +125,7 @@ class User(Base, DBObjectPKMixin):
         InsertDBObjectFunctionSQL,
         RecordVersionAuditSQL,
     ]
-    schema_defs = user_schemas
+    schema_defs = user_schema_defs
 
     graph_node = user_node
     graph_edges = user_edges

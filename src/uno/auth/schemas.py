@@ -11,7 +11,7 @@ from uno.schemas import (
     UpdateSchemaDef,
 )
 
-user_schemas = [
+user_schema_defs = [
     CreateSchemaDef(
         exclude_fields=[
             "id",

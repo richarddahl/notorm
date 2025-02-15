@@ -8,7 +8,6 @@ from enum import Enum
 from decimal import Decimal
 
 from typing import AsyncIterator, Annotated, ClassVar
-from fastapi import FastAPI
 
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import registry, DeclarativeBase
@@ -30,6 +29,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
     AsyncAttrs,
 )
+
+from pydantic import BaseModel
+
+from fastapi import FastAPI
 
 from uno.schemas import SchemaDef
 from uno.sql_emitters import SQLEmitter
@@ -114,11 +117,17 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     # schema attributes
     schema_defs: ClassVar[list[SchemaDef]] = []
+    create_schema: ClassVar[BaseModel] = None
+    list_schema: ClassVar[BaseModel] = None
+    select_schema: ClassVar[BaseModel] = None
+    update_schema: ClassVar[BaseModel] = None
+    delete_schema: ClassVar[BaseModel] = None
+    import_schema: ClassVar[BaseModel] = None
 
     @classmethod
-    def create_schemas(cls, app: FastAPI) -> None:
+    def set_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
-            schema_def.create_schema(cls, app)
+            schema_def.init_schema(cls, app)
 
     @classmethod
     def create_properties(cls) -> None:

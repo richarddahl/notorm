@@ -43,7 +43,7 @@ class SchemaRouter(BaseModel):
             endpoint=getattr(self, self.endpoint),
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=self.tags,
+            tags=[self.klass.__module__.split(".")[1]],
             summary=self.summary,
             description=self.description,
         )

@@ -137,7 +137,7 @@ class SchemaDef(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    def create_schema(self, klass: DeclarativeBase, app: FastAPI) -> Type[BaseModel]:
+    def init_schema(self, klass: DeclarativeBase, app: FastAPI) -> Type[BaseModel]:
         if self.exclude_fields and self.include_fields:
             raise SchemaConfigError(
                 "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
@@ -156,11 +156,7 @@ class SchemaDef(BaseModel):
             **self.suss_fields(klass.__table__),
         )
         self.router(klass=klass).add_to_app(schema, app)
-        setattr(
-            klass,
-            schema_name,
-            schema,
-        )
+        self.set_schema(klass, schema)
 
     def create_field(
         self,
@@ -254,6 +250,9 @@ class CreateSchemaDef(SchemaDef):
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Create a {klass.display_name}"
 
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.create_schema = schema
+
 
 class ListSchemaDef(SchemaDef):
     schema_type: str = "list"
@@ -263,6 +262,9 @@ class ListSchemaDef(SchemaDef):
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to List {klass.display_name_plural}"
+
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.list_schema = schema
 
 
 class SelectSchemaDef(SchemaDef):
@@ -274,6 +276,9 @@ class SelectSchemaDef(SchemaDef):
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Select a {klass.display_name}"
 
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.select_schema = schema
+
 
 class UpdateSchemaDef(SchemaDef):
     schema_type: str = "update"
@@ -283,6 +288,9 @@ class UpdateSchemaDef(SchemaDef):
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Update a {klass.display_name}"
+
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.update_schema = schema
 
 
 class DeleteSchemaDef(SchemaDef):
@@ -295,6 +303,9 @@ class DeleteSchemaDef(SchemaDef):
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Delete a {klass.display_name}"
 
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.delete_schema = schema
+
 
 class ImportSchemaDef(SchemaDef):
     schema_type: str = "import"
@@ -304,3 +315,6 @@ class ImportSchemaDef(SchemaDef):
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Import a {klass.display_name}"
+
+    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        klass.import_schema = schema

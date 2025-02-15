@@ -66,5 +66,6 @@ async def app_base(
     )
 
 
-auth_tables.User.create_schemas(app)
+auth_tables.User.set_schemas(app)
+
 # auth_tables.Tenant.create_schemas(app)
