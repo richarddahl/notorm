@@ -302,9 +302,11 @@ class Attribute(Base):
         back_populates="attributes"
     )
     object_values: Mapped[Optional[list["RelatedObject"]]] = relationship(
+        "RelatedObject",
         back_populates="attribute_values",
         secondary=AttributeObjectValue.__table__,
-        foreign_keys=[AttributeObjectValue.related_object_id],
+        primaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
+        secondaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
     )
     RelatedObject.attribute_values = relationship(
         "Attribute",
