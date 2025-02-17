@@ -2,26 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphEdgeDef
 
 
-workflow_node = GraphNode(
-    table_name="workflow",
-    label="Workflow",
-)
+workflow_edge_defs = []
 
-workflow_edges = []
 
-workflow_event_node = GraphNode(
-    table_name="workflow_event",
-    label="WorkflowEvent",
-)
+workflow_event_edge_defs = []
 
-workflow_event_edges = []
 
-workflow_record_node = GraphNode(
-    table_name="workflow_record",
-    label="WorkflowRecord",
-)
-
-workflow_record_edges = []
+workflow_record_edge_defs = []

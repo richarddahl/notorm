@@ -6,7 +6,7 @@ import textwrap
 
 from dataclasses import dataclass
 
-from uno.sql_emitters import SQLEmitter
+from uno.db.sql_emitters import SQLEmitter
 from uno.config import settings
 
 

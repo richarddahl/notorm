@@ -16,23 +16,24 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
-from uno.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
-from uno.obj.sql_emitters import (
+from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.mixins import BaseFieldMixin
+from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
+from uno.glbl.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertDBObjectFunctionSQL,
 )
 from uno.msg.enums import MessageImportance
-from uno.msg.graphs import message_node, message_edges
+from uno.msg.graphs import message_edge_defs
 
 
-class Message(Base, DBObjectPKMixin, BaseFieldMixin):
+class Message(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "message"
     __table_args__ = {
         "schema": "uno",
         "comment": "Messages are used to communicate between users",
     }
+    __mapper_args__ = {"polymorphic_identity": "message"}
+
     display_name = "Message"
     display_name_plural = "Messages"
 
@@ -40,13 +41,14 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
         AlterGrantSQL,
         RecordVersionAuditSQL,
         InsertObjectTypeRecordSQL,
-        InsertDBObjectFunctionSQL,
     ]
 
-    graph_node = message_node
-    graph_edges = message_edges
+    graph_edge_defs = message_edge_defs
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     sender_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
@@ -72,19 +74,19 @@ class Message(Base, DBObjectPKMixin, BaseFieldMixin):
     )
 
     # Relationships
-    sender: Mapped["User"] = relationship(
-        back_populates="sent_messages",
-    )
-    parent: Mapped["Message"] = relationship(
-        back_populates="children",
-    )
-    children: Mapped["Message"] = relationship(
-        back_populates="parent",
-    )
-    addressed_to: Mapped["User"] = relationship(
-        back_populates="addressed_messages",
-        secondary="uno.message__addressed_to",
-    )
+    # sender: Mapped["User"] = relationship(
+    #    back_populates="sent_messages",
+    # )
+    # parent: Mapped["Message"] = relationship(
+    #    back_populates="children",
+    # )
+    # children: Mapped["Message"] = relationship(
+    #    back_populates="parent",
+    # )
+    # addressed_to: Mapped["User"] = relationship(
+    #    back_populates="addressed_messages",
+    #    secondary="uno.message__addressed_to",
+    # )
 
 
 class MessageAddressedTo(Base):
@@ -133,6 +135,7 @@ class MessageCopiedTo(Base):
     display_name_plural = "Messages Copied To"
 
     sql_emitters = []
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -158,16 +161,17 @@ class MessageCopiedTo(Base):
     # Relationships
 
 
-class MessageDBObject(Base):
+class MessageRelatedObject(Base):
     __tablename__ = "message__dbobject"
     __table_args__ = {
         "schema": "uno",
-        "comment": "Messages to DBObjects",
+        "comment": "Messages to RelatedObjects",
     }
-    display_name = "Message DBObject"
-    display_name_plural = "Message DBObjects"
+    display_name = "Message RelatedObject"
+    display_name_plural = "Message RelatedObjects"
 
     sql_emitters = []
+    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -177,10 +181,10 @@ class MessageDBObject(Base):
         nullable=False,
         info={"edge": "IS_COMMUNICATING_ABOUT"},
     )
-    db_object_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        nullable=False,
-        info={"edge": "IS_COMMUNICATED_VIA"},
-    )
+    # related_object_id: Mapped[str_26] = mapped_column(
+    #    ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+    #    index=True,
+    #    primary_key=True,
+    #    nullable=False,
+    #    info={"edge": "IS_COMMUNICATED_VIA"},
+    # )

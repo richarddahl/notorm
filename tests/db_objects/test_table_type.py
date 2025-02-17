@@ -5,9 +5,9 @@
 from sqlalchemy import inspect, Integer
 from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 
-from uno.obj.tables import ObjectType
+# from uno.obj.tables import ObjectType
 
-from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
+# from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
 from tests.conftest import (
     print_indices,

@@ -11,9 +11,9 @@ from decimal import Decimal
 from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     UniqueConstraint,
-    Identity,
     text,
 )
 
@@ -23,13 +23,9 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
-from uno.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
-from uno.obj.sql_emitters import (
-    InsertObjectTypeRecordSQL,
-    InsertDBObjectFunctionSQL,
-)
+from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.mixins import BaseFieldMixin
+from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 
 from uno.fltr.enums import (
     FilterType,
@@ -39,191 +35,13 @@ from uno.fltr.enums import (
     Lookup,
 )
 
-'''
-class Node(Base):
-    __tablename__ = "node"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "A node in a graph, representing a table in the relational db.",
-        },
-    )
-    display_name = "Node"
-    display_name_plural = "Nodes"
-
-    sql_emitters = []
-
-    object_type_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The object type of the node.",
-    )
-    accessor: Mapped[str_255] = mapped_column(
-        doc="The relational accessor for the node.",
-    )
-    label: Mapped[str_255] = mapped_column(
-        unique=True,
-        index=True,
-        doc="The Graph label of the node.",
-    )
-
-
-class Edge(Base):
-    __tablename__ = "edge"
-    __table_args__ = (
-        UniqueConstraint(
-            "start_node_label",
-            "label",
-            "destination_table_name",
-            name="uq_start_node_label_label_destination_table_name",
-        ),
-        Index(
-            "ix_start_node_label_label_destination_table_name",
-            "start_node_label",
-            "label",
-            "destination_table_name",
-        ),
-        {
-            "schema": "uno",
-            "comment": "An edge in a graph, representing a relationship between two tables in the relational db.",
-        },
-    )
-    display_name = "Edge"
-    display_name_plural = "Edges"
-
-    sql_emitters = []
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the node.",
-    )
-    # object_type_id: Mapped[int] = mapped_column(
-    #    ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-    #    index=True,
-    #    doc="The object type of the node.",
-    # )
-    start_node_label: Mapped[str_255] = mapped_column(
-        ForeignKey("uno.node.label", ondelete="CASCADE"),
-        index=True,
-        doc="The object type of the start node.",
-    )
-    label: Mapped[str_255] = mapped_column(
-        index=True,
-        doc="The Graph label of the edge.",
-    )
-    destination_table_name: Mapped[str_255] = mapped_column(
-        ForeignKey("uno.node.label", ondelete="CASCADE"),
-        index=True,
-        doc="The object type of the end node.",
-    )
-    accessor: Mapped[str] = mapped_column(
-        doc="The relational accessor for the edge.",
-    )
-
-
-class Property(Base):
-    __tablename__ = "property"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "A property of a node or an edge in a graph.",
-        },
-    )
-    display_name = "Property"
-    display_name_plural = "Properties"
-
-    sql_emitters = []
-
-    id: Mapped[int] = mapped_column(
-        Identity(),
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the node.",
-    )
-    node_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("uno.node.object_type_id", ondelete="CASCADE"),
-        index=True,
-        doc="The node associated with the property.",
-    )
-    edge_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("uno.edge.id", ondelete="CASCADE"),
-        index=True,
-        doc="The edge associated with the property.",
-    )
-    accessor: Mapped[str] = mapped_column(
-        doc="The relational accessor for the property.",
-    )
-    name: Mapped[str_255] = mapped_column(
-        index=True,
-        doc="The Graph label of the Property.",
-    )
-    data_type: Mapped[str_26] = mapped_column(
-        doc="The data type of the property.",
-    )
-
-
-class Path(Base):
-    __tablename__ = "path"
-    __table_args__ = (
-        UniqueConstraint(
-            "start_edge_id",
-            "end_edge_id",
-            name="uq_start_edge_id_end_edge_id",
-        ),
-        # CheckConstraint(
-        #    textwrap.dedent(
-        #        """
-        #        parent_path_id IS NOT NULL AND start_edge_id = path.parent_path_id.end_edge_id
-        #        """
-        #    ),
-        #    name="ck_start_edge_id_end_edge_id",
-        # ),
-        {
-            "schema": "uno",
-            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
-        },
-    )
-    display_name = "Path"
-    display_name_plural = "Paths"
-    # include_in_graph = False
-
-    sql_emitters = []
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the node.",
-    )
-    start_edge_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.edge.id", ondelete="CASCADE"),
-        index=True,
-        doc="The start edge of the path.",
-    )
-    end_edge_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.edge.id", ondelete="CASCADE"),
-        index=True,
-        doc="The end edge of the path.",
-    )
-    parent_path_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("uno.path.id", ondelete="CASCADE"),
-        index=True,
-        doc="The parent path of the path.",
-    )
-'''
-
 
 class Filter(Base):
     __tablename__ = "filter"
     __table_args__ = (
         UniqueConstraint(
             "table_name",
-            "label",
+            "name",
             "destination_table_name",
             name="uq_table_name_label_destination_table_name",
         ),
@@ -236,6 +54,8 @@ class Filter(Base):
     display_name_plural = "Filters"
 
     sql_emitters = []
+
+    include_in_graph = False
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -269,9 +89,9 @@ class Filter(Base):
         index=True,
         doc="The destination table name of the filter.",
     )
-    label: Mapped[str_255] = mapped_column(
+    name: Mapped[str_255] = mapped_column(
         index=True,
-        doc="The GraphEdge or GraphProperty label of the filter.",
+        doc="The GraphEdgeDef or GraphProperty name of the filter.",
     )
     accessor: Mapped[str_255] = mapped_column(
         doc="The relational accessor for the filter.",
@@ -301,7 +121,7 @@ class Filter(Base):
     """
 
 
-class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
+class FilterValue(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
@@ -313,7 +133,7 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
             "boolean_value",
             "date_value",
             "decimal_value",
-            "object_value_id",
+            "related_object_value_id",
             "string_value",
             "text_value",
             "time_value",
@@ -341,17 +161,31 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
             """,
             name="ck_filtervalue",
         ),
+        ForeignKeyConstraint(
+            ["related_object_value_id"],
+            ["uno.related_object.id"],
+            ondelete="CASCADE",
+        ),
         {
             "comment": "User definable values for use in queries.",
             "schema": "uno",
         },
     )
+    __mapper_args__ = {
+        "polymorphic_identity": "filter_value",
+        "inherit_condition": id == RelatedObjectBase.id,
+    }
+
     display_name = "Filter Value"
     display_name_plural = "Filter Values"
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
+    include_in_graph = False
 
     # Columns
+    id: Mapped[int] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     filter_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.filter.id", ondelete="CASCADE"),
         index=True,
@@ -387,27 +221,30 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
     time_value: Mapped[Optional[datetime.time]] = mapped_column()
     timestamp_value: Mapped[Optional[datetime.datetime]] = mapped_column()
     string_value: Mapped[Optional[str_255]] = mapped_column()
-    object_value_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+    related_object_value_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey(
+            "uno.related_object.id",
+            ondelete="CASCADE",
+        ),
         index=True,
         nullable=True,
         info={"edge": "HAS_OBJECT_VALUE"},
     )
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship(
+    # tenant: Mapped["Tenant"] = relationship(
+    #    viewonly=True,
+    #    doc="The tenant associated with the filter value.",
+    # )
+    related_object: Mapped["RelatedObject"] = relationship(
         viewonly=True,
-        doc="The tenant associated with the filter value.",
+        back_populates="filtervalue",
+        foreign_keys=[id],
+        doc="Object value",
     )
     """
     fields: Mapped["Field"] = relationship(back_populates="filtervalues")
-    # db_object: Mapped["DBObject"] = relationship(
-    #    viewonly=True,
-    #    back_populates="filtervalue",
-    #    foreign_keys=[object_value_id],
-    #    doc="Object value",
-    # )
-    object_value: Mapped["DBObject"] = relationship(
+    object_value: Mapped["RelatedObject"] = relationship(
         back_populates="filter_object_values",
         foreign_keys=[object_value_id],
         doc="Object value",
@@ -415,7 +252,7 @@ class FilterValue(Base, DBObjectPKMixin, BaseFieldMixin):
     """
 
 
-class Query(Base, DBObjectPKMixin, BaseFieldMixin):
+class Query(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "query"
     __table_args__ = (
         {
@@ -424,14 +261,18 @@ class Query(Base, DBObjectPKMixin, BaseFieldMixin):
             "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "query"}
+
     display_name = "Query"
     display_name_plural = "Queries"
-    # #include_in_graph = False
+    include_in_graph = False
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
     # Columns
-
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
     queries_object_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
@@ -474,17 +315,15 @@ class Query(Base, DBObjectPKMixin, BaseFieldMixin):
     )
 
     # Relationships
-    """
     query_filtervalue: Mapped[list["QueryFilterValue"]] = relationship(
         back_populates="query"
     )
     query_sub_query: Mapped[list["QuerySubquery"]] = relationship(
         back_populates="query"
     )
-    """
 
 
-class QueryFilterValue(Base):
+class QueryFilterValue(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "query__filter_value"
     __table_args__ = (
         Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
@@ -496,11 +335,14 @@ class QueryFilterValue(Base):
     )
     display_name = "Query Filter Value"
     display_name_plural = "Query Filter Values"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     query_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.query.id", ondelete="CASCADE"),
         index=True,
@@ -515,15 +357,11 @@ class QueryFilterValue(Base):
     )
 
     # Relationships
-    """
-    query: Mapped[Query] = relationship(back_populates="query_filtervalue")
-    filtervalue: Mapped[FilterValue] = relationship(
-        back_populates="query_filtervalue"
-    )
-    """
+    # query: Mapped[Query] = relationship(back_populates="query_filtervalue")
+    # filter_value: Mapped[FilterValue] = relationship(back_populates="query_filtervalue")
 
 
-class QuerySubquery(Base):
+class QuerySubquery(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "query__subquery"
     __table_args__ = (
         Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
@@ -533,13 +371,18 @@ class QuerySubquery(Base):
             "info": {"rls_policy": False, "node": False},
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "query__subquery"}
+
     display_name = "Query Subquery"
     display_name_plural = "Query Subqueries"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     query_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.query.id", ondelete="CASCADE"),
         index=True,
@@ -556,7 +399,5 @@ class QuerySubquery(Base):
     )
 
     # Relationships
-    """
     query: Mapped["Query"] = relationship(back_populates="query_sub_query")
     subquery: Mapped["Query"] = relationship(back_populates="query_sub_query")
-    """

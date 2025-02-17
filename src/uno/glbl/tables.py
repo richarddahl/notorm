@@ -10,19 +10,17 @@ from sqlalchemy import UniqueConstraint, ForeignKey, func, Identity
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
-from uno.sql_emitters import AlterGrantSQL
+from uno.db.sql_emitters import AlterGrantSQL
 
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
 
-from uno.obj.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
-from uno.obj.graphs import (
-    object_type_node,
-    object_type_edges,
-    db_object_node,
-    db_object_edges,
-    attachment_node,
-    attachment_edges,
+from uno.glbl.sql_emitters import InsertPermissionSQL, InsertObjectTypeRecordSQL
+from uno.glbl.graphs import (
+    object_type_edge_defs,
+    related_object_edge_defs,
+    attachment_edge_defs,
 )
+from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 
 
 class ObjectType(Base):
@@ -38,7 +36,6 @@ class ObjectType(Base):
         {
             "schema": "uno",
             "comment": "Table Types identify the tables in the database, similar to contenttypes in Django",
-            "info": {"rls_policy": "superuser"},
         },
     )
     display_name = "Table Type"
@@ -50,8 +47,7 @@ class ObjectType(Base):
         AlterGrantSQL,
     ]
 
-    graph_node = object_type_node
-    graph_edges = object_type_edges
+    graph_edge_defs = object_type_edge_defs
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -64,9 +60,13 @@ class ObjectType(Base):
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
 
     # relationships
-    db_objects: Mapped[List["DBObject"]] = relationship(back_populates="object_type")
+    related_objects: Mapped[List["RelatedObject"]] = relationship(
+        back_populates="object_type"
+    )
     described_attribute_types: Mapped[List["AttributeType"]] = relationship(
-        back_populates="describes"
+        back_populates="describes",
+        secondary="uno.attribute_type__object_type",
+        secondaryjoin="AttributeType.parent_id == ObjectType.id",
     )
     value_type_attribute_types: Mapped[List["AttributeType"]] = relationship(
         back_populates="value_types"
@@ -76,58 +76,7 @@ class ObjectType(Base):
         return f"{self.schema_name}.{self.table_name}"
 
 
-class DBObject(Base):
-    """DB Objects are used for the pk of many objects in the database,
-    allowing for a single point of reference for attributes, queries, workflows, and reports
-    """
-
-    __tablename__ = "db_object"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": textwrap.dedent(
-            """
-            DB Objects are used for the pk of many objects in the database,
-            allowing for a single point of reference for attributes, queries, workflows, and reports
-            """
-        ),
-    }
-    display_name = "DB Object"
-    display_name_plural = "DB Objects"
-
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        AlterGrantSQL,
-    ]
-
-    graph_node = db_object_node
-    graph_edges = db_object_edges
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        doc="Primary Key",
-        index=True,
-    )
-    object_type_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        index=True,
-        info={"edge": "HAS_OBJECT_TYPE"},
-    )
-
-    # relationships
-    object_type: Mapped[ObjectType] = relationship(back_populates="db_objects")
-    attributes: Mapped[List["Attribute"]] = relationship(
-        back_populates="db_object", secondary="uno.attribute__object_value"
-    )
-    attachments: Mapped[List["Attachment"]] = relationship(
-        back_populates="db_objects", secondary="uno.attribute__object_value"
-    )
-
-    def __str__(self) -> str:
-        return f"{self.object_type_id}"
-
-
-class Attachment(Base):
+class Attachment(Base, RelatedObjectPKMixin, BaseFieldMixin):
     __tablename__ = "attachment"
     __table_args__ = {
         "schema": "uno",
@@ -138,8 +87,7 @@ class Attachment(Base):
 
     sql_emitters = [InsertObjectTypeRecordSQL]
 
-    graph_node = attachment_node
-    graph_edges = attachment_edges
+    graph_edge_defs = attachment_edge_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -154,16 +102,17 @@ class Attachment(Base):
     # Relationships
 
 
-class AttachmentDBObject(Base):
-    __tablename__ = "attachment__db_object"
+class AttachmentRelatedObject(Base, RelatedObjectPKMixin):
+    __tablename__ = "attachment__related_object"
     __table_args__ = {
         "schema": "uno",
-        "comment": "Attachments to DBObjects",
+        "comment": "Attachments to RelatedObjects",
     }
-    display_name = "Attachment DBObject"
-    display_name_plural = "Attachment DBObjects"
+    display_name = "Attachment RelatedObject"
+    display_name_plural = "Attachment RelatedObjects"
 
     sql_emitters = []
+    include_in_graph = False
 
     # Columns
     attachment_id: Mapped[str_26] = mapped_column(
@@ -173,8 +122,8 @@ class AttachmentDBObject(Base):
         nullable=False,
         info={"edge": "WAS_ATTACHED_TO"},
     )
-    db_object_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+    related_object_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
         index=True,
         primary_key=True,
         nullable=False,

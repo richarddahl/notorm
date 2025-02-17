@@ -27,7 +27,7 @@ from uno.config import settings
 
 # for module in json.loads(settings.INSTALLED_APPS):
 #    importlib.import_module(f"{module}.tables")
-import uno.obj.tables as objs_tables
+# import uno.obj.tables as objs_tables
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
 import uno.msg.tables as comms_tables
@@ -74,7 +74,7 @@ class DBManager:
             for base in Base.registry.mappers:
                 # Emit the SQL for the node definition
                 if base.class_.graph_node:
-                    base.class_.create_properties()
+                    base.class_.set_properties()
                     for prop in base.class_.graph_properties:
                         conn.execute(text(prop.emit_sql()))
                     conn.execute(text(base.class_.graph_node.emit_sql()))

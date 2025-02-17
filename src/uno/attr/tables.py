@@ -11,28 +11,22 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
-from uno.sql_emitters import RecordVersionAuditSQL
+from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.mixins import BaseFieldMixin
+from uno.db.sql_emitters import RecordVersionAuditSQL
 
-from uno.obj.tables import DBObject
-from uno.obj.sql_emitters import (
+from uno.glbl.sql_emitters import (
     InsertObjectTypeRecordSQL,
-    InsertDBObjectFunctionSQL,
+    InsertRelatedObjectFunctionSQL,
 )
 
 from uno.auth.rls_sql_emitters import RLSSQL
 from uno.fltr.tables import Query
 
-from uno.attr.graphs import (
-    attribute_type_node,
-    attribute_type_edges,
-    attribute_value_node,
-    attribute_node,
-)
+from uno.attr.graphs import attribute_type_edge_defs
 
 
-class AttributeType(Base, DBObjectPKMixin, BaseFieldMixin):
+class AttributeType(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "attribute_type"
     __table_args__ = (
         {
@@ -40,18 +34,22 @@ class AttributeType(Base, DBObjectPKMixin, BaseFieldMixin):
             "comment": "Defines the type of attribute that can be associated with an object",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute_type"}
+
     display_name = "Attribute Type"
     display_name_plural = "Attribute Types"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertDBObjectFunctionSQL,
+        InsertRelatedObjectFunctionSQL,
     ]
 
-    graph_node = attribute_type_node
-    graph_edges = attribute_type_edges
+    graph_edge_defs = attribute_type_edge_defs
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     name: Mapped[str_255] = mapped_column(unique=True)
     text: Mapped[str] = mapped_column()
     parent_id: Mapped[Optional[str_26]] = mapped_column(
@@ -62,7 +60,6 @@ class AttributeType(Base, DBObjectPKMixin, BaseFieldMixin):
     initial_comment: Mapped[str] = mapped_column()
 
     # Relationships
-    obj: Mapped[DBObject] = relationship(back_populates="attribute_types")
     parent: Mapped["AttributeType"] = relationship(
         remote_side=[id], back_populates="children"
     )
@@ -75,7 +72,7 @@ class AttributeType(Base, DBObjectPKMixin, BaseFieldMixin):
     )
 
 
-class AttributeTypeAppliesTo(Base):
+class AttributeTypeAppliesTo(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "attribute_type__applies_to"
     __table_args__ = (
         {
@@ -83,12 +80,17 @@ class AttributeTypeAppliesTo(Base):
             "comment": "Defines the type of database objects to which an attribute is applied",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute_type__applies_to"}
+
     display_name = "Attribute Type Applies To"
     display_name_plural = "Attribute Type Applies To"
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
         primary_key=True,
@@ -111,7 +113,7 @@ class AttributeTypeAppliesTo(Base):
     )
 
 
-class AttributeTypeValueType(Base, BaseFieldMixin):
+class AttributeTypeValueType(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "attribute_type__value_type"
     __table_args__ = (
         {
@@ -119,13 +121,19 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
             "comment": "Defines the type of database objects that provide the values for an attribute",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute_type__value_type"}
+
     display_name = "Attribute Type Value Type"
     display_name_plural = "Attribute Type Value Types"
-    # include_in_graph = False
+
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
         primary_key=True,
@@ -148,32 +156,7 @@ class AttributeTypeValueType(Base, BaseFieldMixin):
     )
 
 
-class AttributeValue(Base, DBObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "attribute_value"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Defines the values available for attribute",
-        },
-    )
-    display_name = "Attribute Value"
-    display_name_plural = "Attribute Values"
-
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertDBObjectFunctionSQL,
-    ]
-
-    graph_node = attribute_value_node
-
-    # Columns
-    text: Mapped[str] = mapped_column()
-
-    # Relationships
-    obj: Mapped[DBObject] = relationship(back_populates="attribute_values")
-
-
-class Attribute(Base, DBObjectPKMixin, BaseFieldMixin):
+class Attribute(Base):
     __tablename__ = "attribute"
     __table_args__ = (
         {
@@ -181,17 +164,20 @@ class Attribute(Base, DBObjectPKMixin, BaseFieldMixin):
             "comment": "Attributes define characteristics of objects",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute"}
+
     display_name = "Attribute"
     display_name_plural = "Attributes"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
-        InsertDBObjectFunctionSQL,
+        InsertRelatedObjectFunctionSQL,
     ]
 
-    graph_node = attribute_node
-
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
         index=True,
@@ -201,13 +187,42 @@ class Attribute(Base, DBObjectPKMixin, BaseFieldMixin):
     follow_up_required: Mapped[bool] = mapped_column()
 
     # Relationships
-    obj: Mapped[DBObject] = relationship(back_populates="attribute_values")
     attribute_type: Mapped[AttributeType] = relationship(back_populates="attributes")
-    attribute_values: Mapped[Optional[list[AttributeValue]]] = relationship(
+    attribute_values: Mapped[Optional[list["AttributeValue"]]] = relationship(
         back_populates="attributes"
     )
-    object_values: Mapped[Optional[list[DBObject]]] = relationship(
+    object_values: Mapped[Optional[list["RelatedObject"]]] = relationship(
         back_populates="attributes"
+    )
+
+
+class AttributeValue(RelatedObjectBase, BaseFieldMixin):
+    __tablename__ = "attribute_value"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "Defines the values available for attribute",
+        },
+    )
+    __mapper_args__ = {"polymorphic_identity": "attribute_value"}
+
+    display_name = "Attribute Value"
+    display_name_plural = "Attribute Values"
+
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        InsertRelatedObjectFunctionSQL,
+    ]
+
+    # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
+    text: Mapped[str] = mapped_column()
+
+    # Relationships
+    attributes: Mapped[list[Attribute]] = relationship(
+        back_populates="attribute_values"
     )
 
 
@@ -219,13 +234,18 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
             "comment": "Association table between Attribute and AttributeValue",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute__attribute_value"}
+
     display_name = "Attribute Attribute Value"
     display_name_plural = "Attribute Attribute Values"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
         primary_key=True,
@@ -240,12 +260,12 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
     )
 
     # Relationships
-    attribute: Mapped[Attribute] = relationship(
-        back_populates="attribute_attribute_values",
-    )
-    attribute_value: Mapped[AttributeValue] = relationship(
-        back_populates="attribute_attribute_values",
-    )
+    # attribute: Mapped[Attribute] = relationship(
+    #    back_populates="attribute_attribute_values",
+    # )
+    # attribute_value: Mapped[AttributeValue] = relationship(
+    #    back_populates="attribute_attribute_values",
+    # )
 
 
 class AttributeObjectValue(Base, BaseFieldMixin):
@@ -256,30 +276,35 @@ class AttributeObjectValue(Base, BaseFieldMixin):
             "comment": "Association table between Attribute and Object Value (Meta)",
         },
     )
+    __mapper_args__ = {"polymorphic_identity": "attribute__object_value"}
+
     display_name = "Attribute Object Value"
     display_name_plural = "Attribute Object Values"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         info={"start_node": True},
     )
-    object_value_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        info={"end_node": True},
-    )
+    # object_value_id: Mapped[str_26] = mapped_column(
+    #    ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+    #    primary_key=True,
+    #    index=True,
+    #    info={"end_node": True},
+    # )
 
     # Relationships
-    attribute: Mapped[Attribute] = relationship(
-        back_populates="attribute_object_values",
-    )
-    object_value: Mapped[DBObject] = relationship(
-        back_populates="attribute_object_values",
-    )
+    # attribute: Mapped[Attribute] = relationship(
+    #    back_populates="attribute_object_values",
+    # )
+    # object_value: Mapped[RelatedObject] = relationship(
+    #    back_populates="attribute_object_values",
+    # )

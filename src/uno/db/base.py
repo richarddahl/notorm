@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import textwrap
+
 import datetime
 
 from enum import Enum
@@ -9,8 +11,8 @@ from decimal import Decimal
 
 from typing import AsyncIterator, Annotated, ClassVar
 
-from sqlalchemy import MetaData, create_engine
-from sqlalchemy.orm import registry, DeclarativeBase
+from sqlalchemy import MetaData, create_engine, ForeignKey
+from sqlalchemy.orm import registry, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import (
     BIGINT,
     TIMESTAMP,
@@ -34,9 +36,10 @@ from pydantic import BaseModel
 
 from fastapi import FastAPI
 
+from uno.db.sql_emitters import AlterGrantSQL, InsertObjectTypeRecordSQL
 from uno.schemas import SchemaDef
-from uno.sql_emitters import SQLEmitter
-from uno.graphs import GraphNode, GraphEdge, GraphProperty
+from uno.db.sql_emitters import SQLEmitter
+from uno.graphs import GraphNode, GraphEdgeDef, GraphEdge, GraphProperty
 from uno.utilities import convert_snake_to_title
 
 from uno.config import settings
@@ -109,8 +112,10 @@ class Base(AsyncAttrs, DeclarativeBase):
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Graph attributes
+    include_in_graph: ClassVar[bool] = True
     graph_node: ClassVar[GraphNode] = None
-    graph_edges: ClassVar[dict[str, GraphEdge]] = []
+    graph_edge_defs: ClassVar[list[GraphEdgeDef]] = []
+    graph_edges: ClassVar[dict[str, GraphEdge]] = {}
     graph_properties: ClassVar[dict[str, GraphProperty]] = []
     exclude_from_properties: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, dict[str, str]]] = {}
@@ -125,12 +130,22 @@ class Base(AsyncAttrs, DeclarativeBase):
     import_schema: ClassVar[BaseModel] = None
 
     @classmethod
+    def configure_base(cls, app: FastAPI) -> None:
+        cls.set_schemas(app)
+
+        if cls.include_in_graph:
+            GraphNode(klass=cls)
+
+        # cls.set_properties()
+        # cls.set_filters
+
+    @classmethod
     def set_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
             schema_def.init_schema(cls, app)
 
     @classmethod
-    def create_properties(cls) -> None:
+    def set_properties(cls) -> None:
         """
         Creates and assigns graph properties to the class.
 
@@ -158,7 +173,7 @@ class Base(AsyncAttrs, DeclarativeBase):
             cls.graph_properties.append(
                 GraphProperty(
                     table_name=cls.__table__.name,
-                    label=convert_snake_to_title(column.name),
+                    name=convert_snake_to_title(column.name),
                     accessor=column.name,
                     data_type=data_type,
                 )
@@ -178,7 +193,7 @@ class Base(AsyncAttrs, DeclarativeBase):
             - "table_name": The name of the table associated with the property.
             - "filter_type": Set to "PROPERTY".
             - "data_type": The data type of the property.
-            - "label": The label of the property.
+            - "name": The name of the property.
             - "accessor": The accessor for the property.
             - "lookups": The lookups for the property.
 
@@ -186,7 +201,7 @@ class Base(AsyncAttrs, DeclarativeBase):
             - "table_name": The name of the table associated with the edge.
             - "filter_type": Set to "EDGE".
             - "data_type": Set to "object".
-            - "label": The label of the edge.
+            - "name": The name of the edge.
             - "destination_table_name": The name of the destination table for the edge.
             - "accessor": The accessor for the edge.
             - "lookups": The lookups for the edge.
@@ -202,7 +217,7 @@ class Base(AsyncAttrs, DeclarativeBase):
                 # "table_name": property.table_name,
                 # "filter_type": "PROPERTY",
                 "data_type": property.data_type,
-                "label": property.label,
+                "name": property.name,
                 # "accessor": property.accessor,
                 "lookups": property.lookups,
             }
@@ -211,7 +226,7 @@ class Base(AsyncAttrs, DeclarativeBase):
                 # "table_name": edge.table_name,
                 # "filter_type": "EDGE",
                 "data_type": "object",
-                "label": edge.label,
+                "name": edge.name,
                 # "destination_table_name": edge.destination_table_name,
                 # "accessor": edge.accessor,
                 "lookups": edge.lookups,
@@ -234,3 +249,50 @@ class Base(AsyncAttrs, DeclarativeBase):
             ]
         )
         return sql
+
+
+class RelatedObjectBase(Base):
+    """
+    Base class for objects that are generically related to other objects.
+
+    Related Objects are used for the pk of many objects in the database,
+    allowing for a single point of reference for attributes, queries, workflows, and reports
+    """
+
+    __tablename__ = "related_object"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": textwrap.dedent(
+            """
+            DB Objects are used for the pk of many objects in the database,
+            allowing for a single point of reference for attributes, queries, workflows, and reports
+            """
+        ),
+    }
+    display_name = "DB Object"
+    display_name_plural = "DB Objects"
+
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        AlterGrantSQL,
+    ]
+
+    # graph_edge_defs = related_object_edge_defs
+
+    # Columns
+    id: Mapped[str_26] = mapped_column(
+        primary_key=True,
+        index=True,
+        doc="Primary Key",
+    )
+
+    # relationships
+    # attributes: Mapped[List["Attribute"]] = relationship(
+    #    back_populates="related_object", secondary="uno.attribute__object_value"
+    # )
+    # attachments: Mapped[List["Attachment"]] = relationship(
+    #    back_populates="related_objects", secondary="uno.attribute__object_value"
+    # )
+
+    def __str__(self) -> str:
+        return f"{self.object_type_id}"

@@ -9,6 +9,7 @@ from typing import Optional
 from sqlalchemy import (
     ForeignKey,
     Index,
+    Identity,
     text,
 )
 from sqlalchemy.dialects.postgresql import (
@@ -16,10 +17,10 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.mixins import BaseFieldMixin, DBObjectPKMixin
+from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.mixins import BaseFieldMixin
 
-from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
+# from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
 from uno.wkflw.enums import (
     WorkflowRecordStatus,
@@ -29,31 +30,32 @@ from uno.wkflw.enums import (
     WorkflowTrigger,
 )
 from uno.wkflw.graphs import (
-    workflow_node,
-    workflow_edges,
-    workflow_event_node,
-    workflow_event_edges,
-    workflow_record_node,
-    workflow_record_edges,
+    workflow_edge_defs,
+    workflow_event_edge_defs,
+    workflow_record_edge_defs,
 )
 
 
-class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
+class Workflow(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": "uno",
         "comment": "User-defined workflows",
         "info": {"rls_policy": "superuser", "in_graph": False},
     }
+    __mapper_args__ = {"polymorphic_identity": "workflow"}
+
     display_name = "Workflow"
     display_name_plural = "Workflows"
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
-    graph_node = workflow_node
-    graph_edges = workflow_edges
+    graph_edge_defs = workflow_edge_defs
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
@@ -101,6 +103,7 @@ class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
     record_required: Mapped[bool] = mapped_column(
         server_default=text("false"), doc="Indicats if a Workflow Record is required"
     )
+    """
     limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
             "uno.query.id",
@@ -128,6 +131,7 @@ class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
         index=True,
         # info={"edge": "IS_COMPLETED_BY_objectfunction"},
     )
+    """
     process_child_value: Mapped[bool] = mapped_column(
         server_default=text("true"),
         doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
@@ -146,21 +150,28 @@ class Workflow(Base, DBObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
+class WorkflowEvent(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": "uno",
         "comment": "Manually created or trigger created workflow activities",
     }
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow_event",
+        "inherit_condition": "uno.workflow_event.id = uno.related_object.id",
+    }
+
     display_name = "Workflow Event"
     display_name_plural = "Workflow Events"
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
-    graph_node = workflow_event_node
-    graph_edges = workflow_event_edges
+    graph_edge_defs = workflow_event_edge_defs
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow.id", ondelete="CASCADE"),
         index=True,
@@ -168,7 +179,7 @@ class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "IS_EVENT_FOR"},
     )
@@ -179,21 +190,25 @@ class WorkflowEvent(Base, DBObjectPKMixin, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowRecord(Base, DBObjectPKMixin, BaseFieldMixin):
+class WorkflowRecord(RelatedObjectBase, BaseFieldMixin):
     __tablename__ = "workflow_record"
     __table_args__ = {
         "schema": "uno",
         "comment": "Records of workflow events",
     }
+    __mapper_args__ = {"polymorphic_identity": "workflow_record"}
+
     display_name = "Workflow Record"
     display_name_plural = "Workflow Records"
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters = []
 
-    graph_node = workflow_record_node
-    graph_edges = workflow_record_edges
+    graph_edge_defs = workflow_record_edge_defs
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     workflowevent_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.workflow_event.id", ondelete="CASCADE"),
         index=True,
@@ -222,22 +237,24 @@ class WorkflowRecord(Base, DBObjectPKMixin, BaseFieldMixin):
     comment: Mapped[str] = mapped_column(
         doc="User defined or auto-generated comment on the workflow execution",
     )
+    """
     workflowrecord_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.db_object.id", ondelete="CASCADE"),
+        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
         index=True,
         info={"edge": "RECORDS_EXECUTION"},
     )
+    """
     # ForeignKeyConstraint(
     #    ["workflowrecord_id"],
-    #    ["uno.db_object.id"],
-    #    name="fk_workflowrecord_record_db_object_id",
+    #    ["uno.related_object.id"],
+    #    name="fk_workflowrecord_record_related_object_id",
     #    ondelete="CASCADE",
     # )
 
     # Relationships
 
 
-class ObjectFunction(Base, DBObjectPKMixin, BaseFieldMixin):
+class ObjectFunction(Base):
     __tablename__ = "object_function"
     __table_args__ = {
         "schema": "uno",
@@ -246,19 +263,22 @@ class ObjectFunction(Base, DBObjectPKMixin, BaseFieldMixin):
     }
     display_name = "Object Function"
     display_name_plural = "Object Functions"
-    # include_in_graph = False
+    include_in_graph = False
 
     sql_emitters = []
 
     # Columns
+    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
 
-    label: Mapped[str] = mapped_column(doc="Label of the function")
+    name: Mapped[str] = mapped_column(doc="Label of the function")
     documentation: Mapped[Optional[str]] = mapped_column(
         doc="Documentation of the function"
     )
     name: Mapped[str] = mapped_column(doc="Name of the function")
+    """
     function_object_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.object_type.id", ondelete="CASCADE"),
         index=True,
     )
+    """
     # Relationships

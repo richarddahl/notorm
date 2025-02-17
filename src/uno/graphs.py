@@ -7,13 +7,13 @@ import textwrap
 from dataclasses import dataclass, field
 from datetime import datetime, date, time
 from decimal import Decimal
+from typing import Any
 
 
 from psycopg.sql import SQL, Identifier, Literal
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from sqlalchemy import Table
 
 from uno.fltr.enums import (
     DataType,
@@ -28,10 +28,25 @@ from uno.utilities import convert_snake_to_title
 ADMIN_ROLE = f"{settings.DB_NAME}_admin"
 
 
+class GraphEdgeDef(BaseModel):
+    name: str
+    destination_table_name: str
+    accessor: str
+    secondary_table_name: str = None
+
+
 class GraphBase(BaseModel):
-    label: str
-    table_name: str
-    schema_name: str = "uno"
+    klass: Any
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @computed_field
+    def table_name(self) -> str:
+        return self.klass.__tablename__
+
+    @computed_field
+    def schema_name(self) -> str:
+        return self.klass.__table__.schema
 
     def create_sql_trigger(
         self,
@@ -107,13 +122,13 @@ class GraphBase(BaseModel):
 class GraphProperty(GraphBase):
     # table_name: str <- from GraphBase
     # schema_name: str <- from GraphBase
-    # label: str <- from GraphBase
+    # name: str <- from GraphBase
     accessor: str
     data_type: str
 
     @computed_field
     def display(self) -> str:
-        return convert_snake_to_title(self.label)
+        return convert_snake_to_title(self.name)
 
     @computed_field
     def lookups(self) -> Lookup:
@@ -151,8 +166,8 @@ class GraphProperty(GraphBase):
                 """
                 DO $$
                 BEGIN
-                    INSERT INTO uno.filter(filter_type, data_type, table_name, label, accessor, lookups)
-                        VALUES ({filter_type}, {data_type}, {table_name}, {label}, {accessor}, {lookups});
+                    INSERT INTO uno.filter(filter_type, data_type, table_name, name, accessor, lookups)
+                        VALUES ({filter_type}, {data_type}, {table_name}, {name}, {accessor}, {lookups});
                 END $$;
                 """
             )
@@ -161,8 +176,8 @@ class GraphProperty(GraphBase):
                 filter_type=Literal("PROPERTY"),
                 data_type=Literal(self.data_type),
                 table_name=Literal(self.table_name),
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
+                name=Literal(self.name),
+                label_ident=Identifier(self.name),
                 accessor=Literal(self.accessor),
                 lookups=Literal(self.lookups),
             )
@@ -173,7 +188,7 @@ class GraphProperty(GraphBase):
 class GraphNode(GraphBase):
     # table_name: str <- from GraphBase
     # schema_name: str <- from GraphBase
-    # label: str <- from GraphBase
+    # name: str <- from GraphBase
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
@@ -213,16 +228,16 @@ class GraphNode(GraphBase):
             BEGIN
                 SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
-                WHERE name = {label}) THEN
-                    PERFORM ag_catalog.create_vlabel('graph', {label});
+                WHERE name = {name}) THEN
+                    PERFORM ag_catalog.create_vlabel('graph', {name});
                     EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
                 END IF;
             END $$;
             """
         ).format(
             admin_role=Identifier(ADMIN_ROLE),
-            label=Literal(self.label),
-            label_ident=Identifier(self.label),
+            name=Literal(self.name),
+            label_ident=Identifier(self.name),
             schema_name=Literal(self.schema_name),
             table_name=Literal(self.table_name),
         )
@@ -234,7 +249,7 @@ class GraphNode(GraphBase):
         when a new relational table record is inserted.
 
         The function constructs the SQL statements required to:
-        - Create a new node with the specified label and properties.
+        - Create a new node with the specified name and properties.
         - Create edges for the node if any are defined.
 
         Returns:
@@ -256,7 +271,7 @@ class GraphNode(GraphBase):
             f"""
             DECLARE 
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:{self.label} {{{prop_key_str}}})
+                        CREATE (v:{self.name} {{{prop_key_str}}})
                     $graph$) AS (a agtype);', {prop_val_str});
             BEGIN
                 EXECUTE _sql;
@@ -300,7 +315,7 @@ class GraphNode(GraphBase):
         function_string = f"""
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.label} {{id: %s}})
+                    MATCH (v:{self.name} {{id: %s}})
                     {prop_key_str}
                 $graph$) AS (a agtype);', quote_nullable(NEW.id){prop_val_str});
             BEGIN
@@ -329,7 +344,7 @@ class GraphNode(GraphBase):
         function_string = f"""
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.label} {{id: %s}})
+                    MATCH (v:{self.name} {{id: %s}})
                     DETACH DELETE v
                 $graph$) AS (a agtype);', quote_nullable(OLD.id));
             BEGIN
@@ -354,7 +369,7 @@ class GraphNode(GraphBase):
         This method creates a SQL function and trigger that deletes all corresponding
         vertices for a relation table when the table is truncated. The generated SQL
         function uses the `cypher` command to match and detach delete vertices with
-        the specified label.
+        the specified name.
 
         Returns:
             str: The SQL string to create the function and trigger.
@@ -362,7 +377,7 @@ class GraphNode(GraphBase):
         function_string = f"""
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.label})
+                    MATCH (v:{self.name})
                     DETACH DELETE v
                 $graph$) AS (a agtype);');
             BEGIN
@@ -386,15 +401,18 @@ class GraphNode(GraphBase):
 class GraphEdge(GraphBase):
     # table_name: str <- from GraphBase
     # schema_name: str <- from GraphBase
-    # label: str <- from GraphBase
+    # name: str <- from GraphBase
     destination_table_name: str
     accessor: str
     secondary_table_name: str = None
     lookups: list[Lookup] = related_lookups
+    # display: str <- computed_field
+    # properties: dict[str, GraphProperty] <- computed_field
+    # nullable: bool = False <- computed_field
 
     @computed_field
     def display(self) -> str:
-        return f"{convert_snake_to_title(self.label)} ({convert_snake_to_title(self.destination_table_name)})"
+        return f"{convert_snake_to_title(self.name)} ({convert_snake_to_title(self.destination_table_name)})"
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
@@ -411,7 +429,7 @@ class GraphEdge(GraphBase):
                 {
                     column.name: GraphProperty(
                         table_name=self.table_name,
-                        label=convert_snake_to_title(column.name),
+                        name=convert_snake_to_title(column.name),
                         accessor=column.name,
                         data_type=column.type.python_type.__name__,
                     )
@@ -431,13 +449,13 @@ class GraphEdge(GraphBase):
                 BEGIN
                     SET ROLE {admin_role};
                     IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label
-                        WHERE name = {label}) THEN
-                            PERFORM ag_catalog.create_elabel('graph', {label});
+                        WHERE name = {name}) THEN
+                            PERFORM ag_catalog.create_elabel('graph', {name});
                             CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                     END IF;
                 
-                    INSERT INTO uno.filter(filter_type, data_type, table_name, label, destination_table_name, accessor, lookups)
-                        VALUES ({filter_type}, {data_type}, {table_name}, {label}, {destination_table_name}, {accessor}, {lookups});
+                    INSERT INTO uno.filter(filter_type, data_type, table_name, name, destination_table_name, accessor, lookups)
+                        VALUES ({filter_type}, {data_type}, {table_name}, {name}, {destination_table_name}, {accessor}, {lookups});
                 END $$;
                 """
             )
@@ -446,9 +464,9 @@ class GraphEdge(GraphBase):
                 filter_type=Literal("EDGE"),
                 data_type=Literal("object"),
                 table_name=Literal(self.table_name),
-                label=Literal(self.label),
+                name=Literal(self.name),
                 destination_table_name=Literal(self.destination_table_name),
-                label_ident=Identifier(self.label),
+                label_ident=Identifier(self.name),
                 accessor=Literal(self.accessor),
                 lookups=Literal(self.lookups),
             )
@@ -462,7 +480,7 @@ class GraphEdge(GraphBase):
 
         The generated SQL uses the `cypher` function to match the start and end
         vertices by their IDs and creates a relationship between them with the
-        specified label and properties.
+        specified name and properties.
 
         Returns:
             str: The generated SQL string.
@@ -472,9 +490,9 @@ class GraphEdge(GraphBase):
         function_string = f"""
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.start_node.label} {{id: %s}})
-                    MATCH (w:{self.end_node.label} {{id: %s}})
-                    CREATE (v)-[e:{self.label} {{{prop_key_str}}}]->(w)
+                    MATCH (v:{self.start_node.name} {{id: %s}})
+                    MATCH (w:{self.end_node.name} {{id: %s}})
+                    CREATE (v)-[e:{self.name} {{{prop_key_str}}}]->(w)
                 $graph$) AS (a agtype);', quote_nullable(NEW.id), quote_nullable(NEW.id){prop_val_str});
             BEGIN
                 EXECUTE _sql;
@@ -507,11 +525,11 @@ class GraphEdge(GraphBase):
             )
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_node.label} {{id: %s}})
-                MATCH (w:{self.end_node.label} {{id: %s}})
-                MATCH (v)-[o:{self.label}] ->(w)
+                MATCH (v:{self.start_node.name} {{id: %s}})
+                MATCH (w:{self.end_node.name} {{id: %s}})
+                MATCH (v)-[o:{self.name}] ->(w)
                 DELETE o
-                CREATE (v)-[e:{self.label}] ->(w)
+                CREATE (v)-[e:{self.name}] ->(w)
                 {prop_key_str}
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type}{prop_val_str});
             """
@@ -540,9 +558,9 @@ class GraphEdge(GraphBase):
         """
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_node.label} {{id: %s}})
-                MATCH (w:{self.end_node.label} {{id: %s}})
-                MATCH (v)-[o:{self.label}] ->(w)
+                MATCH (v:{self.start_node.name} {{id: %s}})
+                MATCH (w:{self.end_node.name} {{id: %s}})
+                MATCH (v)-[o:{self.name}] ->(w)
                 DELETE o
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """
@@ -566,16 +584,16 @@ class GraphEdge(GraphBase):
         This method constructs a SQL string that uses the `cypher` function to
         match and delete a relationship between two vertices in a graph. The
         vertices and relationship are specified by the `start_node`,
-        `end_node`, and `label` attributes of the class instance.
+        `end_node`, and `name` attributes of the class instance.
 
         Returns:
             str: The formatted SQL command string.
         """
         function_string = f"""
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                MATCH (v:{self.start_node.label} {{id: %s}})
-                MATCH (w:{self.end_node.label} {{id: %s}})
-                MATCH (v)-[o:{self.label}] ->(w)
+                MATCH (v:{self.start_node.name} {{id: %s}})
+                MATCH (w:{self.end_node.name} {{id: %s}})
+                MATCH (v)-[o:{self.name}] ->(w)
                 DELETE o
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """

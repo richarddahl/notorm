@@ -4,7 +4,7 @@
 
 from psycopg.sql import SQL, Identifier, Literal
 
-from uno.sql_emitters import SQLEmitter
+from uno.db.sql_emitters import SQLEmitter
 from uno.config import settings
 
 

@@ -1,13 +1,16 @@
-from __future__ import annotations
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
 
 from typing import Any, Type
+from enum import Enum
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     create_model,
     model_validator,
-    computed_field,
+    field_validator,
 )
 from pydantic.fields import Field
 from pydantic_core import PydanticUndefined
@@ -17,7 +20,6 @@ from sqlalchemy.orm import DeclarativeBase
 
 from fastapi import FastAPI
 
-from uno.db.enums import SchemaDataType
 from uno.routers import (
     SchemaRouter,
     PostRouter,
@@ -127,13 +129,21 @@ class ImportSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class FKSchema(BaseModel):
+    primary_key: str
+    string_representation: str
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class SchemaDef(BaseModel):
     schema_type: str
     schema_base: BaseModel
     router: SchemaRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
+    data_type: str = "native"
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
+    schema_direction: str = "inbound"
 
     model_config = ConfigDict(extra="forbid")
 
@@ -153,7 +163,7 @@ class SchemaDef(BaseModel):
             __validators__=None,
             __cls_kwargs__=None,
             __slots__=None,
-            **self.suss_fields(klass.__table__),
+            **self.suss_fields(klass),
         )
         self.router(klass=klass).add_to_app(schema, app)
         self.set_schema(klass, schema)
@@ -161,23 +171,16 @@ class SchemaDef(BaseModel):
     def create_field(
         self,
         column: Column,
-        data_type: SchemaDataType = SchemaDataType.NATIVE,
+        klass: DeclarativeBase,
     ) -> tuple[Any, Any]:
         default = _Unset
         default_factory = _Unset
         title = _Unset
-        description = _Unset or column.help_text or column.name
+        description = _Unset or column.doc or column.name
         title = column.name.title()
-        if data_type is SchemaDataType.NATIVE:
-            try:
-                field_type = column.type.python_type
-            except NotImplementedError:
-                field_type = str
-        elif data_type is SchemaDataType.STRING:
-            field_type = str
-        elif data_type is SchemaDataType.HTML:
-            field_type = dict
         nullable = column.nullable
+        json_schema_extra = {}
+
         if column.server_default:
             default = None
         elif column.default:
@@ -190,38 +193,50 @@ class SchemaDef(BaseModel):
         else:
             default = ...
 
+        try:
+            column_type = column.type.python_type
+        except NotImplementedError:
+            column_type = str
+
+        if column.foreign_keys and self.schema_direction == "outbound":
+            json_schema_extra.update({"display": False})
+            if column.info.get("edge"):
+                if not isinstance(column.info["edge"], dict):
+                    return None
+                title = column.info["edge"].get("name")
+                accessor = column.info["edge"].get("relationship")
+
+                if not title or not accessor:
+                    raise SchemaFieldListError(
+                        f"Edge field {column.name} is missing a required attribute.",
+                        "MISSING_EDGE_FIELD_ATTRIBUTE",
+                    )
+                column_type = FKSchema
+
         field = Field(
             default=default,
             default_factory=default_factory,
             title=title,
             description=description,
+            json_schema_extra=json_schema_extra,
         )
-        if nullable:
-            return (field_type | None, field)
-        return (field_type, field)
 
-    def suss_fields(self, table: Table) -> dict[str, Any]:
-        if self.include_fields and self.exclude_fields:
-            raise SchemaFieldListError(
-                "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
-                "INCLUDE_EXCLUDE_FIELDS_CONFLICT",
-            )
+        if nullable:
+            return (column_type | None, field)
+        return (column_type, field)
+
+    def suss_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
-        for col in table.columns:  # type: ignore
-            column_name = col.name
-            if self.include_fields and column_name not in self.include_fields:
+        for col in klass.__table__.columns:  # type: ignore
+            if self.include_fields and col.name not in self.include_fields:
                 continue
-            if self.exclude_fields and column_name in self.exclude_fields:
+            if self.exclude_fields and col.name in self.exclude_fields:
                 continue
-            field = self.create_field(col, data_type=self.data_type)
-            if column_name not in fields:
-                fields[column_name] = field
-        # for name, config in cls.non_db_field_configs.items():
-        #    if name not in fields:
-        #        fields[name] = (
-        #            config.field_type,
-        #            Field(default=config.default, alias=config.alias),
-        #        )
+            field = self.create_field(col, klass)
+            if field is None:
+                continue
+            if col.name not in fields:
+                fields[col.name] = field
         return fields
 
 
@@ -245,10 +260,9 @@ class CreateSchemaDef(SchemaDef):
     schema_type: str = "create"
     schema_base: BaseModel = CreateSchemaBase
     router: SchemaRouter = PostRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to Create a {klass.display_name}"
+        return f"Create a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.create_schema = schema
@@ -258,10 +272,11 @@ class ListSchemaDef(SchemaDef):
     schema_type: str = "list"
     schema_base: BaseModel = ListSchemaBase
     router: SchemaRouter = ListRouter
-    data_type: SchemaDataType = SchemaDataType.HTML
+    # data_type: str = "html"
+    schema_direction: str = "outbound"
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to List {klass.display_name_plural}"
+        return f"List {klass.display_name_plural}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.list_schema = schema
@@ -271,10 +286,10 @@ class SelectSchemaDef(SchemaDef):
     schema_type: str = "select"
     schema_base: BaseModel = SelectSchemaBase
     router: SchemaRouter = SelectRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
+    schema_direction: str = "outbound"
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to Select a {klass.display_name}"
+        return f"Select a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.select_schema = schema
@@ -284,10 +299,9 @@ class UpdateSchemaDef(SchemaDef):
     schema_type: str = "update"
     schema_base: BaseModel = UpdateSchemaBase
     router: SchemaRouter = PatchRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to Update a {klass.display_name}"
+        return f"Update a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.update_schema = schema
@@ -297,11 +311,10 @@ class DeleteSchemaDef(SchemaDef):
     schema_type: str = "delete"
     schema_base: BaseModel = DeleteSchemaBase
     router: SchemaRouter = DeleteRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
     include_fields: list[str] = ["id"]
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to Delete a {klass.display_name}"
+        return f"Delete a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.delete_schema = schema
@@ -311,7 +324,6 @@ class ImportSchemaDef(SchemaDef):
     schema_type: str = "import"
     schema_base: BaseModel = ImportSchemaBase
     router: SchemaRouter = PutRouter
-    data_type: SchemaDataType = SchemaDataType.NATIVE
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Schema to Import a {klass.display_name}"

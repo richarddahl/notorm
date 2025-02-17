@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphEdgeDef

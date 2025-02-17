@@ -2,168 +2,128 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.graphs import GraphNode, GraphEdge
+from uno.graphs import GraphEdgeDef
 
-tenant_node = GraphNode(
-    table_name="tenant",
-    label="Tenant",
-)
-
-tenant_edges = [
-    GraphEdge(
-        table_name="tenant",
-        label="EMPLOYS",
+tenant_edge_defs = [
+    GraphEdgeDef(
+        name="EMPLOYS",
         destination_table_name="user",
         accessor="users",
     ),
-    GraphEdge(
-        table_name="tenant",
-        label="OWNS",
+    GraphEdgeDef(
+        name="OWNS",
         destination_table_name="group",
         accessor="groups",
     ),
-    GraphEdge(
-        table_name="tenant",
-        label="OWNS",
-        destination_table_name="db_object",
-        accessor="db_objects",
+    GraphEdgeDef(
+        name="OWNS",
+        destination_table_name="related_object",
+        accessor="related_objects",
     ),
-    GraphEdge(
-        table_name="tenant",
-        label="IS_OWNED_BY",
+    GraphEdgeDef(
+        name="IS_OWNED_BY",
         destination_table_name="user",
         accessor="owner",
     ),
-    GraphEdge(
-        table_name="tenant",
-        label="WAS_LAST_MODIFIED_BY",
+    GraphEdgeDef(
+        name="WAS_LAST_MODIFIED_BY",
         destination_table_name="user",
         accessor="modified_by",
     ),
-    GraphEdge(
-        table_name="tenant",
-        label="WAS_DELETED_BY",
+    GraphEdgeDef(
+        name="WAS_DELETED_BY",
         destination_table_name="user",
         accessor="deleted_by",
     ),
 ]
 
 
-user_node = GraphNode(
-    table_name="user",
-    label="User",
-)
-
-user_edges = [
-    GraphEdge(
-        table_name="user",
-        label="WORKS_FOR",
+user_edge_defs = [
+    GraphEdgeDef(
+        name="WORKS_FOR",
         destination_table_name="tenant",
         accessor="tenant",
     ),
-    GraphEdge(
-        table_name="user",
-        label="HAS_DEFAULT",
+    GraphEdgeDef(
+        name="HAS_DEFAULT",
         destination_table_name="group",
         accessor="default_group",
     ),
-    GraphEdge(
-        table_name="user",
-        label="IS_OWNED_BY",
+    GraphEdgeDef(
+        name="IS_OWNED_BY",
         destination_table_name="user",
         accessor="owner",
     ),
-    GraphEdge(
-        table_name="user",
-        label="WAS_LAST_MODIFIED_BY",
+    GraphEdgeDef(
+        name="WAS_LAST_MODIFIED_BY",
         destination_table_name="user",
         accessor="modified_by",
     ),
-    GraphEdge(
-        table_name="user",
-        label="WAS_DELETED_BY",
+    GraphEdgeDef(
+        name="WAS_DELETED_BY",
         destination_table_name="user",
         accessor="deleted_by",
     ),
 ]
 
-role_node = GraphNode(
-    table_name="role",
-    label="Role",
-)
 
-role_edges = [
-    GraphEdge(
-        table_name="role",
-        label="HAS_USER",
+role_edge_defs = [
+    GraphEdgeDef(
+        name="HAS_USER",
         destination_table_name="user",
         accessor="users",
     ),
-    GraphEdge(
-        table_name="role",
-        label="HAS_GROUP",
+    GraphEdgeDef(
+        name="HAS_GROUP",
         destination_table_name="group",
         accessor="groups",
     ),
-    GraphEdge(
-        table_name="role",
-        label="HAS_TENANT",
+    GraphEdgeDef(
+        name="HAS_TENANT",
         destination_table_name="tenant",
         accessor="tenants",
     ),
-    GraphEdge(
-        table_name="role",
-        label="IS_OWNED_BY",
+    GraphEdgeDef(
+        name="IS_OWNED_BY",
         destination_table_name="user",
         accessor="owner",
     ),
-    GraphEdge(
-        table_name="role",
-        label="WAS_LAST_MODIFIED_BY",
+    GraphEdgeDef(
+        name="WAS_LAST_MODIFIED_BY",
         destination_table_name="user",
         accessor="modified_by",
     ),
-    GraphEdge(
-        table_name="role",
-        label="WAS_DELETED_BY",
+    GraphEdgeDef(
+        name="WAS_DELETED_BY",
         destination_table_name="user",
         accessor="deleted_by",
     ),
 ]
 
-group_node = GraphNode(
-    table_name="group",
-    label="Group",
-)
 
-group_edges = [
-    GraphEdge(
-        table_name="group",
-        label="HAS_USER",
+group_edge_defs = [
+    GraphEdgeDef(
+        name="HAS_USER",
         destination_table_name="user",
         accessor="users",
     ),
-    GraphEdge(
-        table_name="group",
-        label="HAS_OBJECT",
-        destination_table_name="db_object",
-        accessor="db_objects",
+    GraphEdgeDef(
+        name="HAS_OBJECT",
+        destination_table_name="related_object",
+        accessor="related_objects",
     ),
-    GraphEdge(
-        table_name="group",
-        label="IS_OWNED_BY",
+    GraphEdgeDef(
+        name="IS_OWNED_BY",
         destination_table_name="user",
         accessor="owner",
     ),
-    GraphEdge(
-        table_name="group",
-        label="WAS_LAST_MODIFIED_BY",
+    GraphEdgeDef(
+        name="WAS_LAST_MODIFIED_BY",
         destination_table_name="user",
         accessor="modified_by",
     ),
-    GraphEdge(
-        table_name="group",
-        label="WAS_DELETED_BY",
+    GraphEdgeDef(
+        name="WAS_DELETED_BY",
         destination_table_name="user",
         accessor="deleted_by",
     ),

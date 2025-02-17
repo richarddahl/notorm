@@ -6,7 +6,7 @@ import textwrap
 
 from pydantic.dataclasses import dataclass
 
-from uno.sql_emitters import SQLEmitter
+from uno.db.sql_emitters import SQLEmitter
 
 from uno.config import settings
 
@@ -34,9 +34,9 @@ class InsertULIDSQL(SQLEmitter):
             f"""
             -- SET ROLE {settings.DB_NAME}_writer;
             DECLARE
-                db_object_id VARCHAR(26) := uno.generate_ulid();
+                related_object_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
-                NEW.id = db_object_id;
+                NEW.id = related_object_id;
                 RETURN NEW;
             END;
             """
@@ -53,18 +53,18 @@ class InsertULIDSQL(SQLEmitter):
 
 
 @dataclass
-class InsertDBObjectFunctionSQL(SQLEmitter):
+class InsertRelatedObjectFunctionSQL(SQLEmitter):
     def emit_sql(self) -> str:
         function_string = textwrap.dedent(
             f"""
             DECLARE
                 object_type_id int;
-                db_object_id VARCHAR(26) := uno.generate_ulid();
+                related_object_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
                 /*
-                Function used to insert a record into the db_object table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the db_object table.
-                Set as a trigger on the table, so that the db_object record is created when the
+                Function used to insert a record into the related_object table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the related_object table.
+                Set as a trigger on the table, so that the related_object record is created when the
                 record is created.
 
                 NOT USING sqlalchemy server_default, because triggers have access to TG_TABLE_SCHEMA
@@ -76,16 +76,16 @@ class InsertDBObjectFunctionSQL(SQLEmitter):
                     INTO object_type_id;
 
                 SET ROLE {settings.DB_NAME}_writer;
-                INSERT INTO uno.db_object (id, object_type_id)
-                    VALUES (db_object_id, object_type_id);
-                NEW.id = db_object_id;
+                INSERT INTO uno.related_object (id, object_type_id)
+                    VALUES (related_object_id, object_type_id);
+                NEW.id = related_object_id;
                 RETURN NEW;
             END;
             """
         )
 
         return self.create_sql_function(
-            "insert_db_object",
+            "insert_related_object",
             function_string,
             timing="BEFORE",
             operation="INSERT",
@@ -95,10 +95,10 @@ class InsertDBObjectFunctionSQL(SQLEmitter):
 
 
 @dataclass
-class InsertDBObjectTriggerSQL(SQLEmitter):
+class InsertRelatedObjectTriggerSQL(SQLEmitter):
     def emit_sql(self) -> str:
         return self.create_sql_trigger(
-            "insert_db_object",
+            "insert_related_object",
             timing="BEFORE",
             operation="INSERT",
             for_each="ROW",
