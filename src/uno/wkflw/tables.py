@@ -41,7 +41,6 @@ class Workflow(RelatedObjectBase, BaseFieldMixin):
     __table_args__ = {
         "schema": "uno",
         "comment": "User-defined workflows",
-        "info": {"rls_policy": "superuser", "in_graph": False},
     }
     __mapper_args__ = {"polymorphic_identity": "workflow"}
 
@@ -156,11 +155,6 @@ class WorkflowEvent(RelatedObjectBase, BaseFieldMixin):
         "schema": "uno",
         "comment": "Manually created or trigger created workflow activities",
     }
-    __mapper_args__ = {
-        "polymorphic_identity": "workflow_event",
-        "inherit_condition": "uno.workflow_event.id = uno.related_object.id",
-    }
-
     display_name = "Workflow Event"
     display_name_plural = "Workflow Events"
 
@@ -186,6 +180,10 @@ class WorkflowEvent(RelatedObjectBase, BaseFieldMixin):
     objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(
         doc="Value returned by the Object Function to indicate the workflow is complete"
     )
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow_event",
+        "inherit_condition": id == RelatedObjectBase.id,
+    }
 
     # Relationships
 

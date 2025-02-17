@@ -19,14 +19,6 @@ from sqlalchemy import (
     Column,
     Integer,
 )
-from sqlalchemy.sql import expression
-
-# Define the join condition
-join_condition = expression.join(
-    related_object,
-    workflow_event,
-    related_object.c.id == workflow_event.c.related_object_id
-)
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,

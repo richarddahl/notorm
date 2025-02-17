@@ -109,7 +109,7 @@ class ListSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SelectSchemaBase(BaseModel):
+class DisplaySchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -129,7 +129,7 @@ class ImportSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class FKSchema(BaseModel):
+class RelatedSchema(BaseModel):
     primary_key: str
     string_representation: str
 
@@ -143,7 +143,7 @@ class SchemaDef(BaseModel):
     data_type: str = "native"
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
-    schema_direction: str = "inbound"
+    use_related_schemas: bool = False
 
     model_config = ConfigDict(extra="forbid")
 
@@ -198,8 +198,7 @@ class SchemaDef(BaseModel):
         except NotImplementedError:
             column_type = str
 
-        if column.foreign_keys and self.schema_direction == "outbound":
-            json_schema_extra.update({"display": False})
+        if column.foreign_keys and self.use_related_schemas is True:
             if column.info.get("edge"):
                 if not isinstance(column.info["edge"], dict):
                     return None
@@ -211,7 +210,7 @@ class SchemaDef(BaseModel):
                         f"Edge field {column.name} is missing a required attribute.",
                         "MISSING_EDGE_FIELD_ATTRIBUTE",
                     )
-                column_type = FKSchema
+                column_type = RelatedSchema
 
         field = Field(
             default=default,
@@ -272,8 +271,7 @@ class ListSchemaDef(SchemaDef):
     schema_type: str = "list"
     schema_base: BaseModel = ListSchemaBase
     router: SchemaRouter = ListRouter
-    # data_type: str = "html"
-    schema_direction: str = "outbound"
+    use_related_schemas: bool = True
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"List {klass.display_name_plural}"
@@ -282,17 +280,17 @@ class ListSchemaDef(SchemaDef):
         klass.list_schema = schema
 
 
-class SelectSchemaDef(SchemaDef):
-    schema_type: str = "select"
-    schema_base: BaseModel = SelectSchemaBase
+class DisplaySchemaDef(SchemaDef):
+    schema_type: str = "display"
+    schema_base: BaseModel = DisplaySchemaBase
     router: SchemaRouter = SelectRouter
-    schema_direction: str = "outbound"
+    use_related_schemas: bool = True
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Select a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.select_schema = schema
+        klass.display_schema = schema
 
 
 class UpdateSchemaDef(SchemaDef):

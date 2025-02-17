@@ -171,10 +171,6 @@ class FilterValue(RelatedObjectBase, BaseFieldMixin):
             "schema": "uno",
         },
     )
-    __mapper_args__ = {
-        "polymorphic_identity": "filter_value",
-        "inherit_condition": id == RelatedObjectBase.id,
-    }
 
     display_name = "Filter Value"
     display_name_plural = "Filter Values"
@@ -250,6 +246,10 @@ class FilterValue(RelatedObjectBase, BaseFieldMixin):
         doc="Object value",
     )
     """
+    __mapper_args__ = {
+        "polymorphic_identity": "filter_value",
+        "inherit_condition": id == RelatedObjectBase.id,
+    }
 
 
 class Query(RelatedObjectBase, BaseFieldMixin):

@@ -7,7 +7,7 @@ from uno.schemas import (
     DeleteSchemaDef,
     ImportSchemaDef,
     ListSchemaDef,
-    SelectSchemaDef,
+    DisplaySchemaDef,
     UpdateSchemaDef,
 )
 
@@ -30,7 +30,7 @@ tenant_schema_defs = [
             "is_active",
         ],
     ),
-    SelectSchemaDef(),
+    DisplaySchemaDef(),
     UpdateSchemaDef(
         exclude_fields=[
             "id",
@@ -66,7 +66,7 @@ user_schema_defs = [
             "is_active",
         ],
     ),
-    SelectSchemaDef(),
+    DisplaySchemaDef(),
     UpdateSchemaDef(
         exclude_fields=[
             "id",
@@ -100,7 +100,7 @@ group_schema_defs = [
             "is_active",
         ],
     ),
-    SelectSchemaDef(),
+    DisplaySchemaDef(),
     UpdateSchemaDef(
         exclude_fields=[
             "id",
@@ -134,7 +134,7 @@ role_schema_defs = [
             "is_active",
         ],
     ),
-    SelectSchemaDef(),
+    DisplaySchemaDef(),
     UpdateSchemaDef(
         exclude_fields=[
             "id",
