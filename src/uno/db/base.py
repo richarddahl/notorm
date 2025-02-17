@@ -9,10 +9,17 @@ import datetime
 from enum import Enum
 from decimal import Decimal
 
-from typing import AsyncIterator, Annotated, ClassVar
+from typing import AsyncIterator, Annotated, ClassVar, Any, Optional
 
-from sqlalchemy import MetaData, create_engine, ForeignKey
-from sqlalchemy.orm import registry, DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import MetaData, create_engine, ForeignKey, inspect, text, func
+from sqlalchemy.orm import (
+    registry,
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    declared_attr,
+    relationship,
+)
 from sqlalchemy.dialects.postgresql import (
     BIGINT,
     TIMESTAMP,
@@ -140,6 +147,10 @@ class Base(AsyncAttrs, DeclarativeBase):
         # cls.set_filters
 
     @classmethod
+    def relationships(cls) -> list[Any]:
+        return [relationship for relationship in inspect(cls).relationships]
+
+    @classmethod
     def set_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
             schema_def.init_schema(cls, app)
@@ -251,7 +262,47 @@ class Base(AsyncAttrs, DeclarativeBase):
         return sql
 
 
-class RelatedObjectBase(Base):
+class BaseFieldMixin:
+    is_active: Mapped[bool] = mapped_column(
+        server_default=text("true"),
+        doc="Indicates if the record is active",
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        server_default=text("false"),
+        doc="Indicates if the record has been deleted",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        server_default=func.current_timestamp(),
+        doc="Time the record was created",
+        info={"editable": False},
+    )
+    owner_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.user.id", ondelete="CASCADE"),
+        index=True,
+        info={"edge": "BELONGS_TO_USER"},
+    )
+    modified_at: Mapped[datetime.datetime] = mapped_column(
+        doc="Time the record was last modified",
+        server_default=func.current_timestamp(),
+        server_onupdate=func.current_timestamp(),
+    )
+    modified_by_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.user.id", ondelete="CASCADE"),
+        index=True,
+        info={"edge": "WAS_LAST_MODIFIED_BY", "editable": False},
+    )
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        doc="Time the record was deleted",
+        info={"editable": False},
+    )
+    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("uno.user.id", ondelete="CASCADE"),
+        index=True,
+        info={"edge": "WAS_DELETED_BY", "editable": False},
+    )
+
+
+class RelatedObject(Base, BaseFieldMixin):
     """
     Base class for objects that are generically related to other objects.
 
@@ -285,14 +336,77 @@ class RelatedObjectBase(Base):
         index=True,
         doc="Primary Key",
     )
+    object_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+        index=True,
+        doc="The object_type_id of the related object",
+    )
 
-    # relationships
-    # attributes: Mapped[List["Attribute"]] = relationship(
-    #    back_populates="related_object", secondary="uno.attribute__object_value"
-    # )
-    # attachments: Mapped[List["Attachment"]] = relationship(
-    #    back_populates="related_objects", secondary="uno.attribute__object_value"
-    # )
+    # Relationships
+    @declared_attr
+    def owner(self) -> Mapped["User"]:
+        return relationship(
+            "User",
+            back_populates="owned_objects",
+            foreign_keys=[self.owner_id],
+            doc="The user that owns the related object",
+        )
+
+    @declared_attr
+    def owned_objects(self) -> Mapped["RelatedObject"]:
+        return relationship(
+            self,
+            back_populates="owner",
+            foreign_keys=[self.owner_id],
+            primaryjoin="RelatedObject.owner_id == RelatedObject.id",
+            doc="The objects owned by the user",
+        )
+
+    @declared_attr
+    def modified_by(self) -> Mapped["User"]:
+        return relationship(
+            "User",
+            back_populates="modified_objects",
+            foreign_keys=[self.modified_by_id],
+            doc="The user that last modified the related object",
+        )
+
+    @declared_attr
+    def modified_objects(self) -> Mapped["RelatedObject"]:
+        return relationship(
+            self,
+            back_populates="modified_by",
+            foreign_keys=[self.modified_by_id],
+            primaryjoin="RelatedObject.modified_by_id == RelatedObject.id",
+            doc="The objects last modified by the user",
+        )
+
+    @declared_attr
+    def deleted_by(self) -> Mapped["User"]:
+        return relationship(
+            "User",
+            back_populates="deleted_objects",
+            foreign_keys=[self.deleted_by_id],
+            doc="The user that deleted the related object",
+        )
+
+    @declared_attr
+    def deleted_objects(self) -> Mapped["RelatedObject"]:
+        return relationship(
+            self,
+            back_populates="deleted_by",
+            foreign_keys=[self.deleted_by_id],
+            primaryjoin="RelatedObject.deleted_by_id == RelatedObject.id",
+            doc="The objects deleted by the user",
+        )
+
+    @declared_attr
+    def object_type(self) -> Mapped["ObjectType"]:
+        return relationship(
+            "ObjectType",
+            back_populates="related_objects",
+            doc="The object type of the related object",
+        )
 
     def __str__(self) -> str:
         return f"{self.object_type_id}"

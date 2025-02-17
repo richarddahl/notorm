@@ -26,7 +26,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
-from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.base import Base, RelatedObject, str_26, str_255
 from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.enums import SQLOperation
@@ -57,7 +57,73 @@ from uno.auth.schemas import (
 from uno.auth.graphs import tenant_edge_defs, user_edge_defs
 
 
-class Tenant(RelatedObjectBase, BaseFieldMixin):
+class GroupRole(Base, BaseFieldMixin):
+    __tablename__ = "group_role"
+    __table_args__ = (
+        {
+            "comment": "Assigned by admin users to assign roles to groups.",
+            "schema": "uno",
+        },
+    )
+    display_name = "Group Permission"
+    display_name_plural = "Group Permissions"
+
+    sql_emitters = []
+    include_in_graph = False
+
+    # Columns
+    id: Mapped[int] = mapped_column(
+        Identity(),
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="The id of the Group Role.",
+    )
+    group_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.group.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.role.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+
+class UserGroupRole(Base, BaseFieldMixin):
+    __tablename__ = "user__group_role"
+    __table_args__ = (
+        {
+            "comment": """
+                Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
+            """,
+            "schema": "uno",
+        },
+    )
+    display_name = "User Group Role"
+    display_name_plural = "User Group Roles"
+
+    sql_emitters = []
+
+    include_in_graph = False
+
+    # Columns
+    user_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.user.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        primary_key=True,
+    )
+    group_role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.group_role.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        primary_key=True,
+    )
+
+
+class Tenant(RelatedObject):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -65,7 +131,10 @@ class Tenant(RelatedObjectBase, BaseFieldMixin):
             "comment": "Application end-user tenants",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "tenant"}
+    __mapper_args__ = {
+        "polymorphic_identity": "tenant",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Tenant"
     display_name_plural = "Tenants"
@@ -101,6 +170,11 @@ class Tenant(RelatedObjectBase, BaseFieldMixin):
         foreign_keys="Group.tenant_id",
         doc="Groups that belong to the tenant",
     )
+    roles: Mapped[list["Role"]] = relationship(
+        back_populates="tenant",
+        foreign_keys="Role.tenant_id",
+        doc="Roles that belong to the tenant",
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -109,7 +183,7 @@ class Tenant(RelatedObjectBase, BaseFieldMixin):
         return f"<Tenant {self.name}>"
 
 
-class User(RelatedObjectBase, BaseFieldMixin):
+class User(RelatedObject):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -129,7 +203,10 @@ class User(RelatedObjectBase, BaseFieldMixin):
             "comment": "Application users",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "user"}
+    __mapper_args__ = {
+        "polymorphic_identity": "user",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "User"
     display_name_plural = "Users"
@@ -161,12 +238,14 @@ class User(RelatedObjectBase, BaseFieldMixin):
         index=True,
         nullable=True,
         doc="Tenant to which the user belongs.",
-        info={"edge": {"name": "WORKS_FOR", "relationship": "tenant"}},
+        info={"edge": {"name": "WORKS_FOR", "accessor": "tenant"}},
     )
     default_group_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("uno.group.id", ondelete="SET NULL"),
         index=True,
         nullable=True,
+        doc="Default group for the user",
+        info={"edge": {"name": "HAS_DEFAULT_GROUP", "accessor": "default_group"}},
     )
     is_superuser: Mapped[bool] = mapped_column(
         server_default=text("false"),
@@ -190,7 +269,7 @@ class User(RelatedObjectBase, BaseFieldMixin):
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
         doc="User that owns this user.",
-        info={"edge": {"name": "BELONGS_TO_USER", "relationship": "owner"}},
+        info={"edge": {"name": "HAS_OWNER", "accessor": "owner"}},
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
@@ -201,7 +280,7 @@ class User(RelatedObjectBase, BaseFieldMixin):
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
         doc="User that last modified this user",
-        info={"edge": {"name": "WAS_LAST_MODIFIED_BY", "relationship": "modified_by"}},
+        info={"edge": {"name": "WAS_LAST_MODIFIED_BY", "accessor": "modified_by"}},
     )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         doc="Time the record was deleted",
@@ -210,40 +289,20 @@ class User(RelatedObjectBase, BaseFieldMixin):
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
         doc="User that deleted this user",
-        info={"edge": {"name": "WAS_DELETED_BY", "relationship": "deleted_by"}},
+        info={"edge": {"name": "WAS_DELETED_BY", "accessor": "deleted_by"}},
     )
 
     # Relationships
-    tenant: Mapped[Tenant] = relationship(
+    tenant: Mapped[Optional[Tenant]] = relationship(
         back_populates="users",
         foreign_keys=[tenant_id],
         doc="Tenant the user belongs to",
     )
-    owned_objects: Mapped[list["RelatedObject"]] = relationship(
-        back_populates="owner",
-        foreign_keys="RelatedObject.owner_id",
-        doc="Objects owned by the user",
+    default_group: Mapped[Optional["Group"]] = relationship(
+        back_populates="default_group_users",
+        foreign_keys=[default_group_id],
+        doc="Default group for the user",
     )
-    # default_group: Mapped["Group"] = relationship(
-    #    back_populates="users_default_group",
-    #    foreign_keys=[default_group_id],
-    #    doc="Default group for the user",
-    # )
-    # owner: Mapped["User"] = relationship(
-    #    back_populates="owned_users",
-    #    foreign_keys=[owner_id],
-    #    doc="User that owns this user",
-    # )
-    # modified_by: Mapped["User"] = relationship(
-    #    back_populates="modified_users",
-    #    foreign_keys=[modified_by_id],
-    #    doc="User that last modified this user",
-    # )
-    # deleted_by: Mapped["User"] = relationship(
-    #    back_populates="deleted_users",
-    #    foreign_keys=[deleted_by_id],
-    #    doc="User that deleted this user",
-    # )
 
     def __str__(self) -> str:
         return self.email
@@ -315,7 +374,7 @@ class Permission(Base):
         return f"<TablePermission {self.object_type} - {self.actions}>"
 
 
-class Role(RelatedObjectBase, BaseFieldMixin):
+class Role(RelatedObject):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -328,7 +387,10 @@ class Role(RelatedObjectBase, BaseFieldMixin):
             "schema": "uno",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "role"}
+    __mapper_args__ = {
+        "polymorphic_identity": "role",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Role"
     display_name_plural = "Roles"
@@ -356,10 +418,11 @@ class Role(RelatedObjectBase, BaseFieldMixin):
     #    secondary="uno.role__permission",
     #    doc="Permissions assigned to the role",
     # )
-    # tenants: Mapped[list[Tenant]] = relationship(
-    #    back_populates="roles",
-    #    doc="Tenants that have this role",
-    # )
+    tenant: Mapped[Tenant] = relationship(
+        back_populates="roles",
+        foreign_keys="Role.tenant_id",
+        doc="Tenants that have this role",
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -410,7 +473,7 @@ class RolePermission(Base):
         return f"<RolePermission {self.role_id} - {self.permission_id}>"
 
 
-class Group(RelatedObjectBase, BaseFieldMixin):
+class Group(RelatedObject):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -421,7 +484,10 @@ class Group(RelatedObjectBase, BaseFieldMixin):
             "info": {"rls_policy": "admin"},
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "group"}
+    __mapper_args__ = {
+        "polymorphic_identity": "group",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Group"
     display_name_plural = "Groups"
@@ -447,89 +513,19 @@ class Group(RelatedObjectBase, BaseFieldMixin):
     name: Mapped[str_255] = mapped_column(doc="Group name")
 
     # Relationships
-    # users: Mapped[list["User"]] = relationship(
-    #    back_populates="groups",
-    #    secondary="uno.user__group_role",
-    #    doc="Users that belong to the group",
-    # )
-    # default_group_users: Mapped[list["User"]] = relationship(
-    #    back_populates="default_group",
-    #    foreign_keys="user.default_group_id",
-    #    doc="Users that have this group as their default group",
-    # )
+    tenant: Mapped[Tenant] = relationship(
+        back_populates="groups",
+        foreign_keys="Group.tenant_id",
+        doc="Tenant the group belongs to",
+    )
+    default_group_users: Mapped[list["User"]] = relationship(
+        back_populates="default_group",
+        foreign_keys="User.default_group_id",
+        doc="Users that belong to the group",
+    )
 
     def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
         return f"<Group {self.name}>"
-
-
-'''
-class GroupRole(RelatedObjectBase, BaseFieldMixin):
-    __tablename__ = "group_role"
-    __table_args__ = (
-        {
-            "comment": "Assigned by admin users to assign roles to groups.",
-            "schema": "uno",
-        },
-    )
-    display_name = "Group Permission"
-    display_name_plural = "Group Permissions"
-
-    sql_emitters = []
-    include_in_graph = False
-
-    # Columns
-    """
-    group_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.group.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        info={"edge": "HAS_GROUP"},
-    )
-    role_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.role.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        info={"edge": "HAS_ROLE"},
-    )
-    """
-
-
-class UserGroupRole(Base):
-    __tablename__ = "user__group_role"
-    __table_args__ = (
-        {
-            "comment": """
-                Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
-            """,
-            "schema": "uno",
-        },
-    )
-    display_name = "User Group Role"
-    display_name_plural = "User Group Roles"
-
-    sql_emitters = []
-
-    include_in_graph = False
-
-    # Columns
-    """
-    user_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.user.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        primary_key=True,
-        info={"edge": "IS_ABLE_TO_ACCESS"},
-    )
-    group_role_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.group_role.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-        primary_key=True,
-        info={"edge": "IS_ACCESSIBLE_BY"},
-    )
-    """
-
-'''

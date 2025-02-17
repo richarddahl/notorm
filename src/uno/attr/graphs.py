@@ -7,13 +7,8 @@ from uno.graphs import GraphEdgeDef
 
 attribute_type_edge_defs = [
     GraphEdgeDef(
-        name="IS_CHILD_OF",
-        destination_table_name="attribute_type",
-        accessor="parent",
-    ),
-    GraphEdgeDef(
         name="IS_PARENT_OF",
-        destination_table_name="attribute_type",
+        destination_table_name="atribute_type",
         accessor="children",
     ),
     GraphEdgeDef(

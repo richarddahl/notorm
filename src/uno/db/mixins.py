@@ -16,7 +16,7 @@ from sqlalchemy.orm import (
 )
 
 # from uno.obj.tables import RelatedObject
-from uno.db.base import str_26
+from uno.db.base import RelatedObject, str_26
 
 
 class RelatedObjectPKMixin:
@@ -71,26 +71,24 @@ class BaseFieldMixin:
         index=True,
         info={"edge": "WAS_DELETED_BY", "editable": False},
     )
+
+    # @declared_attr
+    # def group(self) -> Mapped[RelatedObject]:
+    #    return relationship("RelatedObject", back_populates="related_object")
+    #
+    #    @declared_attr
+    #    def owner(self) -> Mapped[RelatedObject]:
+    #        return relationship("RelatedObject", back_populates="related_object")
+    #
+    #    @declared_attr
+    #    def modified_by(self) -> Mapped[RelatedObject]:
+    #        return relationship("RelatedObject", back_populates="related_object")
+    #
+    #    @declared_attr
+    #    def deleted_by(self) -> Mapped[RelatedObject]:
+    #        return relationship("RelatedObject", back_populates="related_object")
+    #
     """
-    @declared_attr
-    def tenant(self) -> Mapped["Tenant"]:
-        return relationship("RelatedObject", back_populates="related_object")
-
-    @declared_attr
-    def group(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
-
-    @declared_attr
-    def owner(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
-
-    @declared_attr
-    def modified_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
-
-    @declared_attr
-    def deleted_by(self) -> Mapped[RelatedObject]:
-        return relationship("RelatedObject", back_populates="related_object")
 
 
 class AuditMixin:

@@ -11,8 +11,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db.base import Base, RelatedObject, str_26, str_255
-from uno.db.mixins import BaseFieldMixin
+from uno.db.base import Base, RelatedObject, BaseFieldMixin, str_26, str_255
 from uno.db.sql_emitters import RecordVersionAuditSQL
 
 from uno.glbl.sql_emitters import (
@@ -198,7 +197,7 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
     )
 
 
-class AttributeType(RelatedObject, BaseFieldMixin):
+class AttributeType(RelatedObject):
     __tablename__ = "attribute_type"
     __table_args__ = (
         {
@@ -206,7 +205,10 @@ class AttributeType(RelatedObject, BaseFieldMixin):
             "comment": "Defines the type of attribute that can be associated with an object",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "attribute_type"}
+    __mapper_args__ = {
+        "polymorphic_identity": "attribute_type",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Attribute Type"
     display_name_plural = "Attribute Types"
@@ -247,6 +249,7 @@ class AttributeType(RelatedObject, BaseFieldMixin):
         back_populates="described_attribute_types",
         secondary=AttributeTypeAppliesTo.__table__,
         secondaryjoin="AttributeType.id == AttributeTypeAppliesTo.attribute_type_id",
+        info={"edge": "DESCRIBES"},
     )
     ObjectType.described_attribute_types = relationship(
         "AttributeType",
@@ -271,7 +274,10 @@ class Attribute(Base):
             "comment": "Attributes define characteristics of objects",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "attribute"}
+    __mapper_args__ = {
+        "polymorphic_identity": "attribute",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Attribute"
     display_name_plural = "Attributes"
@@ -312,11 +318,12 @@ class Attribute(Base):
         "Attribute",
         back_populates="object_values",
         secondary=AttributeObjectValue.__table__,
-        foreign_keys=[AttributeObjectValue.attribute_id],
+        primaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        secondaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
     )
 
 
-class AttributeValue(RelatedObject, BaseFieldMixin):
+class AttributeValue(RelatedObject):
     __tablename__ = "attribute_value"
     __table_args__ = (
         {
@@ -324,7 +331,10 @@ class AttributeValue(RelatedObject, BaseFieldMixin):
             "comment": "Defines the values available for attribute",
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "attribute_value"}
+    __mapper_args__ = {
+        "polymorphic_identity": "attribute_value",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Attribute Value"
     display_name_plural = "Attribute Values"
@@ -344,7 +354,8 @@ class AttributeValue(RelatedObject, BaseFieldMixin):
     attribute_types: Mapped[list[AttributeType]] = relationship(
         back_populates="value_types",
         secondary=AttributeTypeAttributeValue.__table__,
-        foreign_keys=[AttributeTypeAttributeValue.attribute_value_id],
+        primaryjoin="AttributeValue.id == AttributeTypeAttributeValue.attribute_value_id",
+        secondaryjoin="AttributeType.id == AttributeTypeAttributeValue.attribute_type_id",
     )
     attributes: Mapped[list[Attribute]] = relationship(
         back_populates="attribute_values"

@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.base import Base, RelatedObject, str_26, str_255
 from uno.db.mixins import BaseFieldMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 
@@ -107,21 +107,39 @@ class Filter(Base):
         ),
         doc="The lookups for the filter.",
     )
-    """
-    property_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.property.id", ondelete="CASCADE"),
-        index=True,
-        doc="The property associated with the filter.",
-    )
-    edge_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.edge.id", ondelete="CASCADE"),
-        index=True,
-        doc="The edge associated with the filter.",
-    )
-    """
 
 
-class FilterValue(RelatedObjectBase, BaseFieldMixin):
+class QueryFilterValue(Base, BaseFieldMixin):
+    __tablename__ = "query__filter_value"
+    __table_args__ = (
+        Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
+        {
+            "schema": "uno",
+            "comment": "The filter values associated with a query.",
+        },
+    )
+    display_name = "Query Filter Value"
+    display_name_plural = "Query Filter Values"
+    include_in_graph = False
+
+    sql_emitters = []
+
+    # Columns
+    query_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.query.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        info={"edge": "QUERIES_WITH_FILTERVALUE"},
+    )
+    filtervalue_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.filter_value.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        info={"edge": "IS_QUERIED_THROUGH"},
+    )
+
+
+class FilterValue(RelatedObject):
     __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
@@ -171,6 +189,10 @@ class FilterValue(RelatedObjectBase, BaseFieldMixin):
             "schema": "uno",
         },
     )
+    __mapper_args__ = {
+        "polymorphic_identity": "filter_value",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Filter Value"
     display_name_plural = "Filter Values"
@@ -228,40 +250,25 @@ class FilterValue(RelatedObjectBase, BaseFieldMixin):
     )
 
     # Relationships
-    # tenant: Mapped["Tenant"] = relationship(
-    #    viewonly=True,
-    #    doc="The tenant associated with the filter value.",
-    # )
-    related_object: Mapped["RelatedObject"] = relationship(
-        viewonly=True,
-        back_populates="filtervalue",
-        foreign_keys=[id],
-        doc="Object value",
+    queries: Mapped[Optional[list["Query"]]] = relationship(
+        back_populates="filter_values",
+        secondary=QueryFilterValue.__table__,
+        secondaryjoin=QueryFilterValue.filtervalue_id == id,
     )
-    """
-    fields: Mapped["Field"] = relationship(back_populates="filtervalues")
-    object_value: Mapped["RelatedObject"] = relationship(
-        back_populates="filter_object_values",
-        foreign_keys=[object_value_id],
-        doc="Object value",
-    )
-    """
-    __mapper_args__ = {
-        "polymorphic_identity": "filter_value",
-        "inherit_condition": id == RelatedObjectBase.id,
-    }
 
 
-class Query(RelatedObjectBase, BaseFieldMixin):
+class Query(RelatedObject):
     __tablename__ = "query"
     __table_args__ = (
         {
             "comment": "User definable queries",
             "schema": "uno",
-            "info": {"rls_policy": "default", "audit_type": "history"},
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "query"}
+    __mapper_args__ = {
+        "polymorphic_identity": "query",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Query"
     display_name_plural = "Queries"
@@ -315,53 +322,24 @@ class Query(RelatedObjectBase, BaseFieldMixin):
     )
 
     # Relationships
-    query_filtervalue: Mapped[list["QueryFilterValue"]] = relationship(
-        back_populates="query"
+    filter_values: Mapped[Optional[list[FilterValue]]] = relationship(
+        back_populates="queries",
+        secondary=QueryFilterValue.__table__,
+        secondaryjoin=QueryFilterValue.query_id == id,
     )
-    query_sub_query: Mapped[list["QuerySubquery"]] = relationship(
-        back_populates="query"
+    attribute_type_applicability: Mapped[
+        Optional["AttributeTypeAppliesTo"]
+    ] = relationship(
+        back_populates="determining_query",
     )
-
-
-class QueryFilterValue(RelatedObjectBase, BaseFieldMixin):
-    __tablename__ = "query__filter_value"
-    __table_args__ = (
-        Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
-        {
-            "schema": "uno",
-            "comment": "The filter values associated with a query.",
-            "info": {"rls_policy": False, "node": False},
-        },
-    )
-    display_name = "Query Filter Value"
-    display_name_plural = "Query Filter Values"
-    include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
-    )
-    query_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        info={"edge": "IS_QUERIED_THROUGH"},
-    )
-    filtervalue_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_value.id", ondelete="CASCADE"),
-        index=True,
-        primary_key=True,
-        info={"edge": "QUERIES_FILTERVALUE"},
+    attribute_value_applicability: Mapped[
+        Optional["AttributeTypeValueType"]
+    ] = relationship(
+        back_populates="determining_query",
     )
 
-    # Relationships
-    # query: Mapped[Query] = relationship(back_populates="query_filtervalue")
-    # filter_value: Mapped[FilterValue] = relationship(back_populates="query_filtervalue")
 
-
-class QuerySubquery(RelatedObjectBase, BaseFieldMixin):
+class QuerySubquery(Base, BaseFieldMixin):
     __tablename__ = "query__subquery"
     __table_args__ = (
         Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
@@ -371,7 +349,10 @@ class QuerySubquery(RelatedObjectBase, BaseFieldMixin):
             "info": {"rls_policy": False, "node": False},
         },
     )
-    __mapper_args__ = {"polymorphic_identity": "query__subquery"}
+    __mapper_args__ = {
+        "polymorphic_identity": "query__subquery",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Query Subquery"
     display_name_plural = "Query Subqueries"
@@ -380,9 +361,6 @@ class QuerySubquery(RelatedObjectBase, BaseFieldMixin):
     sql_emitters = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
-    )
     query_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.query.id", ondelete="CASCADE"),
         index=True,
@@ -398,6 +376,21 @@ class QuerySubquery(RelatedObjectBase, BaseFieldMixin):
         info={"edge": "HAS_SUBQUERY"},
     )
 
-    # Relationships
-    query: Mapped["Query"] = relationship(back_populates="query_sub_query")
-    subquery: Mapped["Query"] = relationship(back_populates="query_sub_query")
+
+"""
+# Relationships
+
+
+
+
+# Query.sub_queries: Mapped[list["Query"]] = relationship(
+#    back_populates="query",
+#    secondary="uno.query__subquery",
+# )
+# Query.queries: Mapped[Optional[list["Query"]]] = relationship(
+#    back_populates="query_sub_query",
+#    secondary="uno.query__subquery",
+#    foreign_keys=["uno.query__subquery.c.query_id"],
+# )
+
+"""

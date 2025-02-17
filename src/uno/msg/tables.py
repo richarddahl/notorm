@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.base import Base, RelatedObject, str_26, str_255
 from uno.db.mixins import BaseFieldMixin
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 from uno.glbl.sql_emitters import (
@@ -26,13 +26,16 @@ from uno.msg.enums import MessageImportance
 from uno.msg.graphs import message_edge_defs
 
 
-class Message(RelatedObjectBase, BaseFieldMixin):
+class Message(RelatedObject):
     __tablename__ = "message"
     __table_args__ = {
         "schema": "uno",
         "comment": "Messages are used to communicate between users",
     }
-    __mapper_args__ = {"polymorphic_identity": "message"}
+    __mapper_args__ = {
+        "polymorphic_identity": "message",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Message"
     display_name_plural = "Messages"

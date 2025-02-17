@@ -6,10 +6,10 @@ import textwrap
 
 from typing import List
 
-from sqlalchemy import UniqueConstraint, ForeignKey, func, Identity
+from sqlalchemy import UniqueConstraint, ForeignKey, func, text, Identity
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, str_26, str_255
+from uno.db.base import Base, RelatedObject, str_26, str_255
 from uno.db.sql_emitters import AlterGrantSQL
 
 from uno.auth.rls_sql_emitters import SuperuserRLSSQL
@@ -20,7 +20,7 @@ from uno.glbl.graphs import (
     related_object_edge_defs,
     attachment_edge_defs,
 )
-from uno.db.mixins import BaseFieldMixin, RelatedObjectPKMixin
+from uno.db.mixins import BaseFieldMixin
 
 
 class ObjectType(Base):
@@ -60,49 +60,18 @@ class ObjectType(Base):
     table_name: Mapped[str_255] = mapped_column(doc="Name of the table")
 
     # relationships
-    related_objects: Mapped[List["RelatedObject"]] = relationship(
-        back_populates="object_type"
-    )
-    described_attribute_types: Mapped[List["AttributeType"]] = relationship(
-        back_populates="describes",
-        secondary="uno.attribute_type__object_type",
-        secondaryjoin="AttributeType.parent_id == ObjectType.id",
-    )
-    value_type_attribute_types: Mapped[List["AttributeType"]] = relationship(
-        back_populates="value_types"
+
+    related_objects: Mapped["RelatedObject"] = relationship(
+        back_populates="object_type",
+        primaryjoin="RelatedObject.object_type_id == ObjectType.id",
+        doc="The related objects of the object type",
     )
 
     def __str__(self) -> str:
         return f"{self.schema_name}.{self.table_name}"
 
 
-class Attachment(Base, RelatedObjectPKMixin, BaseFieldMixin):
-    __tablename__ = "attachment"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Files attached to db objects",
-    }
-    display_name = "Attachment"
-    display_name_plural = "Attachments"
-
-    sql_emitters = [InsertObjectTypeRecordSQL]
-
-    graph_edge_defs = attachment_edge_defs
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        doc="Primary Key",
-        index=True,
-        server_default=func.generate_ulid(),
-    )
-    name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
-    file: Mapped[str_255] = mapped_column(doc="Path to the file")
-
-    # Relationships
-
-
-class AttachmentRelatedObject(Base, RelatedObjectPKMixin):
+class AttachmentRelatedObject(Base, BaseFieldMixin):
     __tablename__ = "attachment__related_object"
     __table_args__ = {
         "schema": "uno",
@@ -129,3 +98,34 @@ class AttachmentRelatedObject(Base, RelatedObjectPKMixin):
         nullable=False,
         info={"edge": "HAS_ATTACHMENT"},
     )
+
+
+class Attachment(RelatedObject):
+    __tablename__ = "attachment"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Files attached to db objects",
+    }
+    __mapper_args__ = {
+        "polymorphic_identity": "attachment",
+        "inherit_condition": id == RelatedObject.id,
+    }
+
+    display_name = "Attachment"
+    display_name_plural = "Attachments"
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
+
+    graph_edge_defs = attachment_edge_defs
+
+    # Columns
+    id: Mapped[str_26] = mapped_column(
+        primary_key=True,
+        doc="Primary Key",
+        index=True,
+        server_default=func.generate_ulid(),
+    )
+    name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
+    file: Mapped[str_255] = mapped_column(doc="Path to the file")
+
+    # Relationships

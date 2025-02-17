@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, RelatedObjectBase, str_26, str_255
+from uno.db.base import Base, RelatedObject, str_26, str_255
 from uno.db.mixins import BaseFieldMixin
 
 # from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
@@ -36,13 +36,16 @@ from uno.wkflw.graphs import (
 )
 
 
-class Workflow(RelatedObjectBase, BaseFieldMixin):
+class Workflow(RelatedObject):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": "uno",
         "comment": "User-defined workflows",
     }
-    __mapper_args__ = {"polymorphic_identity": "workflow"}
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Workflow"
     display_name_plural = "Workflows"
@@ -149,7 +152,7 @@ class Workflow(RelatedObjectBase, BaseFieldMixin):
     # Relationships
 
 
-class WorkflowEvent(RelatedObjectBase, BaseFieldMixin):
+class WorkflowEvent(RelatedObject):
     __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": "uno",
@@ -182,19 +185,22 @@ class WorkflowEvent(RelatedObjectBase, BaseFieldMixin):
     )
     __mapper_args__ = {
         "polymorphic_identity": "workflow_event",
-        "inherit_condition": id == RelatedObjectBase.id,
+        "inherit_condition": id == RelatedObject.id,
     }
 
     # Relationships
 
 
-class WorkflowRecord(RelatedObjectBase, BaseFieldMixin):
+class WorkflowRecord(RelatedObject):
     __tablename__ = "workflow_record"
     __table_args__ = {
         "schema": "uno",
         "comment": "Records of workflow events",
     }
-    __mapper_args__ = {"polymorphic_identity": "workflow_record"}
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow_record",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
     display_name = "Workflow Record"
     display_name_plural = "Workflow Records"
