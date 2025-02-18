@@ -5,7 +5,8 @@
 import sys
 import io
 import textwrap
-import importlib
+
+from psycopg.sql import SQL, Identifier, Literal
 
 from sqlalchemy import text, create_engine, Engine
 
@@ -35,6 +36,11 @@ from uno.config import settings
 
 
 class DBManager:
+    login = Literal(f"{settings.DB_NAME}_login")
+    admin = Literal(f"{settings.DB_NAME}_admin")
+    writer = Literal(f"{settings.DB_NAME}_writer")
+    db_schema = Identifier(settings.DB_SCHEMA)
+
     def create_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
@@ -57,14 +63,18 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
+            conn.execute(
+                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
+            )
             conn.execute(text(ObjectType.emit_sql()))
 
             for base in Base.registry.mappers:
                 if base.class_.__name__ == ObjectType:
                     continue  # Already emitted above
                 print(f"Creating the table: {base.class_.__tablename__}\n")
-                conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
+                conn.execute(
+                    text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
+                )
 
                 # Emit the SQL for the table
                 conn.execute(text(base.class_.emit_sql()))
@@ -146,7 +156,6 @@ class DBManager:
         handle: str,
         full_name: str,
         is_superuser: bool,
-        is_tenant_admin: bool,
     ) -> str:
         """
         Generates an SQL statement to create a new user in the database.
@@ -156,20 +165,29 @@ class DBManager:
             handle (str): The handle or username of the user.
             full_name (str): The full name of the user.
             is_superuser (bool): A flag indicating if the user is a superuser.
-            is_tenant_admin (bool): A flag indicating if the user is a tenant admin.
 
         Returns:
             str: The SQL statement to insert a new user into the database.
         """
-        return textwrap.dedent(
-            f"""
+        return (
+            SQL(
+                """
             /*
             Creates the superuser for the application.
             */
-            INSERT INTO uno.user (email, handle, full_name, is_superuser, is_tenant_admin)
-            VALUES('{email}', '{handle}', '{full_name}', '{is_superuser}', '{is_tenant_admin}')
+            INSERT INTO {schema}.user (email, handle, full_name, is_superuser)
+            VALUES({email}, {handle}, {full_name}, {is_superuser})
             RETURNING id;
             """
+            )
+            .format(
+                schema=self.db_schema,
+                email=Literal(email),
+                handle=Literal(handle),
+                full_name=Literal(full_name),
+                is_superuser=Literal(is_superuser),
+            )
+            .as_string()
         )
 
     def create_user(
@@ -178,7 +196,6 @@ class DBManager:
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
         is_superuser: bool = False,
-        is_tenant_admin: bool = False,
     ) -> str:
         """
         Creates a new user in the database with the given details.
@@ -188,7 +205,6 @@ class DBManager:
             handle (str): The handle/username of the user. Defaults to settings.SUPERUSER_HANDLE.
             full_name (str): The full name of the user. Defaults to settings.SUPERUSER_FULL_NAME.
             is_superuser (bool): Flag indicating if the user is a superuser. Defaults to False.
-            is_tenant_admin (bool): Flag indicating if the user is a tenant admin. Defaults to False.
 
         Returns:
             str: The ID of the created superuser.
@@ -196,19 +212,37 @@ class DBManager:
 
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin"))
-            conn.execute(text("ALTER TABLE uno.user DISABLE ROW LEVEL SECURITY;"))
-            superuser = conn.execute(
+            conn.execute(
+                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
+            )
+            conn.execute(
                 text(
-                    self.create_user_sql(
-                        email, handle, full_name, is_superuser, is_tenant_admin
-                    )
+                    SQL("ALTER TABLE {schema}.user DISABLE ROW LEVEL SECURITY;")
+                    .format(schema=self.db_schema)
+                    .as_string()
                 )
             )
+            superuser = conn.execute(
+                text(self.create_user_sql(email, handle, full_name, is_superuser))
+            )
             superuser_id = superuser.scalar()
-            conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin"))
-            conn.execute(text("ALTER TABLE uno.user ENABLE ROW LEVEL SECURITY;"))
-            conn.execute(text("ALTER TABLE uno.user FORCE ROW LEVEL SECURITY;"))
+            conn.execute(
+                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
+            )
+            conn.execute(
+                text(
+                    SQL("ALTER TABLE {schema}.user ENABLE ROW LEVEL SECURITY;")
+                    .format(schema=self.db_schema)
+                    .as_string()
+                )
+            )
+            conn.execute(
+                text(
+                    SQL("ALTER TABLE {schema}.user FORCE ROW LEVEL SECURITY;")
+                    .format(schema=self.db_schema)
+                    .as_string()
+                )
+            )
             conn.close()
         eng.dispose()
 
