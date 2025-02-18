@@ -36,6 +36,8 @@ from uno.db.sql_emitters import (
     InsertRelatedObjectFunctionSQL,
     InsertObjectTypeRecordSQL,
 )
+
+from uno.msg.tables import Message, MessageAddressedTo, MessageCopiedTo
 from uno.auth.sql_emitters import (
     InsertUserRelatedObjectFunctionSQL,
     ValidateGroupInsert,
@@ -274,45 +276,65 @@ class User(RelatedObject, BaseMetaMixin):
     )
     created_by: Mapped[Optional["User"]] = relationship(
         "User",
-        back_populates="users_created",
+        back_populates="created_users",
         foreign_keys=[created_by_id],
         remote_side="User.id",
         doc="User who created this user",
         info={"edge": "CREATED"},
     )
-    users_created: Mapped[list["User"]] = relationship(
+    created_users: Mapped[list["User"]] = relationship(
         "User",
         back_populates="created_by",
         foreign_keys=[created_by_id],
         doc="Users created by this user",
         info={"edge": "CREATED"},
     )
-
     modified_by: Mapped[Optional["User"]] = relationship(
-        back_populates="users_modified",
-        foreign_keys="User.modified_by_id",
+        "User",
+        back_populates="modified_users",
+        foreign_keys=[modified_by_id],
+        remote_side="User.id",
         doc="User who last modified this user",
         info={"edge": "MODIFIED"},
     )
-    users_modified: Mapped[Optional["User"]] = relationship(
+    modified_users: Mapped[list["User"]] = relationship(
+        "User",
         back_populates="modified_by",
-        foreign_keys="User.modified_by_id",
-        remote_side="User.id",
-        doc="Users modified by this user",
+        foreign_keys=[modified_by_id],
+        doc="Users last modified by this user",
         info={"edge": "MODIFIED"},
     )
     deleted_by: Mapped[Optional["User"]] = relationship(
-        back_populates="users_deleted",
-        foreign_keys="User.deleted_by_id",
+        "User",
+        back_populates="deleted_users",
+        foreign_keys=[deleted_by_id],
+        remote_side="User.id",
         doc="User who deleted this user",
         info={"edge": "DELETED"},
     )
-    users_deleted: Mapped[Optional["User"]] = relationship(
+    deleted_users: Mapped[list["User"]] = relationship(
+        "User",
         back_populates="deleted_by",
-        foreign_keys="User.deleted_by_id",
-        remote_side="User.id",
+        foreign_keys=[deleted_by_id],
         doc="Users deleted by this user",
         info={"edge": "DELETED"},
+    )
+    messages_sent: Mapped[list["Message"]] = relationship(
+        back_populates="sender",
+        doc="Messages sent by the user",
+        info={"edge": "DID_SEND"},
+    )
+    messages_recieved: Mapped[list["Message"]] = relationship(
+        back_populates="addressed_to",
+        secondary=MessageAddressedTo.__table__,
+        doc="Messages received by the user",
+        info={"edge": "DID_RECEIVE"},
+    )
+    copied_messages: Mapped[list["Message"]] = relationship(
+        back_populates="copied_to",
+        secondary=MessageCopiedTo.__table__,
+        doc="Messages copied to the user",
+        info={"edge": "WAS_COPIED"},
     )
 
     __mapper_args__ = {

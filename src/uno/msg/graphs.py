@@ -25,7 +25,7 @@ message_edge_defs = [
         name="WAS_SENT_TO",
         destination_table_name="user",
         accessor="addressed_to",
-        secondary_table_name="uno.message__addressed_to",
+        secondary_table_name=f"{settings.DB_SCHEMA}.message__addressed_to",
     ),
     # GraphEdgeDef(
     #    name="HAS_ATTACHMENT",

@@ -10,14 +10,14 @@ class ColumnSecurity(str, enum.Enum):
 
     Attributes:
         PUBLIC (str): The column is publicly accessible (in accordance with row-level security enforcement).
-        PRIVATE (str): The column is accessible only to the owner, the tenant admin (if used), and superusers.
+        PRIVATE (str): The column is accessible only to the created_by, the tenant admin (if used), and superusers.
         ADMIN (str): The column is accessible only to the tenant admin (if used) and superusers.
         SECRET (str): The column is accessible only to superusers.
 
     """
 
     PUBLIC = "public"
-    OWNER = "owner"
+    OWNER = "created_by"
     ADMIN = "admin"
     SUPERUSER = "superuser"
 

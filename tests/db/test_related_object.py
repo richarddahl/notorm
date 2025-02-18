@@ -5,7 +5,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR, BIGINT
 
-# from uno.obj.tables import RelatedObject
+from uno.db.tables import RelatedObject
 
 from uno.db.sql_emitters import AlterGrantSQL
 
@@ -23,23 +23,23 @@ class TestRelatedObject:
     schema = "uno"
 
     def test_related_object_structure(self):
-        assert RelatedObject.display_name == "DB Object"
-        assert RelatedObject.display_name_plural == "DB Objects"
+        assert RelatedObject.display_name == "Related Object"
+        assert RelatedObject.display_name_plural == "Related Objects"
         assert AlterGrantSQL in RelatedObject.sql_emitters
         # assert InsertObjectTypeRecordSQL in RelatedObject.sql_emitters
         assert RelatedObject.__name__ == "RelatedObject"
-        assert RelatedObject.__module__ == "uno.obj.tables"
+        assert RelatedObject.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert RelatedObject.__table_args__.get("schema") == "uno"
         assert RelatedObject.__tablename__ == "related_object"
         assert list(RelatedObject.__table__.columns.keys()) == [
             "id",
-            "object_type_id",
+            "object_type_name",
         ]
 
     def test_related_object_indices(self, db_connection):
         """Test the index_definitions on the related_object table in the database."""
         db_inspector = inspect(db_connection)
-        # print_indices(db_inspector, "related_object", schema=self.schema)
+        print_indices(db_inspector, "related_object", schema=self.schema)
         assert db_inspector.get_indexes("related_object", schema=self.schema) == [
             {
                 "name": "ix_uno_related_object_id",
@@ -49,9 +49,9 @@ class TestRelatedObject:
                 "dialect_options": {"postgresql_include": []},
             },
             {
-                "name": "ix_uno_related_object_object_type_id",
+                "name": "ix_uno_related_object_object_type_name",
                 "unique": False,
-                "column_names": ["object_type_id"],
+                "column_names": ["object_type_name"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
             },
@@ -73,8 +73,8 @@ class TestRelatedObject:
         # print_foreign_keys(db_inspector, "related_object", schema=self.schema)
         assert db_inspector.get_foreign_keys("related_object", schema=self.schema) == [
             {
-                "name": "fk_related_object_object_type_id",
-                "constrained_columns": ["object_type_id"],
+                "name": "fk_related_object_object_type_name",
+                "constrained_columns": ["object_type_name"],
                 "referred_schema": "uno",
                 "referred_table": "object_type",
                 "referred_columns": ["id"],
@@ -109,10 +109,10 @@ class TestRelatedObject:
         assert isinstance(column.get("type"), VARCHAR)
         assert column.get("type").length == 26
 
-    def test_related_object_object_type_id_column(self, db_connection):
+    def test_related_object_object_type_name_column(self, db_connection):
         db_inspector = inspect(db_connection)
         column = db_column(
-            db_inspector, "related_object", "object_type_id", schema=self.schema
+            db_inspector, "related_object", "object_type_name", schema=self.schema
         )
         assert column is not None
         assert column.get("nullable") is False

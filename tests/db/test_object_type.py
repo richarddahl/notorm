@@ -27,8 +27,8 @@ class TestObjectType:
         Test the structure of the ObjectType Model.
         The constraints, index_definitions, and field_definitions are tested in other methods.
         """
-        assert ObjectType.__name__ == "ObjectType"
-        assert ObjectType.__module__ == "uno.obj.models"
+        assert ObjectType.__name__ == ObjectType
+        assert ObjectType.__module__ == f"{settings.DB_SCHEMA}.obj.models"
         assert ObjectType.schema_name == "uno"
         assert ObjectType.table_name == "object_type"
         assert ObjectType.table_name_plural == "object_types"
@@ -44,7 +44,7 @@ class TestObjectType:
         assert InsertTableOperation in ObjectType.sql_emitters
 
         object_type = ObjectType(db_schema="uno", name="table_test")
-        assert str(object_type) == "uno.table_test"
+        assert str(object_type) == f"{settings.DB_SCHEMA}.table_test"
 
     def test_object_type_indices(self, db_connection):
         """Test the index_definitions on the object_type table in the database."""
@@ -59,7 +59,7 @@ class TestObjectType:
                 "dialect_options": {"postgresql_include": []},
             },
             {
-                "name": "ix_uno_object_type_id",
+                "name": "ix_uno_object_type_name",
                 "unique": False,
                 "column_names": ["id"],
                 "include_columns": [],
@@ -116,7 +116,7 @@ class TestObjectType:
             db_inspector.get_check_constraints("object_type", schema=self.schema) == []
         )
 
-    def test_object_type_id_column(self, db_connection):
+    def test_object_type_name_column(self, db_connection):
         db_inspector = inspect(db_connection)
         column = db_column(db_inspector, "object_type", "id", schema=self.schema)
         assert column is not None

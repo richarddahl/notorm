@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
-import textwrap
 
 from typing import Optional
 from decimal import Decimal
@@ -11,7 +10,6 @@ from decimal import Decimal
 from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
-    ForeignKeyConstraint,
     Index,
     UniqueConstraint,
     text,
@@ -23,19 +21,39 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.tables import Base, RelatedObject, BaseTable, str_26, str_255
+from uno.db.tables import (
+    Base,
+    RelatedObject,
+    BaseMetaMixin,
+    RecordUserAuditMixin,
+    str_26,
+    str_255,
+)
 from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
 
 from uno.fltr.enums import (
-    FilterType,
     DataType,
     Include,
     Match,
     Lookup,
 )
+from uno.config import settings
 
 
 class Filter(Base):
+    __tablename__ = "filter"
+    __table_args__ = (
+        UniqueConstraint(
+            "table_name",
+            "name",
+            "destination_table_name",
+            name="uq_table_name_label_destination_table_name",
+        ),
+        {
+            "schema": settings.DB_SCHEMA,
+            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+        },
+    )
     display_name = "Filter"
     display_name_plural = "Filters"
 
@@ -49,15 +67,15 @@ class Filter(Base):
         index=True,
         doc="The id of the node.",
     )
-    filter_type: Mapped[FilterType] = mapped_column(
-        ENUM(
-            FilterType,
-            name="filtertype",
-            create_type=True,
-            schema="uno",
-        ),
-        default=FilterType.PROPERTY,
-    )
+    # filter_type: Mapped[FilterType] = mapped_column(
+    #    ENUM(
+    #        FilterType,
+    #        name="filtertype",
+    #        create_type=True,
+    #        schema="uno",
+    #    ),
+    #    default=FilterType.PROPERTY,
+    # )
     data_type: Mapped[str] = mapped_column(
         # ENUM(
         #    DataType,
@@ -68,19 +86,21 @@ class Filter(Base):
         doc="The data type of the filter.",
     )
     table_name: Mapped[str_255] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
-        doc="The table name of the filter.",
+        doc="The table filtered.",
     )
-    destination_table_name: Mapped[Optional[str_255]] = mapped_column(
+    destination_table_name: Mapped[str_255] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
-        doc="The destination table name of the filter.",
+        doc="The destination table of the filter.",
     )
     name: Mapped[str_255] = mapped_column(
-        index=True,
-        doc="The GraphEdgeDef or GraphProperty name of the filter.",
+        doc="The edge label or property name of the filter.",
     )
     accessor: Mapped[str_255] = mapped_column(
-        doc="The relational accessor for the filter.",
+        index=True,
+        doc="The relational db accessor for the filter.",
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -94,22 +114,16 @@ class Filter(Base):
         doc="The lookups for the filter.",
     )
 
-    __tablename__ = "filter"
+
+class QueryFilterValue(Base):
+    __tablename__ = "query_filtervalue"
     __table_args__ = (
-        UniqueConstraint(
-            "table_name",
-            "name",
-            "destination_table_name",
-            name="uq_table_name_label_destination_table_name",
-        ),
+        Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
         {
-            "schema": "uno",
-            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+            "schema": settings.DB_SCHEMA,
+            "comment": "The filter values associated with a query.",
         },
     )
-
-
-class QueryFilterValue(RelatedObject):
     display_name = "Query Filter Value"
     display_name_plural = "Query Filter Values"
     include_in_graph = False
@@ -117,34 +131,61 @@ class QueryFilterValue(RelatedObject):
     sql_emitters = []
 
     # Columns
-    id: Mapped[int] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
-    )
     query_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-        index=True,
-        info={"edge": "QUERIES_WITH_FILTERVALUE"},
+        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     filtervalue_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter_value.id", ondelete="CASCADE"),
-        index=True,
-        info={"edge": "IS_QUERIED_THROUGH"},
+        ForeignKey(f"{settings.DB_SCHEMA}.filtervalue.id", ondelete="CASCADE"),
+        primary_key=True,
     )
-    __tablename__ = "query__filter_value"
+
+
+class FilterValue(RelatedObject, RecordUserAuditMixin):
+    __tablename__ = "filtervalue"
     __table_args__ = (
-        Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
+        UniqueConstraint(
+            "filter_id",
+            "lookup",
+            "include",
+            "match",
+            "bigint_value",
+            "boolean_value",
+            "date_value",
+            "decimal_value",
+            "related_object_value_id",
+            "string_value",
+            "text_value",
+            "time_value",
+            "timestamp_value",
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index(
+            "ix_filtervalue__unique_together",
+            "filter_id",
+            "lookup",
+            "include",
+            "match",
+        ),
+        CheckConstraint(
+            """
+                bigint_value IS NOT NULL
+                OR boolean_value IS NOT NULL
+                OR date_value IS NOT NULL
+                OR decimal_value IS NOT NULL
+                OR related_object_value_id IS NOT NULL
+                OR string_value IS NOT NULL
+                OR text_value IS NOT NULL
+                OR time_value IS NOT NULL
+                OR timestamp_value IS NOT NULL
+            """,
+            name="ck_filtervalue",
+        ),
         {
-            "schema": "uno",
-            "comment": "The filter values associated with a query.",
+            "comment": "User definable values for use in queries.",
+            "schema": settings.DB_SCHEMA,
         },
     )
-    __mapper_args__ = {
-        "polymorphic_identity": "query__filter_value",
-        "inherit_condition": id == RelatedObject.id,
-    }
-
-
-class FilterValue(RelatedObject):
     display_name = "Filter Value"
     display_name_plural = "Filter Values"
 
@@ -153,12 +194,11 @@ class FilterValue(RelatedObject):
 
     # Columns
     id: Mapped[int] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     filter_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.filter.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.filter.id", ondelete="CASCADE"),
         index=True,
-        nullable=False,
     )
     lookup: Mapped[Lookup] = mapped_column(
         ENUM(
@@ -192,12 +232,10 @@ class FilterValue(RelatedObject):
     string_value: Mapped[Optional[str_255]] = mapped_column()
     related_object_value_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
-            "uno.related_object.id",
+            f"{settings.DB_SCHEMA}.relatedobject.id",
             ondelete="CASCADE",
         ),
         index=True,
-        nullable=True,
-        info={"edge": "HAS_OBJECT_VALUE"},
     )
 
     # Relationships
@@ -207,62 +245,48 @@ class FilterValue(RelatedObject):
         secondaryjoin=QueryFilterValue.filtervalue_id == id,
     )
 
-    __tablename__ = "filter_value"
-    __table_args__ = (
-        UniqueConstraint(
-            "filter_id",
-            "lookup",
-            "include",
-            "match",
-            "bigint_value",
-            "boolean_value",
-            "date_value",
-            "decimal_value",
-            "related_object_value_id",
-            "string_value",
-            "text_value",
-            "time_value",
-            "timestamp_value",
-            postgresql_nulls_not_distinct=True,
-        ),
-        Index(
-            "ix_filtervalue__unique_together",
-            "filter_id",
-            "lookup",
-            "include",
-            "match",
-        ),
-        CheckConstraint(
-            """
-                bigint_value IS NOT NULL
-                OR boolean_value IS NOT NULL
-                OR date_value IS NOT NULL
-                OR decimal_value IS NOT NULL
-                OR object_value_id IS NOT NULL
-                OR string_value IS NOT NULL
-                OR text_value IS NOT NULL
-                OR time_value IS NOT NULL
-                OR timestamp_value IS NOT NULL
-            """,
-            name="ck_filtervalue",
-        ),
-        ForeignKeyConstraint(
-            ["related_object_value_id"],
-            ["uno.related_object.id"],
-            ondelete="CASCADE",
-        ),
-        {
-            "comment": "User definable values for use in queries.",
-            "schema": "uno",
-        },
-    )
     __mapper_args__ = {
-        "polymorphic_identity": "filter_value",
+        "polymorphic_identity": "filtervalue",
         "inherit_condition": id == RelatedObject.id,
     }
 
 
-class Query(RelatedObject):
+class QuerySubquery(Base):
+    __tablename__ = "query_subquery"
+    __table_args__ = (
+        Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
+        {
+            "schema": settings.DB_SCHEMA,
+            "comment": "The subqueries associated with a query",
+        },
+    )
+    display_name = "Query Subquery"
+    display_name_plural = "Query Subqueries"
+    include_in_graph = False
+
+    sql_emitters = []
+
+    # Columns
+    query_id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+        primary_key=True,
+        doc="The query the subquery is associated with.",
+    )
+    subquery_id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+        primary_key=True,
+        doc="The subquery associated with the query.",
+    )
+
+
+class Query(RelatedObject, RecordUserAuditMixin):
+    __tablename__ = "query"
+    __table_args__ = (
+        {
+            "comment": "User definable queries",
+            "schema": settings.DB_SCHEMA,
+        },
+    )
     display_name = "Query"
     display_name_plural = "Queries"
     include_in_graph = False
@@ -271,17 +295,12 @@ class Query(RelatedObject):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
     queries_object_type_name: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
-        info={"edge": "QUERIES_ObjectType"},
-    )
-    show_results_with_object: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates if the results of the query should be returned with objects from the queries table type.",
     )
     include_values: Mapped[Include] = mapped_column(
         ENUM(
@@ -320,6 +339,18 @@ class Query(RelatedObject):
         secondary=QueryFilterValue.__table__,
         secondaryjoin=QueryFilterValue.query_id == id,
     )
+    sub_queries: Mapped[Optional[list["Query"]]] = relationship(
+        back_populates="queries",
+        foreign_keys=[QuerySubquery.query_id],
+        secondary=QuerySubquery.__table__,
+        secondaryjoin=QuerySubquery.query_id == id,
+    )
+    queries: Mapped[Optional[list["Query"]]] = relationship(
+        back_populates="sub_queries",
+        foreign_keys=[QuerySubquery.subquery_id],
+        secondary=QuerySubquery.__table__,
+        secondaryjoin=QuerySubquery.subquery_id == id,
+    )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
         back_populates="object_type_query",
         primaryjoin="Query.id == AttributeType.description_query_id",
@@ -329,72 +360,7 @@ class Query(RelatedObject):
         primaryjoin="Query.id == AttributeType.value_type_query_id",
     )
 
-    __tablename__ = "query"
-    __table_args__ = (
-        {
-            "comment": "User definable queries",
-            "schema": "uno",
-        },
-    )
     __mapper_args__ = {
         "polymorphic_identity": "query",
         "inherit_condition": id == RelatedObject.id,
     }
-
-
-class QuerySubquery(RelatedObject):
-    display_name = "Query Subquery"
-    display_name_plural = "Query Subqueries"
-    include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
-    )
-    query_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-        index=True,
-        doc="The query the subquery is associated with.",
-        info={"edge": "HAS_PARENT_QUERY"},
-    )
-    subquery_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-        index=True,
-        doc="The subquery associated with the query.",
-        info={"edge": "HAS_SUBQUERY"},
-    )
-
-    __tablename__ = "query__subquery"
-    __table_args__ = (
-        Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
-        {
-            "schema": "uno",
-            "comment": "The subqueries associated with a query",
-            "info": {"rls_policy": False, "node": False},
-        },
-    )
-    __mapper_args__ = {
-        "polymorphic_identity": "query__subquery",
-        "inherit_condition": id == RelatedObject.id,
-    }
-
-
-"""
-# Relationships
-
-
-
-
-# Query.sub_queries: Mapped[list["Query"]] = relationship(
-#    back_populates="query",
-#    secondary="uno.query__subquery",
-# )
-# Query.queries: Mapped[Optional[list["Query"]]] = relationship(
-#    back_populates="query_sub_query",
-#    secondary="uno.query__subquery",
-#    foreign_keys=["uno.query__subquery.c.query_id"],
-# )
-
-"""

@@ -17,9 +17,14 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.tables import Base, RelatedObject, BaseTable, str_26, str_255
-
-# from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
+from uno.db.tables import (
+    Base,
+    RelatedObject,
+    BaseMetaMixin,
+    RecordUserAuditMixin,
+    str_26,
+    str_255,
+)
 
 from uno.wkflw.enums import (
     WorkflowRecordStatus,
@@ -28,24 +33,24 @@ from uno.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,
 )
-from uno.wkflw.graphs import (
-    workflow_edge_defs,
-    workflow_event_edge_defs,
-    workflow_record_edge_defs,
-)
+from uno.config import settings
 
 
-class Workflow(RelatedObject):
+class Workflow(RelatedObject, RecordUserAuditMixin):
+    __tablename__ = "workflow"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": "User-defined workflows",
+    }
+
     display_name = "Workflow"
     display_name_plural = "Workflows"
 
     sql_emitters = []
 
-    # graph_edge_defs = workflow_edge_defs
-
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
@@ -97,30 +102,25 @@ class Workflow(RelatedObject):
     """
     limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
-            "uno.query.id",
+            f"{settings.DB_SCHEMA}.query.id",
             ondelete="SET NULL",
             name="fk_workflow_query_id",
         ),
         index=True,
-        # info={"edge": "LIMITS_WORKFLOWS_TO_QUERY"},
     )
     parent_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.workflow.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
         index=True,
-        # info={"edge": "IS_CHILD_OF_WORKFLOW"},
     )
     applicable_object_type_name: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
-        # info={"edge": "IS_WORKFLOW_FOR_ObjectType"},
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
     )
     record_object_type_name: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
-        # info={"edge": "HAS_workflowrecord_OF_ObjectType"},
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.object_function.id", ondelete="SET NULL"),
+        ForeignKey(f"{settings.DB_SCHEMA}.objectfunction.id", ondelete="SET NULL"),
         index=True,
-        # info={"edge": "IS_COMPLETED_BY_objectfunction"},
     )
     """
     process_child_value: Mapped[bool] = mapped_column(
@@ -139,58 +139,54 @@ class Workflow(RelatedObject):
     )
 
     # Relationships
-    __tablename__ = "workflow"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "User-defined workflows",
-    }
+
     __mapper_args__ = {
         "polymorphic_identity": "workflow",
         "inherit_condition": id == RelatedObject.id,
     }
 
 
-class WorkflowEvent(RelatedObject):
+class WorkflowEvent(RelatedObject, RecordUserAuditMixin):
+    __tablename__ = "workflowevent"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": "Manually created or trigger created workflow activities",
+    }
     display_name = "Workflow Event"
     display_name_plural = "Workflow Events"
 
     sql_emitters = []
 
-    # graph_edge_defs = workflow_event_edge_defs
-
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     workflow_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.workflow.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "IS_TYPE_OF"},
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "IS_EVENT_FOR"},
     )
     objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(
         doc="Value returned by the Object Function to indicate the workflow is complete"
     )
     __mapper_args__ = {
-        "polymorphic_identity": "workflow_event",
+        "polymorphic_identity": "workflowevent",
         "inherit_condition": id == RelatedObject.id,
     }
 
     # Relationships
 
-    __tablename__ = "workflow_event"
+
+class WorkflowRecord(RelatedObject, RecordUserAuditMixin, BaseMetaMixin):
+    __tablename__ = "workflowrecord"
     __table_args__ = {
-        "schema": "uno",
-        "comment": "Manually created or trigger created workflow activities",
+        "schema": settings.DB_SCHEMA,
+        "comment": "Records of workflow events",
     }
-
-
-class WorkflowRecord(RelatedObject):
     display_name = "Workflow Record"
     display_name_plural = "Workflow Records"
 
@@ -200,12 +196,11 @@ class WorkflowRecord(RelatedObject):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     workflowevent_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.workflow_event.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.workflowevent.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "IS_RECORD_OF"},
     )
     status: Mapped[WorkflowRecordStatus] = mapped_column(
         ENUM(
@@ -232,31 +227,31 @@ class WorkflowRecord(RelatedObject):
     )
     """
     workflowrecord_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "RECORDS_EXECUTION"},
     )
     """
     # ForeignKeyConstraint(
     #    ["workflowrecord_id"],
-    #    ["uno.related_object.id"],
+    #    [f"{settings.DB_SCHEMA}.relatedobject.id"],
     #    name="fk_workflowrecord_record_related_object_id",
     #    ondelete="CASCADE",
     # )
 
     # Relationships
-    __tablename__ = "workflow_record"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Records of workflow events",
-    }
+
     __mapper_args__ = {
-        "polymorphic_identity": "workflow_record",
+        "polymorphic_identity": "workflowrecord",
         "inherit_condition": id == RelatedObject.id,
     }
 
 
 class ObjectFunction(Base):
+    __tablename__ = "objectfunction"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": "Functions that can be called by user-defined workflows and reports",
+    }
     display_name = "Object Function"
     display_name_plural = "Object Functions"
     include_in_graph = False
@@ -273,14 +268,8 @@ class ObjectFunction(Base):
     name: Mapped[str] = mapped_column(doc="Name of the function")
     """
     function_object_type_name: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.object_type_name", ondelete="CASCADE"),
         index=True,
     )
     """
     # Relationships
-    __tablename__ = "object_function"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Functions that can be called by user-defined workflows and reports",
-        "info": {"rls_policy": "superuser", "in_graph": False},
-    }

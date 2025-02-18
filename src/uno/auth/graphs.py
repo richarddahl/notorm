@@ -23,7 +23,7 @@ tenant_edge_defs = [
     GraphEdgeDef(
         name="IS_OWNED_BY",
         destination_table_name="user",
-        accessor="owner",
+        accessor="created_by",
     ),
     GraphEdgeDef(
         name="WAS_LAST_MODIFIED_BY",
@@ -52,7 +52,7 @@ user_edge_defs = [
     GraphEdgeDef(
         name="IS_OWNED_BY",
         destination_table_name="user",
-        accessor="owner",
+        accessor="created_by",
     ),
     GraphEdgeDef(
         name="WAS_LAST_MODIFIED_BY",
@@ -86,7 +86,7 @@ role_edge_defs = [
     GraphEdgeDef(
         name="IS_OWNED_BY",
         destination_table_name="user",
-        accessor="owner",
+        accessor="created_by",
     ),
     GraphEdgeDef(
         name="WAS_LAST_MODIFIED_BY",
@@ -115,7 +115,7 @@ group_edge_defs = [
     GraphEdgeDef(
         name="IS_OWNED_BY",
         destination_table_name="user",
-        accessor="owner",
+        accessor="created_by",
     ),
     GraphEdgeDef(
         name="WAS_LAST_MODIFIED_BY",

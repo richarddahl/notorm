@@ -26,7 +26,7 @@ class PathEdgeChcekSQL(SQLEmitter):
             """
 
         return self.create_sql_function(
-            "set_owner_and_modified",
+            "validate_path",
             function_string,
             return_type="BOOLEAN",
             include_trigger=False,

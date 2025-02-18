@@ -16,7 +16,7 @@ tenant_schema_defs = [
         exclude_fields=[
             "id",
             "created_at",
-            "owner_id",
+            "created_by_id",
             "modified_at",
             "modified_by_id",
             "deleted_at",
@@ -50,7 +50,7 @@ user_schema_defs = [
         exclude_fields=[
             "id",
             "created_at",
-            "owner_id",
+            "created_by_id",
             "modified_at",
             "modified_by_id",
             "deleted_at",
@@ -86,7 +86,7 @@ group_schema_defs = [
         exclude_fields=[
             "id",
             "created_at",
-            "owner_id",
+            "created_by_id",
             "modified_at",
             "modified_by_id",
             "deleted_at",
@@ -120,7 +120,7 @@ role_schema_defs = [
         exclude_fields=[
             "id",
             "created_at",
-            "owner_id",
+            "created_by_id",
             "modified_at",
             "modified_by_id",
             "deleted_at",

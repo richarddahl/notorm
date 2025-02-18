@@ -230,8 +230,6 @@ class Base(AsyncAttrs, DeclarativeBase):
             return
         for property in cls.graph_properties:
             cls.filters[property.display] = {
-                # "table_name": property.table_name,
-                # "filter_type": "PROPERTY",
                 "data_type": property.data_type,
                 "name": property.name,
                 # "accessor": property.accessor,
@@ -267,7 +265,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         return sql
 
 
-class BaseTable:
+class BaseMetaMixin:
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
         doc="Indicates if the record is active",
@@ -280,34 +278,67 @@ class BaseTable:
         server_default=func.current_timestamp(),
         doc="Time the record was created",
     )
-    owner_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.user.id", ondelete="CASCADE"),
-        index=True,
-    )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
         server_default=func.current_timestamp(),
         server_onupdate=func.current_timestamp(),
     )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.user.id", ondelete="CASCADE"),
-        index=True,
-    )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         doc="Time the record was deleted",
     )
+
+    @declared_attr
+    def objects_created(cls) -> Mapped[list[Any]]:
+        return relationship(
+            cls,
+            viewonly=True,
+            foreign_keys=[cls.id],
+            doc="The user that owns the related object",
+            info={"edge": "WAS_CREATED_BY"},
+        )
+
+    @declared_attr
+    def objects_modified(cls) -> Mapped[list[Any]]:
+        return relationship(
+            cls,
+            viewonly=True,
+            foreign_keys=[cls.id],
+            doc="The user that last modified the related object",
+            info={"edge": "WAS_MODIFIED_BY"},
+        )
+
+    @declared_attr
+    def objects_deleted(cls) -> Mapped[list[Any]]:
+        return relationship(
+            cls,
+            viewonly=True,
+            foreign_keys=[cls.id],
+            doc="The user that deleted the related object",
+            info={"edge": "DELETED_BY"},
+        )
+
+
+class RecordUserAuditMixin(BaseMetaMixin):
+    created_by_id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+        index=True,
+    )
+    modified_by_id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+        index=True,
+    )
     deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.user.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
         index=True,
     )
 
     # Relationships
     @declared_attr
-    def owner(cls) -> Mapped["User"]:
+    def created_by(cls) -> Mapped["User"]:
         return relationship(
             "User",
-            # back_populates="owned_objects",
-            foreign_keys=[cls.owner_id],
+            back_populates="objects_created",
+            foreign_keys=[cls.created_by_id],
             doc="The user that owns the related object",
             info={"edge": "OWNS"},
         )
@@ -316,7 +347,7 @@ class BaseTable:
     def modified_by(cls) -> Mapped["User"]:
         return relationship(
             "User",
-            # back_populates="modified_objects",
+            back_populates="objects_modified",
             foreign_keys=[cls.modified_by_id],
             doc="The user that last modified the related object",
             info={"edge": "WAS_MODIFIED_BY"},
@@ -326,7 +357,7 @@ class BaseTable:
     def deleted_by(cls) -> Mapped["User"]:
         return relationship(
             "User",
-            # back_populates="deleted_objects",
+            back_populates="objects_deleted",
             foreign_keys=[cls.deleted_by_id],
             doc="The user that deleted the related object",
             info={"edge": "DELETED_BY"},
@@ -334,14 +365,20 @@ class BaseTable:
 
 
 class ObjectType(Base):
-    """Table Types identify the tables in the database, similar to contenttypes in Django"""
+    """Object Types identify polymorphic types in the database for sublcasses of RelatedObject"""
+
+    __tablename__ = "objecttype"
+    __table_args__ = (
+        {
+            "schema": settings.DB_SCHEMA,
+            "comment": "Object Types identify polymorphic types in the database for sublcasses of RelatedObject",
+        },
+    )
 
     display_name = "Table Type"
     display_name_plural = "Table Types"
 
     sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertPermissionSQL,
         AlterGrantSQL,
     ]
 
@@ -365,25 +402,23 @@ class ObjectType(Base):
         doc="The attribute types that are values for the object type",
         info={"edge": "HAS_VALUE_TYPE"},
     )
+    # filter_values: Mapped[list["FilterValue"]] = relationship(
+    #    back_populates="object_type",
+    #    primaryjoin="FilterValue.filter_type_name == ObjectType.name",
+    #    doc="The attribute types that are filters for the object type",
+    #    info={"edge": "HAS_FILTER_TYPE"},
+    # )
     permissions: Mapped[list["Permission"]] = relationship(
         back_populates="object_type",
         doc="The permissions for the object type",
         info={"edge": "HAS_PERMISSION"},
     )
 
-    __tablename__ = "object_type"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Table Types identify the tables in the database, similar to contenttypes in Django",
-        },
-    )
-
     def __str__(self) -> str:
-        return f"{self.schema_name}.{self.table_name}"
+        return self.name
 
 
-class RelatedObject(Base, BaseTable):
+class RelatedObject(Base):
     """
     Base class for objects that are generically related to other objects.
 
@@ -391,8 +426,18 @@ class RelatedObject(Base, BaseTable):
     allowing for a single point of reference for attributes, queries, workflows, and reports
     """
 
-    display_name = "DB Object"
-    display_name_plural = "DB Objects"
+    __tablename__ = "relatedobject"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": textwrap.dedent(
+            """
+            Related Objects are polymorphic objects that are used for the pk of many objects in the database,
+            allowing for a single point of reference for attributes, queries, workflows, and reports
+            """
+        ),
+    }
+    display_name = "Related Object"
+    display_name_plural = "Related Objects"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -402,23 +447,13 @@ class RelatedObject(Base, BaseTable):
     # Columns
     id: Mapped[str_26] = mapped_column(primary_key=True)
     object_type_name: Mapped[str_255] = mapped_column(
-        ForeignKey("uno.object_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
         doc="The object_type_name of the related object",
     )
 
-    __tablename__ = "related_object"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": textwrap.dedent(
-            """
-            DB Objects are used for the pk of many objects in the database,
-            allowing for a single point of reference for attributes, queries, workflows, and reports
-            """
-        ),
-    }
     __mapper_args__ = {
-        "polymorphic_identity": "related_object",
+        "polymorphic_identity": "relatedobject",
         "polymorphic_on": "object_type_name",
     }
 

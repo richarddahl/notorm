@@ -6,22 +6,25 @@ import textwrap
 
 from dataclasses import dataclass
 
+from psycopg.sql import SQL, Identifier, Literal
+
 from uno.db.sql_emitters import SQLEmitter
 from uno.config import settings
 
 
 @dataclass
-class UserRecordFieldAuditSQL(SQLEmitter):
-    """ """
+class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
+    table_name: str = "user"
 
     def emit_sql(self) -> str:
-        function_string = """
+        function_string = (
+            SQL(
+                """
             DECLARE
-                user_id TEXT := current_setting('rls_var.user_id', true);
+                related_object_id VARCHAR(26) := {db_schema}.generate_ulid();
+                user_id VARCHAR(26) := current_setting('rls_var.user_id', true);
                 estimate INT4;
             BEGIN
-                SELECT current_setting('rls_var.user_id', true) INTO user_id;
-
                 IF user_id IS NULL THEN
                     /*
                     This should only happen when the very first user is created
@@ -29,49 +32,40 @@ class UserRecordFieldAuditSQL(SQLEmitter):
                     */
                     SELECT reltuples AS estimate FROM PG_CLASS WHERE relname = TG_TABLE_NAME INTO estimate;
                     IF TG_TABLE_NAME = 'user' AND estimate < 1 THEN
-                    /*
-                         NEW.modified_at := NOW();
-
-                        IF TG_OP = 'INSERT' THEN
-                            NEW.created_at := NOW();
-                        END IF;
-
-                        IF TG_OP = 'DELETE' THEN
-                            NEW.deleted_at = NOW();
-                        END IF;
-                        */
-                    ELSE
-                        RAISE EXCEPTION 'user_id is NULL';
+                        user_id := related_object_id;
                     END IF;
                 END IF;
+                /*
+                Function used to insert a record into the related_object table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the related_object table.
+                Set as a trigger on the table, so that the related_object record is created when the
+                record is created.
+                */
 
-                NEW.modified_at := NOW();
-                NEW.modified_by_id = user_id;
-
-                IF TG_OP = 'INSERT' THEN
-                    NEW.created_at := NOW();
-                    NEW.owned_by_id = user_id;
-                END IF;
-
-                IF TG_OP = 'DELETE' THEN
-                    NEW.deleted_at = NOW();
-                    NEW.deleted_by_id = user_id;
-                END IF;
+                SET ROLE {db_role};
+                INSERT INTO {db_schema}.related_object (id, object_type_name)
+                    VALUES (related_object_id, {table_name});
+                NEW.id = related_object_id;
                 RETURN NEW;
             END;
             """
+            )
+            .format(
+                db_schema=Identifier(settings.DB_SCHEMA),
+                db_role=Identifier(f"{settings.DB_NAME}_writer"),
+                table_name=Literal(self.table_name),
+            )
+            .as_string()
+        )
 
         return self.create_sql_function(
-            "set_owner_and_modified",
+            "insert_user_related_object",
             function_string,
             timing="BEFORE",
-            operation="INSERT OR UPDATE OR DELETE",
+            operation="INSERT",
             include_trigger=True,
             db_function=False,
         )
-
-
-# UNVERIFIED
 
 
 class RecordFieldAuditSQL(SQLEmitter):

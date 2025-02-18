@@ -22,18 +22,16 @@ from uno.db.management.sql_emitters import (
 )
 
 
-from uno.db.tables import Base
-from uno.config import settings
+from uno.db.tables import Base, ObjectType, RelatedObject
 
-# for module in json.loads(settings.INSTALLED_APPS):
-#    importlib.import_module(f"{module}.tables")
-# import uno.obj.tables as objs_tables
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
 import uno.msg.tables as comms_tables
 import uno.fltr.tables as fltrs_tables
 import uno.rprt.tables as rprts_tables
 import uno.wkflw.tables as wrkflws_tables
+
+from uno.config import settings
 
 
 class DBManager:
@@ -60,7 +58,7 @@ class DBManager:
             # The ordering of these operations are important
 
             conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))
-            conn.execute(text(objs_tables.ObjectType.emit_sql()))
+            conn.execute(text(ObjectType.emit_sql()))
 
             for base in Base.registry.mappers:
                 if base.class_.__name__ == ObjectType:

@@ -29,12 +29,12 @@ related_object_edge_defs = [
         name="HAS_ATTRIBUTE",
         destination_table_name="attribute",
         accessor="attributes",
-        secondary_table_name="uno.attribute__object_value",
+        secondary_table_name=f"{settings.DB_SCHEMA}.attribute__object_value",
     ),
     GraphEdgeDef(
         name="HAS_ATTACHMENT",
         destination_table_name="attachment",
         accessor="attachments",
-        secondary_table_name="uno.attachment__related_object",
+        secondary_table_name=f"{settings.DB_SCHEMA}.attachment__related_object",
     ),
 ]
