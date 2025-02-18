@@ -273,15 +273,17 @@ class User(RelatedObject, BaseMetaMixin):
         info={"edge": "HAS_DEFAULT_GROUP"},
     )
     created_by: Mapped[Optional["User"]] = relationship(
+        "User",
         back_populates="users_created",
-        foreign_keys="User.created_by_id",
+        foreign_keys=[created_by_id],
+        remote_side="User.id",
         doc="User who created this user",
         info={"edge": "CREATED"},
     )
-    users_created: Mapped[Optional["User"]] = relationship(
+    users_created: Mapped[list["User"]] = relationship(
+        "User",
         back_populates="created_by",
-        foreign_keys="User.created_by_id",
-        remote_side="User.id",
+        foreign_keys=[created_by_id],
         doc="Users created by this user",
         info={"edge": "CREATED"},
     )
