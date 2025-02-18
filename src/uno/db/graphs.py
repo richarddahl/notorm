@@ -5,11 +5,11 @@
 from uno.graphs import GraphEdgeDef
 
 
-object_type_edge_defs = [
+objecttype_edge_defs = [
     GraphEdgeDef(
         name="HAS_OBJECT",
-        destination_table_name="related_object",
-        accessor="related_objects",
+        destination_table_name="relatedobject",
+        accessor="relatedobjects",
     ),
     GraphEdgeDef(
         name="IS_DESCRIBED_BY",
@@ -24,7 +24,7 @@ object_type_edge_defs = [
 ]
 
 
-related_object_edge_defs = [
+relatedobject_edge_defs = [
     GraphEdgeDef(
         name="HAS_ATTRIBUTE",
         destination_table_name="attribute",
@@ -35,6 +35,6 @@ related_object_edge_defs = [
         name="HAS_ATTACHMENT",
         destination_table_name="attachment",
         accessor="attachments",
-        secondary_table_name=f"{settings.DB_SCHEMA}.attachment__related_object",
+        secondary_table_name=f"{settings.DB_SCHEMA}.attachment__relatedobject",
     ),
 ]

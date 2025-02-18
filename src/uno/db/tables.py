@@ -126,7 +126,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     # Graph attributes
     include_in_graph: ClassVar[bool] = True
     graph_node: ClassVar[GraphNode] = None
-    # graph_edge_defs: ClassVar[list[GraphEdgeDef]] = []
     graph_edges: ClassVar[dict[str, GraphEdge]] = {}
     graph_properties: ClassVar[dict[str, GraphProperty]] = []
     exclude_from_properties: ClassVar[list[str]] = []
@@ -392,7 +391,7 @@ class ObjectType(Base):
     # Relationships
     described_by: Mapped[list["AttributeType"]] = relationship(
         back_populates="describes",
-        primaryjoin="AttributeType.object_type_name== ObjectType.name",
+        primaryjoin="AttributeType.objecttype_name== ObjectType.name",
         doc="The attribute types that describe the object type",
         info={"edge": "IS_DESCRIBED_BY"},
     )
@@ -403,13 +402,13 @@ class ObjectType(Base):
         info={"edge": "HAS_VALUE_TYPE"},
     )
     # filter_values: Mapped[list["FilterValue"]] = relationship(
-    #    back_populates="object_type",
+    #    back_populates="objecttype",
     #    primaryjoin="FilterValue.filter_type_name == ObjectType.name",
     #    doc="The attribute types that are filters for the object type",
     #    info={"edge": "HAS_FILTER_TYPE"},
     # )
     permissions: Mapped[list["Permission"]] = relationship(
-        back_populates="object_type",
+        back_populates="objecttype",
         doc="The permissions for the object type",
         info={"edge": "HAS_PERMISSION"},
     )
@@ -446,16 +445,16 @@ class RelatedObject(Base):
 
     # Columns
     id: Mapped[str_26] = mapped_column(primary_key=True)
-    object_type_name: Mapped[str_255] = mapped_column(
+    objecttype_name: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
-        doc="The object_type_name of the related object",
+        doc="The objecttype_name of the related object",
     )
 
     __mapper_args__ = {
         "polymorphic_identity": "relatedobject",
-        "polymorphic_on": "object_type_name",
+        "polymorphic_on": "objecttype_name",
     }
 
     def __str__(self) -> str:
-        return f"{self.object_type_name}"
+        return f"{self.objecttype_name}"

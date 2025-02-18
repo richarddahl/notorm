@@ -103,7 +103,7 @@ class MessageRelatedObject(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    related_object_id: Mapped[str_26] = mapped_column(
+    relatedobject_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
         primary_key=True,
     )

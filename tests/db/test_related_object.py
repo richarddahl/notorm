@@ -18,11 +18,13 @@ from tests.conftest import (
     db_column,
 )
 
+from uno.config import settings
+
 
 class TestRelatedObject:
     schema = "uno"
 
-    def test_related_object_structure(self):
+    def test_relatedobject_structure(self):
         assert RelatedObject.display_name == "Related Object"
         assert RelatedObject.display_name_plural == "Related Objects"
         assert AlterGrantSQL in RelatedObject.sql_emitters
@@ -30,89 +32,89 @@ class TestRelatedObject:
         assert RelatedObject.__name__ == "RelatedObject"
         assert RelatedObject.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert RelatedObject.__table_args__.get("schema") == "uno"
-        assert RelatedObject.__tablename__ == "related_object"
+        assert RelatedObject.__tablename__ == "relatedobject"
         assert list(RelatedObject.__table__.columns.keys()) == [
             "id",
-            "object_type_name",
+            "objecttype_name",
         ]
 
-    def test_related_object_indices(self, db_connection):
-        """Test the index_definitions on the related_object table in the database."""
+    def test_relatedobject_indices(self, db_connection):
+        """Test the index_definitions on the relatedobject table in the database."""
         db_inspector = inspect(db_connection)
-        print_indices(db_inspector, "related_object", schema=self.schema)
-        assert db_inspector.get_indexes("related_object", schema=self.schema) == [
+        print_indices(db_inspector, "relatedobject", schema=self.schema)
+        assert db_inspector.get_indexes("relatedobject", schema=self.schema) == [
             {
-                "name": "ix_uno_related_object_id",
+                "name": "ix_uno_relatedobject_id",
                 "unique": False,
                 "column_names": ["id"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
             },
             {
-                "name": "ix_uno_related_object_object_type_name",
+                "name": "ix_uno_relatedobject_objecttype_name",
                 "unique": False,
-                "column_names": ["object_type_name"],
+                "column_names": ["objecttype_name"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
             },
         ]
 
-    def test_related_object_primary_key(self, db_connection):
-        """Test the primary key constraint on the related_object table in the database."""
+    def test_relatedobject_primary_key(self, db_connection):
+        """Test the primary key constraint on the relatedobject table in the database."""
         db_inspector = inspect(db_connection)
-        # print_pk_constraint(db_inspector, "related_object", schema=self.schema)
-        assert db_inspector.get_pk_constraint("related_object", schema=self.schema) == {
+        # print_pk_constraint(db_inspector, "relatedobject", schema=self.schema)
+        assert db_inspector.get_pk_constraint("relatedobject", schema=self.schema) == {
             "constrained_columns": ["id"],
-            "name": "pk_related_object",
+            "name": "pk_relatedobject",
             "comment": None,
         }
 
-    def test_related_object_foreign_keys(self, db_connection):
-        """Test the foreign keys on the related_object table in the database."""
+    def test_relatedobject_foreign_keys(self, db_connection):
+        """Test the foreign keys on the relatedobject table in the database."""
         db_inspector = inspect(db_connection)
-        # print_foreign_keys(db_inspector, "related_object", schema=self.schema)
-        assert db_inspector.get_foreign_keys("related_object", schema=self.schema) == [
+        # print_foreign_keys(db_inspector, "relatedobject", schema=self.schema)
+        assert db_inspector.get_foreign_keys("relatedobject", schema=self.schema) == [
             {
-                "name": "fk_related_object_object_type_name",
-                "constrained_columns": ["object_type_name"],
+                "name": "fk_relatedobject_objecttype_name",
+                "constrained_columns": ["objecttype_name"],
                 "referred_schema": "uno",
-                "referred_table": "object_type",
+                "referred_table": "objecttype",
                 "referred_columns": ["id"],
                 "options": {"ondelete": "CASCADE"},
                 "comment": None,
             },
         ]
 
-    def test_related_object_unique_constraints(self, db_connection):
-        """Test the unique constraints on the related_object table in the database."""
+    def test_relatedobject_unique_constraints(self, db_connection):
+        """Test the unique constraints on the relatedobject table in the database."""
         db_inspector = inspect(db_connection)
-        # print_uq_constraints(db_inspector, "related_object", schema=self.schema)
+        # print_uq_constraints(db_inspector, "relatedobject", schema=self.schema)
         assert (
-            db_inspector.get_unique_constraints("related_object", schema=self.schema)
+            db_inspector.get_unique_constraints("relatedobject", schema=self.schema)
             == []
         )
 
-    def test_related_object_check_constraints(self, db_connection):
-        """Test the check constraints on the related_object table in the database."""
+    def test_relatedobject_check_constraints(self, db_connection):
+        """Test the check constraints on the relatedobject table in the database."""
         db_inspector = inspect(db_connection)
-        # print_ck_constraints(db_inspector, "related_object", schema=self.schema)
+        # print_ck_constraints(db_inspector, "relatedobject", schema=self.schema)
         assert (
-            db_inspector.get_check_constraints("related_object", schema=self.schema)
+            db_inspector.get_check_constraints("relatedobject", schema=self.schema)
             == []
         )
 
-    def test_related_object_id_column(self, db_connection):
+    def test_relatedobject_id_column(self, db_connection):
         db_inspector = inspect(db_connection)
-        column = db_column(db_inspector, "related_object", "id", schema=self.schema)
+        column = db_column(db_inspector, "relatedobject", "id", schema=self.schema)
         assert column is not None
         assert column.get("nullable") is False
         assert isinstance(column.get("type"), VARCHAR)
         assert column.get("type").length == 26
 
-    def test_related_object_object_type_name_column(self, db_connection):
+    def test_relatedobject_objecttype_name_column(self, db_connection):
         db_inspector = inspect(db_connection)
         column = db_column(
-            db_inspector, "related_object", "object_type_name", schema=self.schema
+            db_inspector, "relatedobject", "objecttype_name", schema=self.schema
         )
         assert column is not None
         assert column.get("nullable") is False

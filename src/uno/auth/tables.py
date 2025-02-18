@@ -186,7 +186,7 @@ class User(RelatedObject, BaseMetaMixin):
             SQL(
                 """
                 (is_superuser = 'false' AND default_group_id IS NOT NULL) OR 
-                (is_superuser = 'true' AND default_group_id IS NULL) AND
+                (is_superuser = 'true' AND default_group_id IS NULL)
             """
             ).as_string(),
             name="ck_user_is_superuser",
@@ -347,7 +347,7 @@ class User(RelatedObject, BaseMetaMixin):
 
 
 class RolePermission(Base):
-    __tablename__ = "role__permission"
+    __tablename__ = "role_permission"
     __table_args__ = (
         {
             "comment": """
@@ -359,10 +359,7 @@ class RolePermission(Base):
     display_name = "Role Permission"
     display_name_plural = "Role Permissions"
 
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
-    ]
+    sql_emitters = []
 
     include_in_graph = False
 
@@ -372,7 +369,7 @@ class RolePermission(Base):
         primary_key=True,
         doc="Role ID",
     )
-    permission_id: Mapped[str_26] = mapped_column(
+    permission_id: Mapped[int] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.permission.id", ondelete="CASCADE"),
         primary_key=True,
         doc="Permission ID",
@@ -383,7 +380,7 @@ class Permission(Base):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
-            "object_type_name",
+            "objecttype_name",
             "operation",
             name="uq_objecttype_operation",
         ),
@@ -391,7 +388,7 @@ class Permission(Base):
             "comment": """
                 Permissions for each table.
                 Deleted automatically by the DB via the FK Constraints
-                ondelete when a object_type is deleted.
+                ondelete when a objecttype is deleted.
             """,
             "schema": settings.DB_SCHEMA,
         },
@@ -406,9 +403,10 @@ class Permission(Base):
     id: Mapped[int] = mapped_column(
         Identity(),
         primary_key=True,
+        unique=True,
         doc="The id of the node.",
     )
-    object_type_name: Mapped[int] = mapped_column(
+    objecttype_name: Mapped[int] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         primary_key=True,
         doc="Table to which the permission provides access.",
@@ -425,7 +423,7 @@ class Permission(Base):
     )
 
     # Relationships
-    object_type: Mapped[ObjectType] = relationship(
+    objecttype: Mapped[ObjectType] = relationship(
         back_populates="permissions",
         doc="Table the permission is for",
         info={"edge": "ALLOWS_ACCESS_TO"},
@@ -438,7 +436,7 @@ class Permission(Base):
     )
 
     def __str__(self) -> str:
-        return f"{self.object_type.name} - {self.actions}"
+        return f"{self.objecttype.name} - {self.actions}"
 
 
 class Role(RelatedObject, RecordUserAuditMixin):

@@ -21,7 +21,7 @@ class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
             SQL(
                 """
             DECLARE
-                related_object_id VARCHAR(26) := {db_schema}.generate_ulid();
+                relatedobject_id VARCHAR(26) := {db_schema}.generate_ulid();
                 user_id VARCHAR(26) := current_setting('rls_var.user_id', true);
                 estimate INT4;
             BEGIN
@@ -32,20 +32,20 @@ class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
                     */
                     SELECT reltuples AS estimate FROM PG_CLASS WHERE relname = TG_TABLE_NAME INTO estimate;
                     IF TG_TABLE_NAME = 'user' AND estimate < 1 THEN
-                        user_id := related_object_id;
+                        user_id := relatedobject_id;
                     END IF;
                 END IF;
                 /*
-                Function used to insert a record into the related_object table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the related_object table.
-                Set as a trigger on the table, so that the related_object record is created when the
+                Function used to insert a record into the relatedobject table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the relatedobject table.
+                Set as a trigger on the table, so that the relatedobject record is created when the
                 record is created.
                 */
 
                 SET ROLE {db_role};
-                INSERT INTO {db_schema}.related_object (id, object_type_name)
-                    VALUES (related_object_id, {table_name});
-                NEW.id = related_object_id;
+                INSERT INTO {db_schema}.relatedobject (id, objecttype_name)
+                    VALUES (relatedobject_id, {table_name});
+                NEW.id = relatedobject_id;
                 RETURN NEW;
             END;
             """
@@ -59,7 +59,7 @@ class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
         )
 
         return self.create_sql_function(
-            "insert_user_related_object",
+            "insert_user_relatedobject",
             function_string,
             timing="BEFORE",
             operation="INSERT",
@@ -129,8 +129,8 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
                 JOIN uno.role on ugr.role_id = role.id
                 JOIN uno.role_table_operation rto ON rto.role_id = role.id
                 JOIN uno.permission tp ON tp.id = rto.table_operation_id
-                JOIN uno.object_type tt ON tt.id = tp.object_type_name
-                WHERE tt.name = object_type
+                JOIN uno.objecttype tt ON tt.id = tp.objecttype_name
+                WHERE tt.name = objecttype
                 INTO permissible_groups;
                 RETURN permissible_groups;
             END;
@@ -140,7 +140,7 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
             "get_permissible_groups",
             function_string,
             return_type="VARCHAR[]",
-            function_args="object_type TEXT",
+            function_args="objecttype TEXT",
         )
 
 

@@ -112,10 +112,10 @@ class Workflow(RelatedObject, RecordUserAuditMixin):
         ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
         index=True,
     )
-    applicable_object_type_name: Mapped[str_26] = mapped_column(
+    applicable_objecttype_name: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
     )
-    record_object_type_name: Mapped[Optional[str_26]] = mapped_column(
+    record_objecttype_name: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
@@ -128,13 +128,13 @@ class Workflow(RelatedObject, RecordUserAuditMixin):
         doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
     )
     Index(
-        "ix_workflow_applicable_object_type_name",
-        "applicable_object_type_name",
+        "ix_workflow_applicable_objecttype_name",
+        "applicable_objecttype_name",
         unique=True,
     )
     Index(
-        "ix_workflowrecord_object_type_name",
-        "record_object_type_name",
+        "ix_workflowrecord_objecttype_name",
+        "record_objecttype_name",
         unique=True,
     )
 
@@ -234,7 +234,7 @@ class WorkflowRecord(RelatedObject, RecordUserAuditMixin, BaseMetaMixin):
     # ForeignKeyConstraint(
     #    ["workflowrecord_id"],
     #    [f"{settings.DB_SCHEMA}.relatedobject.id"],
-    #    name="fk_workflowrecord_record_related_object_id",
+    #    name="fk_workflowrecord_record_relatedobject_id",
     #    ondelete="CASCADE",
     # )
 
@@ -267,8 +267,8 @@ class ObjectFunction(Base):
     )
     name: Mapped[str] = mapped_column(doc="Name of the function")
     """
-    function_object_type_name: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.object_type_name", ondelete="CASCADE"),
+    function_objecttype_name: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.objecttype_name", ondelete="CASCADE"),
         index=True,
     )
     """

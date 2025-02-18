@@ -125,7 +125,6 @@ class RLSSQL(SQLEmitter):
             The information for RLS is:
                 user_id: The ID of the user 
                 is_superuser: Whether the user is a superuser
-                is_tenant_admin: Whether the user is a tenant admin
                 tenant_id: The ID of the tenant to which the user is associated
 
             ::param token: The JWT token to verify
@@ -144,7 +143,6 @@ class RLSSQL(SQLEmitter):
                 user_email TEXT; 
                 user_id TEXT;
                 user_is_superuser TEXT;
-                user_is_tenant_admin TEXT;
                 user_tenant_id TEXT;
                 user_is_active BOOLEAN;
                 user_is_deleted BOOLEAN;
@@ -185,14 +183,13 @@ class RLSSQL(SQLEmitter):
                     PERFORM set_config('rls_var.email', sub, true);
 
                     -- Query the user table for the user to get the values for the session variables
-                    SELECT id, email, is_superuser, is_tenant_admin, tenant_id, is_active, is_deleted 
+                    SELECT id, email, is_superuser, tenant_id, is_active, is_deleted 
                     FROM uno.user
                     WHERE email = sub
                     INTO
                         user_id,
                         user_email,
                         user_is_superuser,
-                        user_is_tenant_admin,
                         user_tenant_id,
                         user_is_active,
                         user_is_deleted;
@@ -213,7 +210,6 @@ class RLSSQL(SQLEmitter):
                     PERFORM set_config('rls_var.email', user_email, true);
                     PERFORM set_config('rls_var.user_id', user_id, true);
                     PERFORM set_config('rls_var.is_superuser', user_is_superuser, true);
-                    PERFORM set_config('rls_var.is_tenant_admin', user_is_tenant_admin, true);
                     PERFORM set_config('rls_var.tenant_id', user_tenant_id, true);
 
                     --Set the role to the role passed in

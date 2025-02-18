@@ -17,8 +17,8 @@ tenant_edge_defs = [
     ),
     GraphEdgeDef(
         name="OWNS",
-        destination_table_name="related_object",
-        accessor="related_objects",
+        destination_table_name="relatedobject",
+        accessor="relatedobjects",
     ),
     GraphEdgeDef(
         name="IS_OWNED_BY",
@@ -109,8 +109,8 @@ group_edge_defs = [
     ),
     GraphEdgeDef(
         name="HAS_OBJECT",
-        destination_table_name="related_object",
-        accessor="related_objects",
+        destination_table_name="relatedobject",
+        accessor="relatedobjects",
     ),
     GraphEdgeDef(
         name="IS_OWNED_BY",

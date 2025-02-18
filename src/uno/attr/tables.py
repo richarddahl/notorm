@@ -49,7 +49,7 @@ class AttributeObjectValue(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.attribute.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    related_object_id: Mapped[str_26] = mapped_column(
+    relatedobject_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
         primary_key=True,
     )
@@ -75,7 +75,7 @@ class AttributeTypeObjectType(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.attributetype.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    object_type_name: Mapped[str_255] = mapped_column(
+    objecttype_name: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         primary_key=True,
     )
@@ -153,7 +153,7 @@ class Attribute(RelatedObject, RecordUserAuditMixin):
         back_populates="attribute_values",
         secondary=AttributeObjectValue.__table__,
         primaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
-        secondaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        secondaryjoin="RelatedObject.id == AttributeObjectValue.relatedobject_id",
         doc="The objects with this attribute",
         info={"edge": "HAS_ATTRIBUTE_VALUE"},
     )
@@ -161,7 +161,7 @@ class Attribute(RelatedObject, RecordUserAuditMixin):
         "Attribute",
         back_populates="object_values",
         secondary=AttributeObjectValue.__table__,
-        primaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        primaryjoin="RelatedObject.id == AttributeObjectValue.relatedobject_id",
         secondaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
         doc="The attributes for the object",
         info={"edge": "HAS_ATTRIBUTE_VALUE"},
@@ -253,7 +253,7 @@ class AttributeType(RelatedObject, RecordUserAuditMixin):
         doc="The object types that the attribute type describes.",
         info={"edge": "DESCRIBES"},
     )
-    object_type_query: Mapped[Optional[Query]] = relationship(
+    objecttype_query: Mapped[Optional[Query]] = relationship(
         "Query",
         back_populates="attribute_type_applicability",
         primaryjoin=description_query_id == Query.id,
@@ -304,7 +304,7 @@ class AttachmentRelatedObject(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.attachment.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    related_object_id: Mapped[str_26] = mapped_column(
+    relatedobject_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
         primary_key=True,
     )

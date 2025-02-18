@@ -153,7 +153,7 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
             "boolean_value",
             "date_value",
             "decimal_value",
-            "related_object_value_id",
+            "relatedobject_value_id",
             "string_value",
             "text_value",
             "time_value",
@@ -173,7 +173,7 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
                 OR boolean_value IS NOT NULL
                 OR date_value IS NOT NULL
                 OR decimal_value IS NOT NULL
-                OR related_object_value_id IS NOT NULL
+                OR relatedobject_value_id IS NOT NULL
                 OR string_value IS NOT NULL
                 OR text_value IS NOT NULL
                 OR time_value IS NOT NULL
@@ -230,7 +230,7 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
     time_value: Mapped[Optional[datetime.time]] = mapped_column()
     timestamp_value: Mapped[Optional[datetime.datetime]] = mapped_column()
     string_value: Mapped[Optional[str_255]] = mapped_column()
-    related_object_value_id: Mapped[Optional[str_26]] = mapped_column(
+    relatedobject_value_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
             f"{settings.DB_SCHEMA}.relatedobject.id",
             ondelete="CASCADE",
@@ -298,7 +298,7 @@ class Query(RelatedObject, RecordUserAuditMixin):
         ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
-    queries_object_type_name: Mapped[str_26] = mapped_column(
+    queries_objecttype_name: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
         index=True,
     )
@@ -352,7 +352,7 @@ class Query(RelatedObject, RecordUserAuditMixin):
         secondaryjoin=QuerySubquery.subquery_id == id,
     )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
-        back_populates="object_type_query",
+        back_populates="objecttype_query",
         primaryjoin="Query.id == AttributeType.description_query_id",
     )
     attribute_value_applicability: Mapped[Optional["AttributeType"]] = relationship(

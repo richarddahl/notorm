@@ -26,7 +26,7 @@ attribute_type_edge_defs = [
 attachment_edge_defs = [
     GraphEdgeDef(
         name="IS_ATTACHMENT_FOR",
-        destination_table_name="related_object",
+        destination_table_name="relatedobject",
         accessor="attachments",
     ),
 ]

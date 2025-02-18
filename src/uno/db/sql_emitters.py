@@ -195,9 +195,9 @@ class InsertObjectTypeRecordSQL(SQLEmitter):
         return (
             SQL(
                 """
-            -- Create the object_type record
+            -- Create the objecttype record
             SET ROLE {db_role};
-            INSERT INTO {schema}.object_type (name)
+            INSERT INTO {schema}.objecttype (name)
             VALUES ({table_name});
             """
             )
@@ -217,9 +217,9 @@ class InsertULIDSQL(SQLEmitter):
             f"""
             -- SET ROLE {settings.DB_NAME}_writer;
             DECLARE
-                related_object_id VARCHAR(26) := uno.generate_ulid();
+                relatedobject_id VARCHAR(26) := uno.generate_ulid();
             BEGIN
-                NEW.id = related_object_id;
+                NEW.id = relatedobject_id;
                 RETURN NEW;
             END;
             """
@@ -242,20 +242,20 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
             SQL(
                 """
             DECLARE
-                related_object_id VARCHAR(26) := {db_schema}.generate_ulid();
+                relatedobject_id VARCHAR(26) := {db_schema}.generate_ulid();
                 -- user_id VARCHAR(26) := current_setting('rls_var.user_id', true);
             BEGIN
                 /*
-                Function used to insert a record into the related_object table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the related_object table.
-                Set as a trigger on the table, so that the related_object record is created when the
+                Function used to insert a record into the relatedobject table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the relatedobject table.
+                Set as a trigger on the table, so that the relatedobject record is created when the
                 record is created.
                 */
 
                 SET ROLE {db_role};
-                INSERT INTO {db_schema}.related_object (id, object_type_name)
-                    VALUES (related_object_id, {object_type_name});
-                NEW.id = related_object_id;
+                INSERT INTO {db_schema}.relatedobject (id, objecttype_name)
+                    VALUES (relatedobject_id, {objecttype_name});
+                NEW.id = relatedobject_id;
                 RETURN NEW;
             END;
             """
@@ -263,13 +263,13 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
             .format(
                 db_schema=Identifier(settings.DB_SCHEMA),
                 db_role=Identifier(f"{settings.DB_NAME}_writer"),
-                object_type_name=Literal(self.table_name),
+                objecttype_name=Literal(self.table_name),
             )
             .as_string()
         )
 
         return self.create_sql_function(
-            "insert_related_object",
+            "insert_relatedobject",
             function_string,
             timing="BEFORE",
             operation="INSERT",
@@ -282,7 +282,7 @@ class InsertRelatedObjectFunctionSQL(SQLEmitter):
 class InsertRelatedObjectTriggerSQL(SQLEmitter):
     def emit_sql(self) -> str:
         return self.create_sql_trigger(
-            "insert_related_object",
+            "insert_relatedobject",
             timing="BEFORE",
             operation="INSERT",
             for_each="ROW",
@@ -298,17 +298,17 @@ class InsertPermissionSQL(SQLEmitter):
             BEGIN
                 /*
                 Function to create a new Permission record when a new ObjectType is inserted.
-                Records are created for each object_type with each of the following permissions:
+                Records are created for each objecttype with each of the following permissions:
                     SELECT, INSERT, UPDATE, DELETE
-                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a object_type is deleted.
+                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a objecttype is deleted.
                 */
-                INSERT INTO uno.permission(object_type_name, operation)
+                INSERT INTO uno.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'SELECT'::uno.sqloperation);
-                INSERT INTO uno.permission(object_type_name, operation)
+                INSERT INTO uno.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'INSERT'::uno.sqloperation);
-                INSERT INTO uno.permission(object_type_name, operation)
+                INSERT INTO uno.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'UPDATE'::uno.sqloperation);
-                INSERT INTO uno.permission(object_type_name, operation)
+                INSERT INTO uno.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'DELETE'::uno.sqloperation);
                 RETURN NEW;
             END;
