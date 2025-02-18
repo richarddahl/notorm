@@ -11,7 +11,6 @@ from fastapi.templating import Jinja2Templates
 from uno.config import settings
 
 
-import uno.glbl.tables as glbl_tables
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
 

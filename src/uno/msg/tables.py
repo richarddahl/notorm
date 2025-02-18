@@ -16,10 +16,10 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, RelatedObject, str_26, str_255
-from uno.db.mixins import BaseFieldMixin
-from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
-from uno.glbl.sql_emitters import (
+from uno.db.tables import Base, RelatedObject, str_26, str_255
+from uno.db.sql_emitters import (
+    RecordVersionAuditSQL,
+    AlterGrantSQL,
     InsertObjectTypeRecordSQL,
 )
 from uno.msg.enums import MessageImportance
@@ -27,16 +27,6 @@ from uno.msg.graphs import message_edge_defs
 
 
 class Message(RelatedObject):
-    __tablename__ = "message"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Messages are used to communicate between users",
-    }
-    __mapper_args__ = {
-        "polymorphic_identity": "message",
-        "inherit_condition": id == RelatedObject.id,
-    }
-
     display_name = "Message"
     display_name_plural = "Messages"
 
@@ -46,7 +36,7 @@ class Message(RelatedObject):
         InsertObjectTypeRecordSQL,
     ]
 
-    graph_edge_defs = message_edge_defs
+    # graph_edge_defs = message_edge_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -91,13 +81,18 @@ class Message(RelatedObject):
     #    secondary="uno.message__addressed_to",
     # )
 
-
-class MessageAddressedTo(Base):
-    __tablename__ = "message__addressed_to"
+    __tablename__ = "message"
     __table_args__ = {
         "schema": "uno",
-        "comment": "User addressed on a message",
+        "comment": "Messages are used to communicate between users",
     }
+    __mapper_args__ = {
+        "polymorphic_identity": "message",
+        "inherit_condition": id == RelatedObject.id,
+    }
+
+
+class MessageAddressedTo(Base):
     display_name = "Message Addressed To"
     display_name_plural = "Messages Addressed To"
 
@@ -125,15 +120,14 @@ class MessageAddressedTo(Base):
     )
     read_at: Mapped[datetime.datetime] = mapped_column()
 
-    # Relationships
+    __tablename__ = "message__addressed_to"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "User addressed on a message",
+    }
 
 
 class MessageCopiedTo(Base):
-    __tablename__ = "message__copied_to"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "User copied on a message",
-    }
     display_name = "Message Copied To"
     display_name_plural = "Messages Copied To"
 
@@ -162,14 +156,14 @@ class MessageCopiedTo(Base):
     read_at: Mapped[datetime.datetime] = mapped_column()
 
     # Relationships
+    __tablename__ = "message__copied_to"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "User copied on a message",
+    }
 
 
 class MessageRelatedObject(Base):
-    __tablename__ = "message__dbobject"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Messages to RelatedObjects",
-    }
     display_name = "Message RelatedObject"
     display_name_plural = "Message RelatedObjects"
 
@@ -191,3 +185,8 @@ class MessageRelatedObject(Base):
     #    nullable=False,
     #    info={"edge": "IS_COMMUNICATED_VIA"},
     # )
+    __tablename__ = "message__dbobject"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Messages to RelatedObjects",
+    }

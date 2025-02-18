@@ -38,12 +38,3 @@ related_object_edge_defs = [
         secondary_table_name="uno.attachment__related_object",
     ),
 ]
-
-
-attachment_edge_defs = [
-    GraphEdgeDef(
-        name="IS_ATTACHMENT_FOR",
-        destination_table_name="related_object",
-        accessor="attachments",
-    ),
-]

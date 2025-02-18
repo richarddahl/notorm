@@ -17,8 +17,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, RelatedObject, str_26, str_255
-from uno.db.mixins import BaseFieldMixin
+from uno.db.tables import Base, RelatedObject, BaseTable, str_26, str_255
 
 # from uno.obj.sql_emitters import InsertObjectTypeRecordSQL
 
@@ -37,22 +36,12 @@ from uno.wkflw.graphs import (
 
 
 class Workflow(RelatedObject):
-    __tablename__ = "workflow"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "User-defined workflows",
-    }
-    __mapper_args__ = {
-        "polymorphic_identity": "workflow",
-        "inherit_condition": id == RelatedObject.id,
-    }
-
     display_name = "Workflow"
     display_name_plural = "Workflows"
 
     sql_emitters = []
 
-    graph_edge_defs = workflow_edge_defs
+    # graph_edge_defs = workflow_edge_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -120,12 +109,12 @@ class Workflow(RelatedObject):
         index=True,
         # info={"edge": "IS_CHILD_OF_WORKFLOW"},
     )
-    applicable_object_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+    applicable_object_type_name: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
         # info={"edge": "IS_WORKFLOW_FOR_ObjectType"},
     )
-    record_object_type_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+    record_object_type_name: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
         # info={"edge": "HAS_workflowrecord_OF_ObjectType"},
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
@@ -139,31 +128,35 @@ class Workflow(RelatedObject):
         doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
     )
     Index(
-        "ix_workflow_applicable_object_type_id",
-        "applicable_object_type_id",
+        "ix_workflow_applicable_object_type_name",
+        "applicable_object_type_name",
         unique=True,
     )
     Index(
-        "ix_workflowrecord_object_type_id",
-        "record_object_type_id",
+        "ix_workflowrecord_object_type_name",
+        "record_object_type_name",
         unique=True,
     )
 
     # Relationships
+    __tablename__ = "workflow"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "User-defined workflows",
+    }
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
 
 class WorkflowEvent(RelatedObject):
-    __tablename__ = "workflow_event"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Manually created or trigger created workflow activities",
-    }
     display_name = "Workflow Event"
     display_name_plural = "Workflow Events"
 
     sql_emitters = []
 
-    graph_edge_defs = workflow_event_edge_defs
+    # graph_edge_defs = workflow_event_edge_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -190,24 +183,20 @@ class WorkflowEvent(RelatedObject):
 
     # Relationships
 
-
-class WorkflowRecord(RelatedObject):
-    __tablename__ = "workflow_record"
+    __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": "uno",
-        "comment": "Records of workflow events",
-    }
-    __mapper_args__ = {
-        "polymorphic_identity": "workflow_record",
-        "inherit_condition": id == RelatedObject.id,
+        "comment": "Manually created or trigger created workflow activities",
     }
 
+
+class WorkflowRecord(RelatedObject):
     display_name = "Workflow Record"
     display_name_plural = "Workflow Records"
 
     sql_emitters = []
 
-    graph_edge_defs = workflow_record_edge_defs
+    # graph_edge_defs = workflow_record_edge_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -256,15 +245,18 @@ class WorkflowRecord(RelatedObject):
     # )
 
     # Relationships
+    __tablename__ = "workflow_record"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Records of workflow events",
+    }
+    __mapper_args__ = {
+        "polymorphic_identity": "workflow_record",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
 
 class ObjectFunction(Base):
-    __tablename__ = "object_function"
-    __table_args__ = {
-        "schema": "uno",
-        "comment": "Functions that can be called by user-defined workflows and reports",
-        "info": {"rls_policy": "superuser", "in_graph": False},
-    }
     display_name = "Object Function"
     display_name_plural = "Object Functions"
     include_in_graph = False
@@ -280,9 +272,15 @@ class ObjectFunction(Base):
     )
     name: Mapped[str] = mapped_column(doc="Name of the function")
     """
-    function_object_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
+    function_object_type_name: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.object_type_name", ondelete="CASCADE"),
         index=True,
     )
     """
     # Relationships
+    __tablename__ = "object_function"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Functions that can be called by user-defined workflows and reports",
+        "info": {"rls_policy": "superuser", "in_graph": False},
+    }

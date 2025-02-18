@@ -11,30 +11,25 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db.base import Base, RelatedObject, BaseFieldMixin, str_26, str_255
-from uno.db.sql_emitters import RecordVersionAuditSQL
-
-from uno.glbl.sql_emitters import (
+from uno.db.tables import (
+    Base,
+    RelatedObject,
+    ObjectType,
+    BaseTable,
+    str_26,
+    str_255,
+)
+from uno.db.sql_emitters import (
+    RecordVersionAuditSQL,
     InsertObjectTypeRecordSQL,
     InsertRelatedObjectFunctionSQL,
 )
-
 from uno.auth.rls_sql_emitters import RLSSQL
 from uno.fltr.tables import Query
-from uno.glbl.tables import ObjectType
-
-from uno.attr.graphs import attribute_type_edge_defs
+# from uno.attr.graphs import attribute_type_edge_defs
 
 
-class AttributeObjectValue(Base, BaseFieldMixin):
-    __tablename__ = "attribute__object_value"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Association table between Attribute and Object Value (Meta)",
-        },
-    )
-
+class AttributeObjectValue(RelatedObject):
     display_name = "Attribute Object Value"
     display_name_plural = "Attribute Object Values"
     include_in_graph = False
@@ -42,139 +37,34 @@ class AttributeObjectValue(Base, BaseFieldMixin):
     sql_emitters = []
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"), primary_key=True
+    )
     attribute_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.attribute.id", ondelete="CASCADE"),
-        primary_key=True,
         index=True,
     )
     related_object_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.related_object.id", ondelete="CASCADE"),
-        primary_key=True,
         index=True,
     )
 
-
-class AttributeTypeAppliesTo(Base, BaseFieldMixin):
-    __tablename__ = "attribute_type__applies_to"
+    __tablename__ = "attribute__object_value"
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "Defines the type of database objects to which an attribute is applied",
+            "comment": "Association table between Attribute and RelatedObjects used as values",
         },
     )
-
-    display_name = "Attribute Type Applies To"
-    display_name_plural = "Attribute Type Applies To"
-
-    sql_emitters = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(Identity(), primary_key=True)
-    attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    applicable_object_type_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    determining_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-    )
-    required: Mapped[bool] = mapped_column()
-
-    # Relationships
-    determining_query: Mapped[Optional[Query]] = relationship(
-        Query,
-        back_populates="attribute_type_applicability",
-    )
+    __mapper_args__ = {
+        "polymorphic_identity": "attribute_object_value",
+        "inherit_condition": id == RelatedObject.id,
+    }
 
 
-class AttributeTypeAttributeValue(Base, BaseFieldMixin):
-    __tablename__ = "attribute_type__attribute_value"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Association table between AttributeType and AttributeValue",
-        },
-    )
-
-    display_name = "Attribute Type Attribute Value"
-    display_name_plural = "Attribute Type Attribute Values"
-    include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    attribute_value_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_value.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-
-
-class AttributeTypeValueType(Base, BaseFieldMixin):
-    __tablename__ = "attribute_type__value_type"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Defines the type of database objects that provide the values for an attribute",
-        },
-    )
-
-    display_name = "Attribute Type Value Type"
-    display_name_plural = "Attribute Type Value Types"
-
-    include_in_graph = False
-
-    sql_emitters = []
-
-    # Columns
-    attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    value_object_type_id: Mapped[int] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    determining_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.query.id", ondelete="CASCADE"),
-        info={"edge": "DETERMINES_VALUE_TYPE"},
-    )
-
-    determining_query: Mapped[Query] = relationship(
-        "Query",
-        back_populates="attribute_type__value_type",
-    )
-
-    # Relationships
-    determining_query: Mapped[Optional[Query]] = relationship(
-        Query,
-        back_populates="attribute_value_applicability",
-    )
-
-
-class AttributeAttributeValue(Base, BaseFieldMixin):
-    __tablename__ = "attribute__attribute_value"
-    __table_args__ = (
-        {
-            "schema": "uno",
-            "comment": "Association table between Attribute and AttributeValue",
-        },
-    )
-
-    display_name = "Attribute Attribute Value"
-    display_name_plural = "Attribute Attribute Values"
+class AttributeTypeApplicability(RelatedObject):
+    display_name = "Attribute Type Applicability"
+    display_name_plural = "Attribute Type Applicabilities"
     include_in_graph = False
 
     sql_emitters = []
@@ -183,90 +73,106 @@ class AttributeAttributeValue(Base, BaseFieldMixin):
     id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.related_object.id"), primary_key=True
     )
-    attribute_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute.id", ondelete="CASCADE"),
-        primary_key=True,
+    attribute_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
         index=True,
-        info={"start_node": True},
     )
-    attribute_value_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_value.id", ondelete="CASCADE"),
-        primary_key=True,
+    applicable_object_type_name: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.object_type.name", ondelete="CASCADE"),
         index=True,
-        info={"end_node": True},
     )
 
-
-class AttributeType(RelatedObject):
-    __tablename__ = "attribute_type"
+    __tablename__ = "attribute_type_applicability"
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "Defines the type of attribute that can be associated with an object",
+            "comment": "Association table between AttributeType and ObjectType",
         },
     )
     __mapper_args__ = {
-        "polymorphic_identity": "attribute_type",
+        "polymorphic_identity": "attribute_type_applicability",
         "inherit_condition": id == RelatedObject.id,
     }
 
-    display_name = "Attribute Type"
-    display_name_plural = "Attribute Types"
+
+class AttributeValue(RelatedObject):
+    display_name = "Attribute Value"
+    display_name_plural = "Attribute Values"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
         InsertRelatedObjectFunctionSQL,
     ]
 
-    graph_edge_defs = attribute_type_edge_defs
+    # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"),
+        primary_key=True,
+    )
+    value: Mapped[str] = mapped_column(doc="The value of the attribute")
+
+    __tablename__ = "attribute_value"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "Defines values available for attributes, if not using an existing object types",
+        },
+    )
+    __mapper_args__ = {
+        "polymorphic_identity": "attribute_value",
+        "inherit_condition": id == RelatedObject.id,
+    }
+
+
+class Attribute(RelatedObject):
+    display_name = "Attribute"
+    display_name_plural = "Attributes"
+
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        InsertRelatedObjectFunctionSQL,
+    ]
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.related_object.id"), primary_key=True
+        ForeignKey("uno.related_object.id"),
+        primary_key=True,
+        doc="The unique identifier for the attribute",
     )
-    name: Mapped[str_255] = mapped_column(unique=True)
-    text: Mapped[str] = mapped_column()
-    parent_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("uno.attribute_type.id", ondelete="SET NULL"),
+    attribute_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
         index=True,
-        doc="The parent attribute type",
-        info={
-            "edge": {"name": "IS_CHILD_OF", "accessor": "parent"},
-        },
+        doc="The type of attribute",
     )
-    multiple_allowed: Mapped[bool] = mapped_column()
-    comment_required: Mapped[bool] = mapped_column()
-    initial_comment: Mapped[str] = mapped_column()
+    comment: Mapped[Optional[str]] = mapped_column(doc="A comment about the attribute")
+    follow_up_required: Mapped[bool] = mapped_column(doc="Is follow up required?")
 
     # Relationships
-    parent: Mapped["AttributeType"] = relationship(
-        foreign_keys=[parent_id], remote_side=[id], back_populates="children"
+    attribute_type: Mapped["AttributeType"] = relationship(
+        foreign_keys=[attribute_type_id],
+        back_populates="attributes",
+        doc="The type of attribute",
+        info={"edge": "HAS_ATTRIBUTE_TYPE"},
     )
-    children: Mapped[list["AttributeType"]] = relationship(
-        foreign_keys=[id], back_populates="parent"
+    object_values: Mapped[Optional[list["Attribute"]]] = relationship(
+        "Attribute",
+        back_populates="attribute_values",
+        secondary=AttributeObjectValue.__table__,
+        primaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
+        secondaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        doc="The objects with this attribute",
+        info={"edge": "HAS_ATTRIBUTE_VALUE"},
     )
-    describes: Mapped[list["ObjectType"]] = relationship(
-        back_populates="described_attribute_types",
-        secondary=AttributeTypeAppliesTo.__table__,
-        secondaryjoin="AttributeType.id == AttributeTypeAppliesTo.attribute_type_id",
-        info={"edge": "DESCRIBES"},
-    )
-    ObjectType.described_attribute_types = relationship(
-        "AttributeType",
-        back_populates="describes",
-        secondary=AttributeTypeAppliesTo.__table__,
-        secondaryjoin="ObjectType.id == AttributeTypeAppliesTo.applicable_object_type_id",
-    )
-    value_types: Mapped[list["AttributeValue"]] = relationship(
-        back_populates="attribute_types",
-        secondary=AttributeTypeAttributeValue.__table__,
-    )
-    attributes: Mapped[list["Attribute"]] = relationship(
-        back_populates="attribute_type"
+    RelatedObject.attribute_values = relationship(
+        "Attribute",
+        back_populates="object_values",
+        secondary=AttributeObjectValue.__table__,
+        primaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        secondaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
+        doc="The attributes for the object",
+        info={"edge": "HAS_ATTRIBUTE_VALUE"},
     )
 
-
-class Attribute(Base):
     __tablename__ = "attribute"
     __table_args__ = (
         {
@@ -279,8 +185,10 @@ class Attribute(Base):
         "inherit_condition": id == RelatedObject.id,
     }
 
-    display_name = "Attribute"
-    display_name_plural = "Attributes"
+
+class AttributeType(RelatedObject):
+    display_name = "Attribute Type"
+    display_name_plural = "Attribute Types"
 
     sql_emitters = [
         InsertObjectTypeRecordSQL,
@@ -291,72 +199,161 @@ class Attribute(Base):
     id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.related_object.id"), primary_key=True
     )
-    attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.attribute_type.id", ondelete="CASCADE"),
+    name: Mapped[str_255] = mapped_column(unique=True)
+    text: Mapped[str] = mapped_column()
+    parent_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("uno.attribute_type.id", ondelete="SET NULL"),
         index=True,
-        info={"edge": "IS_OF_TYPE"},
+        doc="The parent attribute type",
     )
-    comment: Mapped[Optional[str]] = mapped_column()
-    follow_up_required: Mapped[bool] = mapped_column()
+    describes_id: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.object_type.name", ondelete="CASCADE"),
+        index=True,
+        doc="The object types that the attribute type describes.",
+    )
+    description_query_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("uno.query.id", ondelete="CASCADE"),
+        index=True,
+        doc="The query that determines which object types are applicable to this attribute type.",
+    )
+    value_type_name: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.object_type.name", ondelete="CASCADE"),
+        doc="The object types that are values for the attribute type",
+    )
+    value_type_query_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("uno.query.id", ondelete="CASCADE"),
+        doc="The query that determines which object types are used as values for the attribute type.",
+    )
+    required: Mapped[bool] = mapped_column(
+        default=False, doc="Is the attribute required?"
+    )
+    multiple_allowed: Mapped[bool] = mapped_column(
+        default=False, doc="Can the attribute have multiple values?"
+    )
+    comment_required: Mapped[bool] = mapped_column(
+        default=False, doc="Is a comment required?"
+    )
+    initial_comment: Mapped[Optional[str]] = mapped_column(
+        doc="The initial comment for attributes of this type"
+    )
 
     # Relationships
-    attribute_type: Mapped[AttributeType] = relationship(
-        back_populates="attributes",
-        foreign_keys=[attribute_type_id],
+    parent: Mapped["AttributeType"] = relationship(
+        foreign_keys=[parent_id],
+        remote_side=[id],
+        back_populates="children",
+        doc="The parent attribute type",
+        info={"edge": "IS_PARENT_OF"},
     )
-    attribute_values: Mapped[Optional[list["AttributeValue"]]] = relationship(
-        back_populates="attributes"
+    children: Mapped[list["AttributeType"]] = relationship(
+        foreign_keys=[id],
+        back_populates="parent",
+        doc="The child attribute types",
+        info={"edge": "HAS_CHILD"},
     )
-    object_values: Mapped[Optional[list["RelatedObject"]]] = relationship(
-        "RelatedObject",
+    describes: Mapped[list[ObjectType]] = relationship(
+        back_populates="described_by",
+        primaryjoin=describes_id == ObjectType.name,
+        secondary=AttributeTypeApplicability.__table__,
+        secondaryjoin=AttributeTypeApplicability.attribute_type_id == id,
+        doc="The object types that the attribute type describes.",
+        info={"edge": "DESCRIBES"},
+    )
+    object_type_query: Mapped[Optional[Query]] = relationship(
+        "Query",
+        back_populates="attribute_type_applicability",
+        primaryjoin=description_query_id == Query.id,
+        doc="The query that determines which object types are applicable to this attribute type.",
+        info={"edge": "DETERMINES_APPLICABILITY"},
+    )
+    value_types: Mapped[list[ObjectType]] = relationship(
         back_populates="attribute_values",
-        secondary=AttributeObjectValue.__table__,
-        primaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
-        secondaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
+        primaryjoin=value_type_name == ObjectType.name,
+        doc="The object types that are values for the attribute type",
+        info={"edge": "IS_VALUE_TYPE_FOR"},
     )
-    RelatedObject.attribute_values = relationship(
-        "Attribute",
-        back_populates="object_values",
-        secondary=AttributeObjectValue.__table__,
-        primaryjoin="RelatedObject.id == AttributeObjectValue.related_object_id",
-        secondaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
+    value_type_query: Mapped[Optional[Query]] = relationship(
+        "Query",
+        back_populates="attribute_value_applicability",
+        primaryjoin=value_type_query_id == Query.id,
+        doc="The query that determines which object types are used as values for the attribute type.",
+        info={"edge": "DETERMINES_VALUE_TYPE"},
+    )
+    attributes: Mapped[list[Attribute]] = relationship(
+        back_populates="attribute_type",
+        foreign_keys=[Attribute.attribute_type_id],
+        remote_side=Attribute.attribute_type_id,
+        doc="The attributes with this attribute type",
+        info={"edge": "HAS_ATTRIBUTE"},
     )
 
-
-class AttributeValue(RelatedObject):
-    __tablename__ = "attribute_value"
+    __tablename__ = "attribute_type"
     __table_args__ = (
         {
             "schema": "uno",
-            "comment": "Defines the values available for attribute",
+            "comment": "Defines the type of attribute that can be associated with an object",
         },
     )
     __mapper_args__ = {
-        "polymorphic_identity": "attribute_value",
+        "polymorphic_identity": "attribute_type",
         "inherit_condition": id == RelatedObject.id,
     }
 
-    display_name = "Attribute Value"
-    display_name_plural = "Attribute Values"
 
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
-    ]
+class AttachmentRelatedObject(RelatedObject):
+    display_name = "Attachment RelatedObject"
+    display_name_plural = "Attachment RelatedObjects"
+
+    sql_emitters = []
+    include_in_graph = False
 
     # Columns
     id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.related_object.id"), primary_key=True
     )
-    text: Mapped[str] = mapped_column()
+    attachment_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.attachment.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    related_object_id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    __tablename__ = "attachment__related_object"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Attachments to RelatedObjects",
+    }
+    __mapper_args__ = {
+        "polymorphic_identity": "attachment__related_object",
+        "inherit_condition": id == RelatedObject.id,
+    }
+
+
+class Attachment(RelatedObject):
+    display_name = "Attachment"
+    display_name_plural = "Attachments"
+
+    sql_emitters = [InsertObjectTypeRecordSQL]
+
+    # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("uno.related_object.id"),
+        primary_key=True,
+    )
+    name: Mapped[str_255] = mapped_column(unique=True, doc="Name of the file")
+    file: Mapped[str_255] = mapped_column(doc="Path to the file")
 
     # Relationships
-    attribute_types: Mapped[list[AttributeType]] = relationship(
-        back_populates="value_types",
-        secondary=AttributeTypeAttributeValue.__table__,
-        primaryjoin="AttributeValue.id == AttributeTypeAttributeValue.attribute_value_id",
-        secondaryjoin="AttributeType.id == AttributeTypeAttributeValue.attribute_type_id",
-    )
-    attributes: Mapped[list[Attribute]] = relationship(
-        back_populates="attribute_values"
-    )
+    __tablename__ = "attachment"
+    __table_args__ = {
+        "schema": "uno",
+        "comment": "Files attached to db objects",
+    }
+    __mapper_args__ = {
+        "polymorphic_identity": "attachment",
+        "inherit_condition": id == RelatedObject.id,
+    }

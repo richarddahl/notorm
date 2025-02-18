@@ -22,7 +22,7 @@ from uno.db.management.sql_emitters import (
 )
 
 
-from uno.db.base import Base
+from uno.db.tables import Base
 from uno.config import settings
 
 # for module in json.loads(settings.INSTALLED_APPS):
@@ -63,7 +63,7 @@ class DBManager:
             conn.execute(text(objs_tables.ObjectType.emit_sql()))
 
             for base in Base.registry.mappers:
-                if base.class_.__name__ == "ObjectType":
+                if base.class_.__name__ == ObjectType:
                     continue  # Already emitted above
                 print(f"Creating the table: {base.class_.__tablename__}\n")
                 conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin;"))

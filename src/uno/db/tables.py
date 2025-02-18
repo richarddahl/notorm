@@ -45,7 +45,12 @@ from fastapi import FastAPI
 
 from uno.db.sql_emitters import AlterGrantSQL, InsertObjectTypeRecordSQL
 from uno.schemas import SchemaDef
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql_emitters import (
+    SQLEmitter,
+    InsertObjectTypeRecordSQL,
+    AlterGrantSQL,
+    InsertPermissionSQL,
+)
 from uno.graphs import GraphNode, GraphEdgeDef, GraphEdge, GraphProperty
 from uno.utilities import convert_snake_to_title
 
@@ -121,7 +126,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     # Graph attributes
     include_in_graph: ClassVar[bool] = True
     graph_node: ClassVar[GraphNode] = None
-    graph_edge_defs: ClassVar[list[GraphEdgeDef]] = []
+    # graph_edge_defs: ClassVar[list[GraphEdgeDef]] = []
     graph_edges: ClassVar[dict[str, GraphEdge]] = {}
     graph_properties: ClassVar[dict[str, GraphProperty]] = []
     exclude_from_properties: ClassVar[list[str]] = []
@@ -262,7 +267,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         return sql
 
 
-class BaseFieldMixin:
+class BaseTable:
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
         doc="Indicates if the record is active",
@@ -274,12 +279,10 @@ class BaseFieldMixin:
     created_at: Mapped[datetime.datetime] = mapped_column(
         server_default=func.current_timestamp(),
         doc="Time the record was created",
-        info={"editable": False},
     )
     owner_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "BELONGS_TO_USER"},
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
@@ -289,26 +292,120 @@ class BaseFieldMixin:
     modified_by_id: Mapped[str_26] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "WAS_LAST_MODIFIED_BY", "editable": False},
     )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         doc="Time the record was deleted",
-        info={"editable": False},
     )
     deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("uno.user.id", ondelete="CASCADE"),
         index=True,
-        info={"edge": "WAS_DELETED_BY", "editable": False},
     )
 
+    # Relationships
+    @declared_attr
+    def owner(cls) -> Mapped["User"]:
+        return relationship(
+            "User",
+            # back_populates="owned_objects",
+            foreign_keys=[cls.owner_id],
+            doc="The user that owns the related object",
+            info={"edge": "OWNS"},
+        )
 
-class RelatedObject(Base, BaseFieldMixin):
+    @declared_attr
+    def modified_by(cls) -> Mapped["User"]:
+        return relationship(
+            "User",
+            # back_populates="modified_objects",
+            foreign_keys=[cls.modified_by_id],
+            doc="The user that last modified the related object",
+            info={"edge": "WAS_MODIFIED_BY"},
+        )
+
+    @declared_attr
+    def deleted_by(cls) -> Mapped["User"]:
+        return relationship(
+            "User",
+            # back_populates="deleted_objects",
+            foreign_keys=[cls.deleted_by_id],
+            doc="The user that deleted the related object",
+            info={"edge": "DELETED_BY"},
+        )
+
+
+class ObjectType(Base):
+    """Table Types identify the tables in the database, similar to contenttypes in Django"""
+
+    display_name = "Table Type"
+    display_name_plural = "Table Types"
+
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        InsertPermissionSQL,
+        AlterGrantSQL,
+    ]
+
+    name: Mapped[str_255] = mapped_column(
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="Name of the table",
+    )
+
+    # Relationships
+    described_by: Mapped[list["AttributeType"]] = relationship(
+        back_populates="describes",
+        primaryjoin="AttributeType.object_type_name== ObjectType.name",
+        doc="The attribute types that describe the object type",
+        info={"edge": "IS_DESCRIBED_BY"},
+    )
+    attribute_values: Mapped[list["AttributeType"]] = relationship(
+        back_populates="value_types",
+        primaryjoin="AttributeType.value_type_name == ObjectType.name",
+        doc="The attribute types that are values for the object type",
+        info={"edge": "HAS_VALUE_TYPE"},
+    )
+    permissions: Mapped[list["Permission"]] = relationship(
+        back_populates="object_type",
+        doc="The permissions for the object type",
+        info={"edge": "HAS_PERMISSION"},
+    )
+
+    __tablename__ = "object_type"
+    __table_args__ = (
+        {
+            "schema": "uno",
+            "comment": "Table Types identify the tables in the database, similar to contenttypes in Django",
+        },
+    )
+
+    def __str__(self) -> str:
+        return f"{self.schema_name}.{self.table_name}"
+
+
+class RelatedObject(Base, BaseTable):
     """
     Base class for objects that are generically related to other objects.
 
     Related Objects are used for the pk of many objects in the database,
     allowing for a single point of reference for attributes, queries, workflows, and reports
     """
+
+    display_name = "DB Object"
+    display_name_plural = "DB Objects"
+
+    sql_emitters = [
+        InsertObjectTypeRecordSQL,
+        AlterGrantSQL,
+    ]
+
+    # Columns
+    id: Mapped[str_26] = mapped_column(primary_key=True)
+    object_type_name: Mapped[str_255] = mapped_column(
+        ForeignKey("uno.object_type.name", ondelete="CASCADE"),
+        index=True,
+        doc="The object_type_name of the related object",
+    )
 
     __tablename__ = "related_object"
     __table_args__ = {
@@ -320,93 +417,10 @@ class RelatedObject(Base, BaseFieldMixin):
             """
         ),
     }
-    display_name = "DB Object"
-    display_name_plural = "DB Objects"
-
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        AlterGrantSQL,
-    ]
-
-    # graph_edge_defs = related_object_edge_defs
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        primary_key=True,
-        index=True,
-        doc="Primary Key",
-    )
-    object_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("uno.object_type.id", ondelete="CASCADE"),
-        index=True,
-        doc="The object_type_id of the related object",
-    )
-
-    # Relationships
-    @declared_attr
-    def owner(self) -> Mapped["User"]:
-        return relationship(
-            "User",
-            back_populates="owned_objects",
-            foreign_keys=[self.owner_id],
-            doc="The user that owns the related object",
-        )
-
-    @declared_attr
-    def owned_objects(self) -> Mapped["RelatedObject"]:
-        return relationship(
-            self,
-            back_populates="owner",
-            foreign_keys=[self.owner_id],
-            primaryjoin="RelatedObject.owner_id == RelatedObject.id",
-            doc="The objects owned by the user",
-        )
-
-    @declared_attr
-    def modified_by(self) -> Mapped["User"]:
-        return relationship(
-            "User",
-            back_populates="modified_objects",
-            foreign_keys=[self.modified_by_id],
-            doc="The user that last modified the related object",
-        )
-
-    @declared_attr
-    def modified_objects(self) -> Mapped["RelatedObject"]:
-        return relationship(
-            self,
-            back_populates="modified_by",
-            foreign_keys=[self.modified_by_id],
-            primaryjoin="RelatedObject.modified_by_id == RelatedObject.id",
-            doc="The objects last modified by the user",
-        )
-
-    @declared_attr
-    def deleted_by(self) -> Mapped["User"]:
-        return relationship(
-            "User",
-            back_populates="deleted_objects",
-            foreign_keys=[self.deleted_by_id],
-            doc="The user that deleted the related object",
-        )
-
-    @declared_attr
-    def deleted_objects(self) -> Mapped["RelatedObject"]:
-        return relationship(
-            self,
-            back_populates="deleted_by",
-            foreign_keys=[self.deleted_by_id],
-            primaryjoin="RelatedObject.deleted_by_id == RelatedObject.id",
-            doc="The objects deleted by the user",
-        )
-
-    @declared_attr
-    def object_type(self) -> Mapped["ObjectType"]:
-        return relationship(
-            "ObjectType",
-            back_populates="related_objects",
-            doc="The object type of the related object",
-        )
+    __mapper_args__ = {
+        "polymorphic_identity": "related_object",
+        "polymorphic_on": "object_type_name",
+    }
 
     def __str__(self) -> str:
-        return f"{self.object_type_id}"
+        return f"{self.object_type_name}"

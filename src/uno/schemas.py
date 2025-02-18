@@ -41,69 +41,6 @@ from uno.config import settings  # type: ignore
 
 _Unset: Any = PydanticUndefined
 
-'''
-from uno.utilities import (  # type: ignore
-    boolean_to_string,
-    date_to_string,
-    datetime_to_string,
-    decimal_to_string,
-    timedelta_to_string,
-    obj_to_string,
-    boolean_to_okui,
-    date_to_okui,
-    datetime_to_okui,
-    decimal_to_okui,
-    timedelta_to_okui,
-    obj_to_okui,
-)
-
-
-
-@dataclass
-class ViewSQL(SQLEmitter):
-    def emit_sql(self, schema_name: str, field_list: list[str]) -> str:
-        return textwrap.dedent(
-            f"""
-            SET ROLE {settings.DB_USER}_admin;
-            CREATE OR REPLACE VIEW {self.schema_name}.{self.table_name}_{schema_name} AS 
-            SELECT {field_list}
-            FROM {self.schema_name}.{self.table_name};
-            """
-        )
-
-class UnoStringSchema(UnoSchema):
-    """
-    A subclass of UnoSchema that represents a string-based mask model.
-
-    UnoStringSchemas are generally used to display the data in a localized string format, via babel.
-    """
-
-    pass
-
-
-class UnoHTMLSchema(UnoSchema):
-    """
-    This class represents an Uno element mask model.
-
-    It inherits from the UnoSchema class and provides additional functionality specific to element masks.
-    """
-
-    pass
-    """
-    @model_validator(mode="after")
-    @classmethod
-    def convert_fields_to_strings(cls, data: Any) -> Any:
-        str_data = {}
-        for k, v in data.items():
-            if isinstance(v, list):
-                for val in v:
-
-                str_data.update({k: [str(i) for i in v]})
-            str_data.update({k: str(v)})
-    """
-
-'''
-
 
 class ListSchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -172,22 +109,59 @@ class SchemaDef(BaseModel):
 
     def suss_related_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
-        print(klass)
-        print(klass)
-        print(klass)
-        print(klass)
         for rel in klass.relationships():  # type: ignore
-            print(rel)
-            # if self.include_fields and rel.name not in self.include_fields:
-            #    continue
-            # if self.exclude_fields and rel.name in self.exclude_fields:
-            #    continue
-            # field = self.create_field(rel, klass)
-            # if field is None:
-            #    continue
-            # if rel.name not in fields:
-            #    fields[rel.name] = field
+            name = str(rel).split(".")[-1]
+            if self.include_fields and name not in self.include_fields:
+                continue
+            if self.exclude_fields and name in self.exclude_fields:
+                continue
+            if not rel.info.get("edge"):
+                raise SchemaFieldListError(
+                    f"Relationship {name} in class: {klass} is missing it's info['edge'].",
+                    "MISSING_EDGE_INFO",
+                )
+            field = self.create_field_from_relationship(rel, klass, name)
+            if field is None:
+                continue
+
+            if name not in fields:
+                fields[name] = field
+
         return fields
+
+    def create_field_from_relationship(
+        self,
+        rel: Any,
+        klass: DeclarativeBase,
+        name: str,
+    ) -> tuple[Any, Any]:
+        default = _Unset
+        default_factory = _Unset
+        title = _Unset
+        description = _Unset or rel.doc or rel.back_populates
+        title = name.title()
+        nullable = True
+
+        if nullable:
+            default = None
+        else:
+            default = ...
+
+        if rel.uselist:
+            column_type = list[RelatedSchema]
+        else:
+            column_type = RelatedSchema
+
+        field = Field(
+            default=default,
+            default_factory=default_factory,
+            title=title,
+            description=description,
+        )
+
+        if nullable:
+            return (column_type | None, field)
+        return (column_type, field)
 
     def suss_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
@@ -196,14 +170,14 @@ class SchemaDef(BaseModel):
                 continue
             if self.exclude_fields and col.name in self.exclude_fields:
                 continue
-            field = self.create_field(col, klass)
+            field = self.create_field_from_column(col, klass)
             if field is None:
                 continue
             if col.name not in fields:
                 fields[col.name] = field
         return fields
 
-    def create_field(
+    def create_field_from_column(
         self,
         column: Column,
         klass: DeclarativeBase,
@@ -232,23 +206,6 @@ class SchemaDef(BaseModel):
         except NotImplementedError:
             column_type = str
 
-        if (
-            column.foreign_keys
-            and self.use_related_schemas is True
-            and not column.primary_key
-        ):
-            if column.info.get("edge"):
-                if not isinstance(column.info["edge"], dict):
-                    return None
-                accessor = column.info["edge"].get("accessor")
-
-                if not accessor:
-                    raise SchemaFieldListError(
-                        f"Edge field {column.name} is missing a required attribute.",
-                        "MISSING_EDGE_FIELD_ATTRIBUTE",
-                    )
-                column_type = RelatedSchema
-                title = accessor
         field = Field(
             default=default,
             default_factory=default_factory,

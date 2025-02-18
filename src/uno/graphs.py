@@ -192,7 +192,7 @@ class GraphNode(GraphBase):
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
-        from uno.db.base import Base
+        from uno.db.tables import Base
 
         klass = Base.registry.get(self.table_name)
         return klass.graph_properties
@@ -418,7 +418,7 @@ class GraphEdge(GraphBase):
     def properties(self) -> dict[str, GraphProperty]:
         if not self.secondary_table_name:
             return {}
-        from uno.db.base import Base
+        from uno.db.tables import Base
 
         table = Base.metadata.tables[self.secondary_table_name]
         props = {}

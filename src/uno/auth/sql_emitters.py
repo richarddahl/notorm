@@ -135,7 +135,7 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
                 JOIN uno.role on ugr.role_id = role.id
                 JOIN uno.role_table_operation rto ON rto.role_id = role.id
                 JOIN uno.permission tp ON tp.id = rto.table_operation_id
-                JOIN uno.object_type tt ON tt.id = tp.object_type_id
+                JOIN uno.object_type tt ON tt.id = tp.object_type_name
                 WHERE tt.name = object_type
                 INTO permissible_groups;
                 RETURN permissible_groups;
