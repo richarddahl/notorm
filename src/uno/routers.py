@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Header, Depends
 
+from uno.config import settings
+
 
 get_db = None
 
@@ -22,6 +24,7 @@ class SchemaRouter(BaseModel):
     method: str
     endpoint: str
     path_prefix: str = "/api"
+    api_version: str = settings.API_VERSION
     multiple: bool = False
     include_in_schema: bool = True
     response_model: BaseModel | None = None
@@ -35,7 +38,7 @@ class SchemaRouter(BaseModel):
     def add_to_app(self, schema: BaseModel, app: FastAPI):
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.klass.__tablename__}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.klass.__tablename__}{self.path_suffix}",
             response_model=schema,
             endpoint=getattr(self, self.endpoint),
             methods=[self.method],
@@ -93,11 +96,11 @@ class ListRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"List {self.klass.display_name_plural}"
+        return f"List {self.klass.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"List {self.klass.display_name_plural} from the database"
+        return f"List {self.klass.display_name} from the database"
 
     async def get(
         self,

@@ -14,6 +14,7 @@ class General(BaseSettings):
     DEBUG: bool = True
     LOCALE: str = "en_US"
     ENV: str = "prod"
+    API_VERSION: str = "v1.0"
 
     # DATABASE SETTINGS
     DB_USER_PW: str
