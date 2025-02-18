@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import textwrap
 
 from typing import Callable
+
+from psycopg.sql import SQL
 
 from pydantic.dataclasses import dataclass
 
@@ -33,23 +34,23 @@ class RLSSQL(SQLEmitter):
             self.emit_create_authorize_user_function_sql(),
             self.emit_enable_rls_sql(),
             self.emit_force_rls_sql() if self.force_rls else "",
-            self.select_policy(self.schema, self.table_name)
+            self.select_policy(settings.DB_SCHEMA, {self.table_name})
             if callable(self.select_policy)
             else self.select_policy,
-            self.insert_policy(self.schema, self.table_name)
+            self.insert_policy(settings.DB_SCHEMA, {self.table_name})
             if callable(self.insert_policy)
             else self.insert_policy,
-            self.update_policy(self.schema, self.table_name)
+            self.update_policy(settings.DB_SCHEMA, {self.table_name})
             if callable(self.update_policy)
             else self.update_policy,
-            self.delete_policy(self.schema, self.table_name)
+            self.delete_policy(settings.DB_SCHEMA, {self.table_name})
             if callable(self.delete_policy)
             else self.delete_policy,
         ]
         return "\n".join(sql)
 
     def emit_permissible_groups_sql(self) -> str:
-        return textwrap.dedent(
+        return SQL(
             """
             CREATE OR REPLACE FUNCTION uno.permissible_groups(table_name TEXT, operation TEXT)
             /*
@@ -81,12 +82,16 @@ class RLSSQL(SQLEmitter):
         Returns:
             str: A string containing the SQL statements to enable RLS for the table.
         """
-        return textwrap.dedent(
-            f"""
-            -- Enable RLS for the table {self.schema}.{self.table_name}
-            SET ROLE {settings.DB_NAME}_admin;
-            ALTER TABLE {self.schema}.{self.table_name} ENABLE ROW LEVEL SECURITY;
+        return (
+            SQL(
+                """
+            -- Enable RLS for the table {db_schema}.{table_name}
+            SET ROLE {db_name}_admin;
+            ALTER TABLE {db_schema}.{table_name} ENABLE ROW LEVEL SECURITY;
             """
+            )
+            .format(db_schema=SQL(settings.DB_SCHEMA), table_name=SQL(self.table_name))
+            .as_string()
         )
 
     def emit_force_rls_sql(self) -> str:
@@ -97,17 +102,21 @@ class RLSSQL(SQLEmitter):
         Returns:
             str: A string containing the SQL statements to force RLS for the table.
         """
-        return textwrap.dedent(
-            f"""
-            -- FORCE RLS for the table {self.schema}.{self.table_name}
-            SET ROLE {settings.DB_NAME}_admin;
-            ALTER TABLE {self.schema}.{self.table_name} FORCE ROW LEVEL SECURITY;
+        return (
+            SQL(
+                """
+            -- FORCE RLS for the table {db_schema}.{table_name}
+            SET ROLE {db_name}_admin;
+            ALTER TABLE {db_schema}.{table_name} FORCE ROW LEVEL SECURITY;
             """
+            )
+            .format(db_schema=SQL(settings.DB_SCHEMA), table_name=SQL(self.table_name))
+            .as_string()
         )
 
     def emit_create_authorize_user_function_sql(self) -> str:
-        return textwrap.dedent(
-            f"""
+        return SQL(
+            """
             CREATE OR REPLACE FUNCTION uno.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
             /*
             Function to verify a JWT token and set the session variables necessary for enforcing RLS
@@ -147,8 +156,8 @@ class RLSSQL(SQLEmitter):
                 user_is_active BOOLEAN;
                 user_is_deleted BOOLEAN;
                 token_secret TEXT;
-                full_role_name TEXT:= '{settings.DB_NAME}_' || role_name;
-                admin_role_name TEXT:= '{settings.DB_NAME}_' || 'admin';
+                full_role_name TEXT:= '{db_name}_' || role_name;
+                admin_role_name TEXT:= '{db_name}_' || 'admin';
             BEGIN
                 -- Set the role to the admin role to read from the token_secret table
                 EXECUTE 'SET ROLE ' || admin_role_name;
@@ -224,31 +233,36 @@ class RLSSQL(SQLEmitter):
             END;
             $$;
             """
-        )
+        ).format(db_name=SQL(settings.DB_NAME))
 
 
 def user_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
             All other users to select only records associated with their tenant;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             email = current_setting('rls_var.email', true)::TEXT OR
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def user_insert_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /*
         The policy to allow:
             Superusers to insert records;
@@ -256,7 +270,7 @@ def user_insert_policy_sql(schema, table_name) -> str:
         Regular users cannot insert records.
         */
         CREATE POLICY user_insert_policy
-        ON {schema}.{table_name} FOR INSERT
+        ON {db_schema}.{table_name} FOR INSERT
         WITH CHECK (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             email = current_setting('rls_var.user_email', true)::TEXT OR
@@ -266,31 +280,39 @@ def user_insert_policy_sql(schema, table_name) -> str:
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def user_update_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
             All other users to select only records associated with their tenant;
         */
         CREATE POLICY user_update_policy
-        ON {schema}.{table_name} FOR UPDATE
+        ON {db_schema}.{table_name} FOR UPDATE
         USING (
             email = current_setting('rls_var.email', true)::TEXT OR
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def user_delete_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to delete records;
@@ -298,7 +320,7 @@ def user_delete_policy_sql(schema, table_name) -> str:
         Regular users cannot delete records.
         */
         CREATE POLICY user_delete_policy
-        ON {schema}.{table_name} FOR DELETE
+        ON {db_schema}.{table_name} FOR DELETE
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -311,6 +333,9 @@ def user_delete_policy_sql(schema, table_name) -> str:
             ) 
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
@@ -323,26 +348,31 @@ class UserRLSSQL(RLSSQL):
 
 
 def tenant_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
             All other users to select only their tenant;
         */
         CREATE POLICY tenant_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             id = current_setting('rls_var.tenant_id', true)::TEXT
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def tenant_insert_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /*
         The policy to allow:
             Superusers to insert records;
@@ -350,22 +380,26 @@ def tenant_insert_policy_sql(schema, table_name) -> str:
         Regular users cannot insert user records.
         */
         CREATE POLICY tenant_insert_policy
-        ON {schema}.{table_name} FOR INSERT
+        ON {db_schema}.{table_name} FOR INSERT
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def tenant_update_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
             All other users to select only user records associated with their tenant;
         */
         CREATE POLICY tenant_update_policy
-        ON {schema}.{table_name} FOR UPDATE
+        ON {db_schema}.{table_name} FOR UPDATE
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -374,20 +408,27 @@ def tenant_update_policy_sql(schema, table_name) -> str:
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def tenant_delete_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to delete tenant records;
         */
         CREATE POLICY tenant_delete_policy
-        ON {schema}.{table_name} FOR DELETE
+        ON {db_schema}.{table_name} FOR DELETE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
@@ -400,15 +441,16 @@ class TenantRLSSQL(RLSSQL):
 
 
 def admin_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
             Tenant Admin users to select all records associated with their tenant;
         */
         CREATE POLICY admin_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -417,19 +459,23 @@ def admin_select_policy_sql(schema, table_name):
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def admin_insert_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to insert a record;
             Tenant Admin users to insert a record associated with their tenant;
         */
         CREATE POLICY admin_insert_policy
-        ON {schema}.{table_name} FOR INSERT
+        ON {db_schema}.{table_name} FOR INSERT
         WITH CHECK (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -438,19 +484,22 @@ def admin_insert_policy_sql(schema, table_name):
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def admin_update_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return SQL(
+        """
         /* 
         The policy to allow:
             Superusers to update all records;
             Tenant Admin users to update all records associated with their tenant;
         */
         CREATE POLICY admin_update_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -463,15 +512,16 @@ def admin_update_policy_sql(schema, table_name):
 
 
 def admin_delete_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to delete all records;
             Tenant Admin users to delete all records associated with their tenant;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -480,6 +530,9 @@ def admin_delete_policy_sql(schema, table_name):
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
@@ -492,8 +545,9 @@ class AdminRLSSQL(RLSSQL):
 
 
 def default_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
@@ -501,7 +555,7 @@ def default_select_policy_sql(schema, table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -510,16 +564,20 @@ def default_select_policy_sql(schema, table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{schema}.{table_name}', 'SELECT')::TEXT[])
+                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'SELECT')::TEXT[])
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def default_insert_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
@@ -527,7 +585,7 @@ def default_insert_policy_sql(schema, table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -536,16 +594,20 @@ def default_insert_policy_sql(schema, table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{schema}.{table_name}', 'INSERT')::TEXT[])
+                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'INSERT')::TEXT[])
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def default_update_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
@@ -553,7 +615,7 @@ def default_update_policy_sql(schema, table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -562,16 +624,20 @@ def default_update_policy_sql(schema, table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{schema}.{table_name}', 'UPDATE')::TEXT[])
+                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'UPDATE')::TEXT[])
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def default_delete_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to select all records;
@@ -579,7 +645,7 @@ def default_delete_policy_sql(schema, table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -588,10 +654,13 @@ def default_delete_policy_sql(schema, table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{schema}.{table_name}', 'DELETE')::TEXT[])
+                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'DELETE')::TEXT[])
             )
         );
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
@@ -604,58 +673,70 @@ class DefaultRLSSQL(RLSSQL):
 
 
 def superuser_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return SQL(
+        """
         /* 
         The policy to allow:
             Superusers to select all records;
         */
         CREATE POLICY tenant_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
     )
 
 
 def superuser_insert_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /*
         The policy to allow:
             Superusers to insert records;
         */
         CREATE POLICY tenant_insert_policy
-        ON {schema}.{table_name} FOR INSERT
+        ON {db_schema}.{table_name} FOR INSERT
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def superuser_update_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to update records;
         */
         CREATE POLICY tenant_update_policy
-        ON {schema}.{table_name} FOR UPDATE
+        ON {db_schema}.{table_name} FOR UPDATE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
 def superuser_delete_policy_sql(schema, table_name) -> str:
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             Superusers to delete records;
         */
         CREATE POLICY tenant_delete_policy
-        ON {schema}.{table_name} FOR DELETE
+        ON {db_schema}.{table_name} FOR DELETE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 
@@ -668,16 +749,20 @@ class SuperuserRLSSQL(RLSSQL):
 
 
 def public_select_policy_sql(schema, table_name):
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         /* 
         The policy to allow:
             All users to select all records;
         */
         CREATE POLICY tenant_select_policy
-        ON {schema}.{table_name} FOR SELECT
+        ON {db_schema}.{table_name} FOR SELECT
         USING (true);
         """
+        )
+        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .as_string()
     )
 
 

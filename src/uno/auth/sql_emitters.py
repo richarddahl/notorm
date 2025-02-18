@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import textwrap
-
 from dataclasses import dataclass
 
 from psycopg.sql import SQL, Identifier, Literal
@@ -68,7 +66,7 @@ class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
         )
 
 
-class RecordFieldAuditSQL(SQLEmitter):
+class RecordAuditDatesSQL(SQLEmitter):
     def emit_sql(self) -> str:
         function_string = """
             DECLARE
@@ -107,7 +105,7 @@ class RecordFieldAuditSQL(SQLEmitter):
             """
 
         return self.create_sql_function(
-            "record_audit",
+            "record_audit_dates",
             function_string,
             timing="BEFORE",
             operation="INSERT OR UPDATE OR DELETE",
@@ -230,7 +228,7 @@ class InsertGroupForTenant(SQLEmitter):
 
 class DefaultGroupTenant(SQLEmitter):
     def emit_sql(self) -> str:
-        function_string = textwrap.dedent(
+        function_string = SQL(
             """
             DECLARE
                 tenant_id TEXT := current_setting('rls_var.tenant_id', true);
@@ -244,7 +242,7 @@ class DefaultGroupTenant(SQLEmitter):
                 RETURN NEW;
             END;
             """
-        )
+        ).as_string()
         return self.create_sql_function(
             "set_tenant_id",
             function_string,

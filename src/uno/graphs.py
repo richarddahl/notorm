@@ -2,13 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import textwrap
-
-from dataclasses import dataclass, field
-from datetime import datetime, date, time
-from decimal import Decimal
 from typing import Any
-
 
 from psycopg.sql import SQL, Identifier, Literal
 
@@ -25,7 +19,7 @@ from uno.fltr.enums import (
 from uno.config import settings
 from uno.utilities import convert_snake_to_title
 
-ADMIN_ROLE = f"{settings.DB_NAME}_admin"
+ADMIN = SQL("{db_name}_admin").format(db_name=settings.DB_NAME)
 
 
 class GraphEdgeDef(BaseModel):
@@ -57,18 +51,30 @@ class GraphBase(BaseModel):
         db_function: bool = True,
     ) -> str:
         trigger_scope = (
-            f"{self.schema_name}."
+            f"{settings.DB_SCHEMA}."
             if db_function
-            else f"{self.schema_name}.{self.table_name}_"
+            else f"{settings.DB_SCHEMA}.{self.table_name}_"
         )
-        return textwrap.dedent(
-            f"""
-            CREATE OR REPLACE TRIGGER {self.table_name}_{function_name}_trigger
+        return (
+            SQL(
+                """
+            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
                 {timing} {operation}
-                ON {self.schema_name}.{self.table_name}
+                ON {db_schema}.{table_name}
                 FOR EACH {for_each}
                 EXECUTE FUNCTION {trigger_scope}{function_name}();
             """
+            )
+            .format(
+                table_name=SQL(self.table_name),
+                function_name=SQL(function_name),
+                timing=SQL(timing),
+                operation=SQL(operation),
+                for_each=SQL(for_each),
+                db_schema=SQL(settings.DB_SCHEMA),
+                trigger_scope=SQL(trigger_scope),
+            )
+            .as_string()
         )
 
     def create_sql_function(
@@ -90,13 +96,13 @@ class GraphBase(BaseModel):
                 "Function arguments cannot be used when creating a trigger function."
             )
         full_function_name = (
-            f"{self.schema_name}.{function_name}"
+            f"{settings.DB_SCHEMA}.{function_name}"
             if db_function
-            else f"{self.schema_name}.{self.table_name}_{function_name}"
+            else f"{settings.DB_SCHEMA}.{self.table_name}_{function_name}"
         )
-        fnct_string = textwrap.dedent(
-            f"""
-            SET ROLE {settings.DB_NAME}_admin;
+        fnct_string = SQL(
+            """
+            SET ROLE {admin};
             CREATE OR REPLACE FUNCTION {full_function_name}({function_args})
             RETURNS {return_type}
             LANGUAGE plpgsql
@@ -105,6 +111,12 @@ class GraphBase(BaseModel):
             {function_string}
             $$;
             """
+        ).format(
+            admin=ADMIN,
+            full_function_name=SQL(full_function_name),
+            function_args=SQL(function_args),
+            return_type=SQL(return_type),
+            function_string=SQL(function_string),
         )
 
         if not include_trigger:
@@ -116,7 +128,7 @@ class GraphBase(BaseModel):
             for_each=for_each,
             db_function=db_function,
         )
-        return f"{textwrap.dedent(fnct_string)}\n{textwrap.dedent(trggr_string)}"
+        return f"{SQL(fnct_string)}\n{SQL(trggr_string)}"
 
 
 class GraphProperty(GraphBase):
@@ -157,7 +169,7 @@ class GraphProperty(GraphBase):
             str: The complete SQL script as a single string.
         """
         sql = self.create_filter_record_sql()
-        return textwrap.dedent(sql)
+        return SQL(sql)
 
     def create_filter_record_sql(self) -> str:
         """ """
@@ -172,14 +184,14 @@ class GraphProperty(GraphBase):
                 """
             )
             .format(
-                admin_role=Identifier(ADMIN_ROLE),
-                filter_type=Literal("PROPERTY"),
-                data_type=Literal(self.data_type),
-                table_name=Literal(self.table_name),
-                name=Literal(self.name),
-                label_ident=Identifier(self.name),
-                accessor=Literal(self.accessor),
-                lookups=Literal(self.lookups),
+                admin_role=ADMIN,
+                filter_type=SQL("PROPERTY"),
+                data_type=SQL(self.data_type),
+                table_name=SQL(self.table_name),
+                name=SQL(self.name),
+                label_ident=SQL(self.name),
+                accessor=SQL(self.accessor),
+                lookups=SQL(self.lookups),
             )
             .as_string()
         )
@@ -219,7 +231,7 @@ class GraphNode(GraphBase):
         # sql += f"\n{self.delete_nodet_sql()}"
         # sql += f"\n{self.truncate_nodet_sql()}"
         # sql += f"\n{self.create_filter_field_sql()}"
-        return textwrap.dedent(sql)
+        return SQL(sql)
 
     def create_node_label(self) -> str:
         query = SQL(
@@ -235,11 +247,11 @@ class GraphNode(GraphBase):
             END $$;
             """
         ).format(
-            admin_role=Identifier(ADMIN_ROLE),
-            name=Literal(self.name),
+            admin_role=ADMIN,
+            name=SQL(self.name),
             label_ident=Identifier(self.name),
-            schema_name=Literal(self.schema_name),
-            table_name=Literal(self.table_name),
+            schema_name=SQL(settings.DB_SCHEMA),
+            table_name=SQL(self.table_name),
         )
         return query.as_string()
 
@@ -267,8 +279,8 @@ class GraphNode(GraphBase):
                 ]
             )
 
-        function_string = textwrap.dedent(
-            f"""
+        function_string = SQL(
+            """
             DECLARE 
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                         CREATE (v:{self.name} {{{prop_key_str}}})
@@ -312,7 +324,8 @@ class GraphNode(GraphBase):
             prop_val_str = ", " + ", ".join(
                 [prop.data_type for prop in self.properties]
             )
-        function_string = f"""
+        function_string = SQL(
+            """
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                     MATCH (v:{self.name} {{id: %s}})
@@ -324,13 +337,16 @@ class GraphNode(GraphBase):
                 RETURN NEW;
             END;
             """
-        return textwrap.dedent(
-            self.create_sql_function(
-                "update_node",
-                function_string,
-                include_trigger=True,
-                db_function=False,
-            )
+        ).format(
+            prop_key_str=SQL(prop_key_str),
+            prop_val_str=SQL(prop_val_str),
+            edge_str=SQL(edge_str),
+        )
+        return self.create_sql_function(
+            "update_node",
+            function_string,
+            include_trigger=True,
+            db_function=False,
         )
 
     def delete_node_sql(self) -> str:
@@ -341,7 +357,7 @@ class GraphNode(GraphBase):
         Returns:
             str: The SQL code for creating the delete function and trigger.
         """
-        function_string = f"""
+        function_string = """
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                     MATCH (v:{self.name} {{id: %s}})
@@ -352,14 +368,12 @@ class GraphNode(GraphBase):
                 RETURN OLD;
             END;
             """
-        return textwrap.dedent(
-            self.create_sql_function(
-                "delete_node",
-                function_string,
-                operation="DELETE",
-                include_trigger=True,
-                db_function=False,
-            )
+        return self.create_sql_function(
+            "delete_node",
+            function_string,
+            operation="DELETE",
+            include_trigger=True,
+            db_function=False,
         )
 
     def truncate_node_sql(self) -> str:
@@ -374,7 +388,7 @@ class GraphNode(GraphBase):
         Returns:
             str: The SQL string to create the function and trigger.
         """
-        function_string = f"""
+        function_string = """
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                     MATCH (v:{self.name})
@@ -386,15 +400,13 @@ class GraphNode(GraphBase):
             END;
             """
 
-        return textwrap.dedent(
-            self.create_sql_function(
-                "truncate_node",
-                function_string,
-                operation="TRUNCATE",
-                for_each="STATEMENT",
-                include_trigger=True,
-                db_function=False,
-            )
+        return self.create_sql_function(
+            "truncate_node",
+            function_string,
+            operation="TRUNCATE",
+            for_each="STATEMENT",
+            include_trigger=True,
+            db_function=False,
         )
 
 
@@ -439,7 +451,7 @@ class GraphEdge(GraphBase):
 
     def emit_sql(self) -> str:
         sql = self.create_edge_label_and_filter_record_sql()
-        return textwrap.dedent(sql)
+        return SQL(sql)
 
     def create_edge_label_and_filter_record_sql(self) -> str:
         return (
@@ -460,15 +472,15 @@ class GraphEdge(GraphBase):
                 """
             )
             .format(
-                admin_role=Identifier(ADMIN_ROLE),
-                filter_type=Literal("EDGE"),
-                data_type=Literal("object"),
-                table_name=Literal(self.table_name),
-                name=Literal(self.name),
-                destination_table_name=Literal(self.destination_table_name),
-                label_ident=Identifier(self.name),
-                accessor=Literal(self.accessor),
-                lookups=Literal(self.lookups),
+                admin_role=ADMIN,
+                filter_type=SQL("EDGE"),
+                data_type=SQL("object"),
+                table_name=SQL(self.table_name),
+                name=SQL(self.name),
+                destination_table_name=SQL(self.destination_table_name),
+                label_ident=SQL(self.name),
+                accessor=SQL(self.accessor),
+                lookups=SQL(self.lookups),
             )
             .as_string()
         )
@@ -487,7 +499,8 @@ class GraphEdge(GraphBase):
         """
         prop_key_str = ", ".join(f"{prop.accessor}: %s" for prop in self.properties)
         prop_val_str = ", ".join([prop.data_type for prop in self.properties])
-        function_string = f"""
+        function_string = SQL(
+            """
             DECLARE
                 _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                     MATCH (v:{self.start_node.name} {{id: %s}})
@@ -499,7 +512,11 @@ class GraphEdge(GraphBase):
                 RETURN NEW;
             END;
             """
-        return textwrap.dedent(function_string)
+        ).format(
+            prop_key_str=SQL(prop_key_str),
+            prop_val_str=SQL(prop_val_str),
+        )
+        return function_string
 
     def update_edge_sql(self) -> str:
         """
@@ -523,7 +540,7 @@ class GraphEdge(GraphBase):
             prop_val_str = ", " + ", ".join(
                 [prop.data_type for prop in self.properties]
             )
-        function_string = f"""
+        function_string = """
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                 MATCH (v:{self.start_node.name} {{id: %s}})
                 MATCH (w:{self.end_node.name} {{id: %s}})
@@ -533,9 +550,9 @@ class GraphEdge(GraphBase):
                 {prop_key_str}
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type}{prop_val_str});
             """
-        return textwrap.dedent(function_string)
+        return SQL(function_string)
 
-        return textwrap.dedent(
+        return SQL(
             self.create_sql_function(
                 "update_edge",
                 function_string,
@@ -556,7 +573,7 @@ class GraphEdge(GraphBase):
         Returns:
             str: The formatted SQL string for deleting the specified relationship.
         """
-        function_string = f"""
+        function_string = """
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                 MATCH (v:{self.start_node.name} {{id: %s}})
                 MATCH (w:{self.end_node.name} {{id: %s}})
@@ -564,16 +581,14 @@ class GraphEdge(GraphBase):
                 DELETE o
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """
-        return textwrap.dedent(function_string)
+        return SQL(function_string)
 
-        return textwrap.dedent(
-            self.create_sql_function(
-                "delete_edge",
-                function_string,
-                operation="UPDATE",
-                include_trigger=True,
-                db_function=False,
-            )
+        return self.create_sql_function(
+            "delete_edge",
+            function_string,
+            operation="UPDATE",
+            include_trigger=True,
+            db_function=False,
         )
 
     def truncate_edge_sql(self) -> str:
@@ -589,7 +604,7 @@ class GraphEdge(GraphBase):
         Returns:
             str: The formatted SQL command string.
         """
-        function_string = f"""
+        function_string = """
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                 MATCH (v:{self.start_node.name} {{id: %s}})
                 MATCH (w:{self.end_node.name} {{id: %s}})
@@ -598,15 +613,13 @@ class GraphEdge(GraphBase):
             $graph$) AS (e agtype);', {self.start_node.data_type}, {self.end_node.data_type});
             """
 
-        return textwrap.dedent(
-            self.create_sql_function(
-                "truncate_edge",
-                function_string,
-                operation="UPDATE",
-                include_trigger=True,
-                for_each="STATEMENT",
-                db_function=False,
-            )
+        return self.create_sql_function(
+            "truncate_edge",
+            function_string,
+            operation="UPDATE",
+            include_trigger=True,
+            for_each="STATEMENT",
+            db_function=False,
         )
 
 

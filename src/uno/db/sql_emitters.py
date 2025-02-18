@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import textwrap
-
 from typing import Optional
 from abc import ABC, abstractmethod
 
@@ -13,15 +11,33 @@ from dataclasses import dataclass
 
 from uno.config import settings
 
+db_schema = Identifier(settings.DB_SCHEMA)
+
+
+# SQL Literals
+LIT_ADMIN_ROLE = Literal(f"{settings.DB_NAME}_admin")
+LIT_WRITER_ROLE = Literal(f"{settings.DB_NAME}_writer")
+LIT_READER_ROLE = Literal(f"{settings.DB_NAME}_reader")
+LIT_LOGIN_ROLE = Literal(f"{settings.DB_NAME}_login")
+LIT_BASE_ROLE = Literal(f"{settings.DB_NAME}_base_role")
+
+# SQL Identifiers
+ADMIN_ROLE = SQL(f"{settings.DB_NAME}_admin")
+WRITER_ROLE = SQL(f"{settings.DB_NAME}_writer")
+READER_ROLE = SQL(f"{settings.DB_NAME}_reader")
+LOGIN_ROLE = SQL(f"{settings.DB_NAME}_login")
+BASE_ROLE = SQL(f"{settings.DB_NAME}_base_role")
+DB_NAME = SQL(settings.DB_NAME)
+DB_SCHEMA = Identifier(settings.DB_SCHEMA)
+
 
 @dataclass
 class SQLEmitter(ABC):
-    table_name: Optional[str] = None
-    schema: Optional[str] = settings.DB_SCHEMA
+    table_name: str | None = None
     timing: Optional[str] = "AFTER"
 
     @abstractmethod
-    def emit_sql(self) -> str:
+    def emit_sql(self, table_name: str) -> str:
         raise NotImplementedError
 
     def create_sql_trigger(
@@ -33,34 +49,30 @@ class SQLEmitter(ABC):
         db_function: bool = True,
     ) -> str:
         trigger_scope = (
-            f"{self.schema}." if db_function else f"{self.schema}.{self.table_name}_"
+            f"{settings.DB_SCHEMA}."
+            if db_function
+            else f"{settings.DB_SCHEMA}.{self.table_name}_"
         )
-        # return SQL(
-        #    """
-        #    CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
-        #        {timing} {operation}
-        #        ON {schema}.{table_name}
-        #        FOR EACH {for_each}
-        #        EXECUTE FUNCTION {trigger_scope}{function_name}();
-        #    """
-        # ).format(
-        #    table_name=SQL.Identifier(self.table_name),
-        #    function_name=SQL.Identifier(function_name),
-        #    timing=SQL.Literal(timing),
-        #    operation=SQL.Literal(operation),
-        #    for_each=SQL.Literal(for_each),
-        #    trigger_scope=SQL.Identifier(trigger_scope),
-        #    schema=SQL.Identifier(self.schema),
-        # )
-
-        return textwrap.dedent(
-            f"""
-            CREATE OR REPLACE TRIGGER {self.table_name}_{function_name}_trigger
+        return (
+            SQL(
+                """
+            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
                 {timing} {operation}
-                ON {self.schema}.{self.table_name}
+                ON {db_schema}.{table_name}
                 FOR EACH {for_each}
                 EXECUTE FUNCTION {trigger_scope}{function_name}();
             """
+            )
+            .format(
+                table_name=SQL(self.table_name),
+                function_name=SQL(function_name),
+                timing=SQL(timing),
+                operation=SQL(operation),
+                for_each=SQL(for_each),
+                trigger_scope=SQL(trigger_scope),
+                db_schema=DB_SCHEMA,
+            )
+            .as_string()
         )
 
     def create_sql_function(
@@ -82,13 +94,14 @@ class SQLEmitter(ABC):
                 "Function arguments cannot be used when creating a trigger function."
             )
         full_function_name = (
-            f"{self.schema}.{function_name}"
+            f"{settings.DB_SCHEMA}.{function_name}"
             if db_function
-            else f"{self.schema}.{self.table_name}_{function_name}"
+            else f"{settings.DB_SCHEMA}.{self.table_name}_{function_name}"
         )
-        fnct_string = textwrap.dedent(
-            f"""
-            SET ROLE {settings.DB_NAME}_admin;
+        fnct_string = (
+            SQL(
+                """
+            SET ROLE {admin};
             CREATE OR REPLACE FUNCTION {full_function_name}({function_args})
             RETURNS {return_type}
             LANGUAGE plpgsql
@@ -98,7 +111,19 @@ class SQLEmitter(ABC):
             {function_string}
             $$;
             """
+            )
+            .format(
+                admin=ADMIN_ROLE,
+                full_function_name=SQL(full_function_name),
+                function_args=SQL(function_args),
+                return_type=SQL(return_type),
+                volatile=SQL(volatile),
+                security_definer=SQL(security_definer),
+                function_string=SQL(function_string),
+            )
+            .as_string()
         )
+
         if not include_trigger:
             return fnct_string
         trggr_string = self.create_sql_trigger(
@@ -108,37 +133,52 @@ class SQLEmitter(ABC):
             for_each=for_each,
             db_function=db_function,
         )
-        return f"{textwrap.dedent(fnct_string)}\n{textwrap.dedent(trggr_string)}"
+        return SQL(
+            "{fnct_string}\n{trggr_string}".format(
+                fnct_string=fnct_string, trggr_string=trggr_string
+            )
+        ).as_string()
 
 
 @dataclass
 class AlterGrantSQL(SQLEmitter):
-    all_tables: bool = True
-    timing: str = "AFTER"
-
     def emit_sql(self) -> str:
-        return textwrap.dedent(
-            f"""
-            SET ROLE {settings.DB_NAME}_admin;
+        return (
+            SQL(
+                """
+            SET ROLE {admin};
             -- Congigure table ownership and privileges
-            ALTER TABLE {self.schema}.{self.table_name} OWNER TO {settings.DB_NAME}_admin;
-            GRANT SELECT ON {self.schema}.{self.table_name} TO
-                {settings.DB_NAME}_reader,
-                {settings.DB_NAME}_writer;
-            GRANT INSERT, UPDATE, DELETE ON {self.schema}.{self.table_name} TO
-                {settings.DB_NAME}_writer;
+            ALTER TABLE {db_schema}.{table_name} OWNER TO {admin};
+            GRANT SELECT ON {db_schema}.{table_name} TO
+                {reader},
+                {writer};
+            GRANT INSERT, UPDATE, DELETE ON {db_schema}.{table_name} TO
+                {writer};
             """
+            )
+            .format(
+                admin=ADMIN_ROLE,
+                reader=READER_ROLE,
+                writer=WRITER_ROLE,
+                db_schema=DB_SCHEMA,
+                table_name=SQL(self.table_name),
+            )
+            .as_string()
         )
 
 
 @dataclass
 class RecordVersionAuditSQL(SQLEmitter):
     def emit_sql(self) -> str:
-        return textwrap.dedent(
-            f"""
+        return (
+            SQL(
+                """
             -- Enable auditing for the table
-            SELECT audit.enable_tracking('{self.schema}.{self.table_name}'::regclass);
+            SELECT audit.enable_tracking('{db_schema}.{table_name}'::regclass);
             """
+            )
+            .format(db_schema=DB_SCHEMA, table_name=SQL(self.table_name))
+            .as_string()
         )
 
 
@@ -148,32 +188,42 @@ class HistoryTableAuditSQL(SQLEmitter):
         return f"{self.emit_create_history_table_sql}\n{self.emit_create_history_function_and_trigger_sql}"
 
     def emit_create_history_table_sql(self) -> str:
-        return textwrap.dedent(
-            f"""
-            SET ROLE {settings.DB_NAME}_admin;
-            CREATE TABLE audit.{self.schema}_{self.table_name}
-            AS (SELECT * FROM {self.schema}.{self.table_name})
+        return (
+            SQL(
+                """
+            SET ROLE {db_name}_admin;
+            CREATE TABLE audit.{db_schema}_{table_name}
+            AS (SELECT * FROM {db_schema}.{table_name})
             WITH NO DATA;
 
-            ALTER TABLE audit.{self.schema}_{self.table_name}
+            ALTER TABLE audit.{db_schema}_{table_name}
             ADD COLUMN pk INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY;
 
-            CREATE INDEX {self.schema}_{self.table_name}_pk_idx
-            ON audit.{self.schema}_{self.table_name} (pk);
+            CREATE INDEX {db_schema}_{table_name}_pk_idx
+            ON audit.{db_schema}_{table_name} (pk);
 
-            CREATE INDEX {self.schema}_{self.table_name}_id_modified_at_idx
-            ON audit.{self.schema}_{self.table_name} (id, modified_at);
+            CREATE INDEX {db_schema}_{table_name}_id_modified_at_idx
+            ON audit.{db_schema}_{table_name} (id, modified_at);
             """
+            )
+            .format(
+                db_name=SQL(settings.DB_NAME),
+                db_schema=SQL(settings.DB_SCHEMA),
+                table_name=SQL(self.table_name),
+            )
+            .as_string()
         )
 
     def emit_create_history_function_and_trigger_sql(self) -> str:
-        function_string = f"""
-            INSERT INTO audit.{self.schema}_{self.table_name}
+        function_string = SQL(
+            """
+            INSERT INTO audit.{db_schema}_{table_name}
             SELECT *
-            FROM {self.schema}.{self.table_name}
+            FROM {db_schema}.{table_name}
             WHERE id = NEW.id;
             RETURN NEW;
             """
+        ).format(db_schema=SQL(settings.DB_SCHEMA), table_name=SQL(self.table_name))
 
         return self.create_sql_function(
             "history",
@@ -202,36 +252,11 @@ class InsertObjectTypeRecordSQL(SQLEmitter):
             """
             )
             .format(
-                schema=Identifier(self.schema),
+                schema=DB_SCHEMA,
                 db_role=Identifier(f"{settings.DB_NAME}_writer"),
                 table_name=Literal(self.table_name),
             )
             .as_string()
-        )
-
-
-@dataclass
-class InsertULIDSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        function_string = textwrap.dedent(
-            f"""
-            -- SET ROLE {settings.DB_NAME}_writer;
-            DECLARE
-                relatedobject_id VARCHAR(26) := uno.generate_ulid();
-            BEGIN
-                NEW.id = relatedobject_id;
-                RETURN NEW;
-            END;
-            """
-        )
-
-        return self.create_sql_function(
-            "insert_ulid",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=True,
         )
 
 
@@ -293,8 +318,9 @@ class InsertRelatedObjectTriggerSQL(SQLEmitter):
 @dataclass
 class InsertPermissionSQL(SQLEmitter):
     def emit_sql(self) -> str:
-        function_string = SQL(
-            """
+        function_string = (
+            SQL(
+                """
             BEGIN
                 /*
                 Function to create a new Permission record when a new ObjectType is inserted.
@@ -302,18 +328,21 @@ class InsertPermissionSQL(SQLEmitter):
                     SELECT, INSERT, UPDATE, DELETE
                 Deleted automatically by the DB via the FKDefinition Constraints ondelete when a objecttype is deleted.
                 */
-                INSERT INTO uno.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'SELECT'::uno.sqloperation);
-                INSERT INTO uno.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'INSERT'::uno.sqloperation);
-                INSERT INTO uno.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'UPDATE'::uno.sqloperation);
-                INSERT INTO uno.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(objecttype_name, operation)
                     VALUES (NEW.name, 'DELETE'::uno.sqloperation);
                 RETURN NEW;
             END;
             """
-        ).as_string()
+            )
+            .format(db_schema=DB_SCHEMA)
+            .as_string()
+        )
 
         return self.create_sql_function(
             "create_permissions",
@@ -322,4 +351,63 @@ class InsertPermissionSQL(SQLEmitter):
             operation="INSERT",
             include_trigger=True,
             db_function=True,
+        )
+
+
+class GenericRecordAuditUserSQL(SQLEmitter):
+    def emit_sql(self) -> str:
+        function_string = (
+            SQL(
+                """
+            DECLARE
+                user_id TEXT := current_setting('rls_var.user_id', true);
+                valid_user_id VARCHAR(26);
+            BEGIN
+                /* 
+                Function used to set the owned_by_id and modified_by_id fields
+                of a table to the user_id of the user making the change. 
+                */
+
+                SELECT current_setting('rls_var.user_id', true) INTO user_id;
+
+                IF user_id IS NULL THEN
+                    RAISE EXCEPTION 'user_id is NULL';
+                END IF;
+
+                IF user_id = '' THEN
+                    RAISE EXCEPTION 'user_id is an empty string';
+                END IF;
+
+                SELECT id INTO valid_user_id FROM {db_schema}.user WHERE id = user_id;
+                IF NOT valid_user_id THEN
+                    RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
+                END IF;
+
+                -- NEW.modified_at := NOW();
+                NEW.modified_by_id = user_id;
+
+                IF TG_OP = 'INSERT' THEN
+                    -- NEW.created_at := NOW();
+                    NEW.owned_by_id = user_id;
+                END IF;
+
+                IF TG_OP = 'DELETE' THEN
+                    -- NEW.deleted_at = NOW();
+                    NEW.deleted_by_id = user_id;
+                END IF;
+
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(db_schema=db_schema)
+            .as_string()
+        )
+
+        return self.create_sql_function(
+            "general_record_audit_users",
+            function_string,
+            timing="BEFORE",
+            operation="INSERT OR UPDATE OR DELETE",
+            include_trigger=True,
         )

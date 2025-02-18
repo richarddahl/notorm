@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import textwrap
-
 from dataclasses import dataclass
 
 from uno.db.sql_emitters import SQLEmitter

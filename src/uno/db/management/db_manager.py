@@ -4,7 +4,7 @@
 
 import sys
 import io
-import textwrap
+
 
 from psycopg.sql import SQL, Identifier, Literal
 
@@ -36,10 +36,10 @@ from uno.config import settings
 
 
 class DBManager:
-    login = Literal(f"{settings.DB_NAME}_login")
-    admin = Literal(f"{settings.DB_NAME}_admin")
-    writer = Literal(f"{settings.DB_NAME}_writer")
-    db_schema = Identifier(settings.DB_SCHEMA)
+    login = SQL(f"{settings.DB_NAME}_login")
+    admin = SQL(f"{settings.DB_NAME}_admin")
+    writer = SQL(f"{settings.DB_NAME}_writer")
+    db_schema = SQL(settings.DB_SCHEMA)
 
     def create_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests
@@ -66,6 +66,7 @@ class DBManager:
             conn.execute(
                 text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
             )
+            print(ObjectType.emit_sql())
             conn.execute(text(ObjectType.emit_sql()))
 
             for base in Base.registry.mappers:

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dataclasses import dataclass
+
 from psycopg.sql import SQL, Identifier, Literal
 
 from uno.db.sql_emitters import SQLEmitter
@@ -28,6 +30,7 @@ DB_NAME = Identifier(settings.DB_NAME)
 DB_SCHEMA = Identifier(settings.DB_SCHEMA)
 
 
+@dataclass
 class DropDatabaseSQL(SQLEmitter):
     def emit_sql(self) -> str:
         return (
