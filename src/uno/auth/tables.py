@@ -210,6 +210,21 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
     )
 
     # Relationships
+    created_by: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="users_created",
+        foreign_keys=[created_by_id],
+        remote_side="User.id",
+        doc="User who created this user",
+        info={"edge": "CREATED"},
+    )
+    users_created: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="created_by",
+        foreign_keys=[created_by_id],
+        doc="Users created by this user",
+        info={"edge": "CREATED"},
+    )
     tenant: Mapped[Optional[Tenant]] = relationship(
         back_populates="users",
         foreign_keys=[tenant_id],
