@@ -203,56 +203,6 @@ class SQLEmitter(ABC):
         operation: str = "UPDATE",
         for_each: str = "ROW",
         db_function: bool = True,
-    ) -> str:
-        """Creates a PostgreSQL trigger SQL statement.
-
-        This method generates a SQL statement for creating or replacing a trigger in PostgreSQL.
-        The trigger can be configured to execute before or after specified operations and can
-        reference either a database function or a table-specific function.
-
-        Args:
-            function_name (str): Name of the function to be executed by the trigger
-            timing (str, optional): When the trigger should fire ("BEFORE" or "AFTER"). Defaults to "BEFORE".
-            operation (str, optional): Database operation that activates the trigger ("INSERT", "UPDATE", "DELETE"). Defaults to "UPDATE".
-            for_each (str, optional): Whether to fire once per statement or row ("ROW" or "STATEMENT"). Defaults to "ROW".
-            db_function (bool, optional): If True, function is in database schema. If False, function is table-specific. Defaults to True.
-
-        Returns:
-            str: Complete SQL statement for creating the trigger
-
-        Example:
-            >>> create_sql_trigger("update_timestamp", "BEFORE", "UPDATE")
-            'CREATE OR REPLACE TRIGGER table_update_timestamp_trigger
-             BEFORE UPDATE ON schema.table
-             FOR EACH ROW
-             EXECUTE FUNCTION schema.update_timestamp();'
-        """
-        trigger_scope = (
-            f"{settings.DB_SCHEMA}."
-            if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_"
-        )
-        return (
-            SQL(
-                """
-            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
-                {timing} {operation}
-                ON {db_schema}.{table_name}
-                FOR EACH {for_each}
-                EXECUTE FUNCTION {trigger_scope}{function_name}();
-            """
-            )
-            .format(
-                table_name=SQL(self.table_name),
-                function_name=SQL(function_name),
-                timing=SQL(timing),
-                operation=SQL(operation),
-                for_each=SQL(for_each),
-                trigger_scope=SQL(trigger_scope),
-                db_schema=DB_SCHEMA,
-            )
-            .as_string()
-        )
 
     def create_sql_function(
         self,
