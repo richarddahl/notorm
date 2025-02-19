@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
+from typing import Optional, ClassVar, Any
 
 from psycopg.sql import SQL
 
@@ -21,25 +21,19 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
+from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
-    Base,
-    BaseMetaMixin,
+    RecordVersionAuditMixin,
+    HistoryTableAuditMixin,
+    RelatedObjectMixin,
     RecordUserAuditMixin,
     RelatedObject,
     ObjectType,
-    str_26,
-    str_255,
 )
 from uno.db.enums import SQLOperation
-from uno.db.sql_emitters import (
-    RecordVersionAuditSQL,
-    InsertRelatedObjectFunctionSQL,
-    InsertObjectTypeRecordSQL,
-)
+from uno.db.sql_emitters import SQLEmitter
 
-from uno.msg.tables import Message, MessageAddressedTo, MessageCopiedTo
 from uno.auth.sql_emitters import (
-    InsertUserRelatedObjectFunctionSQL,
     ValidateGroupInsert,
     InsertGroupForTenant,
     DefaultGroupTenant,
@@ -49,6 +43,7 @@ from uno.auth.rls_sql_emitters import (
     UserRLSSQL,
     TenantRLSSQL,
 )
+from uno.msg.tables import Message, MessageAddressedTo, MessageCopiedTo
 from uno.auth.enums import TenantType
 from uno.auth.schemas import (
     user_schema_defs,
@@ -59,37 +54,9 @@ from uno.auth.schemas import (
 
 from uno.config import settings
 
-"""
-class GroupRole(Base):
-    __tablename__ = "group_role"
-    __table_args__ = (
-        {
-            "comment": "Assigned by admin users to assign roles to groups.",
-            "schema": settings.DB_SCHEMA,
-        },
-    )
-    display_name = "Group Permission"
-    display_name_plural = "Group Permissions"
 
-    sql_emitters = []
-    include_in_graph = False
-
-    # Columns
-    group_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.group.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-    role_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.role.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-    )
-"""
-
-
-class UserGroupRole(Base):
-    __tablename__ = "user_group_role"
+class UserGroupRole(Base, RecordVersionAuditMixin):
+    __tablename__ = "user__group__role"
     __table_args__ = (
         {
             "comment": """
@@ -98,10 +65,10 @@ class UserGroupRole(Base):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "User Group Role"
-    display_name_plural = "User Group Roles"
+    display_name: ClassVar[str] = "User Group Role"
+    display_name_plural: ClassVar[str] = "User Group Roles"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     include_in_graph = False
 
@@ -120,7 +87,7 @@ class UserGroupRole(Base):
     )
 
 
-class Tenant(RelatedObject, RecordUserAuditMixin):
+class Tenant(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -128,20 +95,16 @@ class Tenant(RelatedObject, RecordUserAuditMixin):
             "comment": "Application end-user tenants",
         },
     )
-    display_name = "Tenant"
-    display_name_plural = "Tenants"
+    display_name: ClassVar[str] = "Tenant"
+    display_name_plural: ClassVar[str] = "Tenants"
 
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertRelatedObjectFunctionSQL,
-        InsertGroupForTenant,
-    ]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertGroupForTenant]
 
     schema_defs = tenant_schema_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(unique=True, doc="Tenant name")
     tenant_type: Mapped[TenantType] = mapped_column(
@@ -179,7 +142,7 @@ class Tenant(RelatedObject, RecordUserAuditMixin):
         return self.name
 
 
-class User(RelatedObject, BaseMetaMixin):
+class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -196,14 +159,10 @@ class User(RelatedObject, BaseMetaMixin):
             "comment": "Application users",
         },
     )
-    display_name = "User"
-    display_name_plural = "Users"
+    display_name: ClassVar[str] = "User"
+    display_name_plural: ClassVar[str] = "Users"
 
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
-        InsertUserRelatedObjectFunctionSQL,
-        RecordVersionAuditSQL,
-    ]
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     schema_defs = user_schema_defs
 
     exclude_from_properties = ["is_superuser"]
@@ -211,7 +170,7 @@ class User(RelatedObject, BaseMetaMixin):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
     )
     email: Mapped[str_255] = mapped_column(
         unique=True,
@@ -249,6 +208,7 @@ class User(RelatedObject, BaseMetaMixin):
         ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
         index=True,
     )
+
     # Relationships
     tenant: Mapped[Optional[Tenant]] = relationship(
         back_populates="users",
@@ -274,51 +234,6 @@ class User(RelatedObject, BaseMetaMixin):
         doc="Default group for the user.",
         info={"edge": "HAS_DEFAULT_GROUP"},
     )
-    created_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        back_populates="created_users",
-        foreign_keys=[created_by_id],
-        remote_side="User.id",
-        doc="User who created this user",
-        info={"edge": "CREATED"},
-    )
-    created_users: Mapped[list["User"]] = relationship(
-        "User",
-        back_populates="created_by",
-        foreign_keys=[created_by_id],
-        doc="Users created by this user",
-        info={"edge": "CREATED"},
-    )
-    modified_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        back_populates="modified_users",
-        foreign_keys=[modified_by_id],
-        remote_side="User.id",
-        doc="User who last modified this user",
-        info={"edge": "MODIFIED"},
-    )
-    modified_users: Mapped[list["User"]] = relationship(
-        "User",
-        back_populates="modified_by",
-        foreign_keys=[modified_by_id],
-        doc="Users last modified by this user",
-        info={"edge": "MODIFIED"},
-    )
-    deleted_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        back_populates="deleted_users",
-        foreign_keys=[deleted_by_id],
-        remote_side="User.id",
-        doc="User who deleted this user",
-        info={"edge": "DELETED"},
-    )
-    deleted_users: Mapped[list["User"]] = relationship(
-        "User",
-        back_populates="deleted_by",
-        foreign_keys=[deleted_by_id],
-        doc="Users deleted by this user",
-        info={"edge": "DELETED"},
-    )
     messages_sent: Mapped[list["Message"]] = relationship(
         back_populates="sender",
         doc="Messages sent by the user",
@@ -334,7 +249,7 @@ class User(RelatedObject, BaseMetaMixin):
         back_populates="copied_to",
         secondary=MessageCopiedTo.__table__,
         doc="Messages copied to the user",
-        info={"edge": "WAS_COPIED"},
+        info={"edge": "WAS_COPIED_ON"},
     )
 
     __mapper_args__ = {
@@ -346,7 +261,7 @@ class User(RelatedObject, BaseMetaMixin):
         return self.email
 
 
-class RolePermission(Base):
+class RolePermission(Base, RecordVersionAuditMixin):
     __tablename__ = "role_permission"
     __table_args__ = (
         {
@@ -356,10 +271,10 @@ class RolePermission(Base):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Role Permission"
-    display_name_plural = "Role Permissions"
+    display_name: ClassVar[str] = "Role Permission"
+    display_name_plural: ClassVar[str] = "Role Permissions"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     include_in_graph = False
 
@@ -376,7 +291,7 @@ class RolePermission(Base):
     )
 
 
-class Permission(Base):
+class Permission(Base, RecordVersionAuditMixin):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
@@ -388,15 +303,15 @@ class Permission(Base):
             "comment": """
                 Permissions for each table.
                 Deleted automatically by the DB via the FK Constraints
-                ondelete when a objecttype is deleted.
+                ondelete when a object_type is deleted.
             """,
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Permission"
-    display_name_plural = "Permissions"
+    display_name: ClassVar[str] = "Permission"
+    display_name_plural: ClassVar[str] = "Permissions"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
 
     # Columns
@@ -407,7 +322,7 @@ class Permission(Base):
         doc="The id of the node.",
     )
     objecttype_name: Mapped[int] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.object_type.name", ondelete="CASCADE"),
         primary_key=True,
         doc="Table to which the permission provides access.",
     )
@@ -423,7 +338,7 @@ class Permission(Base):
     )
 
     # Relationships
-    objecttype: Mapped[ObjectType] = relationship(
+    object_type: Mapped[ObjectType] = relationship(
         back_populates="permissions",
         doc="Table the permission is for",
         info={"edge": "ALLOWS_ACCESS_TO"},
@@ -436,10 +351,10 @@ class Permission(Base):
     )
 
     def __str__(self) -> str:
-        return f"{self.objecttype.name} - {self.actions}"
+        return f"{self.object_type.name} - {self.actions}"
 
 
-class Role(RelatedObject, RecordUserAuditMixin):
+class Role(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -452,15 +367,15 @@ class Role(RelatedObject, RecordUserAuditMixin):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Role"
-    display_name_plural = "Roles"
+    display_name: ClassVar[str] = "Role"
+    display_name_plural: ClassVar[str] = "Roles"
 
-    sql_emitters = [InsertObjectTypeRecordSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     schema_defs = role_schema_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
     )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.tenant.id", ondelete="CASCADE"),
@@ -499,7 +414,7 @@ class Role(RelatedObject, RecordUserAuditMixin):
         return self.name
 
 
-class Group(RelatedObject, RecordUserAuditMixin):
+class Group(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -509,20 +424,18 @@ class Group(RelatedObject, RecordUserAuditMixin):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Group"
-    display_name_plural = "Groups"
+    display_name: ClassVar[str] = "Group"
+    display_name_plural: ClassVar[str] = "Groups"
 
-    sql_emitters = [
-        InsertObjectTypeRecordSQL,
+    sql_emitters: ClassVar[list[SQLEmitter]] = [
         ValidateGroupInsert,
         DefaultGroupTenant,
-        InsertRelatedObjectFunctionSQL,
     ]
     schema_defs = group_schema_defs
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
     )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.tenant.id", ondelete="CASCADE"),
