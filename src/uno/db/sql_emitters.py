@@ -35,6 +35,93 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 @dataclass
+class InsertPermissionSQL(SQLEmitter):
+    """Generates SQL to create permissions for a new ObjectType.
+
+    This class creates a function that inserts permission records for each
+    object_type with the following permissions: SELECT, INSERT, UPDATE, DELETE.
+
+    Attributes:
+        table_name (str): The name of the table for which to create permissions.
+    """
+class InsertRelatedObjectTriggerSQL(SQLEmitter):
+    """Generates SQL to create a trigger for inserting related object records.
+
+    This class creates a trigger that executes a function to insert a record into
+    the related_object table when a record is inserted into a table with a PK that
+    is a FKDefinition to the related_object table.
+
+    Attributes:
+        table_name (str): The name of the table for which to create the related object trigger.
+    """
+class InsertRelatedObjectFunctionSQL(SQLEmitter):
+    """Generates SQL to create a function for inserting related object records.
+
+    This class creates a function that inserts a record into the related_object table
+    when a record is inserted into a table with a PK that is a FKDefinition to the related_object table.
+
+    Attributes:
+        table_name (str): The name of the table for which to create the related object function.
+    """
+class InsertObjectTypeRecordSQL(SQLEmitter):
+    """Generates SQL to create an object_type record in the database.
+
+    This class inserts a new record into the object_type table with the specified
+    table name, executed with elevated privileges using the database writer role.
+
+    Attributes:
+        table_name (str): Name of the table to be inserted into object_type table.
+    """
+class InsertHistoryTableRecordSQL(SQLEmitter):
+    """Generates SQL to create a trigger function for auditing table changes.
+
+    This class creates a trigger function that copies newly inserted or updated
+    records into a corresponding history/audit table.
+
+    Attributes:
+        table_name (str): The name of the table to create the history trigger for.
+    """
+class CreateHistoryTableSQL(SQLEmitter):
+    """Generates SQL to create a history/audit table for tracking changes.
+
+    This class creates SQL to generate an audit table that mirrors the structure
+    of the original table, with additional audit columns.
+
+    Attributes:
+        table_name (str): The name of the table for which to create a history table.
+    """
+class RecordVersionAuditSQL(SQLEmitter):
+    """Generates SQL to enable record version auditing for a table.
+
+    This class prepares and executes SQL to enable audit tracking on a database table
+    using the audit schema's enable_tracking function.
+
+    Attributes:
+        table_name (str): The name of the table to enable auditing for.
+    """
+class AlterGrantSQL(SQLEmitter):
+    """Generates SQL to alter table ownership and grant privileges.
+
+    This class creates SQL statements to:
+    1. Set the role to admin.
+    2. Change table ownership to admin role.
+    3. Grant SELECT privileges to reader and writer roles.
+    4. Grant INSERT, UPDATE, DELETE privileges to writer role.
+
+    Attributes:
+        table_name (str): Name of the table to alter grants for.
+    """
+class SQLEmitter(ABC):
+    """Base class for SQL emitters that generate SQL statements.
+
+    This abstract base class provides a framework for creating SQL statements
+    for various database operations. Subclasses must implement the `emit_sql`
+    method to generate specific SQL statements.
+
+    Attributes:
+        table_name (str | None): The name of the database table for which SQL is generated.
+        timing (Optional[str]): The timing of SQL execution, such as "BEFORE" or "AFTER".
+    """
 class SQLEmitter(ABC):
     """SQL Emitter base class for creating PostgreSQL functions and triggers.
 
@@ -57,6 +144,21 @@ class SQLEmitter(ABC):
 
     @abstractmethod
     def emit_sql(self, table_name: str, conn: Engine) -> str:
+        """Generate and return an SQL statement for a given table.
+
+        This abstract method must be implemented by subclasses to generate
+        specific SQL statements for the specified table.
+
+        Args:
+            table_name (str): The name of the table for which to generate SQL.
+            conn (Engine): SQLAlchemy Engine connection object.
+
+        Returns:
+            str: The generated SQL statement.
+
+        Raises:
+            NotImplementedError: This is an abstract method that must be implemented by subclasses.
+        """
         """
         Emits an SQL statement for a given table.
 
@@ -73,6 +175,28 @@ class SQLEmitter(ABC):
         raise NotImplementedError
 
     def create_sql_trigger(
+        self,
+        function_name: str,
+        timing: str = "BEFORE",
+        operation: str = "UPDATE",
+        for_each: str = "ROW",
+        db_function: bool = True,
+    ) -> str:
+        """Generate a SQL statement to create a PostgreSQL trigger.
+
+        This method creates a SQL statement for a trigger that executes a specified
+        function before or after certain database operations.
+
+        Args:
+            function_name (str): Name of the function to be executed by the trigger.
+            timing (str, optional): When the trigger should fire ("BEFORE" or "AFTER"). Defaults to "BEFORE".
+            operation (str, optional): Database operation that activates the trigger ("INSERT", "UPDATE", "DELETE"). Defaults to "UPDATE".
+            for_each (str, optional): Whether to fire once per statement or row ("ROW" or "STATEMENT"). Defaults to "ROW".
+            db_function (bool, optional): If True, function is in database schema. If False, function is table-specific. Defaults to True.
+
+        Returns:
+            str: Complete SQL statement for creating the trigger.
+        """
         self,
         function_name: str,
         timing: str = "BEFORE",
@@ -131,6 +255,44 @@ class SQLEmitter(ABC):
         )
 
     def create_sql_function(
+        self,
+        function_name: str,
+        function_string: str,
+        function_args: str = "",
+        db_function: bool = True,
+        return_type: str = "TRIGGER",
+        volatile: str = "VOLATILE",
+        include_trigger: bool = False,
+        timing: str = "BEFORE",
+        operation: str = "UPDATE",
+        for_each: str = "ROW",
+        security_definer: str = "",
+    ) -> str:
+        """Generate SQL to create a PostgreSQL function and optionally a trigger.
+
+        This method creates SQL statements to define a PostgreSQL function and
+        optionally a trigger that calls the function. The function can be standalone
+        or associated with a specific table.
+
+        Args:
+            function_name (str): Name of the function to create.
+            function_string (str): The actual PL/pgSQL function body code.
+            function_args (str, optional): Function arguments declaration. Defaults to "".
+            db_function (bool, optional): If True, creates standalone function. If False, prefixes function name with table name. Defaults to True.
+            return_type (str, optional): SQL return type for the function. Defaults to "TRIGGER".
+            volatile (str, optional): Function volatility (VOLATILE/STABLE/IMMUTABLE). Defaults to "VOLATILE".
+            include_trigger (bool, optional): Whether to create a trigger for this function. Defaults to False.
+            timing (str, optional): Trigger timing (BEFORE/AFTER). Defaults to "BEFORE".
+            operation (str, optional): Trigger operation (INSERT/UPDATE/DELETE). Defaults to "UPDATE".
+            for_each (str, optional): Trigger granularity (ROW/STATEMENT). Defaults to "ROW".
+            security_definer (str, optional): SECURITY DEFINER clause if needed. Defaults to "".
+
+        Returns:
+            str: SQL statement(s) for creating the function and optional trigger.
+
+        Raises:
+            ValueError: If both function_args and include_trigger are specified.
+        """
         self,
         function_name: str,
         function_string: str,
@@ -252,6 +414,106 @@ class AlterGrantSQL(SQLEmitter):
     """
 
     def emit_sql(self, conn: Engine) -> None:
+        """Execute SQL to audit user actions on records.
+
+        This method creates a function that sets the owned_by_id and modified_by_id
+        fields of a table to the user_id of the user making the change.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create permissions for a new ObjectType.
+
+        This method creates a function that inserts permission records for each
+        object_type with the following permissions: SELECT, INSERT, UPDATE, DELETE.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create a trigger for inserting related object records.
+
+        This method creates a trigger that executes a function to insert a record into
+        the related_object table when a record is inserted into a table with a PK that
+        is a FKDefinition to the related_object table.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create a function for inserting related object records.
+
+        This method creates a function that inserts a record into the related_object table
+        when a record is inserted into a table with a PK that is a FKDefinition to the related_object table.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create an object_type record in the database.
+
+        This method inserts a new record into the object_type table with the specified
+        table name, executed with elevated privileges using the database writer role.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create a trigger function for auditing table changes.
+
+        This method generates a trigger function that copies newly inserted or updated
+        records into a corresponding audit table in the audit schema.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to create a history/audit table for tracking changes.
+
+        This method executes SQL to create an audit table that mirrors the structure
+        of the original table, with additional audit columns.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to enable record version auditing for a table.
+
+        This method executes SQL to enable audit tracking on a specified table
+        using the audit schema's enable_tracking function.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
+        """Execute SQL to alter table ownership and grant privileges.
+
+        This method executes SQL statements to set the role to admin,
+        change table ownership, and grant appropriate privileges to roles.
+
+        Args:
+            conn (Engine): SQLAlchemy engine connection object.
+
+        Returns:
+            None
+        """
         conn.execute(
             text(
                 SQL(
@@ -632,6 +894,14 @@ class InsertPermissionSQL(SQLEmitter):
 
 
 class GenericRecordAuditUserSQL(SQLEmitter):
+    """Generates SQL to audit user actions on records.
+
+    This class creates a function that sets the owned_by_id and modified_by_id
+    fields of a table to the user_id of the user making the change.
+
+    Attributes:
+        table_name (str): The name of the table for which to create the audit function.
+    """
     def emit_sql(self, conn: Engine) -> None:
         function_string = (
             SQL(
