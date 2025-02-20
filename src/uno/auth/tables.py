@@ -278,7 +278,7 @@ class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
 
 
 class RolePermission(Base, RecordVersionAuditMixin):
-    __tablename__ = "role_permission"
+    __tablename__ = "role__permission"
     __table_args__ = (
         {
             "comment": """

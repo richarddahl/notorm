@@ -40,10 +40,10 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
                 FROM uno.group g
                 JOIN uno.user__group__role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
                 JOIN uno.role on ugr.role_id = role.id
-                JOIN uno.role_table_operation rto ON rto.role_id = role.id
-                JOIN uno.permission tp ON tp.id = rto.table_operation_id
-                JOIN uno.meta_type tt ON tt.id = tp.metatype_name
-                WHERE tt.name = meta_type
+                JOIN uno.role__permission rp ON rp.role_id = role.id
+                JOIN uno.permission p ON p.id = rp.permission_id
+                JOIN uno.meta_type mt ON mt.id = tp.metatype_name
+                WHERE mt.name = meta_type
                 INTO permissible_groups;
                 RETURN permissible_groups;
             END;
@@ -166,13 +166,13 @@ class DefaultGroupTenant(SQLEmitter):
         function_string = SQL(
             """
             DECLARE
-                tenant_id TEXT := current_setting('rls_var.tenant_id', true);
+                tenant_id VARCHAR(26) := current_setting('rls_var.tenant_id', true);
             BEGIN
                 IF tenant_id IS NULL THEN
                     RAISE EXCEPTION 'tenant_id is NULL';
                 END IF;
 
-                NEW.tenant_id := tenant_id;
+                NEW.tenant_id = tenant_id;
 
                 RETURN NEW;
             END;

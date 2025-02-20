@@ -4,7 +4,7 @@
 
 import datetime
 
-from typing import Optional, ClassVar
+from typing import Optional, ClassVar, Any
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -17,6 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import (
     ENUM,
     ARRAY,
+    JSONB,
 )
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
@@ -40,10 +41,10 @@ class Filter(Base):
     __tablename__ = "filter"
     __table_args__ = (
         UniqueConstraint(
-            "table_name",
-            "name",
-            "destination_table_name",
-            name="uq_table_name_label_destination_table_name",
+            "meta_type",
+            "accessor",
+            "destination_meta_type",
+            name="uq_filter__meta_type__accessor__destination_meta_type",
         ),
         {
             "schema": settings.DB_SCHEMA,
@@ -63,15 +64,6 @@ class Filter(Base):
         index=True,
         doc="The id of the node.",
     )
-    # filter_type: Mapped[FilterType] = mapped_column(
-    #    ENUM(
-    #        FilterType,
-    #        name="filtertype",
-    #        create_type=True,
-    #        schema="uno",
-    #    ),
-    #    default=FilterType.PROPERTY,
-    # )
     data_type: Mapped[str] = mapped_column(
         # ENUM(
         #    DataType,
@@ -81,18 +73,18 @@ class Filter(Base):
         # ),
         doc="The data type of the filter.",
     )
-    table_name: Mapped[str_255] = mapped_column(
+    meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
-        doc="The table filtered.",
+        doc="The meta type table filtered.",
     )
-    destination_table_name: Mapped[str_255] = mapped_column(
+    destination_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
-        doc="The destination table of the filter.",
+        doc="The destination meta type table of the filter.",
     )
-    name: Mapped[str_255] = mapped_column(
-        doc="The edge label or property name of the filter.",
+    display: Mapped[str] = mapped_column(
+        doc="The edge label or property display of the filter.",
     )
     accessor: Mapped[str_255] = mapped_column(
         index=True,
@@ -109,10 +101,14 @@ class Filter(Base):
         ),
         doc="The lookups for the filter.",
     )
+    properties: Mapped[Optional[dict[str, Any]]] = mapped_column(
+        JSONB,
+        doc="The properties of the filter.",
+    )
 
 
 class QueryFilterValue(Base):
-    __tablename__ = "query_filtervalue"
+    __tablename__ = "query__filter_value"
     __table_args__ = (
         Index("ix_query_id__filtervalue_id", "query_id", "filtervalue_id"),
         {
@@ -248,7 +244,7 @@ class FilterValue(Meta):
 
 
 class QuerySubquery(Base):
-    __tablename__ = "query_subquery"
+    __tablename__ = "query__sub_query"
     __table_args__ = (
         Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
         {

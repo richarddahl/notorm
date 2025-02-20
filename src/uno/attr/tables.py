@@ -51,7 +51,7 @@ class AttributeObjectValue(Base):
 
 
 class AttributeTypeMetaType(Base):
-    __tablename__ = "attributetype_metatype"
+    __tablename__ = "attributetype__meta_type"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -274,7 +274,7 @@ class AttributeType(Meta):
 
 
 class AttachmentRelatedObject(Base):
-    __tablename__ = "attachment_relatedobject"
+    __tablename__ = "attachment__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Attachments to RelatedObjects",

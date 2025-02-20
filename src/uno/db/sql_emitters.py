@@ -523,7 +523,8 @@ class InsertMetaTypeRecordSQL(SQLEmitter):
             -- Create the meta_type record
             SET ROLE {db_role};
             INSERT INTO {schema}.meta_type (name)
-            VALUES ({table_name});
+            VALUES ({table_name})
+            ON CONFLICT DO NOTHING;
             """
                 )
                 .format(

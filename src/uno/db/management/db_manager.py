@@ -37,7 +37,7 @@ from uno.db.tables import Base, MetaType
 
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
-import uno.msg.tables as comms_tables
+import uno.msg.tables as msgs_tables
 import uno.fltr.tables as fltrs_tables
 import uno.rprt.tables as rprts_tables
 import uno.wkflw.tables as wrkflws_tables
@@ -101,17 +101,21 @@ class DBManager:
                 print(f"Creating the table: {base.class_.__tablename__}\n")
                 SetRoleSQL().emit_sql(conn, "admin")
                 # Emit the SQL for the table
-                base.class_.emit_sql(conn)
+                for sql_emitter in base.class_.sql_emitters:
+                    sql_emitter(table_name=base.class_.__tablename__).emit_sql(conn)
 
             for base in Base.registry.mappers:
                 base.class_.configure_base(app)
                 SetRoleSQL().emit_sql(conn, "admin")
-                # Emit the SQL for the node definition
+
+                # Emit the SQL to create the graph property filters
+                for property in base.class_.graph_properties.values():
+                    property.emit_sql(conn)
+
+                # Emit the SQL to create the graph node
                 if base.class_.graph_node:
-                    # base.class_.set_properties()
-                    # for prop in base.class_.graph_properties:
-                    #    conn.execute(text(prop.emit_sql(conn)
                     base.class_.graph_node.emit_sql(conn)
+
                 conn.commit()
             for base in Base.registry.mappers:
                 if not base.class_.include_in_graph:

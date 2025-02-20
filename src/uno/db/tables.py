@@ -20,7 +20,6 @@ from uno.db.base import Base, str_26, str_63, str_255
 from uno.db.sql_emitters import (
     SQLEmitter,
     InsertPermissionSQL,
-    InsertMetaTypeRecordSQL,
     InsertMetaObjectTriggerSQL,
     RecordVersionAuditSQL,
     CreateHistoryTableSQL,
@@ -121,7 +120,7 @@ class Meta(Base):
     display_name: ClassVar[str] = "Meta Object"
     display_name_plural: ClassVar[str] = "Meta Objects"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertMetaTypeRecordSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     # Columns
     id: Mapped[str_26] = mapped_column(primary_key=True)
     metatype_name: Mapped[str_63] = mapped_column(

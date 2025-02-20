@@ -34,7 +34,7 @@ from pydantic import BaseModel
 
 from fastapi import FastAPI
 
-from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL
+from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL, InsertMetaTypeRecordSQL
 from uno.schemas import SchemaDef
 from uno.graphs import GraphNode, GraphEdge, GraphProperty
 from uno.utilities import convert_snake_to_title
@@ -106,13 +106,13 @@ class Base(AsyncAttrs, DeclarativeBase):
     display_name_plural: ClassVar[str]
 
     # SQL attributes
-    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrantSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrantSQL, InsertMetaTypeRecordSQL]
 
     # Graph attributes
     include_in_graph: ClassVar[bool] = True
     graph_node: ClassVar[GraphNode] = None
     graph_edges: ClassVar[dict[str, GraphEdge]] = {}
-    graph_properties: ClassVar[dict[str, GraphProperty]] = []
+    graph_properties: ClassVar[dict[str, GraphProperty]] = {}
     exclude_from_properties: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, dict[str, str]]] = {}
 
@@ -136,12 +136,18 @@ class Base(AsyncAttrs, DeclarativeBase):
         cls.sql_emitters = sql_emitters
 
     @classmethod
+    def relationships(cls) -> list[Any]:
+        return [relationship for relationship in inspect(cls).relationships]
+
+    @classmethod
+    def set_schemas(cls, app: FastAPI) -> None:
+        for schema_def in cls.schema_defs:
+            schema_def.init_schema(cls, app)
+
+    @classmethod
     def configure_base(cls, app: FastAPI) -> None:
         cls.set_schemas(app)
         cls.set_graph()
-
-        # cls.set_properties()
-        # cls.set_filters
 
     @classmethod
     def set_graph(cls) -> None:
@@ -157,6 +163,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         """
         if not cls.include_in_graph:
             return
+        cls.set_properties()
         cls.graph_node = GraphNode(klass=cls)
         cls.set_edges()
 
@@ -182,37 +189,17 @@ class Base(AsyncAttrs, DeclarativeBase):
                 continue
             edge = GraphEdge(
                 klass=cls,
-                table_name=cls.__table__.name,
-                name=rel.info.get("edge"),
-                destination_table_name=rel.mapper.class_.__table__.name,
+                destination_meta_type=rel.mapper.class_.__table__.name,
+                label=rel.info.get("edge"),
+                secondary=rel.secondary,
                 accessor=rel.key,
             )
             cls.graph_edges[rel.key] = edge
 
     @classmethod
-    def relationships(cls) -> list[Any]:
-        return [relationship for relationship in inspect(cls).relationships]
-
-    @classmethod
-    def set_schemas(cls, app: FastAPI) -> None:
-        for schema_def in cls.schema_defs:
-            schema_def.init_schema(cls, app)
-
-    @classmethod
     def set_properties(cls) -> None:
-        """
-        Creates and assigns graph properties to the class.
-
-        This method initializes the `graph_properties` attribute as an empty list.
-        It then iterates over the columns of the class's table, filtering out columns
-        that are either in the `exclude_from_properties` list or are foreign keys
-        but not primary keys. For each remaining column, it determines the data type
-        and creates a `GraphProperty` object, which is appended to the `graph_properties` list.
-
-        Returns:
-            None
-        """
-        cls.graph_properties = []
+        """ """
+        cls.graph_properties = {}
         if not cls.graph_node:
             return
         for column in cls.__table__.columns:
@@ -224,13 +211,10 @@ class Base(AsyncAttrs, DeclarativeBase):
                 data_type = "str"
             else:
                 data_type = column.type.python_type.__name__
-            cls.graph_properties.append(
-                GraphProperty(
-                    table_name=cls.__table__.name,
-                    name=convert_snake_to_title(column.name),
-                    accessor=column.name,
-                    data_type=data_type,
-                )
+            cls.graph_properties[column.name] = GraphProperty(
+                klass=cls,
+                accessor=column.name,
+                data_type=data_type,
             )
 
     @classmethod

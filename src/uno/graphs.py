@@ -2,16 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+
 from typing import Any
 
 from psycopg.sql import SQL, Identifier, Literal
+from psycopg.types.json import Jsonb, set_json_dumps, set_json_loads
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
+from sqlalchemy import Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
+from sqlalchemy.types import NullType
 
-from uno.db.sql_emitters import DB_SCHEMA
+from uno.db.sql_emitters import DB_SCHEMA, WRITER_ROLE, ADMIN_ROLE
 from uno.fltr.enums import (
     DataType,
     Lookup,
@@ -21,8 +26,6 @@ from uno.fltr.enums import (
 )
 from uno.config import settings
 from uno.utilities import convert_snake_to_camel, convert_snake_to_title
-
-ADMIN = f"{settings.DB_NAME}_admin"
 
 
 class GraphBase(BaseModel):
@@ -110,7 +113,7 @@ class GraphBase(BaseModel):
             """
             )
             .format(
-                admin=ADMIN,
+                admin=ADMIN_ROLE,
                 full_function_name=SQL(full_function_name),
                 function_args=SQL(function_args),
                 return_type=SQL(return_type),
@@ -132,15 +135,15 @@ class GraphBase(BaseModel):
 
 
 class GraphProperty(GraphBase):
-    # table_name: str <- from GraphBase
-    # schema_name: str <- from GraphBase
-    # name: str <- from GraphBase
+    # klass: Any <- from GraphBase
     accessor: str
     data_type: str
+    # display: str <- computed_field
+    # lookups: Lookup <- computed_field
 
     @computed_field
     def display(self) -> str:
-        return convert_snake_to_title(self.name)
+        return convert_snake_to_title(self.accessor)
 
     @computed_field
     def lookups(self) -> Lookup:
@@ -168,32 +171,47 @@ class GraphProperty(GraphBase):
         Returns:
             str: The complete SQL script as a single string.
         """
-        sql = self.create_filter_record_sql()
-        conn.execute(text(SQL(sql)))
-
-    def create_filter_record_sql(self) -> str:
-        """ """
-        return (
-            SQL(
-                """
-                DO $$
-                BEGIN
-                    INSERT INTO uno.filter(filter_type, data_type, table_name, name, accessor, lookups)
-                        VALUES ({filter_type}, {data_type}, {table_name}, {name}, {accessor}, {lookups});
-                END $$;
-                """
+        conn.execute(
+            text(
+                SQL(
+                    """
+            DO $$
+            BEGIN
+                SET ROLE {writer_role};
+                INSERT INTO {db_schema}.filter (
+                    data_type,
+                    meta_type,
+                    display,
+                    destination_meta_type,
+                    accessor,
+                    lookups,
+                    properties
+                )
+                VALUES (
+                    {data_type},
+                    {meta_type},
+                    {display},
+                    {meta_type},
+                    {accessor},
+                    {lookups},
+                    {properties}
+                );
+            END $$;
+            """
+                )
+                .format(
+                    writer_role=ADMIN_ROLE,
+                    db_schema=DB_SCHEMA,
+                    data_type=Literal(self.data_type),
+                    meta_type=Literal(self.table_name),
+                    display=Literal(self.display),
+                    destination_meta_type=Literal(self.table_name),
+                    accessor=Literal(self.accessor),
+                    lookups=Literal(self.lookups),
+                    properties=json.dumps([]),
+                )
+                .as_string()
             )
-            .format(
-                admin_role=ADMIN,
-                filter_type=SQL("PROPERTY"),
-                data_type=SQL(self.data_type),
-                table_name=SQL(self.table_name),
-                name=SQL(self.name),
-                label_ident=SQL(self.name),
-                accessor=SQL(self.accessor),
-                lookups=SQL(self.lookups),
-            )
-            .as_string()
         )
 
 
@@ -202,12 +220,13 @@ class GraphNode(GraphBase):
     # schema_name: str <- from GraphBase
     # name: str <- computed_field
 
-    # @computed_field
-    # def properties(self) -> dict[str, GraphProperty]:
-    #    from uno.db.tables import Base
-    #
-    #        klass = Base.registry.get(self.table_name)
-    #        return klass.graph_properties
+    @computed_field
+    def properties(self) -> dict[str, GraphProperty]:
+        return self.klass.graph_properties
+
+    @computed_field
+    def table_name(self) -> str:
+        return self.klass.__table__.name
 
     @computed_field
     def name(self) -> str:
@@ -251,7 +270,7 @@ class GraphNode(GraphBase):
             END $$;
             """
         ).format(
-            admin=Identifier(ADMIN),
+            admin=ADMIN_ROLE,
             name=Literal(self.name),
             label_ident=Identifier(self.name),
             schema_name=SQL(settings.DB_SCHEMA),
@@ -415,39 +434,48 @@ class GraphNode(GraphBase):
 
 
 class GraphEdge(GraphBase):
-    # table_name: str <- from GraphBase
-    # schema_name: str <- from GraphBase
-    name: str
-    destination_table_name: str
+    label: str
+    destination_meta_type: str
     accessor: str
-    secondary_table_name: str = None
+    secondary: Table | None
     lookups: list[Lookup] = related_lookups
+    # properties: dict[str, GraphProperty]
     # display: str <- computed_field
-    # properties: dict[str, GraphProperty] <- computed_field
     # nullable: bool = False <- computed_field
 
     @computed_field
     def display(self) -> str:
-        return f"{convert_snake_to_title(self.name)} ({convert_snake_to_title(self.destination_table_name)})"
+        return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.destination_meta_type)})"
+
+    @computed_field
+    def table_name(self) -> str:
+        return self.klass.__table__.name
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
-        if not self.secondary_table_name:
+        if not isinstance(self.secondary, Table):
             return {}
-        from uno.db.tables import Base
-
-        table = Base.metadata.tables[self.secondary_table_name]
         props = {}
-        for column in table.columns:
-            if column.foreign_keys and not column.primary_key:
+        for column in self.secondary.columns:
+            if column.foreign_keys and column.primary_key:
                 continue
+
+            if type(column.type) == NullType:
+                data_type = "str"
+            else:
+                data_type = column.type.python_type.__name__
+            from uno.db.base import Base
+
+            for base in Base.registry.mappers:
+                if base.class_.__tablename__ == self.secondary.name:
+                    klass = base.class_
+                    break
             props.update(
                 {
                     column.name: GraphProperty(
-                        table_name=self.table_name,
-                        name=convert_snake_to_title(column.name),
+                        klass=klass,
                         accessor=column.name,
-                        data_type=column.type.python_type.__name__,
+                        data_type=data_type,
                     )
                 }
             )
@@ -465,25 +493,45 @@ class GraphEdge(GraphBase):
                 BEGIN
                     SET ROLE {admin_role};
                     IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label
-                        WHERE name = {name}) THEN
-                            PERFORM ag_catalog.create_elabel('graph', {name});
+                        WHERE name = {label}) THEN
+                            PERFORM ag_catalog.create_elabel('graph', {label});
                             CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                     END IF;
-                
-                    -- INSERT INTO {db_schema}."filter"(data_type, table_name, name, destination_table_name, accessor, lookups)
-                    --    VALUES ('object', {table_name}, {name}, {destination_table_name}, {accessor}, {lookups});
+
+                    INSERT INTO {db_schema}.filter (
+                        data_type,
+                        meta_type,
+                        destination_meta_type,
+                        display,
+                        accessor,
+                        lookups,
+                        properties
+                    )
+                    VALUES (
+                        {data_type},
+                        {meta_type},
+                        {destination_meta_type},
+                        {display},
+                        {accessor},
+                        {lookups},
+                        {properties}
+
+                    );
                 END $$;
                 """
             )
             .format(
-                admin_role=ADMIN,
+                admin_role=ADMIN_ROLE,
+                label=Literal(self.label),
+                label_ident=Identifier(self.label),
                 db_schema=DB_SCHEMA,
-                name=Literal(self.name),
-                table_name=Literal(self.table_name),
-                destination_table_name=Literal(self.destination_table_name),
-                label_ident=Identifier(self.name),
+                data_type=Literal("object"),
+                meta_type=Literal(self.table_name),
+                destination_meta_type=Literal(self.destination_meta_type),
+                display=Literal(self.display),
                 accessor=Literal(self.accessor),
                 lookups=Literal(self.lookups),
+                properties=json.dumps(list(self.properties.keys())),
             )
             .as_string()
         )

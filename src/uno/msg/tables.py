@@ -29,7 +29,7 @@ from uno.config import settings
 
 
 class MessageAddressedTo(Base):
-    __tablename__ = "message_addressedto"
+    __tablename__ = "message__addressed_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "User addressed on a message",
@@ -49,14 +49,14 @@ class MessageAddressedTo(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    was_read: Mapped[bool] = mapped_column(
+    read: Mapped[bool] = mapped_column(
         server_default=text("false"),
     )
     read_at: Mapped[datetime.datetime] = mapped_column()
 
 
 class MessageCopiedTo(Base):
-    __tablename__ = "message_copied_to"
+    __tablename__ = "message__copied_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "User copied on a message",
@@ -83,7 +83,7 @@ class MessageCopiedTo(Base):
 
 
 class MessageRelatedObject(Base):
-    __tablename__ = "message_relatedobject"
+    __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Messages to Meta Objects",
