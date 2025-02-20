@@ -11,14 +11,12 @@ from fastapi.templating import Jinja2Templates
 from uno.config import settings
 
 
-import uno.attr.tables as attrs_tables
+import uno.attr.tables as attr_tables
 import uno.auth.tables as auth_tables
-
-import uno.msg.tables as comms_tables
-import uno.fltr.tables as fltrs_tables
-
-import uno.rprt.tables as rprts_tables
-import uno.wkflw.tables as wrkflws_tables
+import uno.msg.tables as msg_tables
+import uno.fltr.tables as fltr_tables
+import uno.rprt.tables as rprt_tables
+import uno.wkflw.tables as wkflw_tables
 
 
 tags_metadata = [

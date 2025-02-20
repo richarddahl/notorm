@@ -7,8 +7,9 @@ This module contains the global fixtures for the tests in all test modules.
 Each test module has its own conftest.py file that containts the fixtures for that module.
 """
 
-import textwrap
 import pytest
+
+from psycopg.sql import SQL
 
 from sqlalchemy import func, select, delete, text, create_engine, Inspector, Column
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -19,6 +20,13 @@ from uno.db.management.db_manager import DBManager
 from uno.auth.enums import TenantType
 from uno.config import settings
 
+import uno.db.tables as db_tables
+import uno.attr.tables as attr_tables
+import uno.auth.tables as auth_tables
+import uno.fltr.tables as fltr_tables
+import uno.msg.tables as msg_tables
+import uno.rprt.tables as rprt_tables
+import uno.wkflw.tables as wkflw_tables
 
 ###########################################
 # SQL CONSTANTS FOR TESTING PURPOSES ONLY #
@@ -90,7 +98,6 @@ BEGIN
     PERFORM set_config('rls_var.email', email, true);
     PERFORM set_config('rls_var.is_superuser', is_superuser, true);
     PERFORM set_config('rls_var.is_tenant_admin', is_tenant_admin, true);
-    PERFORM set_config('rls_var.tenant_id', tenant_id, true);
 
     --Set the role to the provided database role
     PERFORM uno.mock_role(role_name);
@@ -100,14 +107,15 @@ $$;
 
 
 def create_mock_role_function():
-    return textwrap.dedent(
-        f"""
+    return (
+        SQL(
+            """
         CREATE OR REPLACE FUNCTION uno.mock_role(role_name TEXT)
         RETURNS VOID
         LANGUAGE plpgsql
         AS $$
         DECLARE
-            full_role_name TEXT:= '{settings.DB_NAME}_' || role_name;
+            full_role_name TEXT:= {db_name}_ || role_name;
         BEGIN
             /*
             Function used to set the role of the current session to
@@ -125,6 +133,9 @@ def create_mock_role_function():
         END;
         $$;
         """
+        )
+        .format(db_name=SQL(settings.DB_NAME))
+        .as_string()
     )
 
 
@@ -152,46 +163,6 @@ def db_column(
         if col.get("name") == col_name:
             return col
     return None
-
-
-def print_indices(db_inspector: Inspector, table_name: str, schema: str) -> None:
-    objs = db_inspector.get_indexes(table_name, schema=schema)
-    print(f"Indices for {table_name}")
-    for ob in objs:
-        print(ob)
-    print("")
-
-
-def print_pk_constraint(db_inspector: Inspector, table_name: str, schema: str) -> None:
-    objs = db_inspector.get_pk_constraint(table_name, schema=schema)
-    print(f"Primary Key Constraint for {table_name}")
-    for k, v in objs.items():
-        print(k, v)
-    print("")
-
-
-def print_foreign_keys(db_inspector: Inspector, table_name: str, schema: str) -> None:
-    objs = db_inspector.get_foreign_keys(table_name, schema=schema)
-    print(f"Foreign Keys for {table_name}")
-    for ob in objs:
-        print(ob)
-    print("")
-
-
-def print_uq_constraints(db_inspector: Inspector, table_name: str, schema: str) -> None:
-    objs = db_inspector.get_unique_constraints(table_name, schema=schema)
-    print(f"Unique Constraints for {table_name}")
-    for ob in objs:
-        print(ob)
-    print("")
-
-
-def print_ck_constraints(db_inspector: Inspector, table_name: str, schema: str) -> None:
-    objs = db_inspector.get_check_constraints(table_name, schema=schema)
-    print(f"Check Constraints for {table_name}")
-    for ob in objs:
-        print(ob)
-    print("")
 
 
 ############

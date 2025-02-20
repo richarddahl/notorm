@@ -35,93 +35,6 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 @dataclass
-class InsertPermissionSQL(SQLEmitter):
-    """Generates SQL to create permissions for a new ObjectType.
-
-    This class creates a function that inserts permission records for each
-    object_type with the following permissions: SELECT, INSERT, UPDATE, DELETE.
-
-    Attributes:
-        table_name (str): The name of the table for which to create permissions.
-    """
-class InsertRelatedObjectTriggerSQL(SQLEmitter):
-    """Generates SQL to create a trigger for inserting related object records.
-
-    This class creates a trigger that executes a function to insert a record into
-    the related_object table when a record is inserted into a table with a PK that
-    is a FKDefinition to the related_object table.
-
-    Attributes:
-        table_name (str): The name of the table for which to create the related object trigger.
-    """
-class InsertRelatedObjectFunctionSQL(SQLEmitter):
-    """Generates SQL to create a function for inserting related object records.
-
-    This class creates a function that inserts a record into the related_object table
-    when a record is inserted into a table with a PK that is a FKDefinition to the related_object table.
-
-    Attributes:
-        table_name (str): The name of the table for which to create the related object function.
-    """
-class InsertObjectTypeRecordSQL(SQLEmitter):
-    """Generates SQL to create an object_type record in the database.
-
-    This class inserts a new record into the object_type table with the specified
-    table name, executed with elevated privileges using the database writer role.
-
-    Attributes:
-        table_name (str): Name of the table to be inserted into object_type table.
-    """
-class InsertHistoryTableRecordSQL(SQLEmitter):
-    """Generates SQL to create a trigger function for auditing table changes.
-
-    This class creates a trigger function that copies newly inserted or updated
-    records into a corresponding history/audit table.
-
-    Attributes:
-        table_name (str): The name of the table to create the history trigger for.
-    """
-class CreateHistoryTableSQL(SQLEmitter):
-    """Generates SQL to create a history/audit table for tracking changes.
-
-    This class creates SQL to generate an audit table that mirrors the structure
-    of the original table, with additional audit columns.
-
-    Attributes:
-        table_name (str): The name of the table for which to create a history table.
-    """
-class RecordVersionAuditSQL(SQLEmitter):
-    """Generates SQL to enable record version auditing for a table.
-
-    This class prepares and executes SQL to enable audit tracking on a database table
-    using the audit schema's enable_tracking function.
-
-    Attributes:
-        table_name (str): The name of the table to enable auditing for.
-    """
-class AlterGrantSQL(SQLEmitter):
-    """Generates SQL to alter table ownership and grant privileges.
-
-    This class creates SQL statements to:
-    1. Set the role to admin.
-    2. Change table ownership to admin role.
-    3. Grant SELECT privileges to reader and writer roles.
-    4. Grant INSERT, UPDATE, DELETE privileges to writer role.
-
-    Attributes:
-        table_name (str): Name of the table to alter grants for.
-    """
-class SQLEmitter(ABC):
-    """Base class for SQL emitters that generate SQL statements.
-
-    This abstract base class provides a framework for creating SQL statements
-    for various database operations. Subclasses must implement the `emit_sql`
-    method to generate specific SQL statements.
-
-    Attributes:
-        table_name (str | None): The name of the database table for which SQL is generated.
-        timing (Optional[str]): The timing of SQL execution, such as "BEFORE" or "AFTER".
-    """
 class SQLEmitter(ABC):
     """SQL Emitter base class for creating PostgreSQL functions and triggers.
 
@@ -143,22 +56,7 @@ class SQLEmitter(ABC):
     timing: Optional[str] = "AFTER"
 
     @abstractmethod
-    def emit_sql(self, table_name: str, conn: Engine) -> str:
-        """Generate and return an SQL statement for a given table.
-
-        This abstract method must be implemented by subclasses to generate
-        specific SQL statements for the specified table.
-
-        Args:
-            table_name (str): The name of the table for which to generate SQL.
-            conn (Engine): SQLAlchemy Engine connection object.
-
-        Returns:
-            str: The generated SQL statement.
-
-        Raises:
-            NotImplementedError: This is an abstract method that must be implemented by subclasses.
-        """
+    def emit_sql(self, table_name: str, conn: Engine) -> None:
         """
         Emits an SQL statement for a given table.
 
@@ -167,7 +65,7 @@ class SQLEmitter(ABC):
             conn (Engine): SQLAlchemy Engine connection object.
 
         Returns:
-            str: The generated SQL statement.
+            None
 
         Raises:
             NotImplementedError: This is an abstract method that must be implemented by subclasses.
@@ -182,67 +80,50 @@ class SQLEmitter(ABC):
         for_each: str = "ROW",
         db_function: bool = True,
     ) -> str:
-        """Generate a SQL statement to create a PostgreSQL trigger.
+        """Creates a PostgreSQL trigger SQL statement.
 
-        This method creates a SQL statement for a trigger that executes a specified
-        function before or after certain database operations.
+        This method generates a SQL statement for creating or replacing a trigger in PostgreSQL.
+        The trigger can be configured to execute before or after specified operations and can
+        reference either a database function or a table-specific function.
 
         Args:
-            function_name (str): Name of the function to be executed by the trigger.
+            function_name (str): Name of the function to be executed by the trigger
             timing (str, optional): When the trigger should fire ("BEFORE" or "AFTER"). Defaults to "BEFORE".
             operation (str, optional): Database operation that activates the trigger ("INSERT", "UPDATE", "DELETE"). Defaults to "UPDATE".
             for_each (str, optional): Whether to fire once per statement or row ("ROW" or "STATEMENT"). Defaults to "ROW".
             db_function (bool, optional): If True, function is in database schema. If False, function is table-specific. Defaults to True.
 
         Returns:
-            str: Complete SQL statement for creating the trigger.
+            str: Complete SQL statement for creating the trigger
         """
-        self,
-        function_name: str,
-        timing: str = "BEFORE",
-        operation: str = "UPDATE",
-        for_each: str = "ROW",
-        db_function: bool = True,
+        trigger_scope = (
+            f"{settings.DB_SCHEMA}."
+            if db_function
+            else f"{settings.DB_SCHEMA}.{self.table_name}_"
+        )
+        return (
+            SQL(
+                """
+            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
+                {timing} {operation}
+                ON {db_schema}.{table_name}
+                FOR EACH {for_each}
+                EXECUTE FUNCTION {trigger_scope}{function_name}();
+            """
+            )
+            .format(
+                table_name=SQL(self.table_name),
+                function_name=SQL(function_name),
+                timing=SQL(timing),
+                operation=SQL(operation),
+                for_each=SQL(for_each),
+                trigger_scope=SQL(trigger_scope),
+                db_schema=DB_SCHEMA,
+            )
+            .as_string()
+        )
 
     def create_sql_function(
-        self,
-        function_name: str,
-        function_string: str,
-        function_args: str = "",
-        db_function: bool = True,
-        return_type: str = "TRIGGER",
-        volatile: str = "VOLATILE",
-        include_trigger: bool = False,
-        timing: str = "BEFORE",
-        operation: str = "UPDATE",
-        for_each: str = "ROW",
-        security_definer: str = "",
-    ) -> str:
-        """Generate SQL to create a PostgreSQL function and optionally a trigger.
-
-        This method creates SQL statements to define a PostgreSQL function and
-        optionally a trigger that calls the function. The function can be standalone
-        or associated with a specific table.
-
-        Args:
-            function_name (str): Name of the function to create.
-            function_string (str): The actual PL/pgSQL function body code.
-            function_args (str, optional): Function arguments declaration. Defaults to "".
-            db_function (bool, optional): If True, creates standalone function. If False, prefixes function name with table name. Defaults to True.
-            return_type (str, optional): SQL return type for the function. Defaults to "TRIGGER".
-            volatile (str, optional): Function volatility (VOLATILE/STABLE/IMMUTABLE). Defaults to "VOLATILE".
-            include_trigger (bool, optional): Whether to create a trigger for this function. Defaults to False.
-            timing (str, optional): Trigger timing (BEFORE/AFTER). Defaults to "BEFORE".
-            operation (str, optional): Trigger operation (INSERT/UPDATE/DELETE). Defaults to "UPDATE".
-            for_each (str, optional): Trigger granularity (ROW/STATEMENT). Defaults to "ROW".
-            security_definer (str, optional): SECURITY DEFINER clause if needed. Defaults to "".
-
-        Returns:
-            str: SQL statement(s) for creating the function and optional trigger.
-
-        Raises:
-            ValueError: If both function_args and include_trigger are specified.
-        """
         self,
         function_name: str,
         function_string: str,
@@ -340,6 +221,38 @@ class SQLEmitter(ABC):
 
 
 @dataclass
+class SetRoleSQL(SQLEmitter):
+    """Emits SQL to set the current role to the specified role.
+
+    This class generates and executes SQL statements to set the current role to the specified role.
+    It is used to ensure that the correct role is active when executing subsequent SQL statements.
+
+    Where used:
+        Base
+
+    Args:
+        role_name (str): The name of the role to set the current role to
+
+    """
+
+    def emit_sql(self, conn: Engine, role_name: str) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
+            SET ROLE {db_name}_{role};
+            """
+                )
+                .format(
+                    db_name=DB_NAME,
+                    role=SQL(role_name),
+                )
+                .as_string()
+            )
+        )
+
+
+@dataclass
 class AlterGrantSQL(SQLEmitter):
     """
     Emits SQL statements to alter table ownership and grant privileges.
@@ -351,7 +264,7 @@ class AlterGrantSQL(SQLEmitter):
     4. Grants INSERT, UPDATE, DELETE privileges to writer role
 
     Where used:
-    Base
+        Base
 
     Args:
         table_name (str): Name of the table to alter grants for
@@ -364,106 +277,6 @@ class AlterGrantSQL(SQLEmitter):
     """
 
     def emit_sql(self, conn: Engine) -> None:
-        """Execute SQL to audit user actions on records.
-
-        This method creates a function that sets the owned_by_id and modified_by_id
-        fields of a table to the user_id of the user making the change.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create permissions for a new ObjectType.
-
-        This method creates a function that inserts permission records for each
-        object_type with the following permissions: SELECT, INSERT, UPDATE, DELETE.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create a trigger for inserting related object records.
-
-        This method creates a trigger that executes a function to insert a record into
-        the related_object table when a record is inserted into a table with a PK that
-        is a FKDefinition to the related_object table.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create a function for inserting related object records.
-
-        This method creates a function that inserts a record into the related_object table
-        when a record is inserted into a table with a PK that is a FKDefinition to the related_object table.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create an object_type record in the database.
-
-        This method inserts a new record into the object_type table with the specified
-        table name, executed with elevated privileges using the database writer role.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create a trigger function for auditing table changes.
-
-        This method generates a trigger function that copies newly inserted or updated
-        records into a corresponding audit table in the audit schema.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to create a history/audit table for tracking changes.
-
-        This method executes SQL to create an audit table that mirrors the structure
-        of the original table, with additional audit columns.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to enable record version auditing for a table.
-
-        This method executes SQL to enable audit tracking on a specified table
-        using the audit schema's enable_tracking function.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
-        """Execute SQL to alter table ownership and grant privileges.
-
-        This method executes SQL statements to set the role to admin,
-        change table ownership, and grant appropriate privileges to roles.
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object.
-
-        Returns:
-            None
-        """
         conn.execute(
             text(
                 SQL(
@@ -498,7 +311,7 @@ class RecordVersionAuditSQL(SQLEmitter):
     using the audit schema's enable_tracking function.
 
     Where used:
-    RecordVersionAuditMixin
+        RecordVersionAuditMixin
 
     Args:
         table_name (str): The name of the table to enable auditing for.
@@ -546,6 +359,9 @@ class CreateHistoryTableSQL(SQLEmitter):
     The audit table is initially created empty (WITH NO DATA) and will be populated through
     triggers or other mechanisms when changes occur in the main table.
 
+    Where used:
+        HistoryTableAuditMixin
+
     Args:
         None directly, but inherits from SQLEmitter which provides table_name
 
@@ -565,31 +381,28 @@ class CreateHistoryTableSQL(SQLEmitter):
     """
 
     def emit_sql(self, conn: Engine) -> None:
-        """
-        Creates an audit table for tracking changes in the database.
-
-        This method executes SQL to:
-        1. Set the database role
-        2. Create an audit table as a copy of the source table structure (without data)
-        3. Add an auto-incrementing primary key column
-        4. Create indexes for efficient querying
-
-        Args:
-            conn (Engine): SQLAlchemy engine connection object
-
-        Returns:
-            None
-
-        Raises:
-            SQLAlchemyError: If there is an error executing the SQL statements
-        """
         conn.execute(
             text(
                 SQL(
                     """
             SET ROLE {db_name}_admin;
             CREATE TABLE audit.{db_schema}_{table_name}
-            AS (SELECT * FROM {db_schema}.{table_name})
+            AS (
+                SELECT 
+                    t1.*,
+                    t2.metatype_name,
+                    t2.is_active,
+                    t2.is_deleted,
+                    t2.created_at,
+                    t2.created_by_id, 
+                    t2.modified_at, 
+                    t2.modified_by_id,
+                    t2.deleted_at,
+                    t2.deleted_by_id
+                FROM {db_schema}.{table_name} t1
+                INNER JOIN {db_schema}.meta t2
+                ON t1.id = t2.id
+            )
             WITH NO DATA;
 
             ALTER TABLE audit.{db_schema}_{table_name}
@@ -614,51 +427,34 @@ class CreateHistoryTableSQL(SQLEmitter):
 
 @dataclass
 class InsertHistoryTableRecordSQL(SQLEmitter):
-    """Generates and executes SQL to create a trigger function for auditing table changes.
+    """A SQL emitter class that generates audit triggers for database tables.
 
-    This class extends SQLEmitter to create a trigger function that copies newly inserted
-    or updated records into a corresponding history/audit table. The history table must
-    exist in the 'audit' schema and follow the naming pattern 'audit.{schema}_{table}'.
+    This class creates SQL functions and triggers that automatically track changes to database tables
+    by copying modified records into corresponding audit tables. It implements the audit trail pattern
+    for database change tracking.
 
-    Parameters
-    ----------
-    table_name : str
-        The name of the table to create the history trigger for.
-        The audit table must already exist as audit.{schema}_{table_name}
+    The generated trigger function copies newly inserted or updated records from the source table
+    into a corresponding audit table in the audit schema. The audit table must have an identical
+    structure to the source table.
 
-    Returns
-    -------
-    None
-        Executes the SQL directly on the database connection.
+    Where used:
+        HistoryTableAuditMixin
 
-    Notes
-    -----
-    - Creates a SECURITY DEFINER trigger function
-    - Trigger fires AFTER INSERT OR UPDATE operations
-    - Copies the entire row into the audit table using the NEW record's ID
-    - The audit table must have identical structure to the source table
+    Attributes:
+        table_name (str): Name of the table to audit
+
+        ```python
+        # Create audit trigger for users table
+        emitter = InsertHistoryTableRecordSQL('users')
+        # This creates a trigger that copies changes from schema.users to audit.schema_users
+
+    Note:
+        - The audit tables must exist beforehand in the audit schema
+        - Audit tables must have same structure as source tables
+        - The naming convention for audit tables is: audit.{schema}_{table_name}
     """
 
     def emit_sql(self, conn: Engine) -> None:
-        """Creates and executes a SQL function that audits table changes by inserting records into an audit table.
-
-        This method generates a trigger function that copies newly inserted or updated records
-        into a corresponding audit table in the audit schema. The audit table must follow the same
-        structure as the source table.
-
-        Args:
-            conn (Engine): SQLAlchemy Engine object representing the database connection
-
-        Returns:
-            None
-
-        Example:
-            ```
-            emitter = SQLEmitter('users')
-            emitter.emit_sql(engine)
-            # Creates trigger function that copies changes from schema.users to audit.schema_users
-            ```
-        """
         function_string = (
             SQL(
                 """
@@ -694,22 +490,25 @@ class InsertHistoryTableRecordSQL(SQLEmitter):
 
 
 @dataclass
-class InsertObjectTypeRecordSQL(SQLEmitter):
-    """Emits SQL to create an object_type record in the database.
+class InsertMetaTypeRecordSQL(SQLEmitter):
+    """Emits SQL to create an meta_type record in the database.
 
-    This class is responsible for inserting a new record into the object_type table
+    This class is responsible for inserting a new record into the meta_type table
     with the specified table name. The SQL is executed with elevated privileges using
     the database writer role.
+
+    Where used:
+        RelatedObjectMixin
 
     Attributes:
         timing (str): Specifies when the SQL should be executed ("AFTER")
 
     Args:
-        table_name (str): Name of the table to be inserted into object_type table
+        table_name (str): Name of the table to be inserted into meta_type table
 
     Example:
         ```
-        emitter = InsertObjectTypeRecordSQL(table_name="my_table")
+        emitter = InsertMetaTypeRecordSQL(table_name="my_table")
         emitter.emit_sql(engine)
         ```
     """
@@ -721,9 +520,9 @@ class InsertObjectTypeRecordSQL(SQLEmitter):
             text(
                 SQL(
                     """
-            -- Create the object_type record
+            -- Create the meta_type record
             SET ROLE {db_role};
-            INSERT INTO {schema}.object_type (name)
+            INSERT INTO {schema}.meta_type (name)
             VALUES ({table_name});
             """
                 )
@@ -737,60 +536,35 @@ class InsertObjectTypeRecordSQL(SQLEmitter):
         )
 
 
-@dataclass
-class InsertRelatedObjectFunctionSQL(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> None:
-        function_string = (
-            SQL(
-                """
-            DECLARE
-                relatedobject_id VARCHAR(26) := {db_schema}.generate_ulid();
-                -- user_id VARCHAR(26) := current_setting('rls_var.user_id', true);
-            BEGIN
-                /*
-                Function used to insert a record into the related_object table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the related_object table.
-                Set as a trigger on the table, so that the related_object record is created when the
-                record is created.
-                */
+class InsertMetaObjectTriggerSQL(SQLEmitter):
+    """
+    A SQLEmitter class for creating a trigger that handles related object insertions.
 
-                SET ROLE {db_role};
-                INSERT INTO {db_schema}.related_object (id, objecttype_name)
-                    VALUES (relatedobject_id, {objecttype_name});
-                NEW.id = relatedobject_id;
-                RETURN NEW;
-            END;
-            """
-            )
-            .format(
-                db_schema=Identifier(settings.DB_SCHEMA),
-                db_role=Identifier(f"{settings.DB_NAME}_writer"),
-                objecttype_name=Literal(self.table_name),
-            )
-            .as_string()
-        )
+    This class generates and executes SQL to create a trigger that fires before
+    INSERT operations on related objects. The trigger is implemented as a database
+    function and executes for each row.
 
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "insert_relatedobject",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT",
-                    include_trigger=True,
-                    db_function=True,
-                )
-            )
-        )
+    Where used:
+        RelatedObjectMixin
 
+    Args:
+        None
 
-@dataclass
-class InsertRelatedObjectTriggerSQL(SQLEmitter):
+    Returns:
+        None
+
+    Example:
+        ```python
+        trigger = InsertMetaObjectTriggerSQL()
+        trigger.emit_sql(engine)
+        ```
+    """
+
     def emit_sql(self, conn: Engine) -> None:
         conn.execute(
             text(
                 self.create_sql_trigger(
-                    "insert_relatedobject",
+                    "insert_meta_object",
                     timing="BEFORE",
                     operation="INSERT",
                     for_each="ROW",
@@ -802,24 +576,53 @@ class InsertRelatedObjectTriggerSQL(SQLEmitter):
 
 @dataclass
 class InsertPermissionSQL(SQLEmitter):
+    """SQL Emitter class for generating a PostgreSQL function and trigger to automatically create permissions.
+
+    This class generates a SQL function that automatically creates permission records when a new
+    MetaType is inserted. For each new MetaType, it creates four permission records, one for
+    each basic database operation (SELECT, INSERT, UPDATE, DELETE).
+
+    The generated function:
+    - Is triggered AFTER INSERT operations
+    - Creates permission records in the permission table
+    - Links permissions to the newly created MetaType
+    - Returns the NEW record to complete the trigger operation
+
+    Where used:
+        MetaType
+
+    Attributes:
+        None
+
+    Methods:
+        emit_sql(conn: Engine) -> None:
+            Generates and executes the SQL function and trigger creation statements.
+
+            Args:
+                conn (Engine): SQLAlchemy engine connection to execute the SQL.
+
+            Returns:
+                None
+    """
+
     def emit_sql(self, conn: Engine) -> None:
         function_string = (
             SQL(
                 """
             BEGIN
                 /*
-                Function to create a new Permission record when a new ObjectType is inserted.
-                Records are created for each object_type with each of the following permissions:
+                Function to create a new Permission record when a new MetaType is inserted.
+                Records are created for each meta_type with each of the following permissions:
                     SELECT, INSERT, UPDATE, DELETE
-                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a object_type is deleted.
+                Deleted automatically by the DB via the FKDefinition Constraints ondelete when a meta_type is deleted.
                 */
-                INSERT INTO {db_schema}.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(metatype_name, operation)
                     VALUES (NEW.name, 'SELECT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(metatype_name, operation)
                     VALUES (NEW.name, 'INSERT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(metatype_name, operation)
                     VALUES (NEW.name, 'UPDATE'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(objecttype_name, operation)
+                INSERT INTO {db_schema}.permission(metatype_name, operation)
                     VALUES (NEW.name, 'DELETE'::uno.sqloperation);
                 RETURN NEW;
             END;
@@ -838,77 +641,6 @@ class InsertPermissionSQL(SQLEmitter):
                     operation="INSERT",
                     include_trigger=True,
                     db_function=True,
-                )
-            )
-        )
-
-
-class GenericRecordAuditUserSQL(SQLEmitter):
-    """Generates SQL to audit user actions on records.
-
-    This class creates a function that sets the owned_by_id and modified_by_id
-    fields of a table to the user_id of the user making the change.
-
-    Attributes:
-        table_name (str): The name of the table for which to create the audit function.
-    """
-    def emit_sql(self, conn: Engine) -> None:
-        function_string = (
-            SQL(
-                """
-            DECLARE
-                user_id TEXT := current_setting('rls_var.user_id', true);
-                valid_user_id VARCHAR(26);
-            BEGIN
-                /* 
-                Function used to set the owned_by_id and modified_by_id fields
-                of a table to the user_id of the user making the change. 
-                */
-
-                SELECT current_setting('rls_var.user_id', true) INTO user_id;
-
-                IF user_id IS NULL THEN
-                    RAISE EXCEPTION 'user_id is NULL';
-                END IF;
-
-                IF user_id = '' THEN
-                    RAISE EXCEPTION 'user_id is an empty string';
-                END IF;
-
-                SELECT id INTO valid_user_id FROM {db_schema}.user WHERE id = user_id;
-                IF NOT valid_user_id THEN
-                    RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
-                END IF;
-
-                -- NEW.modified_at := NOW();
-                NEW.modified_by_id = user_id;
-
-                IF TG_OP = 'INSERT' THEN
-                    -- NEW.created_at := NOW();
-                    NEW.owned_by_id = user_id;
-                END IF;
-
-                IF TG_OP = 'DELETE' THEN
-                    -- NEW.deleted_at = NOW();
-                    NEW.deleted_by_id = user_id;
-                END IF;
-
-                RETURN NEW;
-            END;
-            """
-            )
-            .format(db_schema=DB_SCHEMA)
-            .as_string()
-        )
-
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "general_record_audit_users",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT OR UPDATE OR DELETE",
-                    include_trigger=True,
                 )
             )
         )

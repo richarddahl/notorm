@@ -110,7 +110,7 @@ class SchemaDef(BaseModel):
     def suss_related_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
         for rel in klass.relationships():  # type: ignore
-            name = str(rel).split(".")[-1]
+            name = rel.key
             if self.include_fields and name not in self.include_fields:
                 continue
             if self.exclude_fields and name in self.exclude_fields:
@@ -253,7 +253,7 @@ class ListSchemaDef(SchemaDef):
     use_related_schemas: bool = True
 
     def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"List {klass.display_name_plural}"
+        return f"List {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
         klass.list_schema = schema

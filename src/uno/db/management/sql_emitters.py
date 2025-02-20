@@ -4,52 +4,91 @@
 
 from dataclasses import dataclass
 
-from psycopg.sql import SQL, Identifier, Literal
+from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
-from uno.db.sql_emitters import SQLEmitter
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
+from uno.db.sql_emitters import (
+    SQLEmitter,
+    DB_SCHEMA,
+    DB_NAME,
+    ADMIN_ROLE,
+    WRITER_ROLE,
+    READER_ROLE,
+    LOGIN_ROLE,
+    BASE_ROLE,
+    LIT_BASE_ROLE,  # Necessary for searchiing pg_roles
+    LIT_READER_ROLE,  # Necessary for searchiing pg_roles
+    LIT_WRITER_ROLE,  # Necessary for searchiing pg_roles
+    LIT_ADMIN_ROLE,  # Necessary for searchiing pg_roles
+    LIT_LOGIN_ROLE,  # Necessary for searchiing pg_roles
+)
+
+
 from uno.config import settings
-
-
-# SQL Literal and Identifier objects are used to create SQL strings
-# that are passed to the database for execution.
-
-# SQL Literals
-LIT_ADMIN_ROLE = Literal(f"{settings.DB_NAME}_admin")
-LIT_WRITER_ROLE = Literal(f"{settings.DB_NAME}_writer")
-LIT_READER_ROLE = Literal(f"{settings.DB_NAME}_reader")
-LIT_LOGIN_ROLE = Literal(f"{settings.DB_NAME}_login")
-LIT_BASE_ROLE = Literal(f"{settings.DB_NAME}_base_role")
-
-# SQL Identifiers
-ADMIN_ROLE = Identifier(f"{settings.DB_NAME}_admin")
-WRITER_ROLE = Identifier(f"{settings.DB_NAME}_writer")
-READER_ROLE = Identifier(f"{settings.DB_NAME}_reader")
-LOGIN_ROLE = Identifier(f"{settings.DB_NAME}_login")
-BASE_ROLE = Identifier(f"{settings.DB_NAME}_base_role")
-DB_NAME = Identifier(settings.DB_NAME)
-DB_SCHEMA = Identifier(settings.DB_SCHEMA)
 
 
 @dataclass
 class DropDatabaseSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """Drop database SQL emitter.
+
+    This class extends SQLEmitter to generate and execute SQL for dropping a database.
+    It forces the drop operation even if there are active connections.
+
+    Note:
+        This is a destructive operation that cannot be undone. Use with caution.
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        SQLAlchemyError: If there is an error executing the DROP DATABASE statement
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             -- Drop the database if it exists
             DROP DATABASE IF EXISTS {} WITH (FORCE);
             """
+                )
+                .format(DB_NAME)
+                .as_string()
             )
-            .format(DB_NAME)
-            .as_string()
         )
 
 
 class DropRolesSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """Drop database roles used by the application.
+
+    This class handles the removal of all application-specific database roles,
+    including admin, writer, reader, login, and base roles. It uses a single SQL
+    statement to drop all roles if they exist.
+
+    Attributes:
+        None
+
+    Methods:
+        emit_sql(conn: Engine) -> None: Executes SQL to drop all application roles.
+
+    Args:
+        conn (Engine): SQLAlchemy Engine connection object to execute SQL statements.
+
+    Returns:
+        None
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             -- Drop the roles if they exist
             DROP ROLE IF EXISTS {admin_role};
             DROP ROLE IF EXISTS {writer_role};
@@ -57,23 +96,45 @@ class DropRolesSQL(SQLEmitter):
             DROP ROLE IF EXISTS {login_role};
             DROP ROLE IF EXISTS {base_role};
             """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    writer_role=WRITER_ROLE,
+                    reader_role=READER_ROLE,
+                    login_role=LOGIN_ROLE,
+                    base_role=BASE_ROLE,
+                )
+                .as_string()
             )
-            .format(
-                admin_role=ADMIN_ROLE,
-                writer_role=WRITER_ROLE,
-                reader_role=READER_ROLE,
-                login_role=LOGIN_ROLE,
-                base_role=BASE_ROLE,
-            )
-            .as_string()
         )
 
 
 class CreateRolesSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """Creates a set of database roles with a hierarchical permission structure in PostgreSQL.
+
+    This class creates the following roles if they don't already exist:
+    - Base role: Foundation role that other roles inherit from
+    - Reader role: Inherits from base role, for read-only access
+    - Writer role: Inherits from base role, for write access
+    - Admin role: Inherits from base role, for administrative access
+    - Login role: Authentication role that can switch to other roles
+
+    The roles are created using a DO block in PostgreSQL to ensure idempotency.
+    The login role is granted the ability to switch to reader, writer, and admin roles.
+
+    Args:
+        conn (Engine): SQLAlchemy Engine instance representing the database connection
+
+    Returns:
+        None
+
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             DO $$
             BEGIN
                 -- Create the base role with permissions that all other users will inherit
@@ -108,45 +169,96 @@ class CreateRolesSQL(SQLEmitter):
                 GRANT {reader_role}, {writer_role}, {admin_role} TO {login_role};
             END $$;
             """
+                )
+                .format(
+                    lit_base_role=LIT_BASE_ROLE,
+                    base_role=BASE_ROLE,
+                    lit_reader_role=LIT_READER_ROLE,
+                    reader_role=READER_ROLE,
+                    lit_writer_role=LIT_WRITER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    lit_admin_role=LIT_ADMIN_ROLE,
+                    admin_role=ADMIN_ROLE,
+                    lit_login_role=LIT_LOGIN_ROLE,
+                    login_role=LOGIN_ROLE,
+                    password=settings.DB_USER_PW,
+                )
+                .as_string()
             )
-            .format(
-                lit_base_role=LIT_BASE_ROLE,
-                base_role=BASE_ROLE,
-                lit_reader_role=LIT_READER_ROLE,
-                reader_role=READER_ROLE,
-                lit_writer_role=LIT_WRITER_ROLE,
-                writer_role=WRITER_ROLE,
-                lit_admin_role=LIT_ADMIN_ROLE,
-                admin_role=ADMIN_ROLE,
-                lit_login_role=LIT_LOGIN_ROLE,
-                login_role=LOGIN_ROLE,
-                password=settings.DB_USER_PW,
-            )
-            .as_string()
         )
 
 
 class CreateDatabaseSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """
+    A class that emits SQL to create a new database.
+
+    This class extends SQLEmitter to generate and execute SQL statements for database creation.
+    The SQL statement sets the specified database name and assigns an admin role as the owner.
+
+    Attributes:
+        Inherits all attributes from SQLEmitter parent class.
+
+    Methods:
+        emit_sql(conn: Engine) -> None:
+            Executes SQL to create a new database with specified owner.
+
+    Args:
+        conn (Engine): SQLAlchemy Engine connection object used to execute the SQL.
+
+    Returns:
+        None
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             -- Create the database
             CREATE DATABASE {db_name} WITH OWNER = {admin};
             """
+                )
+                .format(db_name=DB_NAME, admin=ADMIN_ROLE)
+                .as_string()
             )
-            .format(db_name=DB_NAME, admin=ADMIN_ROLE)
-            .as_string()
         )
 
 
 class CreateSchemasAndExtensionsSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return "\n".join(
-            [
-                self.emit_create_schemas_sql(),
-                self.emit_create_extensions_sql(),
-            ]
+    """SQL emitter for creating schemas and extensions in a PostgreSQL database.
+
+    This class is responsible for generating and executing SQL statements that:
+    1. Create the necessary schemas (uno and application-specific schema)
+    2. Set up required PostgreSQL extensions (btree_gist, supa_audit, pgcrypto, pgjwt, age)
+    3. Configure permissions and ownership for the Apache AGE (age) graph extension
+
+    Attributes:
+        None
+
+    Methods:
+        emit_sql(conn: Engine) -> str:
+            Executes the combined SQL statements for creating schemas and extensions.
+
+        emit_create_schemas_sql() -> str:
+            Generates SQL for creating the uno and application-specific schemas.
+
+        emit_create_extensions_sql() -> str:
+            Generates SQL for creating and configuring all required PostgreSQL extensions.
+
+    Dependencies:
+        - SQLAlchemy Engine for database connection
+        - PostgreSQL with support for the specified extensions
+        - Required roles (ADMIN_ROLE, READER_ROLE, WRITER_ROLE) must be defined
+    """
+
+    def emit_sql(self, conn: Engine) -> str:
+        conn.execute(
+            text(
+                f"""
+                {self.emit_create_schemas_sql()}
+                {self.emit_create_extensions_sql()}
+                """
+            )
         )
 
     def emit_create_schemas_sql(self) -> str:
@@ -218,13 +330,53 @@ class CreateSchemasAndExtensionsSQL(SQLEmitter):
 
 
 class PrivilegeAndSearchPathSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return "\n".join(
-            [
-                self.emit_revoke_access_sql(),
-                self.emit_set_search_paths_sql(),
-                self.emit_grant_schema_privileges_sql(),
-            ]
+    """A SQL emitter class responsible for managing database privileges and search paths.
+
+    This class generates SQL statements to configure database access controls and search paths
+    for different database roles. It handles three main operations:
+    1. Revoking existing access privileges
+    2. Setting up search paths for different roles
+    3. Granting appropriate schema privileges
+
+    Methods:
+        emit_sql(conn: Engine) -> str:
+            Executes all SQL statements in the correct order using the provided database connection.
+
+        emit_revoke_access_sql() -> str:
+            Generates SQL to revoke all existing privileges from schemas and tables for all roles.
+
+        emit_set_search_paths_sql() -> str:
+            Generates SQL to set up the search path hierarchy for each database role.
+
+        emit_grant_schema_privileges_sql() -> str:
+            Generates SQL to grant appropriate privileges to schemas and set up role inheritance.
+
+    The class manages privileges for the following schemas:
+    - uno
+    - audit
+    - graph
+    - ag_catalog
+    - custom schema (specified by DB_SCHEMA)
+
+    And handles the following roles:
+    - base role
+    - login role
+    - reader role
+    - writer role
+    - admin role
+    """
+
+    def emit_sql(self, conn: Engine) -> str:
+        conn.execute(
+            text(
+                "\n".join(
+                    [
+                        self.emit_revoke_access_sql(),
+                        self.emit_set_search_paths_sql(),
+                        self.emit_grant_schema_privileges_sql(),
+                    ]
+                )
+            )
         )
 
     def emit_revoke_access_sql(self) -> str:
@@ -410,10 +562,39 @@ class PrivilegeAndSearchPathSQL(SQLEmitter):
 
 
 class TablePrivilegeSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """SQL emitter for managing table privileges in PostgreSQL database.
+
+    This class handles the emission of SQL statements that manage table privileges for different roles
+    in the database. It sets up a hierarchical permission structure where:
+    - Admin role has full privileges on all schemas
+    - Writer role has CRUD operations on most tables
+    - Reader role has read-only access to most tables
+
+    The privileges are granted on the following schemas:
+    - uno
+    - audit
+    - graph
+    - ag_catalog
+    - custom schema (specified by DB_SCHEMA)
+
+    Special cases:
+    - The 'id' column of uno.user table has restricted access for reader and writer roles
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        SQLAlchemyError: If there's an error executing the SQL statements
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             -- Grant table privileges to the roles
             SET ROLE {admin_role};
             GRANT SELECT ON ALL TABLES IN SCHEMA
@@ -446,21 +627,47 @@ class TablePrivilegeSQL(SQLEmitter):
             TO
                 {admin_role};
             """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    schema=DB_SCHEMA,
+                )
+                .as_string()
             )
-            .format(
-                admin_role=ADMIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-                schema=DB_SCHEMA,
-            )
-            .as_string()
         )
 
 
 class PGULIDSQLSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return SQL(
-            """
+    """Emitter class for PostgreSQL ULID generation SQL function.
+
+    This class emits SQL code that creates a PostgreSQL function 'uno.generate_ulid()'
+    which generates Universally Unique Lexicographically Sortable Identifiers (ULIDs).
+
+    A ULID is a 26-character Crockford Base32 string, encoding:
+    - First 10 characters: timestamp with millisecond precision
+    - Last 16 characters: random values for uniqueness
+
+    The implementation is based on OK Log's Go implementation of the ULID spec
+    (https://github.com/oklog/ulid).
+
+    Attributes:
+        None
+
+    Methods:
+        emit_sql(conn: Engine) -> str: Executes SQL to create the ULID generation function
+            Args:
+                conn (Engine): SQLAlchemy engine connection object
+            Returns:
+                str: Empty string as function creates PostgreSQL function
+    """
+
+    def emit_sql(self, conn: Engine) -> str:
+        conn.execute(
+            text(
+                SQL(
+                    """
             -- pgulid is based on OK Log's Go implementation of the ULID spec
             --
             -- https://github.com/oklog/ulid
@@ -541,14 +748,38 @@ class PGULIDSQLSQL(SQLEmitter):
             LANGUAGE plpgsql
             VOLATILE;
             """
-        ).as_string()
+                ).as_string()
+            )
+        )
 
 
 class CreateTokenSecretSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        return (
-            SQL(
-                """
+    """Creates a table and associated trigger for managing authentication token secrets in the database.
+
+    This class generates SQL to:
+    1. Create a 'token_secret' table in the 'uno' schema with a single TEXT column
+    2. Create a trigger function that ensures only one token secret exists at a time
+    3. Create a trigger that runs the function before inserts
+
+    The token_secret table is designed to store a single authentication secret used
+    for signing JWT tokens. The trigger mechanism ensures that any new secret insertion
+    will first delete the existing secret, maintaining only one active secret.
+
+    This approach provides more security than environment variables by storing the
+    secret in the database.
+
+    Args:
+        None
+
+    Returns:
+        None: Executes SQL statements directly on the database connection
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
 
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
@@ -578,7 +809,247 @@ class CreateTokenSecretSQL(SQLEmitter):
             FOR EACH ROW
             EXECUTE FUNCTION uno.set_token_secret();
             """
+                )
+                .format(admin_role=ADMIN_ROLE, db_name=DB_NAME)
+                .as_string()
             )
-            .format(admin_role=ADMIN_ROLE, db_name=DB_NAME)
+        )
+
+
+@dataclass
+class AlterTablesBeforeInsertFirstUser(SQLEmitter):
+    """Class for emitting SQL to modify tables before inserting the first user.
+
+    This class handles the necessary table modifications required before inserting
+    the initial user into the system. It performs the following operations:
+    1. Sets the role to admin
+    2. Disables row level security on the user table
+    3. Drops NOT NULL constraints on created_by_id and modified_by_id columns in meta table
+
+    Inherits from SQLEmitter base class.
+
+    Methods:
+        emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
+                -- Set the role to the admin role
+                SET ROLE {admin};
+                -- Disable row level security on the user table
+                ALTER TABLE {db_schema}.user DISABLE ROW LEVEL SECURITY;
+
+                -- Drop the NOT NULL constraint on the meta table for the created_by_id and modified_by_id columns
+                ALTER TABLE {db_schema}.meta ALTER COLUMN created_by_id DROP NOT NULL;
+                ALTER TABLE {db_schema}.meta ALTER COLUMN modified_by_id DROP NOT NULL;
+            """
+                )
+                .format(admin=ADMIN_ROLE, db_schema=DB_SCHEMA)
+                .as_string()
+            )
+        )
+
+
+@dataclass
+class UpdateMetaRecordOfFirstUser(SQLEmitter):
+    """Updates the meta record of the first user in the database.
+
+    This class emits SQL to update the 'created_by_id' and 'modified_by_id' fields
+    in the meta table for the first user. It first sets the database role to writer
+    before performing the update.
+
+    Attributes:
+        user_id (str): The ID of the user to be set in the meta record.
+
+    Methods:
+        emit_sql(conn: Engine) -> None: Executes the SQL update statement using the provided
+            database connection.
+
+    Args:
+        conn (Engine): SQLAlchemy Engine object representing the database connection.
+
+    Returns:
+        None
+    """
+
+    user_id: str = None
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
+                -- Set the role to the writer role
+                SET ROLE {writer};
+                -- Update the meta record for the first user
+                UPDATE {db_schema}.meta
+                SET created_by_id = {user_id}, modified_by_id = {user_id}
+                WHERE id = {user_id};
+            """
+                )
+                .format(
+                    writer=WRITER_ROLE,
+                    db_schema=DB_SCHEMA,
+                    user_id=self.user_id,
+                )
+                .as_string()
+            )
+        )
+
+
+@dataclass
+class AlterTablesAfterInsertFirstUser(SQLEmitter):
+    """Emits SQL to alter tables after first user is inserted.
+
+    After the first user is inserted, this class emits SQL that:
+    1. Sets the role to admin
+    2. Adds NOT NULL constraints to created_by_id and modified_by_id columns in the meta table
+    3. Enables row level security on the user table
+
+    Args:
+        None
+
+    Inherits:
+        SQLEmitter
+
+    Methods:
+        emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
+                -- Set the role to the admin role
+                SET ROLE {admin};
+                -- Add the null constraint back to the meta table for the created_by_id and modified_by_id columns
+                ALTER TABLE {db_schema}.meta ALTER COLUMN created_by_id SET NOT NULL;
+                ALTER TABLE {db_schema}.meta ALTER COLUMN modified_by_id SET NOT NULL;
+
+                -- Enable row level security on the user table
+                ALTER TABLE {db_schema}.user ENABLE ROW LEVEL SECURITY;
+            """
+                )
+                .format(admin=ADMIN_ROLE, db_schema=DB_SCHEMA)
+                .as_string()
+            )
+        )
+
+
+@dataclass
+class InsertMetaObjectFunctionSQL(SQLEmitter):
+
+    """A SQL emitter class that generates and executes a PostgreSQL function for inserting meta object records.
+
+    This class creates a database function that handles the insertion of meta records when new objects
+    are created in tables that have a foreign key relationship with the meta table. The function
+    implements special logic for handling the first user creation case.
+
+    The generated function:
+    - Creates a new meta record with a ULID as primary key
+    - Sets appropriate timestamps and user tracking fields
+    - Handles the special case of first user creation when no user_id exists
+    - Validates user_id existence and format
+    - Associates the new meta record with the object being created
+
+    Parameters
+    ----------
+    conn : Engine
+        SQLAlchemy engine connection to execute the SQL
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    SQLAlchemyError
+        If there are any database errors during function creation
+
+    Notes
+    -----
+    The function expects:
+    - A 'rls_var.user_id' setting in PostgreSQL
+    - Proper role permissions (writer role)
+    - Meta table with specified schema
+    - User table for user validation
+    """
+
+    def emit_sql(self, conn: Engine) -> None:
+        function_string = (
+            SQL(
+                """
+            DECLARE
+                meta_id VARCHAR(26) := {db_schema}.generate_ulid();
+                now TIMESTAMP := NOW();
+                user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
+            BEGIN
+                /*
+                Function used to insert a record into the meta table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the meta table.
+                Set as a trigger on the table, so that the meta record is created when the
+                record is created.
+
+                Has particular logic to handle the case where the first user is created, as
+                the user_id is not yet set in the rls_vars.
+                */
+
+                SET ROLE {writer};
+                IF user_id IS NULL AND TG_TABLE_NAME = 'user' THEN
+                    INSERT INTO {db_schema}.meta (
+                        id,
+                        metatype_name,
+                        is_active,
+                        is_deleted,
+                        created_at,
+                        modified_at
+                    )
+                        VALUES (meta_id, TG_TABLE_NAME, TRUE, FALSE, now, now);
+                ELSIF user_id IS NULL AND TG_TABLE_NAME != 'user' THEN
+                    RAISE EXCEPTION 'Table %: ', TG_TABLE_NAME;
+                ELSIF user_id = '' THEN
+                        RAISE EXCEPTION 'user_id is an empty string';
+                ELSIF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                        RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
+                ELSE
+                    INSERT INTO {db_schema}.meta (
+                        id,
+                        TG_TABLE_NAME,
+                        is_active,
+                        is_deleted,
+                        created_at,
+                        created_by_id,
+                        modified_at,
+                        modified_by_id
+                    )
+                        VALUES (meta_id, TG_TABLE_NAME, TRUE, FALSE, now, user_id, now, user_id);
+                END IF;
+                NEW.id = meta_id;
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(
+                db_schema=DB_SCHEMA,
+                admin=ADMIN_ROLE,
+                writer=WRITER_ROLE,
+            )
             .as_string()
+        )
+
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "insert_meta_object",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT",
+                    include_trigger=False,
+                    db_function=True,
+                )
+            )
         )

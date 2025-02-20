@@ -4,7 +4,7 @@
 
 import datetime
 
-from typing import Optional
+from typing import Optional, ClassVar
 from decimal import Decimal
 
 from sqlalchemy import (
@@ -12,7 +12,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     UniqueConstraint,
-    text,
 )
 
 from sqlalchemy.dialects.postgresql import (
@@ -21,15 +20,12 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
+from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
-    Base,
-    RelatedObject,
-    BaseMetaMixin,
+    Meta,
     RecordUserAuditMixin,
-    str_26,
-    str_255,
 )
-from uno.db.sql_emitters import RecordVersionAuditSQL, AlterGrantSQL
+from uno.db.sql_emitters import SQLEmitter
 
 from uno.fltr.enums import (
     DataType,
@@ -54,10 +50,10 @@ class Filter(Base):
             "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
         },
     )
-    display_name = "Filter"
-    display_name_plural = "Filters"
+    display_name: ClassVar[str] = "Filter"
+    display_name_plural: ClassVar[str] = "Filters"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     include_in_graph = False
 
@@ -86,12 +82,12 @@ class Filter(Base):
         doc="The data type of the filter.",
     )
     table_name: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
         doc="The table filtered.",
     )
     destination_table_name: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
         doc="The destination table of the filter.",
     )
@@ -124,11 +120,11 @@ class QueryFilterValue(Base):
             "comment": "The filter values associated with a query.",
         },
     )
-    display_name = "Query Filter Value"
-    display_name_plural = "Query Filter Values"
+    display_name: ClassVar[str] = "Query Filter Value"
+    display_name_plural: ClassVar[str] = "Query Filter Values"
     include_in_graph = False
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -141,7 +137,7 @@ class QueryFilterValue(Base):
     )
 
 
-class FilterValue(RelatedObject, RecordUserAuditMixin):
+class FilterValue(Meta):
     __tablename__ = "filtervalue"
     __table_args__ = (
         UniqueConstraint(
@@ -186,15 +182,15 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Filter Value"
-    display_name_plural = "Filter Values"
+    display_name: ClassVar[str] = "Filter Value"
+    display_name_plural: ClassVar[str] = "Filter Values"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
 
     # Columns
     id: Mapped[int] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     filter_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.filter.id", ondelete="CASCADE"),
@@ -232,7 +228,7 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
     string_value: Mapped[Optional[str_255]] = mapped_column()
     relatedobject_value_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
-            f"{settings.DB_SCHEMA}.relatedobject.id",
+            f"{settings.DB_SCHEMA}.meta.id",
             ondelete="CASCADE",
         ),
         index=True,
@@ -247,7 +243,7 @@ class FilterValue(RelatedObject, RecordUserAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "filtervalue",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }
 
 
@@ -260,11 +256,11 @@ class QuerySubquery(Base):
             "comment": "The subqueries associated with a query",
         },
     )
-    display_name = "Query Subquery"
-    display_name_plural = "Query Subqueries"
+    display_name: ClassVar[str] = "Query Subquery"
+    display_name_plural: ClassVar[str] = "Query Subqueries"
     include_in_graph = False
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -279,7 +275,7 @@ class QuerySubquery(Base):
     )
 
 
-class Query(RelatedObject, RecordUserAuditMixin):
+class Query(Meta):
     __tablename__ = "query"
     __table_args__ = (
         {
@@ -287,19 +283,19 @@ class Query(RelatedObject, RecordUserAuditMixin):
             "schema": settings.DB_SCHEMA,
         },
     )
-    display_name = "Query"
-    display_name_plural = "Queries"
+    display_name: ClassVar[str] = "Query"
+    display_name_plural: ClassVar[str] = "Queries"
     include_in_graph = False
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
-    queries_objecttype_name: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.objecttype.name", ondelete="CASCADE"),
+    queries_metatype_name: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
     )
     include_values: Mapped[Include] = mapped_column(
@@ -352,7 +348,7 @@ class Query(RelatedObject, RecordUserAuditMixin):
         secondaryjoin=QuerySubquery.subquery_id == id,
     )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
-        back_populates="objecttype_query",
+        back_populates="metatype_query",
         primaryjoin="Query.id == AttributeType.description_query_id",
     )
     attribute_value_applicability: Mapped[Optional["AttributeType"]] = relationship(
@@ -362,5 +358,5 @@ class Query(RelatedObject, RecordUserAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "query",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }

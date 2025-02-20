@@ -23,12 +23,11 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
+    MetaObjectMixin,
     RecordVersionAuditMixin,
     HistoryTableAuditMixin,
-    RelatedObjectMixin,
-    RecordUserAuditMixin,
-    RelatedObject,
-    ObjectType,
+    Meta,
+    MetaType,
 )
 from uno.db.enums import SQLOperation
 from uno.db.sql_emitters import SQLEmitter
@@ -87,7 +86,7 @@ class UserGroupRole(Base, RecordVersionAuditMixin):
     )
 
 
-class Tenant(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
+class Tenant(Meta, HistoryTableAuditMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -104,7 +103,7 @@ class Tenant(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(unique=True, doc="Tenant name")
     tenant_type: Mapped[TenantType] = mapped_column(
@@ -135,14 +134,14 @@ class Tenant(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "tenant",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }
 
     def __str__(self) -> str:
         return self.name
 
 
-class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
+class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -170,7 +169,7 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     email: Mapped[str_255] = mapped_column(
         unique=True,
@@ -180,7 +179,7 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
     handle: Mapped[str_255] = mapped_column(
         unique=True, index=True, doc="User's displayed name and alternate login ID"
     )
-    full_name: Mapped[str_255] = mapped_column(doc="User's full name")
+    full_name: Mapped[Optional[str_255]] = mapped_column(doc="User's full name")
     tenant_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.tenant.id", ondelete="CASCADE"),
         index=True,
@@ -196,6 +195,7 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
         index=True,
         doc="Superuser status",
     )
+    """
     created_by_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
         index=True,
@@ -225,6 +225,7 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
         doc="Users created by this user",
         info={"edge": "CREATED"},
     )
+    """
     tenant: Mapped[Optional[Tenant]] = relationship(
         back_populates="users",
         foreign_keys=[tenant_id],
@@ -269,7 +270,7 @@ class User(RelatedObject, RelatedObjectMixin, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "user",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }
 
     def __str__(self) -> str:
@@ -310,15 +311,15 @@ class Permission(Base, RecordVersionAuditMixin):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
-            "objecttype_name",
+            "metatype_name",
             "operation",
-            name="uq_objecttype_operation",
+            name="uq_metatype_operation",
         ),
         {
             "comment": """
                 Permissions for each table.
                 Deleted automatically by the DB via the FK Constraints
-                ondelete when a object_type is deleted.
+                ondelete when a meta_type is deleted.
             """,
             "schema": settings.DB_SCHEMA,
         },
@@ -336,8 +337,8 @@ class Permission(Base, RecordVersionAuditMixin):
         unique=True,
         doc="The id of the node.",
     )
-    objecttype_name: Mapped[int] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.object_type.name", ondelete="CASCADE"),
+    metatype_name: Mapped[int] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         primary_key=True,
         doc="Table to which the permission provides access.",
     )
@@ -353,7 +354,7 @@ class Permission(Base, RecordVersionAuditMixin):
     )
 
     # Relationships
-    object_type: Mapped[ObjectType] = relationship(
+    meta_type: Mapped[MetaType] = relationship(
         back_populates="permissions",
         doc="Table the permission is for",
         info={"edge": "ALLOWS_ACCESS_TO"},
@@ -366,10 +367,10 @@ class Permission(Base, RecordVersionAuditMixin):
     )
 
     def __str__(self) -> str:
-        return f"{self.object_type.name} - {self.actions}"
+        return f"{self.meta_type.name} - {self.actions}"
 
 
-class Role(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
+class Role(Meta, HistoryTableAuditMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -390,7 +391,7 @@ class Role(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.tenant.id", ondelete="CASCADE"),
@@ -422,14 +423,14 @@ class Role(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "role",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }
 
     def __str__(self) -> str:
         return self.name
 
 
-class Group(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
+class Group(Meta, HistoryTableAuditMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -450,7 +451,7 @@ class Group(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.related_object.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.tenant.id", ondelete="CASCADE"),
@@ -480,7 +481,7 @@ class Group(RelatedObject, RecordUserAuditMixin, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "group",
-        "inherit_condition": id == RelatedObject.id,
+        "inherit_condition": id == Meta.id,
     }
 
     def __str__(self) -> str:

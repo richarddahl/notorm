@@ -9,7 +9,25 @@ from psycopg.sql import SQL
 
 from pydantic.dataclasses import dataclass
 
-from uno.db.sql_emitters import SQLEmitter
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
+
+from uno.db.sql_emitters import (
+    SQLEmitter,
+    DB_SCHEMA,
+    DB_NAME,
+    ADMIN_ROLE,
+    WRITER_ROLE,
+    READER_ROLE,
+    LOGIN_ROLE,
+    BASE_ROLE,
+    LIT_BASE_ROLE,
+    LIT_READER_ROLE,
+    LIT_WRITER_ROLE,
+    LIT_ADMIN_ROLE,
+    LIT_LOGIN_ROLE,
+)
 from uno.config import settings
 
 
@@ -21,7 +39,7 @@ class RLSSQL(SQLEmitter):
     update_policy: Callable | str = "RETURN true"
     force_rls: bool = True
 
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> None:
         """
         Generates and returns the SQL statements for enabling RLS, forcing RLS,
         and applying select, insert, update, and delete policies.
@@ -34,20 +52,20 @@ class RLSSQL(SQLEmitter):
             self.emit_create_authorize_user_function_sql(),
             self.emit_enable_rls_sql(),
             self.emit_force_rls_sql() if self.force_rls else "",
-            self.select_policy(settings.DB_SCHEMA, {self.table_name})
+            self.select_policy(self.table_name)
             if callable(self.select_policy)
             else self.select_policy,
-            self.insert_policy(settings.DB_SCHEMA, {self.table_name})
+            self.insert_policy(self.table_name)
             if callable(self.insert_policy)
             else self.insert_policy,
-            self.update_policy(settings.DB_SCHEMA, {self.table_name})
+            self.update_policy(self.table_name)
             if callable(self.update_policy)
             else self.update_policy,
-            self.delete_policy(settings.DB_SCHEMA, {self.table_name})
+            self.delete_policy(self.table_name)
             if callable(self.delete_policy)
             else self.delete_policy,
         ]
-        return "\n".join(sql)
+        conn.execute(text("\n".join(sql)))
 
     def emit_permissible_groups_sql(self) -> str:
         return SQL(
@@ -66,7 +84,7 @@ class RLSSQL(SQLEmitter):
                 RETURN QUERY
                 SELECT g.*
                 FROM uno.group g
-                JOIN uno.user_group_role ugr ON ugr.group_id = g.id
+                JOIN uno.user__group__role ugr ON ugr.group_id = g.id
                 JOIN uno.user u ON u.id = ugr.user_email
                 JOIN uno.permission tp ON ugr.role_id = tp.id
                 WHERE u.id = session_user_id AND tp.is_active = TRUE;
@@ -90,7 +108,7 @@ class RLSSQL(SQLEmitter):
             ALTER TABLE {db_schema}.{table_name} ENABLE ROW LEVEL SECURITY;
             """
             )
-            .format(db_schema=SQL(settings.DB_SCHEMA), table_name=SQL(self.table_name))
+            .format(db_schema=DB_SCHEMA, table_name=SQL(self.table_name))
             .as_string()
         )
 
@@ -110,7 +128,7 @@ class RLSSQL(SQLEmitter):
             ALTER TABLE {db_schema}.{table_name} FORCE ROW LEVEL SECURITY;
             """
             )
-            .format(db_schema=SQL(settings.DB_SCHEMA), table_name=SQL(self.table_name))
+            .format(db_schema=DB_SCHEMA, table_name=SQL(self.table_name))
             .as_string()
         )
 
@@ -236,7 +254,7 @@ class RLSSQL(SQLEmitter):
         ).format(db_name=SQL(settings.DB_NAME))
 
 
-def user_select_policy_sql(schema, table_name):
+def user_select_policy_sql(table_name):
     return (
         SQL(
             """
@@ -254,12 +272,12 @@ def user_select_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def user_insert_policy_sql(schema, table_name) -> str:
+def user_insert_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -281,12 +299,12 @@ def user_insert_policy_sql(schema, table_name) -> str:
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def user_update_policy_sql(schema, table_name) -> str:
+def user_update_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -304,12 +322,12 @@ def user_update_policy_sql(schema, table_name) -> str:
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def user_delete_policy_sql(schema, table_name) -> str:
+def user_delete_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -334,7 +352,7 @@ def user_delete_policy_sql(schema, table_name) -> str:
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
@@ -347,7 +365,7 @@ class UserRLSSQL(RLSSQL):
     delete_policy: Callable = user_delete_policy_sql
 
 
-def tenant_select_policy_sql(schema, table_name):
+def tenant_select_policy_sql(table_name):
     return (
         SQL(
             """
@@ -364,12 +382,12 @@ def tenant_select_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def tenant_insert_policy_sql(schema, table_name) -> str:
+def tenant_insert_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -384,12 +402,12 @@ def tenant_insert_policy_sql(schema, table_name) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def tenant_update_policy_sql(schema, table_name) -> str:
+def tenant_update_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -409,12 +427,12 @@ def tenant_update_policy_sql(schema, table_name) -> str:
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def tenant_delete_policy_sql(schema, table_name) -> str:
+def tenant_delete_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -427,7 +445,7 @@ def tenant_delete_policy_sql(schema, table_name) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
@@ -440,7 +458,7 @@ class TenantRLSSQL(RLSSQL):
     delete_policy: Callable = tenant_delete_policy_sql
 
 
-def admin_select_policy_sql(schema, table_name):
+def admin_select_policy_sql(table_name):
     return (
         SQL(
             """
@@ -460,12 +478,12 @@ def admin_select_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def admin_insert_policy_sql(schema, table_name):
+def admin_insert_policy_sql(table_name):
     return (
         SQL(
             """
@@ -485,12 +503,12 @@ def admin_insert_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def admin_update_policy_sql(schema, table_name):
+def admin_update_policy_sql(table_name):
     return SQL(
         """
         /* 
@@ -511,7 +529,7 @@ def admin_update_policy_sql(schema, table_name):
     )
 
 
-def admin_delete_policy_sql(schema, table_name):
+def admin_delete_policy_sql(table_name):
     return (
         SQL(
             """
@@ -531,7 +549,7 @@ def admin_delete_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
@@ -544,7 +562,7 @@ class AdminRLSSQL(RLSSQL):
     delete_policy: Callable = admin_delete_policy_sql
 
 
-def default_select_policy_sql(schema, table_name):
+def default_select_policy_sql(table_name):
     return (
         SQL(
             """
@@ -569,12 +587,12 @@ def default_select_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def default_insert_policy_sql(schema, table_name):
+def default_insert_policy_sql(table_name):
     return (
         SQL(
             """
@@ -599,12 +617,12 @@ def default_insert_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def default_update_policy_sql(schema, table_name):
+def default_update_policy_sql(table_name):
     return (
         SQL(
             """
@@ -629,12 +647,12 @@ def default_update_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def default_delete_policy_sql(schema, table_name):
+def default_delete_policy_sql(table_name):
     return (
         SQL(
             """
@@ -659,7 +677,7 @@ def default_delete_policy_sql(schema, table_name):
         );
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
@@ -672,7 +690,7 @@ class DefaultRLSSQL(RLSSQL):
     delete_policy: Callable = default_delete_policy_sql
 
 
-def superuser_select_policy_sql(schema, table_name):
+def superuser_select_policy_sql(table_name):
     return SQL(
         """
         /* 
@@ -686,7 +704,7 @@ def superuser_select_policy_sql(schema, table_name):
     )
 
 
-def superuser_insert_policy_sql(schema, table_name) -> str:
+def superuser_insert_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -699,12 +717,12 @@ def superuser_insert_policy_sql(schema, table_name) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def superuser_update_policy_sql(schema, table_name) -> str:
+def superuser_update_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -717,12 +735,12 @@ def superuser_update_policy_sql(schema, table_name) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
 
-def superuser_delete_policy_sql(schema, table_name) -> str:
+def superuser_delete_policy_sql(table_name) -> str:
     return (
         SQL(
             """
@@ -735,7 +753,7 @@ def superuser_delete_policy_sql(schema, table_name) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 
@@ -748,7 +766,7 @@ class SuperuserRLSSQL(RLSSQL):
     delete_policy: Callable = superuser_delete_policy_sql
 
 
-def public_select_policy_sql(schema, table_name):
+def public_select_policy_sql(table_name):
     return (
         SQL(
             """
@@ -761,7 +779,7 @@ def public_select_policy_sql(schema, table_name):
         USING (true);
         """
         )
-        .format(db_schema=SQL(schema), table_name=SQL(table_name))
+        .format(db_schema=DB_SCHEMA, table_name=SQL(table_name))
         .as_string()
     )
 

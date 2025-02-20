@@ -5,10 +5,16 @@
 import sys
 import io
 
-
-from psycopg.sql import SQL, Identifier, Literal
+from psycopg.sql import SQL, Literal
 
 from sqlalchemy import text, create_engine, Engine
+
+from fastapi import FastAPI
+
+from uno.db.sql_emitters import (
+    SetRoleSQL,
+    DB_SCHEMA,
+)
 
 from uno.db.management.sql_emitters import (
     DropDatabaseSQL,
@@ -20,10 +26,14 @@ from uno.db.management.sql_emitters import (
     PGULIDSQLSQL,
     CreateTokenSecretSQL,
     TablePrivilegeSQL,
+    InsertMetaObjectFunctionSQL,
+    AlterTablesBeforeInsertFirstUser,
+    UpdateMetaRecordOfFirstUser,
+    AlterTablesAfterInsertFirstUser,
 )
 
 
-from uno.db.tables import Base, ObjectType, RelatedObject
+from uno.db.tables import Base, MetaType
 
 import uno.attr.tables as attrs_tables
 import uno.auth.tables as auth_tables
@@ -35,12 +45,31 @@ import uno.wkflw.tables as wrkflws_tables
 from uno.config import settings
 
 
-class DBManager:
-    login = SQL(f"{settings.DB_NAME}_login")
-    admin = SQL(f"{settings.DB_NAME}_admin")
-    writer = SQL(f"{settings.DB_NAME}_writer")
-    db_schema = SQL(settings.DB_SCHEMA)
+tags_metadata = [
+    {
+        "name": "0KUI",
+        "description": "Zero Knowledge User Interface.",
+        "externalDocs": {
+            "description": "uno 0kui docs",
+            "url": "http://localhost:8001/okui/",
+        },
+    },
+    {
+        "name": "auth",
+        "description": "Manage Users, Roles, Groups etc...",
+        "externalDocs": {
+            "description": "uno auth docs",
+            "url": "http://localhost:8001/auth/models",
+        },
+    },
+]
+app = FastAPI(
+    openapi_tags=tags_metadata,
+    title="Uno is not an ORM",
+)
 
+
+class DBManager:
     def create_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
@@ -63,41 +92,41 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            conn.execute(
-                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
-            )
-            print(ObjectType.emit_sql())
-            conn.execute(text(ObjectType.emit_sql()))
+            SetRoleSQL().emit_sql(conn, "admin")
+            MetaType.emit_sql(conn)
 
             for base in Base.registry.mappers:
-                if base.class_.__name__ == ObjectType:
+                if base.class_.__name__ == MetaType:
                     continue  # Already emitted above
                 print(f"Creating the table: {base.class_.__tablename__}\n")
-                conn.execute(
-                    text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
-                )
-
+                SetRoleSQL().emit_sql(conn, "admin")
                 # Emit the SQL for the table
-                conn.execute(text(base.class_.emit_sql()))
+                base.class_.emit_sql(conn)
 
             for base in Base.registry.mappers:
+                base.class_.configure_base(app)
+                SetRoleSQL().emit_sql(conn, "admin")
                 # Emit the SQL for the node definition
                 if base.class_.graph_node:
-                    base.class_.set_properties()
-                    for prop in base.class_.graph_properties:
-                        conn.execute(text(prop.emit_sql()))
-                    conn.execute(text(base.class_.graph_node.emit_sql()))
+                    # base.class_.set_properties()
+                    # for prop in base.class_.graph_properties:
+                    #    conn.execute(text(prop.emit_sql(conn)
+                    base.class_.graph_node.emit_sql(conn)
+                conn.commit()
             for base in Base.registry.mappers:
-                for edge in base.class_.graph_edges:
-                    conn.execute(text(edge.emit_sql()))
+                if not base.class_.include_in_graph:
+                    continue
+                print(f"Creating the edges for: {base.class_.__tablename__}")
+                for edge in base.class_.graph_edges.values():
+                    edge.emit_sql(conn)
                 conn.commit()
 
-                if base.class_.graph_node:
-                    base.class_.set_filters()
-                    print(f"Filters for {base.class_.__tablename__}")
-                    for filter in base.class_.filters.values():
-                        print(filter)
-                    print("")
+            # if base.class_.graph_node:
+            #    base.class_.set_filters()
+            #    print(f"Filters for {base.class_.__tablename__}")
+            #    for filter in base.class_.filters.values():
+            #        print(filter)
+            #        print("")
 
             conn.close()
         eng.dispose()
@@ -140,9 +169,9 @@ class DBManager:
                 f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
             )
             # Drop the Database
-            conn.execute(text(DropDatabaseSQL().emit_sql()))
+            DropDatabaseSQL().emit_sql(conn)
             print(f"Database dropped: {settings.DB_NAME} \n")
-            conn.execute(text(DropRolesSQL().emit_sql()))
+            DropRolesSQL().emit_sql(conn)
             print(f"All Roles dropped for database: {settings.DB_NAME} \n")
             conn.close()
         eng.dispose()
@@ -182,7 +211,7 @@ class DBManager:
             """
             )
             .format(
-                schema=self.db_schema,
+                schema=DB_SCHEMA,
                 email=Literal(email),
                 handle=Literal(handle),
                 full_name=Literal(full_name),
@@ -198,55 +227,42 @@ class DBManager:
         full_name: str = settings.SUPERUSER_FULL_NAME,
         is_superuser: bool = False,
     ) -> str:
-        """
-        Creates a new user in the database with the given details.
+        """Create a new user in the database.
+
+        This method creates a new user with specified details, performing necessary table alterations
+        before and after the user creation. It uses a specific database role for login operations.
 
         Args:
-            email (str): The email address of the user. Defaults to settings.SUPERUSER_EMAIL.
-            handle (str): The handle/username of the user. Defaults to settings.SUPERUSER_HANDLE.
-            full_name (str): The full name of the user. Defaults to settings.SUPERUSER_FULL_NAME.
-            is_superuser (bool): Flag indicating if the user is a superuser. Defaults to False.
+            email (str, optional): User's email address. Defaults to settings.SUPERUSER_EMAIL.
+            handle (str, optional): User's handle/username. Defaults to settings.SUPERUSER_HANDLE.
+            full_name (str, optional): User's full name. Defaults to settings.SUPERUSER_FULL_NAME.
+            is_superuser (bool, optional): Flag indicating if user is a superuser. Defaults to False.
 
         Returns:
-            str: The ID of the created superuser.
-        """
+            str: The ID of the newly created user.
 
+        Note:
+            This method performs database operations in AUTOCOMMIT isolation level and
+            includes pre and post user creation table alterations:
+                Disables Row Level Security (RLS) for the user table.
+                Drops NOT NULL constraints on the meta created_by_id and modified_by_id columns.
+                Inserts the new user into the user table.
+                Updates the meta record of the first user.
+                Enables Row Level Security (RLS) for the user table.
+                Sets the NOT NULL constraints on the meta created_by_id and modified_by_id columns.
+            Returns the ID of the newly created user.
+        """
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            conn.execute(
-                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
-            )
-            conn.execute(
-                text(
-                    SQL("ALTER TABLE {schema}.user DISABLE ROW LEVEL SECURITY;")
-                    .format(schema=self.db_schema)
-                    .as_string()
-                )
-            )
+            AlterTablesBeforeInsertFirstUser().emit_sql(conn)
             superuser = conn.execute(
                 text(self.create_user_sql(email, handle, full_name, is_superuser))
             )
             superuser_id = superuser.scalar()
-            conn.execute(
-                text(SQL("SET ROLE {role};").format(role=self.admin).as_string())
-            )
-            conn.execute(
-                text(
-                    SQL("ALTER TABLE {schema}.user ENABLE ROW LEVEL SECURITY;")
-                    .format(schema=self.db_schema)
-                    .as_string()
-                )
-            )
-            conn.execute(
-                text(
-                    SQL("ALTER TABLE {schema}.user FORCE ROW LEVEL SECURITY;")
-                    .format(schema=self.db_schema)
-                    .as_string()
-                )
-            )
+            UpdateMetaRecordOfFirstUser(user_id=superuser_id).emit_sql(conn)
+            AlterTablesAfterInsertFirstUser().emit_sql(conn)
             conn.close()
         eng.dispose()
-
         return superuser_id
 
     def engine(
@@ -302,8 +318,8 @@ class DBManager:
                 f"\nCreating the db: {settings.DB_NAME}, and roles, users, and app schema.\n"
             )
             print("Creating the roles and the database\n")
-            conn.execute(text(CreateRolesSQL().emit_sql()))
-            conn.execute(text(CreateDatabaseSQL().emit_sql()))
+            CreateRolesSQL().emit_sql(conn)
+            CreateDatabaseSQL().emit_sql(conn)
             conn.close()
         eng.dispose()
 
@@ -326,10 +342,10 @@ class DBManager:
         eng = self.engine(db_role="postgres")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             print("Creating the schemas and extensions\n")
-            conn.execute(text(CreateSchemasAndExtensionsSQL().emit_sql()))
+            CreateSchemasAndExtensionsSQL().emit_sql(conn)
 
             print("Configuring the privileges for the schemas and setting the paths\n")
-            conn.execute(text(PrivilegeAndSearchPathSQL().emit_sql()))
+            PrivilegeAndSearchPathSQL().emit_sql(conn)
 
             conn.close()
         eng.dispose()
@@ -356,10 +372,10 @@ class DBManager:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             print("Creating the token_secret table, function, and trigger\n")
-            conn.execute(text(CreateTokenSecretSQL().emit_sql()))
+            CreateTokenSecretSQL().emit_sql(conn)
 
             print("Creating the pgulid function\n")
-            conn.execute(text(PGULIDSQLSQL().emit_sql()))
+            PGULIDSQLSQL().emit_sql(conn)
 
             # Create the tables
             self.create_tables(conn)
@@ -379,4 +395,5 @@ class DBManager:
         Base.metadata.create_all(bind=conn)
 
         print("Setting the table privileges\n")
-        conn.execute(text(TablePrivilegeSQL().emit_sql()))
+        TablePrivilegeSQL().emit_sql(conn)
+        InsertMetaObjectFunctionSQL().emit_sql(conn)

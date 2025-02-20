@@ -8,7 +8,10 @@ from psycopg.sql import SQL, Identifier, Literal
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
+from sqlalchemy.engine import Engine
+from sqlalchemy.sql import text
 
+from uno.db.sql_emitters import DB_SCHEMA
 from uno.fltr.enums import (
     DataType,
     Lookup,
@@ -17,16 +20,9 @@ from uno.fltr.enums import (
     string_lookups,
 )
 from uno.config import settings
-from uno.utilities import convert_snake_to_title
+from uno.utilities import convert_snake_to_camel, convert_snake_to_title
 
-ADMIN = SQL("{db_name}_admin").format(db_name=settings.DB_NAME)
-
-
-class GraphEdgeDef(BaseModel):
-    name: str
-    destination_table_name: str
-    accessor: str
-    secondary_table_name: str = None
+ADMIN = f"{settings.DB_NAME}_admin"
 
 
 class GraphBase(BaseModel):
@@ -100,8 +96,9 @@ class GraphBase(BaseModel):
             if db_function
             else f"{settings.DB_SCHEMA}.{self.table_name}_{function_name}"
         )
-        fnct_string = SQL(
-            """
+        fnct_string = (
+            SQL(
+                """
             SET ROLE {admin};
             CREATE OR REPLACE FUNCTION {full_function_name}({function_args})
             RETURNS {return_type}
@@ -111,12 +108,15 @@ class GraphBase(BaseModel):
             {function_string}
             $$;
             """
-        ).format(
-            admin=ADMIN,
-            full_function_name=SQL(full_function_name),
-            function_args=SQL(function_args),
-            return_type=SQL(return_type),
-            function_string=SQL(function_string),
+            )
+            .format(
+                admin=ADMIN,
+                full_function_name=SQL(full_function_name),
+                function_args=SQL(function_args),
+                return_type=SQL(return_type),
+                function_string=SQL(function_string),
+            )
+            .as_string()
         )
 
         if not include_trigger:
@@ -155,7 +155,7 @@ class GraphProperty(GraphBase):
             return numeric_lookups
         return string_lookups
 
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> None:
         """
         Generates a complete SQL script by combining various SQL components.
 
@@ -169,7 +169,7 @@ class GraphProperty(GraphBase):
             str: The complete SQL script as a single string.
         """
         sql = self.create_filter_record_sql()
-        return SQL(sql)
+        conn.execute(text(SQL(sql)))
 
     def create_filter_record_sql(self) -> str:
         """ """
@@ -200,16 +200,20 @@ class GraphProperty(GraphBase):
 class GraphNode(GraphBase):
     # table_name: str <- from GraphBase
     # schema_name: str <- from GraphBase
-    # name: str <- from GraphBase
+    # name: str <- computed_field
+
+    # @computed_field
+    # def properties(self) -> dict[str, GraphProperty]:
+    #    from uno.db.tables import Base
+    #
+    #        klass = Base.registry.get(self.table_name)
+    #        return klass.graph_properties
 
     @computed_field
-    def properties(self) -> dict[str, GraphProperty]:
-        from uno.db.tables import Base
+    def name(self) -> str:
+        return convert_snake_to_camel(self.table_name)
 
-        klass = Base.registry.get(self.table_name)
-        return klass.graph_properties
-
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> None:
         """
         Generates a complete SQL script by combining various SQL
         components.
@@ -231,14 +235,14 @@ class GraphNode(GraphBase):
         # sql += f"\n{self.delete_nodet_sql()}"
         # sql += f"\n{self.truncate_nodet_sql()}"
         # sql += f"\n{self.create_filter_field_sql()}"
-        return SQL(sql)
+        conn.execute(text(SQL(sql).as_string()))
 
     def create_node_label(self) -> str:
         query = SQL(
             """
             DO $$
             BEGIN
-                SET ROLE {admin_role};
+                SET ROLE {admin};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
                 WHERE name = {name}) THEN
                     PERFORM ag_catalog.create_vlabel('graph', {name});
@@ -247,8 +251,8 @@ class GraphNode(GraphBase):
             END $$;
             """
         ).format(
-            admin_role=ADMIN,
-            name=SQL(self.name),
+            admin=Identifier(ADMIN),
+            name=Literal(self.name),
             label_ident=Identifier(self.name),
             schema_name=SQL(settings.DB_SCHEMA),
             table_name=SQL(self.table_name),
@@ -413,7 +417,7 @@ class GraphNode(GraphBase):
 class GraphEdge(GraphBase):
     # table_name: str <- from GraphBase
     # schema_name: str <- from GraphBase
-    # name: str <- from GraphBase
+    name: str
     destination_table_name: str
     accessor: str
     secondary_table_name: str = None
@@ -449,9 +453,9 @@ class GraphEdge(GraphBase):
             )
         return props
 
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> None:
         sql = self.create_edge_label_and_filter_record_sql()
-        return SQL(sql)
+        conn.execute(text(sql))
 
     def create_edge_label_and_filter_record_sql(self) -> str:
         return (
@@ -466,21 +470,20 @@ class GraphEdge(GraphBase):
                             CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                     END IF;
                 
-                    INSERT INTO uno.filter(filter_type, data_type, table_name, name, destination_table_name, accessor, lookups)
-                        VALUES ({filter_type}, {data_type}, {table_name}, {name}, {destination_table_name}, {accessor}, {lookups});
+                    -- INSERT INTO {db_schema}."filter"(data_type, table_name, name, destination_table_name, accessor, lookups)
+                    --    VALUES ('object', {table_name}, {name}, {destination_table_name}, {accessor}, {lookups});
                 END $$;
                 """
             )
             .format(
                 admin_role=ADMIN,
-                filter_type=SQL("EDGE"),
-                data_type=SQL("object"),
-                table_name=SQL(self.table_name),
-                name=SQL(self.name),
-                destination_table_name=SQL(self.destination_table_name),
-                label_ident=SQL(self.name),
-                accessor=SQL(self.accessor),
-                lookups=SQL(self.lookups),
+                db_schema=DB_SCHEMA,
+                name=Literal(self.name),
+                table_name=Literal(self.table_name),
+                destination_table_name=Literal(self.destination_table_name),
+                label_ident=Identifier(self.name),
+                accessor=Literal(self.accessor),
+                lookups=Literal(self.lookups),
             )
             .as_string()
         )
@@ -621,12 +624,3 @@ class GraphEdge(GraphBase):
             for_each="STATEMENT",
             db_function=False,
         )
-
-
-# class Path(GraphBase):
-#    from_node: Node
-#    edge: Edge
-#    to_node: Node
-#    parent_path: "Path"
-#
-#    model_config = ConfigDict(arbitrary_types_allowed=True)

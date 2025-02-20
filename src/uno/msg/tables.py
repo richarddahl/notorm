@@ -4,7 +4,7 @@
 
 import datetime
 
-from typing import Optional
+from typing import Optional, ClassVar
 
 from sqlalchemy import (
     ForeignKey,
@@ -17,17 +17,14 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.tables import (
+from uno.db.base import (
     Base,
     str_26,
     str_255,
 )
-from uno.db.sql_emitters import (
-    RecordVersionAuditSQL,
-    AlterGrantSQL,
-)
+from uno.db.sql_emitters import RecordVersionAuditSQL
+from uno.db.sql_emitters import SQLEmitter
 from uno.msg.enums import MessageImportance
-
 from uno.config import settings
 
 
@@ -37,10 +34,10 @@ class MessageAddressedTo(Base):
         "schema": settings.DB_SCHEMA,
         "comment": "User addressed on a message",
     }
-    display_name = "Message Addressed To"
-    display_name_plural = "Messages Addressed To"
+    display_name: ClassVar[str] = "Message Addressed To"
+    display_name_plural: ClassVar[str] = "Messages Addressed To"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
 
     # Columns
@@ -64,10 +61,10 @@ class MessageCopiedTo(Base):
         "schema": settings.DB_SCHEMA,
         "comment": "User copied on a message",
     }
-    display_name = "Message Copied To"
-    display_name_plural = "Messages Copied To"
+    display_name: ClassVar[str] = "Message Copied To"
+    display_name_plural: ClassVar[str] = "Messages Copied To"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
 
     # Columns
@@ -89,13 +86,13 @@ class MessageRelatedObject(Base):
     __tablename__ = "message_relatedobject"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
-        "comment": "Messages to Related Objects",
+        "comment": "Messages to Meta Objects",
     }
 
-    display_name = "Message Related Object"
-    display_name_plural = "Message Related Objects"
+    display_name: ClassVar[str] = "Message Meta Object"
+    display_name_plural: ClassVar[str] = "Message Meta Objects"
 
-    sql_emitters = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
 
     # Columns
@@ -103,8 +100,8 @@ class MessageRelatedObject(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    relatedobject_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.relatedobject.id", ondelete="CASCADE"),
+    meta_id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -115,11 +112,10 @@ class Message(Base):
         "schema": settings.DB_SCHEMA,
         "comment": "Messages are used to communicate between users",
     }
-    display_name = "Message"
-    display_name_plural = "Messages"
+    display_name: ClassVar[str] = "Message"
+    display_name_plural: ClassVar[str] = "Messages"
 
-    sql_emitters = [
-        AlterGrantSQL,
+    sql_emitters: ClassVar[list[SQLEmitter]] = [
         RecordVersionAuditSQL,
     ]
 
@@ -166,17 +162,17 @@ class Message(Base):
         back_populates="copied_messages",
         secondary=MessageCopiedTo.__table__,
         doc="Users copied on the message",
-        info={"edge": "WAS_COPIED"},
+        info={"edge": "WAS_COPIED_ON"},
     )
     parent: Mapped["Message"] = relationship(
         back_populates="children",
         foreign_keys=[parent_id],
         doc="Parent message",
-        info={"edge": "IS_CHILD_OF"},
+        info={"edge": "IS_PARENT_OF"},
     )
     children: Mapped["Message"] = relationship(
         back_populates="parent",
         remote_side=[id],
         doc="Child messages",
-        info={"edge": "IS_CHILD"},
+        info={"edge": "IS_CHILD_OF"},
     )

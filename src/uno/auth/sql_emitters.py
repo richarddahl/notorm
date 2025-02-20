@@ -6,116 +6,31 @@ from dataclasses import dataclass
 
 from psycopg.sql import SQL, Identifier, Literal
 
-from uno.db.sql_emitters import SQLEmitter
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
+
+from uno.db.sql_emitters import (
+    SQLEmitter,
+    DB_SCHEMA,
+    DB_NAME,
+    ADMIN_ROLE,
+    WRITER_ROLE,
+    READER_ROLE,
+    LOGIN_ROLE,
+    BASE_ROLE,
+    LIT_BASE_ROLE,
+    LIT_READER_ROLE,
+    LIT_WRITER_ROLE,
+    LIT_ADMIN_ROLE,
+    LIT_LOGIN_ROLE,
+)
 from uno.config import settings
 
 
 @dataclass
-class InsertUserRelatedObjectFunctionSQL(SQLEmitter):
-    table_name: str = "user"
-
-    def emit_sql(self) -> str:
-        function_string = (
-            SQL(
-                """
-            DECLARE
-                relatedobject_id VARCHAR(26) := {db_schema}.generate_ulid();
-                user_id VARCHAR(26) := current_setting('rls_var.user_id', true);
-                estimate INT4;
-            BEGIN
-                IF user_id IS NULL THEN
-                    /*
-                    This should only happen when the very first user is created
-                    and therefore a user_id cannot be set in the session variables
-                    */
-                    SELECT reltuples AS estimate FROM PG_CLASS WHERE relname = TG_TABLE_NAME INTO estimate;
-                    IF TG_TABLE_NAME = 'user' AND estimate < 1 THEN
-                        user_id := relatedobject_id;
-                    END IF;
-                END IF;
-                /*
-                Function used to insert a record into the relatedobject table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the relatedobject table.
-                Set as a trigger on the table, so that the relatedobject record is created when the
-                record is created.
-                */
-
-                SET ROLE {db_role};
-                INSERT INTO {db_schema}.relatedobject (id, objecttype_name)
-                    VALUES (relatedobject_id, {table_name});
-                NEW.id = relatedobject_id;
-                RETURN NEW;
-            END;
-            """
-            )
-            .format(
-                db_schema=Identifier(settings.DB_SCHEMA),
-                db_role=Identifier(f"{settings.DB_NAME}_writer"),
-                table_name=Literal(self.table_name),
-            )
-            .as_string()
-        )
-
-        return self.create_sql_function(
-            "insert_user_relatedobject",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
-        )
-
-
-class RecordAuditDatesSQL(SQLEmitter):
-    def emit_sql(self) -> str:
-        function_string = """
-            DECLARE
-                user_id TEXT := current_setting('rls_var.user_id', true);
-            BEGIN
-                /* 
-                Function used to set the owned_by_id and modified_by_id fields
-                of a table to the user_id of the user making the change. 
-                */
-
-                SELECT current_setting('rls_var.user_id', true) INTO user_id;
-
-                IF user_id IS NULL THEN
-                    RAISE EXCEPTION 'user_id is NULL';
-                END IF;
-
-                IF user_id = '' THEN
-                    RAISE EXCEPTION 'user_id is an empty string';
-                END IF;
-
-                NEW.modified_at := NOW();
-                NEW.modified_by_id = user_id;
-
-                IF TG_OP = 'INSERT' THEN
-                    NEW.created_at := NOW();
-                    NEW.owned_by_id = user_id;
-                END IF;
-
-                IF TG_OP = 'DELETE' THEN
-                    NEW.deleted_at = NOW();
-                    NEW.deleted_by_id = user_id;
-                END IF;
-
-                RETURN NEW;
-            END;
-            """
-
-        return self.create_sql_function(
-            "record_audit_dates",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT OR UPDATE OR DELETE",
-            include_trigger=True,
-        )
-
-
-@dataclass
 class GetPermissibleGroupsFunctionSQL(SQLEmitter):
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> str:
         function_string = """
             DECLARE
                 user_id TEXT := current_setting('rls_var.user_id', true)::TEXT;
@@ -123,12 +38,12 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
             BEGIN
                 SELECT id
                 FROM uno.group g
-                JOIN uno.user_group_role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
+                JOIN uno.user__group__role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
                 JOIN uno.role on ugr.role_id = role.id
                 JOIN uno.role_table_operation rto ON rto.role_id = role.id
                 JOIN uno.permission tp ON tp.id = rto.table_operation_id
-                JOIN uno.objecttype tt ON tt.id = tp.objecttype_name
-                WHERE tt.name = objecttype
+                JOIN uno.meta_type tt ON tt.id = tp.metatype_name
+                WHERE tt.name = meta_type
                 INTO permissible_groups;
                 RETURN permissible_groups;
             END;
@@ -138,13 +53,15 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
             "get_permissible_groups",
             function_string,
             return_type="VARCHAR[]",
-            function_args="objecttype TEXT",
+            function_args="meta_type TEXT",
         )
 
 
 class ValidateGroupInsert(SQLEmitter):
-    def emit_sql(self) -> str:
-        function_string = f"""
+    def emit_sql(self, conn: Engine) -> str:
+        function_string = (
+            SQL(
+                """
             DECLARE
                 group_count INT4;
                 tenanttype uno.tenanttype;
@@ -157,36 +74,46 @@ class ValidateGroupInsert(SQLEmitter):
                 FROM uno.group
                 WHERE tenant_id = NEW.tenant_id;
 
-                IF NOT {settings.ENFORCE_MAX_GROUPS} THEN
+                IF NOT {ENFORCE_MAX_GROUPS} THEN
                     RETURN NEW;
                 END IF;
 
                 IF tenanttype = 'INDIVIDUAL' AND
-                    {settings.MAX_INDIVIDUAL_GROUPS} > 0 AND
-                    group_count >= {settings.MAX_INDIVIDUAL_GROUPS} THEN
+                    {MAX_INDIVIDUAL_GROUPS} > 0 AND
+                    group_count >= {MAX_INDIVIDUAL_GROUPS} THEN
                         RAISE EXCEPTION 'Group Count Exceeded';
                 END IF;
                 IF
                     tenanttype = 'BUSINESS' AND
-                    {settings.MAX_BUSINESS_GROUPS} > 0 AND
-                    group_count >= {settings.MAX_BUSINESS_GROUPS} THEN
+                    {MAX_BUSINESS_GROUPS} > 0 AND
+                    group_count >= {MAX_BUSINESS_GROUPS} THEN
                         RAISE EXCEPTION 'Group Count Exceeded';
                 END IF;
                 IF
                     tenanttype = 'CORPORATE' AND
-                    {settings.MAX_CORPORATE_GROUPS} > 0 AND
-                    group_count >= {settings.MAX_CORPORATE_GROUPS} THEN
+                    {MAX_CORPORATE_GROUPS} > 0 AND
+                    group_count >= {MAX_CORPORATE_GROUPS} THEN
                         RAISE EXCEPTION 'Group Count Exceeded';
                 END IF;
                 IF
                     tenanttype = 'ENTERPRISE' AND
-                    {settings.MAX_ENTERPRISE_GROUPS} > 0 AND
-                    group_count >= {settings.MAX_ENTERPRISE_GROUPS} THEN
+                    {MAX_ENTERPRISE_GROUPS} > 0 AND
+                    group_count >= {MAX_ENTERPRISE_GROUPS} THEN
                         RAISE EXCEPTION 'Group Count Exceeded';
                 END IF;
                 RETURN NEW;
             END;
             """
+            )
+            .format(
+                ENFORCE_MAX_GROUPS=settings.ENFORCE_MAX_GROUPS,
+                MAX_INDIVIDUAL_GROUPS=settings.MAX_INDIVIDUAL_GROUPS,
+                MAX_BUSINESS_GROUPS=settings.MAX_BUSINESS_GROUPS,
+                MAX_CORPORATE_GROUPS=settings.MAX_CORPORATE_GROUPS,
+                MAX_ENTERPRISE_GROUPS=settings.MAX_ENTERPRISE_GROUPS,
+            )
+            .as_string()
+        )
 
         return self.create_sql_function(
             "validate_group_insert",
@@ -199,35 +126,43 @@ class ValidateGroupInsert(SQLEmitter):
 
 
 # class InsertGroupConstraint(SQLEmitter):
-#    def emit_sql(self) -> str:
+#    def emit_sql(self, conn:Engine)-> str:
 #        return """ALTER TABLE uno.group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (uno.validate_group_insert(tenant_id) = true);
 #            """
 
 
 class InsertGroupForTenant(SQLEmitter):
-    def emit_sql(self) -> str:
-        return f"""CREATE OR REPLACE FUNCTION uno.insert_group_for_tenant()
+    def emit_sql(self, conn: Engine) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """CREATE OR REPLACE FUNCTION uno.insert_group_for_tenant()
             RETURNS TRIGGER
             LANGUAGE plpgsql
             AS $$
             BEGIN
-                SET ROLE {settings.DB_NAME}_admin;
-                INSERT INTO uno.group(tenant_id, name) VALUES (NEW.id, NEW.name);
+                SET ROLE {admin_role};
+                INSERT INTO {db_schema}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
                 RETURN NEW;
             END;
             $$;
 
             CREATE OR REPLACE TRIGGER insert_group_for_tenant_trigger
             -- The trigger to call the function
-            AFTER INSERT ON uno.tenant
+            AFTER INSERT ON {db_schema}.tenant
             FOR EACH ROW
-            EXECUTE FUNCTION uno.insert_group_for_tenant();
+            EXECUTE FUNCTION {db_schema}.insert_group_for_tenant();
             """
+                )
+                .format(db_schema=DB_SCHEMA, admin_role=ADMIN_ROLE)
+                .as_string()
+            )
+        )
 
 
 class DefaultGroupTenant(SQLEmitter):
-    def emit_sql(self) -> str:
+    def emit_sql(self, conn: Engine) -> str:
         function_string = SQL(
             """
             DECLARE
@@ -243,11 +178,15 @@ class DefaultGroupTenant(SQLEmitter):
             END;
             """
         ).as_string()
-        return self.create_sql_function(
-            "set_tenant_id",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "set_tenant_id",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT",
+                    include_trigger=True,
+                    db_function=False,
+                )
+            )
         )

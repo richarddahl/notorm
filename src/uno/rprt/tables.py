@@ -12,6 +12,6 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-# from uno.db.base import Base, BaseMetaMixin, RBACFieldMixin, str_26, str_255  # type: ignore
-# from uno.rltd.tables import RelatedObject, ObjectType
+# from uno.db.base import Base, RBACFieldMixin, str_26, str_255  # type: ignore
+# from uno.rltd.tables import Meta, MetaType
 # from uno.fltr.tables import Query
