@@ -240,7 +240,7 @@ class AttributeType(Meta):
         info={"edge": "DESCRIBES"},
     )
     metatype_query: Mapped[Optional[Query]] = relationship(
-        "Query",
+        Query,
         back_populates="attribute_type_applicability",
         primaryjoin=description_query_id == Query.id,
         doc="The query that determines which object types are applicable to this attribute type.",
@@ -253,7 +253,7 @@ class AttributeType(Meta):
         info={"edge": "IS_VALUE_TYPE_FOR"},
     )
     value_type_query: Mapped[Optional[Query]] = relationship(
-        "Query",
+        Query,
         back_populates="attribute_value_applicability",
         primaryjoin=value_type_query_id == Query.id,
         doc="The query that determines which object types are used as values for the attribute type.",
