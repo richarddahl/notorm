@@ -166,7 +166,7 @@ class Meta(Base):
             "User",
             foreign_keys=[cls.created_by_id],
             doc="The user that owns the related object",
-            info={"edge": "OWNS"},
+            info={"edge": "WAS_CREATED_BY"},
         )
 
     @declared_attr
@@ -184,7 +184,7 @@ class Meta(Base):
             "User",
             foreign_keys=[cls.deleted_by_id],
             doc="The user that deleted the related object",
-            info={"edge": "DELETED_BY"},
+            info={"edge": "WAS_DELETED_BY"},
         )
 
     __mapper_args__ = {
