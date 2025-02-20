@@ -94,6 +94,8 @@ class Base(AsyncAttrs, DeclarativeBase):
             bool: BOOLEAN,
             list: ARRAY,
             str_26: VARCHAR(26),
+            str_63: VARCHAR(63),
+            str_64: VARCHAR(64),
             str_128: VARCHAR(128),
             str_255: VARCHAR(255),
             decimal: NUMERIC,
