@@ -34,7 +34,7 @@ from pydantic import BaseModel
 
 from fastapi import FastAPI
 
-from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL, InsertMetaTypeRecordSQL
+from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL
 from uno.schemas import SchemaDef
 from uno.graphs import GraphNode, GraphEdge, GraphProperty
 from uno.utilities import convert_snake_to_title
@@ -108,7 +108,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     display_name_plural: ClassVar[str]
 
     # SQL attributes
-    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrantSQL, InsertMetaTypeRecordSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrantSQL]
 
     # Graph attributes
     include_in_graph: ClassVar[bool] = True

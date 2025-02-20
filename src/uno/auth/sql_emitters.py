@@ -42,7 +42,7 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
                 JOIN uno.role on ugr.role_id = role.id
                 JOIN uno.role__permission rp ON rp.role_id = role.id
                 JOIN uno.permission p ON p.id = rp.permission_id
-                JOIN uno.meta_type mt ON mt.id = tp.metatype_name
+                JOIN uno.meta_type mt ON mt.id = tp.meta_type_name
                 WHERE mt.name = meta_type
                 INTO permissible_groups;
                 RETURN permissible_groups;

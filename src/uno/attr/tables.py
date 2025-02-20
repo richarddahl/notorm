@@ -14,8 +14,13 @@ from sqlalchemy.orm import (
 from uno.db.base import Base, str_26, str_255
 
 from uno.db.tables import (
-    Meta,
+    MetaRecord,
     MetaType,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    UserRecordAuditMixin,
+    RecordVersionAuditMixin,
+    HistoryTableAuditMixin,
 )
 from uno.db.sql_emitters import SQLEmitter
 from uno.auth.rls_sql_emitters import RLSSQL
@@ -70,18 +75,20 @@ class AttributeTypeMetaType(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.attribute_type.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    metatype_name: Mapped[str_255] = mapped_column(
+    meta_type_name: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
-class AttributeValue(Meta):
-    __tablename__ = "attribute_value"
+class UserDefinedValue(
+    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+):
+    __tablename__ = "user_defined_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
-            "comment": "Defines values available for attributes, if not using an existing object types",
+            "comment": "User Defined values available for attributes",
         },
     )
 
@@ -98,12 +105,12 @@ class AttributeValue(Meta):
     value: Mapped[str] = mapped_column(doc="The value of the attribute")
 
     __mapper_args__ = {
-        "polymorphic_identity": "attribute_value",
-        "inherit_condition": id == Meta.id,
+        "polymorphic_identity": "user_defined_value",
+        "inherit_condition": id == MetaRecord.id,
     }
 
 
-class Attribute(Meta):
+class Attribute(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "attribute"
     __table_args__ = (
         {
@@ -139,30 +146,32 @@ class Attribute(Meta):
     )
     object_values: Mapped[Optional[list["Attribute"]]] = relationship(
         "Attribute",
-        back_populates="attribute_values",
+        back_populates="user_defined_values",
         secondary=AttributeObjectValue.__table__,
         primaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
-        secondaryjoin="Meta.id == AttributeObjectValue.meta_id",
+        secondaryjoin="MetaRecord.id == AttributeObjectValue.meta_id",
         doc="The objects with this attribute",
-        info={"edge": "HAS_ATTRIBUTE_VALUE"},
+        info={"edge": "HAS_user_defined_value"},
     )
-    Meta.attribute_values = relationship(
+    MetaRecord.user_defined_values = relationship(
         "Attribute",
         back_populates="object_values",
         secondary=AttributeObjectValue.__table__,
-        primaryjoin="Meta.id == AttributeObjectValue.meta_id",
+        primaryjoin="MetaRecord.id == AttributeObjectValue.meta_id",
         secondaryjoin="Attribute.id == AttributeObjectValue.attribute_id",
         doc="The attributes for the object",
-        info={"edge": "HAS_ATTRIBUTE_VALUE"},
+        info={"edge": "HAS_user_defined_value"},
     )
 
     __mapper_args__ = {
         "polymorphic_identity": "attribute",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
 
-class AttributeType(Meta):
+class AttributeType(
+    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+):
     __tablename__ = "attribute_type"
     __table_args__ = (
         {
@@ -232,14 +241,14 @@ class AttributeType(Meta):
         info={"edge": "IS_CHILD_OF"},
     )
     describes: Mapped[list[MetaType]] = relationship(
-        back_populates="described_by",
+        # back_populates="described_by",
         primaryjoin=describes_id == MetaType.name,
         secondary=AttributeTypeMetaType.__table__,
         secondaryjoin=AttributeTypeMetaType.attribute_type_id == id,
         doc="The object types that the attribute type describes.",
         info={"edge": "DESCRIBES"},
     )
-    metatype_query: Mapped[Optional[Query]] = relationship(
+    meta_type_query: Mapped[Optional[Query]] = relationship(
         Query,
         back_populates="attribute_type_applicability",
         primaryjoin=description_query_id == Query.id,
@@ -247,14 +256,14 @@ class AttributeType(Meta):
         info={"edge": "DETERMINES_APPLICABILITY"},
     )
     value_types: Mapped[list[MetaType]] = relationship(
-        back_populates="attribute_values",
+        # back_populates="user_defined_values",
         primaryjoin=value_type_name == MetaType.name,
         doc="The object types that are values for the attribute type",
         info={"edge": "IS_VALUE_TYPE_FOR"},
     )
     value_type_query: Mapped[Optional[Query]] = relationship(
         Query,
-        back_populates="attribute_value_applicability",
+        back_populates="user_defined_value_applicability",
         primaryjoin=value_type_query_id == Query.id,
         doc="The query that determines which object types are used as values for the attribute type.",
         info={"edge": "DETERMINES_VALUE_TYPE"},
@@ -269,7 +278,7 @@ class AttributeType(Meta):
 
     __mapper_args__ = {
         "polymorphic_identity": "attribute_type",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
 
@@ -279,7 +288,7 @@ class AttachmentRelatedObject(Base):
         "schema": settings.DB_SCHEMA,
         "comment": "Attachments to RelatedObjects",
     }
-    display_name: ClassVar[str] = "Attachment Meta"
+    display_name: ClassVar[str] = "Attachment MetaRecord"
     display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
@@ -296,7 +305,7 @@ class AttachmentRelatedObject(Base):
     )
 
 
-class Attachment(Meta):
+class Attachment(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "attachment"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -320,5 +329,5 @@ class Attachment(Meta):
 
     __mapper_args__ = {
         "polymorphic_identity": "attachment",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }

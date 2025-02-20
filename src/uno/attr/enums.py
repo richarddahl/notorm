@@ -20,6 +20,6 @@ class AttributeDataType(str, enum.Enum):
     OBJECT = "Object"
 
 
-class AttributeValueWidget(str, enum.Enum):
+class UserDefinedValueWidget(str, enum.Enum):
     TABLE = "Table"
     BUTTONS = "Buttons"

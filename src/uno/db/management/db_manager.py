@@ -26,9 +26,9 @@ from uno.db.management.sql_emitters import (
     PGULIDSQLSQL,
     CreateTokenSecretSQL,
     TablePrivilegeSQL,
-    InsertMetaObjectFunctionSQL,
+    InsertMetaFunctionSQL,
     AlterTablesBeforeInsertFirstUser,
-    UpdateMetaRecordOfFirstUser,
+    UpdateRecordOfFirstUser,
     AlterTablesAfterInsertFirstUser,
 )
 
@@ -263,7 +263,7 @@ class DBManager:
                 text(self.create_user_sql(email, handle, full_name, is_superuser))
             )
             superuser_id = superuser.scalar()
-            UpdateMetaRecordOfFirstUser(user_id=superuser_id).emit_sql(conn)
+            UpdateRecordOfFirstUser(user_id=superuser_id).emit_sql(conn)
             AlterTablesAfterInsertFirstUser().emit_sql(conn)
             conn.close()
         eng.dispose()
@@ -400,4 +400,4 @@ class DBManager:
 
         print("Setting the table privileges\n")
         TablePrivilegeSQL().emit_sql(conn)
-        InsertMetaObjectFunctionSQL().emit_sql(conn)
+        InsertMetaFunctionSQL().emit_sql(conn)

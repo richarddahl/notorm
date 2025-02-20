@@ -842,9 +842,9 @@ class AlterTablesBeforeInsertFirstUser(SQLEmitter):
                 -- Disable row level security on the user table
                 ALTER TABLE {db_schema}.user DISABLE ROW LEVEL SECURITY;
 
-                -- Drop the NOT NULL constraint on the meta table for the created_by_id and modified_by_id columns
-                ALTER TABLE {db_schema}.meta ALTER COLUMN created_by_id DROP NOT NULL;
-                ALTER TABLE {db_schema}.meta ALTER COLUMN modified_by_id DROP NOT NULL;
+                -- Drop the NOT NULL constraint on the user table for the created_by_id and modified_by_id columns
+                ALTER TABLE {db_schema}.user ALTER COLUMN created_by_id DROP NOT NULL;
+                ALTER TABLE {db_schema}.user ALTER COLUMN modified_by_id DROP NOT NULL;
             """
                 )
                 .format(admin=ADMIN_ROLE, db_schema=DB_SCHEMA)
@@ -854,27 +854,7 @@ class AlterTablesBeforeInsertFirstUser(SQLEmitter):
 
 
 @dataclass
-class UpdateMetaRecordOfFirstUser(SQLEmitter):
-    """Updates the meta record of the first user in the database.
-
-    This class emits SQL to update the 'created_by_id' and 'modified_by_id' fields
-    in the meta table for the first user. It first sets the database role to writer
-    before performing the update.
-
-    Attributes:
-        user_id (str): The ID of the user to be set in the meta record.
-
-    Methods:
-        emit_sql(conn: Engine) -> None: Executes the SQL update statement using the provided
-            database connection.
-
-    Args:
-        conn (Engine): SQLAlchemy Engine object representing the database connection.
-
-    Returns:
-        None
-    """
-
+class UpdateRecordOfFirstUser(SQLEmitter):
     user_id: str = None
 
     def emit_sql(self, conn: Engine) -> None:
@@ -884,8 +864,8 @@ class UpdateMetaRecordOfFirstUser(SQLEmitter):
                     """
                 -- Set the role to the writer role
                 SET ROLE {writer};
-                -- Update the meta record for the first user
-                UPDATE {db_schema}.meta
+                -- Update the user record for the first user
+                UPDATE {db_schema}.user
                 SET created_by_id = {user_id}, modified_by_id = {user_id}
                 WHERE id = {user_id};
             """
@@ -926,9 +906,9 @@ class AlterTablesAfterInsertFirstUser(SQLEmitter):
                     """
                 -- Set the role to the admin role
                 SET ROLE {admin};
-                -- Add the null constraint back to the meta table for the created_by_id and modified_by_id columns
-                ALTER TABLE {db_schema}.meta ALTER COLUMN created_by_id SET NOT NULL;
-                ALTER TABLE {db_schema}.meta ALTER COLUMN modified_by_id SET NOT NULL;
+                -- Add the null constraint back to the user table for the created_by_id and modified_by_id columns
+                ALTER TABLE {db_schema}.user ALTER COLUMN created_by_id SET NOT NULL;
+                ALTER TABLE {db_schema}.user ALTER COLUMN modified_by_id SET NOT NULL;
 
                 -- Enable row level security on the user table
                 ALTER TABLE {db_schema}.user ENABLE ROW LEVEL SECURITY;
@@ -941,93 +921,24 @@ class AlterTablesAfterInsertFirstUser(SQLEmitter):
 
 
 @dataclass
-class InsertMetaObjectFunctionSQL(SQLEmitter):
-
-    """A SQL emitter class that generates and executes a PostgreSQL function for inserting meta object records.
-
-    This class creates a database function that handles the insertion of meta records when new objects
-    are created in tables that have a foreign key relationship with the meta table. The function
-    implements special logic for handling the first user creation case.
-
-    The generated function:
-    - Creates a new meta record with a ULID as primary key
-    - Sets appropriate timestamps and user tracking fields
-    - Handles the special case of first user creation when no user_id exists
-    - Validates user_id existence and format
-    - Associates the new meta record with the object being created
-
-    Parameters
-    ----------
-    conn : Engine
-        SQLAlchemy engine connection to execute the SQL
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    SQLAlchemyError
-        If there are any database errors during function creation
-
-    Notes
-    -----
-    The function expects:
-    - A 'rls_var.user_id' setting in PostgreSQL
-    - Proper role permissions (writer role)
-    - Meta table with specified schema
-    - User table for user validation
-    """
-
+class InsertMetaFunctionSQL(SQLEmitter):
     def emit_sql(self, conn: Engine) -> None:
         function_string = (
             SQL(
                 """
             DECLARE
                 meta_id VARCHAR(26) := {db_schema}.generate_ulid();
-                now TIMESTAMP := NOW();
-                user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
             BEGIN
                 /*
                 Function used to insert a record into the meta table, when a record is inserted
                 into a table that has a PK that is a FKDefinition to the meta table.
                 Set as a trigger on the table, so that the meta record is created when the
                 record is created.
-
-                Has particular logic to handle the case where the first user is created, as
-                the user_id is not yet set in the rls_vars.
                 */
 
                 SET ROLE {writer};
-                IF user_id IS NULL AND TG_TABLE_NAME = 'user' THEN
-                    INSERT INTO {db_schema}.meta (
-                        id,
-                        metatype_name,
-                        is_active,
-                        is_deleted,
-                        created_at,
-                        modified_at
-                    )
-                        VALUES (meta_id, TG_TABLE_NAME, TRUE, FALSE, now, now);
-                ELSIF user_id IS NULL AND TG_TABLE_NAME != 'user' THEN
-                    RAISE EXCEPTION 'Table %: ', TG_TABLE_NAME;
-                ELSIF user_id = '' THEN
-                        RAISE EXCEPTION 'user_id is an empty string';
-                ELSIF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
-                        RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
-                ELSE
-                    INSERT INTO {db_schema}.meta (
-                        id,
-                        TG_TABLE_NAME,
-                        is_active,
-                        is_deleted,
-                        created_at,
-                        created_by_id,
-                        modified_at,
-                        modified_by_id
-                    )
-                        VALUES (meta_id, TG_TABLE_NAME, TRUE, FALSE, now, user_id, now, user_id);
-                END IF;
+                INSERT INTO {db_schema}.meta (id, meta_type_name)
+                    VALUES (meta_id, TG_TABLE_NAME);
                 NEW.id = meta_id;
                 RETURN NEW;
             END;
@@ -1035,7 +946,6 @@ class InsertMetaObjectFunctionSQL(SQLEmitter):
             )
             .format(
                 db_schema=DB_SCHEMA,
-                admin=ADMIN_ROLE,
                 writer=WRITER_ROLE,
             )
             .as_string()
@@ -1044,7 +954,7 @@ class InsertMetaObjectFunctionSQL(SQLEmitter):
         conn.execute(
             text(
                 self.create_sql_function(
-                    "insert_meta_object",
+                    "insert_meta",
                     function_string,
                     timing="BEFORE",
                     operation="INSERT",

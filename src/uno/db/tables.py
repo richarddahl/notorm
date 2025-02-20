@@ -8,7 +8,7 @@ import datetime
 
 from typing import Optional, ClassVar
 
-from sqlalchemy import ForeignKey, text, func
+from sqlalchemy import ForeignKey, text, func, TIMESTAMP
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -20,10 +20,13 @@ from uno.db.base import Base, str_26, str_63, str_255
 from uno.db.sql_emitters import (
     SQLEmitter,
     InsertPermissionSQL,
+    InsertMetaTypeRecordSQL,
     InsertMetaObjectTriggerSQL,
     RecordVersionAuditSQL,
     CreateHistoryTableSQL,
     InsertHistoryTableRecordSQL,
+    RecordAuditFunctionSQL,
+    UserRecordAuditFunctionSQL,
 )
 from uno.config import settings
 
@@ -43,91 +46,16 @@ class HistoryTableAuditMixin:
     ]
 
 
-class RecordUserAuditMixin:
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+class RecordAuditMixin:
+    """Mixin for auditing actions on records
 
+    Documents both the timestamps of when and user ids  of who created,
+    modified, and deleted a record
 
-class MetaObjectMixin:
-    """Mixin for Meta Objects"""
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = [
-        InsertMetaObjectTriggerSQL,
-    ]
-
-
-class MetaType(Base):
-    """Meta Types identify polymorphic types in the database for sublcasses of Meta"""
-
-    __tablename__ = "meta_type"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "Meta Types identify polymorphic types in the database for sublcasses of Meta",
-        },
-    )
-
-    display_name: ClassVar[str] = "Table Type"
-    display_name_plural: ClassVar[str] = "Table Types"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertPermissionSQL]
-
-    name: Mapped[str_63] = mapped_column(
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="Name of the table",
-    )
-
-    # Relationships
-    described_by: Mapped[list["AttributeType"]] = relationship(
-        back_populates="describes",
-        primaryjoin="AttributeType.metatype_name== MetaType.name",
-        doc="The attribute types that describe the object type",
-        info={"edge": "IS_DESCRIBED_BY"},
-    )
-    attribute_values: Mapped[list["AttributeType"]] = relationship(
-        back_populates="value_types",
-        primaryjoin="AttributeType.value_type_name == MetaType.name",
-        doc="The attribute types that are values for the object type",
-        info={"edge": "HAS_VALUE_TYPE"},
-    )
-    permissions: Mapped[list["Permission"]] = relationship(
-        back_populates="meta_type",
-        doc="The permissions for the object type",
-        info={"edge": "HAS_PERMISSION"},
-    )
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Meta(Base):
-    """
-    Base class for objects that are generically related to other objects.
-
-    Meta Objects are used for the pk of many objects in the database,
-    allowing for a single point of reference for attributes, queries, workflows, and reports
     """
 
-    __tablename__ = "meta"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": """
-            Meta Objects are polymorphic objects that are used for the pk of many objects in the database,
-            allowing for a single point of reference for attributes, queries, workflows, and reports
-            """,
-    }
-    display_name: ClassVar[str] = "Meta Object"
-    display_name_plural: ClassVar[str] = "Meta Objects"
+    sql_emitters: ClassVar[list[SQLEmitter]] = [RecordAuditFunctionSQL]
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-    # Columns
-    id: Mapped[str_26] = mapped_column(primary_key=True)
-    metatype_name: Mapped[str_63] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
-        index=True,
-        doc="The metatype_name of the related object",
-    )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
         doc="Indicates if the record is active",
@@ -139,57 +67,156 @@ class Meta(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was created",
     )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
-    )
+
+    @declared_attr
+    def created_by_id(cls) -> Mapped[str_26]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
     modified_at: Mapped[datetime.datetime] = mapped_column(
         doc="Time the record was last modified",
     )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
-    )
+
+    @declared_attr
+    def modified_by_id(cls) -> Mapped[str_26]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         doc="Time the record was deleted",
     )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
+
+    @declared_attr
+    def deleted_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
+
+class UserRecordAuditMixin:
+    """Mixin for auditing actions on records
+
+    Documents both the timestamps of when and user ids  of who created,
+    modified, and deleted a record
+
+    """
+
+    sql_emitters: ClassVar[list[SQLEmitter]] = [UserRecordAuditFunctionSQL]
+
+    is_active: Mapped[bool] = mapped_column(
+        server_default=text("true"),
+        doc="Indicates if the record is active",
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        server_default=text("false"),
+        doc="Indicates if the record has been deleted",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        doc="Time the record was created",
     )
 
-    # Relationships
     @declared_attr
-    def created_by(cls) -> Mapped["User"]:
-        return relationship(
-            "User",
-            foreign_keys=[cls.created_by_id],
-            doc="The user that owns the related object",
-            info={"edge": "WAS_CREATED_BY"},
+    def created_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
         )
 
-    @declared_attr
-    def modified_by(cls) -> Mapped["User"]:
-        return relationship(
-            "User",
-            foreign_keys=[cls.modified_by_id],
-            doc="The user that last modified the related object",
-            info={"edge": "WAS_MODIFIED_BY"},
-        )
+    modified_at: Mapped[datetime.datetime] = mapped_column(
+        doc="Time the record was last modified",
+    )
 
     @declared_attr
-    def deleted_by(cls) -> Mapped["User"]:
-        return relationship(
-            "User",
-            foreign_keys=[cls.deleted_by_id],
-            doc="The user that deleted the related object",
-            info={"edge": "WAS_DELETED_BY"},
+    def modified_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
         )
+
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        doc="Time the record was deleted",
+    )
+
+    @declared_attr
+    def deleted_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
+
+class MetaObjectMixin:
+    """Mixin for MetaRecord Objects"""
+
+    sql_emitters: ClassVar[list[SQLEmitter]] = [
+        InsertMetaObjectTriggerSQL,
+    ]
+
+
+class MetaType(Base):
+    """MetaRecord Types identify polymorphic types in the database for sublcasses of MetaRecord"""
+
+    __tablename__ = "meta_type"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": "MetaRecord Types identify polymorphic types in the database for sublcasses of MetaRecord",
+    }
+
+    display_name: ClassVar[str] = "Meta Type"
+    display_name_plural: ClassVar[str] = "Meta Types"
+
+    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertPermissionSQL]
+
+    name: Mapped[str_63] = mapped_column(
+        primary_key=True,
+        unique=True,
+        index=True,
+        doc="Name of the table",
+    )
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class MetaRecord(Base):
+    """
+    Base class for objects that are generically related to other objects.
+
+    MetaRecord Objects are used for the pk of many objects in the database,
+    allowing for a single point of reference for attributes, queries, workflows, and reports
+    """
+
+    __tablename__ = "meta"
+    __table_args__ = {
+        "schema": settings.DB_SCHEMA,
+        "comment": """
+            MetaRecord Objects are polymorphic objects that are used for the pk of many objects in the database,
+            allowing for a single point of reference for attributes, queries, workflows, and reports
+            """,
+    }
+    display_name: ClassVar[str] = "Meta Record"
+    display_name_plural: ClassVar[str] = "Meta Records"
+
+    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertMetaTypeRecordSQL]
+
+    # Columns
+
+    id: Mapped[str_26] = mapped_column(primary_key=True)
+    meta_type_name: Mapped[str_63] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        index=True,
+        doc="The meta_type_name of the related object",
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "meta",
-        "polymorphic_on": "metatype_name",
+        "polymorphic_on": "meta_type_name",
     }
 
     def __str__(self) -> str:
-        return f"{self.metatype_name}"
+        return f"{self.meta_type_name}"

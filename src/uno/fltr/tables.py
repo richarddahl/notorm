@@ -23,8 +23,10 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
-    Meta,
-    RecordUserAuditMixin,
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
 )
 from uno.db.sql_emitters import SQLEmitter
 
@@ -133,7 +135,9 @@ class QueryFilterValue(Base):
     )
 
 
-class FilterValue(Meta):
+class FilterValue(
+    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+):
     __tablename__ = "filtervalue"
     __table_args__ = (
         UniqueConstraint(
@@ -145,7 +149,7 @@ class FilterValue(Meta):
             "boolean_value",
             "date_value",
             "decimal_value",
-            "relatedobject_value_id",
+            "meta_value_id",
             "string_value",
             "text_value",
             "time_value",
@@ -165,7 +169,7 @@ class FilterValue(Meta):
                 OR boolean_value IS NOT NULL
                 OR date_value IS NOT NULL
                 OR decimal_value IS NOT NULL
-                OR relatedobject_value_id IS NOT NULL
+                OR meta_value_id IS NOT NULL
                 OR string_value IS NOT NULL
                 OR text_value IS NOT NULL
                 OR time_value IS NOT NULL
@@ -222,7 +226,7 @@ class FilterValue(Meta):
     time_value: Mapped[Optional[datetime.time]] = mapped_column()
     timestamp_value: Mapped[Optional[datetime.datetime]] = mapped_column()
     string_value: Mapped[Optional[str_255]] = mapped_column()
-    relatedobject_value_id: Mapped[Optional[str_26]] = mapped_column(
+    meta_value_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
             f"{settings.DB_SCHEMA}.meta.id",
             ondelete="CASCADE",
@@ -239,7 +243,7 @@ class FilterValue(Meta):
 
     __mapper_args__ = {
         "polymorphic_identity": "filtervalue",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
 
@@ -271,7 +275,7 @@ class QuerySubquery(Base):
     )
 
 
-class Query(Meta):
+class Query(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "query"
     __table_args__ = (
         {
@@ -290,7 +294,7 @@ class Query(Meta):
         ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
-    queries_metatype_name: Mapped[str_26] = mapped_column(
+    queries_meta_type_name: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
     )
@@ -344,15 +348,15 @@ class Query(Meta):
         secondaryjoin=QuerySubquery.subquery_id == id,
     )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
-        back_populates="metatype_query",
+        back_populates="meta_type_query",
         primaryjoin="Query.id == AttributeType.description_query_id",
     )
-    attribute_value_applicability: Mapped[Optional["AttributeType"]] = relationship(
+    user_defined_value_applicability: Mapped[Optional["AttributeType"]] = relationship(
         back_populates="value_type_query",
         primaryjoin="Query.id == AttributeType.value_type_query_id",
     )
 
     __mapper_args__ = {
         "polymorphic_identity": "query",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }

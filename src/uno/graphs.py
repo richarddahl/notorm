@@ -184,8 +184,7 @@ class GraphProperty(GraphBase):
                     display,
                     destination_meta_type,
                     accessor,
-                    lookups,
-                    properties
+                    lookups
                 )
                 VALUES (
                     {data_type},
@@ -193,8 +192,7 @@ class GraphProperty(GraphBase):
                     {display},
                     {meta_type},
                     {accessor},
-                    {lookups},
-                    {properties}
+                    {lookups}
                 );
             END $$;
             """
@@ -208,7 +206,6 @@ class GraphProperty(GraphBase):
                     destination_meta_type=Literal(self.table_name),
                     accessor=Literal(self.accessor),
                     lookups=Literal(self.lookups),
-                    properties=json.dumps([]),
                 )
                 .as_string()
             )

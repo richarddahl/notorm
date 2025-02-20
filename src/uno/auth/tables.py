@@ -23,11 +23,13 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
+    MetaRecord,
+    MetaType,
     MetaObjectMixin,
+    RecordAuditMixin,
+    UserRecordAuditMixin,
     RecordVersionAuditMixin,
     HistoryTableAuditMixin,
-    Meta,
-    MetaType,
 )
 from uno.db.enums import SQLOperation
 from uno.db.sql_emitters import SQLEmitter
@@ -54,7 +56,7 @@ from uno.auth.schemas import (
 from uno.config import settings
 
 
-class UserGroupRole(Base, RecordVersionAuditMixin):
+class UserGroupRole(Base):
     __tablename__ = "user__group__role"
     __table_args__ = (
         {
@@ -86,7 +88,7 @@ class UserGroupRole(Base, RecordVersionAuditMixin):
     )
 
 
-class Tenant(Meta, HistoryTableAuditMixin):
+class Tenant(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -134,14 +136,14 @@ class Tenant(Meta, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "tenant",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
     def __str__(self) -> str:
         return self.name
 
 
-class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
+class User(MetaRecord, MetaObjectMixin, UserRecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -195,37 +197,6 @@ class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
         index=True,
         doc="Superuser status",
     )
-    """
-    created_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
-    )
-    modified_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-        index=True,
-    )
-
-    # Relationships
-    created_by: Mapped[Optional["User"]] = relationship(
-        "User",
-        back_populates="users_created",
-        foreign_keys=[created_by_id],
-        remote_side="User.id",
-        doc="User who created this user",
-        info={"edge": "CREATED"},
-    )
-    users_created: Mapped[list["User"]] = relationship(
-        "User",
-        back_populates="created_by",
-        foreign_keys=[created_by_id],
-        doc="Users created by this user",
-        info={"edge": "CREATED"},
-    )
-    """
     tenant: Mapped[Optional[Tenant]] = relationship(
         back_populates="users",
         foreign_keys=[tenant_id],
@@ -235,12 +206,18 @@ class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
     groups: Mapped[list["Group"]] = relationship(
         back_populates="users",
         secondary=UserGroupRole.__table__,
+        foreign_keys="UserGroupRole.user_id",
+        primaryjoin="and_(User.id == UserGroupRole.user_id, UserGroupRole.role_id == None)",
+        secondaryjoin="and_(User.id == UserGroupRole.user_id, UserGroupRole.role_id == None)",
         doc="Groups of which the user is a member.",
         info={"edge": "IS_MEMBER_OF"},
     )
     roles: Mapped[list["Role"]] = relationship(
         back_populates="users",
         secondary=UserGroupRole.__table__,
+        foreign_keys="UserGroupRole.user_id",
+        primaryjoin="and_(User.id == UserGroupRole.user_id, UserGroupRole.group_id == None)",
+        secondaryjoin="and_(User.id == UserGroupRole.user_id, UserGroupRole.group_id == None)",
         doc="Roles assigned to the user",
         info={"edge": "IS_ASSIGNED"},
     )
@@ -252,6 +229,7 @@ class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
     )
     messages_sent: Mapped[list["Message"]] = relationship(
         back_populates="sender",
+        foreign_keys=[Message.sender_id],
         doc="Messages sent by the user",
         info={"edge": "DID_SEND"},
     )
@@ -270,7 +248,7 @@ class User(Meta, MetaObjectMixin, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "user",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
     def __str__(self) -> str:
@@ -311,9 +289,9 @@ class Permission(Base, RecordVersionAuditMixin):
     __tablename__ = "permission"
     __table_args__ = (
         UniqueConstraint(
-            "metatype_name",
+            "meta_type_name",
             "operation",
-            name="uq_metatype_operation",
+            name="uq_meta_type_operation",
         ),
         {
             "comment": """
@@ -337,7 +315,7 @@ class Permission(Base, RecordVersionAuditMixin):
         unique=True,
         doc="The id of the node.",
     )
-    metatype_name: Mapped[int] = mapped_column(
+    meta_type_name: Mapped[int] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         primary_key=True,
         doc="Table to which the permission provides access.",
@@ -355,7 +333,7 @@ class Permission(Base, RecordVersionAuditMixin):
 
     # Relationships
     meta_type: Mapped[MetaType] = relationship(
-        back_populates="permissions",
+        # back_populates="permissions",
         doc="Table the permission is for",
         info={"edge": "ALLOWS_ACCESS_TO"},
     )
@@ -370,7 +348,7 @@ class Permission(Base, RecordVersionAuditMixin):
         return f"{self.meta_type.name} - {self.actions}"
 
 
-class Role(Meta, HistoryTableAuditMixin):
+class Role(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -417,20 +395,23 @@ class Role(Meta, HistoryTableAuditMixin):
     users: Mapped[list[User]] = relationship(
         back_populates="roles",
         secondary=UserGroupRole.__table__,
+        foreign_keys="UserGroupRole.role_id",
+        primaryjoin="and_(Role.id == UserGroupRole.role_id, UserGroupRole.group_id == None)",
+        secondaryjoin="and_(Role.id == UserGroupRole.role_id, UserGroupRole.group_id == None)",
         doc="Users that have this role",
         info={"edge": "IS_ASSIGNED_TO"},
     )
 
     __mapper_args__ = {
         "polymorphic_identity": "role",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
     def __str__(self) -> str:
         return self.name
 
 
-class Group(Meta, HistoryTableAuditMixin):
+class Group(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -469,6 +450,9 @@ class Group(Meta, HistoryTableAuditMixin):
     users: Mapped[list[User]] = relationship(
         back_populates="groups",
         secondary=UserGroupRole.__table__,
+        foreign_keys="UserGroupRole.group_id",
+        primaryjoin="and_(Group.id == UserGroupRole.group_id, UserGroupRole.role_id == None)",
+        secondaryjoin="and_(Group.id == UserGroupRole.group_id, UserGroupRole.role_id == None)",
         doc="Users that belong to the group",
         info={"edge": "IS_MEMBER_OF"},
     )
@@ -481,7 +465,7 @@ class Group(Meta, HistoryTableAuditMixin):
 
     __mapper_args__ = {
         "polymorphic_identity": "group",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
     def __str__(self) -> str:

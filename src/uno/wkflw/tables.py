@@ -19,8 +19,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.db.base import Base, str_26, str_255
 from uno.db.tables import (
-    Meta,
-    RecordUserAuditMixin,
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
 )
 from uno.db.sql_emitters import SQLEmitter
 from uno.wkflw.enums import (
@@ -34,7 +36,7 @@ from uno.auth.tables import User
 from uno.config import settings
 
 
-class Workflow(Meta):
+class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -140,11 +142,13 @@ class Workflow(Meta):
 
     __mapper_args__ = {
         "polymorphic_identity": "workflow",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
 
-class WorkflowEvent(Meta):
+class WorkflowEvent(
+    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+):
     __tablename__ = "workflow_event"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -173,13 +177,15 @@ class WorkflowEvent(Meta):
     )
     __mapper_args__ = {
         "polymorphic_identity": "workflow_event",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
     # Relationships
 
 
-class WorkflowRecord(Meta):
+class WorkflowRecord(
+    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+):
     __tablename__ = "workflow_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -240,7 +246,7 @@ class WorkflowRecord(Meta):
 
     __mapper_args__ = {
         "polymorphic_identity": "workflow_record",
-        "inherit_condition": id == Meta.id,
+        "inherit_condition": id == MetaRecord.id,
     }
 
 

@@ -390,15 +390,7 @@ class CreateHistoryTableSQL(SQLEmitter):
             AS (
                 SELECT 
                     t1.*,
-                    t2.metatype_name,
-                    t2.is_active,
-                    t2.is_deleted,
-                    t2.created_at,
-                    t2.created_by_id, 
-                    t2.modified_at, 
-                    t2.modified_by_id,
-                    t2.deleted_at,
-                    t2.deleted_by_id
+                    t2.meta_type_name
                 FROM {db_schema}.{table_name} t1
                 INNER JOIN {db_schema}.meta t2
                 ON t1.id = t2.id
@@ -565,7 +557,7 @@ class InsertMetaObjectTriggerSQL(SQLEmitter):
         conn.execute(
             text(
                 self.create_sql_trigger(
-                    "insert_meta_object",
+                    "insert_meta",
                     timing="BEFORE",
                     operation="INSERT",
                     for_each="ROW",
@@ -617,13 +609,13 @@ class InsertPermissionSQL(SQLEmitter):
                     SELECT, INSERT, UPDATE, DELETE
                 Deleted automatically by the DB via the FKDefinition Constraints ondelete when a meta_type is deleted.
                 */
-                INSERT INTO {db_schema}.permission(metatype_name, operation)
+                INSERT INTO {db_schema}.permission(meta_type_name, operation)
                     VALUES (NEW.name, 'SELECT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(metatype_name, operation)
+                INSERT INTO {db_schema}.permission(meta_type_name, operation)
                     VALUES (NEW.name, 'INSERT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(metatype_name, operation)
+                INSERT INTO {db_schema}.permission(meta_type_name, operation)
                     VALUES (NEW.name, 'UPDATE'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(metatype_name, operation)
+                INSERT INTO {db_schema}.permission(meta_type_name, operation)
                     VALUES (NEW.name, 'DELETE'::uno.sqloperation);
                 RETURN NEW;
             END;
@@ -640,6 +632,147 @@ class InsertPermissionSQL(SQLEmitter):
                     function_string,
                     timing="AFTER",
                     operation="INSERT",
+                    include_trigger=True,
+                    db_function=True,
+                )
+            )
+        )
+
+
+@dataclass
+class RecordAuditFunctionSQL(SQLEmitter):
+    def emit_sql(self, conn: Engine) -> None:
+        function_string = (
+            SQL(
+                """
+            DECLARE
+                user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
+                now TIMESTAMP := NOW();
+            BEGIN
+                SET ROLE {writer};
+
+                IF user_id IS NULL OR user_id = '' THEN
+                    RAISE EXCEPTION 'No user defined in rls_vars';
+                ELSIF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                    RAISE EXCEPTION 'User ID in rls_vars is not a valid user';
+                END IF;
+
+                IF TG_OP = 'INSERT' THEN
+                    NEW.is_active = TRUE;
+                    NEW.is_deleted = FALSE;
+                    NEW.created_at = now;
+                    NEW.created_by_id = user_id;
+                    NEW.modified_at = now;
+                    NEW.modified_by_id = user_id;
+                ELSIF TG_OP = 'UPDATE' THEN
+                    NEW.modified_at = now;
+                    NEW.modified_by_id = user_id;
+                ELSIF TG_OP = 'DELETE' THEN
+                    NEW.is_active = FALSE;
+                    NEW.is_deleted = TRUE;
+                    NEW.deleted_at = now;
+                    NEW.deleted_by_id = user_id;
+                END IF;
+
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(
+                db_schema=DB_SCHEMA,
+                admin=ADMIN_ROLE,
+                writer=WRITER_ROLE,
+            )
+            .as_string()
+        )
+
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "record_audit",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT OR UPDATE OR DELETE",
+                    include_trigger=True,
+                    db_function=True,
+                )
+            )
+        )
+
+
+@dataclass
+class UserRecordAuditFunctionSQL(SQLEmitter):
+    def emit_sql(self, conn: Engine) -> None:
+        function_string = (
+            SQL(
+                """
+            DECLARE
+                now TIMESTAMP := NOW();
+                user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
+            BEGIN
+                /*
+                Function used to insert a record into the meta table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the meta table.
+                Set as a trigger on the table, so that the meta record is created when the
+                record is created.
+
+                Has particular logic to handle the case where the first user is created, as
+                the user_id is not yet set in the rls_vars.
+                */
+
+                SET ROLE {writer};
+                IF user_id IS NOT NULL AND
+                    NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                        RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
+                ELSIF user_id IS NULL AND
+                    EXISTS (SELECT id FROM {db_schema}.user) THEN
+                        IF TG_OP = 'UPDATE' THEN
+                            IF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = OLD.id) THEN
+                                RAISE EXCEPTION 'No user defined in rls_vars and this is not the first user being updated';
+                            ELSE
+                                user_id := OLD.id;
+                            END IF;
+                        ELSE
+                            RAISE EXCEPTION 'No user defined in rls_vars and this is not the first user created';
+                        END IF;
+                END IF;
+
+                IF TG_OP = 'INSERT' THEN
+                    NEW.is_active = TRUE;
+                    NEW.is_deleted = FALSE;
+                    NEW.created_at = now;
+                    NEW.created_by_id = user_id;
+                    NEW.modified_at = now;
+                    NEW.modified_by_id = user_id;
+                ELSIF TG_OP = 'UPDATE' THEN
+                    NEW.modified_at = now;
+                    NEW.modified_by_id = user_id;
+                ELSIF TG_OP = 'DELETE' THEN
+                    NEW.is_active = FALSE;
+                    NEW.is_deleted = TRUE;
+                    NEW.deleted_at = now;
+                    NEW.deleted_by_id = user_id;
+                END IF;
+
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(
+                db_schema=DB_SCHEMA,
+                admin=ADMIN_ROLE,
+                writer=WRITER_ROLE,
+            )
+            .as_string()
+        )
+
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "user_record_audit",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT OR UPDATE OR DELETE",
                     include_trigger=True,
                     db_function=True,
                 )

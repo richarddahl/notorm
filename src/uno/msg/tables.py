@@ -22,6 +22,12 @@ from uno.db.base import (
     str_26,
     str_255,
 )
+from uno.db.tables import (
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    RecordVersionAuditMixin,
+)
 from uno.db.sql_emitters import RecordVersionAuditSQL
 from uno.db.sql_emitters import SQLEmitter
 from uno.msg.enums import MessageImportance
@@ -86,11 +92,11 @@ class MessageRelatedObject(Base):
     __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
-        "comment": "Messages to Meta Objects",
+        "comment": "Messages to MetaRecord Objects",
     }
 
-    display_name: ClassVar[str] = "Message Meta Object"
-    display_name_plural: ClassVar[str] = "Message Meta Objects"
+    display_name: ClassVar[str] = "Message MetaRecord Object"
+    display_name_plural: ClassVar[str] = "Message MetaRecord Objects"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
     include_in_graph = False
@@ -106,7 +112,12 @@ class MessageRelatedObject(Base):
     )
 
 
-class Message(Base):
+class Message(
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    RecordVersionAuditMixin,
+):
     __tablename__ = "message"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -120,7 +131,9 @@ class Message(Base):
     ]
 
     # Columns
-    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+    )
     sender_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
         index=True,
@@ -148,6 +161,7 @@ class Message(Base):
     # Relationships
     sender: Mapped["User"] = relationship(
         back_populates="messages_sent",
+        foreign_keys=[sender_id],
         doc="User who sent the message",
         info={"edge": "IS_SENDER"},
     )
@@ -172,7 +186,13 @@ class Message(Base):
     )
     children: Mapped["Message"] = relationship(
         back_populates="parent",
+        foreign_keys=[parent_id],
         remote_side=[id],
         doc="Child messages",
         info={"edge": "IS_CHILD_OF"},
     )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "message",
+        "inherit_condition": id == MetaRecord.id,
+    }
