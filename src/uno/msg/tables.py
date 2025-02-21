@@ -169,14 +169,14 @@ class Message(
         back_populates="messages_recieved",
         secondary=MessageAddressedTo.__table__,
         doc="Users addressed on the message",
-        info={"edge": "DID_RECEIVE"},
+        info={"edge": "RECEIVED"},
     )
 
     copied_to: Mapped["User"] = relationship(
         back_populates="copied_messages",
         secondary=MessageCopiedTo.__table__,
         doc="Users copied on the message",
-        info={"edge": "WAS_COPIED_ON"},
+        info={"edge": "COPIED_ON"},
     )
     parent: Mapped["Message"] = relationship(
         back_populates="children",

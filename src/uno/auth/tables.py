@@ -239,19 +239,19 @@ class User(
         back_populates="sender",
         foreign_keys=[Message.sender_id],
         doc="Messages sent by the user",
-        info={"edge": "DID_SEND"},
+        info={"edge": "SENT"},
     )
     messages_recieved: Mapped[list["Message"]] = relationship(
         back_populates="addressed_to",
         secondary=MessageAddressedTo.__table__,
         doc="Messages received by the user",
-        info={"edge": "DID_RECEIVE"},
+        info={"edge": "RECEIVED"},
     )
     copied_messages: Mapped[list["Message"]] = relationship(
         back_populates="copied_to",
         secondary=MessageCopiedTo.__table__,
         doc="Messages copied to the user",
-        info={"edge": "WAS_COPIED_ON"},
+        info={"edge": "COPIED_ON"},
     )
 
     __mapper_args__ = {
@@ -394,7 +394,7 @@ class Role(
         back_populates="roles",
         foreign_keys="Role.tenant_id",
         doc="Tenants that have this role",
-        info={"edge": "BELONGS_TO_TENANT"},
+        info={"edge": "BELONGS_TO"},
     )
     users: Mapped[list[User]] = relationship(
         back_populates="roles",
@@ -454,7 +454,7 @@ class Group(
         back_populates="groups",
         foreign_keys="Group.tenant_id",
         doc="Tenant the group belongs to",
-        info={"edge": "BELONGS_TO_TENANT"},
+        info={"edge": "BELONGS_TO"},
     )
     users: Mapped[list[User]] = relationship(
         back_populates="groups",
