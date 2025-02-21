@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from typing import AsyncIterator, Annotated, ClassVar, Any
 
-from sqlalchemy import MetaData, create_engine, inspect, Engine
+from sqlalchemy import MetaData, create_engine, inspect, Connection
 from sqlalchemy.orm import registry, DeclarativeBase
 from sqlalchemy.dialects.postgresql import (
     ARRAY,
@@ -23,7 +23,6 @@ from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     VARCHAR,
 )
-from sqlalchemy.sql.sqltypes import NullType
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -37,7 +36,7 @@ from fastapi import FastAPI
 
 from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL
 from uno.schemas import SchemaDef
-from uno.graphs import GraphNode, GraphEdge, GraphProperty
+from uno.graphs import Vertex, Edge, Property
 from uno.config import settings
 
 
@@ -116,9 +115,9 @@ class Base(AsyncAttrs, DeclarativeBase):
 
     # Graph attributes
     include_in_graph: ClassVar[bool] = True
-    graph_node: ClassVar[GraphNode] = None
-    graph_edges: ClassVar[dict[str, GraphEdge]] = {}
-    graph_properties: ClassVar[dict[str, GraphProperty]] = {}
+    vertex: ClassVar[Vertex] = None
+    edges: ClassVar[dict[str, Edge]] = {}
+    graph_properties: ClassVar[dict[str, Property]] = {}
     exclude_from_properties: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, dict[str, str]]] = {}
 
@@ -160,7 +159,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         """
         Sets the graph attributes for the class.
 
-        This method initializes the `graph_node` attribute as a `GraphNode` object
+        This method initializes the `vertex` attribute as a `Vertex` object
         with the class as the `klass` attribute. It then calls the `set_edges` method
         to set the edges for the class.
 
@@ -170,14 +169,14 @@ class Base(AsyncAttrs, DeclarativeBase):
         if not cls.include_in_graph:
             return
         cls.set_properties()
-        cls.graph_node = GraphNode(klass=cls)
+        cls.vertex = Vertex(klass=cls)
         cls.set_edges()
 
     @classmethod
     def set_properties(cls) -> None:
         """ """
         cls.graph_properties = {}
-        if not cls.graph_node:
+        if not cls.vertex:
             return
         for column in cls.__table__.columns:
             if column.name in cls.exclude_from_properties:
@@ -185,11 +184,7 @@ class Base(AsyncAttrs, DeclarativeBase):
             if column.foreign_keys and not column.primary_key:
                 continue
             data_type = column.type.python_type.__name__
-            if type(column.type) == NullType:
-                data_type = "str"
-            else:
-                data_type = column.type.python_type.__name__
-            cls.graph_properties[column.name] = GraphProperty(
+            cls.graph_properties[column.name] = Property(
                 klass=cls,
                 accessor=column.name,
                 data_type=data_type,
@@ -200,62 +195,34 @@ class Base(AsyncAttrs, DeclarativeBase):
         """
         Sets edges for the class based on its relationships.
 
-        This method initializes the `graph_edges` attribute as an empty dictionary.
+        This method initializes the `edges` attribute as an empty dictionary.
         It then iterates over the class's relationships, filtering out relationships
         that are not to a class that is included in the graph. For each remaining
-        relationship, it creates a `GraphEdge` object, which is added to the `graph_edges`
+        relationship, it creates a `Edge` object, which is added to the `edges`
         dictionary.
 
         Returns:
             None
         """
-        cls.graph_edges = {}
-        if not cls.graph_node:
+        cls.edges = {}
+        if not cls.vertex:
             return
         for rel in cls.relationships():
-            if not rel.mapper.class_.graph_node:
+            if not rel.mapper.class_.vertex:
                 continue
-            edge = GraphEdge(
+            edge = Edge(
                 klass=cls,
                 destination_meta_type=rel.mapper.class_.__table__.name,
                 label=rel.info.get("edge"),
                 secondary=rel.secondary,
                 accessor=rel.key,
             )
-            cls.graph_edges[rel.key] = edge
+            cls.edges[rel.key] = edge
 
     @classmethod
     def set_filters(cls) -> None:
-        """
-        Sets filters for the class based on its graph properties and edges.
-
-        This method iterates over the class's `graph_properties` and `graph_edges`
-        attributes to populate the `filters` dictionary with relevant filter
-        configurations.
-
-        For each property in `graph_properties`, a filter is created with the
-        following keys:
-            - "table_name": The name of the table associated with the property.
-            - "filter_type": Set to "PROPERTY".
-            - "data_type": The data type of the property.
-            - "name": The name of the property.
-            - "accessor": The accessor for the property.
-            - "lookups": The lookups for the property.
-
-        For each edge in `graph_edges`, a filter is created with the following keys:
-            - "table_name": The name of the table associated with the edge.
-            - "filter_type": Set to "EDGE".
-            - "data_type": Set to "object".
-            - "name": The name of the edge.
-            - "destination_table_name": The name of the destination table for the edge.
-            - "accessor": The accessor for the edge.
-            - "lookups": The lookups for the edge.
-
-        Returns:
-            None
-        """
         cls.filters = {}
-        if not cls.graph_node:
+        if not cls.vertex:
             return
         for property in cls.graph_properties:
             cls.filters[property.display] = {
@@ -264,7 +231,7 @@ class Base(AsyncAttrs, DeclarativeBase):
                 # "accessor": property.accessor,
                 "lookups": property.lookups,
             }
-        for edge in cls.graph_edges:
+        for edge in cls.edges:
             cls.filters[edge.display] = {
                 # "table_name": edge.table_name,
                 # "filter_type": "EDGE",
@@ -280,6 +247,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     #    pass
 
     @classmethod
-    def emit_sql(cls, conn: Engine) -> str:
+    def emit_sql_emitters(cls, conn: Connection = None) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(table_name=cls.__tablename__).emit_sql(conn)
+            sql_emitter(conn=conn, table_name=cls.__tablename__).emit_sql()

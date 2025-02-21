@@ -7,7 +7,7 @@ from typing import Callable
 
 from psycopg.sql import SQL
 
-from pydantic.dataclasses import dataclass
+from pydantic import ConfigDict
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -31,7 +31,6 @@ from uno.db.sql_emitters import (
 from uno.config import settings
 
 
-@dataclass
 class RLSSQL(SQLEmitter):
     insert_policy: Callable | str = "RETURN true"
     select_policy: Callable | str = "RETURN true"
@@ -39,7 +38,9 @@ class RLSSQL(SQLEmitter):
     update_policy: Callable | str = "RETURN true"
     force_rls: bool = True
 
-    def emit_sql(self, conn: Engine) -> None:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def emit_sql(self) -> None:
         """
         Generates and returns the SQL statements for enabling RLS, forcing RLS,
         and applying select, insert, update, and delete policies.
@@ -65,7 +66,7 @@ class RLSSQL(SQLEmitter):
             if callable(self.delete_policy)
             else self.delete_policy,
         ]
-        conn.execute(text("\n".join(sql)))
+        self.conn.execute(text("\n".join(sql)))
 
     def emit_permissible_groups_sql(self) -> str:
         return SQL(
@@ -357,7 +358,6 @@ def user_delete_policy_sql(table_name) -> str:
     )
 
 
-@dataclass
 class UserRLSSQL(RLSSQL):
     select_policy: Callable = user_select_policy_sql
     insert_policy: Callable = user_insert_policy_sql
@@ -450,7 +450,6 @@ def tenant_delete_policy_sql(table_name) -> str:
     )
 
 
-@dataclass
 class TenantRLSSQL(RLSSQL):
     select_policy: Callable = tenant_select_policy_sql
     insert_policy: Callable = tenant_insert_policy_sql
@@ -554,7 +553,6 @@ def admin_delete_policy_sql(table_name):
     )
 
 
-@dataclass
 class AdminRLSSQL(RLSSQL):
     select_policy: Callable = admin_select_policy_sql
     insert_policy: Callable = admin_insert_policy_sql
@@ -682,7 +680,6 @@ def default_delete_policy_sql(table_name):
     )
 
 
-@dataclass
 class DefaultRLSSQL(RLSSQL):
     select_policy: Callable = default_select_policy_sql
     insert_policy: Callable = default_insert_policy_sql
@@ -758,7 +755,6 @@ def superuser_delete_policy_sql(table_name) -> str:
     )
 
 
-@dataclass
 class SuperuserRLSSQL(RLSSQL):
     select_policy: Callable = superuser_select_policy_sql
     insert_policy: Callable = superuser_insert_policy_sql
@@ -784,7 +780,6 @@ def public_select_policy_sql(table_name):
     )
 
 
-@dataclass
 class PublicReadSuperuserWriteRLSSQL(RLSSQL):
     select_policy: Callable = public_select_policy_sql
     insert_policy: Callable = superuser_insert_policy_sql

@@ -11,11 +11,11 @@ from psycopg.sql import SQL, Identifier, Literal
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from sqlalchemy import Table
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 from sqlalchemy.types import NullType
 
-from uno.db.sql_emitters import DB_SCHEMA, ADMIN_ROLE
+from uno.db.sql_emitters import DB_SCHEMA, ADMIN_ROLE, WRITER_ROLE
 from uno.val.enums import (
     Lookup,
     numeric_lookups,
@@ -129,7 +129,7 @@ class GraphBase(BaseModel):
         return f"{SQL(fnct_string)}\n{SQL(trggr_string)}"
 
 
-class GraphProperty(GraphBase):
+class Property(GraphBase):
     # klass: Any <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
@@ -162,19 +162,7 @@ class GraphProperty(GraphBase):
             return boolean_lookups
         return object_lookups
 
-    def emit_sql(self, conn: Engine) -> None:
-        """
-        Generates a complete SQL script by combining various SQL components.
-
-        This method constructs a SQL script by sequentially appending the results
-        of several helper methods that generate specific parts of the SQL script.
-        The final script includes SQL for creating labels, insert functions and
-        triggers, update functions and triggers, delete functions and triggers,
-        truncate functions and triggers, and filter fields.
-
-        Returns:
-            str: The complete SQL script as a single string.
-        """
+    def emit_sql(self, conn) -> None:
         conn.execute(
             text(
                 SQL(
@@ -202,7 +190,7 @@ class GraphProperty(GraphBase):
             """
                 )
                 .format(
-                    writer_role=ADMIN_ROLE,
+                    writer_role=WRITER_ROLE,
                     db_schema=DB_SCHEMA,
                     display=Literal(self.display),
                     data_type=Literal(self.data_type),
@@ -216,21 +204,21 @@ class GraphProperty(GraphBase):
         )
 
 
-class GraphNode(GraphBase):
+class Vertex(GraphBase):
     # klass: Any <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
-    # properties: dict[str, GraphProperty] <- computed_field
+    # properties: dict[str, Property] <- computed_field
     # name: str <- computed_field
 
     @computed_field
-    def properties(self) -> dict[str, GraphProperty]:
+    def properties(self) -> dict[str, Property]:
         return self.klass.graph_properties
 
     @computed_field
     def name(self) -> str:
         return convert_snake_to_camel(self.source_meta_type)
 
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self, conn) -> None:
         """
         Generates a complete SQL script by combining various SQL
         components.
@@ -429,13 +417,13 @@ class GraphNode(GraphBase):
         )
 
 
-class GraphEdge(GraphBase):
+class Edge(GraphBase):
     label: str
     destination_meta_type: str
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
-    # properties: dict[str, GraphProperty]
+    # properties: dict[str, Property]
     # display: str <- computed_field
     # nullable: bool = False <- computed_field
 
@@ -448,7 +436,7 @@ class GraphEdge(GraphBase):
         return self.klass.__table__.name
 
     @computed_field
-    def properties(self) -> dict[str, GraphProperty]:
+    def properties(self) -> dict[str, Property]:
         if not isinstance(self.secondary, Table):
             return {}
         props = {}
@@ -456,10 +444,10 @@ class GraphEdge(GraphBase):
             if column.foreign_keys and column.primary_key:
                 continue
 
-            if type(column.type) == NullType:
-                data_type = "str"
-            else:
-                data_type = column.type.python_type.__name__
+            # if type(column.type) == NullType:
+            #    data_type = "str"
+            # else:
+            data_type = column.type.python_type.__name__
             from uno.db.base import Base
 
             for base in Base.registry.mappers:
@@ -468,7 +456,7 @@ class GraphEdge(GraphBase):
                     break
             props.update(
                 {
-                    column.name: GraphProperty(
+                    column.name: Property(
                         klass=klass,
                         accessor=column.name,
                         data_type=data_type,
@@ -477,7 +465,7 @@ class GraphEdge(GraphBase):
             )
         return props
 
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self, conn) -> None:
         sql = self.create_edge_label_and_filter_record_sql()
         conn.execute(text(sql))
 

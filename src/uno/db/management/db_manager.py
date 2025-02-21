@@ -21,15 +21,19 @@ from uno.db.management.sql_emitters import (
     DropRolesSQL,
     CreateRolesSQL,
     CreateDatabaseSQL,
-    CreateSchemasAndExtensionsSQL,
-    PrivilegeAndSearchPathSQL,
+    CreateSchemasSQL,
+    CreateExtensionsSQL,
+    RevokePrivilegesSQL,
+    SetSearchPathSQL,
+    GrantSchemaPrivilegesSQL,
     PGULIDSQLSQL,
     CreateTokenSecretSQL,
-    TablePrivilegeSQL,
-    InsertMetaFunctionSQL,
+    GrantTablePrivilegeSQL,
+    GrantSequencePrivilegeSQL,
     AlterTablesBeforeInsertFirstUser,
     UpdateRecordOfFirstUser,
     AlterTablesAfterInsertFirstUser,
+    InsertMetaFunctionSQL,
 )
 
 
@@ -93,40 +97,39 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            SetRoleSQL().emit_sql(conn, "admin")
-            MetaType.emit_sql(conn)
+            SetRoleSQL(conn=conn).emit_sql("admin")
+            MetaType.emit_sql_emitters(conn=conn)
 
             for base in Base.registry.mappers:
                 if base.class_.__name__ == MetaType:
                     continue  # Already emitted above
                 print(f"Creating the table: {base.class_.__tablename__}\n")
-                SetRoleSQL().emit_sql(conn, "admin")
+                SetRoleSQL(conn=conn).emit_sql("admin")
                 # Emit the SQL for the table
-                for sql_emitter in base.class_.sql_emitters:
-                    sql_emitter(table_name=base.class_.__tablename__).emit_sql(conn)
+                base.class_.emit_sql_emitters(conn=conn)
 
             for base in Base.registry.mappers:
                 base.class_.configure_base(app)
-                SetRoleSQL().emit_sql(conn, "admin")
+                SetRoleSQL(conn=conn).emit_sql("admin")
 
                 # Emit the SQL to create the graph property filters
                 for property in base.class_.graph_properties.values():
                     property.emit_sql(conn)
 
                 # Emit the SQL to create the graph node
-                if base.class_.graph_node:
-                    base.class_.graph_node.emit_sql(conn)
+                if base.class_.vertex:
+                    base.class_.vertex.emit_sql(conn)
 
                 conn.commit()
             for base in Base.registry.mappers:
                 if not base.class_.include_in_graph:
                     continue
                 print(f"Creating the edges for: {base.class_.__tablename__}")
-                for edge in base.class_.graph_edges.values():
+                for edge in base.class_.edges.values():
                     edge.emit_sql(conn)
                 conn.commit()
 
-            # if base.class_.graph_node:
+            # if base.class_.vertex:
             #    base.class_.set_filters()
             #    print(f"Filters for {base.class_.__tablename__}")
             #    for filter in base.class_.filters.values():
@@ -174,9 +177,9 @@ class DBManager:
                 f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
             )
             # Drop the Database
-            DropDatabaseSQL().emit_sql(conn)
+            DropDatabaseSQL(conn=conn).emit_sql()
             print(f"Database dropped: {settings.DB_NAME} \n")
-            DropRolesSQL().emit_sql(conn)
+            DropRolesSQL(conn=conn).emit_sql()
             print(f"All Roles dropped for database: {settings.DB_NAME} \n")
             conn.close()
         eng.dispose()
@@ -259,13 +262,13 @@ class DBManager:
         """
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            AlterTablesBeforeInsertFirstUser().emit_sql(conn)
+            AlterTablesBeforeInsertFirstUser(conn=conn).emit_sql()
             superuser = conn.execute(
                 text(self.create_user_sql(email, handle, full_name, is_superuser))
             )
             superuser_id = superuser.scalar()
-            UpdateRecordOfFirstUser(user_id=superuser_id).emit_sql(conn)
-            AlterTablesAfterInsertFirstUser().emit_sql(conn)
+            UpdateRecordOfFirstUser(conn=conn, user_id=superuser_id).emit_sql()
+            AlterTablesAfterInsertFirstUser(conn=conn).emit_sql()
             conn.close()
         eng.dispose()
         return superuser_id
@@ -323,8 +326,8 @@ class DBManager:
                 f"\nCreating the db: {settings.DB_NAME}, and roles, users, and app schema.\n"
             )
             print("Creating the roles and the database\n")
-            CreateRolesSQL().emit_sql(conn)
-            CreateDatabaseSQL().emit_sql(conn)
+            CreateRolesSQL(conn=conn).emit_sql()
+            CreateDatabaseSQL(conn=conn).emit_sql()
             conn.close()
         eng.dispose()
 
@@ -347,10 +350,13 @@ class DBManager:
         eng = self.engine(db_role="postgres")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             print("Creating the schemas and extensions\n")
-            CreateSchemasAndExtensionsSQL().emit_sql(conn)
+            CreateSchemasSQL(conn=conn).emit_sql()
+            CreateExtensionsSQL(conn=conn).emit_sql()
 
             print("Configuring the privileges for the schemas and setting the paths\n")
-            PrivilegeAndSearchPathSQL().emit_sql(conn)
+            RevokePrivilegesSQL(conn=conn).emit_sql()
+            SetSearchPathSQL(conn=conn).emit_sql()
+            GrantSchemaPrivilegesSQL(conn=conn).emit_sql()
 
             conn.close()
         eng.dispose()
@@ -377,10 +383,10 @@ class DBManager:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             print("Creating the token_secret table, function, and trigger\n")
-            CreateTokenSecretSQL().emit_sql(conn)
+            CreateTokenSecretSQL(conn=conn).emit_sql()
 
             print("Creating the pgulid function\n")
-            PGULIDSQLSQL().emit_sql(conn)
+            PGULIDSQLSQL(conn=conn).emit_sql()
 
             # Create the tables
             self.create_tables(conn)
@@ -400,5 +406,6 @@ class DBManager:
         Base.metadata.create_all(bind=conn)
 
         print("Setting the table privileges\n")
-        TablePrivilegeSQL().emit_sql(conn)
-        InsertMetaFunctionSQL().emit_sql(conn)
+        GrantTablePrivilegeSQL(conn=conn).emit_sql()
+        GrantSequencePrivilegeSQL(conn=conn).emit_sql()
+        InsertMetaFunctionSQL(conn=conn).emit_sql()

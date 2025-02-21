@@ -30,7 +30,7 @@ from uno.config import settings
 
 @dataclass
 class GetPermissibleGroupsFunctionSQL(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> str:
+    def emit_sql(self) -> str:
         function_string = """
             DECLARE
                 user_id TEXT := current_setting('rls_var.user_id', true)::TEXT;
@@ -58,7 +58,7 @@ class GetPermissibleGroupsFunctionSQL(SQLEmitter):
 
 
 class ValidateGroupInsert(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> str:
+    def emit_sql(self) -> str:
         function_string = (
             SQL(
                 """
@@ -133,8 +133,8 @@ class ValidateGroupInsert(SQLEmitter):
 
 
 class InsertGroupForTenant(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """CREATE OR REPLACE FUNCTION uno.insert_group_for_tenant()
@@ -162,7 +162,7 @@ class InsertGroupForTenant(SQLEmitter):
 
 
 class DefaultGroupTenant(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> str:
+    def emit_sql(self) -> str:
         function_string = SQL(
             """
             DECLARE
@@ -178,7 +178,7 @@ class DefaultGroupTenant(SQLEmitter):
             END;
             """
         ).as_string()
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "set_tenant_id",

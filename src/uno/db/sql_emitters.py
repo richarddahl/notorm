@@ -5,11 +5,11 @@
 from typing import Optional
 from abc import ABC, abstractmethod
 
+from pydantic import ConfigDict, BaseModel
+
 from psycopg.sql import SQL, Identifier, Literal
 from sqlalchemy import text
-from sqlalchemy.engine import Engine
-
-from dataclasses import dataclass
+from sqlalchemy.engine import Connection
 
 from uno.config import settings
 
@@ -34,8 +34,7 @@ DB_NAME = SQL(settings.DB_NAME)
 DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
-@dataclass
-class SQLEmitter(ABC):
+class SQLEmitter(ABC, BaseModel):
     """SQL Emitter base class for creating PostgreSQL functions and triggers.
 
     This abstract base class provides methods to generate SQL for creating PostgreSQL
@@ -52,11 +51,14 @@ class SQLEmitter(ABC):
         create_sql_function: Creates a PostgreSQL function SQL statement with optional trigger.
     """
 
+    conn: Connection = None
     table_name: str | None = None
     timing: Optional[str] = "AFTER"
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     @abstractmethod
-    def emit_sql(self, table_name: str, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         """
         Emits an SQL statement for a given table.
 
@@ -220,7 +222,6 @@ class SQLEmitter(ABC):
         ).as_string()
 
 
-@dataclass
 class SetRoleSQL(SQLEmitter):
     """Emits SQL to set the current role to the specified role.
 
@@ -235,8 +236,8 @@ class SetRoleSQL(SQLEmitter):
 
     """
 
-    def emit_sql(self, conn: Engine, role_name: str) -> None:
-        conn.execute(
+    def emit_sql(self, role_name: str) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -252,7 +253,6 @@ class SetRoleSQL(SQLEmitter):
         )
 
 
-@dataclass
 class AlterGrantSQL(SQLEmitter):
     """
     Emits SQL statements to alter table ownership and grant privileges.
@@ -276,8 +276,8 @@ class AlterGrantSQL(SQLEmitter):
         ```
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -303,7 +303,6 @@ class AlterGrantSQL(SQLEmitter):
         )
 
 
-@dataclass
 class RecordVersionAuditSQL(SQLEmitter):
     """Emits SQL to enable record version auditing for a specified table.
 
@@ -327,8 +326,8 @@ class RecordVersionAuditSQL(SQLEmitter):
         Uses the global DB_SCHEMA constant for the schema name.
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -345,7 +344,6 @@ class RecordVersionAuditSQL(SQLEmitter):
         )
 
 
-@dataclass
 class CreateHistoryTableSQL(SQLEmitter):
     """Creates a history/audit table for tracking changes in the main table.
 
@@ -380,8 +378,8 @@ class CreateHistoryTableSQL(SQLEmitter):
         - Table will be named audit.{db_schema}_{table_name}
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -417,7 +415,6 @@ class CreateHistoryTableSQL(SQLEmitter):
         )
 
 
-@dataclass
 class InsertHistoryTableRecordSQL(SQLEmitter):
     """A SQL emitter class that generates audit triggers for database tables.
 
@@ -446,7 +443,7 @@ class InsertHistoryTableRecordSQL(SQLEmitter):
         - The naming convention for audit tables is: audit.{schema}_{table_name}
     """
 
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = (
             SQL(
                 """
@@ -466,7 +463,7 @@ class InsertHistoryTableRecordSQL(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "history",
@@ -481,34 +478,11 @@ class InsertHistoryTableRecordSQL(SQLEmitter):
         )
 
 
-@dataclass
 class InsertMetaTypeRecordSQL(SQLEmitter):
-    """Emits SQL to create an meta_type record in the database.
-
-    This class is responsible for inserting a new record into the meta_type table
-    with the specified table name. The SQL is executed with elevated privileges using
-    the database writer role.
-
-    Where used:
-        RelatedObjectMixin
-
-    Attributes:
-        timing (str): Specifies when the SQL should be executed ("AFTER")
-
-    Args:
-        table_name (str): Name of the table to be inserted into meta_type table
-
-    Example:
-        ```
-        emitter = InsertMetaTypeRecordSQL(table_name="my_table")
-        emitter.emit_sql(engine)
-        ```
-    """
-
     timing: str = "AFTER"
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -553,8 +527,8 @@ class InsertMetaObjectTriggerSQL(SQLEmitter):
         ```
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 self.create_sql_trigger(
                     "insert_meta",
@@ -567,7 +541,6 @@ class InsertMetaObjectTriggerSQL(SQLEmitter):
         )
 
 
-@dataclass
 class InsertPermissionSQL(SQLEmitter):
     """SQL Emitter class for generating a PostgreSQL function and trigger to automatically create permissions.
 
@@ -598,7 +571,7 @@ class InsertPermissionSQL(SQLEmitter):
                 None
     """
 
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = (
             SQL(
                 """
@@ -625,7 +598,7 @@ class InsertPermissionSQL(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "create_permissions",
@@ -639,9 +612,8 @@ class InsertPermissionSQL(SQLEmitter):
         )
 
 
-@dataclass
 class RecordAuditFunctionSQL(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = (
             SQL(
                 """
@@ -686,7 +658,7 @@ class RecordAuditFunctionSQL(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "record_audit",
@@ -700,9 +672,8 @@ class RecordAuditFunctionSQL(SQLEmitter):
         )
 
 
-@dataclass
 class UserRecordAuditFunctionSQL(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = (
             SQL(
                 """
@@ -766,7 +737,7 @@ class UserRecordAuditFunctionSQL(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "user_record_audit",

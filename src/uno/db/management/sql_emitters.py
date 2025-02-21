@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
-
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from sqlalchemy import text
@@ -29,7 +27,6 @@ from uno.db.sql_emitters import (
 from uno.config import settings
 
 
-@dataclass
 class DropDatabaseSQL(SQLEmitter):
     """Drop database SQL emitter.
 
@@ -49,8 +46,8 @@ class DropDatabaseSQL(SQLEmitter):
         SQLAlchemyError: If there is an error executing the DROP DATABASE statement
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -84,8 +81,8 @@ class DropRolesSQL(SQLEmitter):
         None
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -130,8 +127,8 @@ class CreateRolesSQL(SQLEmitter):
 
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -209,8 +206,8 @@ class CreateDatabaseSQL(SQLEmitter):
         None
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -224,65 +221,33 @@ class CreateDatabaseSQL(SQLEmitter):
         )
 
 
-class CreateSchemasAndExtensionsSQL(SQLEmitter):
-    """SQL emitter for creating schemas and extensions in a PostgreSQL database.
-
-    This class is responsible for generating and executing SQL statements that:
-    1. Create the necessary schemas (uno and application-specific schema)
-    2. Set up required PostgreSQL extensions (btree_gist, supa_audit, pgcrypto, pgjwt, age)
-    3. Configure permissions and ownership for the Apache AGE (age) graph extension
-
-    Attributes:
-        None
-
-    Methods:
-        emit_sql(conn: Engine) -> str:
-            Executes the combined SQL statements for creating schemas and extensions.
-
-        emit_create_schemas_sql() -> str:
-            Generates SQL for creating the uno and application-specific schemas.
-
-        emit_create_extensions_sql() -> str:
-            Generates SQL for creating and configuring all required PostgreSQL extensions.
-
-    Dependencies:
-        - SQLAlchemy Engine for database connection
-        - PostgreSQL with support for the specified extensions
-        - Required roles (ADMIN_ROLE, READER_ROLE, WRITER_ROLE) must be defined
-    """
-
-    def emit_sql(self, conn: Engine) -> str:
-        conn.execute(
+class CreateSchemasSQL(SQLEmitter):
+    def emit_sql(self) -> str:
+        self.conn.execute(
             text(
-                f"""
-                {self.emit_create_schemas_sql()}
-                {self.emit_create_extensions_sql()}
-                """
-            )
-        )
-
-    def emit_create_schemas_sql(self) -> str:
-        return (
-            SQL(
-                """
-            -- Create the uno schemas
-            CREATE SCHEMA IF NOT EXISTS uno AUTHORIZATION {admin_role};
-            CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {admin_role};
+                SQL(
+                    """
+            -- Create the db_schema
+            CREATE SCHEMA IF NOT EXISTS {db_schema} AUTHORIZATION {admin_role};
             """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    db_schema=DB_SCHEMA,
+                )
+                .as_string()
             )
-            .format(
-                admin_role=ADMIN_ROLE,
-                schema=DB_SCHEMA,
-            )
-            .as_string()
         )
 
-    def emit_create_extensions_sql(self) -> str:
-        return (
-            SQL(
-                """
+
+class CreateExtensionsSQL(SQLEmitter):
+    def emit_sql(self) -> str:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
             -- Create the extensions
-            SET search_path TO uno;
+            SET search_path TO {db_schema};
 
             -- Creating the btree_gist extension
             CREATE EXTENSION IF NOT EXISTS btree_gist;
@@ -319,77 +284,30 @@ class CreateSchemasAndExtensionsSQL(SQLEmitter):
             ALTER SEQUENCE graph._ag_label_vertex_id_seq OWNER TO {admin_role};
             ALTER SEQUENCE graph._label_id_seq OWNER TO {admin_role};
             """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-            )
-            .as_string()
-        )
-
-
-class PrivilegeAndSearchPathSQL(SQLEmitter):
-    """A SQL emitter class responsible for managing database privileges and search paths.
-
-    This class generates SQL statements to configure database access controls and search paths
-    for different database roles. It handles three main operations:
-    1. Revoking existing access privileges
-    2. Setting up search paths for different roles
-    3. Granting appropriate schema privileges
-
-    Methods:
-        emit_sql(conn: Engine) -> str:
-            Executes all SQL statements in the correct order using the provided database connection.
-
-        emit_revoke_access_sql() -> str:
-            Generates SQL to revoke all existing privileges from schemas and tables for all roles.
-
-        emit_set_search_paths_sql() -> str:
-            Generates SQL to set up the search path hierarchy for each database role.
-
-        emit_grant_schema_privileges_sql() -> str:
-            Generates SQL to grant appropriate privileges to schemas and set up role inheritance.
-
-    The class manages privileges for the following schemas:
-    - uno
-    - audit
-    - graph
-    - ag_catalog
-    - custom schema (specified by DB_SCHEMA)
-
-    And handles the following roles:
-    - base role
-    - login role
-    - reader role
-    - writer role
-    - admin role
-    """
-
-    def emit_sql(self, conn: Engine) -> str:
-        conn.execute(
-            text(
-                "\n".join(
-                    [
-                        self.emit_revoke_access_sql(),
-                        self.emit_set_search_paths_sql(),
-                        self.emit_grant_schema_privileges_sql(),
-                    ]
                 )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    db_schema=DB_SCHEMA,
+                )
+                .as_string()
             )
         )
 
-    def emit_revoke_access_sql(self) -> str:
-        return (
-            SQL(
-                """
-            -- Explicitly revoke all privileges on all schemas and tables
+
+class RevokePrivilegesSQL(SQLEmitter):
+    def emit_sql(self) -> None:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
+            -- Explicitly revoke all privileges on all db_schemas and tables
             REVOKE ALL ON SCHEMA
-                uno,
                 audit,
                 graph,
                 ag_catalog,
-                {schema} 
+                {db_schema} 
             FROM
                 public,
                 {base_role},
@@ -399,11 +317,10 @@ class PrivilegeAndSearchPathSQL(SQLEmitter):
                 {admin_role};
 
             REVOKE ALL ON ALL TABLES IN SCHEMA
-                uno,
                 audit,
                 graph,
                 ag_catalog,
-                {schema} 
+                {db_schema} 
             FROM
                 public,
                 {base_role},
@@ -419,105 +336,106 @@ class PrivilegeAndSearchPathSQL(SQLEmitter):
                 {writer_role},
                 {admin_role};
             """
+                )
+                .format(
+                    db_name=DB_NAME,
+                    db_schema=DB_SCHEMA,
+                    base_role=BASE_ROLE,
+                    login_role=LOGIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    admin_role=ADMIN_ROLE,
+                )
+                .as_string()
             )
-            .format(
-                db_name=DB_NAME,
-                schema=DB_SCHEMA,
-                base_role=BASE_ROLE,
-                login_role=LOGIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-                admin_role=ADMIN_ROLE,
-            )
-            .as_string()
         )
 
-    def emit_set_search_paths_sql(self) -> str:
-        return (
-            SQL(
-                """
+
+class SetSearchPathSQL(SQLEmitter):
+    def emit_sql(self) -> None:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
             -- Set the search paths for the roles
             ALTER ROLE
                 {base_role}
             SET search_path TO
                 ag_catalog,
-                uno,
                 audit,
                 graph,
-                {schema};
+                {db_schema};
 
             ALTER ROLE
                 {login_role}
             SET search_path TO
                 ag_catalog,
-                uno,
                 audit,
                 graph,
-                {schema};
+                {db_schema};
 
 
             ALTER ROLE
                 {reader_role}
             SET search_path TO
                 ag_catalog,
-                uno,
                 audit,
                 graph,
-                {schema};
+                {db_schema};
 
             ALTER ROLE
                 {writer_role}
             SET search_path TO
                 ag_catalog,
-                uno,
                 audit,
                 graph,
-                {schema};
+                {db_schema};
 
             ALTER ROLE
                 {admin_role}
             SET search_path TO
                 ag_catalog,
-                uno,
                 audit,
                 graph,
-                {schema};
+                {db_schema};
             """
+                )
+                .format(
+                    base_role=BASE_ROLE,
+                    login_role=LOGIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    admin_role=ADMIN_ROLE,
+                    db_schema=DB_SCHEMA,
+                )
+                .as_string()
             )
-            .format(
-                base_role=BASE_ROLE,
-                login_role=LOGIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-                admin_role=ADMIN_ROLE,
-                schema=DB_SCHEMA,
-            )
-            .as_string()
         )
 
-    def emit_grant_schema_privileges_sql(self) -> str:
-        return (
-            SQL(
-                """
-            -- Grant ownership of the uno schemas to the DB admin role
+
+class GrantSchemaPrivilegesSQL(SQLEmitter):
+    def emit_sql(self) -> None:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
+            -- Grant ownership of the db_schemas to the DB admin role
             ALTER SCHEMA audit OWNER TO {admin_role};
-            ALTER SCHEMA uno OWNER TO {admin_role};
             ALTER SCHEMA graph OWNER TO {admin_role};
             ALTER SCHEMA ag_catalog OWNER TO {admin_role};
 
-            ALTER SCHEMA {schema} OWNER TO {admin_role};
+            ALTER SCHEMA {db_schema} OWNER TO {admin_role};
             ALTER TABLE audit.record_version OWNER TO {admin_role};
 
             -- Grant connect privileges to the DB login role
             GRANT CONNECT ON DATABASE {db_name} TO {login_role};
 
-            -- Grant usage privileges for users to created schemas
+            -- Grant usage privileges for users to created db_schemas
             GRANT USAGE ON SCHEMA
-                uno,
                 audit,
                 graph,
                 ag_catalog,
-                {schema}
+                {db_schema}
             TO
                 {login_role},
                 {admin_role},
@@ -525,19 +443,17 @@ class PrivilegeAndSearchPathSQL(SQLEmitter):
                 {writer_role};
 
             GRANT CREATE ON SCHEMA
-                uno,
                 audit,
                 graph,
-                {schema}
+                {db_schema}
             TO
                 {admin_role};
 
             GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA
-                uno,
                 audit,
                 graph,
                 ag_catalog,
-                {schema}
+                {db_schema}
             TO
                 {login_role},
                 {admin_role},
@@ -548,91 +464,14 @@ class PrivilegeAndSearchPathSQL(SQLEmitter):
             GRANT {writer_role} TO {login_role} WITH INHERIT FALSE, SET TRUE;
             GRANT {reader_role} TO {login_role} WITH INHERIT FALSE, SET TRUE;
             """
-            )
-            .format(
-                db_name=DB_NAME,
-                schema=DB_SCHEMA,
-                admin_role=ADMIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-                login_role=LOGIN_ROLE,
-            )
-            .as_string()
-        )
-
-
-class TablePrivilegeSQL(SQLEmitter):
-    """SQL emitter for managing table privileges in PostgreSQL database.
-
-    This class handles the emission of SQL statements that manage table privileges for different roles
-    in the database. It sets up a hierarchical permission structure where:
-    - Admin role has full privileges on all schemas
-    - Writer role has CRUD operations on most tables
-    - Reader role has read-only access to most tables
-
-    The privileges are granted on the following schemas:
-    - uno
-    - audit
-    - graph
-    - ag_catalog
-    - custom schema (specified by DB_SCHEMA)
-
-    Special cases:
-    - The 'id' column of uno.user table has restricted access for reader and writer roles
-
-    Args:
-        None
-
-    Returns:
-        None
-
-    Raises:
-        SQLAlchemyError: If there's an error executing the SQL statements
-    """
-
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
-            -- Grant table privileges to the roles
-            SET ROLE {admin_role};
-            GRANT SELECT ON ALL TABLES IN SCHEMA
-                uno,
-                audit,
-                graph,
-                ag_catalog,
-                {schema}
-            TO
-                {reader_role},
-                {writer_role};
-
-            GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA
-                uno,
-                audit,
-                graph,
-                {schema} 
-            TO
-                {writer_role},
-                {admin_role};
-
-            REVOKE SELECT, INSERT, UPDATE (id) ON uno.user FROM 
-                {reader_role},
-                {writer_role};
-
-            GRANT ALL ON ALL TABLES IN SCHEMA
-                audit,
-                graph,
-                ag_catalog
-            TO
-                {admin_role};
-            """
                 )
                 .format(
+                    db_name=DB_NAME,
+                    db_schema=DB_SCHEMA,
                     admin_role=ADMIN_ROLE,
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
-                    schema=DB_SCHEMA,
+                    login_role=LOGIN_ROLE,
                 )
                 .as_string()
             )
@@ -642,7 +481,7 @@ class TablePrivilegeSQL(SQLEmitter):
 class PGULIDSQLSQL(SQLEmitter):
     """Emitter class for PostgreSQL ULID generation SQL function.
 
-    This class emits SQL code that creates a PostgreSQL function 'uno.generate_ulid()'
+    This class emits SQL code that creates a PostgreSQL function 'generate_ulid()'
     which generates Universally Unique Lexicographically Sortable Identifiers (ULIDs).
 
     A ULID is a 26-character Crockford Base32 string, encoding:
@@ -663,8 +502,8 @@ class PGULIDSQLSQL(SQLEmitter):
                 str: Empty string as function creates PostgreSQL function
     """
 
-    def emit_sql(self, conn: Engine) -> str:
-        conn.execute(
+    def emit_sql(self) -> str:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -688,7 +527,7 @@ class PGULIDSQLSQL(SQLEmitter):
 
             CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-            CREATE FUNCTION uno.generate_ulid()
+            CREATE FUNCTION {db_schema}.generate_ulid()
             RETURNS TEXT
             AS $$
             DECLARE
@@ -710,7 +549,7 @@ class PGULIDSQLSQL(SQLEmitter):
             timestamp = SET_BYTE(timestamp, 5, unix_time::BIT(8)::INTEGER);
 
             -- 10 entropy bytes
-            ulid = timestamp || uno.gen_random_bytes(10);
+            ulid = timestamp || {db_schema}.gen_random_bytes(10);
 
             -- Encode the timestamp
             output = output || CHR(GET_BYTE(encoding, (GET_BYTE(ulid, 0) & 224) >> 5));
@@ -748,46 +587,26 @@ class PGULIDSQLSQL(SQLEmitter):
             LANGUAGE plpgsql
             VOLATILE;
             """
-                ).as_string()
+                )
+                .format(db_schema=DB_SCHEMA)
+                .as_string()
             )
         )
 
 
 class CreateTokenSecretSQL(SQLEmitter):
-    """Creates a table and associated trigger for managing authentication token secrets in the database.
-
-    This class generates SQL to:
-    1. Create a 'token_secret' table in the 'uno' schema with a single TEXT column
-    2. Create a trigger function that ensures only one token secret exists at a time
-    3. Create a trigger that runs the function before inserts
-
-    The token_secret table is designed to store a single authentication secret used
-    for signing JWT tokens. The trigger mechanism ensures that any new secret insertion
-    will first delete the existing secret, maintaining only one active secret.
-
-    This approach provides more security than environment variables by storing the
-    secret in the database.
-
-    Args:
-        None
-
-    Returns:
-        None: Executes SQL statements directly on the database connection
-    """
-
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
-
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
-            CREATE TABLE uno.token_secret (
+            CREATE TABLE {db_schema}.token_secret (
                 token_secret TEXT PRIMARY KEY
             );
 
-            CREATE OR REPLACE FUNCTION uno.set_token_secret()
+            CREATE OR REPLACE FUNCTION {db_schema}.set_token_secret()
             RETURNS TRIGGER
             LANGUAGE plpgsql
             AS $$
@@ -799,24 +618,27 @@ class CreateTokenSecretSQL(SQLEmitter):
                 We only store this in the database as it is 
                 more secure there than in the environment variables
                 */
-                DELETE FROM uno.token_secret;
+                DELETE FROM {db_schema}.token_secret;
                 RETURN NEW;
             END;
             $$;
 
             CREATE TRIGGER set_token_secret_trigger
-            BEFORE INSERT ON uno.token_secret
+            BEFORE INSERT ON {db_schema}.token_secret
             FOR EACH ROW
-            EXECUTE FUNCTION uno.set_token_secret();
+            EXECUTE FUNCTION {db_schema}.set_token_secret();
             """
                 )
-                .format(admin_role=ADMIN_ROLE, db_name=DB_NAME)
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    db_name=DB_NAME,
+                    db_schema=DB_SCHEMA,
+                )
                 .as_string()
             )
         )
 
 
-@dataclass
 class AlterTablesBeforeInsertFirstUser(SQLEmitter):
     """Class for emitting SQL to modify tables before inserting the first user.
 
@@ -832,8 +654,8 @@ class AlterTablesBeforeInsertFirstUser(SQLEmitter):
         emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -853,12 +675,11 @@ class AlterTablesBeforeInsertFirstUser(SQLEmitter):
         )
 
 
-@dataclass
 class UpdateRecordOfFirstUser(SQLEmitter):
     user_id: str = None
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -880,7 +701,6 @@ class UpdateRecordOfFirstUser(SQLEmitter):
         )
 
 
-@dataclass
 class AlterTablesAfterInsertFirstUser(SQLEmitter):
     """Emits SQL to alter tables after first user is inserted.
 
@@ -899,8 +719,8 @@ class AlterTablesAfterInsertFirstUser(SQLEmitter):
         emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
     """
 
-    def emit_sql(self, conn: Engine) -> None:
-        conn.execute(
+    def emit_sql(self) -> None:
+        self.conn.execute(
             text(
                 SQL(
                     """
@@ -920,9 +740,86 @@ class AlterTablesAfterInsertFirstUser(SQLEmitter):
         )
 
 
-@dataclass
+class GrantTablePrivilegeSQL(SQLEmitter):
+    def emit_sql(self) -> None:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
+            -- Grant table privileges to the roles
+            SET ROLE {admin_role};
+            GRANT SELECT ON ALL TABLES IN SCHEMA
+                audit,
+                graph,
+                ag_catalog,
+                {db_schema}
+            TO
+                {reader_role},
+                {writer_role};
+
+            GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA
+                audit,
+                graph,
+                {db_schema} 
+            TO
+                {writer_role},
+                {admin_role};
+
+            REVOKE SELECT, INSERT, UPDATE (id) ON {db_schema}.user FROM 
+                {reader_role},
+                {writer_role};
+
+            GRANT ALL ON ALL TABLES IN SCHEMA
+                audit,
+                graph,
+                ag_catalog
+            TO
+                {admin_role};
+            """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    db_schema=DB_SCHEMA,
+                )
+                .as_string()
+            )
+        )
+
+
+class GrantSequencePrivilegeSQL(SQLEmitter):
+    def emit_sql(self) -> None:
+        self.conn.execute(
+            text(
+                SQL(
+                    """
+                    -- Grant table privileges to the roles
+                    SET ROLE {admin_role};
+                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA
+                        audit,
+                        graph,
+                        ag_catalog,
+                        {db_schema}
+                    TO
+                        {reader_role},
+                        {writer_role};
+
+                    """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    db_schema=DB_SCHEMA,
+                )
+                .as_string()
+            )
+        )
+
+
 class InsertMetaFunctionSQL(SQLEmitter):
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = (
             SQL(
                 """
@@ -951,7 +848,7 @@ class InsertMetaFunctionSQL(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "insert_meta",

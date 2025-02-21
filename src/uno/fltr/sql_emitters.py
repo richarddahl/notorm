@@ -32,7 +32,7 @@ from uno.config import settings
 class PathEdgeChcekSQL(SQLEmitter):
     """ """
 
-    def emit_sql(self, conn: Engine) -> None:
+    def emit_sql(self) -> None:
         function_string = """
             BEGIN
                 SELECT 
@@ -43,7 +43,7 @@ class PathEdgeChcekSQL(SQLEmitter):
             END;
             """
 
-        conn.execute(
+        self.conn.execute(
             text(
                 self.create_sql_function(
                     "validate_path",
