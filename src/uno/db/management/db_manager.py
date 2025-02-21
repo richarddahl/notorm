@@ -40,6 +40,7 @@ import uno.auth.tables as auth_tables
 import uno.msg.tables as msgs_tables
 import uno.fltr.tables as fltrs_tables
 import uno.rprt.tables as rprts_tables
+import uno.val.tables as vals_tables
 import uno.wkflw.tables as wrkflws_tables
 
 from uno.config import settings

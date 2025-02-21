@@ -12,14 +12,15 @@ from typing import AsyncIterator, Annotated, ClassVar, Any
 from sqlalchemy import MetaData, create_engine, inspect, Engine
 from sqlalchemy.orm import registry, DeclarativeBase
 from sqlalchemy.dialects.postgresql import (
+    ARRAY,
     BIGINT,
-    TIMESTAMP,
-    DATE,
-    TIME,
     BOOLEAN,
+    BYTEA,
+    DATE,
     ENUM,
     NUMERIC,
-    ARRAY,
+    TIME,
+    TIMESTAMP,
     VARCHAR,
 )
 from sqlalchemy.sql.sqltypes import NullType
@@ -37,7 +38,6 @@ from fastapi import FastAPI
 from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL
 from uno.schemas import SchemaDef
 from uno.graphs import GraphNode, GraphEdge, GraphProperty
-from uno.utilities import convert_snake_to_title
 from uno.config import settings
 
 
@@ -74,31 +74,35 @@ async def get_db() -> AsyncIterator[AsyncSession]:
         yield session
 
 
+bytea = Annotated[bytes, BYTEA]
+decimal = Annotated[Decimal, 19]
 str_26 = Annotated[str, 26]
 str_63 = Annotated[str, 63]
 str_64 = Annotated[str, 64]
 str_128 = Annotated[str, 128]
 str_255 = Annotated[str, 255]
-decimal = Annotated[Decimal, 19]
+str_list_255 = Annotated[list[str], 255]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
     registry = registry(
         type_annotation_map={
-            int: BIGINT,
+            bool: BOOLEAN,
+            bytes: BYTEA,
             datetime.datetime: TIMESTAMP(timezone=True),
             datetime.date: DATE,
             datetime.time: TIME,
-            str: VARCHAR,
+            decimal: NUMERIC,
             Enum: ENUM,
-            bool: BOOLEAN,
+            int: BIGINT,
             list: ARRAY,
+            str: VARCHAR,
+            str_list_255: ARRAY(VARCHAR(255)),
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
             str_64: VARCHAR(64),
             str_128: VARCHAR(128),
             str_255: VARCHAR(255),
-            decimal: NUMERIC,
         }
     )
     metadata = metadata
@@ -170,6 +174,28 @@ class Base(AsyncAttrs, DeclarativeBase):
         cls.set_edges()
 
     @classmethod
+    def set_properties(cls) -> None:
+        """ """
+        cls.graph_properties = {}
+        if not cls.graph_node:
+            return
+        for column in cls.__table__.columns:
+            if column.name in cls.exclude_from_properties:
+                continue
+            if column.foreign_keys and not column.primary_key:
+                continue
+            data_type = column.type.python_type.__name__
+            if type(column.type) == NullType:
+                data_type = "str"
+            else:
+                data_type = column.type.python_type.__name__
+            cls.graph_properties[column.name] = GraphProperty(
+                klass=cls,
+                accessor=column.name,
+                data_type=data_type,
+            )
+
+    @classmethod
     def set_edges(cls) -> None:
         """
         Sets edges for the class based on its relationships.
@@ -197,27 +223,6 @@ class Base(AsyncAttrs, DeclarativeBase):
                 accessor=rel.key,
             )
             cls.graph_edges[rel.key] = edge
-
-    @classmethod
-    def set_properties(cls) -> None:
-        """ """
-        cls.graph_properties = {}
-        if not cls.graph_node:
-            return
-        for column in cls.__table__.columns:
-            if column.name in cls.exclude_from_properties:
-                continue
-            if column.foreign_keys and not column.primary_key:
-                continue
-            if type(column.type) == NullType:
-                data_type = "str"
-            else:
-                data_type = column.type.python_type.__name__
-            cls.graph_properties[column.name] = GraphProperty(
-                klass=cls,
-                accessor=column.name,
-                data_type=data_type,
-            )
 
     @classmethod
     def set_filters(cls) -> None:

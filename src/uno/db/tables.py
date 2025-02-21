@@ -170,7 +170,10 @@ class MetaType(Base):
     display_name: ClassVar[str] = "Meta Type"
     display_name_plural: ClassVar[str] = "Meta Types"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertPermissionSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [
+        InsertMetaTypeRecordSQL,
+        InsertPermissionSQL,
+    ]
 
     name: Mapped[str_63] = mapped_column(
         primary_key=True,

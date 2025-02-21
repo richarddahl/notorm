@@ -7,7 +7,6 @@ import json
 from typing import Any
 
 from psycopg.sql import SQL, Identifier, Literal
-from psycopg.types.json import Jsonb, set_json_dumps, set_json_loads
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
@@ -16,13 +15,13 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
 from sqlalchemy.types import NullType
 
-from uno.db.sql_emitters import DB_SCHEMA, WRITER_ROLE, ADMIN_ROLE
-from uno.fltr.enums import (
-    DataType,
+from uno.db.sql_emitters import DB_SCHEMA, ADMIN_ROLE
+from uno.val.enums import (
     Lookup,
-    related_lookups,
     numeric_lookups,
-    string_lookups,
+    text_lookups,
+    object_lookups,
+    boolean_lookups,
 )
 from uno.config import settings
 from uno.utilities import convert_snake_to_camel, convert_snake_to_title
@@ -34,12 +33,8 @@ class GraphBase(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
-    def table_name(self) -> str:
+    def source_meta_type(self) -> str:
         return self.klass.__tablename__
-
-    @computed_field
-    def schema_name(self) -> str:
-        return self.klass.__table__.schema
 
     def create_sql_trigger(
         self,
@@ -52,20 +47,20 @@ class GraphBase(BaseModel):
         trigger_scope = (
             f"{settings.DB_SCHEMA}."
             if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_"
+            else f"{settings.DB_SCHEMA}.{self.source_meta_type}_"
         )
         return (
             SQL(
                 """
-            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
+            CREATE OR REPLACE TRIGGER {source_meta_type}_{function_name}_trigger
                 {timing} {operation}
-                ON {db_schema}.{table_name}
+                ON {db_schema}.{source_meta_type}
                 FOR EACH {for_each}
                 EXECUTE FUNCTION {trigger_scope}{function_name}();
             """
             )
             .format(
-                table_name=SQL(self.table_name),
+                source_meta_type=SQL(self.source_meta_type),
                 function_name=SQL(function_name),
                 timing=SQL(timing),
                 operation=SQL(operation),
@@ -97,7 +92,7 @@ class GraphBase(BaseModel):
         full_function_name = (
             f"{settings.DB_SCHEMA}.{function_name}"
             if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_{function_name}"
+            else f"{settings.DB_SCHEMA}.{self.source_meta_type}_{function_name}"
         )
         fnct_string = (
             SQL(
@@ -136,9 +131,11 @@ class GraphBase(BaseModel):
 
 class GraphProperty(GraphBase):
     # klass: Any <- from GraphBase
+    # source_meta_type: str <- computed_field from GraphBase
     accessor: str
     data_type: str
     # display: str <- computed_field
+    # destination_meta_type: str <- computed_field
     # lookups: Lookup <- computed_field
 
     @computed_field
@@ -146,17 +143,24 @@ class GraphProperty(GraphBase):
         return convert_snake_to_title(self.accessor)
 
     @computed_field
+    def destination_meta_type(self) -> str:
+        return self.source_meta_type
+
+    @computed_field
     def lookups(self) -> Lookup:
         if self.data_type in [
             "int",
-            "float",
             "Decimal",
             "datetime",
             "date",
             "time",
         ]:
             return numeric_lookups
-        return string_lookups
+        if self.data_type in ["str"]:
+            return text_lookups
+        if self.data_type in ["bool"]:
+            return boolean_lookups
+        return object_lookups
 
     def emit_sql(self, conn: Engine) -> None:
         """
@@ -179,18 +183,18 @@ class GraphProperty(GraphBase):
             BEGIN
                 SET ROLE {writer_role};
                 INSERT INTO {db_schema}.filter (
-                    data_type,
-                    meta_type,
                     display,
+                    data_type,
+                    source_meta_type,
                     destination_meta_type,
                     accessor,
                     lookups
                 )
                 VALUES (
-                    {data_type},
-                    {meta_type},
                     {display},
-                    {meta_type},
+                    {data_type},
+                    {source_meta_type},
+                    {destination_meta_type},
                     {accessor},
                     {lookups}
                 );
@@ -200,10 +204,10 @@ class GraphProperty(GraphBase):
                 .format(
                     writer_role=ADMIN_ROLE,
                     db_schema=DB_SCHEMA,
-                    data_type=Literal(self.data_type),
-                    meta_type=Literal(self.table_name),
                     display=Literal(self.display),
-                    destination_meta_type=Literal(self.table_name),
+                    data_type=Literal(self.data_type),
+                    source_meta_type=Literal(self.source_meta_type),
+                    destination_meta_type=Literal(self.destination_meta_type),
                     accessor=Literal(self.accessor),
                     lookups=Literal(self.lookups),
                 )
@@ -213,8 +217,9 @@ class GraphProperty(GraphBase):
 
 
 class GraphNode(GraphBase):
-    # table_name: str <- from GraphBase
-    # schema_name: str <- from GraphBase
+    # klass: Any <- from GraphBase
+    # source_meta_type: str <- computed_field from GraphBase
+    # properties: dict[str, GraphProperty] <- computed_field
     # name: str <- computed_field
 
     @computed_field
@@ -222,12 +227,8 @@ class GraphNode(GraphBase):
         return self.klass.graph_properties
 
     @computed_field
-    def table_name(self) -> str:
-        return self.klass.__table__.name
-
-    @computed_field
     def name(self) -> str:
-        return convert_snake_to_camel(self.table_name)
+        return convert_snake_to_camel(self.source_meta_type)
 
     def emit_sql(self, conn: Engine) -> None:
         """
@@ -262,16 +263,14 @@ class GraphNode(GraphBase):
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
                 WHERE name = {name}) THEN
                     PERFORM ag_catalog.create_vlabel('graph', {name});
-                    EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
+                    EXECUTE format('CREATE INDEX ON graph.{name_ident} (id);');
                 END IF;
             END $$;
             """
         ).format(
             admin=ADMIN_ROLE,
             name=Literal(self.name),
-            label_ident=Identifier(self.name),
-            schema_name=SQL(settings.DB_SCHEMA),
-            table_name=SQL(self.table_name),
+            name_ident=Identifier(self.name),
         )
         return query.as_string()
 
@@ -435,7 +434,7 @@ class GraphEdge(GraphBase):
     destination_meta_type: str
     accessor: str
     secondary: Table | None
-    lookups: list[Lookup] = related_lookups
+    lookups: list[Lookup] = object_lookups
     # properties: dict[str, GraphProperty]
     # display: str <- computed_field
     # nullable: bool = False <- computed_field
@@ -445,7 +444,7 @@ class GraphEdge(GraphBase):
         return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.destination_meta_type)})"
 
     @computed_field
-    def table_name(self) -> str:
+    def source_meta_type(self) -> str:
         return self.klass.__table__.name
 
     @computed_field
@@ -497,19 +496,19 @@ class GraphEdge(GraphBase):
 
                     INSERT INTO {db_schema}.filter (
                         data_type,
-                        meta_type,
+                        source_meta_type,
                         destination_meta_type,
-                        display,
                         accessor,
+                        display,
                         lookups,
                         properties
                     )
                     VALUES (
                         {data_type},
-                        {meta_type},
+                        {source_meta_type},
                         {destination_meta_type},
-                        {display},
                         {accessor},
+                        {display},
                         {lookups},
                         {properties}
 
@@ -523,7 +522,7 @@ class GraphEdge(GraphBase):
                 label_ident=Identifier(self.label),
                 db_schema=DB_SCHEMA,
                 data_type=Literal("object"),
-                meta_type=Literal(self.table_name),
+                source_meta_type=Literal(self.source_meta_type),
                 destination_meta_type=Literal(self.destination_meta_type),
                 display=Literal(self.display),
                 accessor=Literal(self.accessor),

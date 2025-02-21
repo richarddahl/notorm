@@ -60,10 +60,8 @@ class UserGroupRole(Base):
     __tablename__ = "user__group__role"
     __table_args__ = (
         {
-            "comment": """
-                Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
-            """,
             "schema": settings.DB_SCHEMA,
+            "comment": "The relationship between users, groups, and roles.",
         },
     )
     display_name: ClassVar[str] = "User Group Role"
@@ -88,7 +86,12 @@ class UserGroupRole(Base):
     )
 
 
-class Tenant(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
+class Tenant(
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
+):
     __tablename__ = "tenant"
     __table_args__ = (
         {
@@ -143,7 +146,12 @@ class Tenant(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMix
         return self.name
 
 
-class User(MetaRecord, MetaObjectMixin, UserRecordAuditMixin, HistoryTableAuditMixin):
+class User(
+    MetaRecord,
+    MetaObjectMixin,
+    UserRecordAuditMixin,
+    HistoryTableAuditMixin,
+):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -259,10 +267,8 @@ class RolePermission(Base, RecordVersionAuditMixin):
     __tablename__ = "role__permission"
     __table_args__ = (
         {
-            "comment": """
-                Assigned by tenant_admin users to assign roles for groups to users based on organization requirements.
-            """,
             "schema": settings.DB_SCHEMA,
+            "comment": "The relationship between roles and permissions.",
         },
     )
     display_name: ClassVar[str] = "Role Permission"
@@ -294,12 +300,8 @@ class Permission(Base, RecordVersionAuditMixin):
             name="uq_meta_type_operation",
         ),
         {
-            "comment": """
-                Permissions for each table.
-                Deleted automatically by the DB via the FK Constraints
-                ondelete when a meta_type is deleted.
-            """,
             "schema": settings.DB_SCHEMA,
+            "comment": "Permissions for each table.",
         },
     )
     display_name: ClassVar[str] = "Permission"
@@ -325,7 +327,7 @@ class Permission(Base, RecordVersionAuditMixin):
             SQLOperation,
             name="sqloperation",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
         primary_key=True,
         doc="Database operation that is permissible.",
@@ -348,16 +350,18 @@ class Permission(Base, RecordVersionAuditMixin):
         return f"{self.meta_type.name} - {self.actions}"
 
 
-class Role(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
+class Role(
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
+):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
         {
-            "comment": """
-                Roles, created by end user group admins, enable assignment of group_permissions
-                by functionality, department, etc... to users.
-            """,
+            "comment": "Roles define collections of permissions necessary to accomplish businness objectives.",
             "schema": settings.DB_SCHEMA,
         },
     )
@@ -411,14 +415,19 @@ class Role(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
         return self.name
 
 
-class Group(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
+class Group(
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
+):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
         {
-            "comment": "Application end-user groups",
             "schema": settings.DB_SCHEMA,
+            "comment": "Application user groups",
         },
     )
     display_name: ClassVar[str] = "Group"

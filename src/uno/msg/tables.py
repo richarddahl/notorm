@@ -147,7 +147,7 @@ class Message(
             MessageImportance,
             name="importance_enum",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
         doc="Importance of the message",
     )

@@ -9,7 +9,6 @@ from typing import Optional, ClassVar
 from sqlalchemy import (
     ForeignKey,
     Index,
-    Identity,
     text,
 )
 from sqlalchemy.dialects.postgresql import (
@@ -17,7 +16,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import Base, str_26, str_255
+from uno.db.base import str_26, str_255
 from uno.db.tables import (
     MetaRecord,
     MetaObjectMixin,
@@ -26,17 +25,19 @@ from uno.db.tables import (
 )
 from uno.db.sql_emitters import SQLEmitter
 from uno.wkflw.enums import (
-    WorkflowRecordStatus,
-    WorkflowRecordState,
-    WorkflowFlag,
     WorkflowDBEvent,
     WorkflowTrigger,
 )
-from uno.auth.tables import User
+from uno.rprt.enums import Status, State, Flag
 from uno.config import settings
 
 
-class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin):
+class Workflow(
+    MetaRecord,
+    MetaObjectMixin,
+    RecordAuditMixin,
+    HistoryTableAuditMixin,
+):
     __tablename__ = "workflow"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -61,7 +62,7 @@ class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditM
             WorkflowTrigger,
             name="workflowtrigger",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
         default=WorkflowTrigger.DB_EVENT,
         doc="The type of event that triggers execution of the workflow",
@@ -69,14 +70,14 @@ class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditM
     repeat_every: Mapped[int] = mapped_column(
         server_default=text("0"), doc="Repeat every x days"
     )
-    flag: Mapped[WorkflowFlag] = mapped_column(
+    flag: Mapped[Flag] = mapped_column(
         ENUM(
-            WorkflowFlag,
+            Flag,
             name="workflowflag",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
-        default=WorkflowFlag.MEDIUM,
+        default=Flag.MEDIUM,
         doc="Flag indicating the importance of the workflow",
     )
     due_within: Mapped[int] = mapped_column(
@@ -87,7 +88,7 @@ class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditM
             WorkflowDBEvent,
             name="workflowdbevent",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
         default=WorkflowDBEvent.INSERT,
         doc="The database event that triggers the workflow, if applicable",
@@ -146,16 +147,16 @@ class Workflow(MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditM
     }
 
 
-class WorkflowEvent(
+class WorkflowStep(
     MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
 ):
-    __tablename__ = "workflow_event"
+    __tablename__ = "workflow_step"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Manually created or trigger created workflow activities",
     }
-    display_name: ClassVar[str] = "Workflow Event"
-    display_name_plural: ClassVar[str] = "Workflow Events"
+    display_name: ClassVar[str] = "Workflow Step"
+    display_name_plural: ClassVar[str] = "Workflow Steps"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -176,7 +177,7 @@ class WorkflowEvent(
         doc="Value returned by the Object Function to indicate the workflow is complete"
     )
     __mapper_args__ = {
-        "polymorphic_identity": "workflow_event",
+        "polymorphic_identity": "workflow_step",
         "inherit_condition": id == MetaRecord.id,
     }
 
@@ -203,27 +204,27 @@ class WorkflowRecord(
         ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
     )
     workflowevent_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.workflow_event.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.workflow_step.id", ondelete="CASCADE"),
         index=True,
     )
-    status: Mapped[WorkflowRecordStatus] = mapped_column(
+    status: Mapped[Status] = mapped_column(
         ENUM(
-            WorkflowRecordStatus,
+            Status,
             name="workflowrecordstatus",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
-        default=WorkflowRecordStatus.OPEN,
+        default=Status.OPEN,
         doc="Status of the workflow record",
     )
-    state: Mapped[WorkflowRecordState] = mapped_column(
+    state: Mapped[State] = mapped_column(
         ENUM(
-            WorkflowRecordState,
+            State,
             name="workflowrecordstate",
             create_type=True,
-            schema="uno",
+            schema=settings.DB_SCHEMA,
         ),
-        default=WorkflowRecordState.PENDING,
+        default=State.PENDING,
         doc="State of the workflow record",
     )
     comment: Mapped[str] = mapped_column(
@@ -248,52 +249,3 @@ class WorkflowRecord(
         "polymorphic_identity": "workflow_record",
         "inherit_condition": id == MetaRecord.id,
     }
-
-
-class ObjectFunction(Base):
-    __tablename__ = "objectfunction"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "Functions that can be called by user-defined workflows and reports",
-    }
-    display_name: ClassVar[str] = "Object Function"
-    display_name_plural: ClassVar[str] = "Object Functions"
-    include_in_graph = False
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[int] = mapped_column(Identity(), primary_key=True)
-
-    name: Mapped[str] = mapped_column(doc="Label of the function")
-    documentation: Mapped[Optional[str]] = mapped_column(
-        doc="Documentation of the function"
-    )
-    name: Mapped[str] = mapped_column(doc="Name of the function")
-    """
-    function_meta_type_name: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type_name", ondelete="CASCADE"),
-        index=True,
-    )
-    """
-    # Relationships
-
-
-"""
-User.__mapper__.add_property(
-    "created_workflow_events",
-    relationship(
-        WorkflowEvent,
-        foreign_keys=[WorkflowEvent.created_by_id],
-        info={"edge": "CREATED"},
-    ),
-)
-User.__mapper__.add_property(
-    "created_workflow_records",
-    relationship(
-        WorkflowRecord,
-        foreign_keys=[WorkflowRecord.created_by_id],
-        info={"edge": "CREATED"},
-    ),
-)
-"""

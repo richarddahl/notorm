@@ -4,36 +4,24 @@
 import enum
 
 
-# Workflow Enums
-class WorkflowRecordStatus(str, enum.Enum):
+# Report Enumerations
+class Status(str, enum.Enum):
     CLOSED = "Closed"
     OPEN = "Open"
     AT_RISK = "At Risk"
     OVERDUE = "Overdue"
 
 
-class WorkflowRecordState(str, enum.Enum):
+class State(str, enum.Enum):
     PENDING = "Pending"
     COMPLETE = "Complete"
     CANCELLED = "Cancelled"
     DEFERRED = "Deferred"
 
 
-class WorkflowFlag(str, enum.Enum):
+class Flag(str, enum.Enum):
     INFORMATION = "Information"
     LOW = "Low"
     MEDIUM = "Medium"
     HIGH = "High"
     CRITICAL = "Critical"
-
-
-class WorkflowDBEvent(str, enum.Enum):
-    INSERT = "Insert"
-    UPDATE = "Update"
-    DELETE = "Delete"
-
-
-class WorkflowTrigger(str, enum.Enum):
-    DB_EVENT = "DB Event"
-    SCHEDULE = "Schedule"
-    USER = "User"

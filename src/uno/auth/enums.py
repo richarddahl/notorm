@@ -142,7 +142,7 @@ class Lookup(str, enum.Enum):
     CONTAINS = "contains"
 
 
-related_lookups = [
+object_lookups = [
     Lookup.EQUAL,
     Lookup.NOT_EQUAL,
     Lookup.NULL,
@@ -165,7 +165,7 @@ numeric_lookups = [
     Lookup.NOT_IN,
 ]
 
-string_lookups = [
+text_lookups = [
     Lookup.EQUAL,
     Lookup.NOT_EQUAL,
     Lookup.LIKE,
