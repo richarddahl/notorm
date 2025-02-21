@@ -177,15 +177,20 @@ class NodeSQLEmitter(GraphSQLEmitter):
         function_string = SQL(
             """
             DECLARE 
-                sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:{self.name} {{{prop_key_str}}})
-                    $graph$) AS (a agtype);', {prop_val_str});
+                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
+                        CREATE (v:%s {%s})
+                    $graph$) AS (a agtype);', %s);
             BEGIN
                 EXECUTE _sql;
-                {edge_str}
+                %s
                 RETURN NEW;
             END;
             """
+        ).format(
+            Identifier(self.name),
+            SQL(prop_key_str),
+            SQL(prop_val_str),
+            SQL("{edge_str}"),
         )
 
         return self.create_sql_function(
