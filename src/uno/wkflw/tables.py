@@ -23,7 +23,7 @@ from uno.db.tables import (
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,

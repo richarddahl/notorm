@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 
-from uno.db.sql_emitters import (
+from uno.db.sql.sql_emitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -29,10 +29,10 @@ from uno.config import settings
 
 
 @dataclass
-class PathEdgeChcekSQL(SQLEmitter):
+class PathEdgeChcek(SQLEmitter):
     """ """
 
-    def emit_sql(self) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         function_string = """
             BEGIN
                 SELECT 
@@ -43,7 +43,7 @@ class PathEdgeChcekSQL(SQLEmitter):
             END;
             """
 
-        self.conn.execute(
+        conn.execute(
             text(
                 self.create_sql_function(
                     "validate_path",

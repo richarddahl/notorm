@@ -20,7 +20,7 @@ from uno.db.tables import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.val.enums import ValueType
 from uno.config import settings
 
@@ -180,3 +180,7 @@ class Report(
         "polymorphic_identity": "report",
         "inherit_condition": id == MetaRecord.id,
     }
+
+    def create_schema(self):
+        """Create the BaseModel used for the report"""
+        pass

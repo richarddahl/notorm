@@ -8,25 +8,19 @@ import datetime
 
 from typing import Optional, ClassVar
 
-from sqlalchemy import ForeignKey, text, func, TIMESTAMP
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    declared_attr,
-    relationship,
-)
+from sqlalchemy import ForeignKey, text
+from sqlalchemy.orm import Mapped, mapped_column, declared_attr
 
 from uno.db.base import Base, str_26, str_63, str_255
-from uno.db.sql_emitters import (
-    SQLEmitter,
-    InsertPermissionSQL,
-    InsertMetaTypeRecordSQL,
-    InsertMetaObjectTriggerSQL,
-    RecordVersionAuditSQL,
-    CreateHistoryTableSQL,
-    InsertHistoryTableRecordSQL,
-    RecordAuditFunctionSQL,
-    UserRecordAuditFunctionSQL,
+from uno.db.sql.sql_emitter import SQLEmitter
+from uno.db.sql.table_sql_emitters import (
+    InsertPermission,
+    InsertMetaTypeRecord,
+    InsertMetaRecordTrigger,
+    RecordVersionAudit,
+    CreateHistoryTable,
+    InsertHistoryTableRecord,
+    RecordAuditFunction,
 )
 from uno.config import settings
 
@@ -34,15 +28,15 @@ from uno.config import settings
 class RecordVersionAuditMixin:
     """Mixin for recording version history of a record"""
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [RecordVersionAuditSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [RecordVersionAudit]
 
 
 class HistoryTableAuditMixin:
     """Mixin for recording history of a table"""
 
     sql_emitters: ClassVar[list[SQLEmitter]] = [
-        CreateHistoryTableSQL,
-        InsertHistoryTableRecordSQL,
+        CreateHistoryTable,
+        InsertHistoryTableRecord,
     ]
 
 
@@ -54,7 +48,7 @@ class RecordAuditMixin:
 
     """
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [RecordAuditFunctionSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [RecordAuditFunction]
 
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -98,63 +92,11 @@ class RecordAuditMixin:
         )
 
 
-class UserRecordAuditMixin:
-    """Mixin for auditing actions on records
-
-    Documents both the timestamps of when and user ids  of who created,
-    modified, and deleted a record
-
-    """
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = [UserRecordAuditFunctionSQL]
-
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates if the record is active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates if the record has been deleted",
-    )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        doc="Time the record was created",
-    )
-
-    @declared_attr
-    def created_by_id(cls) -> Mapped[Optional[str_26]]:
-        return mapped_column(
-            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-            index=True,
-        )
-
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        doc="Time the record was last modified",
-    )
-
-    @declared_attr
-    def modified_by_id(cls) -> Mapped[Optional[str_26]]:
-        return mapped_column(
-            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-            index=True,
-        )
-
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        doc="Time the record was deleted",
-    )
-
-    @declared_attr
-    def deleted_by_id(cls) -> Mapped[Optional[str_26]]:
-        return mapped_column(
-            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
-            index=True,
-        )
-
-
 class MetaObjectMixin:
     """Mixin for MetaRecord Objects"""
 
     sql_emitters: ClassVar[list[SQLEmitter]] = [
-        InsertMetaObjectTriggerSQL,
+        InsertMetaRecordTrigger,
     ]
 
 
@@ -171,8 +113,8 @@ class MetaType(Base):
     display_name_plural: ClassVar[str] = "Meta Types"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = [
-        InsertMetaTypeRecordSQL,
-        InsertPermissionSQL,
+        InsertMetaTypeRecord,
+        InsertPermission,
     ]
 
     name: Mapped[str_63] = mapped_column(
@@ -205,7 +147,7 @@ class MetaRecord(Base):
     display_name: ClassVar[str] = "Meta Record"
     display_name_plural: ClassVar[str] = "Meta Records"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertMetaTypeRecordSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [InsertMetaTypeRecord]
 
     # Columns
 

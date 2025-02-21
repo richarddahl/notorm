@@ -34,9 +34,10 @@ from pydantic import BaseModel
 
 from fastapi import FastAPI
 
-from uno.db.sql_emitters import SQLEmitter, AlterGrantSQL
+from uno.db.sql.sql_emitter import SQLEmitter
+from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.schemas import SchemaDef
-from uno.graphs import Vertex, Edge, Property
+from uno.db.sql.graph_sql_emitters import Node, Edge, Property
 from uno.config import settings
 
 
@@ -111,11 +112,11 @@ class Base(AsyncAttrs, DeclarativeBase):
     display_name_plural: ClassVar[str]
 
     # SQL attributes
-    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrantSQL]
+    sql_emitters: ClassVar[list[SQLEmitter]] = [AlterGrants]
 
     # Graph attributes
     include_in_graph: ClassVar[bool] = True
-    vertex: ClassVar[Vertex] = None
+    node: ClassVar[Node] = None
     edges: ClassVar[dict[str, Edge]] = {}
     graph_properties: ClassVar[dict[str, Property]] = {}
     exclude_from_properties: ClassVar[list[str]] = []
@@ -159,7 +160,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         """
         Sets the graph attributes for the class.
 
-        This method initializes the `vertex` attribute as a `Vertex` object
+        This method initializes the `node` attribute as a `Node` object
         with the class as the `klass` attribute. It then calls the `set_edges` method
         to set the edges for the class.
 
@@ -169,14 +170,14 @@ class Base(AsyncAttrs, DeclarativeBase):
         if not cls.include_in_graph:
             return
         cls.set_properties()
-        cls.vertex = Vertex(klass=cls)
+        cls.node = Node(klass=cls)
         cls.set_edges()
 
     @classmethod
     def set_properties(cls) -> None:
         """ """
         cls.graph_properties = {}
-        if not cls.vertex:
+        if not cls.node:
             return
         for column in cls.__table__.columns:
             if column.name in cls.exclude_from_properties:
@@ -205,10 +206,10 @@ class Base(AsyncAttrs, DeclarativeBase):
             None
         """
         cls.edges = {}
-        if not cls.vertex:
+        if not cls.node:
             return
         for rel in cls.relationships():
-            if not rel.mapper.class_.vertex:
+            if not rel.mapper.class_.node:
                 continue
             edge = Edge(
                 klass=cls,
@@ -222,7 +223,7 @@ class Base(AsyncAttrs, DeclarativeBase):
     @classmethod
     def set_filters(cls) -> None:
         cls.filters = {}
-        if not cls.vertex:
+        if not cls.node:
             return
         for property in cls.graph_properties:
             cls.filters[property.display] = {
@@ -247,6 +248,6 @@ class Base(AsyncAttrs, DeclarativeBase):
     #    pass
 
     @classmethod
-    def emit_sql_emitters(cls, conn: Connection = None) -> None:
+    def emit_sql(cls, conn: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(conn=conn, table_name=cls.__tablename__).emit_sql()
+            sql_emitter(klass=cls).emit_sql(conn)

@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 from tests.conftest import db_column
 
 from uno.db.tables import MetaRecord
-from uno.db.sql_emitters import AlterGrantSQL, InsertMetaTypeRecordSQL
+from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
 from uno.config import settings
 
 
@@ -18,8 +18,8 @@ class TestRelatedObject:
     def test_meta_structure(self):
         assert MetaRecord.display_name == "Meta Record"
         assert MetaRecord.display_name_plural == "Meta Records"
-        assert AlterGrantSQL in MetaRecord.sql_emitters
-        assert InsertMetaTypeRecordSQL in MetaRecord.sql_emitters
+        assert AlterGrants in MetaRecord.sql_emitters
+        assert InsertMetaTypeRecord in MetaRecord.sql_emitters
         assert MetaRecord.__name__ == "MetaRecord"
         assert MetaRecord.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert MetaRecord.__table_args__.get("schema") == "uno"

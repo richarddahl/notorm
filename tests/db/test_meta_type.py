@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 from tests.conftest import db_column
 
 from uno.db.tables import MetaType
-from uno.db.sql_emitters import AlterGrantSQL
+from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.config import settings
 
 
@@ -18,7 +18,7 @@ class TestMetaType:
     def test_meta_type_structure(self):
         assert MetaType.display_name == "Meta Type"
         assert MetaType.display_name_plural == "Meta Types"
-        assert AlterGrantSQL in MetaType.sql_emitters
+        assert AlterGrants in MetaType.sql_emitters
         assert MetaType.__name__ == "MetaType"
         assert MetaType.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert MetaType.__table_args__.get("schema") == "uno"

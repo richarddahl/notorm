@@ -4,18 +4,21 @@
 
 import json
 
-from typing import Any
-
 from psycopg.sql import SQL, Identifier, Literal
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import ConfigDict, computed_field
 
 from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
-from sqlalchemy.types import NullType
+from sqlalchemy.orm import DeclarativeBase
 
-from uno.db.sql_emitters import DB_SCHEMA, ADMIN_ROLE, WRITER_ROLE
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
+    DB_SCHEMA,
+    ADMIN_ROLE,
+    WRITER_ROLE,
+)
 from uno.val.enums import (
     Lookup,
     numeric_lookups,
@@ -23,12 +26,14 @@ from uno.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.config import settings
-from uno.utilities import convert_snake_to_camel, convert_snake_to_title
+from uno.utilities import (
+    convert_snake_to_camel,
+    convert_snake_to_title,
+)
 
 
-class GraphBase(BaseModel):
-    klass: Any
+class GraphBase(SQLEmitter):
+    klass: type[DeclarativeBase]
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -36,101 +41,9 @@ class GraphBase(BaseModel):
     def source_meta_type(self) -> str:
         return self.klass.__tablename__
 
-    def create_sql_trigger(
-        self,
-        function_name: str,
-        timing: str = "BEFORE",
-        operation: str = "UPDATE",
-        for_each: str = "ROW",
-        db_function: bool = True,
-    ) -> str:
-        trigger_scope = (
-            f"{settings.DB_SCHEMA}."
-            if db_function
-            else f"{settings.DB_SCHEMA}.{self.source_meta_type}_"
-        )
-        return (
-            SQL(
-                """
-            CREATE OR REPLACE TRIGGER {source_meta_type}_{function_name}_trigger
-                {timing} {operation}
-                ON {db_schema}.{source_meta_type}
-                FOR EACH {for_each}
-                EXECUTE FUNCTION {trigger_scope}{function_name}();
-            """
-            )
-            .format(
-                source_meta_type=SQL(self.source_meta_type),
-                function_name=SQL(function_name),
-                timing=SQL(timing),
-                operation=SQL(operation),
-                for_each=SQL(for_each),
-                db_schema=SQL(settings.DB_SCHEMA),
-                trigger_scope=SQL(trigger_scope),
-            )
-            .as_string()
-        )
-
-    def create_sql_function(
-        self,
-        function_name: str,
-        function_string: str,
-        function_args: str = "",
-        db_function: bool = True,
-        return_type: str = "TRIGGER",
-        volatile: str = "VOLATILE",
-        include_trigger: bool = False,
-        timing: str = "BEFORE",
-        operation: str = "UPDATE",
-        for_each: str = "ROW",
-        security_definer: str = "SECURITY DEFINER",
-    ) -> str:
-        if function_args and include_trigger is True:
-            raise ValueError(
-                "Function arguments cannot be used when creating a trigger function."
-            )
-        full_function_name = (
-            f"{settings.DB_SCHEMA}.{function_name}"
-            if db_function
-            else f"{settings.DB_SCHEMA}.{self.source_meta_type}_{function_name}"
-        )
-        fnct_string = (
-            SQL(
-                """
-            SET ROLE {admin};
-            CREATE OR REPLACE FUNCTION {full_function_name}({function_args})
-            RETURNS {return_type}
-            LANGUAGE plpgsql
-            SECURITY DEFINER
-            AS $$
-            {function_string}
-            $$;
-            """
-            )
-            .format(
-                admin=ADMIN_ROLE,
-                full_function_name=SQL(full_function_name),
-                function_args=SQL(function_args),
-                return_type=SQL(return_type),
-                function_string=SQL(function_string),
-            )
-            .as_string()
-        )
-
-        if not include_trigger:
-            return fnct_string
-        trggr_string = self.create_sql_trigger(
-            function_name,
-            timing=timing,
-            operation=operation,
-            for_each=for_each,
-            db_function=db_function,
-        )
-        return f"{SQL(fnct_string)}\n{SQL(trggr_string)}"
-
 
 class Property(GraphBase):
-    # klass: Any <- from GraphBase
+    # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
     data_type: str
@@ -149,10 +62,10 @@ class Property(GraphBase):
     @computed_field
     def lookups(self) -> Lookup:
         if self.data_type in [
-            "int",
-            "Decimal",
             "datetime",
             "date",
+            "Decimal",
+            "int",
             "time",
         ]:
             return numeric_lookups
@@ -162,7 +75,7 @@ class Property(GraphBase):
             return boolean_lookups
         return object_lookups
 
-    def emit_sql(self, conn) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -204,8 +117,8 @@ class Property(GraphBase):
         )
 
 
-class Vertex(GraphBase):
-    # klass: Any <- from GraphBase
+class Node(GraphBase):
+    # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     # properties: dict[str, Property] <- computed_field
     # name: str <- computed_field
@@ -218,36 +131,22 @@ class Vertex(GraphBase):
     def name(self) -> str:
         return convert_snake_to_camel(self.source_meta_type)
 
-    def emit_sql(self, conn) -> None:
-        """
-        Generates a complete SQL script by combining various SQL
-        components.
+    def emit_sql(self, conn: Connection) -> None:
+        self.create_node_label(conn)
+        # self.insert_node(conn)
+        # self.update_node(conn)
+        # self.delete_node(conn)
+        # self.truncate_node(conn)
+        # self.create_filter_field(conn)
 
-        This method constructs a SQL script by sequentially appending
-        the results of several helper methods that generate specific
-        parts of the SQL script.
-        The final script includes SQL for creating labels, insert
-        functions and triggers, update functions and triggers,
-        delete functions and triggers, truncate functions and
-        triggers, and filter fields.
-
-        Returns:
-            str: The complete SQL script as a single string.
-        """
-        sql = self.create_node_label()
-        # sql += f"\n{self.insert_node_sql()}"
-        # sql += f"\n{self.update_nodet_sql()}"
-        # sql += f"\n{self.delete_nodet_sql()}"
-        # sql += f"\n{self.truncate_nodet_sql()}"
-        # sql += f"\n{self.create_filter_field_sql()}"
-        conn.execute(text(SQL(sql).as_string()))
-
-    def create_node_label(self) -> str:
-        query = SQL(
-            """
+    def create_node_label(self, conn: Connection) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
             DO $$
             BEGIN
-                SET ROLE {admin};
+                SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
                 WHERE name = {name}) THEN
                     PERFORM ag_catalog.create_vlabel('graph', {name});
@@ -255,14 +154,17 @@ class Vertex(GraphBase):
                 END IF;
             END $$;
             """
-        ).format(
-            admin=ADMIN_ROLE,
-            name=Literal(self.name),
-            name_ident=Identifier(self.name),
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    name=Literal(self.name),
+                    name_ident=Identifier(self.name),
+                )
+                .as_string()
+            )
         )
-        return query.as_string()
 
-    def insert_node_sql(self) -> str:
+    def insert_node(self) -> None:
         """
         Generates SQL code to create a function and trigger for inserting a new node record
         when a new relational table record is inserted.
@@ -308,7 +210,7 @@ class Vertex(GraphBase):
             db_function=False,
         )
 
-    def update_node_sql(self) -> str:
+    def update_node(self) -> None:
         """
         Generates SQL code for creating an update function and trigger for a node record.
 
@@ -356,7 +258,7 @@ class Vertex(GraphBase):
             db_function=False,
         )
 
-    def delete_node_sql(self) -> str:
+    def delete_node(self) -> None:
         """
         Generates SQL code for creating a function and trigger to delete a node record
         from a graph database when its corresponding relational table record is deleted.
@@ -383,7 +285,7 @@ class Vertex(GraphBase):
             db_function=False,
         )
 
-    def truncate_node_sql(self) -> str:
+    def truncate_node(self) -> None:
         """
         Generates SQL function and trigger for truncating a relation table.
 
@@ -418,12 +320,14 @@ class Vertex(GraphBase):
 
 
 class Edge(GraphBase):
+    # klass: type[DeclarativeBase] <- from GraphBase
+    # source_meta_type: str <- computed_field from GraphBase
     label: str
     destination_meta_type: str
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
-    # properties: dict[str, Property]
+    # properties: dict[str, Property] <- computed_field
     # display: str <- computed_field
     # nullable: bool = False <- computed_field
 
@@ -465,11 +369,11 @@ class Edge(GraphBase):
             )
         return props
 
-    def emit_sql(self, conn) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         sql = self.create_edge_label_and_filter_record_sql()
         conn.execute(text(sql))
 
-    def create_edge_label_and_filter_record_sql(self) -> str:
+    def create_edge_label_and_filter_record_sql(self) -> None:
         return (
             SQL(
                 """
@@ -520,7 +424,7 @@ class Edge(GraphBase):
             .as_string()
         )
 
-    def insert_edge_sql(self) -> str:
+    def insert_edge_sql(self) -> None:
         """
         Generates an SQL string to create a function and trigger for inserting
         a relationship between two vertices in a graph database.
@@ -553,7 +457,7 @@ class Edge(GraphBase):
         )
         return function_string
 
-    def update_edge_sql(self) -> str:
+    def update_edge_sql(self) -> None:
         """
         Generates the SQL string for creating an update function and trigger in a graph database.
 
@@ -597,7 +501,7 @@ class Edge(GraphBase):
             )
         )
 
-    def delete_edge_sql(self) -> str:
+    def delete_edge_sql(self) -> None:
         """
         Generates the SQL string for creating a delete function and trigger.
 
@@ -626,7 +530,7 @@ class Edge(GraphBase):
             db_function=False,
         )
 
-    def truncate_edge_sql(self) -> str:
+    def truncate_edge_sql(self) -> None:
         """
         Generates the SQL command to create a function and trigger for truncating
         relationships in a graph database.

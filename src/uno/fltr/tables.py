@@ -16,7 +16,7 @@ from uno.db.tables import (
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.fltr.enums import Include, Match
 from uno.val.enums import Lookup

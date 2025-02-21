@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+
 from typing import Optional, ClassVar, Any
 
 from psycopg.sql import SQL
@@ -18,6 +20,7 @@ from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     relationship,
+    declared_attr,
 )
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 
@@ -27,23 +30,24 @@ from uno.db.tables import (
     MetaType,
     MetaObjectMixin,
     RecordAuditMixin,
-    UserRecordAuditMixin,
     RecordVersionAuditMixin,
     HistoryTableAuditMixin,
 )
 from uno.db.enums import SQLOperation
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.auth.sql_emitters import (
     ValidateGroupInsert,
     InsertGroupForTenant,
     DefaultGroupTenant,
+    UserRecordAuditFunction,
 )
-from uno.auth.rls_sql_emitters import (
-    RLSSQL,
-    UserRLSSQL,
-    TenantRLSSQL,
-)
+
+# from uno.auth.rls_sql_emitters import (
+#    RowLevelSecurity,
+#    UserRowLevelSecurity,
+#    TenantRowLevelSecurity,
+# )
 from uno.msg.tables import Message, MessageAddressedTo, MessageCopiedTo
 from uno.auth.enums import TenantType
 from uno.auth.schemas import (
@@ -54,6 +58,58 @@ from uno.auth.schemas import (
 )
 
 from uno.config import settings
+
+
+class UserRecordAuditMixin:
+    """Mixin for auditing actions on records
+
+    Documents both the timestamps of when and user ids  of who created,
+    modified, and deleted a record
+
+    """
+
+    sql_emitters: ClassVar[list[SQLEmitter]] = [UserRecordAuditFunction]
+
+    is_active: Mapped[bool] = mapped_column(
+        server_default=text("true"),
+        doc="Indicates if the record is active",
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        server_default=text("false"),
+        doc="Indicates if the record has been deleted",
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        doc="Time the record was created",
+    )
+
+    @declared_attr
+    def created_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
+    modified_at: Mapped[datetime.datetime] = mapped_column(
+        doc="Time the record was last modified",
+    )
+
+    @declared_attr
+    def modified_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
+
+    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        doc="Time the record was deleted",
+    )
+
+    @declared_attr
+    def deleted_by_id(cls) -> Mapped[Optional[str_26]]:
+        return mapped_column(
+            ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+            index=True,
+        )
 
 
 class UserGroupRole(Base):

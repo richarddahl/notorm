@@ -11,29 +11,25 @@ from sqlalchemy import text, create_engine, Engine
 
 from fastapi import FastAPI
 
-from uno.db.sql_emitters import (
-    SetRoleSQL,
+from uno.db.sql.sql_emitter import (
     DB_SCHEMA,
 )
 
 from uno.db.management.sql_emitters import (
-    DropDatabaseSQL,
-    DropRolesSQL,
-    CreateRolesSQL,
-    CreateDatabaseSQL,
-    CreateSchemasSQL,
-    CreateExtensionsSQL,
-    RevokePrivilegesSQL,
-    SetSearchPathSQL,
-    GrantSchemaPrivilegesSQL,
-    PGULIDSQLSQL,
-    CreateTokenSecretSQL,
-    GrantTablePrivilegeSQL,
-    GrantSequencePrivilegeSQL,
+    SetRole,
+    DropDatabaseAndRoles,
+    CreateRolesAndDatabase,
+    CreateSchemasAndExtensions,
+    GrantPrivilegesAndSetSearchPaths,
+    CreatePGULID,
+    CreateTokenSecret,
+    GrantPrivileges,
+    InsertMetaFunction,
+)
+from uno.auth.sql_emitters import (
     AlterTablesBeforeInsertFirstUser,
     UpdateRecordOfFirstUser,
     AlterTablesAfterInsertFirstUser,
-    InsertMetaFunctionSQL,
 )
 
 
@@ -82,11 +78,71 @@ class DBManager:
             output_stream = io.StringIO()
             # sys.stdout = output_stream
 
-        self.create_roles_and_db()
-        self.create_schemas_extensions_and_tables()
-        self.create_auth_functions_and_triggers()
+        self.create_roles_and_database()
+        self.create_schemas_and_extensions()
+        self.set_privileges_and_paths()
+        self.create_functions_triggers_and_tables()
+        self.emit_table_sql()
 
-        # Connect to the new database to create the Graph functions and triggers
+        print(f"Database created: {settings.DB_NAME}\n")
+
+        # Reset the stdout stream
+        if settings.ENV == "test":
+            sys.stdout = sys.__stdout__
+
+    def create_roles_and_database(self) -> None:
+
+        eng = self.engine(
+            db_role="postgres", db_password="postgreSQLR0ck%", db_name="postgres"
+        )
+        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            CreateRolesAndDatabase().emit_sql(conn)
+            print("Created the roles and the database\n")
+            conn.close()
+        eng.dispose()
+
+    def create_schemas_and_extensions(self) -> None:
+        eng = self.engine(db_role="postgres")
+        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            CreateSchemasAndExtensions().emit_sql(conn)
+            print("Created the schemas and extensions\n")
+            conn.close()
+        eng.dispose()
+
+    def set_privileges_and_paths(self) -> None:
+        eng = self.engine(db_role="postgres")
+        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            GrantPrivilegesAndSetSearchPaths().emit_sql(conn)
+            print("Configured the privileges set the search paths\n")
+            conn.close()
+        eng.dispose()
+
+    def create_functions_triggers_and_tables(self) -> None:
+        eng = self.engine(db_role=f"{settings.DB_NAME}_login")
+        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            CreateTokenSecret().emit_sql(conn)
+            print("Created the token_secret table\n")
+
+            CreatePGULID().emit_sql(conn)
+            print("Created the pgulid function\n")
+
+            self.create_tables_functions_and_privileges(conn)
+
+            conn.close()
+        eng.dispose()
+
+    def create_tables_functions_and_privileges(self, conn) -> None:
+        Base.metadata.create_all(bind=conn)
+        print("Created the database tables\n")
+
+        GrantPrivileges().emit_sql(conn)
+        print("Set the table privileges\n")
+
+        InsertMetaFunction().emit_sql(conn)
+        print("Created the insert_meta function\n")
+
+    def emit_table_sql(self) -> None:
+        # Connect to the new database to emit the table specific SQL
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             # Must emit the sql for the object type table first
@@ -97,73 +153,43 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            SetRoleSQL(conn=conn).emit_sql("admin")
-            MetaType.emit_sql_emitters(conn=conn)
+            SetRole().emit_sql(conn, "admin")
+            MetaType.emit_sql(conn)
 
             for base in Base.registry.mappers:
                 if base.class_.__name__ == MetaType:
                     continue  # Already emitted above
-                print(f"Creating the table: {base.class_.__tablename__}\n")
-                SetRoleSQL(conn=conn).emit_sql("admin")
+                print(f"Created the table: {base.class_.__tablename__}\n")
+                SetRole().emit_sql(conn, "admin")
                 # Emit the SQL for the table
-                base.class_.emit_sql_emitters(conn=conn)
+                base.class_.emit_sql(conn)
 
             for base in Base.registry.mappers:
                 base.class_.configure_base(app)
-                SetRoleSQL(conn=conn).emit_sql("admin")
+                SetRole().emit_sql(conn, "admin")
 
                 # Emit the SQL to create the graph property filters
                 for property in base.class_.graph_properties.values():
                     property.emit_sql(conn)
 
                 # Emit the SQL to create the graph node
-                if base.class_.vertex:
-                    base.class_.vertex.emit_sql(conn)
+                if base.class_.node:
+                    base.class_.node.emit_sql(conn)
 
                 conn.commit()
             for base in Base.registry.mappers:
                 if not base.class_.include_in_graph:
                     continue
-                print(f"Creating the edges for: {base.class_.__tablename__}")
+                print(f"Created the edges for: {base.class_.__tablename__}")
                 for edge in base.class_.edges.values():
                     edge.emit_sql(conn)
                 conn.commit()
 
-            # if base.class_.vertex:
-            #    base.class_.set_filters()
-            #    print(f"Filters for {base.class_.__tablename__}")
-            #    for filter in base.class_.filters.values():
-            #        print(filter)
-            #        print("")
-
             conn.close()
         eng.dispose()
 
-        print(f"Database created: {settings.DB_NAME}\n")
-
-        # Reset the stdout stream
-        if settings.ENV == "test":
-            sys.stdout = sys.__stdout__
-
     def drop_db(self) -> None:
-        """
-        Drops the database and all associated roles.
 
-        This method connects to the PostgreSQL database as the 'postgres' user and
-        performs the following actions:
-        1. Drops the specified database.
-        2. Drops all roles associated with the application.
-
-        If the environment is set to 'test', the stdout stream is redirected to a
-        StringIO object to prevent print statements from being displayed in the test
-        output.
-
-        After the operations are completed, the stdout stream is reset to its original
-        state if it was redirected.
-
-        Returns:
-            None
-        """
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
         if settings.ENV == "test":
@@ -177,10 +203,8 @@ class DBManager:
                 f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
             )
             # Drop the Database
-            DropDatabaseSQL(conn=conn).emit_sql()
-            print(f"Database dropped: {settings.DB_NAME} \n")
-            DropRolesSQL(conn=conn).emit_sql()
-            print(f"All Roles dropped for database: {settings.DB_NAME} \n")
+            DropDatabaseAndRoles().emit_sql(conn)
+            print(f"Database {settings.DB_NAME} and all assocated roles dropped\n")
             conn.close()
         eng.dispose()
 
@@ -262,13 +286,13 @@ class DBManager:
         """
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            AlterTablesBeforeInsertFirstUser(conn=conn).emit_sql()
+            AlterTablesBeforeInsertFirstUser().emit_sql(conn)
             superuser = conn.execute(
                 text(self.create_user_sql(email, handle, full_name, is_superuser))
             )
             superuser_id = superuser.scalar()
-            UpdateRecordOfFirstUser(conn=conn, user_id=superuser_id).emit_sql()
-            AlterTablesAfterInsertFirstUser(conn=conn).emit_sql()
+            UpdateRecordOfFirstUser().emit_sql(conn, superuser_id)
+            AlterTablesAfterInsertFirstUser().emit_sql(conn)
             conn.close()
         eng.dispose()
         return superuser_id
@@ -297,115 +321,3 @@ class DBManager:
         return create_engine(
             f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}"
         )
-
-    def create_roles_and_db(self) -> None:
-        """
-        Creates roles and a database.
-
-        This method establishes a connection to the PostgreSQL database using the provided
-        engine configuration. It then executes SQL commands to create roles and a database
-        as specified by the `CreateRolesSQL` and `CreateDatabaseSQL` classes.
-
-        Steps performed:
-        1. Connects to the PostgreSQL database with the role 'postgres'.
-        2. Executes SQL to create roles.
-        3. Executes SQL to create the database.
-        4. Closes the connection and disposes of the engine.
-
-        Note:
-            The database connection is set to use the 'AUTOCOMMIT' isolation level.
-
-        Raises:
-            SQLAlchemyError: If there is an error executing the SQL commands.
-        """
-        eng = self.engine(
-            db_role="postgres", db_password="postgreSQLR0ck%", db_name="postgres"
-        )
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            print(
-                f"\nCreating the db: {settings.DB_NAME}, and roles, users, and app schema.\n"
-            )
-            print("Creating the roles and the database\n")
-            CreateRolesSQL(conn=conn).emit_sql()
-            CreateDatabaseSQL(conn=conn).emit_sql()
-            conn.close()
-        eng.dispose()
-
-    def create_schemas_extensions_and_tables(self) -> None:
-        """
-        Creates schemas, extensions, functions, triggers, and sets privileges and paths in the database.
-
-        This method connects to the new database as the postgres user and performs the following actions:
-        1. Creates the necessary schemas and extensions.
-        2. Configures the privileges for the schemas.
-        3. Sets the search paths for the schemas.
-
-        The method uses an engine with AUTOCOMMIT isolation level to execute the SQL commands.
-        """
-        # Connect to the new database as the postgres user
-        print("Connect to new db")
-        print(
-            "Create schemas, functions, and triggers, then set privileges and paths.\n"
-        )
-        eng = self.engine(db_role="postgres")
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            print("Creating the schemas and extensions\n")
-            CreateSchemasSQL(conn=conn).emit_sql()
-            CreateExtensionsSQL(conn=conn).emit_sql()
-
-            print("Configuring the privileges for the schemas and setting the paths\n")
-            RevokePrivilegesSQL(conn=conn).emit_sql()
-            SetSearchPathSQL(conn=conn).emit_sql()
-            GrantSchemaPrivilegesSQL(conn=conn).emit_sql()
-
-            conn.close()
-        eng.dispose()
-
-    def create_auth_functions_and_triggers(self) -> None:
-        """
-        Creates authentication functions and triggers in the database.
-
-        This method performs the following actions:
-        1. Connects to the database using a specific role.
-        2. Creates the token_secret table, function, and trigger.
-        3. Creates the pgulid function.
-        4. Creates the necessary database tables.
-        5. Sets the table privileges.
-
-        The connection is established with AUTOCOMMIT isolation level to ensure
-        that each command is executed immediately. After all operations are
-        completed, the connection and engine are properly closed and disposed.
-
-        Returns:
-            None
-        """
-        # Connect to the new database to create the Auth functions and triggers
-        eng = self.engine(db_role=f"{settings.DB_NAME}_login")
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            print("Creating the token_secret table, function, and trigger\n")
-            CreateTokenSecretSQL(conn=conn).emit_sql()
-
-            print("Creating the pgulid function\n")
-            PGULIDSQLSQL(conn=conn).emit_sql()
-
-            # Create the tables
-            self.create_tables(conn)
-
-            conn.close()
-        eng.dispose()
-
-    def create_tables(self, conn) -> None:
-        """
-        Returns:
-            None
-        """
-        # Connect to the new database to create the Auth functions and triggers
-        # Create the tables
-        print("Creating the database tables\n")
-
-        Base.metadata.create_all(bind=conn)
-
-        print("Setting the table privileges\n")
-        GrantTablePrivilegeSQL(conn=conn).emit_sql()
-        GrantSequencePrivilegeSQL(conn=conn).emit_sql()
-        InsertMetaFunctionSQL(conn=conn).emit_sql()

@@ -18,7 +18,7 @@ from uno.db.tables import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.val.enums import (
     Lookup,

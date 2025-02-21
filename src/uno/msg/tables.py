@@ -28,8 +28,8 @@ from uno.db.tables import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.db.sql_emitters import RecordVersionAuditSQL
-from uno.db.sql_emitters import SQLEmitter
+from uno.db.sql.table_sql_emitters import RecordVersionAudit
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.msg.enums import MessageImportance
 from uno.config import settings
 
@@ -127,7 +127,7 @@ class Message(
     display_name_plural: ClassVar[str] = "Messages"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = [
-        RecordVersionAuditSQL,
+        RecordVersionAudit,
     ]
 
     # Columns
