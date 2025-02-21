@@ -9,10 +9,10 @@ class ValueType(str, enum.Enum):
     ATTRIBUTE = "attribute"
     # CALCULATION = "calculation"
     METHOD = "method"
+    PROPERTY = "property"
     RELATIONSHIP = "relationship"
     RECORD = "record"
     REPORT = "report"
-    WORKFLOW_RECORD = "workflow_record"
 
 
 class DataType(str, enum.Enum):
