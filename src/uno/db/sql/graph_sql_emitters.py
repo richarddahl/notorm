@@ -4,17 +4,16 @@
 
 import json
 
-from psycopg.sql import SQL, Identifier, Literal
+from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
-from pydantic import ConfigDict, computed_field
+from pydantic import computed_field
 
 from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
-from sqlalchemy.orm import DeclarativeBase
 
 from uno.db.sql.sql_emitter import (
-    SQLEmitter,
+    TableSQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -32,17 +31,14 @@ from uno.utilities import (
 )
 
 
-class GraphBase(SQLEmitter):
-    klass: type[DeclarativeBase]
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class GraphSQLEmitter(TableSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
         return self.klass.__tablename__
 
 
-class Property(GraphBase):
+class PropertySQLEmitter(GraphSQLEmitter):
     # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
@@ -117,14 +113,14 @@ class Property(GraphBase):
         )
 
 
-class Node(GraphBase):
+class NodeSQLEmitter(GraphSQLEmitter):
     # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
-    # properties: dict[str, Property] <- computed_field
+    # properties: dict[str, PropertySQLEmitter] <- computed_field
     # name: str <- computed_field
 
     @computed_field
-    def properties(self) -> dict[str, Property]:
+    def properties(self) -> dict[str, PropertySQLEmitter]:
         return self.klass.graph_properties
 
     @computed_field
@@ -133,7 +129,7 @@ class Node(GraphBase):
 
     def emit_sql(self, conn: Connection) -> None:
         self.create_node_label(conn)
-        # self.insert_node(conn)
+        self.insert_node(conn)
         # self.update_node(conn)
         # self.delete_node(conn)
         # self.truncate_node(conn)
@@ -164,18 +160,8 @@ class Node(GraphBase):
             )
         )
 
-    def insert_node(self) -> None:
-        """
-        Generates SQL code to create a function and trigger for inserting a new node record
-        when a new relational table record is inserted.
+    def old_insert_node(self, conn: Connection) -> None:
 
-        The function constructs the SQL statements required to:
-        - Create a new node with the specified name and properties.
-        - Create edges for the node if any are defined.
-
-        Returns:
-            str: The generated SQL code for the insert function and trigger.
-        """
         prop_key_str = ""
         prop_val_str = ""
 
@@ -191,7 +177,43 @@ class Node(GraphBase):
         function_string = SQL(
             """
             DECLARE 
-                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
+                sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
+                        CREATE (v:{self.name} {{{prop_key_str}}})
+                    $graph$) AS (a agtype);', {prop_val_str});
+            BEGIN
+                EXECUTE _sql;
+                {edge_str}
+                RETURN NEW;
+            END;
+            """
+        )
+
+        return self.create_sql_function(
+            "insert_node",
+            function_string,
+            operation="INSERT",
+            include_trigger=True,
+            db_function=False,
+        )
+
+    def insert_node(self, conn: Connection) -> None:
+
+        prop_key_str = ""
+        prop_val_str = ""
+
+        if self.properties:
+            prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
+            prop_val_str = ", ".join(
+                [
+                    f"quote_nullable(NEW.{prop.accessor})"
+                    for prop in self.properties.values()
+                ]
+            )
+
+        function_string = SQL(
+            """
+            DECLARE 
+                sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
                         CREATE (v:{self.name} {{{prop_key_str}}})
                     $graph$) AS (a agtype);', {prop_val_str});
             BEGIN
@@ -319,7 +341,7 @@ class Node(GraphBase):
         )
 
 
-class Edge(GraphBase):
+class EdgeSQLEmitter(GraphSQLEmitter):
     # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
@@ -327,7 +349,7 @@ class Edge(GraphBase):
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
-    # properties: dict[str, Property] <- computed_field
+    # properties: dict[str, PropertySQLEmitter] <- computed_field
     # display: str <- computed_field
     # nullable: bool = False <- computed_field
 
@@ -340,27 +362,21 @@ class Edge(GraphBase):
         return self.klass.__table__.name
 
     @computed_field
-    def properties(self) -> dict[str, Property]:
+    def properties(self) -> dict[str, PropertySQLEmitter]:
         if not isinstance(self.secondary, Table):
             return {}
         props = {}
         for column in self.secondary.columns:
             if column.foreign_keys and column.primary_key:
                 continue
-
-            # if type(column.type) == NullType:
-            #    data_type = "str"
-            # else:
             data_type = column.type.python_type.__name__
-            from uno.db.base import Base
-
-            for base in Base.registry.mappers:
+            for base in self.klass.registry.mappers:
                 if base.class_.__tablename__ == self.secondary.name:
                     klass = base.class_
                     break
             props.update(
                 {
-                    column.name: Property(
+                    column.name: PropertySQLEmitter(
                         klass=klass,
                         accessor=column.name,
                         data_type=data_type,
@@ -370,13 +386,14 @@ class Edge(GraphBase):
         return props
 
     def emit_sql(self, conn: Connection) -> None:
-        sql = self.create_edge_label_and_filter_record_sql()
-        conn.execute(text(sql))
+        self.create_edge_label(conn)
+        self.create_filter_field(conn)
 
-    def create_edge_label_and_filter_record_sql(self) -> None:
-        return (
-            SQL(
-                """
+    def create_edge_label(self, conn: Connection) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
                 DO $$
                 BEGIN
                     SET ROLE {admin_role};
@@ -385,7 +402,26 @@ class Edge(GraphBase):
                             PERFORM ag_catalog.create_elabel('graph', {label});
                             CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                     END IF;
+                END $$;
+                """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    label=Literal(self.label),
+                    label_ident=Identifier(self.label),
+                )
+                .as_string()
+            )
+        )
 
+    def create_filter_field(self, conn: Connection) -> None:
+        conn.execute(
+            text(
+                SQL(
+                    """
+                DO $$
+                BEGIN
+                    SET ROLE {admin_role};
                     INSERT INTO {db_schema}.filter (
                         data_type,
                         source_meta_type,
@@ -407,21 +443,22 @@ class Edge(GraphBase):
                     );
                 END $$;
                 """
+                )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    label=Literal(self.label),
+                    label_ident=Identifier(self.label),
+                    db_schema=DB_SCHEMA,
+                    data_type=Literal("object"),
+                    source_meta_type=Literal(self.source_meta_type),
+                    destination_meta_type=Literal(self.destination_meta_type),
+                    display=Literal(self.display),
+                    accessor=Literal(self.accessor),
+                    lookups=Literal(self.lookups),
+                    properties=json.dumps(list(self.properties.keys())),
+                )
+                .as_string()
             )
-            .format(
-                admin_role=ADMIN_ROLE,
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
-                db_schema=DB_SCHEMA,
-                data_type=Literal("object"),
-                source_meta_type=Literal(self.source_meta_type),
-                destination_meta_type=Literal(self.destination_meta_type),
-                display=Literal(self.display),
-                accessor=Literal(self.accessor),
-                lookups=Literal(self.lookups),
-                properties=json.dumps(list(self.properties.keys())),
-            )
-            .as_string()
         )
 
     def insert_edge_sql(self) -> None:
