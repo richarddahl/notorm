@@ -110,6 +110,10 @@ class PropertySQLEmitter(GraphSQLEmitter):
                 )
                 .as_string()
             )
+        ).format(
+            Identifier(self.name),
+            SQL(prop_key_str),
+            SQL(prop_val_str),
         )
 
 
@@ -162,17 +166,6 @@ class NodeSQLEmitter(GraphSQLEmitter):
 
     def old_insert_node(self, conn: Connection) -> None:
 
-        prop_key_str = ""
-        prop_val_str = ""
-
-        if self.properties:
-            prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
-            prop_val_str = ", ".join(
-                [
-                    f"quote_nullable(NEW.{prop.accessor})"
-                    for prop in self.properties.values()
-                ]
-            )
 
         function_string = SQL(
             """
@@ -202,6 +195,12 @@ class NodeSQLEmitter(GraphSQLEmitter):
         )
 
     def insert_node(self, conn: Connection) -> None:
+        prop_key_str = ", ".join(
+            SQL("{}: {}").format(Identifier(prop), Placeholder()) for prop in self.properties.keys()
+        )
+        prop_val_str = ", ".join(
+            SQL("quote_nullable(NEW.{})").format(Identifier(prop.accessor)) for prop in self.properties.values()
+        )
 
         prop_key_str = ""
         prop_val_str = ""
@@ -218,9 +217,9 @@ class NodeSQLEmitter(GraphSQLEmitter):
         function_string = SQL(
             """
             DECLARE 
-                sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:{self.name} {{{prop_key_str}}})
-                    $graph$) AS (a agtype);', {prop_val_str});
+                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
+                        CREATE (v:%s {%s})
+                    $graph$) AS (a agtype);', %s);
             BEGIN
                 EXECUTE _sql;
                 {edge_str}
