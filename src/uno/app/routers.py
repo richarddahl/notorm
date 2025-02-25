@@ -140,6 +140,10 @@ class ImportRouter(SchemaRouter):
     def get_endpoint(self) -> Callable:
         return partialmethod(self._endpoint, {"object": self.kls.update_schema})
 
+    @computed_field
+    def get_endpoint(self) -> Callable:
+        return partialmethod(self._endpoint, object=self.kls.insert_schema)
+
     def _endpoint(self, id: str, object: BaseModel):
         return {"message": "update"}
 
