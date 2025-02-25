@@ -38,7 +38,7 @@ from uno.app.tags import tags_metadata
 from uno.config import settings
 
 for module in settings.LOAD_MODULES:
-    importlib.import_module(module) as f"{module}_objs"
+    globals()[f"{module}_objs"] = importlib.import_module(module)
 
 
 app = FastAPI(
