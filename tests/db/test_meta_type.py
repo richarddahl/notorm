@@ -23,8 +23,8 @@ class TestMetaType:
         assert MetaType.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert MetaType.__table_args__.get("schema") == "uno"
         assert MetaType.__tablename__ == "meta_type"
-        # print(list(MetaRecord.__table__.columns.keys()))
-        assert list(MetaType.__table__.columns.keys()) == ["name"]
+        # print(list(MetaRecord.table.columns.keys()))
+        assert list(MetaType.table.columns.keys()) == ["name"]
 
     def test_meta_type_indices(self, db_connection):
         """Test the index_definitions on the meta_type table in the database."""

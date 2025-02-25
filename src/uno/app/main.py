@@ -2,16 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+import importlib
+
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from uno.db.obj import UnoObj
 from uno.app.tags import tags_metadata
 
 # import uno.attr.tables as attr_tables
-import uno.auth.objs as auth_tables
+# import uno.auth.objs as auth_objs
 
 # import uno.msg.tables as msg_tables
 # import uno.fltr.tables as fltr_tables
@@ -19,17 +22,18 @@ import uno.auth.objs as auth_tables
 # import uno.wkflw.tables as wkflw_tables
 from uno.config import settings
 
+for module in settings.LOAD_MODULES:
+    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
+        f"{module}.objs"
+    )
 
 app = FastAPI(
     openapi_tags=tags_metadata,
     title="Uno is not an ORM",
 )
 
-
-auth_tables.User.configure_base(app)
-auth_tables.Tenant.configure_base(app)
-auth_tables.Role.configure_base(app)
-auth_tables.Group.configure_base(app)
+for obj in UnoObj.registry.values():
+    obj.configure_obj(app)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -62,8 +66,8 @@ async def app_base(
 )
 def get_filters():
     """Retrieve the generated OpenAPI schema."""
-    auth_tables.User.filters
-    return JSONResponse(content=auth_tables.User.filters)
+    auth_objs.User.filters
+    return JSONResponse(content=auth_objs.User.filters)
 
 
 def generate_openapi_schema():

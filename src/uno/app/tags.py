@@ -4,7 +4,7 @@
 
 from uno.db.obj import UnoObj
 
-import uno.auth.objs as auth_tables
+import uno.auth.objs as auth_objs
 
 
 tags_metadata = [

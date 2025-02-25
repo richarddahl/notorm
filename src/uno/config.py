@@ -22,8 +22,8 @@ class General(BaseSettings):
     DB_PORT: int
     DB_SCHEMA: str
     DB_NAME: str
-    DB_DRIVER: str
-    DB_URL: str
+    DB_SYNC_DRIVER: str
+    DB_ASYNC_DRIVER: str
 
     # DATABASE QUERY SETTINGS
     DEFAULT_LIMIT: int = 100
@@ -55,6 +55,20 @@ class General(BaseSettings):
     SUPERUSER_EMAIL: str
     SUPERUSER_HANDLE: str
     SUPERUSER_FULL_NAME: str
+
+    # Modules to load
+    LOAD_MODULES: list[str] = []
+    """
+        "uno.attr",
+        "uno.auth",
+        "uno.fltr",
+        "uno.meta",
+        "uno.msg",
+        "uno.rprt",
+        "uno.val",
+        "uno.wkflw",
+    ]
+    """
 
 
 class Prod(General):

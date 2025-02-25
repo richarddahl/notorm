@@ -28,9 +28,8 @@ from uno.db.management.sql_emitters import (
     InsertMetaRecordFunction,
 )
 from uno.auth.sql_emitters import (
-    AlterTablesBeforeInsertFirstUser,
-    UpdateRecordOfFirstUser,
-    AlterTablesAfterInsertFirstUser,
+    DisableRLSOnUserForFirstInsert,
+    EnableUserRLSAfterFirstInsert,
 )
 from uno.db.obj import meta_data, UnoObj
 from uno.meta.objs import MetaType
@@ -38,13 +37,18 @@ from uno.app.tags import tags_metadata
 from uno.config import settings
 
 for module in settings.LOAD_MODULES:
-    globals()[f"{module}_objs"] = importlib.import_module(module)
+    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
+        f"{module}.objs"
+    )
 
 
 app = FastAPI(
     openapi_tags=tags_metadata,
     title="Uno is not an ORM",
 )
+
+for obj in UnoObj.registry.values():
+    obj.configure_obj(app)
 
 
 class DBManager:
@@ -141,11 +145,10 @@ class DBManager:
                 SetRole().emit_sql(conn, "admin")
                 # Emit the SQL for the table
                 uno.emit_sql(conn)
-                uno.configure_base(app)
             return
 
             for base in Base.registry.mappers:
-                base.class_.configure_base(app)
+                base.class_.configure_obj(app)
                 SetRole().emit_sql(conn, "admin")
 
                 # Emit the SQL to create the graph property filters
@@ -190,47 +193,13 @@ class DBManager:
         if settings.ENV == "test":
             sys.stdout = sys.__stdout__
 
-    def create_user_sql(
-        self,
-        email: str,
-        handle: str,
-        full_name: str,
-        is_superuser: bool,
-    ) -> str:
-
-        return (
-            SQL(
-                """
-            /*
-            Creates the superuser for the application.
-            */
-            SET ROLE {admin_role};
-
-            INSERT INTO {schema}.user (email, handle, full_name, is_superuser)
-            VALUES({email}, {handle}, {full_name}, {is_superuser})
-            RETURNING id;
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                schema=DB_SCHEMA,
-                email=Literal(email),
-                handle=Literal(handle),
-                full_name=Literal(full_name),
-                is_superuser=Literal(is_superuser),
-            )
-            .as_string()
-        )
-
-    def create_user(
+    def create_superuser(
         self,
         email: str = settings.SUPERUSER_EMAIL,
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
-        is_superuser: bool = False,
     ) -> str:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
-        # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         user = auth_objs.User(
             email=email,
             handle=handle,
@@ -239,7 +208,7 @@ class DBManager:
         )
         user_insert = user.insert_schema(**user.model_dump())
         with eng.connect() as conn:
-            AlterTablesBeforeInsertFirstUser().emit_sql(conn)
+            DisableRLSOnUserForFirstInsert().emit_sql(conn)
             result = conn.execute(
                 insert(user.db.db_table)
                 .values(**user_insert.model_dump())
@@ -249,7 +218,7 @@ class DBManager:
             print(f"Created the superuser: {user_id}\n")
             conn.commit()
 
-            AlterTablesAfterInsertFirstUser().emit_sql(conn)
+            EnableUserRLSAfterFirstInsert().emit_sql(conn)
             conn.close()
         eng.dispose()
         return user_id
@@ -257,12 +226,12 @@ class DBManager:
     def engine(
         self,
         db_role: str,
-        db_driver: str = settings.DB_DRIVER,
+        db_sync_driver: str = settings.DB_SYNC_DRIVER,
         db_password: str = settings.DB_USER_PW,
         db_host: str = settings.DB_HOST,
         db_name: str = settings.DB_NAME,
     ) -> Engine:
 
         return create_engine(
-            f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}"
+            f"{db_sync_driver}://{db_role}:{db_password}@{db_host}/{db_name}"
         )

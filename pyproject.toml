@@ -32,6 +32,7 @@ dependencies = [
   "jinja2",
   "PyJWT",
   "psycopg",
+  'asyncpg',
   "pydantic[email]",
   "pydantic-settings",
   "python-multipart",
@@ -52,7 +53,7 @@ path = "src/uno/__about__.py"
 
 # Default Environment
 [tool.hatch.envs.default.scripts]
-main = "uvicorn uno.main:app {args: --reload}"
+main = "uvicorn uno.app.main:app {args: --reload}"
 createdb = "python src/uno/db/cmd/create_db.py"
 dropdb = "python uno/db/cmd/drop_db.py"
 

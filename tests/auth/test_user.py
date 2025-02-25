@@ -22,8 +22,8 @@ class TestUser:
         assert User.__module__ == f"{settings.DB_SCHEMA}.auth.tables"
         assert User.__table_args__[1].get("schema") == "uno"
         assert User.__tablename__ == "user"
-        # print(User.__table__.columns.keys())
-        assert list(User.__table__.columns.keys()) == [
+        # print(User.table.columns.keys())
+        assert list(User.table.columns.keys()) == [
             "id",
             "email",
             "handle",

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import importlib
 
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
@@ -13,6 +14,12 @@ from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
 from uno.config import settings
 
 
+for module in settings.LOAD_MODULES:
+    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
+        f"{module}.objs"
+    )
+
+
 class TestMetaRecord:
     schema = settings.DB_SCHEMA
 
@@ -21,7 +28,7 @@ class TestMetaRecord:
 
         db_manager = DBManager()
         db_manager.create_db()
-        db_manager.create_user(is_superuser=True)
+        db_manager.create_superuser()
 
 
 '''
@@ -34,8 +41,8 @@ class TestMetaRecord:
         assert MetaRecord.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert MetaRecord.__table_args__.get("schema") == "uno"
         assert MetaRecord.__tablename__ == "meta_record"
-        # print(list(MetaRecord.__table__.columns.keys()))
-        assert list(MetaRecord.__table__.columns.keys()) == [
+        # print(list(MetaRecord.table.columns.keys()))
+        assert list(MetaRecord.table.columns.keys()) == [
             "id",
             "meta_type_id",
         ]

@@ -23,13 +23,13 @@ from uno.config import settings
 
 import uno.meta.objs as db_tables
 
-# import uno.auth.tables as auth_tables
+# import uno.auth.tables as auth_objs
 
 
 '''
 
 # import uno.attr.tables as attr_tables
-# import uno.auth.tables as auth_tables
+# import uno.auth.tables as auth_objs
 # import uno.fltr.tables as fltr_tables
 # import uno.msg.tables as msg_tables
 # import uno.rprt.tables as rprt_tables
@@ -223,7 +223,7 @@ def superuser_id():
     db = DBManager()
     db.drop_db()
     db.create_db()
-    return db.create_user(is_superuser=True)
+    return db.create_superuser()
 
 
 @pytest.fixture(scope="class")
@@ -248,7 +248,7 @@ def session(engine, superuser_id, create_test_functions):
 @pytest.fixture(scope="class")
 def create_test_functions() -> None:
     eng = create_engine(
-        f"{settings.DB_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+        f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
     )
     with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin"))
