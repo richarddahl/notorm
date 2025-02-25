@@ -9,10 +9,10 @@ from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, JSONB
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.base import Base, str_26, str_255
-from uno.db.tables import (
+from uno.db.obj import Base, str_26, str_255
+from uno.meta.objs import (
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
@@ -34,7 +34,6 @@ class QueryFilterValue(Base):
     )
     display_name: ClassVar[str] = "Query Filter Value"
     display_name_plural: ClassVar[str] = "Query Filter Values"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -60,7 +59,6 @@ class FilterFilterValue(Base):
     )
     display_name: ClassVar[str] = "Filter Filter Value"
     display_name_plural: ClassVar[str] = "Filter Filter Values"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -86,7 +84,6 @@ class QuerySubquery(Base):
     )
     display_name: ClassVar[str] = "Query Subquery"
     display_name_plural: ClassVar[str] = "Query Subqueries"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -114,7 +111,7 @@ class Filter(Base):
         ),
         {
             "schema": settings.DB_SCHEMA,
-            "comment": "Used to enable user-defined filtering using the graph vertices and edges.",
+            "comment": "Used to enable user-defined filtering using the graph vertices and graph_edges.",
         },
     )
     display_name: ClassVar[str] = "Filter"
@@ -126,7 +123,7 @@ class Filter(Base):
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the node.",
+        doc="The id of the graph_node.",
     )
     display: Mapped[str] = mapped_column(
         doc="The edge label or property display of the filter.",
@@ -137,12 +134,12 @@ class Filter(Base):
     source_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
-        doc="The meta type table filtered.",
+        doc="The meta_record type table filtered.",
     )
     destination_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
-        doc="The destination meta type table of the filter.",
+        doc="The destination meta_record type table of the filter.",
     )
     accessor: Mapped[str_255] = mapped_column(
         index=True,
@@ -167,7 +164,7 @@ class Filter(Base):
 
 class FilterValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 ):
@@ -198,7 +195,7 @@ class FilterValue(
 
     # Columns
     id: Mapped[int] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     include: Mapped[Include] = mapped_column(
         ENUM(
@@ -224,7 +221,7 @@ class FilterValue(
     )
     value_id: Mapped[str_26] = mapped_column(
         ForeignKey(
-            f"{settings.DB_SCHEMA}.meta.id",
+            f"{settings.DB_SCHEMA}.meta_record.id",
             ondelete="CASCADE",
         ),
         index=True,
@@ -232,7 +229,7 @@ class FilterValue(
 
     # Relationships
     queries: Mapped[Optional[list["Query"]]] = relationship(
-        back_populates="filter_values",
+        # back_populates="filter_values",
         secondary=QueryFilterValue.__table__,
         secondaryjoin=QueryFilterValue.filter_value_id == id,
         info={"edge": "FILTERS_WITH"},
@@ -246,7 +243,7 @@ class FilterValue(
 
 class Query(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 ):
@@ -259,16 +256,15 @@ class Query(
     )
     display_name: ClassVar[str] = "Query"
     display_name_plural: ClassVar[str] = "Queries"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="The name of the query.")
-    queries_meta_type_name: Mapped[str_26] = mapped_column(
+    queries_meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
     )
@@ -305,24 +301,24 @@ class Query(
 
     # Relationships
     filter_values: Mapped[Optional[list[FilterValue]]] = relationship(
-        back_populates="queries",
+        # back_populates="queries",
         secondary=QueryFilterValue.__table__,
         secondaryjoin=QueryFilterValue.query_id == id,
     )
     sub_queries: Mapped[Optional[list["Query"]]] = relationship(
-        back_populates="queries",
+        # back_populates="queries",
         foreign_keys=[QuerySubquery.query_id],
         secondary=QuerySubquery.__table__,
         secondaryjoin=QuerySubquery.query_id == id,
     )
     queries: Mapped[Optional[list["Query"]]] = relationship(
-        back_populates="sub_queries",
+        # back_populates="sub_queries",
         foreign_keys=[QuerySubquery.subquery_id],
         secondary=QuerySubquery.__table__,
         secondaryjoin=QuerySubquery.subquery_id == id,
     )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
-        back_populates="description_limiting_query",
+        # back_populates="description_limiting_query",
         primaryjoin="Query.id == AttributeType.description_limiting_query_id",
     )
 

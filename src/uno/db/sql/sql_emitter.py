@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Any
+
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, ConfigDict, computed_field
@@ -54,22 +56,22 @@ class SQLEmitter(ABC, BaseModel):
     ) -> str:
 
         trigger_scope = (
-            f"{settings.DB_SCHEMA}."
-            if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_"
+            f"{settings.DB_SCHEMA}." if db_function else f"{self.table_name}_"
         )
+        trigger_prefix = self.table_name.split(".")[1]
         return (
             SQL(
                 """
-            CREATE OR REPLACE TRIGGER {table_name}_{function_name}_trigger
+            CREATE OR REPLACE TRIGGER {trigger_prefix}_{function_name}_trigger
                 {timing} {operation}
-                ON {db_schema}.{table_name}
+                ON {table_name}
                 FOR EACH {for_each}
                 EXECUTE FUNCTION {trigger_scope}{function_name}();
             """
             )
             .format(
                 table_name=SQL(self.table_name),
+                trigger_prefix=SQL(trigger_prefix),
                 function_name=SQL(function_name),
                 timing=SQL(timing),
                 operation=SQL(operation),
@@ -102,7 +104,7 @@ class SQLEmitter(ABC, BaseModel):
         full_function_name = (
             f"{settings.DB_SCHEMA}.{function_name}"
             if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_{function_name}"
+            else f"{self.table_name}_{function_name}"
         )
         ADMIN_ROLE = SQL(f"{settings.DB_NAME}_admin")
         fnct_string = (
@@ -148,10 +150,10 @@ class SQLEmitter(ABC, BaseModel):
 
 
 class TableSQLEmitter(SQLEmitter):
-    klass: type[DeclarativeBase] = None
+    klass: Any = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def table_name(self) -> str:
-        return self.klass.__tablename__
+        return self.klass.table.fullname

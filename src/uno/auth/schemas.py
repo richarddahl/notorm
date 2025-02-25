@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.schemas import (
-    CreateSchemaDef,
+from uno.app.schemas import (
+    InsertSchemaDef,
     DeleteSchemaDef,
     ImportSchemaDef,
     ListSchemaDef,
@@ -12,7 +12,7 @@ from uno.schemas import (
 )
 
 tenant_schema_defs = [
-    CreateSchemaDef(
+    InsertSchemaDef(
         exclude_fields=[
             "id",
             "created_at",
@@ -46,7 +46,7 @@ tenant_schema_defs = [
 ]
 
 user_schema_defs = [
-    CreateSchemaDef(
+    InsertSchemaDef(
         exclude_fields=[
             "id",
             "created_at",
@@ -82,7 +82,7 @@ user_schema_defs = [
 ]
 
 group_schema_defs = [
-    CreateSchemaDef(
+    InsertSchemaDef(
         exclude_fields=[
             "id",
             "created_at",
@@ -116,7 +116,7 @@ group_schema_defs = [
 ]
 
 role_schema_defs = [
-    CreateSchemaDef(
+    InsertSchemaDef(
         exclude_fields=[
             "id",
             "created_at",

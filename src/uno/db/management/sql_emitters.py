@@ -167,7 +167,7 @@ class CreateRolesAndDatabase(SQLEmitter):
         )
 
 
-class CreateSchemasAndExtensions(SQLEmitter):
+class InsertSchemasAndExtensions(SQLEmitter):
     def emit_sql(self, conn: Connection) -> None:
         self.create_schemas(conn)
         self.create_extensions(conn)
@@ -313,43 +313,42 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {base_role}
             SET search_path TO
-                ag_catalog,
+                {db_schema},
                 audit,
                 graph,
-                {db_schema};
+                ag_catalog;
 
             ALTER ROLE
                 {login_role}
             SET search_path TO
-                ag_catalog,
+                {db_schema},
                 audit,
                 graph,
-                {db_schema};
-
+                ag_catalog;
 
             ALTER ROLE
                 {reader_role}
             SET search_path TO
-                ag_catalog,
+                {db_schema},
                 audit,
                 graph,
-                {db_schema};
+                ag_catalog;
 
             ALTER ROLE
                 {writer_role}
             SET search_path TO
-                ag_catalog,
+                {db_schema},
                 audit,
                 graph,
-                {db_schema};
+                ag_catalog;
 
             ALTER ROLE
                 {admin_role}
             SET search_path TO
-                ag_catalog,
+                {db_schema},
                 audit,
                 graph,
-                {db_schema};
+                ag_catalog;
             """
                 )
                 .format(
@@ -444,11 +443,11 @@ class CreateTokenSecret(SQLEmitter):
                     """
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
-            CREATE TABLE {db_schema}.token_secret (
+            CREATE TABLE audit.token_secret (
                 token_secret TEXT PRIMARY KEY
             );
 
-            CREATE OR REPLACE FUNCTION {db_schema}.set_token_secret()
+            CREATE OR REPLACE FUNCTION audit.set_token_secret()
             RETURNS TRIGGER
             LANGUAGE plpgsql
             AS $$
@@ -460,15 +459,15 @@ class CreateTokenSecret(SQLEmitter):
                 We only store this in the database as it is 
                 more secure there than in the environment variables
                 */
-                DELETE FROM {db_schema}.token_secret;
+                DELETE FROM audit.token_secret;
                 RETURN NEW;
             END;
             $$;
 
             CREATE TRIGGER set_token_secret_trigger
-            BEFORE INSERT ON {db_schema}.token_secret
+            BEFORE INSERT ON audit.token_secret
             FOR EACH ROW
-            EXECUTE FUNCTION {db_schema}.set_token_secret();
+            EXECUTE FUNCTION audit.set_token_secret();
             """
                 )
                 .format(
@@ -510,9 +509,9 @@ class GrantPrivileges(SQLEmitter):
                 {writer_role},
                 {admin_role};
 
-            REVOKE SELECT, INSERT, UPDATE (id) ON {db_schema}.user FROM 
-                {reader_role},
-                {writer_role};
+            --REVOKE SELECT, INSERT, UPDATE (id) ON user FROM 
+            --    {reader_role},
+            --    {writer_role};
 
             GRANT ALL ON ALL TABLES IN SCHEMA
                 audit,
@@ -561,24 +560,22 @@ class GrantPrivileges(SQLEmitter):
         )
 
 
-class InsertMetaFunction(SQLEmitter):
+class InsertMetaRecordFunction(SQLEmitter):
     def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
             DECLARE
-                meta_id VARCHAR(26) := {db_schema}.generate_ulid();
+                meta_id VARCHAR(26) := generate_ulid();
+                table_name VARCHAR(255) := TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME;
             BEGIN
                 /*
-                Function used to insert a record into the meta table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the meta table.
-                Set as a trigger on the table, so that the meta record is created when the
-                record is created.
+                Function used to insert a record into the meta_record table, when a 
+                polymorphic record is inserted.
                 */
-
-                SET ROLE {writer};
-                INSERT INTO {db_schema}.meta (id, meta_type_name)
-                    VALUES (meta_id, TG_TABLE_NAME);
+                SET ROLE {writer_role};
+                INSERT INTO meta_record (id, meta_type_id)
+                    VALUES (meta_id, table_name);
                 NEW.id = meta_id;
                 RETURN NEW;
             END;
@@ -586,7 +583,7 @@ class InsertMetaFunction(SQLEmitter):
             )
             .format(
                 db_schema=DB_SCHEMA,
-                writer=WRITER_ROLE,
+                writer_role=WRITER_ROLE,
             )
             .as_string()
         )
@@ -594,10 +591,11 @@ class InsertMetaFunction(SQLEmitter):
         conn.execute(
             text(
                 self.create_sql_function(
-                    "insert_meta",
+                    "insert_meta_record",
                     function_string,
                     timing="BEFORE",
                     operation="INSERT",
+                    # security_definer="SECURITY DEFINER",
                     include_trigger=False,
                     db_function=True,
                 )

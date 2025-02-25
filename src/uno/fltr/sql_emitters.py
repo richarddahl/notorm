@@ -37,7 +37,7 @@ class PathEdgeChcek(SQLEmitter):
             BEGIN
                 SELECT 
                 IF pare
-                    RAISE EXCEPTION 'Path cannot start and end at the same node';
+                    RAISE EXCEPTION 'Path cannot start and end at the same graph_node';
                 END IF;
                 RETURN NEW;
             END;

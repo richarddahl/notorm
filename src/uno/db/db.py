@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+
 from typing import Any
 
 from sqlalchemy import (
@@ -11,14 +15,34 @@ from sqlalchemy import (
     and_,
     or_,
     not_,
+    create_engine,
+    text,
 )
-from uno.enumerations import (
-    UnoSelectResultType,
-    Include,
-    Lookup,
-)  # type: ignore
-from uno.db import metadata, engine, async_engine  # type: ignore
-from config import settings  # type: ignore
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncConnection
+
+from pydantic import BaseModel
+
+from uno.db.enums import SelectResultType
+from uno.val.enums import Lookup
+from uno.fltr.enums import Include, Match
+from uno.config import settings
+
+
+DB_ROLE = f"{settings.DB_NAME}_login"
+DB_DRIVER = settings.DB_DRIVER
+DB_USER_PW = settings.DB_USER_PW
+DB_HOST = settings.DB_HOST
+DB_NAME = settings.DB_NAME
+DB_SCHEMA = settings.DB_SCHEMA
+
+async_engine = create_async_engine(
+    f"{DB_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+)
+
+engine = create_engine(
+    f"{DB_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+)
 
 
 class UnoDB:
@@ -30,122 +54,21 @@ class UnoDB:
 
     db_table: Table
     table_name: str
-    db_tables: dict[str, Table]
-    DB_NAME: str
-    pk_fields: list[str]
+    metadata: Any
+    # async_engine: AsyncConnection
 
-    def __init__(self, table_name) -> None:
-        """
-        Initializes a new instance of the UnoDB class.
+    def __init__(self, db_table: Table) -> None:
+        self.db_table = db_table
+        self.table_name = db_table.fullname
+        self.metadata = db_table.metadata
+        # self.async_engine = get_connection()
 
-        Args:
-            table_name (str): The name of the table in the database.
+    def connection(self) -> Connection:
+        return engine.connect()
 
-        Raises:
-            Exception: If the specified table does not exist in the database.
-        """
-        self.table_name = table_name
-        self.db_tables = metadata.tables
-        self.engine = engine
-        self.async_engine = async_engine
-        self.pk_fields = []
-        self.DB_NAME = settings.DB_SCHEMA
-        try:
-            self.db_table = self.db_tables[table_name]
-        except KeyError as e:
-            raise Exception(f"Table {table_name} does not exist in the database") from e
-        for column in self.db_table.columns:
-            if column.primary_key:
-                self.pk_fields.append(column.name)
-
-    def server_default_columns(self) -> list[str]:
-        """
-        Retrieves the columns with server defaults for the table associated with the given class.
-
-        Returns:
-            A list of columns with server defaults for the table.
-        """
-        return [
-            column.name for column in self.db_table.columns if column.#server_default
-        ]
-
-    def unique_constraints(self) -> list[str]:
-        """
-        Retrieves the unique constraints defined for the table associated with the given class.
-
-        Returns:
-            A list of unique constraints for the table.
-        """
-        insp = inspect(self.engine)
-        # The fully schema qualified table name cannot be used by the inspector
-        # The table name must be stripped of the schema name and they must be passed as separate arguments
-        # TODO - Determine if this is a hack that can be fixed?
-        table_name = self.table_name.replace(f"{settings.DB_SCHEMA}.", "")
-        #server_default_columns = self.#server_default_columns()
-        pks_ = insp.get_pk_constraint(table_name, schema=settings.DB_SCHEMA)
-        pks = [
-            pk_name
-            for pk_name in pks_.get("constrained_columns", [])
-            if pk_name not in #server_default_columns
-        ]  # type: ignore
-        uniques_ = insp.get_unique_constraints(table_name, schema=settings.DB_SCHEMA)
-        uniques = [
-            u
-            for unique in uniques_
-            for u in unique.get("column_names", [])
-            if unique not in #server_default_columns
-        ]  # type: ignore
-        if pks and uniques:
-            return pks + uniques
-        if uniques and not pks:
-            return uniques
-        if pks and not uniques:
-            return pks
-        return list(self.db_table.columns.keys())
-
-    def validate_columns(
-        self, value_keys: list[str], column_names: list[str] | None
-    ) -> list[str]:
-        """
-        Validates the provided value keys against the column names.
-
-        Args:
-            value_keys (list[str]): The list of value keys to validate.
-            column_names (list[str]): The list of column names to compare against.
-
-        Raises:
-            Exception: If no valid fields are provided or if a column is missing.
-
-        Returns:
-            list[str]: The validated column names.
-        """
-        if not column_names:
-            column_names = list(self.db_table.columns.keys())
-        missing_columns = set(value_keys) - set(column_names)
-        if missing_columns:
-            raise Exception(
-                f"Column {missing_columns} is not in the column names provided."
-            )
-        return column_names
-
-    async def get_unique_fields_from_values(
-        self, values: dict[str, Any]
-    ) -> dict[str, Any]:
-        """
-        Retrieves the unique fields from the provided values.
-
-        Args:
-            values (dict[str, Any]): The values to retrieve the unique fields from.
-
-        Returns:
-            list[str]: The unique fields.
-        """
-        unique_constraint_field_names = self.unique_constraints()
-        unique_fields = {}
-        for key, val in values.items():
-            if key in unique_constraint_field_names:
-                unique_fields[key] = val
-        return unique_fields
+    async def async_connection() -> AsyncConnection:
+        async with async_engine.connect() as conn:
+            yield conn
 
     def where(
         self,
@@ -189,11 +112,25 @@ class UnoDB:
         else:
             return ~operation
 
+    def select(self, values: dict[str, Any]) -> bool | None:
+        with self.connection() as conn:
+            conn.execute(text("SET ROLE uno_dev_reader"))
+            stmt = select(self.db_table)
+            result = conn.execute(stmt)
+            return result.fetchone()
+
+    def insert(self, schema: BaseModel) -> None:
+        with self.connection() as conn:
+            conn.execute(insert(self.db_table).values(schema.model_dump()))
+            conn.commit()
+            conn.close()
+
+    """
     async def select(
         self,
         # columns: list[str] | None = None,
         values: dict[str, Any],
-        result_type: UnoSelectResultType = UnoSelectResultType.FIRST,
+        result_type: SelectResultType = SelectResultType.FIRST,
         column_names: list[str] | None = None,
     ) -> bool | None:
         # if columns is None:
@@ -214,6 +151,23 @@ class UnoDB:
             result = await conn.execute(stmt)
         return getattr(result, result_type)()
 
+    def exists(
+        self,
+        values: dict[str, Any],
+    ) -> bool | None:
+        unique_values = self.get_unique_fields_from_values(values)
+        columns = (
+            self.db_table.c.get(field_name) for field_name in unique_values.keys()
+        )
+
+        # Create the statement
+        where_clauses = [self.where(key, val) for key, val in values.items()]
+        stmt = select(*columns).where(and_(*where_clauses))  # type: ignore
+
+        # Run the query
+        with self.connection.connect() as conn:
+            result = conn.execute(select(exists(stmt)))
+        return result.scalar()
     async def exists(
         self,
         values: dict[str, Any],
@@ -233,23 +187,11 @@ class UnoDB:
         return result.scalar()
 
     async def insert(self, values: dict[str, Any]) -> None:
-        """
-        Inserts a row into the table.
-
-        Args:
-            values: A dictionary containing the column names and their corresponding values.
-
-        Returns:
-            None
-        """
         if await self.exists(values):
             raise Exception("Record already exists")
         async with self.async_engine.begin() as conn:
             await conn.execute(insert(self.db_table).values(values))
-            # conn.commit()
-            # conn.close()
 
-    """
     async def select(
         self,
         statement: Any | None = None,

@@ -20,7 +20,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from fastapi import FastAPI
 
-from uno.routers import (
+from uno.app.routers import (
     SchemaRouter,
     PostRouter,
     ListRouter,
@@ -50,8 +50,8 @@ class DisplaySchemaBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CreateSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+class InsertSchemaBase(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
 
 class UpdateSchemaBase(BaseModel):
@@ -77,14 +77,14 @@ class SchemaDef(BaseModel):
     schema_type: str
     schema_base: BaseModel
     router: SchemaRouter
-    data_type: str = "native"
+    return_format: str = "native"
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
     use_related_schemas: bool = False
 
     model_config = ConfigDict(extra="forbid")
 
-    def init_schema(self, klass: DeclarativeBase, app: FastAPI) -> Type[BaseModel]:
+    def create_schema(self, klass: DeclarativeBase, app: FastAPI) -> None:
         if self.exclude_fields and self.include_fields:
             raise SchemaConfigError(
                 "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
@@ -93,7 +93,7 @@ class SchemaDef(BaseModel):
 
         schema_name = f"{klass.__name__}{self.schema_type.capitalize()}"
         fields = self.suss_fields(klass)
-        fields.update(self.suss_related_fields(klass))
+        # fields.update(self.suss_related_fields(klass))
 
         schema = create_model(
             schema_name,
@@ -105,7 +105,8 @@ class SchemaDef(BaseModel):
             **fields,
         )
         self.router(klass=klass).add_to_app(schema, app)
-        self.set_schema(klass, schema)
+        # self.set_schema(klass, schema)
+        setattr(klass, f"{self.schema_type}_schema", schema)
 
     def suss_related_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
@@ -138,7 +139,7 @@ class SchemaDef(BaseModel):
         default = _Unset
         default_factory = _Unset
         title = _Unset
-        description = _Unset or rel.doc or rel.back_populates
+        description = _Unset or rel.doc  # or rel.back_populates
         title = name.title()
         nullable = True
 
@@ -165,7 +166,7 @@ class SchemaDef(BaseModel):
 
     def suss_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
         fields = {}
-        for col in klass.__table__.columns:  # type: ignore
+        for col in klass.table.columns:  # type: ignore
             if self.include_fields and col.name not in self.include_fields:
                 continue
             if self.exclude_fields and col.name in self.exclude_fields:
@@ -234,16 +235,16 @@ class SchemaDef(BaseModel):
 """
 
 
-class CreateSchemaDef(SchemaDef):
-    schema_type: str = "create"
-    schema_base: BaseModel = CreateSchemaBase
+class InsertSchemaDef(SchemaDef):
+    schema_type: str = "insert"
+    schema_base: BaseModel = InsertSchemaBase
     router: SchemaRouter = PostRouter
 
     def format_doc(self, klass: DeclarativeBase) -> str:
         return f"Create a {klass.display_name}"
 
     def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.create_schema = schema
+        klass.insert_schema = schema
 
 
 class ListSchemaDef(SchemaDef):

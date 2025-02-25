@@ -72,14 +72,15 @@ class PropertySQLEmitter(GraphSQLEmitter):
         return object_lookups
 
     def emit_sql(self, conn: Connection) -> None:
+        return
         conn.execute(
             text(
                 SQL(
                     """
             DO $$
             BEGIN
-                SET ROLE {writer_role};
-                INSERT INTO {db_schema}.filter (
+                SET ROLE {admin_role};
+                INSERT INTO filter (
                     display,
                     data_type,
                     source_meta_type,
@@ -94,12 +95,13 @@ class PropertySQLEmitter(GraphSQLEmitter):
                     {destination_meta_type},
                     {accessor},
                     {lookups}
-                );
+                )
+                RETURNING id;
             END $$;
             """
                 )
                 .format(
-                    writer_role=WRITER_ROLE,
+                    admin_role=ADMIN_ROLE,
                     db_schema=DB_SCHEMA,
                     display=Literal(self.display),
                     data_type=Literal(self.data_type),
@@ -110,10 +112,6 @@ class PropertySQLEmitter(GraphSQLEmitter):
                 )
                 .as_string()
             )
-        ).format(
-            Identifier(self.name),
-            SQL(prop_key_str),
-            SQL(prop_val_str),
         )
 
 
@@ -121,14 +119,14 @@ class NodeSQLEmitter(GraphSQLEmitter):
     # klass: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     # properties: dict[str, PropertySQLEmitter] <- computed_field
-    # name: str <- computed_field
+    # label: str <- computed_field
 
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
         return self.klass.graph_properties
 
     @computed_field
-    def name(self) -> str:
+    def label(self) -> str:
         return convert_snake_to_camel(self.source_meta_type)
 
     def emit_sql(self, conn: Connection) -> None:
@@ -148,99 +146,66 @@ class NodeSQLEmitter(GraphSQLEmitter):
             BEGIN
                 SET ROLE {admin_role};
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
-                WHERE name = {name}) THEN
-                    PERFORM ag_catalog.create_vlabel('graph', {name});
-                    EXECUTE format('CREATE INDEX ON graph.{name_ident} (id);');
+                WHERE name = {label}) THEN
+                    PERFORM ag_catalog.create_vlabel('graph', {label});
+                    EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
                 END IF;
             END $$;
             """
                 )
                 .format(
                     admin_role=ADMIN_ROLE,
-                    name=Literal(self.name),
-                    name_ident=Identifier(self.name),
+                    label=Literal(self.label),
+                    label_ident=Identifier(self.label),
                 )
                 .as_string()
             )
         )
 
-    def old_insert_node(self, conn: Connection) -> None:
-
-
-        function_string = SQL(
-            """
-            DECLARE 
-                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:%s {%s})
-                    $graph$) AS (a agtype);', %s);
-            BEGIN
-                EXECUTE _sql;
-                %s
-                RETURN NEW;
-            END;
-            """
-        ).format(
-            Identifier(self.name),
-            SQL(prop_key_str),
-            SQL(prop_val_str),
-            SQL("{edge_str}"),
-        )
-
-        return self.create_sql_function(
-            "insert_node",
-            function_string,
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
-        )
-
     def insert_node(self, conn: Connection) -> None:
-        prop_key_str = ", ".join(
-            SQL("{}: {}").format(Identifier(prop), Placeholder()) for prop in self.properties.keys()
-        )
-        prop_val_str = ", ".join(
-            SQL("quote_nullable(NEW.{})").format(Identifier(prop.accessor)) for prop in self.properties.values()
-        )
-
-        prop_key_str = ""
-        prop_val_str = ""
-
-        if self.properties:
-            prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
-            prop_val_str = ", ".join(
-                [
-                    f"quote_nullable(NEW.{prop.accessor})"
-                    for prop in self.properties.values()
-                ]
+        return
+        prop_str = " ".join(
+            SQL('{accessor}: "NEW".{value}')
+            .format(
+                accessor=Literal(prop.accessor),
+                value=Literal(prop.accessor),
             )
+            .as_string()
+            for prop in self.properties.values()
+        )
 
-        function_string = SQL(
-            """
-            DECLARE 
-                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:%s {%s})
-                    $graph$) AS (a agtype);', %s);
+        function_string = (
+            SQL(
+                """
             BEGIN
-                EXECUTE _sql;
-                {edge_str}
-                RETURN NEW;
+                SELECT * FROM cypher('graph', $graph$
+                    CREATE (v:{label} {{{prop_str}}})
+                $graph$) AS (a agtype);
+                RETURN NEW; 
             END;
             """
+            )
+            .format(label=SQL(self.label), prop_str=SQL(prop_str))
+            .as_string()
         )
 
-        return self.create_sql_function(
-            "insert_node",
-            function_string,
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "insert_node",
+                    function_string,
+                    operation="INSERT",
+                    include_trigger=True,
+                    db_function=False,
+                )
+            )
         )
 
     def update_node(self) -> None:
         """
-        Generates SQL code for creating an update function and trigger for a node record.
+        Generates SQL code for creating an update function and trigger for a graph_node record.
 
-        This method constructs the SQL code necessary to update an existing node record
+        This method constructs the SQL code necessary to update an existing graph_node record
         in a graph database when its corresponding relational table record is updated. The
         generated SQL includes the necessary property updates and edge updates if they exist.
 
@@ -250,8 +215,8 @@ class NodeSQLEmitter(GraphSQLEmitter):
         prop_key_str = ""
         prop_val_str = ""
         edge_str = ""
-        if self.edges:
-            edge_str = "\n".join([edge.update_edge_sql() for edge in self.edges])
+        if self.graph_edges:
+            edge_str = "\n".join([edge.update_edge_sql() for edge in self.graph_edges])
         if self.properties:
             prop_key_str = "SET " + ", ".join(
                 f"v.{prop.accessor} = %s" for prop in self.properties
@@ -286,7 +251,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
 
     def delete_node(self) -> None:
         """
-        Generates SQL code for creating a function and trigger to delete a node record
+        Generates SQL code for creating a function and trigger to delete a graph_node record
         from a graph database when its corresponding relational table record is deleted.
 
         Returns:
@@ -419,14 +384,17 @@ class EdgeSQLEmitter(GraphSQLEmitter):
         )
 
     def create_filter_field(self, conn: Connection) -> None:
+        return
         conn.execute(
             text(
                 SQL(
                     """
                 DO $$
+                DECLARE
+                    filter_id VARCHAR(26);
                 BEGIN
                     SET ROLE {admin_role};
-                    INSERT INTO {db_schema}.filter (
+                    INSERT INTO filter (
                         data_type,
                         source_meta_type,
                         destination_meta_type,
@@ -444,7 +412,8 @@ class EdgeSQLEmitter(GraphSQLEmitter):
                         {lookups},
                         {properties}
 
-                    );
+                    ) RETURNING id INTO filter_id;
+
                 END $$;
                 """
                 )
@@ -503,7 +472,7 @@ class EdgeSQLEmitter(GraphSQLEmitter):
         Generates the SQL string for creating an update function and trigger in a graph database.
 
         This function constructs a SQL query that:
-        - Matches a start node and an end node based on their labels and IDs.
+        - Matches a start graph_node and an end graph_node based on their labels and IDs.
         - Deletes an existing relationship between the vertices.
         - Creates a new relationship between the vertices with updated properties.
 

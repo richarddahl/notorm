@@ -33,7 +33,7 @@ class AlterTablesBeforeInsertFirstUser(TableSQLEmitter):
     the initial user into the system. It performs the following operations:
     1. Sets the role to admin
     2. Disables row level security on the user table
-    3. Drops NOT NULL constraints on created_by_id and modified_by_id columns in meta table
+    3. Drops NOT NULL constraints on created_by_id and modified_by_id columns in meta_record table
 
     Inherits from SQLEmitter base class.
 
@@ -67,7 +67,48 @@ class AlterTablesBeforeInsertFirstUser(TableSQLEmitter):
 
 class UpdateRecordOfFirstUser(TableSQLEmitter):
 
-    def emit_sql(self, conn: Connection, user_id: str, table_name: str = None) -> None:
+    def emit_sql(self, conn: Connection) -> None:
+        function_string = (
+            SQL(
+                """
+                DECLARE
+                    user_count INT4;
+                BEGIN
+                    user_count := (SELECT COUNT(*) FROM user);
+                    IF user_count > 1 THEN 
+                        RAISE EXCEPTION 'This is not the first user created';
+                    END IF;
+
+                    -- Update the user record for the first user
+                    NEW.created_by_id = NEW.id;
+                    NEW.modified_by_id = NEW.id;
+                    RETURN NEW;
+                END;
+            """
+            )
+            .format(
+                writer_role=WRITER_ROLE,
+                db_schema=DB_SCHEMA,
+            )
+            .as_string()
+        )
+
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "update_record_of_first_user",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT",
+                    include_trigger=True,
+                    db_function=False,
+                )
+            )
+        )
+
+    def emit_sql_old(
+        self, conn: Connection, user_id: str, table_name: str = None
+    ) -> None:
         conn.execute(
             text(
                 SQL(
@@ -75,7 +116,7 @@ class UpdateRecordOfFirstUser(TableSQLEmitter):
                 -- Set the role to the writer_role role
                 SET ROLE {writer_role};
                 -- Update the user record for the first user
-                UPDATE {db_schema}.user
+                UPDATE user
                 SET created_by_id = {user_id}, modified_by_id = {user_id}
                 WHERE id = {user_id};
             """
@@ -95,7 +136,7 @@ class AlterTablesAfterInsertFirstUser(TableSQLEmitter):
 
     After the first user is inserted, this class emits SQL that:
     1. Sets the role to admin
-    2. Adds NOT NULL constraints to created_by_id and modified_by_id columns in the meta table
+    2. Adds NOT NULL constraints to created_by_id and modified_by_id columns in the meta_record table
     3. Enables row level security on the user table
 
     Args:
@@ -138,13 +179,12 @@ class UserRecordAuditFunction(TableSQLEmitter):
             SQL(
                 """
             DECLARE
-                now TIMESTAMP := NOW();
                 user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
             BEGIN
                 /*
-                Function used to insert a record into the meta table, when a record is inserted
-                into a table that has a PK that is a FKDefinition to the meta table.
-                Set as a trigger on the table, so that the meta record is created when the
+                Function used to insert a record into the meta_record table, when a record is inserted
+                into a table that has a PK that is a FKDefinition to the meta_record table.
+                Set as a trigger on the table, so that the meta_record record is created when the
                 record is created.
 
                 Has particular logic to handle the case where the first user is created, as
@@ -155,7 +195,8 @@ class UserRecordAuditFunction(TableSQLEmitter):
                 IF user_id IS NOT NULL AND
                     NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
                         RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
-                ELSIF user_id IS NULL AND
+                END IF;
+                IF user_id IS NULL AND
                     EXISTS (SELECT id FROM {db_schema}.user) THEN
                         IF TG_OP = 'UPDATE' THEN
                             IF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = OLD.id) THEN
@@ -169,19 +210,14 @@ class UserRecordAuditFunction(TableSQLEmitter):
                 END IF;
 
                 IF TG_OP = 'INSERT' THEN
-                    NEW.is_active = TRUE;
-                    NEW.is_deleted = FALSE;
-                    NEW.created_at = now;
+                    IF user_id IS NULL THEN
+                        user_id := NEW.id;
+                    END IF;
                     NEW.created_by_id = user_id;
-                    NEW.modified_at = now;
                     NEW.modified_by_id = user_id;
                 ELSIF TG_OP = 'UPDATE' THEN
-                    NEW.modified_at = now;
                     NEW.modified_by_id = user_id;
                 ELSIF TG_OP = 'DELETE' THEN
-                    NEW.is_active = FALSE;
-                    NEW.is_deleted = TRUE;
-                    NEW.deleted_at = now;
                     NEW.deleted_by_id = user_id;
                 END IF;
 
@@ -190,9 +226,8 @@ class UserRecordAuditFunction(TableSQLEmitter):
             """
             )
             .format(
-                db_schema=DB_SCHEMA,
-                admin_role=ADMIN_ROLE,
                 writer_role=WRITER_ROLE,
+                db_schema=DB_SCHEMA,
             )
             .as_string()
         )
@@ -222,12 +257,12 @@ class GetPermissibleGroupsFunction(TableSQLEmitter):
                 permissible_groups VARCHAR(26)[];
             BEGIN
                 SELECT id
-                FROM {db_schema}.group g
-                JOIN {db_schema}.user__group__role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
-                JOIN {db_schema}.role on ugr.role_id = role.id
-                JOIN {db_schema}.role__permission rp ON rp.role_id = role.id
-                JOIN {db_schema}.permission p ON p.id = rp.permission_id
-                JOIN {db_schema}.meta_type mt ON mt.id = tp.meta_type_name
+                FROM group g
+                JOIN user__group__role ugr ON ugr.group_id = g.id AND ugr.user_id = user_id
+                JOIN role on ugr.role_id = role.id
+                JOIN role__permission rp ON rp.role_id = role.id
+                JOIN permission p ON p.id = rp.permission_id
+                JOIN meta_type mt ON mt.id = tp.meta_type_id
                 WHERE mt.name = meta_type
                 INTO permissible_groups;
                 RETURN permissible_groups;
@@ -254,14 +289,14 @@ class ValidateGroupInsert(TableSQLEmitter):
                 """
             DECLARE
                 group_count INT4;
-                tenanttype {db_schema}.tenanttype;
+                tenanttype tenanttype;
             BEGIN
                 SELECT tenant_type INTO tenanttype
-                FROM {db_schema}.tenant
+                FROM tenant
                 WHERE id = NEW.tenant_id;
 
                 SELECT COUNT(*) INTO group_count
-                FROM {db_schema}.group
+                FROM group
                 WHERE tenant_id = NEW.tenant_id;
 
                 IF NOT {ENFORCE_MAX_GROUPS} THEN
@@ -318,8 +353,8 @@ class ValidateGroupInsert(TableSQLEmitter):
 
 # class InsertGroupConstraint(SQLEmitter):
 #    def emit_sql(self, conn: Connection:Engine)-> str:
-#        return """ALTER TABLE {db_schema}.group ADD CONSTRAINT ck_can_insert_group
-#            CHECK ({db_schema}.validate_group_insert(tenant_id) = true);
+#        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
+#            CHECK (validate_group_insert(tenant_id) = true);
 #            """
 
 
@@ -328,23 +363,24 @@ class InsertGroupForTenant(TableSQLEmitter):
         conn.execute(
             text(
                 SQL(
-                    """CREATE OR REPLACE FUNCTION {db_schema}.insert_group_for_tenant()
-            RETURNS TRIGGER
-            LANGUAGE plpgsql
-            AS $$
-            BEGIN
-                SET ROLE {admin_role};
-                INSERT INTO {db_schema}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
-                RETURN NEW;
-            END;
-            $$;
+                    """
+                CREATE OR REPLACE FUNCTION {db_schema}.insert_group_for_tenant()
+                RETURNS TRIGGER
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    SET ROLE {admin_role};
+                    INSERT INTO {db_schema}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
+                    RETURN NEW;
+                END;
+                $$;
 
-            CREATE OR REPLACE TRIGGER insert_group_for_tenant_trigger
-            -- The trigger to call the function
-            AFTER INSERT ON {db_schema}.tenant
-            FOR EACH ROW
-            EXECUTE FUNCTION {db_schema}.insert_group_for_tenant();
-            """
+                CREATE OR REPLACE TRIGGER insert_group_for_tenant_trigger
+                -- The trigger to call the function
+                AFTER INSERT ON tenant
+                FOR EACH ROW
+                EXECUTE FUNCTION {db_schema}.insert_group_for_tenant();
+                """
                 )
                 .format(
                     db_schema=DB_SCHEMA,

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-
+'''
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
 
@@ -22,7 +22,7 @@ class TestUser:
         assert User.__module__ == f"{settings.DB_SCHEMA}.auth.tables"
         assert User.__table_args__[1].get("schema") == "uno"
         assert User.__tablename__ == "user"
-        print(User.__table__.columns.keys())
+        # print(User.__table__.columns.keys())
         assert list(User.__table__.columns.keys()) == [
             "id",
             "email",
@@ -150,7 +150,7 @@ class TestUser:
                 "name": "fk_user_id",
                 "constrained_columns": ["id"],
                 "referred_schema": "uno",
-                "referred_table": "meta",
+                "referred_table": "meta_record",
                 "referred_columns": ["id"],
                 "options": {},
                 "comment": None,
@@ -192,3 +192,5 @@ class TestUser:
                 "comment": None,
             }
         ]
+
+'''

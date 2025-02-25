@@ -14,6 +14,10 @@ class UnoError(Exception):
         self.error_code = error_code
 
 
+class UnoRegistryError(UnoError):
+    pass
+
+
 class SchemaConfigError(UnoError):
     pass
 

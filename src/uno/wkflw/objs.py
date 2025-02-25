@@ -16,10 +16,10 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import str_26, str_255
-from uno.db.tables import (
+from uno.db.obj import str_26, str_255
+from uno.meta.objs import (
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
@@ -34,7 +34,7 @@ from uno.config import settings
 
 class Workflow(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 ):
@@ -51,7 +51,7 @@ class Workflow(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
@@ -113,10 +113,10 @@ class Workflow(
         ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
         index=True,
     )
-    applicable_meta_type_name: Mapped[str_26] = mapped_column(
+    applicable_meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
     )
-    record_meta_type_name: Mapped[Optional[str_26]] = mapped_column(
+    record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
@@ -129,13 +129,13 @@ class Workflow(
         doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
     )
     Index(
-        "ix_workflow_applicable_meta_type_name",
-        "applicable_meta_type_name",
+        "ix_workflow_applicable_meta_type_id",
+        "applicable_meta_type_id",
         unique=True,
     )
     Index(
-        "ix_workflowrecord_meta_type_name",
-        "record_meta_type_name",
+        "ix_workflowrecord_meta_type_id",
+        "record_meta_type_id",
         unique=True,
     )
 
@@ -148,7 +148,7 @@ class Workflow(
 
 
 class WorkflowStep(
-    MetaRecord, MetaObjectMixin, RecordAuditMixin, HistoryTableAuditMixin
+    MetaRecord, MetaRecordMixin, RecordAuditMixin, HistoryTableAuditMixin
 ):
     __tablename__ = "workflow_step"
     __table_args__ = {
@@ -162,7 +162,7 @@ class WorkflowStep(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
@@ -170,7 +170,7 @@ class WorkflowStep(
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
         index=True,
     )
     objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(

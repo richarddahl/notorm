@@ -112,9 +112,9 @@ class RowLevelSecurity(TableSQLEmitter):
         return (
             SQL(
                 """
-            -- Enable RLS for the table {db_schema}.{table_name}
+            -- Enable RLS for the table {table_name}
             SET ROLE {db_name}_admin;
-            ALTER TABLE {db_schema}.{table_name} ENABLE ROW LEVEL SECURITY;
+            ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY;
             """
             )
             .format(db_schema=DB_SCHEMA, table_name=SQL(self.table_name))
@@ -132,9 +132,9 @@ class RowLevelSecurity(TableSQLEmitter):
         return (
             SQL(
                 """
-            -- FORCE RLS for the table {db_schema}.{table_name}
+            -- FORCE RLS for the table {table_name}
             SET ROLE {db_name}_admin;
-            ALTER TABLE {db_schema}.{table_name} FORCE ROW LEVEL SECURITY;
+            ALTER TABLE {table_name} FORCE ROW LEVEL SECURITY;
             """
             )
             .format(db_schema=DB_SCHEMA, table_name=SQL(self.table_name))
@@ -273,7 +273,7 @@ def user_select_policy_sql(self.table_name):
             All other users to select only records associated with their tenant;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             email = current_setting('rls_var.email', true)::TEXT OR
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
@@ -297,7 +297,7 @@ def user_insert_policy_sql(self.table_name) -> str:
         Regular users cannot insert records.
         */
         CREATE POLICY user_insert_policy
-        ON {db_schema}.{table_name} FOR INSERT
+        ON {table_name} FOR INSERT
         WITH CHECK (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             email = current_setting('rls_var.user_email', true)::TEXT OR
@@ -323,7 +323,7 @@ def user_update_policy_sql(self.table_name) -> str:
             All other users to select only records associated with their tenant;
         */
         CREATE POLICY user_update_policy
-        ON {db_schema}.{table_name} FOR UPDATE
+        ON {table_name} FOR UPDATE
         USING (
             email = current_setting('rls_var.email', true)::TEXT OR
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
@@ -347,7 +347,7 @@ def user_delete_policy_sql(self.table_name) -> str:
         Regular users cannot delete records.
         */
         CREATE POLICY user_delete_policy
-        ON {db_schema}.{table_name} FOR DELETE
+        ON {table_name} FOR DELETE
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -383,7 +383,7 @@ def tenant_select_policy_sql(self.table_name):
             All other users to select only their tenant;
         */
         CREATE POLICY tenant_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             id = current_setting('rls_var.tenant_id', true)::TEXT
@@ -406,7 +406,7 @@ def tenant_insert_policy_sql(self.table_name) -> str:
         Regular users cannot insert user records.
         */
         CREATE POLICY tenant_insert_policy
-        ON {db_schema}.{table_name} FOR INSERT
+        ON {table_name} FOR INSERT
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
@@ -425,7 +425,7 @@ def tenant_update_policy_sql(self.table_name) -> str:
             All other users to select only user records associated with their tenant;
         */
         CREATE POLICY tenant_update_policy
-        ON {db_schema}.{table_name} FOR UPDATE
+        ON {table_name} FOR UPDATE
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -449,7 +449,7 @@ def tenant_delete_policy_sql(self.table_name) -> str:
             Superusers to delete tenant records;
         */
         CREATE POLICY tenant_delete_policy
-        ON {db_schema}.{table_name} FOR DELETE
+        ON {table_name} FOR DELETE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
@@ -475,7 +475,7 @@ def admin_select_policy_sql(self.table_name):
             Tenant Admin users to select all records associated with their tenant;
         */
         CREATE POLICY admin_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -500,7 +500,7 @@ def admin_insert_policy_sql(self.table_name):
             Tenant Admin users to insert a record associated with their tenant;
         */
         CREATE POLICY admin_insert_policy
-        ON {db_schema}.{table_name} FOR INSERT
+        ON {table_name} FOR INSERT
         WITH CHECK (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -524,7 +524,7 @@ def admin_update_policy_sql(self.table_name):
             Tenant Admin users to update all records associated with their tenant;
         */
         CREATE POLICY admin_update_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -546,7 +546,7 @@ def admin_delete_policy_sql(self.table_name):
             Tenant Admin users to delete all records associated with their tenant;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -579,7 +579,7 @@ def default_select_policy_sql(self.table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -588,7 +588,7 @@ def default_select_policy_sql(self.table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'SELECT')::TEXT[])
+                group_id IN (uno.permissible_groups('{table_name}', 'SELECT')::TEXT[])
             )
         );
         """
@@ -609,7 +609,7 @@ def default_insert_policy_sql(self.table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -618,7 +618,7 @@ def default_insert_policy_sql(self.table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'INSERT')::TEXT[])
+                group_id IN (uno.permissible_groups('{table_name}', 'INSERT')::TEXT[])
             )
         );
         """
@@ -639,7 +639,7 @@ def default_update_policy_sql(self.table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -648,7 +648,7 @@ def default_update_policy_sql(self.table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'UPDATE')::TEXT[])
+                group_id IN (uno.permissible_groups('{table_name}', 'UPDATE')::TEXT[])
             )
         );
         """
@@ -669,7 +669,7 @@ def default_delete_policy_sql(self.table_name):
             Regular users to select only records associated with their Groups or that they own.;
         */
         CREATE POLICY user_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (
             current_setting('rls_var.is_superuser', true)::BOOLEAN OR
             (
@@ -678,7 +678,7 @@ def default_delete_policy_sql(self.table_name):
             ) OR
             (
                 owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN (uno.permissible_groups('{db_schema}.{table_name}', 'DELETE')::TEXT[])
+                group_id IN (uno.permissible_groups('{table_name}', 'DELETE')::TEXT[])
             )
         );
         """
@@ -703,7 +703,7 @@ def superuser_select_policy_sql(self.table_name):
             Superusers to select all records;
         */
         CREATE POLICY tenant_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
     )
@@ -718,7 +718,7 @@ def superuser_insert_policy_sql(self) -> str:
             Superusers to insert records;
         */
         CREATE POLICY tenant_insert_policy
-        ON {db_schema}.{table_name} FOR INSERT
+        ON {table_name} FOR INSERT
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
@@ -736,7 +736,7 @@ def superuser_update_policy_sql(self) -> str:
             Superusers to update records;
         */
         CREATE POLICY tenant_update_policy
-        ON {db_schema}.{table_name} FOR UPDATE
+        ON {table_name} FOR UPDATE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
@@ -754,7 +754,7 @@ def superuser_delete_policy_sql(self) -> str:
             Superusers to delete records;
         */
         CREATE POLICY tenant_delete_policy
-        ON {db_schema}.{table_name} FOR DELETE
+        ON {table_name} FOR DELETE
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
         )
@@ -779,7 +779,7 @@ def public_select_policy_sql(self):
             All users to select all records;
         */
         CREATE POLICY tenant_select_policy
-        ON {db_schema}.{table_name} FOR SELECT
+        ON {table_name} FOR SELECT
         USING (true);
         """
         )

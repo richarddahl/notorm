@@ -7,32 +7,37 @@ This module contains the global fixtures for the tests in all test modules.
 Each test module has its own conftest.py file that containts the fixtures for that module.
 """
 
+
 import pytest
 
-from psycopg.sql import SQL
+# from psycopg.sql import SQL
 
-from sqlalchemy import func, select, delete, text, create_engine, Inspector, Column
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.asyncio import create_async_engine
+# from sqlalchemy import func, select, delete, text, create_engine, Inspector, Column
+# from sqlalchemy.orm import sessionmaker, scoped_session
+# from sqlalchemy.ext.asyncio import create_async_engine
 
 from uno.db.management.db_manager import DBManager
 
-from uno.auth.enums import TenantType
+# from uno.auth.enums import TenantType
 from uno.config import settings
 
-import uno.db.tables as db_tables
-import uno.attr.tables as attr_tables
-import uno.auth.tables as auth_tables
-import uno.fltr.tables as fltr_tables
-import uno.msg.tables as msg_tables
-import uno.rprt.tables as rprt_tables
-import uno.wkflw.tables as wkflw_tables
+import uno.meta.objs as db_tables
+
+# import uno.auth.tables as auth_tables
+
+
+'''
+
+# import uno.attr.tables as attr_tables
+# import uno.auth.tables as auth_tables
+# import uno.fltr.tables as fltr_tables
+# import uno.msg.tables as msg_tables
+# import uno.rprt.tables as rprt_tables
+# import uno.wkflw.tables as wkflw_tables
 
 ###########################################
 # SQL CONSTANTS FOR TESTING PURPOSES ONLY #
 ###########################################
-
-
 CREATE_TEST_RAISE_CURRENT_ROLE_FUNCTION = """
 CREATE OR REPLACE FUNCTION uno.testraise_role()
 RETURNS VOID
@@ -218,7 +223,7 @@ def superuser_id():
     db = DBManager()
     db.drop_db()
     db.create_db()
-    yield db.create_user(is_superuser=True)
+    return db.create_user(is_superuser=True)
 
 
 @pytest.fixture(scope="class")
@@ -355,3 +360,5 @@ def user_dict(session, superuser_id, tenant_dict, group_dict):
 @pytest.fixture(scope="class")
 def data_dict(user_dict, tenant_dict, group_dict):
     yield {"users": user_dict, "tenants": tenant_dict, "groups": group_dict}
+
+'''

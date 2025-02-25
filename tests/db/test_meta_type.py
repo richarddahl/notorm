@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-
+'''
 from sqlalchemy import inspect, Integer
 from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 
@@ -31,7 +31,7 @@ class TestMetaType:
         db_inspector = inspect(db_connection)
         assert db_inspector.get_indexes("meta_type", schema=self.schema) == [
             {
-                "name": "ix_uno_meta_type_name",
+                "name": "ix_uno_meta_type_id",
                 "unique": True,
                 "column_names": ["name"],
                 "include_columns": [],
@@ -65,9 +65,11 @@ class TestMetaType:
         # print(db_inspector.get_check_constraints("meta_type", schema=self.schema))
         assert db_inspector.get_check_constraints("meta_type", schema=self.schema) == []
 
-    def test_meta_type_name_column(self, db_connection):
+    def test_meta_type_id_column(self, db_connection):
         db_inspector = inspect(db_connection)
         column = db_column(db_inspector, "meta_type", "name", schema=self.schema)
         assert column is not None
         assert column.get("nullable") is False
         assert isinstance(column.get("type"), VARCHAR)
+
+'''

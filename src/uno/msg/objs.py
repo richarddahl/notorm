@@ -17,14 +17,14 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.base import (
+from uno.db.obj import (
     Base,
     str_26,
     str_255,
 )
-from uno.db.tables import (
+from uno.meta.objs import (
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
@@ -44,7 +44,6 @@ class MessageAddressedTo(Base):
     display_name_plural: ClassVar[str] = "Messages Addressed To"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
-    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -71,7 +70,6 @@ class MessageCopiedTo(Base):
     display_name_plural: ClassVar[str] = "Messages Copied To"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
-    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -99,7 +97,6 @@ class MessageRelatedObject(Base):
     display_name_plural: ClassVar[str] = "Message MetaRecord Objects"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
-    include_in_graph = False
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -107,14 +104,14 @@ class MessageRelatedObject(Base):
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
 class Message(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -132,7 +129,7 @@ class Message(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     sender_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
@@ -160,34 +157,29 @@ class Message(
 
     # Relationships
     sender: Mapped["User"] = relationship(
-        back_populates="messages_sent",
         foreign_keys=[sender_id],
         doc="User who sent the message",
         info={"edge": "IS_SENDER"},
     )
-    addressed_to: Mapped["User"] = relationship(
-        back_populates="messages_recieved",
+    addressed_to: Mapped[list["User"]] = relationship(
         secondary=MessageAddressedTo.__table__,
         doc="Users addressed on the message",
         info={"edge": "RECEIVED"},
     )
 
-    copied_to: Mapped["User"] = relationship(
-        back_populates="copied_messages",
+    copied_to: Mapped[list["User"]] = relationship(
         secondary=MessageCopiedTo.__table__,
         doc="Users copied on the message",
         info={"edge": "COPIED_ON"},
     )
     parent: Mapped["Message"] = relationship(
-        back_populates="children",
         foreign_keys=[parent_id],
+        remote_side=[id],
         doc="Parent message",
         info={"edge": "IS_PARENT_OF"},
     )
     children: Mapped["Message"] = relationship(
-        back_populates="parent",
-        foreign_keys=[parent_id],
-        remote_side=[id],
+        foreign_keys=[id],
         doc="Child messages",
         info={"edge": "IS_CHILD_OF"},
     )

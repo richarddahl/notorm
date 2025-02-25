@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 import enum
+
 # Filter Enumerations
 
 
@@ -22,7 +23,7 @@ class Include(str, enum.Enum):
 
 class Match(str, enum.Enum):
     """
-    Enumeration class for Uno match types.
+    Enumeration class for UnoObj match types.
 
     The Match class represents the different match types in db queries.
 

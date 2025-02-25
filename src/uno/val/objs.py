@@ -4,17 +4,17 @@
 
 import datetime
 
-from typing import ClassVar, Optional
+from typing import ClassVar
 from decimal import Decimal
 
-from sqlalchemy import ForeignKey, Identity
+from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.base import Base, str_26, str_255, str_list_255
-from uno.db.tables import (
+from uno.db.obj import Base, str_26
+from uno.meta.objs import (
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
@@ -30,35 +30,30 @@ from uno.val.enums import (
 from uno.config import settings
 
 
-class AttachmentMeta(Base):
-    __tablename__ = "attachment__meta"
+class AttachmentMetaRecord(Base):
+    __tablename__ = "attachment__meta_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
-        "comment": "The relationship between attachments and meta objects",
+        "comment": "The relationship between attachments and meta_record objects",
     }
     display_name: ClassVar[str] = "Attachment MetaRecord"
     display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
-    include_in_graph = False
 
     # Columns
+
     attachment_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.attachment.id", ondelete="CASCADE"),
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
 
-class BooleanValue(
-    MetaRecord,
-    MetaObjectMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
-):
+class BooleanValue(MetaRecord):
     __tablename__ = "boolean_value"
     __table_args__ = (
         {
@@ -73,7 +68,7 @@ class BooleanValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -97,7 +92,7 @@ class BooleanValue(
 
 class DateTimeValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -115,7 +110,7 @@ class DateTimeValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -139,7 +134,7 @@ class DateTimeValue(
 
 class DateValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -157,7 +152,7 @@ class DateValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -181,7 +176,7 @@ class DateValue(
 
 class DecimalValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -199,7 +194,7 @@ class DecimalValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -223,7 +218,7 @@ class DecimalValue(
 
 class IntegerValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -241,7 +236,7 @@ class IntegerValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -265,7 +260,7 @@ class IntegerValue(
 
 class TextValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -283,7 +278,7 @@ class TextValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -307,7 +302,7 @@ class TextValue(
 
 class TimeValue(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -325,7 +320,7 @@ class TimeValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -349,7 +344,7 @@ class TimeValue(
 
 class Attachment(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -366,7 +361,7 @@ class Attachment(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(unique=True, doc="Name of the file")
@@ -382,7 +377,7 @@ class Attachment(
 
 class Method(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -393,13 +388,12 @@ class Method(
     }
     display_name: ClassVar[str] = "Object Function"
     display_name_plural: ClassVar[str] = "Object Functions"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
     )
 
@@ -429,7 +423,7 @@ This is something for Jeff to look at and see if it is useful and feasible, usin
 
 class CalculationSymbol(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -440,7 +434,6 @@ class CalculationSymbol(
     }
     display_name: ClassVar[str] = "Calculation Input"
     display_name_plural: ClassVar[str] = "Calculation Inputs"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -456,7 +449,7 @@ class CalculationSymbol(
 
 class Calculation(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -467,14 +460,13 @@ class Calculation(
     }
     display_name: ClassVar[str] = "Calculation"
     display_name_plural: ClassVar[str] = "Calculations"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
 
-    meta_type_name: Mapped[str_26] = mapped_column(
+    meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
     )

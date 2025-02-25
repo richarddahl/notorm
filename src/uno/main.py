@@ -8,35 +8,18 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from uno.app.tags import tags_metadata
+
+# import uno.attr.tables as attr_tables
+import uno.auth.objs as auth_tables
+
+# import uno.msg.tables as msg_tables
+# import uno.fltr.tables as fltr_tables
+# import uno.rprt.tables as rprt_tables
+# import uno.wkflw.tables as wkflw_tables
 from uno.config import settings
 
 
-import uno.attr.tables as attr_tables
-import uno.auth.tables as auth_tables
-import uno.msg.tables as msg_tables
-import uno.fltr.tables as fltr_tables
-import uno.rprt.tables as rprt_tables
-import uno.wkflw.tables as wkflw_tables
-
-
-tags_metadata = [
-    {
-        "name": "0KUI",
-        "description": "Zero Knowledge User Interface.",
-        "externalDocs": {
-            "description": "uno 0kui docs",
-            "url": "http://localhost:8001/okui/",
-        },
-    },
-    {
-        "name": "auth",
-        "description": "Manage Users, Roles, Groups etc...",
-        "externalDocs": {
-            "description": "uno auth docs",
-            "url": "http://localhost:8001/auth/models",
-        },
-    },
-]
 app = FastAPI(
     openapi_tags=tags_metadata,
     title="Uno is not an ORM",

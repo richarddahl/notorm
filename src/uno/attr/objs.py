@@ -11,24 +11,24 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db.base import Base, str_26, str_255
+from uno.db.obj import UnoObj
 
-from uno.db.tables import (
+from uno.meta.objs import (
     MetaRecord,
     MetaType,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
 from uno.db.sql.sql_emitter import SQLEmitter
 
 # from uno.auth.rls_sql_emitters import RowLevelSecurity
-from uno.fltr.tables import Query
+from uno.fltr.objs import Query
 
 from uno.config import settings
 
 
-class AttributeValue(Base):
+class AttributeValue(UnoObj):
     __tablename__ = "attribute__value"
     __table_args__ = (
         {
@@ -39,7 +39,6 @@ class AttributeValue(Base):
 
     display_name: ClassVar[str] = "Attribute Object Value"
     display_name_plural: ClassVar[str] = "Attribute Object Values"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -49,7 +48,7 @@ class AttributeValue(Base):
         primary_key=True,
     )
     value_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -59,13 +58,12 @@ class AttributeTypeMetaType(Base):
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
-            "comment": "The relationship between attribute types and the meta types they describe",
+            "comment": "The relationship between attribute types and the meta_record types they describe",
         },
     )
 
     display_name: ClassVar[str] = "Attribute Type Applicability"
     display_name_plural: ClassVar[str] = "Attribute Type Applicabilities"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -74,7 +72,7 @@ class AttributeTypeMetaType(Base):
         ForeignKey(f"{settings.DB_SCHEMA}.attribute_type.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    meta_type_name: Mapped[str_255] = mapped_column(
+    meta_type_id: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         primary_key=True,
     )
@@ -82,7 +80,7 @@ class AttributeTypeMetaType(Base):
 
 class Attribute(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 ):
@@ -100,7 +98,7 @@ class Attribute(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
         doc="The unique identifier for the attribute",
     )
@@ -115,7 +113,7 @@ class Attribute(
     # Relationships
     attribute_type: Mapped["AttributeType"] = relationship(
         foreign_keys=[attribute_type_id],
-        back_populates="attributes",
+        # back_populates="attributes",
         doc="The type of attribute",
         info={"edge": "HAS_ATTRIBUTE_TYPE"},
     )
@@ -128,7 +126,7 @@ class Attribute(
 
 class AttributeType(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 ):
@@ -146,7 +144,7 @@ class AttributeType(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"), primary_key=True
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
     )
     name: Mapped[str_255] = mapped_column(unique=True)
     text: Mapped[str] = mapped_column()
@@ -158,20 +156,20 @@ class AttributeType(
     describes_id: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
-        doc="The meta types that the attribute type describes.",
+        doc="The meta_record types that the attribute type describes.",
     )
     description_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
         index=True,
-        doc="The query that determines which meta types are applicable to this attribute type.",
+        doc="The query that determines which meta_record types are applicable to this attribute type.",
     )
     value_type_name: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
-        doc="The meta types that are values for the attribute type",
+        doc="The meta_record types that are values for the attribute type",
     )
     value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
-        doc="The query that determines which meta types are used as values for the attribute type.",
+        doc="The query that determines which meta_record types are used as values for the attribute type.",
     )
     required: Mapped[bool] = mapped_column(
         default=False, doc="Is the attribute required?"
@@ -190,13 +188,13 @@ class AttributeType(
     parent: Mapped["AttributeType"] = relationship(
         foreign_keys=[parent_id],
         remote_side=[id],
-        back_populates="children",
+        # back_populates="children",
         doc="The parent attribute type",
         info={"edge": "IS_PARENT_OF"},
     )
     children: Mapped[list["AttributeType"]] = relationship(
         foreign_keys=[id],
-        back_populates="parent",
+        # back_populates="parent",
         doc="The child attribute types",
         info={"edge": "IS_CHILD_OF"},
     )
@@ -204,24 +202,24 @@ class AttributeType(
         primaryjoin=describes_id == MetaType.name,
         secondary=AttributeTypeMetaType.__table__,
         secondaryjoin=AttributeTypeMetaType.attribute_type_id == id,
-        doc="The meta types that the attribute type describes.",
+        doc="The meta_record types that the attribute type describes.",
         info={"edge": "DESCRIBES"},
     )
     description_limiting_query: Mapped[Optional[Query]] = relationship(
         Query,
-        back_populates="attribute_type_applicability",
+        # back_populates="attribute_type_applicability",
         primaryjoin=description_limiting_query_id == Query.id,
-        doc="The query that determines which meta types are applicable to this attribute type.",
+        doc="The query that determines which meta_record types are applicable to this attribute type.",
         info={"edge": "DETERMINES_APPLICABILITY"},
     )
     value_types: Mapped[list[MetaType]] = relationship(
         primaryjoin=value_type_name == MetaType.name,
-        doc="The meta types that are values for the attribute type",
+        doc="The meta_record types that are values for the attribute type",
         info={"edge": "IS_VALUE_TYPE_FOR"},
     )
 
     attributes: Mapped[list[Attribute]] = relationship(
-        back_populates="attribute_type",
+        # back_populates="attribute_type",
         foreign_keys=[Attribute.attribute_type_id],
         remote_side=Attribute.attribute_type_id,
         doc="The attributes with this attribute type",

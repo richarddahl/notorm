@@ -18,6 +18,30 @@ from uno.db.sql.sql_emitter import (
 
 
 class AlterGrants(TableSQLEmitter):
+    def emit_sql_for_DDL(self) -> None:
+        return (
+            SQL(
+                """
+            SET ROLE {admin_role};
+            -- Configure table ownership and privileges
+            ALTER TABLE {table_name} OWNER TO {admin_role};
+            REVOKE ALL ON {table_name} FROM PUBLIC, {writer_role}, {reader_role};
+            GRANT SELECT ON {table_name} TO
+                {reader_role},
+                {writer_role};
+            GRANT ALL ON {table_name} TO
+                {writer_role};
+            """
+            )
+            .format(
+                admin_role=ADMIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                table_name=SQL(self.table_name),
+            )
+            .as_string()
+        )
+
     def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
@@ -25,20 +49,20 @@ class AlterGrants(TableSQLEmitter):
                     """
             SET ROLE {admin_role};
             -- Congigure table ownership and privileges
-            ALTER TABLE {db_schema}.{table_name} OWNER TO {admin_role};
-            GRANT SELECT ON {db_schema}.{table_name} TO
-                {reader},
-                {writer};
-            GRANT INSERT, UPDATE, DELETE ON {db_schema}.{table_name} TO
-                {writer};
+            ALTER TABLE {table_name} OWNER TO {admin_role};
+            REVOKE ALL ON {table_name} FROM PUBLIC, {writer_role}, {reader_role};
+            GRANT SELECT ON {table_name} TO
+                {reader_role},
+                {writer_role};
+            GRANT ALL ON {table_name} TO
+                {writer_role};
             """
                 )
                 .format(
                     admin_role=ADMIN_ROLE,
-                    reader=READER_ROLE,
-                    writer=WRITER_ROLE,
-                    db_schema=DB_SCHEMA,
-                    table_name=Identifier(self.table_name),
+                    reader_role=READER_ROLE,
+                    writer_role=WRITER_ROLE,
+                    table_name=SQL(self.table_name),
                 )
                 .as_string()
             )
@@ -74,7 +98,7 @@ class RecordVersionAudit(TableSQLEmitter):
                 SQL(
                     """
             -- Enable auditing for the table
-            SELECT audit.enable_tracking('{db_schema}.{table_name}'::regclass);
+            SELECT audit.enable_tracking('{table_name}'::regclass);
             """
                 )
                 .format(
@@ -130,9 +154,9 @@ class CreateHistoryTable(TableSQLEmitter):
             AS (
                 SELECT 
                     t1.*,
-                    t2.meta_type_name
-                FROM {db_schema}.{table_name} t1
-                INNER JOIN {db_schema}.meta t2
+                    t2.meta_type_id
+                FROM {table_name} t1
+                INNER JOIN meta_record t2
                 ON t1.id = t2.id
             )
             WITH NO DATA;
@@ -192,7 +216,7 @@ class InsertHistoryTableRecord(TableSQLEmitter):
             BEGIN
                 INSERT INTO audit.{db_schema}_{table_name}
                 SELECT *
-                FROM {db_schema}.{table_name}
+                FROM {table_name}
                 WHERE id = NEW.id;
                 RETURN NEW;
             END;
@@ -222,6 +246,25 @@ class InsertHistoryTableRecord(TableSQLEmitter):
 
 class InsertMetaTypeRecord(TableSQLEmitter):
 
+    def emit_sql_for_DDL(self) -> str:
+        return (
+            SQL(
+                """
+            -- Create the meta_type record
+            SET ROLE {writer_role};
+            INSERT INTO {schema}.meta_type (id)
+            VALUES ({table_name})
+            ON CONFLICT DO NOTHING;
+            """
+            )
+            .format(
+                schema=DB_SCHEMA,
+                writer_role=WRITER_ROLE,
+                table_name=Literal(self.table_name),
+            )
+            .as_string()
+        )
+
     def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
@@ -229,7 +272,7 @@ class InsertMetaTypeRecord(TableSQLEmitter):
                     """
             -- Create the meta_type record
             SET ROLE {writer_role};
-            INSERT INTO {schema}.meta_type (name)
+            INSERT INTO {schema}.meta_type (id)
             VALUES ({table_name})
             ON CONFLICT DO NOTHING;
             """
@@ -249,7 +292,7 @@ class InsertMetaRecordTrigger(TableSQLEmitter):
         conn.execute(
             text(
                 self.create_sql_trigger(
-                    "insert_meta",
+                    "insert_meta_record",
                     timing="BEFORE",
                     operation="INSERT",
                     for_each="ROW",
@@ -259,37 +302,77 @@ class InsertMetaRecordTrigger(TableSQLEmitter):
         )
 
 
-class RecordAuditFunction(TableSQLEmitter):
+class RecordStatusFunction(TableSQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
+        function_string = (
+            SQL(
+                """
+            DECLARE
+                now TIMESTAMP := NOW();
+            BEGIN
+                SET ROLE {writer_role};
+
+                IF TG_OP = 'INSERT' THEN
+                    NEW.is_active = TRUE;
+                    NEW.is_deleted = FALSE;
+                    NEW.created_at = now;
+                    NEW.modified_at = now;
+                ELSIF TG_OP = 'UPDATE' THEN
+                    NEW.modified_at = now;
+                ELSIF TG_OP = 'DELETE' THEN
+                    NEW.is_active = FALSE;
+                    NEW.is_deleted = TRUE;
+                    NEW.deleted_at = now;
+                END IF;
+
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(writer_role=WRITER_ROLE)
+            .as_string()
+        )
+
+        conn.execute(
+            text(
+                self.create_sql_function(
+                    "set_record_status",
+                    function_string,
+                    timing="BEFORE",
+                    operation="INSERT OR UPDATE OR DELETE",
+                    include_trigger=True,
+                    db_function=True,
+                )
+            )
+        )
+
+
+class RecordUserAuditFunction(TableSQLEmitter):
     def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
             DECLARE
                 user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
-                now TIMESTAMP := NOW();
             BEGIN
-                SET ROLE {writer};
+                SET ROLE {writer_role};
+
 
                 IF user_id IS NULL OR user_id = '' THEN
-                    RAISE EXCEPTION 'No user defined in rls_vars';
-                ELSIF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                    IF EXISTS (SELECT id FROM {db_schema}.user) THEN
+                        RAISE EXCEPTION 'No user defined in rls_vars';
+                    END IF;
+                END IF;
+                IF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
                     RAISE EXCEPTION 'User ID in rls_vars is not a valid user';
                 END IF;
 
                 IF TG_OP = 'INSERT' THEN
-                    NEW.is_active = TRUE;
-                    NEW.is_deleted = FALSE;
-                    NEW.created_at = now;
                     NEW.created_by_id = user_id;
-                    NEW.modified_at = now;
                     NEW.modified_by_id = user_id;
                 ELSIF TG_OP = 'UPDATE' THEN
-                    NEW.modified_at = now;
                     NEW.modified_by_id = user_id;
                 ELSIF TG_OP = 'DELETE' THEN
-                    NEW.is_active = FALSE;
-                    NEW.is_deleted = TRUE;
-                    NEW.deleted_at = now;
                     NEW.deleted_by_id = user_id;
                 END IF;
 
@@ -298,9 +381,8 @@ class RecordAuditFunction(TableSQLEmitter):
             """
             )
             .format(
+                writer_role=WRITER_ROLE,
                 db_schema=DB_SCHEMA,
-                admin_role=ADMIN_ROLE,
-                writer=WRITER_ROLE,
             )
             .as_string()
         )
@@ -308,7 +390,7 @@ class RecordAuditFunction(TableSQLEmitter):
         conn.execute(
             text(
                 self.create_sql_function(
-                    "record_audit",
+                    "set_record_user_audit",
                     function_string,
                     timing="BEFORE",
                     operation="INSERT OR UPDATE OR DELETE",
@@ -332,14 +414,14 @@ class InsertPermission(TableSQLEmitter):
                     SELECT, INSERT, UPDATE, DELETE
                 Deleted automatically by the DB via the FKDefinition Constraints ondelete when a meta_type is deleted.
                 */
-                INSERT INTO {db_schema}.permission(meta_type_name, operation)
-                    VALUES (NEW.name, 'SELECT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(meta_type_name, operation)
-                    VALUES (NEW.name, 'INSERT'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(meta_type_name, operation)
-                    VALUES (NEW.name, 'UPDATE'::uno.sqloperation);
-                INSERT INTO {db_schema}.permission(meta_type_name, operation)
-                    VALUES (NEW.name, 'DELETE'::uno.sqloperation);
+                INSERT INTO permission(meta_type_id, operation)
+                    VALUES (NEW.id, 'SELECT'::uno.sqloperation);
+                INSERT INTO permission(meta_type_id, operation)
+                    VALUES (NEW.id, 'INSERT'::uno.sqloperation);
+                INSERT INTO permission(meta_type_id, operation)
+                    VALUES (NEW.id, 'UPDATE'::uno.sqloperation);
+                INSERT INTO permission(meta_type_id, operation)
+                    VALUES (NEW.id, 'DELETE'::uno.sqloperation);
                 RETURN NEW;
             END;
             """
@@ -355,66 +437,6 @@ class InsertPermission(TableSQLEmitter):
                     function_string,
                     timing="AFTER",
                     operation="INSERT",
-                    include_trigger=True,
-                    db_function=True,
-                )
-            )
-        )
-
-
-class RecordAuditFunction(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        function_string = (
-            SQL(
-                """
-            DECLARE
-                user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
-                now TIMESTAMP := NOW();
-            BEGIN
-                SET ROLE {writer};
-
-                IF user_id IS NULL OR user_id = '' THEN
-                    RAISE EXCEPTION 'No user defined in rls_vars';
-                ELSIF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
-                    RAISE EXCEPTION 'User ID in rls_vars is not a valid user';
-                END IF;
-
-                IF TG_OP = 'INSERT' THEN
-                    NEW.is_active = TRUE;
-                    NEW.is_deleted = FALSE;
-                    NEW.created_at = now;
-                    NEW.created_by_id = user_id;
-                    NEW.modified_at = now;
-                    NEW.modified_by_id = user_id;
-                ELSIF TG_OP = 'UPDATE' THEN
-                    NEW.modified_at = now;
-                    NEW.modified_by_id = user_id;
-                ELSIF TG_OP = 'DELETE' THEN
-                    NEW.is_active = FALSE;
-                    NEW.is_deleted = TRUE;
-                    NEW.deleted_at = now;
-                    NEW.deleted_by_id = user_id;
-                END IF;
-
-                RETURN NEW;
-            END;
-            """
-            )
-            .format(
-                db_schema=DB_SCHEMA,
-                admin_role=ADMIN_ROLE,
-                writer=WRITER_ROLE,
-            )
-            .as_string()
-        )
-
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "record_audit",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT OR UPDATE OR DELETE",
                     include_trigger=True,
                     db_function=True,
                 )

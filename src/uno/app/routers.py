@@ -33,17 +33,17 @@ class SchemaRouter(BaseModel):
 
     @computed_field
     def table(self) -> Table:
-        return self.klass.__table__
+        return self.klass.table
 
     def add_to_app(self, schema: BaseModel, app: FastAPI):
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.api_version}/{self.klass.__tablename__}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.klass.table.name}{self.path_suffix}",
             response_model=schema,
             endpoint=getattr(self, self.endpoint),
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=[self.klass.__module__.split(".")[1]],
+            tags=[self.klass.display_name],
             summary=self.summary,
             description=self.description,
         )
@@ -102,12 +102,10 @@ class ListRouter(SchemaRouter):
     def description(self) -> str:
         return f"List {self.klass.display_name} from the database"
 
-    async def get(
-        self,
-    ):
+    def get(self):
+        return self.klass.db.select(self.table)
         # await db.execute(func.uno.authorize_user(authorization))
         # result = await db.execute(select(self.table))
-        return "test"
 
 
 class PutRouter(SchemaRouter):

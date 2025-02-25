@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 import enum
-# Filter Enumerations
 
 
 class ValueType(str, enum.Enum):
@@ -16,38 +15,22 @@ class ValueType(str, enum.Enum):
 
 
 class DataType(str, enum.Enum):
-    """
-    Enumeration class for Uno data types.
-
-    This class represents the different data types that can be used in the Uno framework.
-
-    Attributes:
-        BOOLEAN (str): Represents a boolean data type.
-        DATETIME (str): Represents a datetime data type.
-        DATE (str): Represents a date data type.
-        DECIMAL (str): Represents a decimal data type.
-        INTEGER (str): Represents an integer data type.
-        TEXT (str): Represents a text data type.
-        TIME (str): Represents a time data type.
-        OBJECT (str): Represents an object data type.
-
-    """
-
     BOOLEAN = "bool"
     DATETIME = "datetime"
     DATE = "date"
     DECIMAL = "Decimal"
+    JSON = "json"
     INTEGER = "int"
+    RECORD = "record"
     TEXT = "str"
     TIME = "time"
-    OBJECT = "object"
 
 
 class Lookup(str, enum.Enum):
     """
-    Enumeration class for Uno lookup operations.
+    Enumeration class for UnoObj lookup operations.
 
-    This class defines the available lookup operations that can be used in the Uno framework.
+    This class defines the available lookup operations that can be used in the UnoObj framework.
     Each lookup operation is represented by a string value.
 
     Attributes:

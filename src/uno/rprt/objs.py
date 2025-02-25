@@ -13,10 +13,10 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.postgresql import ENUM
 
-from uno.db.base import Base, str_26, str_64, str_255, bytea
-from uno.db.tables import (
+from uno.db.obj import Base, str_26, str_64, str_255, bytea
+from uno.meta.objs import (
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
@@ -36,7 +36,6 @@ class ReportTypeReportField(Base):
 
     display_name: ClassVar[str] = "Report Type Field"
     display_name_plural: ClassVar[str] = "Report Type Fields"
-    include_in_graph = False
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
@@ -53,7 +52,7 @@ class ReportTypeReportField(Base):
 
 class ReportField(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -72,12 +71,12 @@ class ReportField(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
     )
     field_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
-        doc="The meta type of the report field",
+        doc="The meta_record type of the report field",
     )
     field_type: Mapped[ValueType] = mapped_column(
         ENUM(
@@ -103,7 +102,7 @@ class ReportField(
 
 class ReportType(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -122,12 +121,12 @@ class ReportType(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
     )
     applicable_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
-        doc="The meta type of the report",
+        doc="The meta_record type of the report",
     )
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the report type",
@@ -141,7 +140,7 @@ class ReportType(
 
 class Report(
     MetaRecord,
-    MetaObjectMixin,
+    MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 ):
@@ -160,7 +159,7 @@ class Report(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta.id"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str_255] = mapped_column(
@@ -181,6 +180,6 @@ class Report(
         "inherit_condition": id == MetaRecord.id,
     }
 
-    def create_schema(self):
+    def insert_schema(self):
         """Create the BaseModel used for the report"""
         pass
