@@ -4,6 +4,7 @@
 
 import sys
 import io
+import importlib
 
 from psycopg.sql import SQL, Literal
 
@@ -34,16 +35,10 @@ from uno.auth.sql_emitters import (
 from uno.db.obj import meta_data, UnoObj
 from uno.meta.objs import MetaType
 from uno.app.tags import tags_metadata
-
-# import uno.attr.tables as attrs_tables
-import uno.auth.objs as auth_tables
-
-# import uno.msg.tables as msgs_tables
-# import uno.fltr.tables as fltrs_tables
-# import uno.rprt.tables as rprts_tables
-# import uno.val.tables as vals_tables
-# import uno.wkflw.tables as wrkflws_tables
 from uno.config import settings
+
+for module in settings.LOAD_MODULES:
+    importlib.import_module(module) as f"{module}_objs"
 
 
 app = FastAPI(
@@ -236,7 +231,7 @@ class DBManager:
     ) -> str:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        user = auth_tables.User(
+        user = auth_objs.User(
             email=email,
             handle=handle,
             full_name=full_name,
