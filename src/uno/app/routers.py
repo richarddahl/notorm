@@ -25,11 +25,9 @@ class SchemaRouter(BaseModel):
     endpoint: str
     path_prefix: str = "/api"
     api_version: str = settings.API_VERSION
-    multiple: bool = False
     include_in_schema: bool = True
-    response_model: BaseModel | None = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
 
     @computed_field
     def table(self) -> Table:
@@ -56,13 +54,9 @@ class PostRouter(SchemaRouter):
     endpoint: str = "post"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
-    multiple: bool = False
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
@@ -71,6 +65,10 @@ class PostRouter(SchemaRouter):
     @computed_field
     def description(self) -> str:
         return f"Create a new {self.klass.display_name} in the database"
+
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.klass.insert_schema
 
     async def post(
         self,
@@ -83,16 +81,12 @@ class PostRouter(SchemaRouter):
 class ListRouter(SchemaRouter):
     path_suffix: str = ""
     method: str = "GET"
-    endpoint: str = "get"
+    endpoint: str = "list_"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
-    multiple: bool = True
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
@@ -102,10 +96,27 @@ class ListRouter(SchemaRouter):
     def description(self) -> str:
         return f"List {self.klass.display_name} from the database"
 
-    def get(self):
-        return self.klass.db.select(self.table)
-        # await db.execute(func.uno.authorize_user(authorization))
-        # result = await db.execute(select(self.table))
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.klass.list_schema
+
+    async def list_(self) -> list["ListSchema"]:
+        result = await self.klass.db.list(schema=self.response_model)
+        print("")
+        print(result)
+        for r in result:
+            print(r)
+        print("")
+        return result
+
+    async def list_old(self) -> list["ListSchema"]:
+        result = await self.klass.db.list(schema=self.response_model)
+        print("")
+        print(result)
+        for r in result:
+            print(r)
+        print("")
+        return result
 
 
 class PutRouter(SchemaRouter):
@@ -115,12 +126,9 @@ class PutRouter(SchemaRouter):
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
     response_model: BaseModel | None = None
-    multiple: bool = False
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
@@ -146,12 +154,9 @@ class PatchRouter(SchemaRouter):
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
     response_model: BaseModel | None = None
-    multiple: bool = False
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
@@ -172,12 +177,9 @@ class DeleteRouter(SchemaRouter):
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
     response_model: BaseModel | None = None
-    multiple: bool = False
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
@@ -198,12 +200,9 @@ class SelectRouter(SchemaRouter):
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
     response_model: BaseModel | None = None
-    multiple: bool = False
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def summary(self) -> str:
