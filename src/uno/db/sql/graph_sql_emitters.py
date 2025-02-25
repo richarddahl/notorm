@@ -35,11 +35,11 @@ class GraphSQLEmitter(TableSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.klass.__tablename__
+        return self.kls.__tablename__
 
 
 class PropertySQLEmitter(GraphSQLEmitter):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
     data_type: str
@@ -116,14 +116,14 @@ class PropertySQLEmitter(GraphSQLEmitter):
 
 
 class NodeSQLEmitter(GraphSQLEmitter):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     # properties: dict[str, PropertySQLEmitter] <- computed_field
     # label: str <- computed_field
 
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
-        return self.klass.graph_properties
+        return self.kls.graph_properties
 
     @computed_field
     def label(self) -> str:
@@ -311,7 +311,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
 
 
 class EdgeSQLEmitter(GraphSQLEmitter):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
     destination_meta_type: str
@@ -328,7 +328,7 @@ class EdgeSQLEmitter(GraphSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.klass.table.name
+        return self.kls.table.name
 
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
@@ -339,14 +339,14 @@ class EdgeSQLEmitter(GraphSQLEmitter):
             if column.foreign_keys and column.primary_key:
                 continue
             data_type = column.type.python_type.__name__
-            for base in self.klass.registry.mappers:
+            for base in self.kls.registry.mappers:
                 if base.class_.__tablename__ == self.secondary.name:
-                    klass = base.class_
+                    kls = base.class_
                     break
             props.update(
                 {
                     column.name: PropertySQLEmitter(
-                        klass=klass,
+                        kls=kls,
                         accessor=column.name,
                         data_type=data_type,
                     )

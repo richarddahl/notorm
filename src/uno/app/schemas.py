@@ -22,12 +22,12 @@ from fastapi import FastAPI
 
 from uno.app.routers import (
     SchemaRouter,
-    PostRouter,
+    InsertRouter,
     ListRouter,
     SelectRouter,
-    PatchRouter,
+    UpdateRouter,
     DeleteRouter,
-    PutRouter,
+    ImportRouter,
 )
 
 
@@ -70,7 +70,7 @@ class RelatedSchema(BaseModel):
     primary_key: str
     string_representation: str
 
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    model_config = ConfigDict(extra="ignore")
 
 
 class SchemaDef(BaseModel):
@@ -82,35 +82,39 @@ class SchemaDef(BaseModel):
     include_fields: list[str] | None = []
     use_related_schemas: bool = False
 
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    model_config = ConfigDict(extra="ignore")
 
-    def create_schema(self, klass: DeclarativeBase, app: FastAPI) -> None:
+    def create_schema(self, kls: DeclarativeBase, app: FastAPI) -> None:
         if self.exclude_fields and self.include_fields:
             raise SchemaConfigError(
                 "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
                 "INCLUDE_EXCLUDE_FIELDS_CONFLICT",
             )
 
-        schema_name = f"{klass.__name__}{self.schema_type.capitalize()}"
-        fields = self.suss_fields(klass)
-        # fields.update(self.suss_related_fields(klass))
+        schema_name = f"{kls.__name__}{self.schema_type.capitalize()}"
+        fields = self.suss_fields(kls)
+        # fields.update(self.suss_related_fields(kls))
 
         schema = create_model(
             schema_name,
-            __doc__=self.format_doc(klass),
+            __doc__=self.format_doc(kls),
             __base__=self.schema_base,
             __validators__=None,
             __cls_kwargs__=None,
             __slots__=None,
             **fields,
         )
-        self.router(klass=klass).add_to_app(schema, app)
-        # self.set_schema(klass, schema)
-        setattr(klass, f"{self.schema_type}_schema", schema)
+        router = self.router(kls=kls, reponse_model=schema)
+        endpoint = router.endpoint_factory(
+            body=schema, response_model=router.response_model
+        )
+        router.add_to_app(app)
 
-    def suss_related_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
+        setattr(kls, f"{self.schema_type}_schema", schema)
+
+    def suss_related_fields(self, kls: DeclarativeBase) -> dict[str, Any]:
         fields = {}
-        for rel in klass.relationships():  # type: ignore
+        for rel in kls.relationships():  # type: ignore
             name = rel.key
             if self.include_fields and name not in self.include_fields:
                 continue
@@ -118,10 +122,10 @@ class SchemaDef(BaseModel):
                 continue
             if not rel.info.get("edge"):
                 raise SchemaFieldListError(
-                    f"Relationship {name} in class: {klass} is missing it's info['edge'].",
+                    f"Relationship {name} in class: {kls} is missing it's info['edge'].",
                     "MISSING_EDGE_INFO",
                 )
-            field = self.create_field_from_relationship(rel, klass, name)
+            field = self.create_field_from_relationship(rel, kls, name)
             if field is None:
                 continue
 
@@ -133,7 +137,7 @@ class SchemaDef(BaseModel):
     def create_field_from_relationship(
         self,
         rel: Any,
-        klass: DeclarativeBase,
+        kls: DeclarativeBase,
         name: str,
     ) -> tuple[Any, Any]:
         default = _Unset
@@ -164,14 +168,14 @@ class SchemaDef(BaseModel):
             return (column_type | None, field)
         return (column_type, field)
 
-    def suss_fields(self, klass: DeclarativeBase) -> dict[str, Any]:
+    def suss_fields(self, kls: DeclarativeBase) -> dict[str, Any]:
         fields = {}
-        for col in klass.table.columns:  # type: ignore
+        for col in kls.table.columns:  # type: ignore
             if self.include_fields and col.name not in self.include_fields:
                 continue
             if self.exclude_fields and col.name in self.exclude_fields:
                 continue
-            field = self.create_field_from_column(col, klass)
+            field = self.create_field_from_column(col, kls)
             if field is None:
                 continue
             if col.name not in fields:
@@ -181,7 +185,7 @@ class SchemaDef(BaseModel):
     def create_field_from_column(
         self,
         column: Column,
-        klass: DeclarativeBase,
+        kls: DeclarativeBase,
     ) -> tuple[Any, Any]:
         default = _Unset
         default_factory = _Unset
@@ -229,13 +233,13 @@ class SchemaDef(BaseModel):
 class InsertSchemaDef(SchemaDef):
     schema_type: str = "insert"
     schema_base: BaseModel = InsertSchemaBase
-    router: SchemaRouter = PostRouter
+    router: SchemaRouter = InsertRouter
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Create a {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"Create a {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.insert_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.insert_schema = schema
 
 
 class ListSchemaDef(SchemaDef):
@@ -244,11 +248,11 @@ class ListSchemaDef(SchemaDef):
     router: SchemaRouter = ListRouter
     use_related_schemas: bool = True
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"List {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"List {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.list_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.list_schema = schema
 
 
 class DisplaySchemaDef(SchemaDef):
@@ -257,23 +261,23 @@ class DisplaySchemaDef(SchemaDef):
     router: SchemaRouter = SelectRouter
     use_related_schemas: bool = True
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Select a {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"Select a {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.display_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.display_schema = schema
 
 
 class UpdateSchemaDef(SchemaDef):
     schema_type: str = "update"
     schema_base: BaseModel = UpdateSchemaBase
-    router: SchemaRouter = PatchRouter
+    router: SchemaRouter = UpdateRouter
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Update a {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"Update a {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.update_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.update_schema = schema
 
 
 class DeleteSchemaDef(SchemaDef):
@@ -282,20 +286,20 @@ class DeleteSchemaDef(SchemaDef):
     router: SchemaRouter = DeleteRouter
     include_fields: list[str] = ["id"]
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Delete a {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"Delete a {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.delete_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.delete_schema = schema
 
 
 class ImportSchemaDef(SchemaDef):
     schema_type: str = "import"
     schema_base: BaseModel = ImportSchemaBase
-    router: SchemaRouter = PutRouter
+    router: SchemaRouter = ImportRouter
 
-    def format_doc(self, klass: DeclarativeBase) -> str:
-        return f"Schema to Import a {klass.display_name}"
+    def format_doc(self, kls: DeclarativeBase) -> str:
+        return f"Schema to Import a {kls.display_name}"
 
-    def set_schema(self, klass: DeclarativeBase, schema: Type[BaseModel]) -> None:
-        klass.import_schema = schema
+    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+        kls.import_schema = schema

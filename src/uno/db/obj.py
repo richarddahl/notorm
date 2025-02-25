@@ -205,7 +205,7 @@ class UnoObj(BaseModel):
     def create_ddl_listeners(cls) -> None:
         for sql_emitter in cls.sql_emitters:
             event.listen(
-                cls.table, "after_create", DDL(sql_emitter(klass=cls).emit_sql())
+                cls.table, "after_create", DDL(sql_emitter(kls=cls).emit_sql())
             )
 
     # @classmethod
@@ -221,7 +221,7 @@ class UnoObj(BaseModel):
     @classmethod
     def set_graph(cls) -> None:
         cls.set_properties()
-        cls.graph_node = NodeSQLEmitter(klass=cls)
+        cls.graph_node = NodeSQLEmitter(kls=cls)
         cls.set_edges()
 
     @classmethod
@@ -236,7 +236,7 @@ class UnoObj(BaseModel):
                 continue
             data_type = column.type.python_type.__name__
             cls.graph_properties[column.name] = PropertySQLEmitter(
-                klass=cls,
+                kls=cls,
                 accessor=column.name,
                 data_type=data_type,
             )
@@ -250,7 +250,7 @@ class UnoObj(BaseModel):
         #    if not rel.mapper.class_.graph_node:
         #        continue
         #    edge = EdgeSQLEmitter(
-        #        klass=cls,
+        #        kls=cls,
         #        destination_meta_type=rel.mapper.class_.table.name,
         #        label=rel.info.get("edge"),
         #        secondary=rel.secondary,
@@ -288,7 +288,7 @@ class UnoObj(BaseModel):
     @classmethod
     def emit_sql(cls, conn: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(klass=cls).emit_sql(conn)
+            sql_emitter(kls=cls).emit_sql(conn)
 
     def save(self) -> None:
         schema = self.insert_schema(**self.model_dump())

@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from abc import ABC, abstractmethod
 from enum import Enum
-from functools import partialmethod
-from typing import Callable
+from typing import Callable, Type
 
 from pydantic import BaseModel, computed_field
 
@@ -16,12 +16,11 @@ from uno.config import settings
 get_db = None
 
 
-class SchemaRouter(BaseModel):
+class SchemaRouter(BaseModel, ABC):
     kls: type[BaseModel]
     reponse_model: type[BaseModel]
     path_suffix: str
     method: str
-    # endpoint: Callable
     path_prefix: str = "/api"
     api_version: str = settings.API_VERSION
     include_in_schema: bool = True
@@ -31,11 +30,11 @@ class SchemaRouter(BaseModel):
     def add_to_app(self, app: FastAPI):
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.api_version}/{self.kls.__name__}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.kls.table.name}{self.path_suffix}",
             response_model=(
                 self.reponse_model if not self.return_list else list[self.reponse_model]
             ),
-            endpoint=self.get_endpoint(),
+            endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
             tags=[self.kls.display_name],
@@ -44,8 +43,12 @@ class SchemaRouter(BaseModel):
         )
         app.include_router(router)
 
+    @abstractmethod
+    def endpoint_factory(self, schema: type[BaseModel]):
+        raise NotImplementedError
 
-class CreateRouter(SchemaRouter):
+
+class InsertRouter(SchemaRouter):
     path_suffix: str = ""
     method: str = "POST"
     path_prefix: str = "/api"
@@ -65,20 +68,13 @@ class CreateRouter(SchemaRouter):
     def response_model(self) -> BaseModel:
         return self.kls.insert_schema
 
-    async def get_endpoint(
-        self,
-        request: Request,
-        object: BaseModel = Body(...),
-    ) -> dict:
-        data = await request.json()
-        return self.response_model
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint, {"object": self.kls.import_schema})
+        async def endpoint(self, object: body):
+            return cls.response_model
 
-    async def _endpoint(self, id: str, object: BaseModel):
-        return self.response_model
+        setattr(cls, "endpoint", endpoint)
 
 
 class ListRouter(SchemaRouter):
@@ -102,13 +98,14 @@ class ListRouter(SchemaRouter):
     def response_model(self) -> BaseModel:
         return self.kls.list_schema
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint)
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-    async def _endpoint(self) -> list["ListSchemaBase"]:
-        results = await self.kls.db.list(schema=self.response_model)
-        return results
+        async def endpoint(self) -> list[BaseModel]:
+            results = await self.kls.db.list(schema=self.response_model)
+            return results
+
+        setattr(cls, "endpoint", endpoint)
 
 
 class ImportRouter(SchemaRouter):
@@ -136,16 +133,13 @@ class ImportRouter(SchemaRouter):
             __{self.kls.__name__.title()}Insert__ schema.   
         """
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint, {"object": self.kls.update_schema})
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint, object=self.kls.insert_schema)
+        async def endpoint(self, object: body):
+            return cls.response_model
 
-    def _endpoint(self, id: str, object: BaseModel):
-        return {"message": "update"}
+        setattr(cls, "endpoint", endpoint)
 
 
 class UpdateRouter(SchemaRouter):
@@ -165,12 +159,13 @@ class UpdateRouter(SchemaRouter):
     def description(self) -> str:
         return f"Update a {self.kls.display_name}, by its ID, using the __{self.kls.__name__.title()}Update__ schema."
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint, {"object": self.kls.update_schema})
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-    def _endpoint(self, id: str, object: BaseModel):
-        return {"message": "update"}
+        async def endpoint(self, id: str, object: body):
+            return cls.response_model
+
+        setattr(cls, "endpoint", endpoint)
 
 
 class DeleteRouter(SchemaRouter):
@@ -190,12 +185,13 @@ class DeleteRouter(SchemaRouter):
     def description(self) -> str:
         return f"Delete a {self.kls.display_name}, by its ID, using the __{self.kls.__name__.title()}Delete__ schema."
 
-    @computed_field
-    def get_endpoint(self) -> Callable:
-        return partialmethod(self._endpoint, {"object": self.kls.update_schema})
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-    def _endpoint(self, id: str, object: BaseModel):
-        return {"message": "delete"}
+        async def endpoint(self, id: str) -> type[BaseModel]:
+            return {"message": "delete"}
+
+        setattr(cls, "endpoint", endpoint)
 
 
 class SelectRouter(SchemaRouter):
@@ -215,13 +211,18 @@ class SelectRouter(SchemaRouter):
     def description(self) -> str:
         return f"Select a {self.kls.display_name}, by its ID. Returns the __{self.kls.__name__.title()}Select__ schema."
 
-    async def get_endpoint(
-        self,
-        id: str,
-    ):
-        return self.response_model
-        # result = await db.execute(select(self.table).filter_by(id=id))
-        # obj = result.scalar()
-        # if obj is None:
-        #    raise HTTPException(status_code=404, detail="Object not found")
-        # return self.response_model
+    @classmethod
+    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
+
+        async def endpoint(
+            self,
+            id: str,
+        ):
+            return self.response_model
+            # result = await db.execute(select(self.table).filter_by(id=id))
+            # obj = result.scalar()
+            # if obj is None:
+            #    raise HTTPException(status_code=404, detail="Object not found")
+            # return self.response_model
+
+        setattr(cls, "endpoint", endpoint)

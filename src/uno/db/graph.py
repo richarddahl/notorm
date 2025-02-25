@@ -35,11 +35,11 @@ class GraphDef(BaseModel):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.klass.__tablename__
+        return self.kls.__tablename__
 
 
 class PropertyDef(GraphDef):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
     data_type: str
@@ -73,14 +73,14 @@ class PropertyDef(GraphDef):
 
 
 class NodeDef(GraphDef):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     # properties: dict[str, PropertySQLEmitter] <- computed_field
     # label: str <- computed_field
 
     @computed_field
     def properties(self) -> dict[str, PropertyDef]:
-        return self.klass.graph_properties
+        return self.kls.graph_properties
 
     @computed_field
     def label(self) -> str:
@@ -98,7 +98,7 @@ class Edge(BaseModel):
 
 
 class EdgeDef(GraphDef):
-    # klass: type[DeclarativeBase] <- from GraphBase
+    # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
     destination_meta_type: str
@@ -117,7 +117,7 @@ class EdgeDef(GraphDef):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.klass.tablename
+        return self.kls.tablename
 
     @computed_field
     def properties(self) -> dict[str, PropertyDef]:
@@ -128,14 +128,14 @@ class EdgeDef(GraphDef):
             if column.foreign_keys and column.primary_key:
                 continue
             data_type = column.type.python_type.__name__
-            for base in self.klass.registry.mappers:
+            for base in self.kls.registry.mappers:
                 if base.class_.__tablename__ == self.secondary.name:
-                    klass = base.class_
+                    kls = base.class_
                     break
             props.update(
                 {
                     column.name: PropertyDef(
-                        klass=klass,
+                        kls=kls,
                         accessor=column.name,
                         data_type=data_type,
                     )
