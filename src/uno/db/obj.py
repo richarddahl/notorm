@@ -213,7 +213,7 @@ class UnoObj(BaseModel):
     #    return [relationship for relationship in inspect(cls).relationships]
 
     @classmethod
-    def configure_base(cls, app: FastAPI) -> None:
+    def configure_obj(cls, app: FastAPI) -> None:
         cls.create_schemas(app)
         cls.set_graph()
         cls.set_fields()
@@ -229,7 +229,7 @@ class UnoObj(BaseModel):
         cls.graph_properties = {}
         if not cls.graph_node:
             return
-        for column in cls.__table__.columns:
+        for column in cls.table.columns:
             if column.name in cls.exclude_from_properties:
                 continue
             if column.foreign_keys and not column.primary_key:
@@ -251,7 +251,7 @@ class UnoObj(BaseModel):
         #        continue
         #    edge = EdgeSQLEmitter(
         #        klass=cls,
-        #        destination_meta_type=rel.mapper.class_.__table__.name,
+        #        destination_meta_type=rel.mapper.class_.table.name,
         #        label=rel.info.get("edge"),
         #        secondary=rel.secondary,
         #        accessor=rel.key,

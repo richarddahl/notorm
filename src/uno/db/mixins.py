@@ -81,12 +81,14 @@ class RecordStatusMixin(UnoMixin):
         ColumnDef(
             args=["created_at", TIMESTAMP],
             kwargs={
+                "nullable": False,
                 "doc": "Time the record was created",
             },
         ),
         ColumnDef(
             args=["modified_at", TIMESTAMP],
             kwargs={
+                "nullable": False,
                 "doc": "Time the record was last modified",
             },
         ),
@@ -114,12 +116,14 @@ class RecordUserAuditMixin(UnoMixin):
         ColumnDef(
             args=["created_by_id", VARCHAR(26)],
             kwargs={
+                "nullable": False,
                 "index": True,
             },
         ),
         ColumnDef(
             args=["modified_by_id", VARCHAR(26)],
             kwargs={
+                "nullable": False,
                 "index": True,
             },
         ),

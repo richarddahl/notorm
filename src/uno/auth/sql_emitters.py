@@ -26,7 +26,7 @@ from uno.db.sql.sql_emitter import (
 from uno.config import settings
 
 
-class AlterTablesBeforeInsertFirstUser(TableSQLEmitter):
+class DisableRLSOnUserForFirstInsert(TableSQLEmitter):
     """Class for emitting SQL to modify tables before inserting the first user.
 
     This class handles the necessary table modifications required before inserting
@@ -50,10 +50,6 @@ class AlterTablesBeforeInsertFirstUser(TableSQLEmitter):
                 SET ROLE {admin_role};
                 -- Disable row level security on the user table
                 ALTER TABLE {db_schema}.user DISABLE ROW LEVEL SECURITY;
-
-                -- Drop the NOT NULL constraint on the user table for the created_by_id and modified_by_id columns
-                ALTER TABLE {db_schema}.user ALTER COLUMN created_by_id DROP NOT NULL;
-                ALTER TABLE {db_schema}.user ALTER COLUMN modified_by_id DROP NOT NULL;
             """
                 )
                 .format(
@@ -65,73 +61,7 @@ class AlterTablesBeforeInsertFirstUser(TableSQLEmitter):
         )
 
 
-class UpdateRecordOfFirstUser(TableSQLEmitter):
-
-    def emit_sql(self, conn: Connection) -> None:
-        function_string = (
-            SQL(
-                """
-                DECLARE
-                    user_count INT4;
-                BEGIN
-                    user_count := (SELECT COUNT(*) FROM user);
-                    IF user_count > 1 THEN 
-                        RAISE EXCEPTION 'This is not the first user created';
-                    END IF;
-
-                    -- Update the user record for the first user
-                    NEW.created_by_id = NEW.id;
-                    NEW.modified_by_id = NEW.id;
-                    RETURN NEW;
-                END;
-            """
-            )
-            .format(
-                writer_role=WRITER_ROLE,
-                db_schema=DB_SCHEMA,
-            )
-            .as_string()
-        )
-
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "update_record_of_first_user",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT",
-                    include_trigger=True,
-                    db_function=False,
-                )
-            )
-        )
-
-    def emit_sql_old(
-        self, conn: Connection, user_id: str, table_name: str = None
-    ) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
-                -- Set the role to the writer_role role
-                SET ROLE {writer_role};
-                -- Update the user record for the first user
-                UPDATE user
-                SET created_by_id = {user_id}, modified_by_id = {user_id}
-                WHERE id = {user_id};
-            """
-                )
-                .format(
-                    writer_role=WRITER_ROLE,
-                    db_schema=DB_SCHEMA,
-                    user_id=user_id,
-                )
-                .as_string()
-            )
-        )
-
-
-class AlterTablesAfterInsertFirstUser(TableSQLEmitter):
+class EnableUserRLSAfterFirstInsert(TableSQLEmitter):
     """Emits SQL to alter tables after first user is inserted.
 
     After the first user is inserted, this class emits SQL that:
@@ -156,10 +86,6 @@ class AlterTablesAfterInsertFirstUser(TableSQLEmitter):
                     """
                 -- Set the role to the admin role
                 SET ROLE {admin_role};
-                -- Add the null constraint back to the user table for the created_by_id and modified_by_id columns
-                ALTER TABLE {db_schema}.user ALTER COLUMN created_by_id SET NOT NULL;
-                ALTER TABLE {db_schema}.user ALTER COLUMN modified_by_id SET NOT NULL;
-
                 -- Enable row level security on the user table
                 ALTER TABLE {db_schema}.user ENABLE ROW LEVEL SECURITY;
             """

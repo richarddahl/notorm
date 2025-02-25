@@ -30,18 +30,18 @@ from uno.config import settings
 
 
 DB_ROLE = f"{settings.DB_NAME}_login"
-DB_DRIVER = settings.DB_DRIVER
+DB_ASYNC_DRIVER = settings.DB_ASYNC_DRIVER
 DB_USER_PW = settings.DB_USER_PW
 DB_HOST = settings.DB_HOST
 DB_NAME = settings.DB_NAME
 DB_SCHEMA = settings.DB_SCHEMA
 
 async_engine = create_async_engine(
-    f"{DB_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
 )
 
 engine = create_engine(
-    f"{DB_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
 )
 
 

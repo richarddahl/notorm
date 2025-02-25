@@ -47,7 +47,6 @@ from uno.auth.sql_emitters import (
     ValidateGroupInsert,
     InsertGroupForTenant,
     DefaultGroupTenant,
-    UpdateRecordOfFirstUser,
 )
 
 # from uno.auth.rls_sql_emitters import (
@@ -129,7 +128,6 @@ class User(UnoObj, UserMixin):
     display_name = "User"
     display_name_plural = "Users"
 
-    sql_emitters = [UpdateRecordOfFirstUser]
     schema_defs = user_schema_defs
 
     exclude_from_properties = ["is_superuser"]

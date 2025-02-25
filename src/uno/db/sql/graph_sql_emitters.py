@@ -328,7 +328,7 @@ class EdgeSQLEmitter(GraphSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.klass.__table__.name
+        return self.klass.table.name
 
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:

@@ -4,7 +4,6 @@
 
 from typing import Optional
 
-from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import VARCHAR
 
 from uno.db.mixins import (
@@ -13,7 +12,6 @@ from uno.db.mixins import (
     RecordStatusMixin,
     InsertMetaRecordMixin,
 )
-from uno.db.sql.table_sql_emitters import RecordUserAuditFunction
 from uno.auth.sql_emitters import UserRecordAuditFunction
 
 
@@ -25,14 +23,14 @@ class UserRecordUserAuditMixin(UnoMixin):
             args=["created_by_id", VARCHAR(26)],
             kwargs={
                 "index": True,
-                "nullable": True,
+                "nullable": False,
             },
         ),
         ColumnDef(
             args=["modified_by_id", VARCHAR(26)],
             kwargs={
                 "index": True,
-                "nullable": True,
+                "nullable": False,
             },
         ),
         ColumnDef(
