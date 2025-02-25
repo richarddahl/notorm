@@ -102,6 +102,12 @@ class ListRouter(SchemaRouter):
 
     async def list_(self) -> list["ListSchema"]:
         result = await self.klass.db.list(schema=self.response_model)
+        print("Result from db.list:", result)  # Debugging line
+        if not isinstance(result, list):
+            raise HTTPException(status_code=500, detail="Expected a list from db.list")
+        for item in result:
+            if not isinstance(item, dict):
+                raise HTTPException(status_code=500, detail="Expected a list of dicts")
         return result
 
     async def list_old(self) -> list["ListSchema"]:
