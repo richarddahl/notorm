@@ -26,8 +26,10 @@ class SchemaRouter(BaseModel):
     path_prefix: str = "/api"
     api_version: str = settings.API_VERSION
     include_in_schema: bool = True
+    tags: list[str | Enum] | None = None
+    return_list: bool = False
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def table(self) -> Table:
@@ -37,7 +39,7 @@ class SchemaRouter(BaseModel):
         router = APIRouter()
         router.add_api_route(
             f"{self.path_prefix}/{self.api_version}/{self.klass.table.name}{self.path_suffix}",
-            response_model=schema,
+            response_model=schema if not self.return_list else list[schema],
             endpoint=getattr(self, self.endpoint),
             methods=[self.method],
             include_in_schema=self.include_in_schema,
@@ -84,6 +86,7 @@ class ListRouter(SchemaRouter):
     endpoint: str = "list_"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
+    return_list: bool = True
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
     # table: Table | None = None <- computed_field
@@ -100,24 +103,9 @@ class ListRouter(SchemaRouter):
     def response_model(self) -> BaseModel:
         return self.klass.list_schema
 
-    async def list_(self) -> list["ListSchema"]:
-        result = await self.klass.db.list(schema=self.response_model)
-        print("Result from db.list:", result)  # Debugging line
-        if not isinstance(result, list):
-            raise HTTPException(status_code=500, detail="Expected a list from db.list")
-        for item in result:
-            if not isinstance(item, dict):
-                raise HTTPException(status_code=500, detail="Expected a list of dicts")
-        return result
-
-    async def list_old(self) -> list["ListSchema"]:
-        result = await self.klass.db.list(schema=self.response_model)
-        print("")
-        print(result)
-        for r in result:
-            print(r)
-        print("")
-        return result
+    async def list_(self) -> list["ListSchemaBase"]:
+        results = await self.klass.db.list(schema=self.response_model)
+        return results
 
 
 class PutRouter(SchemaRouter):

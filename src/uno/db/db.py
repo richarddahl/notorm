@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import asyncio
+
 from typing import Any
 
 from sqlalchemy import (
@@ -30,6 +32,7 @@ from uno.config import settings
 
 
 DB_ROLE = f"{settings.DB_NAME}_login"
+DB_SYNC_DRIVER = settings.DB_SYNC_DRIVER
 DB_ASYNC_DRIVER = settings.DB_ASYNC_DRIVER
 DB_USER_PW = settings.DB_USER_PW
 DB_HOST = settings.DB_HOST
@@ -41,7 +44,7 @@ async_engine = create_async_engine(
 )
 
 engine = create_engine(
-    f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
 )
 
 
@@ -66,9 +69,9 @@ class UnoDB:
     def connection(self) -> Connection:
         return engine.connect()
 
-    async def async_connection() -> AsyncConnection:
-        async with async_engine.connect() as conn:
-            yield conn
+    async def async_connection(self) -> AsyncConnection:
+        connection = await async_engine.connect()
+        yield connection
 
     def where(
         self,
@@ -112,16 +115,31 @@ class UnoDB:
         else:
             return ~operation
 
-    def select(self, values: dict[str, Any]) -> bool | None:
-        with self.connection() as conn:
+    def sync_list(self, schema: BaseModel) -> list[BaseModel]:
+        columns = [
+            self.db_table.c.get(field_name) for field_name in schema.model_fields.keys()
+        ]
+        with engine.connect() as conn:
             conn.execute(text("SET ROLE uno_dev_reader"))
-            stmt = select(self.db_table)
+            stmt = select(self.db_table).with_only_columns(*columns)
             result = conn.execute(stmt)
-            return result.fetchone()
+            return result.mappings().all()
 
-    def insert(self, schema: BaseModel) -> None:
+    async def list(self, schema: BaseModel) -> list[BaseModel]:
+        columns = [
+            self.db_table.c.get(field_name) for field_name in schema.model_fields.keys()
+        ]
+        async with async_engine.connect() as conn:
+            await conn.execute(text("SET ROLE uno_dev_reader"))
+            stmt = select(self.db_table).with_only_columns(*columns)
+            result = await conn.execute(stmt)
+            return result.mappings().all()
+
+    def sync_insert(
+        self, request_schema: BaseModel, response_schema: BaseModel
+    ) -> None:
         with self.connection() as conn:
-            conn.execute(insert(self.db_table).values(schema.model_dump()))
+            conn.execute(insert(self.db_table).values(request_schema.model_dump()))
             conn.commit()
             conn.close()
 

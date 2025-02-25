@@ -43,34 +43,34 @@ _Unset: Any = PydanticUndefined
 
 
 class ListSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class DisplaySchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class InsertSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    pass
 
 
 class UpdateSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class DeleteSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class ImportSchemaBase(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    pass
 
 
 class RelatedSchema(BaseModel):
     primary_key: str
     string_representation: str
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
 
 
 class SchemaDef(BaseModel):
@@ -82,7 +82,7 @@ class SchemaDef(BaseModel):
     include_fields: list[str] | None = []
     use_related_schemas: bool = False
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
 
     def create_schema(self, klass: DeclarativeBase, app: FastAPI) -> None:
         if self.exclude_fields and self.include_fields:
@@ -223,15 +223,6 @@ class SchemaDef(BaseModel):
     @classmethod
     def create_view(cls) -> None:
         cls.sql_emitters.append(ViewSQL().emit_sql())
-
-    @classmethod
-    def emit_sql(cls) -> str:
-        if cls.schema_operation_type != SchemaOperationType.SELECT:
-            return ""
-        return "\n".join(
-            [f"{sql_emitter().emit_sql()}" for sql_emitter in cls.sql_emitters]
-        )
-
 """
 
 
