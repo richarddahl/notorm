@@ -102,11 +102,6 @@ class ListRouter(SchemaRouter):
 
     async def list_(self) -> list["ListSchema"]:
         result = await self.klass.db.list(schema=self.response_model)
-        print("")
-        print(result)
-        for r in result:
-            print(r)
-        print("")
         return result
 
     async def list_old(self) -> list["ListSchema"]:
