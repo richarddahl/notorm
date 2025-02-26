@@ -99,6 +99,8 @@ class GraphNode(GraphBase):
     def properties(self) -> dict[str, GraphProperty]:
         props = {}
         for column in self.kls.table.columns:
+            if column.name in self.kls.exclude_from_properties:
+                continue
             data_type = column.type.python_type.__name__
             props.update(
                 {
@@ -115,8 +117,8 @@ class GraphNode(GraphBase):
         self.sql_emitter(kls=self.kls, node=self)._emit_sql(conn)
 
 
-class Edge(BaseModel):
-    source: str
+class GraphEdge(BaseModel):
+    # source: str
     destination: str
     label: str
     # accessor: str
