@@ -21,7 +21,8 @@ from uno.db.sql.table_sql_emitters import (
     RecordStatusFunction,
     RecordUserAuditFunction,
 )
-from uno.db.graph import Edge
+from uno.db.obj import UnoForeignKey
+from uno.db.graph import GraphEdge
 from uno.config import settings
 
 
@@ -112,36 +113,16 @@ class RecordUserAuditMixin(UnoMixin):
 
     sql_emitters = [RecordUserAuditFunction]
 
-    column_defs = [
-        ColumnDef(
-            args=["created_by_id", VARCHAR(26)],
-            kwargs={
-                "nullable": False,
-                "index": True,
-            },
-        ),
-        ColumnDef(
-            args=["modified_by_id", VARCHAR(26)],
-            kwargs={
-                "nullable": False,
-                "index": True,
-            },
-        ),
-        ColumnDef(
-            args=["deleted_by_id", VARCHAR(26)],
-            kwargs={
-                "index": True,
-                "nullable": True,
-            },
-        ),
-    ]
-
     created_by_id: Optional[str] = None
     modified_by_id: Optional[str] = None
     deleted_by_id: Optional[str] = None
 
 
-class GeneralMixin(InsertMetaRecordMixin, RecordStatusMixin, RecordUserAuditMixin):
+class GeneralMixin(
+    InsertMetaRecordMixin,
+    RecordStatusMixin,
+    RecordUserAuditMixin,
+):
     """Mixin for General Objects"""
 
     column_defs = []

@@ -6,48 +6,30 @@ from typing import Optional
 
 from sqlalchemy.dialects.postgresql import VARCHAR
 
+from uno.db.obj import UnoForeignKey
 from uno.db.mixins import (
     UnoMixin,
     ColumnDef,
     RecordStatusMixin,
     InsertMetaRecordMixin,
 )
+from uno.db.graph import GraphEdge
 from uno.auth.sql_emitters import UserRecordAuditFunction
 
 
 class UserRecordUserAuditMixin(UnoMixin):
     sql_emitters = [UserRecordAuditFunction]
 
-    column_defs = [
-        ColumnDef(
-            args=["created_by_id", VARCHAR(26)],
-            kwargs={
-                "index": True,
-                "nullable": False,
-            },
-        ),
-        ColumnDef(
-            args=["modified_by_id", VARCHAR(26)],
-            kwargs={
-                "index": True,
-                "nullable": False,
-            },
-        ),
-        ColumnDef(
-            args=["deleted_by_id", VARCHAR(26)],
-            kwargs={
-                "index": True,
-                "nullable": True,
-            },
-        ),
-    ]
-
     created_by_id: Optional[str] = None
     modified_by_id: Optional[str] = None
     deleted_by_id: Optional[str] = None
 
 
-class UserMixin(InsertMetaRecordMixin, RecordStatusMixin, UserRecordUserAuditMixin):
+class UserMixin(
+    InsertMetaRecordMixin,
+    RecordStatusMixin,
+    UserRecordUserAuditMixin,
+):
     """Mixin for General Objects"""
 
     column_defs = []

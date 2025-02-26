@@ -12,6 +12,7 @@ from sqlalchemy import (
     MetaData,
     inspect,
     Table,
+    Column,
     ForeignKey,
     event,
     DDL,
@@ -42,7 +43,7 @@ from fastapi import FastAPI
 
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
-from uno.db.graph import Edge
+from uno.db.graph import GraphEdge
 from uno.app.schemas import SchemaDef
 from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
 from uno.db.graph import GraphNode
@@ -69,7 +70,7 @@ meta_data = MetaData(
 
 
 class UnoRelatedModel(BaseModel):
-    local_table_name: ClassVar[str] = None
+    local_table_column_name: ClassVar[str] = None
     local_column: ClassVar[str] = None
     remote_table_name: ClassVar[str] = None
     remote_column_name: ClassVar[str] = None
@@ -78,12 +79,20 @@ class UnoRelatedModel(BaseModel):
 
 class UnoForeignKey(ForeignKey):
     related_model: ClassVar[UnoRelatedModel] = None
-    edge: ClassVar[Optional[Edge]] = None
+    edge: ClassVar[Optional[GraphEdge]] = None
 
     def __init__(self, *args, **kwargs) -> None:
         kwargs.pop("edge", None)
         kwargs.pop("related_model", None)
         super().__init__(*args, **kwargs)
+
+    def create_related_model(self) -> None:
+        self.related_model = UnoRelatedModel(
+            local_table_name=self.column.table.name,
+            local_column=self.column.name,
+            remote_table_name=self.column.foreign_keys[0].column.table.name,
+            remote_column_name=self.column.foreign_keys[0].column.name,
+        )
 
 
 class UnoTableDef(BaseModel):
@@ -118,8 +127,11 @@ class UnoObj(BaseModel):
         InsertMetaTypeRecord,
     ]
 
+    # Related model attributes
+    related_models: ClassVar[list[UnoRelatedModel]] = []
+
     # Graph attributes
-    # edges: ClassVar[dict[str, Edge]] = {}
+    # edges: ClassVar[dict[str, GraphEdge]] = {}
     # edge_defs: ClassVar[dict[str, EdgeDef]] = {}
     graph_node: ClassVar[GraphNode] = None
     # graph_edges: ClassVar[dict[str, EdgeSQLEmitter]] = {}
@@ -134,11 +146,6 @@ class UnoObj(BaseModel):
     update_schema: ClassVar[BaseModel] = None
     delete_schema: ClassVar[BaseModel] = None
     import_schema: ClassVar[BaseModel] = None
-
-    @classmethod
-    def create_schemas(cls, app: FastAPI) -> None:
-        for schema_def in cls.schema_defs:
-            schema_def.create_schema(cls, app)
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -208,15 +215,16 @@ class UnoObj(BaseModel):
         # cls.create_ddl_listeners()
 
     @classmethod
+    def create_schemas(cls, app: FastAPI) -> None:
+        for schema_def in cls.schema_defs:
+            schema_def.create_schema(cls, app)
+
+    @classmethod
     def create_ddl_listeners(cls) -> None:
         for sql_emitter in cls.sql_emitters:
             event.listen(
                 cls.table, "after_create", DDL(sql_emitter(kls=cls)._emit_sql())
             )
-
-    # @classmethod
-    # def relationships(cls) -> list[Any]:
-    #    return [relationship for relationship in inspect(cls).relationships]
 
     @classmethod
     def configure_obj(cls, app: FastAPI, conn: Connection = None) -> None:

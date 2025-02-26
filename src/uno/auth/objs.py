@@ -37,7 +37,7 @@ from uno.db.mixins import (
     GeneralMixin,
 )
 from uno.db.enums import SQLOperation
-from uno.db.graph import Edge
+from uno.db.graph import GraphEdge
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.meta.objs import MetaRecord, MetaType
 
@@ -79,17 +79,7 @@ class User(UnoObj, UserMixin):
                 "tenant_id",
                 UnoForeignKey(
                     "tenant.id",
-                    related_model=UnoRelatedModel(
-                        local_table_name="user",
-                        local_column_name="tenant_id",
-                        remote_table_name="tenant",
-                        remote_column_name="id",
-                    ),
-                    edge=Edge(
-                        source="User",
-                        destination="Tenant",
-                        label="BELONGS_TO",
-                    ),
+                    edge=GraphEdge(destination="Tenant", label="BELONGS_TO"),
                 ),
                 index=True,
             ),
@@ -97,19 +87,36 @@ class User(UnoObj, UserMixin):
                 "default_group_id",
                 UnoForeignKey(
                     "group.id",
-                    related_model=UnoRelatedModel(
-                        local_table_name="user",
-                        local_column_name="default_group_id",
-                        remote_table_name="group",
-                        remote_column_name="id",
-                    ),
-                    edge=Edge(
-                        source="User",
-                        destination="Group",
-                        label="HAS_DEFAULT_GROUP",
-                    ),
+                    edge=GraphEdge(destination="Group", label="HAS_DEFAULT_GROUP"),
                 ),
                 index=True,
+            ),
+            Column(
+                "created_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "modified_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "deleted_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
+                ),
+                index=True,
+                nullable=True,
             ),
             CheckConstraint(
                 """
@@ -131,7 +138,6 @@ class User(UnoObj, UserMixin):
     schema_defs = user_schema_defs
 
     exclude_from_properties = ["is_superuser"]
-    # graph_properties = []
 
     email: str
     handle: str
@@ -157,14 +163,7 @@ class Group(UnoObj, GeneralMixin):
                 "tenant_id",
                 UnoForeignKey(
                     "tenant.id",
-                    related_model=UnoRelatedModel(
-                        local_table_name="group",
-                        local_column_name="tenant_id",
-                        remote_table_name="tenant",
-                        remote_column_name="id",
-                    ),
-                    edge=Edge(
-                        source="Group",
+                    edge=GraphEdge(
                         destination="Tenant",
                         label="BELONGS_TO",
                     ),
@@ -172,6 +171,33 @@ class Group(UnoObj, GeneralMixin):
                 index=True,
             ),
             Column("name", VARCHAR(255), unique=True),
+            Column(
+                "created_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "modified_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "deleted_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
+                ),
+                index=True,
+                nullable=True,
+            ),
             Index("ix_group_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
@@ -227,14 +253,7 @@ class Role(UnoObj, GeneralMixin):
                 "tenant_id",
                 UnoForeignKey(
                     "tenant.id",
-                    related_model=UnoRelatedModel(
-                        local_table_name="role",
-                        local_column_name="tenant_id",
-                        remote_table_name="tenant",
-                        remote_column_name="id",
-                    ),
-                    edge=Edge(
-                        source="Role",
+                    edge=GraphEdge(
                         destination="Tenant",
                         label="BELONGS_TO",
                     ),
@@ -243,6 +262,33 @@ class Role(UnoObj, GeneralMixin):
             ),
             Column("name", VARCHAR(255), unique=True),
             Column("description", VARCHAR),
+            Column(
+                "created_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "modified_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "deleted_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
+                ),
+                index=True,
+                nullable=True,
+            ),
             Index("ix_role_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
@@ -304,6 +350,33 @@ class Tenant(UnoObj, GeneralMixin):
                 ),
                 server_default=TenantType.INDIVIDUAL.name,
                 nullable=False,
+            ),
+            Column(
+                "created_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "modified_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
+                ),
+                index=True,
+                nullable=False,
+            ),
+            Column(
+                "deleted_by_id",
+                UnoForeignKey(
+                    "user.id",
+                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
+                ),
+                index=True,
+                nullable=True,
             ),
         ],
     )
