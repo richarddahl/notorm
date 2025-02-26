@@ -22,7 +22,8 @@ class MetaType(UnoObj):
     display_name_plural = "Meta Types"
     include_in_api_docs = False
     sql_emitters = [InsertPermission]
-    name: str
+
+    id: str
 
 
 class MetaRecord(UnoObj):

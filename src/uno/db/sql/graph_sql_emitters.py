@@ -6,7 +6,7 @@ import json
 
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
-from pydantic import computed_field
+from pydantic import BaseModel, computed_field
 
 from sqlalchemy import Table
 from sqlalchemy.engine import Connection
@@ -35,7 +35,7 @@ class GraphSQLEmitter(TableSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.kls.__tablename__
+        return self.kls.table.name
 
 
 class PropertySQLEmitter(GraphSQLEmitter):
@@ -71,7 +71,7 @@ class PropertySQLEmitter(GraphSQLEmitter):
             return boolean_lookups
         return object_lookups
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         return
         conn.execute(
             text(
@@ -116,20 +116,24 @@ class PropertySQLEmitter(GraphSQLEmitter):
 
 
 class NodeSQLEmitter(GraphSQLEmitter):
-    # kls: type[DeclarativeBase] <- from GraphBase
-    # source_meta_type: str <- computed_field from GraphBase
-    # properties: dict[str, PropertySQLEmitter] <- computed_field
-    # label: str <- computed_field
-
-    @computed_field
-    def properties(self) -> dict[str, PropertySQLEmitter]:
-        return self.kls.graph_properties
+    node: BaseModel = None
+    # source_meta_type: str
+    # properties: dict[str, PropertySQLEmitter]
+    # label: str
 
     @computed_field
     def label(self) -> str:
-        return convert_snake_to_camel(self.source_meta_type)
+        return convert_snake_to_camel(self.node.label)
 
-    def emit_sql(self, conn: Connection) -> None:
+    @computed_field
+    def source_meta_type(self) -> str:
+        return self.node.kls.table.name
+
+    @computed_field
+    def properties(self) -> dict[str, PropertySQLEmitter]:
+        return self.node.properties
+
+    def _emit_sql(self, conn: Connection) -> None:
         self.create_node_label(conn)
         self.insert_node(conn)
         # self.update_node(conn)
@@ -162,30 +166,43 @@ class NodeSQLEmitter(GraphSQLEmitter):
             )
         )
 
-    def insert_node(self, conn: Connection) -> None:
-        return
-        prop_str = " ".join(
-            SQL('{accessor}: "NEW".{value}')
-            .format(
-                accessor=Literal(prop.accessor),
-                value=Literal(prop.accessor),
-            )
-            .as_string()
-            for prop in self.properties.values()
-        )
+    def insert_node(self, conn: Connection) -> str:
+        prop_key_str = ""
+        prop_val_str = ""
+        edge_str = ""
+        # if self.edges:
+        #    edge_str = "\n".join([edge.insert_edge_sql() for edge in self.edges])
 
+        if self.properties:
+            prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
+            prop_val_str = ", ".join(
+                [
+                    f"quote_nullable(NEW.{prop.accessor})"
+                    for prop in self.properties.values()
+                ]
+            )
         function_string = (
             SQL(
                 """
+            DECLARE 
+                insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
+                        CREATE (v:{label} {{{prop_key_str}}})
+                    $graph$) AS (a agtype);', {prop_val_str});
             BEGIN
-                SELECT * FROM cypher('graph', $graph$
-                    CREATE (v:{label} {{{prop_str}}})
-                $graph$) AS (a agtype);
-                RETURN NEW; 
+                SET ROLE {admin_role};
+                EXECUTE insert_node_sql;
+                {edge_str}
+                RETURN NEW;
             END;
             """
             )
-            .format(label=SQL(self.label), prop_str=SQL(prop_str))
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=SQL(self.label),
+                prop_key_str=SQL(prop_key_str),
+                prop_val_str=SQL(prop_val_str),
+                edge_str=SQL(edge_str),
+            )
             .as_string()
         )
 
@@ -195,6 +212,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
                     "insert_node",
                     function_string,
                     operation="INSERT",
+                    timing="AFTER",
                     include_trigger=True,
                     db_function=False,
                 )
@@ -354,7 +372,7 @@ class EdgeSQLEmitter(GraphSQLEmitter):
             )
         return props
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         self.create_edge_label(conn)
         self.create_filter_field(conn)
 

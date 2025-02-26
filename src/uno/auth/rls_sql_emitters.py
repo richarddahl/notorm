@@ -40,7 +40,7 @@ class RowLevelSecurity(TableSQLEmitter):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         """
         Generates and returns the SQL statements for enabling RLS, forcing RLS,
         and applying select, insert, update, and delete policies.

@@ -26,7 +26,7 @@ from uno.config import settings
 
 
 class SetRole(SQLEmitter):
-    def emit_sql(self, conn: Connection, role_name: str) -> None:
+    def _emit_sql(self, conn: Connection, role_name: str) -> None:
         conn.execute(
             text(
                 SQL(
@@ -45,7 +45,7 @@ class SetRole(SQLEmitter):
 
 class DropDatabaseAndRoles(SQLEmitter):
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
 
         self.drop_database(conn)
         self.drop_roles(conn)
@@ -91,7 +91,7 @@ class DropDatabaseAndRoles(SQLEmitter):
 
 class CreateRolesAndDatabase(SQLEmitter):
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         self.create_roles(conn)
         self.create_database(conn)
 
@@ -168,7 +168,7 @@ class CreateRolesAndDatabase(SQLEmitter):
 
 
 class InsertSchemasAndExtensions(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         self.create_schemas(conn)
         self.create_extensions(conn)
 
@@ -246,7 +246,7 @@ class InsertSchemasAndExtensions(SQLEmitter):
 
 class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         self.revokePrivileges(conn)
         self.setSearchPath(conn)
         self.grantSchemaPrivileges(conn)
@@ -429,14 +429,14 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
 
 class CreatePGULID(SQLEmitter):
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         with open("src/uno/db/sql/pgulid.sql", "r") as file:
             sql = file.read()
         conn.execute(text(SQL(sql).format(db_schema=DB_SCHEMA).as_string()))
 
 
 class CreateTokenSecret(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -481,7 +481,7 @@ class CreateTokenSecret(SQLEmitter):
 
 
 class GrantPrivileges(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         self.grant_table_privileges(conn)
         self.grant_sequence_privileges(conn)
 
@@ -561,7 +561,7 @@ class GrantPrivileges(SQLEmitter):
 
 
 class InsertMetaRecordFunction(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """

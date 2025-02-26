@@ -43,7 +43,7 @@ class SQLEmitter(ABC, BaseModel):
         return None
 
     @abstractmethod
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         raise NotImplementedError
 
     def create_sql_trigger(

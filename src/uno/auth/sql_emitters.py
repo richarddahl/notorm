@@ -38,10 +38,10 @@ class DisableRLSOnUserForFirstInsert(TableSQLEmitter):
     Inherits from SQLEmitter base class.
 
     Methods:
-        emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
+        _emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
     """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -76,10 +76,10 @@ class EnableUserRLSAfterFirstInsert(TableSQLEmitter):
         SQLEmitter
 
     Methods:
-        emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
+        _emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
     """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -100,7 +100,7 @@ class EnableUserRLSAfterFirstInsert(TableSQLEmitter):
 
 
 class UserRecordAuditFunction(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -174,7 +174,7 @@ class UserRecordAuditFunction(TableSQLEmitter):
 
 class GetPermissibleGroupsFunction(TableSQLEmitter):
 
-    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def _emit_sql(self, conn: Connection, table_name: str = None) -> str:
         function_string = SQL(
             text(
                 """
@@ -209,7 +209,7 @@ class GetPermissibleGroupsFunction(TableSQLEmitter):
 
 class ValidateGroupInsert(TableSQLEmitter):
 
-    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def _emit_sql(self, conn: Connection, table_name: str = None) -> str:
         function_string = (
             SQL(
                 """
@@ -278,14 +278,14 @@ class ValidateGroupInsert(TableSQLEmitter):
 
 
 # class InsertGroupConstraint(SQLEmitter):
-#    def emit_sql(self, conn: Connection:Engine)-> str:
+#    def _emit_sql(self, conn: Connection:Engine)-> str:
 #        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (validate_group_insert(tenant_id) = true);
 #            """
 
 
 class InsertGroupForTenant(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -318,7 +318,7 @@ class InsertGroupForTenant(TableSQLEmitter):
 
 
 class DefaultGroupTenant(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> str:
+    def _emit_sql(self, conn: Connection) -> str:
         function_string = SQL(
             """
             DECLARE

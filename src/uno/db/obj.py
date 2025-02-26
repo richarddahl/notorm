@@ -45,12 +45,7 @@ from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.db.graph import Edge
 from uno.app.schemas import SchemaDef
 from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
-from uno.db.sql.graph_sql_emitters import (
-    NodeSQLEmitter,
-    EdgeSQLEmitter,
-    PropertySQLEmitter,
-)
-from uno.db.graph import EdgeDef
+from uno.db.graph import GraphNode
 from uno.db.db import UnoDB
 from uno.errors import UnoRegistryError
 from uno.config import settings
@@ -123,11 +118,10 @@ class UnoObj(BaseModel):
     ]
 
     # Graph attributes
-    edges: ClassVar[dict[str, Edge]] = {}
-    edge_defs: ClassVar[dict[str, EdgeDef]] = {}
-    graph_node: ClassVar[NodeSQLEmitter] = None
-    graph_edges: ClassVar[dict[str, EdgeSQLEmitter]] = {}
-    graph_properties: ClassVar[dict[str, PropertySQLEmitter]] = {}
+    # edges: ClassVar[dict[str, Edge]] = {}
+    # edge_defs: ClassVar[dict[str, EdgeDef]] = {}
+    graph_node: ClassVar[GraphNode] = None
+    # graph_edges: ClassVar[dict[str, EdgeSQLEmitter]] = {}
     exclude_from_properties: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, dict[str, str]]] = {}
 
@@ -205,7 +199,7 @@ class UnoObj(BaseModel):
     def create_ddl_listeners(cls) -> None:
         for sql_emitter in cls.sql_emitters:
             event.listen(
-                cls.table, "after_create", DDL(sql_emitter(kls=cls).emit_sql())
+                cls.table, "after_create", DDL(sql_emitter(kls=cls)._emit_sql())
             )
 
     # @classmethod
@@ -213,33 +207,17 @@ class UnoObj(BaseModel):
     #    return [relationship for relationship in inspect(cls).relationships]
 
     @classmethod
-    def configure_obj(cls, app: FastAPI) -> None:
+    def configure_obj(cls, app: FastAPI, conn: Connection = None) -> None:
         cls.create_schemas(app)
-        cls.set_graph()
+        cls.set_graph(conn)
         cls.set_fields()
 
     @classmethod
-    def set_graph(cls) -> None:
-        cls.set_properties()
-        cls.graph_node = NodeSQLEmitter(kls=cls)
+    def set_graph(cls, conn: Connection) -> None:
+        cls.graph_node = GraphNode(kls=cls)
+        if conn is not None:
+            cls.graph_node._emit_sql(conn)
         cls.set_edges()
-
-    @classmethod
-    def set_properties(cls) -> None:
-        cls.graph_properties = {}
-        if not cls.graph_node:
-            return
-        for column in cls.table.columns:
-            if column.name in cls.exclude_from_properties:
-                continue
-            if column.foreign_keys and not column.primary_key:
-                continue
-            data_type = column.type.python_type.__name__
-            cls.graph_properties[column.name] = PropertySQLEmitter(
-                kls=cls,
-                accessor=column.name,
-                data_type=data_type,
-            )
 
     @classmethod
     def set_edges(cls) -> None:
@@ -286,9 +264,9 @@ class UnoObj(BaseModel):
         pass
 
     @classmethod
-    def emit_sql(cls, conn: Connection) -> None:
+    def _emit_sql(cls, conn: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(kls=cls).emit_sql(conn)
+            sql_emitter(kls=cls)._emit_sql(conn)
 
     def save(self) -> None:
         schema = self.insert_schema(**self.model_dump())

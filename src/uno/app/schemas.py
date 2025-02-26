@@ -226,7 +226,7 @@ class SchemaDef(BaseModel):
 """
     @classmethod
     def create_view(cls) -> None:
-        cls.sql_emitters.append(ViewSQL().emit_sql())
+        cls.sql_emitters.append(ViewSQL()._emit_sql())
 """
 
 

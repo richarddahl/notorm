@@ -32,7 +32,7 @@ from uno.config import settings
 class PathEdgeChcek(SQLEmitter):
     """ """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = """
             BEGIN
                 SELECT 

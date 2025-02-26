@@ -47,9 +47,6 @@ app = FastAPI(
     title="Uno is not an ORM",
 )
 
-for obj in UnoObj.registry.values():
-    obj.configure_obj(app)
-
 
 class DBManager:
     def create_db(self) -> None:
@@ -76,9 +73,8 @@ class DBManager:
         eng = self.engine(
             db_role="postgres", db_password="postgreSQLR0ck%", db_name="postgres"
         )
-        eng.dispose()
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            CreateRolesAndDatabase().emit_sql(conn)
+            CreateRolesAndDatabase()._emit_sql(conn)
             print("Created the roles and the database\n")
             conn.close()
         eng.dispose()
@@ -86,7 +82,7 @@ class DBManager:
     def create_schemas_and_extensions(self) -> None:
         eng = self.engine(db_role="postgres")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            InsertSchemasAndExtensions().emit_sql(conn)
+            InsertSchemasAndExtensions()._emit_sql(conn)
             print("Created the schemas and extensions\n")
             conn.close()
         eng.dispose()
@@ -94,7 +90,7 @@ class DBManager:
     def set_privileges_and_paths(self) -> None:
         eng = self.engine(db_role="postgres")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            GrantPrivilegesAndSetSearchPaths().emit_sql(conn)
+            GrantPrivilegesAndSetSearchPaths()._emit_sql(conn)
             print("Configured the privileges set the search paths\n")
             conn.close()
         eng.dispose()
@@ -102,10 +98,10 @@ class DBManager:
     def create_functions_triggers_and_tables(self) -> None:
         eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            CreateTokenSecret().emit_sql(conn)
+            CreateTokenSecret()._emit_sql(conn)
             print("Created the token_secret table\n")
 
-            CreatePGULID().emit_sql(conn)
+            CreatePGULID()._emit_sql(conn)
             print("Created the pgulid function\n")
 
             self.create_tables_functions_and_privileges(conn)
@@ -118,10 +114,10 @@ class DBManager:
         meta_data.create_all(bind=conn)
         print("Created the database tables\n")
 
-        GrantPrivileges().emit_sql(conn)
+        GrantPrivileges()._emit_sql(conn)
         print("Set the table privileges\n")
 
-        InsertMetaRecordFunction().emit_sql(conn)
+        InsertMetaRecordFunction()._emit_sql(conn)
         print("Created the insert_meta function\n")
 
     def emit_table_sql(self) -> None:
@@ -136,34 +132,37 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            SetRole().emit_sql(conn, "admin")
-            MetaType.emit_sql(conn)
+            for uno_obj in UnoObj.registry.values():
+                uno_obj.configure_obj(app, conn)
+
+            SetRole()._emit_sql(conn, "admin")
+            MetaType._emit_sql(conn)
 
             for uno in UnoObj.registry.values():
                 if issubclass(uno, MetaType):
                     continue  # Already emitted above
-                SetRole().emit_sql(conn, "admin")
+                SetRole()._emit_sql(conn, "admin")
                 # Emit the SQL for the table
-                uno.emit_sql(conn)
+                uno._emit_sql(conn)
             return
 
             for base in Base.registry.mappers:
                 base.class_.configure_obj(app)
-                SetRole().emit_sql(conn, "admin")
+                SetRole()._emit_sql(conn, "admin")
 
                 # Emit the SQL to create the graph property filters
                 for property in base.class_.graph_properties.values():
-                    property.emit_sql(conn)
+                    property._emit_sql(conn)
 
                 # Emit the SQL to create the graph graph_node
                 if base.class_.graph_node:
-                    base.class_.graph_node.emit_sql(conn)
+                    base.class_.graph_node._emit_sql(conn)
 
                 conn.commit()
             for base in Base.registry.mappers:
                 print(f"Created the graph_edges for: {base.class_.__tablename__}")
                 for edge in base.class_.graph_edges.values():
-                    edge.emit_sql(conn)
+                    edge._emit_sql(conn)
                 conn.commit()
 
             conn.close()
@@ -184,7 +183,7 @@ class DBManager:
                 f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
             )
             # Drop the Database
-            DropDatabaseAndRoles().emit_sql(conn)
+            DropDatabaseAndRoles()._emit_sql(conn)
             print(f"Database {settings.DB_NAME} and all assocated roles dropped\n")
             conn.close()
         eng.dispose()
@@ -208,7 +207,7 @@ class DBManager:
         )
         user_insert = user.insert_schema(**user.model_dump())
         with eng.connect() as conn:
-            DisableRLSOnUserForFirstInsert().emit_sql(conn)
+            DisableRLSOnUserForFirstInsert()._emit_sql(conn)
             result = conn.execute(
                 insert(user.db.db_table)
                 .values(**user_insert.model_dump())
@@ -218,7 +217,7 @@ class DBManager:
             print(f"Created the superuser: {user_id}\n")
             conn.commit()
 
-            EnableUserRLSAfterFirstInsert().emit_sql(conn)
+            EnableUserRLSAfterFirstInsert()._emit_sql(conn)
             conn.close()
         eng.dispose()
         return user_id

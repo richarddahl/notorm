@@ -131,7 +131,7 @@ class User(UnoObj, UserMixin):
     schema_defs = user_schema_defs
 
     exclude_from_properties = ["is_superuser"]
-    graph_properties = []
+    # graph_properties = []
 
     email: str
     handle: str
@@ -313,11 +313,11 @@ class Tenant(UnoObj, GeneralMixin):
     sql_emitters = [InsertGroupForTenant]
 
     schema_defs = tenant_schema_defs
-    edge_defs = {
-        "users": {"source": "Tenant", "destination": "User", "label": "OWNS"},
-        "groups": {"source": "Tenant", "destination": "Group", "label": "OWNS"},
-        "roles": {"source": "Tenant", "destination": "Role", "label": "OWNS"},
-    }
+    # edge_defs = {
+    #    "users": {"source": "Tenant", "destination": "User", "label": "OWNS"},
+    #    "groups": {"source": "Tenant", "destination": "Group", "label": "OWNS"},
+    #    "roles": {"source": "Tenant", "destination": "Role", "label": "OWNS"},
+    # }
 
     # BaseModel fields
     name: str

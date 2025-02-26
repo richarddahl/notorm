@@ -42,7 +42,7 @@ class AlterGrants(TableSQLEmitter):
             .as_string()
         )
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -84,7 +84,7 @@ class RecordVersionAudit(TableSQLEmitter):
     Example:
         ```python
         emitter = RecordVersionAudit("my_table")
-        emitter.emit_sql(engine)
+        emitter._emit_sql(engine)
         ```
 
     Note:
@@ -92,7 +92,7 @@ class RecordVersionAudit(TableSQLEmitter):
         Uses the global DB_SCHEMA constant for the schema name.
     """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -135,7 +135,7 @@ class CreateHistoryTable(TableSQLEmitter):
     Example:
         ```
         emitter = CreateHistoryTableSQL()
-        emitter.emit_sql(engine)
+        emitter._emit_sql(engine)
         ```
 
     Note:
@@ -144,7 +144,7 @@ class CreateHistoryTable(TableSQLEmitter):
         - Table will be named audit.{db_schema}_{table_name}
     """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -209,7 +209,7 @@ class InsertHistoryTableRecord(TableSQLEmitter):
         - The naming convention for audit tables is: audit.{schema}_{table_name}
     """
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -265,7 +265,7 @@ class InsertMetaTypeRecord(TableSQLEmitter):
             .as_string()
         )
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -288,7 +288,7 @@ class InsertMetaTypeRecord(TableSQLEmitter):
 
 
 class InsertMetaRecordTrigger(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 self.create_sql_trigger(
@@ -303,7 +303,7 @@ class InsertMetaRecordTrigger(TableSQLEmitter):
 
 
 class RecordStatusFunction(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -348,7 +348,7 @@ class RecordStatusFunction(TableSQLEmitter):
 
 
 class RecordUserAuditFunction(TableSQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -403,7 +403,7 @@ class RecordUserAuditFunction(TableSQLEmitter):
 
 class InsertPermission(TableSQLEmitter):
 
-    def emit_sql(self, conn: Connection) -> None:
+    def _emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """

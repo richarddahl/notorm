@@ -4,6 +4,10 @@
 
 import json
 
+from typing import ClassVar
+
+from abc import ABC, abstractmethod
+
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from pydantic import BaseModel, computed_field, ConfigDict
@@ -25,35 +29,38 @@ from uno.val.enums import (
     object_lookups,
     boolean_lookups,
 )
+from uno.db.sql.graph_sql_emitters import (
+    GraphSQLEmitter,
+    NodeSQLEmitter,
+    PropertySQLEmitter,
+)
 from uno.utilities import (
     convert_snake_to_camel,
     convert_snake_to_title,
 )
 
 
-class GraphDef(BaseModel):
+class GraphBase(BaseModel, ABC):
 
-    @computed_field
-    def source_meta_type(self) -> str:
-        return self.kls.__tablename__
+    sql_emitter: ClassVar[GraphSQLEmitter] = None
+
+    @abstractmethod
+    def _emit_sql(self, conn: Connection):
+        raise NotImplementedError
 
 
-class PropertyDef(GraphDef):
-    # kls: type[DeclarativeBase] <- from GraphBase
-    # source_meta_type: str <- computed_field from GraphBase
+class GraphProperty(GraphBase):
+    source_meta_type: str
     accessor: str
     data_type: str
-    # display: str <- computed_field
-    # destination_meta_type: str <- computed_field
+    # label: str <- computed_field
     # lookups: Lookup <- computed_field
 
-    @computed_field
-    def display(self) -> str:
-        return convert_snake_to_title(self.accessor)
+    sql_emitter = PropertySQLEmitter
 
     @computed_field
-    def destination_meta_type(self) -> str:
-        return self.source_meta_type
+    def label(self) -> str:
+        return convert_snake_to_title(self.accessor)
 
     @computed_field
     def lookups(self) -> Lookup:
@@ -71,20 +78,41 @@ class PropertyDef(GraphDef):
             return boolean_lookups
         return object_lookups
 
+    def _emit_sql(self, conn):
+        self.sql_emitter()._emit_sql(conn)
 
-class NodeDef(GraphDef):
-    # kls: type[DeclarativeBase] <- from GraphBase
-    # source_meta_type: str <- computed_field from GraphBase
-    # properties: dict[str, PropertySQLEmitter] <- computed_field
-    # label: str <- computed_field
+
+class GraphNode(GraphBase):
+    kls: type[BaseModel]
+
+    sql_emitter = NodeSQLEmitter
 
     @computed_field
-    def properties(self) -> dict[str, PropertyDef]:
-        return self.kls.graph_properties
+    def source_meta_type(self) -> str:
+        return self.kls.__name__
 
     @computed_field
     def label(self) -> str:
         return convert_snake_to_camel(self.source_meta_type)
+
+    @computed_field
+    def properties(self) -> dict[str, GraphProperty]:
+        props = {}
+        for column in self.kls.table.columns:
+            data_type = column.type.python_type.__name__
+            props.update(
+                {
+                    column.name: GraphProperty(
+                        source_meta_type=self.source_meta_type,
+                        accessor=column.name,
+                        data_type=data_type,
+                    )
+                }
+            )
+        return props
+
+    def _emit_sql(self, conn):
+        self.sql_emitter(kls=self.kls, node=self)._emit_sql(conn)
 
 
 class Edge(BaseModel):
@@ -97,7 +125,7 @@ class Edge(BaseModel):
     model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)
 
 
-class EdgeDef(GraphDef):
+class EdgeDef(GraphBase):
     # kls: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
@@ -106,13 +134,13 @@ class EdgeDef(GraphDef):
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
     # properties: dict[str, PropertySQLEmitter] <- computed_field
-    # display: str <- computed_field
+    # label: str <- computed_field
     # nullable: bool = False <- computed_field
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
+    """
     @computed_field
-    def display(self) -> str:
+    def label(self) -> str:
         return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.destination_meta_type)})"
 
     @computed_field
@@ -120,7 +148,7 @@ class EdgeDef(GraphDef):
         return self.kls.tablename
 
     @computed_field
-    def properties(self) -> dict[str, PropertyDef]:
+    def properties(self) -> dict[str, GraphProperty]:
         if not isinstance(self.secondary, Table):
             return {}
         props = {}
@@ -134,7 +162,7 @@ class EdgeDef(GraphDef):
                     break
             props.update(
                 {
-                    column.name: PropertyDef(
+                    column.name: GraphProperty(
                         kls=kls,
                         accessor=column.name,
                         data_type=data_type,
@@ -142,3 +170,4 @@ class EdgeDef(GraphDef):
                 }
             )
         return props
+    """
