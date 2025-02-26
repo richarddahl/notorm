@@ -18,8 +18,6 @@ class MetaType(UnoObj):
             Column("id", VARCHAR(63), primary_key=True, unique=True, index=True),
         ],
     )
-    display_name = "Meta Type"
-    display_name_plural = "Meta Types"
     include_in_api_docs = False
     sql_emitters = [InsertPermission]
 
@@ -44,8 +42,6 @@ class MetaRecord(UnoObj):
         ],
     )
     table_name = "meta_record"
-    display_name = "Meta Record"
-    display_name_plural = "Meta Records"
     include_in_api_docs = False
 
     # BaseModel fields

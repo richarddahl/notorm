@@ -48,6 +48,7 @@ from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
 from uno.db.graph import GraphNode
 from uno.db.db import UnoDB
 from uno.errors import UnoRegistryError
+from uno.utilities import convert_snake_to_title
 from uno.config import settings
 
 
@@ -108,8 +109,8 @@ class UnoObj(BaseModel):
     registry: ClassVar[dict[str, "UnoObj"]] = {}
     class_name_map: ClassVar[dict[str, str]] = {}
 
-    display_name: ClassVar[str] = ""
-    display_name_plural: ClassVar[str] = ""
+    display_name: ClassVar[str] = None
+    display_name_plural: ClassVar[str] = None
 
     # SQL attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = [
@@ -174,6 +175,17 @@ class UnoObj(BaseModel):
 
         # Initialize the uno_db
         cls.db = UnoDB(db_table=cls.table)
+
+        cls.display_name = (
+            convert_snake_to_title(cls.table.name)
+            if cls.display_name is None
+            else cls.display_name
+        )
+        cls.display_name_plural = (
+            f"{convert_snake_to_title(cls.table.name)}s"
+            if cls.display_name_plural is None
+            else cls.display_name_plural
+        )
 
         # Add the subclass to the model_name_registry if it is not there (shouldn't be there, but just in case)
         if cls.__name__ not in cls.class_name_map:
