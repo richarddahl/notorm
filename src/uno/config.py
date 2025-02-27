@@ -37,6 +37,7 @@ class General(BaseSettings):
     TOKEN_ALGORITHM: str = "HS256"
     TOKEN_SECRET: str
     LOGIN_URL: str
+    FORCE_RLS: bool = True
 
     # APPLICATION SETTINGS
     # Max Groups and Users for each type of tenant
