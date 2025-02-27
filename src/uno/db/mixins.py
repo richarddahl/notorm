@@ -6,7 +6,7 @@ import datetime
 
 from typing import ClassVar, Any, Optional
 
-from sqlalchemy import Column
+from sqlalchemy import Column, ForeignKeyConstraint, CheckConstraint, UniqueConstraint
 from sqlalchemy.dialects.postgresql import VARCHAR, BOOLEAN, TIMESTAMP
 
 from pydantic import BaseModel, ConfigDict
@@ -32,11 +32,41 @@ class ColumnDef(BaseModel):
         return Column(*self.args, **self.kwargs)
 
 
+class UnoMixinCKConstraint(BaseModel):
+    columns: list[str]
+    ref_columns: list[str]
+    name: str
+
+    def create_constraint(self) -> None:
+        return ForeignKeyConstraint(self.columns, self.ref_columns, name=self.name)
+
+
+class UnoMixinUQConstraint(BaseModel):
+    columns: list[str]
+    ref_columns: list[str]
+    name: str
+
+    def create_constraint(self) -> None:
+        return ForeignKeyConstraint(self.columns, self.ref_columns, name=self.name)
+
+
+class UnoMixinFKConstraint(BaseModel):
+    columns: list[str]
+    ref_columns: list[str]
+    name: str
+
+    def create_constraint(self) -> None:
+        return ForeignKeyConstraint(self.columns, self.ref_columns, name=self.name)
+
+
 class UnoMixin(BaseModel):
     """Base class for all database table mixins"""
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
     column_defs: ClassVar[list[ColumnDef]] = []
+    constraint_defs: ClassVar[
+        list[ForeignKeyConstraint | CheckConstraint | UniqueConstraint]
+    ] = []
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -110,6 +140,48 @@ class RecordStatusMixin(UnoMixin):
 class RecordUserAuditMixin(UnoMixin):
 
     sql_emitters = [RecordUserAuditFunction]
+
+    column_defs = [
+        ColumnDef(
+            args=["created_by_id", VARCHAR(26)],
+            kwargs={
+                "nullable": False,
+                "doc": "User that created the record",
+            },
+        ),
+        ColumnDef(
+            args=["modified_by_id", VARCHAR(26)],
+            kwargs={
+                "nullable": False,
+                "doc": "User that last modified the record",
+            },
+        ),
+        ColumnDef(
+            args=["deleted_by_id", VARCHAR(26)],
+            kwargs={
+                "nullable": True,
+                "doc": "User that deleted the record",
+            },
+        ),
+    ]
+
+    constraint_defs = [
+        UnoMixinFKConstraint(
+            columns=["created_by_id"],
+            ref_columns=["user.id"],
+            name="fk_created_by_id",
+        ),
+        UnoMixinFKConstraint(
+            columns=["modified_by_id"],
+            ref_columns=["user.id"],
+            name="fk_modified_by_id",
+        ),
+        UnoMixinFKConstraint(
+            columns=["deleted_by_id"],
+            ref_columns=["user.id"],
+            name="fk_deleted_by_id",
+        ),
+    ]
 
     created_by_id: Optional[str] = None
     modified_by_id: Optional[str] = None

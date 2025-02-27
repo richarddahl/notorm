@@ -71,18 +71,15 @@ class User(UnoObj, UserMixin):
             Column("is_superuser", BOOLEAN, server_default=text("false"), index=True),
             Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("default_group_id", ForeignKey("group.id"), index=True),
-            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             CheckConstraint(
                 """
-                is_superuser = 'true'  OR
-                is_superuser = 'false' AND
-                default_group_id IS NOT NULL AND
-                tenant_id IS NOT NULL AND
-                created_by_id IS NOT NULL AND
-                modified_by_id IS NOT NULL
-             """,
+                    is_superuser = 'true'  OR
+                    is_superuser = 'false' AND
+                    default_group_id IS NOT NULL AND
+                    tenant_id IS NOT NULL AND
+                    created_by_id IS NOT NULL AND
+                    modified_by_id IS NOT NULL
+                 """,
                 name="ck_user_is_superuser",
             ),
         ],
@@ -122,9 +119,6 @@ class Group(UnoObj, GeneralMixin):
             Column("id", VARCHAR(26), primary_key=True, nullable=True),
             Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("name", VARCHAR(255), unique=True),
-            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             Index("ix_group_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
@@ -157,9 +151,6 @@ class Role(UnoObj, GeneralMixin):
             Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("name", VARCHAR(255), unique=True),
             Column("description", VARCHAR),
-            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             Index("ix_role_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
@@ -195,9 +186,6 @@ class Tenant(UnoObj, GeneralMixin):
                 server_default=TenantType.INDIVIDUAL.name,
                 nullable=False,
             ),
-            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
-            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
         ],
     )
 

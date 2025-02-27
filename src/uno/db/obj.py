@@ -37,6 +37,7 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 from fastapi import FastAPI
 
+from uno.db.mixins import ColumnDef, UnoMixin
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.db.graph import GraphEdge
@@ -123,21 +124,31 @@ class UnoObj(BaseModel):
 
         sql_emitters = []
         column_defs = []
+        constraint_defs = []
         for kls in cls.mro():
             if hasattr(kls, "column_defs"):
                 for column_def in kls.column_defs:
-                    if column_def not in cls.column_defs:
+                    if column_def not in column_defs:
                         column_defs.append(column_def)
+
+            if hasattr(kls, "constraint_defs"):
+                for constraint_def in kls.constraint_defs:
+                    if constraint_def not in constraint_defs:
+                        constraint_defs.append(constraint_def)
 
             if hasattr(kls, "sql_emitters"):
                 for sql_emitter in kls.sql_emitters:
                     if sql_emitter not in sql_emitters:
                         sql_emitters.append(sql_emitter)
 
-        for column_def in column_defs:
-            cls.table_def.args.append(column_def.create_column())
-
-        sql_emitters.reverse()
+        cls.column_defs = column_defs
+        cls.constraint_defs = constraint_defs
+        cls.table_def.args.extend(
+            [column_def.create_column() for column_def in column_defs]
+        )
+        cls.table_def.args.extend(
+            [constraint_def.create_constraint() for constraint_def in constraint_defs]
+        )
         cls.sql_emitters = sql_emitters
 
         # Create the table
