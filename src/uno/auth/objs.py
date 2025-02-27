@@ -69,17 +69,6 @@ class User(UnoObj, UserMixin):
             Column("is_superuser", BOOLEAN, server_default=text("false"), index=True),
             Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("default_group_id", ForeignKey("group.id"), index=True),
-            CheckConstraint(
-                """
-                    is_superuser = 'true'  OR
-                    is_superuser = 'false' AND
-                    default_group_id IS NOT NULL AND
-                    tenant_id IS NOT NULL AND
-                    created_by_id IS NOT NULL AND
-                    modified_by_id IS NOT NULL
-                 """,
-                name="ck_user_is_superuser",
-            ),
         ],
     )
 

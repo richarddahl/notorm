@@ -33,21 +33,33 @@ class ColumnDef(BaseModel):
 
 
 class UnoMixinCKConstraint(BaseModel):
-    columns: list[str]
-    ref_columns: list[str]
+    sqltext: str
     name: str
+    initially: Optional[str] = None
+    info: Optional[dict[str, Any]] = None
 
     def create_constraint(self) -> None:
-        return ForeignKeyConstraint(self.columns, self.ref_columns, name=self.name)
+        return CheckConstraint(
+            sqltext=self.sqltext,
+            name=self.name,
+            initially=self.initially,
+            info=self.info,
+        )
 
 
 class UnoMixinUQConstraint(BaseModel):
     columns: list[str]
-    ref_columns: list[str]
     name: str
+    defferable: Optional[str] = None
+    initially: Optional[str] = None
 
     def create_constraint(self) -> None:
-        return ForeignKeyConstraint(self.columns, self.ref_columns, name=self.name)
+        return UniqueConstraint(
+            *self.columns,
+            name=self.name,
+            defferable=self.defferable,
+            initially=self.initially,
+        )
 
 
 class UnoMixinFKConstraint(BaseModel):

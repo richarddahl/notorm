@@ -4,7 +4,7 @@
 
 from typing import Optional
 
-from sqlalchemy import ForeignKeyConstraint, CheckConstraint, UniqueConstraint, VARCHAR
+from sqlalchemy import VARCHAR
 
 from uno.db.mixins import (
     UnoMixin,
@@ -12,6 +12,8 @@ from uno.db.mixins import (
     InsertMetaRecordMixin,
     ColumnDef,
     UnoMixinFKConstraint,
+    UnoMixinCKConstraint,
+    UnoMixinUQConstraint,
 )
 from uno.auth.sql_emitters import UserRecordAuditFunction
 
@@ -59,17 +61,17 @@ class UserRecordUserAuditMixin(UnoMixin):
             ref_columns=["user.id"],
             name="fk_deleted_by_id",
         ),
-        # CheckConstraint(
-        #    """
-        #        is_superuser = 'true'  OR
-        #        is_superuser = 'false' AND
-        #        default_group_id IS NOT NULL AND
-        #        tenant_id IS NOT NULL AND
-        #        created_by_id IS NOT NULL AND
-        #        modified_by_id IS NOT NULL
-        #     """,
-        #    name="ck_user_is_superuser",
-        # ),
+        UnoMixinCKConstraint(
+            sqltext="""
+                is_superuser = 'true'  OR
+                is_superuser = 'false' AND
+                default_group_id IS NOT NULL AND
+               tenant_id IS NOT NULL AND
+                created_by_id IS NOT NULL AND
+                modified_by_id IS NOT NULL
+             """,
+            name="ck_user_is_superuser",
+        ),
     ]
 
     created_by_id: Optional[str] = None
