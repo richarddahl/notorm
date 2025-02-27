@@ -21,7 +21,6 @@ pip install notorm
 
 `notorm` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
 
-
 ## Introduction
 
 Why `notorm`
@@ -29,3 +28,9 @@ Why `notorm`
 "uno" is already a project at pypi, the actual name of this library: UNO is Not an ORM.
 
 It's meant as an homage to GNU of course.
+
+## Starting the db with Docker
+
+`cd to notorm/docker`
+`docker build -t pg16_uno .`
+`docker-compose up`

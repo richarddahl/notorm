@@ -16,7 +16,7 @@ RUN apk add --no-cache unzip \
     git \
     cmake \
     libcurl \
-    llvm15
+    llvm19
 
 
 # Copy extension files
@@ -30,6 +30,9 @@ RUN chmod 755 /docker-entrypoint-initdb.d/*
 # Configure PostgreSQL environment variables
 ENV POSTGRES_DB=postgres
 ENV POSTGRES_USER=postgres
+#COPY pg_pwd.txt /run/secrets/pg_pwd
+#ENV POSTGRES_PASSWORD_FILE=/run/secrets/pg_pwd
+ENV PGDATA=/var/lib/postgresql/data
 ENV POSTGRES_PASSWORD="postgreSQLR0ck%"
 
 # Expose PostgreSQL port
