@@ -2,7 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import asyncio
+
 from typing import Any
+
+from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from sqlalchemy import (
     Table,
@@ -19,14 +23,15 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from pydantic import BaseModel
 
+from uno.db.conn import sync_engine, engine
 from uno.db.enums import SelectResultType
+from uno.db.management.sql_emitters import SetRole, DB_NAME
 from uno.val.enums import Lookup
 from uno.fltr.enums import Include, Match
-from uno.db.conn import sync_engine, engine
 from uno.config import settings
 
 
@@ -47,9 +52,19 @@ class UnoDB:
     def sync_connection(self) -> Connection:
         return sync_engine.connect()
 
-    async def connection(self) -> AsyncConnection:
-        connection = await engine.connect()
+    def connection(self) -> AsyncConnection:
+        connection = engine.connect()
         yield connection
+
+    def set_role_text(self, role_name: str) -> str:
+        return (
+            SQL("SET ROLE {db_name}_{role_name};")
+            .format(
+                db_name=DB_NAME,
+                role_name=SQL(role_name),
+            )
+            .as_string()
+        )
 
     def where(
         self,
@@ -71,19 +86,6 @@ class UnoDB:
         else:
             return ~operation
 
-    def sync_list(self, schema: BaseModel = None) -> list[BaseModel]:
-        if schema is None:
-            schema = self.obj_class.list_schema
-        columns = [
-            self.obj_class.table.c.get(field_name)
-            for field_name in schema.model_fields.keys()
-        ]
-        with engine.connect() as conn:
-            conn.execute(text("SET ROLE uno_dev_reader"))
-            stmt = select(self.obj_class.table).with_only_columns(*columns)
-            result = conn.execute(stmt)
-            return result.mappings().all()
-
     async def list(self, schema: BaseModel = None) -> list[BaseModel]:
         if schema is None:
             schema = self.obj_class.list_schema
@@ -92,12 +94,12 @@ class UnoDB:
             for field_name in schema.model_fields.keys()
         ]
         async with engine.connect() as conn:
-            await conn.execute(text("SET ROLE uno_dev_reader"))
+            await conn.execute(text(self.set_role_text("reader")))
             stmt = select(self.obj_class.table).with_only_columns(*columns)
             result = await conn.execute(stmt)
             return result.mappings().all()
 
-    def sync_insert(
+    async def insert(
         self, request_schema: BaseModel = None, response_schema: BaseModel = None
     ) -> None:
         if request_schema is None:
@@ -105,38 +107,20 @@ class UnoDB:
         if response_schema is None:
             response_schema = self.obj_class.select_schema
 
-        with self.connection() as conn:
-            conn.execute(
-                insert(self.obj_class.table).values(request_schema.model_dump())
-            )
-            conn.commit()
-            conn.close()
-
-    def sync_select(
-        self,
-        id: str,
-        request_schema: BaseModel = None,
-        response_schema: BaseModel = None,
-    ) -> bool | None:
-
-        if request_schema is None:
-            request_schema = self.obj_class.select_schema
-        if response_schema is None:
-            response_schema = self.obj_class.select_schema
-
-        columns = [
+        response_columns = [
             self.obj_class.table.c.get(field_name)
-            for field_name in self.obj_class.select_schema.model_fields.keys()
+            for field_name in response_schema.model_fields.keys()
         ]
 
-        stmt = select(*columns).where(and_(self.where("id", id)))
-
-        # Run the query
-        with engine.connect() as conn:
-            conn.execute(text("SET ROLE uno_dev_reader"))
-            result = conn.execute(stmt)
-            row = result.fetchone()
-        return row._mapping if row else None
+        async with engine.begin() as conn:
+            await conn.execute(text(self.set_role_text("writer")))
+            result = await conn.execute(
+                insert(self.obj_class.table)
+                .values(request_schema.model_dump())
+                .returning(*response_columns)
+            )
+            await conn.commit()
+        return result.fetchone()
 
     async def select(
         self,
@@ -156,9 +140,8 @@ class UnoDB:
 
         stmt = select(*columns).where(and_(self.where("id", id)))
 
-        # Run the query
-        async with async_engine.connect() as conn:
-            await conn.execute(text("SET ROLE uno_dev_reader"))
+        async with self.async_connection.connect() as conn:
+            await conn.execute(text(self.set_role_text("reader")))
             result = await conn.execute(stmt)
             row = result.fetchone()
         return row._mapping if row else None
