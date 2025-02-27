@@ -2,52 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import ClassVar, Any, Optional
+from typing import ClassVar, Any
 
-from sqlalchemy import (
-    MetaData,
-    inspect,
-    Table,
-    Column,
-    ForeignKey,
-    event,
-    DDL,
-)
+from sqlalchemy import MetaData, Table
 from sqlalchemy.engine import Connection
-from sqlalchemy.dialects.postgresql import (
-    ARRAY,
-    BIGINT,
-    BOOLEAN,
-    BYTEA,
-    DATE,
-    ENUM,
-    NUMERIC,
-    TIME,
-    TIMESTAMP,
-    VARCHAR,
-)
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-    AsyncAttrs,
-)
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from fastapi import FastAPI
 
-from uno.db.mixins import ColumnDef, UnoMixin
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.db.graph import GraphEdge
 from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
 from uno.db.graph import GraphNode
 from uno.db.db import UnoDB
-from uno.db.rel_obj import UnoRelObj
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
-from uno.app.schemas import SchemaDef
 from uno.config import settings
 
 
@@ -93,7 +64,7 @@ class UnoObj(BaseModel):
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
 
-    related_objects: ClassVar[dict[str, UnoRelObj]] = {}
+    related_objects: ClassVar[dict[str, BaseModel]] = {}
 
     # SQL attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = [
@@ -108,7 +79,7 @@ class UnoObj(BaseModel):
     filters: ClassVar[dict[str, dict[str, str]]] = {}
 
     # schema attributes
-    schema_defs: ClassVar[list[SchemaDef]] = []
+    schema_defs: ClassVar[list[BaseModel]] = []
     insert_schema: ClassVar[BaseModel] = None
     list_schema: ClassVar[BaseModel] = None
     select_schema: ClassVar[BaseModel] = None
@@ -191,22 +162,10 @@ class UnoObj(BaseModel):
                 "TABLE_NAME_EXISTS_IN_REGISTRY",
             )
 
-        # cls.create_ddl_listeners()
-
-    # def __init__(self, *args, **kwargs) -> None:
-    #    super().__init__(*args, **kwargs)
-
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, app)
-
-    # @classmethod
-    # def create_ddl_listeners(cls) -> None:
-    #    for sql_emitter in cls.sql_emitters:
-    #        event.listen(
-    #            cls.table, "after_create", DDL(sql_emitter(kls=cls)._emit_sql())
-    #        )
 
     @classmethod
     def configure_obj(cls, app: FastAPI, conn: Connection = None) -> None:

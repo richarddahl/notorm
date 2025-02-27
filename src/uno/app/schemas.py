@@ -16,7 +16,6 @@ from pydantic.fields import Field
 from pydantic_core import PydanticUndefined
 
 from sqlalchemy import Column, Table
-from sqlalchemy.orm import DeclarativeBase
 
 from fastapi import FastAPI
 
@@ -31,11 +30,9 @@ from uno.app.routers import (
 )
 
 
-from uno.errors import (
-    SchemaConfigError,
-    SchemaFieldListError,
-)
-from uno.utilities import convert_snake_to_title
+from uno.errors import SchemaConfigError
+from uno.db.obj import UnoObj
+from uno.db.rel_obj import UnoRelObj, RelType
 from uno.config import settings  # type: ignore
 
 
@@ -66,13 +63,6 @@ class ImportSchemaBase(BaseModel):
     pass
 
 
-class RelatedSchema(BaseModel):
-    primary_key: str
-    string_representation: str
-
-    model_config = ConfigDict(extra="ignore")
-
-
 class SchemaDef(BaseModel):
     schema_type: str
     schema_base: BaseModel
@@ -80,11 +70,11 @@ class SchemaDef(BaseModel):
     return_format: str = "native"
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
-    use_related_schemas: bool = False
+    include_related_fields: bool = False
 
     model_config = ConfigDict(extra="ignore")
 
-    def create_schema(self, kls: DeclarativeBase, app: FastAPI) -> None:
+    def create_schema(self, kls: BaseModel, app: FastAPI) -> None:
         if self.exclude_fields and self.include_fields:
             raise SchemaConfigError(
                 "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
@@ -92,8 +82,10 @@ class SchemaDef(BaseModel):
             )
 
         schema_name = f"{kls.__name__}{self.schema_type.capitalize()}"
+
         fields = self.suss_fields(kls)
-        # fields.update(self.suss_related_fields(kls))
+        if self.include_related_fields:
+            fields.update(self.suss_related_fields(kls))
 
         schema = create_model(
             schema_name,
@@ -112,20 +104,14 @@ class SchemaDef(BaseModel):
 
         setattr(kls, f"{self.schema_type}_schema", schema)
 
-    def suss_related_fields(self, kls: DeclarativeBase) -> dict[str, Any]:
+    def suss_related_fields(self, kls: UnoObj) -> dict[str, Any]:
         fields = {}
-        for rel in kls.relationships():  # type: ignore
-            name = rel.key
+        for name, rel_obj in kls.related_objects.items():  # type: ignore
             if self.include_fields and name not in self.include_fields:
                 continue
             if self.exclude_fields and name in self.exclude_fields:
                 continue
-            if not rel.info.get("edge"):
-                raise SchemaFieldListError(
-                    f"Relationship {name} in class: {kls} is missing it's info['edge'].",
-                    "MISSING_EDGE_INFO",
-                )
-            field = self.create_field_from_relationship(rel, kls, name)
+            field = self.create_field_from_related_objects(rel_obj, name)
             if field is None:
                 continue
 
@@ -134,16 +120,15 @@ class SchemaDef(BaseModel):
 
         return fields
 
-    def create_field_from_relationship(
+    def create_field_from_related_objects(
         self,
-        rel: Any,
-        kls: DeclarativeBase,
+        rel_obj: UnoRelObj,
         name: str,
     ) -> tuple[Any, Any]:
         default = _Unset
         default_factory = _Unset
         title = _Unset
-        description = _Unset or rel.doc  # or rel.back_populates
+        description = _Unset or rel_obj.doc  # or rel.back_populates
         title = name.title()
         nullable = True
 
@@ -152,10 +137,10 @@ class SchemaDef(BaseModel):
         else:
             default = ...
 
-        if rel.uselist:
-            column_type = list[RelatedSchema]
+        if rel_obj.rel_type in [RelType.MANY_TO_ONE, RelType.MANY_TO_MANY]:
+            column_type = list[UnoObj]
         else:
-            column_type = RelatedSchema
+            column_type = UnoObj
 
         field = Field(
             default=default,
@@ -168,14 +153,14 @@ class SchemaDef(BaseModel):
             return (column_type | None, field)
         return (column_type, field)
 
-    def suss_fields(self, kls: DeclarativeBase) -> dict[str, Any]:
+    def suss_fields(self, kls: UnoObj) -> dict[str, Any]:
         fields = {}
         for col in kls.table.columns:  # type: ignore
             if self.include_fields and col.name not in self.include_fields:
                 continue
             if self.exclude_fields and col.name in self.exclude_fields:
                 continue
-            field = self.create_field_from_column(col, kls)
+            field = self.create_field_from_column(col)
             if field is None:
                 continue
             if col.name not in fields:
@@ -185,7 +170,6 @@ class SchemaDef(BaseModel):
     def create_field_from_column(
         self,
         column: Column,
-        kls: DeclarativeBase,
     ) -> tuple[Any, Any]:
         default = _Unset
         default_factory = _Unset
@@ -223,22 +207,15 @@ class SchemaDef(BaseModel):
         return (column_type, field)
 
 
-"""
-    @classmethod
-    def create_view(cls) -> None:
-        cls.sql_emitters.append(ViewSQL()._emit_sql())
-"""
-
-
 class InsertSchemaDef(SchemaDef):
     schema_type: str = "insert"
     schema_base: BaseModel = InsertSchemaBase
     router: SchemaRouter = InsertRouter
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"Create a {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.insert_schema = schema
 
 
@@ -246,12 +223,12 @@ class ListSchemaDef(SchemaDef):
     schema_type: str = "list"
     schema_base: BaseModel = ListSchemaBase
     router: SchemaRouter = ListRouter
-    use_related_schemas: bool = True
+    include_related_fields: bool = True
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"List {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.list_schema = schema
 
 
@@ -259,12 +236,12 @@ class DisplaySchemaDef(SchemaDef):
     schema_type: str = "display"
     schema_base: BaseModel = DisplaySchemaBase
     router: SchemaRouter = SelectRouter
-    use_related_schemas: bool = True
+    include_related_fields: bool = True
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"Select a {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.display_schema = schema
 
 
@@ -273,10 +250,10 @@ class UpdateSchemaDef(SchemaDef):
     schema_base: BaseModel = UpdateSchemaBase
     router: SchemaRouter = UpdateRouter
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"Update a {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.update_schema = schema
 
 
@@ -286,10 +263,10 @@ class DeleteSchemaDef(SchemaDef):
     router: SchemaRouter = DeleteRouter
     include_fields: list[str] = ["id"]
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"Delete a {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.delete_schema = schema
 
 
@@ -298,8 +275,8 @@ class ImportSchemaDef(SchemaDef):
     schema_base: BaseModel = ImportSchemaBase
     router: SchemaRouter = ImportRouter
 
-    def format_doc(self, kls: DeclarativeBase) -> str:
+    def format_doc(self, kls: UnoObj) -> str:
         return f"Schema to Import a {kls.display_name}"
 
-    def set_schema(self, kls: DeclarativeBase, schema: Type[BaseModel]) -> None:
+    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
         kls.import_schema = schema

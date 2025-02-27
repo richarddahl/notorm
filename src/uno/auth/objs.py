@@ -30,9 +30,7 @@ from uno.db.obj import (
 )
 from uno.db.mixins import GeneralMixin
 from uno.db.enums import SQLOperation
-from uno.db.graph import GraphEdge
-from uno.db.sql.sql_emitter import SQLEmitter
-from uno.meta.objs import MetaRecord, MetaType
+from uno.meta.objs import MetaRecord
 
 # from uno.msg.tables import Message, MessageAddressedTo, MessageCopiedTo
 from uno.auth.mixins import UserMixin

@@ -6,7 +6,9 @@ import enum
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
+
+from uno.db.obj import UnoObj
 
 
 class RelType(str, enum.Enum):
@@ -26,6 +28,13 @@ class UnoRelObj(BaseModel):
     join_column: Optional[str] = None
     join_remote_column: Optional[str] = None
     rel_type: RelType = RelType.ONE_TO_MANY
+    pre_fetch: bool = False
+    # obj: UnoObj <- computed_field
+
+    @computed_field
+    def obj(self) -> UnoObj:
+
+        return UnoObj.registry[self.populates]
 
 
 general_rel_objs = {
@@ -37,14 +46,14 @@ general_rel_objs = {
         rel_type=RelType.ONE_TO_ONE,
     ),
     "group": UnoRelObj(
-        column="id",
+        column="group_id",
         populates="group",
         remote_column="group.id",
         edge_label="IS_ASSIGNED_TO",
         rel_type=RelType.ONE_TO_MANY,
     ),
     "tenant": UnoRelObj(
-        column="id",
+        column="tenant_id",
         populates="tenant",
         remote_column="tenant.id",
         edge_label="IS_ASSIGNED_TO",
@@ -56,6 +65,7 @@ general_rel_objs = {
         populates="created_by",
         edge_label="CREATED_BY",
         rel_type=RelType.ONE_TO_MANY,
+        pre_fetch=True,
     ),
     "modified_by": UnoRelObj(
         column="modified_by_id",
@@ -63,6 +73,7 @@ general_rel_objs = {
         populates="modified_by",
         edge_label="MODIFIED_BY",
         rel_type=RelType.ONE_TO_MANY,
+        pre_fetch=True,
     ),
     "deleted_by": UnoRelObj(
         column="deleted_by_id",
@@ -70,5 +81,6 @@ general_rel_objs = {
         populates="deleted_by",
         edge_label="DELETED_BY",
         rel_type=RelType.ONE_TO_MANY,
+        pre_fetch=True,
     ),
 }
