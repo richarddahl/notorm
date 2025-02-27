@@ -4,7 +4,7 @@
 
 import json
 
-from typing import ClassVar
+from typing import ClassVar, Any
 
 from abc import ABC, abstractmethod
 
@@ -42,6 +42,7 @@ from uno.utilities import (
 
 
 class GraphBase(BaseModel, ABC):
+    obj_class: type[BaseModel] = None
 
     sql_emitter: ClassVar[GraphSQLEmitter] = None
 
@@ -84,13 +85,12 @@ class GraphProperty(GraphBase):
 
 
 class GraphNode(GraphBase):
-    kls: type[BaseModel]
 
     sql_emitter = NodeSQLEmitter
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.kls.__name__
+        return self.obj_class.__name__
 
     @computed_field
     def label(self) -> str:
@@ -99,8 +99,8 @@ class GraphNode(GraphBase):
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
         props = {}
-        for column in self.kls.table.columns:
-            if column.name in self.kls.exclude_from_properties:
+        for column in self.obj_class.table.columns:
+            if column.name in self.obj_class.exclude_from_properties:
                 continue
             data_type = column.type.python_type.__name__
             props.update(
@@ -114,11 +114,12 @@ class GraphNode(GraphBase):
             )
         return props
 
-    def _emit_sql(self, conn):
-        self.sql_emitter(kls=self.kls, node=self)._emit_sql(conn)
+    def _emit_sql(self, conn: Connection):
+        self.sql_emitter(obj_class=self.obj_class, node=self)._emit_sql(conn)
 
 
 class GraphEdge(GraphBase):
+    obj_class: Any = None
     source_table: str
     source_column: str
     destination_column: str
@@ -127,12 +128,12 @@ class GraphEdge(GraphBase):
 
     sql_emitter = EdgeSQLEmitter
 
-    def _emit_sql(self, conn):
+    def _emit_sql(self, conn: Connection):
         self.sql_emitter(edge=self)._emit_sql(conn)
 
 
 class EdgeDef(GraphBase):
-    # kls: type[DeclarativeBase] <- from GraphBase
+    # obj_class: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
     destination_meta_type: str
@@ -151,7 +152,7 @@ class EdgeDef(GraphBase):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.kls.tablename
+        return self.obj_class.tablename
 
     @computed_field
     def properties(self) -> dict[str, GraphProperty]:
@@ -162,14 +163,14 @@ class EdgeDef(GraphBase):
             if column.foreign_keys and column.primary_key:
                 continue
             data_type = column.type.python_type.__name__
-            for base in self.kls.registry.mappers:
+            for base in self.obj_class.registry.mappers:
                 if base.class_.__tablename__ == self.secondary.name:
-                    kls = base.class_
+                    obj_class = base.class_
                     break
             props.update(
                 {
                     column.name: GraphProperty(
-                        kls=kls,
+                        obj_class=obj_class,
                         accessor=column.name,
                         data_type=data_type,
                     )

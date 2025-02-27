@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import asyncio
-
 from typing import Any
 
 from sqlalchemy import (
@@ -28,24 +26,8 @@ from pydantic import BaseModel
 from uno.db.enums import SelectResultType
 from uno.val.enums import Lookup
 from uno.fltr.enums import Include, Match
+from uno.db.conn import sync_engine, engine
 from uno.config import settings
-
-
-DB_ROLE = f"{settings.DB_NAME}_login"
-DB_SYNC_DRIVER = settings.DB_SYNC_DRIVER
-DB_ASYNC_DRIVER = settings.DB_ASYNC_DRIVER
-DB_USER_PW = settings.DB_USER_PW
-DB_HOST = settings.DB_HOST
-DB_NAME = settings.DB_NAME
-DB_SCHEMA = settings.DB_SCHEMA
-
-async_engine = create_async_engine(
-    f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
-)
-
-engine = create_engine(
-    f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
-)
 
 
 class UnoDB:
@@ -55,22 +37,18 @@ class UnoDB:
 
     """
 
-    db_table: Table
+    obj_class: BaseModel
     table_name: str
-    metadata: Any
-    # async_engine: AsyncConnection
 
-    def __init__(self, db_table: Table) -> None:
-        self.db_table = db_table
-        self.table_name = db_table.fullname
-        self.metadata = db_table.metadata
-        # self.async_engine = get_connection()
+    def __init__(self, obj_class: BaseModel) -> None:
+        self.obj_class = obj_class
+        self.table_name = self.obj_class.table.fullname
 
-    def connection(self) -> Connection:
-        return engine.connect()
+    def sync_connection(self) -> Connection:
+        return sync_engine.connect()
 
-    async def async_connection(self) -> AsyncConnection:
-        connection = await async_engine.connect()
+    async def connection(self) -> AsyncConnection:
+        connection = await engine.connect()
         yield connection
 
     def where(
@@ -80,29 +58,7 @@ class UnoDB:
         include: str = Include.INCLUDE,
         lookup: str = Lookup.EQUAL,
     ) -> Any:
-        """
-        Filters the table based on the specified field name, value, include option, and lookup method.
-
-        Args:
-            field_name (str): The name of the field to filter on.
-            value (Any): The value to filter for.
-            include (str, optional): The include option. Defaults to Include.INCLUDE.
-            lookup (str, optional): The lookup method. Defaults to Lookup.EQUAL.
-
-        Returns:
-            Any: The filtered operation.
-
-        Raises:
-            Exception: If the specified column does not exist in the table.
-            Exception: If the specified column does not have the specified lookup method.
-        """
-        try:
-            column = self.db_table.c.get(field_name)
-        except AttributeError as e:
-            raise Exception(
-                f"Column {field_name} does not exist in table {self.db_table}"
-            ) from e
-
+        column = self.obj_class.table.c.get(field_name)
         try:
             operation = getattr(column, lookup)(value)
         except AttributeError as e:
@@ -115,67 +71,106 @@ class UnoDB:
         else:
             return ~operation
 
-    def sync_list(self, schema: BaseModel) -> list[BaseModel]:
+    def sync_list(self, schema: BaseModel = None) -> list[BaseModel]:
+        if schema is None:
+            schema = self.obj_class.list_schema
         columns = [
-            self.db_table.c.get(field_name) for field_name in schema.model_fields.keys()
+            self.obj_class.table.c.get(field_name)
+            for field_name in schema.model_fields.keys()
         ]
         with engine.connect() as conn:
             conn.execute(text("SET ROLE uno_dev_reader"))
-            stmt = select(self.db_table).with_only_columns(*columns)
+            stmt = select(self.obj_class.table).with_only_columns(*columns)
             result = conn.execute(stmt)
             return result.mappings().all()
 
-    async def list(self, schema: BaseModel) -> list[BaseModel]:
+    async def list(self, schema: BaseModel = None) -> list[BaseModel]:
+        if schema is None:
+            schema = self.obj_class.list_schema
         columns = [
-            self.db_table.c.get(field_name) for field_name in schema.model_fields.keys()
+            self.obj_class.table.c.get(field_name)
+            for field_name in schema.model_fields.keys()
         ]
-        async with async_engine.connect() as conn:
+        async with engine.connect() as conn:
             await conn.execute(text("SET ROLE uno_dev_reader"))
-            stmt = select(self.db_table).with_only_columns(*columns)
+            stmt = select(self.obj_class.table).with_only_columns(*columns)
             result = await conn.execute(stmt)
             return result.mappings().all()
 
     def sync_insert(
-        self, request_schema: BaseModel, response_schema: BaseModel
+        self, request_schema: BaseModel = None, response_schema: BaseModel = None
     ) -> None:
+        if request_schema is None:
+            request_schema = self.obj_class.insert_schema
+        if response_schema is None:
+            response_schema = self.obj_class.select_schema
+
         with self.connection() as conn:
-            conn.execute(insert(self.db_table).values(request_schema.model_dump()))
+            conn.execute(
+                insert(self.obj_class.table).values(request_schema.model_dump())
+            )
             conn.commit()
             conn.close()
 
-    """
-    async def select(
+    def sync_select(
         self,
-        # columns: list[str] | None = None,
-        values: dict[str, Any],
-        result_type: SelectResultType = SelectResultType.FIRST,
-        column_names: list[str] | None = None,
+        id: str,
+        request_schema: BaseModel = None,
+        response_schema: BaseModel = None,
     ) -> bool | None:
-        # if columns is None:
-        #    column_names = list(self.db_table.columns.keys())
-        column_names = self.validate_columns(
-            list(values.keys()), self.db_table.columns.keys()
-        )
-        columns = (self.db_table.c.get(field_name) for field_name in column_names)
 
-        # Create the statement
-        where_clauses = [
-            self.where(key, val) for key, val in values.items() if key in column_names
+        if request_schema is None:
+            request_schema = self.obj_class.select_schema
+        if response_schema is None:
+            response_schema = self.obj_class.select_schema
+
+        columns = [
+            self.obj_class.table.c.get(field_name)
+            for field_name in self.obj_class.select_schema.model_fields.keys()
         ]
-        stmt = select(*columns).where(and_(*where_clauses))  # type: ignore
+
+        stmt = select(*columns).where(and_(self.where("id", id)))
 
         # Run the query
-        async with self.async_engine.begin() as conn:
-            result = await conn.execute(stmt)
-        return getattr(result, result_type)()
+        with engine.connect() as conn:
+            conn.execute(text("SET ROLE uno_dev_reader"))
+            result = conn.execute(stmt)
+            row = result.fetchone()
+        return row._mapping if row else None
 
+    async def select(
+        self,
+        id: str,
+        request_schema: BaseModel = None,
+        response_schema: BaseModel = None,
+    ) -> bool | None:
+        if request_schema is None:
+            request_schema = self.obj_class.select_schema
+        if response_schema is None:
+            response_schema = self.obj_class.select_schema
+
+        columns = [
+            self.obj_class.table.c.get(field_name)
+            for field_name in self.obj_class.select_schema.model_fields.keys()
+        ]
+
+        stmt = select(*columns).where(and_(self.where("id", id)))
+
+        # Run the query
+        async with async_engine.connect() as conn:
+            await conn.execute(text("SET ROLE uno_dev_reader"))
+            result = await conn.execute(stmt)
+            row = result.fetchone()
+        return row._mapping if row else None
+
+    """
     def exists(
         self,
         values: dict[str, Any],
     ) -> bool | None:
         unique_values = self.get_unique_fields_from_values(values)
         columns = (
-            self.db_table.c.get(field_name) for field_name in unique_values.keys()
+            self.obj_class.table.c.get(field_name) for field_name in unique_values.keys()
         )
 
         # Create the statement
@@ -192,7 +187,7 @@ class UnoDB:
     ) -> bool | None:
         unique_values = await self.get_unique_fields_from_values(values)
         columns = (
-            self.db_table.c.get(field_name) for field_name in unique_values.keys()
+            self.obj_class.table.c.get(field_name) for field_name in unique_values.keys()
         )
 
         # Create the statement
@@ -208,7 +203,7 @@ class UnoDB:
         if await self.exists(values):
             raise Exception("Record already exists")
         async with self.async_engine.begin() as conn:
-            await conn.execute(insert(self.db_table).values(values))
+            await conn.execute(insert(self.obj_class.table).values(values))
 
     async def select(
         self,
@@ -225,19 +220,19 @@ class UnoDB:
         queries: list[dict[str, Any]] | None = None,
     ):
         with engine.connect() as conn:
-            conn.execute(insert(self.db_table).values(values))
+            conn.execute(insert(self.obj_class.table).values(values))
             conn.commit()
             conn.close()
     
     async def update(self, values: dict[str, Any], where: dict[str, Any]) -> None:
         with engine.connect() as conn:
-            conn.execute(update(self.db_table).values(values).where(where))
+            conn.execute(update(self.obj_class.table).values(values).where(where))
             conn.commit()
             conn.close()
 
     async def delete(self, where: dict[str, Any]) -> None:
         with engine.connect() as conn:
-            conn.execute(delete(self.db_table).where(where))
+            conn.execute(delete(self.obj_class.table).where(where))
             conn.commit()
             conn.close()
     """

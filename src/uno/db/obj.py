@@ -7,9 +7,7 @@ from typing import ClassVar, Any
 from sqlalchemy import MetaData, Table
 from sqlalchemy.engine import Connection
 
-from pydantic import BaseModel, ConfigDict, computed_field
-
-from fastapi import FastAPI
+from pydantic import BaseModel, ConfigDict
 
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
@@ -122,6 +120,10 @@ class UnoObj(BaseModel):
         )
         cls.sql_emitters = sql_emitters
 
+        from uno.app.app import app
+
+        cls.app = app
+
         # Create the table
         cls.table = Table(
             cls.table_def.table_name,
@@ -131,7 +133,7 @@ class UnoObj(BaseModel):
         )
 
         # Initialize the uno_db
-        cls.db = UnoDB(db_table=cls.table)
+        cls.db = UnoDB(obj_class=cls)
 
         cls.display_name = (
             convert_snake_to_title(cls.table.name)
@@ -162,37 +164,43 @@ class UnoObj(BaseModel):
                 "TABLE_NAME_EXISTS_IN_REGISTRY",
             )
 
-    @classmethod
-    def create_schemas(cls, app: FastAPI) -> None:
-        for schema_def in cls.schema_defs:
-            schema_def.create_schema(cls, app)
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self.configure_related_objects()
 
     @classmethod
-    def configure_obj(cls, app: FastAPI, conn: Connection = None) -> None:
-        cls.configure_related_objects(cls)
-        cls.create_schemas(app)
-        cls.set_graph(conn)
+    def create_schemas(cls) -> None:
+        for schema_def in cls.schema_defs:
+            schema_def.create_schema(cls, cls.app)
+
+    @classmethod
+    def configure_obj(cls) -> None:
+        cls.create_schemas()
+        cls.set_graph()
         cls.set_fields()
 
     def configure_related_objects(self) -> None:
         for name, rel_obj in self.related_objects.items():
             edge = GraphEdge(
+                obj_class=self,
                 source_table=self.table.name,
                 source_column=rel_obj.column,
                 destination_column=rel_obj.remote_column,
                 label=rel_obj.edge_label,
             )
             self.graph_edges.update({name: edge})
-            with self.db.connection() as conn:
+            with self.db.sync_connection() as conn:
                 edge._emit_sql(conn)
                 conn.commit()
                 conn.close()
 
     @classmethod
-    def set_graph(cls, conn: Connection) -> None:
-        cls.graph_node = GraphNode(kls=cls)
-        if conn is not None:
+    def set_graph(cls) -> None:
+        cls.graph_node = GraphNode(obj_class=cls)
+        with cls.db.sync_connection() as conn:
             cls.graph_node._emit_sql(conn)
+            conn.commit()
+            conn.close()
         cls.set_edges()
 
     @classmethod
@@ -204,7 +212,7 @@ class UnoObj(BaseModel):
         #    if not rel.mapper.class_.graph_node:
         #        continue
         #    edge = EdgeSQLEmitter(
-        #        kls=cls,
+        #        obj_class=cls,
         #        destination_meta_type=rel.mapper.class_.table.name,
         #        label=rel.info.get("edge"),
         #        secondary=rel.secondary,
@@ -242,8 +250,17 @@ class UnoObj(BaseModel):
     @classmethod
     def _emit_sql(cls, conn: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(kls=cls)._emit_sql(conn)
+            sql_emitter(obj_class=cls)._emit_sql(conn)
 
     def save(self) -> None:
         schema = self.insert_schema(**self.model_dump())
         self.db.insert(schema)
+
+    # DB methods
+    @classmethod
+    def select(cls, id: str) -> bool | None:
+        return cls.db.select(id)
+
+    @classmethod
+    def sync_select(cls, id: str) -> bool | None:
+        return cls.db.sync_select(id)

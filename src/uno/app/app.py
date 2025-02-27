@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from fastapi import FastAPI
+
 from uno.db.obj import UnoObj
-
-import uno.auth.objs as auth_objs
-
 
 tags_metadata = [
     {
@@ -30,4 +29,9 @@ tags_metadata.extend(
         for uno_obj in UnoObj.registry.values()
         if getattr(uno_obj, "include_in_api_docs", True)
     ]
+)
+
+app = FastAPI(
+    openapi_tags=tags_metadata,
+    title="Uno is not an ORM",
 )

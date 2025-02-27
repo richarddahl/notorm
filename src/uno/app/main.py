@@ -11,15 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from uno.db.obj import UnoObj
-from uno.app.tags import tags_metadata
-
-# import uno.attr.tables as attr_tables
-# import uno.auth.objs as auth_objs
-
-# import uno.msg.tables as msg_tables
-# import uno.fltr.tables as fltr_tables
-# import uno.rprt.tables as rprt_tables
-# import uno.wkflw.tables as wkflw_tables
+from uno.app.app import app
 from uno.config import settings
 
 for module in settings.LOAD_MODULES:
@@ -27,13 +19,9 @@ for module in settings.LOAD_MODULES:
         f"{module}.objs"
     )
 
-app = FastAPI(
-    openapi_tags=tags_metadata,
-    title="Uno is not an ORM",
-)
 
 for obj in UnoObj.registry.values():
-    obj.configure_obj(app)
+    obj.configure_obj()
 
 templates = Jinja2Templates(directory="templates")
 

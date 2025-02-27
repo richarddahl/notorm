@@ -35,11 +35,11 @@ class GraphSQLEmitter(TableSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.kls.table.name
+        return self.obj_class.table.name
 
 
 class PropertySQLEmitter(GraphSQLEmitter):
-    # kls: type[DeclarativeBase] <- from GraphBase
+    # obj_class: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
     data_type: str
@@ -127,7 +127,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
-        return self.node.kls.table.name
+        return self.node.obj_class.table.name
 
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
@@ -341,14 +341,14 @@ class EdgeSQLEmitter(TableSQLEmitter):
             if column.foreign_keys and column.primary_key:
                 continue
             data_type = column.type.python_type.__name__
-            for base in self.kls.registry.mappers:
+            for base in self.obj_class.registry.mappers:
                 if base.class_.__tablename__ == self.secondary.name:
-                    kls = base.class_
+                    obj_class = base.class_
                     break
             props.update(
                 {
                     column.name: PropertySQLEmitter(
-                        kls=kls,
+                        obj_class=obj_class,
                         accessor=column.name,
                         data_type=data_type,
                     )

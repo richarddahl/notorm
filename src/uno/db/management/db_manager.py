@@ -6,16 +6,10 @@ import sys
 import io
 import importlib
 
-from psycopg.sql import SQL, Literal
-
-from sqlalchemy import text, create_engine, Engine, func, select, insert
-
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import create_engine, Engine, insert
 
 from fastapi import FastAPI
 
-from uno.db.sql.sql_emitter import DB_SCHEMA, WRITER_ROLE, ADMIN_ROLE
 from uno.db.management.sql_emitters import (
     SetRole,
     DropDatabaseAndRoles,
@@ -33,19 +27,14 @@ from uno.auth.sql_emitters import (
 )
 from uno.db.obj import meta_data, UnoObj
 from uno.meta.objs import MetaType
-from uno.app.tags import tags_metadata
+from uno.app.app import app
 from uno.config import settings
 
+# Import all the modules in the settings.LOAD_MODULES list
 for module in settings.LOAD_MODULES:
     globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
         f"{module}.objs"
     )
-
-
-app = FastAPI(
-    openapi_tags=tags_metadata,
-    title="Uno is not an ORM",
-)
 
 
 class DBManager:
@@ -133,7 +122,7 @@ class DBManager:
             # The ordering of these operations are important
 
             for uno_obj in UnoObj.registry.values():
-                uno_obj.configure_obj(app, conn)
+                uno_obj.configure_obj()
 
             SetRole()._emit_sql(conn, "admin")
             MetaType._emit_sql(conn)
@@ -147,7 +136,7 @@ class DBManager:
             return
 
             for base in Base.registry.mappers:
-                base.class_.configure_obj(app)
+                base.class_.configure_obj()
                 SetRole()._emit_sql(conn, "admin")
 
                 # Emit the SQL to create the graph property filters
@@ -209,9 +198,9 @@ class DBManager:
         with eng.connect() as conn:
             DisableRLSOnUserForFirstInsert()._emit_sql(conn)
             result = conn.execute(
-                insert(user.db.db_table)
+                insert(user.db.obj_class.table)
                 .values(**user_insert.model_dump())
-                .returning(user.db.db_table.c.id)
+                .returning(user.db.obj_class.table.c.id)
             )
             user_id = result.scalar()
             print(f"Created the superuser: {user}\n")

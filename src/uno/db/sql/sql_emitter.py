@@ -150,10 +150,10 @@ class SQLEmitter(ABC, BaseModel):
 
 
 class TableSQLEmitter(SQLEmitter):
-    kls: Any = None
+    obj_class: Any = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @computed_field
     def table_name(self) -> str:
-        return self.kls.table.fullname
+        return self.obj_class.table.fullname

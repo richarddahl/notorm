@@ -43,7 +43,7 @@ class ListSchemaBase(BaseModel):
     pass
 
 
-class DisplaySchemaBase(BaseModel):
+class SelectSchemaBase(BaseModel):
     pass
 
 
@@ -74,39 +74,39 @@ class SchemaDef(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    def create_schema(self, kls: BaseModel, app: FastAPI) -> None:
+    def create_schema(self, obj_class: BaseModel, app: FastAPI) -> None:
         if self.exclude_fields and self.include_fields:
             raise SchemaConfigError(
                 "You can't have both include_fields and exclude_fields in the same model (mask) configuration.",
                 "INCLUDE_EXCLUDE_FIELDS_CONFLICT",
             )
 
-        schema_name = f"{kls.__name__}{self.schema_type.capitalize()}"
+        schema_name = f"{obj_class.__name__}{self.schema_type.capitalize()}"
 
-        fields = self.suss_fields(kls)
+        fields = self.suss_fields(obj_class)
         if self.include_related_fields:
-            fields.update(self.suss_related_fields(kls))
+            fields.update(self.suss_related_fields(obj_class))
 
         schema = create_model(
             schema_name,
-            __doc__=self.format_doc(kls),
+            __doc__=self.format_doc(obj_class),
             __base__=self.schema_base,
             __validators__=None,
             __cls_kwargs__=None,
             __slots__=None,
             **fields,
         )
-        router = self.router(kls=kls, reponse_model=schema)
+        router = self.router(obj_class=obj_class, reponse_model=schema)
         endpoint = router.endpoint_factory(
             body=schema, response_model=router.response_model
         )
         router.add_to_app(app)
 
-        setattr(kls, f"{self.schema_type}_schema", schema)
+        setattr(obj_class, f"{self.schema_type}_schema", schema)
 
-    def suss_related_fields(self, kls: UnoObj) -> dict[str, Any]:
+    def suss_related_fields(self, obj_class: UnoObj) -> dict[str, Any]:
         fields = {}
-        for name, rel_obj in kls.related_objects.items():  # type: ignore
+        for name, rel_obj in obj_class.related_objects.items():  # type: ignore
             if self.include_fields and name not in self.include_fields:
                 continue
             if self.exclude_fields and name in self.exclude_fields:
@@ -153,9 +153,9 @@ class SchemaDef(BaseModel):
             return (column_type | None, field)
         return (column_type, field)
 
-    def suss_fields(self, kls: UnoObj) -> dict[str, Any]:
+    def suss_fields(self, obj_class: UnoObj) -> dict[str, Any]:
         fields = {}
-        for col in kls.table.columns:  # type: ignore
+        for col in obj_class.table.columns:  # type: ignore
             if self.include_fields and col.name not in self.include_fields:
                 continue
             if self.exclude_fields and col.name in self.exclude_fields:
@@ -212,11 +212,11 @@ class InsertSchemaDef(SchemaDef):
     schema_base: BaseModel = InsertSchemaBase
     router: SchemaRouter = InsertRouter
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"Create a {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"Create a {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.insert_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.insert_schema = schema
 
 
 class ListSchemaDef(SchemaDef):
@@ -225,24 +225,24 @@ class ListSchemaDef(SchemaDef):
     router: SchemaRouter = ListRouter
     include_related_fields: bool = True
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"List {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"List {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.list_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.list_schema = schema
 
 
-class DisplaySchemaDef(SchemaDef):
-    schema_type: str = "display"
-    schema_base: BaseModel = DisplaySchemaBase
+class SelectSchemaDef(SchemaDef):
+    schema_type: str = "select"
+    schema_base: BaseModel = SelectSchemaBase
     router: SchemaRouter = SelectRouter
     include_related_fields: bool = True
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"Select a {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"Select a {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.display_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.select_schema = schema
 
 
 class UpdateSchemaDef(SchemaDef):
@@ -250,11 +250,11 @@ class UpdateSchemaDef(SchemaDef):
     schema_base: BaseModel = UpdateSchemaBase
     router: SchemaRouter = UpdateRouter
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"Update a {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"Update a {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.update_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.update_schema = schema
 
 
 class DeleteSchemaDef(SchemaDef):
@@ -263,11 +263,11 @@ class DeleteSchemaDef(SchemaDef):
     router: SchemaRouter = DeleteRouter
     include_fields: list[str] = ["id"]
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"Delete a {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"Delete a {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.delete_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.delete_schema = schema
 
 
 class ImportSchemaDef(SchemaDef):
@@ -275,8 +275,8 @@ class ImportSchemaDef(SchemaDef):
     schema_base: BaseModel = ImportSchemaBase
     router: SchemaRouter = ImportRouter
 
-    def format_doc(self, kls: UnoObj) -> str:
-        return f"Schema to Import a {kls.display_name}"
+    def format_doc(self, obj_class: UnoObj) -> str:
+        return f"Schema to Import a {obj_class.display_name}"
 
-    def set_schema(self, kls: UnoObj, schema: Type[BaseModel]) -> None:
-        kls.import_schema = schema
+    def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
+        obj_class.import_schema = schema

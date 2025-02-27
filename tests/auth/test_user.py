@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-'''
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
 
-from tests.conftest import db_column
-
-from uno.auth.tables import User
+from uno.errors import HTTPException
+from uno.auth.objs import User
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
 from uno.config import settings
 
@@ -15,6 +13,18 @@ from uno.config import settings
 class TestUser:
     schema = settings.DB_SCHEMA
 
+    def test_user_select(self):
+        print(User.insert_schema)
+        print(User.select_schema)
+
+        result = User.sync_select("01JMYNF72N60R5RC1G61E30C1G")
+        if result is None:
+            raise HTTPException(status_code=404, detail="Object not found")
+
+        return result
+
+
+'''
     def test_user_structure(self):
         assert User.display_name == "User"
         assert User.display_name_plural == "Users"

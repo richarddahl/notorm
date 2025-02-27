@@ -9,13 +9,7 @@ from typing import Optional
 from pydantic import BaseModel, computed_field
 
 from uno.db.obj import UnoObj
-
-
-class RelType(str, enum.Enum):
-    ONE_TO_ONE = "ONE_TO_ONE"
-    ONE_TO_MANY = "ONE_TO_MANY"
-    MANY_TO_ONE = "MANY_TO_ONE"
-    MANY_TO_MANY = "MANY_TO_MANY"
+from uno.db.enums import RelType
 
 
 class UnoRelObj(BaseModel):
@@ -35,6 +29,18 @@ class UnoRelObj(BaseModel):
     def obj(self) -> UnoObj:
 
         return UnoObj.registry[self.populates]
+
+    def _emit_sql(self, table_name: str) -> str:
+        if self.rel_type == RelType.ONE_TO_ONE:
+            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
+        elif self.rel_type == RelType.ONE_TO_MANY:
+            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
+        elif self.rel_type == RelType.MANY_TO_ONE:
+            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
+        elif self.rel_type == RelType.MANY_TO_MANY:
+            return f"JOIN {self.join_table} ON {table_name}.{self.column} = {self.join_table}.{self.join_column} JOIN {self.obj.table_name} ON {self.join_table}.{self.join_remote_column} = {self.obj.table_name}.{self.remote_column}"
+        else:
+            raise ValueError(f"Invalid rel_type: {self.rel_type}")
 
 
 general_rel_objs = {

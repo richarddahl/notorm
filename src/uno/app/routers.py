@@ -10,6 +10,7 @@ from pydantic import BaseModel, computed_field
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Header, Depends, Body
 
+from uno.db.enums import SelectResultType
 from uno.config import settings
 
 
@@ -17,7 +18,7 @@ get_db = None
 
 
 class SchemaRouter(BaseModel, ABC):
-    kls: type[BaseModel]
+    obj_class: type[BaseModel]
     reponse_model: type[BaseModel]
     path_suffix: str
     method: str
@@ -30,14 +31,14 @@ class SchemaRouter(BaseModel, ABC):
     def add_to_app(self, app: FastAPI):
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.api_version}/{self.kls.table.name}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.obj_class.table.name}{self.path_suffix}",
             response_model=(
                 self.reponse_model if not self.return_list else list[self.reponse_model]
             ),
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=[self.kls.display_name],
+            tags=[self.obj_class.display_name],
             summary=self.summary,
             description=self.description,
         )
@@ -58,15 +59,15 @@ class InsertRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Create a new {self.kls.display_name}"
+        return f"Create a new {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Create a new {self.kls.display_name} using the __{self.kls.__name__.title()}Insert__ schema."
+        return f"Create a new {self.obj_class.display_name} using the __{self.obj_class.__name__.title()}Insert__ schema."
 
     @computed_field
     def response_model(self) -> BaseModel:
-        return self.kls.insert_schema
+        return self.obj_class.insert_schema
 
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
@@ -88,21 +89,21 @@ class ListRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"List {self.kls.display_name_plural}"
+        return f"List {self.obj_class.display_name_plural}"
 
     @computed_field
     def description(self) -> str:
-        return f"Returns a list of {self.kls.display_name_plural} in the __{self.kls.__name__.title()}List__ schema."
+        return f"Returns a list of {self.obj_class.display_name_plural} in the __{self.obj_class.__name__.title()}List__ schema."
 
     @computed_field
     def response_model(self) -> BaseModel:
-        return self.kls.list_schema
+        return self.obj_class.list_schema
 
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
         async def endpoint(self) -> list[BaseModel]:
-            results = await self.kls.db.list(schema=self.response_model)
+            results = await self.obj_class.db.list(schema=self.response_model)
             return results
 
         setattr(cls, "endpoint", endpoint)
@@ -120,17 +121,17 @@ class ImportRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Import a new {self.kls.display_name}"
+        return f"Import a new {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
         return f"""
-            Import a new {self.kls.display_name} to the database.
+            Import a new {self.obj_class.display_name} to the database.
             This will overwrite the all of the object's fields.
             Generally, this is used to import data from another
-            instance of the database. The {self.kls.display_name} 
+            instance of the database. The {self.obj_class.display_name} 
             data must be in the format of the
-            __{self.kls.__name__.title()}Insert__ schema.   
+            __{self.obj_class.__name__.title()}Insert__ schema.   
         """
 
     @classmethod
@@ -153,11 +154,11 @@ class UpdateRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Update a new {self.kls.display_name}"
+        return f"Update a new {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Update a {self.kls.display_name}, by its ID, using the __{self.kls.__name__.title()}Update__ schema."
+        return f"Update a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Update__ schema."
 
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
@@ -179,11 +180,11 @@ class DeleteRouter(SchemaRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Delete a {self.kls.display_name}"
+        return f"Delete a {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Delete a {self.kls.display_name}, by its ID, using the __{self.kls.__name__.title()}Delete__ schema."
+        return f"Delete a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Delete__ schema."
 
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
@@ -199,17 +200,21 @@ class SelectRouter(SchemaRouter):
     method: str = "GET"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
+    # response_model: BaseModel | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
     @computed_field
     def summary(self) -> str:
-        return f"Select a {self.kls.display_name}"
+        return f"Select a {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Select a {self.kls.display_name}, by its ID. Returns the __{self.kls.__name__.title()}Select__ schema."
+        return f"Select a {self.obj_class.display_name}, by its ID. Returns the __{self.obj_class.__name__.title()}Select__ schema."
+
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.obj_class.list_schema
 
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
@@ -217,12 +222,15 @@ class SelectRouter(SchemaRouter):
         async def endpoint(
             self,
             id: str,
-        ):
-            return self.response_model
-            # result = await db.execute(select(self.table).filter_by(id=id))
-            # obj = result.scalar()
-            # if obj is None:
-            #    raise HTTPException(status_code=404, detail="Object not found")
-            # return self.response_model
+        ) -> BaseModel:
+            result = await self.obj_class.db.select(
+                "01JMYNF72N60R5RC1G61E30C1G",
+                response_model=response_model,
+                result_type=SelectResultType.FIRST,
+            )
+            if result is None:
+                raise HTTPException(status_code=404, detail="Object not found")
+
+            return result
 
         setattr(cls, "endpoint", endpoint)
