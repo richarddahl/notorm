@@ -26,75 +26,164 @@ from uno.db.sql.sql_emitter import (
 from uno.config import settings
 
 
-class DisableRLSOnUserForFirstInsert(TableSQLEmitter):
-    """Class for emitting SQL to modify tables before inserting the first user.
-
-    This class handles the necessary table modifications required before inserting
-    the initial user into the system. It performs the following operations:
-    1. Sets the role to admin
-    2. Disables row level security on the user table
-    3. Drops NOT NULL constraints on created_by_id and modified_by_id columns in meta_record table
-
-    Inherits from SQLEmitter base class.
-
-    Methods:
-        _emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
-    """
-
+class CreateRLSFunctions(TableSQLEmitter):
     def _emit_sql(self, conn: Connection) -> None:
+        self.emit_create_authorize_user_function_sql(conn)
+        self.emit_permissible_groups_sql(conn)
+
+    def emit_create_authorize_user_function_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
-                -- Set the role to the admin role
-                SET ROLE {admin_role};
-                -- Disable row level security on the user table
-                ALTER TABLE {db_schema}.user DISABLE ROW LEVEL SECURITY;
+            CREATE OR REPLACE FUNCTION {db_schema}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
+            /*
+            Function to verify a JWT token and set the session variables necessary for enforcing RLS
+            Ensures that:
+                The token is valid or
+                    raises an Exception (Invalid Token)
+                The token contains a sub (which is an email address) or
+                    raises an Exception (Token does not contain a sub)
+                The email address provided in the sub is of a user in the user table or
+                    raises an Exception (User not found)
+                The user is active or  Raises an Exception (User is not active)
+                The user is not deleted or Raises an Exception (User was deleted)
+            If all checks pass, returns the information necessary to enforce RLS otherwise raises an Exception
+
+            The information for RLS is:
+                user_id: The ID of the user 
+                is_superuser: Whether the user is a superuser
+                tenant_id: The ID of the tenant to which the user is associated
+
+            ::param token: The JWT token to verify
+            ::param role_name: The role to set for the session
+            */
+                RETURNS BOOLEAN
+                LANGUAGE plpgsql
+            AS $$
+
+            DECLARE
+                token_header JSONB;
+                token_payload JSONB;
+                token_valid BOOLEAN;
+                sub TEXT;
+                expiration INT;
+                user_email TEXT; 
+                user_id TEXT;
+                user_is_superuser TEXT;
+                user_tenant_id TEXT;
+                user_is_active BOOLEAN;
+                user_is_deleted BOOLEAN;
+                token_secret TEXT;
+                full_role_name TEXT:= '{db_name}_' || role_name;
+                admin_role_name TEXT:= '{db_name}_' || 'admin';
+            BEGIN
+                -- Set the role to the admin role to read from the token_secret table
+                EXECUTE 'SET ROLE ' || admin_role_name;
+
+                -- Get the secret from the token_secret table
+                SELECT secret FROM {db_schema}.token_secret INTO token_secret;
+
+                -- Verify the token
+                SELECT header, payload, valid
+                FROM {db_schema}.verify(token, token_secret)
+                INTO token_header, token_payload, token_valid;
+
+                IF token_valid THEN
+
+                    -- Get the sub from the token payload
+                    sub := token_payload ->> 'sub';
+
+                    IF sub IS NULL THEN
+                        RAISE EXCEPTION 'no sub in token';
+                    END IF;
+
+                    -- Get the expiration from the token payload
+                    expiration := token_payload ->> 'exp';
+                    IF expiration IS NULL THEN
+                        RAISE EXCEPTION 'no exp in token';
+                    END IF;
+
+                    /*
+                    Set the session variable for the user's email so that it can be used
+                    in the query to get the user's information
+                    */
+                    PERFORM set_config('rls_var.email', sub, true);
+
+                    -- Query the user table for the user to get the values for the session variables
+                    SELECT id, email, is_superuser, tenant_id, is_active, is_deleted 
+                    FROM {db_schema}.user
+                    WHERE email = sub
+                    INTO
+                        user_id,
+                        user_email,
+                        user_is_superuser,
+                        user_tenant_id,
+                        user_is_active,
+                        user_is_deleted;
+
+                    IF user_id IS NULL THEN
+                        RAISE EXCEPTION 'user not found';
+                    END IF;
+
+                    IF user_is_active = FALSE THEN 
+                        RAISE EXCEPTION 'user is not active';
+                    END IF; 
+
+                    IF user_is_deleted = TRUE THEN
+                        RAISE EXCEPTION 'user was deleted';
+                    END IF; 
+
+                    -- Set the session variables used for RLS
+                    PERFORM set_config('rls_var.email', user_email, true);
+                    PERFORM set_config('rls_var.user_id', user_id, true);
+                    PERFORM set_config('rls_var.is_superuser', user_is_superuser, true);
+                    PERFORM set_config('rls_var.tenant_id', user_tenant_id, true);
+
+                    --Set the role to the role passed in
+                    EXECUTE 'SET ROLE ' || full_role_name;
+
+                ELSE
+                    -- Token failed verification
+                    RAISE EXCEPTION 'invalid token';
+                END IF;
+                -- Return the validity of the token
+                RETURN token_valid;
+            END;
+            $$;
             """
                 )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    db_schema=DB_SCHEMA,
-                )
+                .format(db_name=SQL(settings.DB_NAME))
                 .as_string()
             )
         )
 
-
-class EnableUserRLSAfterFirstInsert(TableSQLEmitter):
-    """Emits SQL to alter tables after first user is inserted.
-
-    After the first user is inserted, this class emits SQL that:
-    1. Sets the role to admin
-    2. Adds NOT NULL constraints to created_by_id and modified_by_id columns in the meta_record table
-    3. Enables row level security on the user table
-
-    Args:
-        None
-
-    Inherits:
-        SQLEmitter
-
-    Methods:
-        _emit_sql(conn: Engine) -> None: Executes the SQL statements using the provided database connection
-    """
-
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_permissible_groups_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
-                -- Set the role to the admin role
-                SET ROLE {admin_role};
-                -- Enable row level security on the user table
-                ALTER TABLE {db_schema}.user ENABLE ROW LEVEL SECURITY;
+            CREATE OR REPLACE FUNCTION {db_schema}.permissible_groups(table_name TEXT, operation TEXT)
+            /*
+            Function to get the permissible groups for the user
+            */
+                RETURNS SETOF {db_schema}.group
+                LANGUAGE plpgsql
+            AS $$
+            DECLARE
+                user_id TEXT;
+            BEGIN
+                user_id := current_setting('s_var.id', true);
+                RETURN QUERY
+                SELECT g.*
+                FROM {db_schema}.group g
+                JOIN {db_schema}.user__group__role ugr ON ugr.group_id = g.id
+                JOIN {db_schema}.user u ON u.id = ugr.user_email
+                JOIN {db_schema}.permission tp ON ugr.role_id = tp.id
+                WHERE u.id = session_user_id AND tp.is_active = TRUE;
+            END $$;
             """
                 )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    db_schema=DB_SCHEMA,
-                )
-                .as_string()
             )
         )
 
