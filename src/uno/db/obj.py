@@ -120,10 +120,6 @@ class UnoObj(BaseModel):
         )
         cls.sql_emitters = sql_emitters
 
-        from uno.app.app import app
-
-        cls.app = app
-
         # Create the table
         cls.table = Table(
             cls.table_def.table_name,
@@ -131,9 +127,6 @@ class UnoObj(BaseModel):
             *cls.table_def.args,
             **cls.table_def.kwargs,
         )
-
-        # Initialize the uno_db
-        cls.db = UnoDB(obj_class=cls)
 
         cls.display_name = (
             convert_snake_to_title(cls.table.name)
@@ -164,6 +157,17 @@ class UnoObj(BaseModel):
                 "TABLE_NAME_EXISTS_IN_REGISTRY",
             )
 
+        # Initialize the uno_db
+        cls.db = UnoDB(obj_class=cls)
+
+        from uno.app.app import app
+
+        cls.app = app
+
+        cls.create_schemas()
+        # cls.set_graph()
+        cls.set_fields()
+
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.configure_related_objects()
@@ -172,12 +176,6 @@ class UnoObj(BaseModel):
     def create_schemas(cls) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, cls.app)
-
-    @classmethod
-    def configure_obj(cls) -> None:
-        cls.create_schemas()
-        cls.set_graph()
-        cls.set_fields()
 
     def configure_related_objects(self) -> None:
         for name, rel_obj in self.related_objects.items():
@@ -191,16 +189,14 @@ class UnoObj(BaseModel):
             self.graph_edges.update({name: edge})
             with self.db.sync_connection() as conn:
                 edge._emit_sql(conn)
-                conn.commit()
-                conn.close()
 
     @classmethod
     def set_graph(cls) -> None:
         cls.graph_node = GraphNode(obj_class=cls)
         with cls.db.sync_connection() as conn:
             cls.graph_node._emit_sql(conn)
-            conn.commit()
-            conn.close()
+        conn.commit()
+        conn.close()
         cls.set_edges()
 
     @classmethod
@@ -252,9 +248,17 @@ class UnoObj(BaseModel):
         for sql_emitter in cls.sql_emitters:
             sql_emitter(obj_class=cls)._emit_sql(conn)
 
-    def save(self) -> None:
-        schema = self.insert_schema(**self.model_dump())
-        self.db.insert(schema)
+    async def save(self, use_sync: bool = False) -> None:
+        if not self.id:
+            schema = self.insert_schema(**self.model_dump())
+            result = await self.db.insert(schema)
+        else:
+            schema = self.update_schema(**self.model_dump())
+            result = await self.db.update(schema)
+        for name, value in result.items():
+            if name in self.model_fields:
+                setattr(self, name, value)
+        return self
 
     # DB methods
     @classmethod
@@ -262,5 +266,14 @@ class UnoObj(BaseModel):
         return cls.db.select(id)
 
     @classmethod
-    def sync_select(cls, id: str) -> bool | None:
-        return cls.db.sync_select(id)
+    async def list(cls) -> BaseModel:
+        return await cls.db.list()
+
+    def refresh(self, **data):
+        values, fields, error = self.validate_model(self.__class__, data)
+        if error:
+            raise error
+        for name in fields:
+            value = values[name]
+            setattr(self, name, value)
+        return self

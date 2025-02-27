@@ -34,12 +34,7 @@ from uno.val.enums import Lookup
 from uno.fltr.enums import Include, Match
 from uno.config import settings
 
-
-class UnoDB:
-    """Provides a set of methods for interacting with a database table.
-
-    UnoDB methods transparently expose the underlying SQLAlchemy methods for interacting with a database table.
-
+'''
     def is_table_empty(self) -> bool:
         """Check if the table is empty using the pg_class system catalog."""
         query = SQL(
@@ -49,6 +44,15 @@ class UnoDB:
         with self.sync_connection() as conn:
             result = conn.execute(query, (self.table_name,))
             return result.scalar()
+'''
+
+
+class UnoDB:
+    """Provides a set of methods for interacting with a database table.
+
+    UnoDB methods transparently expose the underlying SQLAlchemy methods for interacting with a database table.
+
+    """
 
     obj_class: BaseModel
     table_name: str
@@ -108,7 +112,9 @@ class UnoDB:
             return result.mappings().all()
 
     async def insert(
-        self, request_schema: BaseModel = None, response_schema: BaseModel = None
+        self,
+        request_schema: BaseModel = None,
+        response_schema: BaseModel = None,
     ) -> None:
         if request_schema is None:
             request_schema = self.obj_class.insert_schema
@@ -128,7 +134,7 @@ class UnoDB:
                 .returning(*response_columns)
             )
             await conn.commit()
-        return result.fetchone()
+        return result.fetchone()._mapping
 
     async def select(
         self,

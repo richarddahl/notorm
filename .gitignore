@@ -170,3 +170,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .aider*
+docker/pg_pwd.txt

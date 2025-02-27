@@ -20,9 +20,6 @@ for module in settings.LOAD_MODULES:
     )
 
 
-for obj in UnoObj.registry.values():
-    obj.configure_obj()
-
 templates = Jinja2Templates(directory="templates")
 
 app.mount(

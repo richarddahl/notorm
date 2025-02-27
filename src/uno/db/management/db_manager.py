@@ -21,10 +21,6 @@ from uno.db.management.sql_emitters import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.auth.sql_emitters import (
-    DisableRLSOnUserForFirstInsert,
-    EnableUserRLSAfterFirstInsert,
-)
 from uno.db.obj import meta_data, UnoObj
 from uno.meta.objs import MetaType
 from uno.app.app import app
@@ -121,9 +117,6 @@ class DBManager:
 
             # The ordering of these operations are important
 
-            for uno_obj in UnoObj.registry.values():
-                uno_obj.configure_obj()
-
             SetRole()._emit_sql(conn, "admin")
             MetaType._emit_sql(conn)
 
@@ -136,7 +129,6 @@ class DBManager:
             return
 
             for base in Base.registry.mappers:
-                base.class_.configure_obj()
                 SetRole()._emit_sql(conn, "admin")
 
                 # Emit the SQL to create the graph property filters
@@ -181,35 +173,20 @@ class DBManager:
         if settings.ENV == "test":
             sys.stdout = sys.__stdout__
 
-    def create_superuser(
+    async def create_superuser(
         self,
         email: str = settings.SUPERUSER_EMAIL,
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
     ) -> str:
-        eng = self.engine(db_role=f"{settings.DB_NAME}_login")
         user = auth_objs.User(
             email=email,
             handle=handle,
             full_name=full_name,
             is_superuser=True,
         )
-        user_insert = user.insert_schema(**user.model_dump())
-        with eng.connect() as conn:
-            DisableRLSOnUserForFirstInsert()._emit_sql(conn)
-            result = conn.execute(
-                insert(user.db.obj_class.table)
-                .values(**user_insert.model_dump())
-                .returning(user.db.obj_class.table.c.id)
-            )
-            user_id = result.scalar()
-            print(f"Created the superuser: {user}\n")
-            conn.commit()
-
-            EnableUserRLSAfterFirstInsert()._emit_sql(conn)
-            conn.close()
-        eng.dispose()
-        return user_id
+        await user.save()
+        return user
 
     def engine(
         self,

@@ -40,11 +40,11 @@ from uno.auth.sql_emitters import (
     DefaultGroupTenant,
 )
 
-# from uno.auth.rls_sql_emitters import (
-#    RowLevelSecurity,
-#    UserRowLevelSecurity,
-#    TenantRowLevelSecurity,
-# )
+from uno.auth.rls_sql_emitters import (
+    #    RowLevelSecurity,
+    UserRowLevelSecurity,
+    #    TenantRowLevelSecurity,
+)
 from uno.auth.enums import TenantType
 from uno.auth.schemas import (
     user_schema_defs,
@@ -73,6 +73,7 @@ class User(UnoObj, UserMixin):
     )
 
     # Class Variables
+    sql_emitters = [UserRowLevelSecurity]
     schema_defs = user_schema_defs
     exclude_from_properties = ["is_superuser"]
     related_objects = user_rel_objs
