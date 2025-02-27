@@ -4,16 +4,11 @@
 
 from typing import Optional
 
-from sqlalchemy.dialects.postgresql import VARCHAR
-
-from uno.db.obj import UnoForeignKey
 from uno.db.mixins import (
     UnoMixin,
-    ColumnDef,
     RecordStatusMixin,
     InsertMetaRecordMixin,
 )
-from uno.db.graph import GraphEdge
 from uno.auth.sql_emitters import UserRecordAuditFunction
 
 

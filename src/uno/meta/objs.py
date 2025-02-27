@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 
 from uno.db.obj import UnoObj, meta_data, UnoTableDef
 from uno.db.sql.table_sql_emitters import InsertPermission
+from uno.db.graph import GraphNode, GraphEdge
 from uno.config import settings
 
 

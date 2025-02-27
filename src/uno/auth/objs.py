@@ -25,17 +25,10 @@ from sqlalchemy.dialects.postgresql import (
 
 from uno.db.obj import (
     UnoObj,
-    UnoForeignKey,
     UnoTableDef,
-    UnoRelatedModel,
     meta_data,
 )
-from uno.db.mixins import (
-    InsertMetaRecordMixin,
-    RecordStatusMixin,
-    RecordUserAuditMixin,
-    GeneralMixin,
-)
+from uno.db.mixins import GeneralMixin
 from uno.db.enums import SQLOperation
 from uno.db.graph import GraphEdge
 from uno.db.sql.sql_emitter import SQLEmitter
@@ -61,6 +54,7 @@ from uno.auth.schemas import (
     group_schema_defs,
     role_schema_defs,
 )
+from uno.auth.rel_objs import user_rel_objs, group_rel_objs
 
 from uno.config import settings
 
@@ -75,49 +69,11 @@ class User(UnoObj, UserMixin):
             Column("handle", VARCHAR(255), unique=True, index=True),
             Column("full_name", VARCHAR(255)),
             Column("is_superuser", BOOLEAN, server_default=text("false"), index=True),
-            Column(
-                "tenant_id",
-                UnoForeignKey(
-                    "tenant.id",
-                    edge=GraphEdge(destination="Tenant", label="BELONGS_TO"),
-                ),
-                index=True,
-            ),
-            Column(
-                "default_group_id",
-                UnoForeignKey(
-                    "group.id",
-                    edge=GraphEdge(destination="Group", label="HAS_DEFAULT_GROUP"),
-                ),
-                index=True,
-            ),
-            Column(
-                "created_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "modified_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "deleted_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
-                ),
-                index=True,
-                nullable=True,
-            ),
+            Column("tenant_id", ForeignKey("tenant.id"), index=True),
+            Column("default_group_id", ForeignKey("group.id"), index=True),
+            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             CheckConstraint(
                 """
                 is_superuser = 'true'  OR
@@ -132,13 +88,12 @@ class User(UnoObj, UserMixin):
         ],
     )
 
-    display_name = "User"
-    display_name_plural = "Users"
-
+    # Class Variables
     schema_defs = user_schema_defs
-
     exclude_from_properties = ["is_superuser"]
+    related_objects = user_rel_objs
 
+    # BaseModel Fields
     email: str
     handle: str
     full_name: str
@@ -147,10 +102,16 @@ class User(UnoObj, UserMixin):
     tenant: Optional["Tenant"] = None
     default_group_id: Optional[str] = None
     default_group: Optional["Group"] = None
+    meta_record: Optional[MetaRecord] = None
+    groups: Optional[list["Group"]] = None
+    roles: Optional[list["Role"]] = None
+    created_objects: Optional[list[MetaRecord]] = None
+    modified_objects: Optional[list[MetaRecord]] = None
+    deleted_objects: Optional[list[MetaRecord]] = None
     id: Optional[str] = None
 
     def __str__(self) -> str:
-        return self.email
+        return self.handle
 
 
 class Group(UnoObj, GeneralMixin):
@@ -159,85 +120,29 @@ class Group(UnoObj, GeneralMixin):
         meta_data=meta_data,
         args=[
             Column("id", VARCHAR(26), primary_key=True, nullable=True),
-            Column(
-                "tenant_id",
-                UnoForeignKey(
-                    "tenant.id",
-                    edge=GraphEdge(
-                        destination="Tenant",
-                        label="BELONGS_TO",
-                    ),
-                ),
-                index=True,
-            ),
+            Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("name", VARCHAR(255), unique=True),
-            Column(
-                "created_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "modified_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "deleted_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
-                ),
-                index=True,
-                nullable=True,
-            ),
+            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             Index("ix_group_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
     )
-    display_name = "Group"
-    display_name_plural = "Groups"
 
-    sql_emitters = [
-        ValidateGroupInsert,
-        DefaultGroupTenant,
-    ]
+    # Class Variables
+    sql_emitters = [ValidateGroupInsert, DefaultGroupTenant]
     schema_defs = group_schema_defs
+    related_objects = group_rel_objs
 
+    # BaseModel Fields
     name: str
-    tenant_id: Optional[str] = None
+    tenant_id: str = None
     tenant: Optional["Tenant"] = None
-    id: Optional[str] = None
-
     roles: list["Role"] = []
-    default_users: list["User"] = []
-
-    """
-    # Relationships
-    edge_defs={"edge": "BELONGS_TO"},
-    # group_role_users: Mapped[list[GroupRoleUser]] = relationship(
-    #    doc="Users assigned to group roles",
-    #    info={"edge": "IS_ASSIGNED_TO"},
-    # )
-    roles: Mapped[list[Role]] = relationship(
-        secondary=GroupRole.__table__,
-        doc="Roles assigned to the group",
-        info={"edge": "IS_ASSIGNED"},
-    )
-    default_users: Mapped[list[User]] = relationship(
-        viewonly=True,
-        foreign_keys="User.default_group_id",
-        doc="Users that belong to the group",
-        info={"edge": "HAS_DEFAULT_GROUP"},
-    )
-    """
+    default_users: list[User] = []
+    members: list[User] = []
+    id: Optional[str] = None
 
     def __str__(self) -> str:
         return self.name
@@ -249,52 +154,16 @@ class Role(UnoObj, GeneralMixin):
         meta_data=meta_data,
         args=[
             Column("id", VARCHAR(26), primary_key=True, nullable=True),
-            Column(
-                "tenant_id",
-                UnoForeignKey(
-                    "tenant.id",
-                    edge=GraphEdge(
-                        destination="Tenant",
-                        label="BELONGS_TO",
-                    ),
-                ),
-                index=True,
-            ),
+            Column("tenant_id", ForeignKey("tenant.id"), index=True),
             Column("name", VARCHAR(255), unique=True),
             Column("description", VARCHAR),
-            Column(
-                "created_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "modified_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "deleted_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
-                ),
-                index=True,
-                nullable=True,
-            ),
+            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
             Index("ix_role_tenant_id_name", "tenant_id", "name"),
             UniqueConstraint("tenant_id", "name"),
         ],
     )
-    display_name = "Role"
-    display_name_plural = "Roles"
     schema_defs = role_schema_defs
 
     # BaseModel fields
@@ -303,31 +172,6 @@ class Role(UnoObj, GeneralMixin):
     tenant: Optional["Tenant"] = None
     description: Optional[str] = None
     id: Optional[str] = None
-
-    # Relationships
-    """
-    permissions: Mapped[list[Permission]] = relationship(
-        viewonly=True,
-        secondary=RolePermission.__table__,
-        doc="Permissions assigned to the role",
-        info={"edge": "ALLOWS_PERMISSION"},
-    )
-    tenant: Mapped[Tenant] = relationship(
-        viewonly=True,
-        foreign_keys="Role.tenant_id",
-        doc="Tenants that have this role",
-        info={"edge": "BELONGS_TO"},
-    )
-    group_roles: Mapped[list["GroupRole"]] = relationship(
-        doc="Groups that have this role",
-        foreign_keys="GroupRole.role_id",
-        info={"edge": "IS_ASSIGNED_TO"},
-    )
-    # users: Mapped[list[GroupRoleUser]] = relationship(
-    #    doc="Users that have this role",
-    #    info={"edge": "IS_ASSIGNED_TO"},
-    # )
-    """
 
     def __str__(self) -> str:
         return self.name
@@ -351,46 +195,16 @@ class Tenant(UnoObj, GeneralMixin):
                 server_default=TenantType.INDIVIDUAL.name,
                 nullable=False,
             ),
-            Column(
-                "created_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_CREATED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "modified_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_MODIFIED_BY"),
-                ),
-                index=True,
-                nullable=False,
-            ),
-            Column(
-                "deleted_by_id",
-                UnoForeignKey(
-                    "user.id",
-                    edge=GraphEdge(destination="User", label="WAS_DELETED_BY"),
-                ),
-                index=True,
-                nullable=True,
-            ),
+            Column("created_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("modified_by_id", ForeignKey("user.id"), index=True, nullable=False),
+            Column("deleted_by_id", ForeignKey("user.id"), index=True, nullable=True),
         ],
     )
-    display_name = "Tenant"
-    display_name_plural = "Tenants"
+
+    # Class Variables
 
     sql_emitters = [InsertGroupForTenant]
-
     schema_defs = tenant_schema_defs
-    # edge_defs = {
-    #    "users": {"source": "Tenant", "destination": "User", "label": "OWNS"},
-    #    "groups": {"source": "Tenant", "destination": "Group", "label": "OWNS"},
-    #    "roles": {"source": "Tenant", "destination": "Role", "label": "OWNS"},
-    # }
 
     # BaseModel fields
     name: str
@@ -440,10 +254,11 @@ class Permission(UnoObj):
     display_name_plural = "Permissions"
     include_in_api_docs = False
 
+    # Class Variables
     sql_emitters = []
 
-    # BaseModel fields
-    id: int
+    # BaseModel Fields
+    id: Optional[int]
     meta_type_id: str
     operation: SQLOperation
 

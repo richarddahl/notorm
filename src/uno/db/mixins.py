@@ -21,8 +21,6 @@ from uno.db.sql.table_sql_emitters import (
     RecordStatusFunction,
     RecordUserAuditFunction,
 )
-from uno.db.obj import UnoForeignKey
-from uno.db.graph import GraphEdge
 from uno.config import settings
 
 

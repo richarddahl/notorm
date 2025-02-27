@@ -328,26 +328,10 @@ class NodeSQLEmitter(GraphSQLEmitter):
         )
 
 
-class EdgeSQLEmitter(GraphSQLEmitter):
-    # kls: type[DeclarativeBase] <- from GraphBase
-    # source_meta_type: str <- computed_field from GraphBase
-    label: str
-    destination_meta_type: str
-    accessor: str
-    secondary: Table | None
-    lookups: list[Lookup] = object_lookups
-    # properties: dict[str, PropertySQLEmitter] <- computed_field
-    # display: str <- computed_field
-    # nullable: bool = False <- computed_field
+class EdgeSQLEmitter(TableSQLEmitter):
+    edge: BaseModel = None
 
-    @computed_field
-    def display(self) -> str:
-        return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.destination_meta_type)})"
-
-    @computed_field
-    def source_meta_type(self) -> str:
-        return self.kls.table.name
-
+    """
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
         if not isinstance(self.secondary, Table):
@@ -371,10 +355,11 @@ class EdgeSQLEmitter(GraphSQLEmitter):
                 }
             )
         return props
+    """
 
     def _emit_sql(self, conn: Connection) -> None:
         self.create_edge_label(conn)
-        self.create_filter_field(conn)
+        # self.create_filter_field(conn)
 
     def create_edge_label(self, conn: Connection) -> None:
         conn.execute(
@@ -394,8 +379,8 @@ class EdgeSQLEmitter(GraphSQLEmitter):
                 )
                 .format(
                     admin_role=ADMIN_ROLE,
-                    label=Literal(self.label),
-                    label_ident=Identifier(self.label),
+                    label=Literal(self.edge.label),
+                    label_ident=Identifier(self.edge.label),
                 )
                 .as_string()
             )

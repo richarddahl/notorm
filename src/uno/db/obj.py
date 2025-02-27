@@ -2,11 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import (
-    ClassVar,
-    Any,
-    Optional,
-)
+from typing import ClassVar, Any, Optional
 
 from sqlalchemy import (
     MetaData,
@@ -44,12 +40,13 @@ from fastapi import FastAPI
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
 from uno.db.graph import GraphEdge
-from uno.app.schemas import SchemaDef
 from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
 from uno.db.graph import GraphNode
 from uno.db.db import UnoDB
+from uno.db.rel_obj import UnoRelObj
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
+from uno.app.schemas import SchemaDef
 from uno.config import settings
 
 
@@ -67,32 +64,6 @@ meta_data = MetaData(
     naming_convention=POSTGRES_INDEXES_NAMING_CONVENTION,
     schema=settings.DB_SCHEMA,
 )
-
-
-class UnoRelatedModel(BaseModel):
-    local_table_column_name: ClassVar[str] = None
-    local_column: ClassVar[str] = None
-    remote_table_name: ClassVar[str] = None
-    remote_column_name: ClassVar[str] = None
-    join_table_name: ClassVar[Optional[str]] = None
-
-
-class UnoForeignKey(ForeignKey):
-    related_model: ClassVar[UnoRelatedModel] = None
-    edge: ClassVar[Optional[GraphEdge]] = None
-
-    def __init__(self, *args, **kwargs) -> None:
-        kwargs.pop("edge", None)
-        kwargs.pop("related_model", None)
-        super().__init__(*args, **kwargs)
-
-    def create_related_model(self) -> None:
-        self.related_model = UnoRelatedModel(
-            local_table_name=self.column.table.name,
-            local_column=self.column.name,
-            remote_table_name=self.column.foreign_keys[0].column.table.name,
-            remote_column_name=self.column.foreign_keys[0].column.name,
-        )
 
 
 class UnoTableDef(BaseModel):
@@ -121,20 +92,17 @@ class UnoObj(BaseModel):
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
 
+    related_objects: ClassVar[dict[str, UnoRelObj]] = {}
+
     # SQL attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = [
         AlterGrants,
         InsertMetaTypeRecord,
     ]
 
-    # Related model attributes
-    related_models: ClassVar[list[UnoRelatedModel]] = []
-
     # Graph attributes
-    # edges: ClassVar[dict[str, GraphEdge]] = {}
-    # edge_defs: ClassVar[dict[str, EdgeDef]] = {}
     graph_node: ClassVar[GraphNode] = None
-    # graph_edges: ClassVar[dict[str, EdgeSQLEmitter]] = {}
+    graph_edges: ClassVar[dict[str, GraphEdge]] = {}
     exclude_from_properties: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, dict[str, str]]] = {}
 
@@ -214,23 +182,41 @@ class UnoObj(BaseModel):
 
         # cls.create_ddl_listeners()
 
+    # def __init__(self, *args, **kwargs) -> None:
+    #    super().__init__(*args, **kwargs)
+
     @classmethod
     def create_schemas(cls, app: FastAPI) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, app)
 
-    @classmethod
-    def create_ddl_listeners(cls) -> None:
-        for sql_emitter in cls.sql_emitters:
-            event.listen(
-                cls.table, "after_create", DDL(sql_emitter(kls=cls)._emit_sql())
-            )
+    # @classmethod
+    # def create_ddl_listeners(cls) -> None:
+    #    for sql_emitter in cls.sql_emitters:
+    #        event.listen(
+    #            cls.table, "after_create", DDL(sql_emitter(kls=cls)._emit_sql())
+    #        )
 
     @classmethod
     def configure_obj(cls, app: FastAPI, conn: Connection = None) -> None:
+        cls.configure_related_objects(cls)
         cls.create_schemas(app)
         cls.set_graph(conn)
         cls.set_fields()
+
+    def configure_related_objects(self) -> None:
+        for name, rel_obj in self.related_objects.items():
+            edge = GraphEdge(
+                source_table=self.table.name,
+                source_column=rel_obj.column,
+                destination_column=rel_obj.remote_column,
+                label=rel_obj.edge_label,
+            )
+            self.graph_edges.update({name: edge})
+            with self.db.connection() as conn:
+                edge._emit_sql(conn)
+                conn.commit()
+                conn.close()
 
     @classmethod
     def set_graph(cls, conn: Connection) -> None:

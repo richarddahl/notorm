@@ -214,7 +214,7 @@ class DBManager:
                 .returning(user.db.db_table.c.id)
             )
             user_id = result.scalar()
-            print(f"Created the superuser: {user_id}\n")
+            print(f"Created the superuser: {user}\n")
             conn.commit()
 
             EnableUserRLSAfterFirstInsert()._emit_sql(conn)

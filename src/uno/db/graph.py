@@ -33,6 +33,7 @@ from uno.db.sql.graph_sql_emitters import (
     GraphSQLEmitter,
     NodeSQLEmitter,
     PropertySQLEmitter,
+    EdgeSQLEmitter,
 )
 from uno.utilities import (
     convert_snake_to_camel,
@@ -117,14 +118,17 @@ class GraphNode(GraphBase):
         self.sql_emitter(kls=self.kls, node=self)._emit_sql(conn)
 
 
-class GraphEdge(BaseModel):
-    # source: str
-    destination: str
+class GraphEdge(GraphBase):
+    source_table: str
+    source_column: str
+    destination_column: str
     label: str
-    # accessor: str
     lookups: list[Lookup] = object_lookups
 
-    model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)
+    sql_emitter = EdgeSQLEmitter
+
+    def _emit_sql(self, conn):
+        self.sql_emitter(edge=self)._emit_sql(conn)
 
 
 class EdgeDef(GraphBase):
