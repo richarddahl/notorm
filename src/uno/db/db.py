@@ -40,7 +40,15 @@ class UnoDB:
 
     UnoDB methods transparently expose the underlying SQLAlchemy methods for interacting with a database table.
 
-    """
+    def is_table_empty(self) -> bool:
+        """Check if the table is empty using the pg_class system catalog."""
+        query = SQL(
+            "SELECT reltuples = 0 FROM pg_class WHERE oid = %s::regclass"
+        ).format(Identifier(self.table_name))
+
+        with self.sync_connection() as conn:
+            result = conn.execute(query, (self.table_name,))
+            return result.scalar()
 
     obj_class: BaseModel
     table_name: str
