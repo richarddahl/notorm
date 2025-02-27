@@ -1,30 +1,49 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
+
+import pytest
+from unittest import IsolatedAsyncioTestCase
+
+
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
 
+from uno.db.management.db_manager import DBManager
 from uno.errors import HTTPException
 from uno.auth.objs import User
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
+
 from uno.config import settings
 
 
-class TestUser:
-    schema = settings.DB_SCHEMA
+class TestUser(IsolatedAsyncioTestCase):
 
-    def test_user_select(self):
-        print(User.insert_schema)
-        print(User.select_schema)
+    async def test_db_creation(self):
 
-        result = User.sync_select("01JMYNF72N60R5RC1G61E30C1G")
-        if result is None:
-            raise HTTPException(status_code=404, detail="Object not found")
-
-        return result
+        db_manager = DBManager()
+        db_manager.create_db()
+        super_user = await db_manager.create_superuser()
+        assert super_user is not None
+        assert isinstance(super_user, User)
+        assert super_user.is_superuser is True
+        assert super_user.is_active is True
+        assert super_user.is_deleted is False
+        assert super_user.email == settings.SUPERUSER_EMAIL
+        assert super_user.handle == settings.SUPERUSER_HANDLE
+        assert super_user.full_name == settings.SUPERUSER_FULL_NAME
+        assert super_user.tenant_id == None
+        assert super_user.default_group_id == None
 
 
 '''
+    async def test_user_select(self):
+        result = await User.list()
+        if result is None:
+            raise HTTPException(status_code=404, detail="Object not found")
+        assert result is not None
+
+
     def test_user_structure(self):
         assert User.display_name == "User"
         assert User.display_name_plural == "Users"

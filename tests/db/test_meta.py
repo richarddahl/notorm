@@ -23,13 +23,6 @@ for module in settings.LOAD_MODULES:
 class TestMetaRecord:
     schema = settings.DB_SCHEMA
 
-    def test_db_creation(self):
-        from uno.db.management.db_manager import DBManager
-
-        db_manager = DBManager()
-        db_manager.create_db()
-        db_manager.create_superuser()
-
 
 '''
     def test_meta_structure(self):
