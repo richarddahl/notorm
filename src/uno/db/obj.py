@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, Table, Column
 from sqlalchemy.sql.expression import Join, join
 from sqlalchemy.engine import Connection
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, AliasGenerator
 
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import AlterGrants
@@ -48,6 +48,13 @@ class UnoTableDef(BaseModel):
 
 class UnoObj(BaseModel):
     """Base class for all database tables"""
+
+    model_config = ConfigDict(
+        alias_generator=AliasGenerator(
+            validation_alias=None,
+            serialization_alias=convert_snake_to_title,
+        )
+    )
 
     table_def: ClassVar[UnoTableDef]
     table: ClassVar[Table]

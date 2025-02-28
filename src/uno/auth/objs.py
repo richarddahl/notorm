@@ -116,18 +116,22 @@ class User(UnoObj, UserMixin):
     related_objects = user_rel_objs
 
     # BaseModel Fields
-    email: str = Field(..., serialization_alias="Email")
-    handle: str = Field(..., serialization_alias="Handle")
-    full_name: Optional[str] = Field(None, serialization_alias="Name")
-    is_superuser: bool = Field(False, serialization_alias="Is Superuser")
-    tenant_id: Optional[str | UnoRelObj] = Field(None, serialization_alias="Tenant")
-    # tenant: Optional["Tenant"] = None
-    default_group_id: Optional[str | UnoRelObj] = Field(
-        None, serialization_alias="Default Group"
+    email: str = None
+    handle: str = None
+    full_name: Optional[str] = None
+    is_superuser: bool = False
+    tenant_id: Optional[str | UnoRelObj] = Field(
+        None,
+        serialization_alias="Tenant",
     )
-    # default_group: Optional["Group"] = None
-    # meta_record: Optional[MetaRecord] = None
-    group_id: Optional[str | UnoRelObj] = Field(None, serialization_alias="Group")
+    default_group_id: Optional[str | UnoRelObj] = Field(
+        None,
+        serialization_alias="Default Group",
+    )
+    group_id: Optional[str | UnoRelObj] = Field(
+        None,
+        serialization_alias="Group",
+    )
     # roles: Optional[list["Role"]] = None
     # created_objects: Optional[list[MetaRecord]] = None
     # modified_objects: Optional[list[MetaRecord]] = None
