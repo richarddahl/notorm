@@ -72,7 +72,7 @@ class InsertRouter(SchemaRouter):
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-        async def endpoint(self, object: body):
+        async def endpoint(self, object: BaseModel):
             return cls.response_model
 
         setattr(cls, "endpoint", endpoint)
@@ -137,7 +137,7 @@ class ImportRouter(SchemaRouter):
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-        async def endpoint(self, object: body):
+        async def endpoint(self, body: BaseModel):
             return cls.response_model
 
         setattr(cls, "endpoint", endpoint)
@@ -163,7 +163,7 @@ class UpdateRouter(SchemaRouter):
     @classmethod
     def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
 
-        async def endpoint(self, id: str, object: body):
+        async def endpoint(self, id: str, body: BaseModel):
             return cls.response_model
 
         setattr(cls, "endpoint", endpoint)
