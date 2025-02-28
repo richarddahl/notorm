@@ -10,6 +10,7 @@ from sqlalchemy import Column, ForeignKeyConstraint, CheckConstraint, UniqueCons
 from sqlalchemy.dialects.postgresql import VARCHAR, BOOLEAN, TIMESTAMP
 
 from pydantic import BaseModel, ConfigDict
+from pydantic.fields import Field
 
 from uno.db.sql.sql_emitter import SQLEmitter
 from uno.db.sql.table_sql_emitters import (
@@ -142,11 +143,18 @@ class RecordStatusMixin(UnoMixin):
         ),
     ]
 
-    is_active: bool = True
-    is_deleted: bool = False
-    created_at: Optional[datetime.datetime] = None
-    modified_at: Optional[datetime.datetime] = None
-    deleted_at: Optional[datetime.datetime] = None
+    is_active: bool = Field(True, serialization_alias="Is Active")
+    is_deleted: bool = Field(False, serialization_alias="Is Deleted")
+    created_at: Optional[datetime.datetime] = Field(
+        None, serialization_alias="Created At"
+    )
+    modified_at: Optional[datetime.datetime] = Field(
+        None, serialization_alias="Modified At"
+    )
+    deleted_at: Optional[datetime.datetime] = Field(
+        None,
+        serialization_alias="Deleted At",
+    )
 
 
 class RecordUserAuditMixin(UnoMixin):
@@ -195,9 +203,9 @@ class RecordUserAuditMixin(UnoMixin):
         ),
     ]
 
-    created_by_id: Optional[str] = None
-    modified_by_id: Optional[str] = None
-    deleted_by_id: Optional[str] = None
+    created_by_id: Optional[str] = Field(None, serialization_alias="Created By")
+    modified_by_id: Optional[str] = Field(None, serialization_alias="Modified By")
+    deleted_by_id: Optional[str] = Field(None, serialization_alias="Deleted By")
 
 
 class GeneralMixin(

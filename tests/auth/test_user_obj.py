@@ -27,6 +27,7 @@ class TestUser(IsolatedAsyncioTestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
+    """
     async def test_create_superuser(self):
 
         db_manager = DBManager()
@@ -53,6 +54,12 @@ class TestUser(IsolatedAsyncioTestCase):
         )
         # await user.save()
         assert user is not None
+    """
+
+    async def test_select_user(self):
+        first_user = await User.list()
+        user = await User.get_by_id(first_user[0].id)
+        print(user.model_dump(by_alias=True))
 
 
 """

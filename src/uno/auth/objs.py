@@ -23,11 +23,14 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
+from pydantic.fields import Field
+
 from uno.db.obj import (
     UnoObj,
     UnoTableDef,
     meta_data,
 )
+from uno.db.rel_obj import UnoRelObj
 from uno.db.mixins import GeneralMixin
 from uno.db.enums import SQLOperation
 from uno.meta.objs import MetaRecord
@@ -62,13 +65,47 @@ class User(UnoObj, UserMixin):
         table_name="user",
         meta_data=meta_data,
         args=[
-            Column("id", VARCHAR(26), primary_key=True, nullable=True),
-            Column("email", VARCHAR(255), unique=True, index=True),
-            Column("handle", VARCHAR(255), unique=True, index=True),
-            Column("full_name", VARCHAR(255)),
-            Column("is_superuser", BOOLEAN, server_default=text("false"), index=True),
-            Column("tenant_id", ForeignKey("tenant.id"), index=True),
-            Column("default_group_id", ForeignKey("group.id"), index=True),
+            Column(
+                "id",
+                VARCHAR(26),
+                primary_key=True,
+                nullable=True,
+                index=True,
+            ),
+            Column(
+                "email",
+                VARCHAR(255),
+                unique=True,
+                index=True,
+            ),
+            Column(
+                "handle",
+                VARCHAR(255),
+                unique=True,
+                index=True,
+            ),
+            Column(
+                "full_name",
+                VARCHAR(255),
+            ),
+            Column(
+                "is_superuser",
+                BOOLEAN,
+                server_default=text("false"),
+                index=True,
+            ),
+            Column(
+                "tenant_id",
+                ForeignKey("tenant.id"),
+                index=True,
+                nullable=True,
+            ),
+            Column(
+                "default_group_id",
+                ForeignKey("group.id"),
+                index=True,
+                nullable=True,
+            ),
         ],
     )
 
@@ -79,20 +116,22 @@ class User(UnoObj, UserMixin):
     related_objects = user_rel_objs
 
     # BaseModel Fields
-    email: str
-    handle: str
-    full_name: str
-    is_superuser: bool = False
-    tenant_id: Optional[str] = None
-    tenant: Optional["Tenant"] = None
-    default_group_id: Optional[str] = None
-    default_group: Optional["Group"] = None
-    meta_record: Optional[MetaRecord] = None
-    groups: Optional[list["Group"]] = None
-    roles: Optional[list["Role"]] = None
-    created_objects: Optional[list[MetaRecord]] = None
-    modified_objects: Optional[list[MetaRecord]] = None
-    deleted_objects: Optional[list[MetaRecord]] = None
+    email: str = Field(..., serialization_alias="Email")
+    handle: str = Field(..., serialization_alias="Handle")
+    full_name: Optional[str] = Field(None, serialization_alias="Name")
+    is_superuser: bool = Field(False, serialization_alias="Is Superuser")
+    tenant_id: Optional[str | UnoRelObj] = Field(None, serialization_alias="Tenant")
+    # tenant: Optional["Tenant"] = None
+    default_group_id: Optional[str | UnoRelObj] = Field(
+        None, serialization_alias="Default Group"
+    )
+    # default_group: Optional["Group"] = None
+    # meta_record: Optional[MetaRecord] = None
+    group_id: Optional[str | UnoRelObj] = Field(None, serialization_alias="Group")
+    # roles: Optional[list["Role"]] = None
+    # created_objects: Optional[list[MetaRecord]] = None
+    # modified_objects: Optional[list[MetaRecord]] = None
+    # deleted_objects: Optional[list[MetaRecord]] = None
     id: Optional[str] = None
 
     def __str__(self) -> str:
@@ -104,10 +143,24 @@ class Group(UnoObj, GeneralMixin):
         table_name="group",
         meta_data=meta_data,
         args=[
-            Column("id", VARCHAR(26), primary_key=True, nullable=True),
-            Column("tenant_id", ForeignKey("tenant.id"), index=True),
-            Column("name", VARCHAR(255), unique=True),
-            Index("ix_group_tenant_id_name", "tenant_id", "name"),
+            Column(
+                "id",
+                VARCHAR(26),
+                primary_key=True,
+                nullable=True,
+                index=True,
+            ),
+            Column(
+                "tenant_id",
+                ForeignKey("tenant.id"),
+                nullable=False,
+                index=True,
+            ),
+            Column(
+                "name",
+                VARCHAR(255),
+                unique=True,
+            ),
             UniqueConstraint("tenant_id", "name"),
         ],
     )
@@ -119,11 +172,11 @@ class Group(UnoObj, GeneralMixin):
 
     # BaseModel Fields
     name: str
-    tenant_id: str = None
-    tenant: Optional["Tenant"] = None
-    roles: list["Role"] = []
-    default_users: list[User] = []
-    members: list[User] = []
+    tenant_id: Optional[str | UnoRelObj] = None
+    # tenant: Optional["Tenant"] = None
+    # roles: list["Role"] = []
+    # default_users: list[User] = []
+    # members: list[User] = []
     id: Optional[str] = None
 
     def __str__(self) -> str:

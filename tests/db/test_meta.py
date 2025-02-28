@@ -7,13 +7,14 @@ import importlib
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
 
-# from tests.conftest import db_column
+from tests.conftest import db_column
 
 from uno.meta.objs import MetaRecord
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
 from uno.config import settings
 
 
+'''
 for module in settings.LOAD_MODULES:
     globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
         f"{module}.objs"
@@ -24,16 +25,14 @@ class TestMetaRecord:
     schema = settings.DB_SCHEMA
 
 
-'''
     def test_meta_structure(self):
         assert MetaRecord.display_name == "Meta Record"
         assert MetaRecord.display_name_plural == "Meta Records"
         assert AlterGrants in MetaRecord.sql_emitters
         assert InsertMetaTypeRecord in MetaRecord.sql_emitters
         assert MetaRecord.__name__ == "MetaRecord"
-        assert MetaRecord.__module__ == f"{settings.DB_SCHEMA}.db.tables"
-        assert MetaRecord.__table_args__.get("schema") == "uno"
-        assert MetaRecord.__tablename__ == "meta_record"
+        assert MetaRecord.table.schema == "uno"
+        assert MetaRecord.table.name == "meta_record"
         # print(list(MetaRecord.table.columns.keys()))
         assert list(MetaRecord.table.columns.keys()) == [
             "id",
@@ -45,6 +44,13 @@ class TestMetaRecord:
         db_inspector = inspect(db_connection)
         # print(db_inspector.get_indexes("meta_record", schema=self.schema))
         assert db_inspector.get_indexes("meta_record", schema=self.schema) == [
+            {
+                "name": "ix_uno_meta_record_id",
+                "unique": True,
+                "column_names": ["id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
             {
                 "name": "ix_uno_meta_record_meta_type_id",
                 "unique": False,
@@ -74,10 +80,10 @@ class TestMetaRecord:
                 "constrained_columns": ["meta_type_id"],
                 "referred_schema": "uno",
                 "referred_table": "meta_type",
-                "referred_columns": ["name"],
+                "referred_columns": ["id"],
                 "options": {"ondelete": "CASCADE"},
                 "comment": None,
-            },
+            }
         ]
 
     def test_meta_unique_constraints(self, db_connection):

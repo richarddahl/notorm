@@ -16,7 +16,14 @@ class MetaType(UnoObj):
         table_name="meta_type",
         meta_data=meta_data,
         args=[
-            Column("id", VARCHAR(63), primary_key=True, unique=True, index=True),
+            Column(
+                "id",
+                VARCHAR(63),
+                primary_key=True,
+                unique=True,
+                index=True,
+                nullable=False,
+            ),
         ],
     )
     include_in_api_docs = False
@@ -34,10 +41,14 @@ class MetaRecord(UnoObj):
                 "id",
                 VARCHAR(26),
                 primary_key=True,
+                nullable=False,
+                unique=True,
+                index=True,
             ),
             Column(
                 "meta_type_id",
                 ForeignKey("meta_type.id", ondelete="CASCADE"),
+                nullable=False,
                 index=True,
             ),
         ],

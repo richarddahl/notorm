@@ -5,10 +5,24 @@
 import copy
 
 
-from uno.db.rel_obj import UnoRelObj, general_rel_objs
+from uno.db.rel_obj import (
+    UnoRelObj,
+    GroupRelObj,
+    TenantRelObj,
+    CreatedByRelObj,
+    ModifiedByRelObj,
+    DeletedByRelObj,
+    general_rel_objs,
+)
 
 
-user_rel_objs = copy.deepcopy(general_rel_objs)
+user_rel_objs = {
+    "tenant_id": TenantRelObj,
+    "created_by_id": CreatedByRelObj,
+    "modified_by_id": ModifiedByRelObj,
+    "deleted_by_id": DeletedByRelObj,
+}
+"""
 user_rel_objs.update(
     {
         "created_objects": UnoRelObj(
@@ -37,8 +51,10 @@ user_rel_objs.update(
         ),
     }
 )
+"""
 
 group_rel_objs = copy.deepcopy(general_rel_objs)
+"""
 group_rel_objs.update(
     {
         "members": UnoRelObj(
@@ -65,8 +81,10 @@ group_rel_objs.update(
         ),
     },
 )
+"""
 
 role_rel_objs = copy.deepcopy(general_rel_objs)
+"""
 role_rel_objs.update(
     {
         "tenant": UnoRelObj(
@@ -79,3 +97,4 @@ role_rel_objs.update(
         )
     }
 )
+"""

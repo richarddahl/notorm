@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import asyncio
-
 from typing import Any
 
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
@@ -109,7 +107,8 @@ class UnoDB:
             await conn.execute(text(self.set_role_text("reader")))
             stmt = select(self.obj_class.table).with_only_columns(*columns)
             result = await conn.execute(stmt)
-            return result.mappings().all()
+        await conn.close()
+        return result.mappings().all()
 
     async def insert(
         self,
@@ -134,6 +133,7 @@ class UnoDB:
                 .returning(*response_columns)
             )
             await conn.commit()
+        await conn.close()
         return result.fetchone()._mapping
 
     async def select(
@@ -142,6 +142,7 @@ class UnoDB:
         request_schema: BaseModel = None,
         response_schema: BaseModel = None,
     ) -> bool | None:
+
         if request_schema is None:
             request_schema = self.obj_class.select_schema
         if response_schema is None:
@@ -154,10 +155,11 @@ class UnoDB:
 
         stmt = select(*columns).where(and_(self.where("id", id)))
 
-        async with self.async_connection.connect() as conn:
+        async with engine.begin() as conn:
             await conn.execute(text(self.set_role_text("reader")))
             result = await conn.execute(stmt)
             row = result.fetchone()
+        await conn.close()
         return row._mapping if row else None
 
     """

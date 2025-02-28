@@ -4,31 +4,49 @@
 
 import enum
 
-from typing import Optional
+from typing import Optional, ClassVar
 
-from pydantic import BaseModel, computed_field
+from sqlalchemy import Table, Column
+from sqlalchemy.sql.expression import Join, join
+
+from pydantic import BaseModel, computed_field, field_validator
 
 from uno.db.obj import UnoObj
 from uno.db.enums import RelType
+from uno.config import settings
 
 
 class UnoRelObj(BaseModel):
-    column: str
-    remote_column: str
-    populates: str
-    edge_label: Optional[str] = None
-    multiple: bool = False
-    join_table: Optional[str] = None
-    join_column: Optional[str] = None
-    join_remote_column: Optional[str] = None
-    rel_type: RelType = RelType.ONE_TO_MANY
-    pre_fetch: bool = False
-    # obj: UnoObj <- computed_field
+    column: ClassVar[str]
+    remote_column: ClassVar[str]
+    join_table: ClassVar[str] = None
+    edge_label: ClassVar[Optional[str]] = None
+    rel_type: ClassVar[RelType] = RelType.ONE_TO_MANY
+    join: ClassVar[Join] = None
+    table: ClassVar[Optional[Table]] = None
+    pre_fetch: ClassVar[bool] = False
 
-    @computed_field
-    def obj(self) -> UnoObj:
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
 
-        return UnoObj.registry[self.populates]
+    @classmethod
+    def create_join(cls) -> Join:
+        local_column = cls.table.columns[cls.column]
+        remote_table = cls.table.metadata.tables[
+            f"{settings.DB_SCHEMA}.{cls.remote_column.split('.')[0]}"
+        ]
+        remote_column = remote_table.columns[cls.remote_column.split(".")[1]]
+        if cls.rel_type == RelType.MANY_TO_MANY:
+            cls.join = join(
+                cls.table,
+                remote_table,
+                onclause=local_column == remote_column,
+            )
+        cls.join = join(
+            cls.table,
+            remote_table,
+            onclause=local_column == remote_column,
+        )
 
     def _emit_sql(self, table_name: str) -> str:
         if self.rel_type == RelType.ONE_TO_ONE:
@@ -43,50 +61,45 @@ class UnoRelObj(BaseModel):
             raise ValueError(f"Invalid rel_type: {self.rel_type}")
 
 
+class GroupRelObj(UnoRelObj):
+    column = "group_id"
+    remote_column = "group.id"
+    edge_label = "IS_ASSIGNED_TO"
+    rel_type = RelType.ONE_TO_MANY
+
+
+class TenantRelObj(UnoRelObj):
+    column = "tenant_id"
+    remote_column = "tenant.id"
+    edge_label = "IS_ASSIGNED_TO"
+    rel_type = RelType.ONE_TO_MANY
+
+
+class CreatedByRelObj(UnoRelObj):
+    column = "created_by_id"
+    remote_column = "user.id"
+    edge_label = "CREATED_BY"
+    rel_type = RelType.ONE_TO_MANY
+
+
+class ModifiedByRelObj(UnoRelObj):
+    column = "modified_by_id"
+    remote_column = "user.id"
+    edge_label = "MODIFIED_BY"
+    rel_type = RelType.ONE_TO_MANY
+
+
+class DeletedByRelObj(UnoRelObj):
+    column = "deleted_by_id"
+    remote_column = "user.id"
+    edge_label = "DELETED_BY"
+    rel_type = RelType.ONE_TO_MANY
+
+
 general_rel_objs = {
-    "meta_record": UnoRelObj(
-        column="id",
-        remote_column="meta_record.id",
-        populates="meta_record",
-        edge_label="IS_META_RECORD",
-        rel_type=RelType.ONE_TO_ONE,
-    ),
-    "group": UnoRelObj(
-        column="group_id",
-        populates="group",
-        remote_column="group.id",
-        edge_label="IS_ASSIGNED_TO",
-        rel_type=RelType.ONE_TO_MANY,
-    ),
-    "tenant": UnoRelObj(
-        column="tenant_id",
-        populates="tenant",
-        remote_column="tenant.id",
-        edge_label="IS_ASSIGNED_TO",
-        rel_type=RelType.ONE_TO_MANY,
-    ),
-    "created_by": UnoRelObj(
-        column="created_by_id",
-        remote_column="user.id",
-        populates="created_by",
-        edge_label="CREATED_BY",
-        rel_type=RelType.ONE_TO_MANY,
-        pre_fetch=True,
-    ),
-    "modified_by": UnoRelObj(
-        column="modified_by_id",
-        remote_column="user.id",
-        populates="modified_by",
-        edge_label="MODIFIED_BY",
-        rel_type=RelType.ONE_TO_MANY,
-        pre_fetch=True,
-    ),
-    "deleted_by": UnoRelObj(
-        column="deleted_by_id",
-        remote_column="user.id",
-        populates="deleted_by",
-        edge_label="DELETED_BY",
-        rel_type=RelType.ONE_TO_MANY,
-        pre_fetch=True,
-    ),
+    "group_id": GroupRelObj,
+    "tenant_id": TenantRelObj,
+    "created_by_id": CreatedByRelObj,
+    "modified_by_id": ModifiedByRelObj,
+    "deleted_by_id": DeletedByRelObj,
 }

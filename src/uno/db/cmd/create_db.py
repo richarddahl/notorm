@@ -9,4 +9,4 @@ if __name__ == "__main__":
     db = DBManager()
     db.drop_db()
     db.create_db()
-    db.create_superuser()
+    # db.create_superuser()

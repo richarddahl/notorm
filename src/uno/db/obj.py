@@ -4,7 +4,8 @@
 
 from typing import ClassVar, Any
 
-from sqlalchemy import MetaData, Table
+from sqlalchemy import MetaData, Table, Column
+from sqlalchemy.sql.expression import Join, join
 from sqlalchemy.engine import Connection
 
 from pydantic import BaseModel, ConfigDict
@@ -85,6 +86,7 @@ class UnoObj(BaseModel):
     delete_schema: ClassVar[BaseModel] = None
     import_schema: ClassVar[BaseModel] = None
 
+    # SETUP METHODS BEGIN
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         # Don't add the UnoObj class to the registry
@@ -168,27 +170,10 @@ class UnoObj(BaseModel):
         # cls.set_graph()
         cls.set_fields()
 
-    def __init__(self, **data: Any) -> None:
-        super().__init__(**data)
-        self.configure_related_objects()
-
     @classmethod
     def create_schemas(cls) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, cls.app)
-
-    def configure_related_objects(self) -> None:
-        for name, rel_obj in self.related_objects.items():
-            edge = GraphEdge(
-                obj_class=self,
-                source_table=self.table.name,
-                source_column=rel_obj.column,
-                destination_column=rel_obj.remote_column,
-                label=rel_obj.edge_label,
-            )
-            self.graph_edges.update({name: edge})
-            with self.db.sync_connection() as conn:
-                edge._emit_sql(conn)
 
     @classmethod
     def set_graph(cls) -> None:
@@ -225,17 +210,12 @@ class UnoObj(BaseModel):
             cls.filters[property.display] = {
                 "data_type": property.data_type,
                 "name": property.name,
-                # "accessor": property.accessor,
                 "lookups": property.lookups,
             }
         for edge in cls.graph_edges:
             cls.filters[edge.display] = {
-                # "table_name": edge.table_name,
-                # "filter_type": "EDGE",
                 "data_type": "record",
                 "name": edge.name,
-                # "destination_table_name": edge.destination_table_name,
-                # "accessor": edge.accessor,
                 "lookups": edge.lookups,
             }
 
@@ -248,32 +228,75 @@ class UnoObj(BaseModel):
         for sql_emitter in cls.sql_emitters:
             sql_emitter(obj_class=cls)._emit_sql(conn)
 
-    async def save(self, use_sync: bool = False) -> None:
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        self.configure_related_objects()
+
+    def configure_related_objects(self) -> None:
+        rel_objs = {}
+        for name, rel_obj in self.related_objects.items():
+            rel_obj.table = self.table
+            rel_obj.create_join()
+            edge = GraphEdge(
+                obj_class=self,
+                source_table=self.table.name,
+                source_column=rel_obj.column,
+                destination_column=rel_obj.remote_column,
+                label=rel_obj.edge_label,
+            )
+            self.graph_edges.update({name: edge})
+            with self.db.sync_connection() as conn:
+                edge._emit_sql(conn)
+            rel_objs.update({name: rel_obj})
+        self.__class__.related_objects = rel_objs
+
+    # SETUP METHODS COMPLETE
+
+    # UTILITY METHODS BEGIN
+
+    def refresh(self, fields: dict[str, Any]) -> None:
+        """
+        Updates the object's fields with new values from the provided dictionary.
+
+        Args:
+            fields (dict[str, Any]): Dictionary containing field names as keys and their new values.
+                                    Only fields that exist in the model will be updated.
+
+        Returns:
+            None
+
+        Example:
+            >>> obj.refresh({'name': 'John', 'age': 30})
+            # Updates obj.name and obj.age if they exist in the model
+        """
+        field_names = self.model_fields.keys()
+        for field_name in fields.keys():
+            if field_name in field_names:
+                setattr(self, field_name, fields[field_name])
+
+    # UTILITY METHODS END
+
+    # DB METHODS BEGIN
+    @classmethod
+    async def get_by_id(cls, id: str) -> list[BaseModel]:
+        data = await cls.db.select(id)
+        return cls(**data)
+
+    @classmethod
+    async def select(cls, id: str) -> BaseModel:
+        return await cls.db.select(id)
+
+    @classmethod
+    async def list(cls) -> list[BaseModel]:
+        obj_list = await cls.db.list()
+        return [cls(**val) for val in obj_list]
+
+    async def save(self) -> BaseModel:
         if not self.id:
             schema = self.insert_schema(**self.model_dump())
             result = await self.db.insert(schema)
         else:
             schema = self.update_schema(**self.model_dump())
             result = await self.db.update(schema)
-        for name, value in result.items():
-            if name in self.model_fields:
-                setattr(self, name, value)
-        return self
-
-    # DB methods
-    @classmethod
-    def select(cls, id: str) -> bool | None:
-        return cls.db.select(id)
-
-    @classmethod
-    async def list(cls) -> BaseModel:
-        return await cls.db.list()
-
-    def refresh(self, **data):
-        values, fields, error = self.validate_model(self.__class__, data)
-        if error:
-            raise error
-        for name in fields:
-            value = values[name]
-            setattr(self, name, value)
+        self.refresh(result)
         return self

@@ -21,7 +21,7 @@ from uno.db.management.db_manager import DBManager
 from uno.auth.enums import TenantType
 from uno.config import settings
 
-from uno.auth.objs import Tenant, Group, User
+# from uno.auth.objs import Tenant, Group, User
 
 # for module in settings.LOAD_MODULES:
 #    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
@@ -169,23 +169,27 @@ def db_column(
 ############
 
 
+'''
 @pytest.fixture(scope="session")
 def engine():
-    return create_engine(settings.DB_URL)
+    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    return create_engine(DB_URL)
 
 
 @pytest.fixture(scope="session")
 def echo_engine():
-    return create_engine(settings.DB_URL, echo=True)
+    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    return create_engine(DB_URL, echo=True)
 
 
 @pytest.fixture(scope="session")
 def async_engine():
-    return create_async_engine(settings.DB_URL)
+    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    return create_async_engine(DB_URL)
 
 
 @pytest.fixture(scope="session")
-def echo_connection(echo_engine, superuser_id):
+def echo_connection(echo_engine):
     connection = echo_engine.connect()
     yield connection
     connection.close()
@@ -193,7 +197,7 @@ def echo_connection(echo_engine, superuser_id):
 
 
 @pytest.fixture(scope="session")
-def db_connection(engine, superuser_id):
+def db_connection(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
     connection = engine.connect()
     # begin the nested transaction
@@ -208,16 +212,17 @@ def db_connection(engine, superuser_id):
 
 @pytest.fixture(scope="session")
 def test_async_engine():
-    return create_async_engine(settings.DB_URL)
+    DB_URL = f"{settings.DB_ASYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    return create_async_engine(DB_URL)
 
 
 @pytest.fixture(scope="session")
-def superuser_id():
+async def superuser_id():
     """Creates the database and a superuser and returns the superuser id."""
     db = DBManager()
     db.drop_db()
     db.create_db()
-    return db.create_superuser()
+    return await db.create_superuser()
 
 
 @pytest.fixture(scope="class")
@@ -354,3 +359,5 @@ def user_dict(session, superuser_id, tenant_dict, group_dict):
 @pytest.fixture(scope="class")
 def data_dict(user_dict, tenant_dict, group_dict):
     yield {"users": user_dict, "tenants": tenant_dict, "groups": group_dict}
+
+'''
