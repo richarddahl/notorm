@@ -9,31 +9,25 @@ Each test module has its own conftest.py file that containts the fixtures for th
 
 
 import pytest
+import importlib
 
-# from psycopg.sql import SQL
+from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
-# from sqlalchemy import func, select, delete, text, create_engine, Inspector, Column
-# from sqlalchemy.orm import sessionmaker, scoped_session
-# from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy import func, select, delete, text, create_engine, Column
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from uno.db.management.db_manager import DBManager
 
-# from uno.auth.enums import TenantType
+from uno.auth.enums import TenantType
 from uno.config import settings
 
-import uno.meta.objs as db_tables
+from uno.auth.objs import Tenant, Group, User
 
-# import uno.auth.tables as auth_objs
+# for module in settings.LOAD_MODULES:
+#    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
+#        f"{module}.objs"
+#    )
 
-
-'''
-
-# import uno.attr.tables as attr_tables
-# import uno.auth.tables as auth_objs
-# import uno.fltr.tables as fltr_tables
-# import uno.msg.tables as msg_tables
-# import uno.rprt.tables as rprt_tables
-# import uno.wkflw.tables as wkflw_tables
 
 ###########################################
 # SQL CONSTANTS FOR TESTING PURPOSES ONLY #
@@ -360,5 +354,3 @@ def user_dict(session, superuser_id, tenant_dict, group_dict):
 @pytest.fixture(scope="class")
 def data_dict(user_dict, tenant_dict, group_dict):
     yield {"users": user_dict, "tenants": tenant_dict, "groups": group_dict}
-
-'''
