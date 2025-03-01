@@ -69,7 +69,7 @@ dropdb = "ENV=dev python src/uno/db/cmd/drop_db.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "pytest_asyncio",
+  "pytest-asyncio",
   "asyncio",
   "httpx",
   "requests",
@@ -99,7 +99,8 @@ createdb = "ENV=test python src/uno/cmd/create_db.py"
 dropdb = "ENV=test python src/uno/cmd/drop_db.py"
 
 [tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "Session"
 
 
 # Documentation Environement
