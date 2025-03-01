@@ -36,6 +36,8 @@ class CreateRLSFunctions(TableSQLEmitter):
             text(
                 SQL(
                     """
+
+            DROP FUNCTION IF EXISTS {db_schema}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
             CREATE OR REPLACE FUNCTION {db_schema}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
             /*
             Function to verify a JWT token and set the session variables necessary for enforcing RLS
@@ -163,6 +165,7 @@ class CreateRLSFunctions(TableSQLEmitter):
             text(
                 SQL(
                     """
+            DROP FUNCTION IF EXISTS {db_schema}.permissible_groups(table_name TEXT, operation TEXT);
             CREATE OR REPLACE FUNCTION {db_schema}.permissible_groups(table_name TEXT, operation TEXT)
             /*
             Function to get the permissible groups for the user

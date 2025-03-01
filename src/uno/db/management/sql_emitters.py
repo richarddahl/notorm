@@ -443,6 +443,7 @@ class CreateTokenSecret(SQLEmitter):
                     """
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
+            DROP TABLE IF EXISTS audit.token_secret CASCADE;
             CREATE TABLE audit.token_secret (
                 token_secret TEXT PRIMARY KEY
             );
