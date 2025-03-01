@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from abc import ABC, abstractmethod
+
 from typing import Any, Type
 from enum import Enum
 
@@ -63,7 +65,7 @@ class ImportSchemaBase(BaseModel):
     pass
 
 
-class SchemaDef(BaseModel):
+class SchemaDef(BaseModel, ABC):
     schema_type: str
     schema_base: BaseModel
     router: SchemaRouter
@@ -206,6 +208,14 @@ class SchemaDef(BaseModel):
             return (column_type | None, field)
         return (column_type, field)
 
+    @abstractmethod
+    def before_db_state_change(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def after_db_state_change(self) -> None:
+        raise NotImplementedError
+
 
 class InsertSchemaDef(SchemaDef):
     schema_type: str = "insert"
@@ -217,6 +227,12 @@ class InsertSchemaDef(SchemaDef):
 
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.insert_schema = schema
+
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
 
 
 class ListSchemaDef(SchemaDef):
@@ -231,6 +247,12 @@ class ListSchemaDef(SchemaDef):
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.list_schema = schema
 
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
+
 
 class SelectSchemaDef(SchemaDef):
     schema_type: str = "select"
@@ -244,6 +266,12 @@ class SelectSchemaDef(SchemaDef):
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.select_schema = schema
 
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
+
 
 class UpdateSchemaDef(SchemaDef):
     schema_type: str = "update"
@@ -255,6 +283,12 @@ class UpdateSchemaDef(SchemaDef):
 
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.update_schema = schema
+
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
 
 
 class DeleteSchemaDef(SchemaDef):
@@ -269,6 +303,12 @@ class DeleteSchemaDef(SchemaDef):
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.delete_schema = schema
 
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
+
 
 class ImportSchemaDef(SchemaDef):
     schema_type: str = "import"
@@ -280,3 +320,9 @@ class ImportSchemaDef(SchemaDef):
 
     def set_schema(self, obj_class: UnoObj, schema: Type[BaseModel]) -> None:
         obj_class.import_schema = schema
+
+    def before_db_state_change(self) -> None:
+        pass
+
+    def after_db_state_change(self) -> None:
+        pass
