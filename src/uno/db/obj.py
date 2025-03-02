@@ -185,12 +185,12 @@ class UnoObj(BaseModel):
 
         cls.app = app
 
-        cls.create_schemas()
+        cls.set_schemas()
         # cls.set_graph()
         cls.set_fields()
 
     @classmethod
-    def create_schemas(cls) -> None:
+    def set_schemas(cls) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, cls.app)
         for schema_def in cls.schema_defs:
@@ -251,6 +251,7 @@ class UnoObj(BaseModel):
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
+        # self.set_schemas()
         self.configure_related_objects()
 
     def configure_related_objects(self) -> None:
@@ -334,17 +335,39 @@ class UnoObj(BaseModel):
         return local_columns + related_columns
 
     @classmethod
-    def construct_response_schemas(cls, data: dict[str:Any]) -> BaseModel:
-        schema_keys = {}
+    def corellate_data(cls, data: dict[str:Any]) -> BaseModel:
+        schema_dict = {}
         for key, value in data.items():
+            # Check if the key is a related object field (__ delimiter)
             if "__" in key:
                 rel_name, field_name = key.split("__")
-                if rel_name not in schema_keys:
-                    schema_keys[rel_name] = {}
-                schema_keys[rel_name].update({field_name: value})
+                if rel_name not in schema_dict:
+                    schema_dict[rel_name] = {}
+                schema_dict[rel_name].update({field_name: value})
             else:
-                schema_keys.update({key: value})
-        return schema_keys
+                schema_dict.update({key: value})
+        return schema_dict
+
+    @classmethod
+    def construct_response_schema(cls, data) -> dict[str, BaseModel]:
+
+        schema = {}
+        corellated_data = cls.corellate_data(data)
+        for key, val in corellated_data.items():
+            # The key is a field_name and the val is either a value or a dictionary
+            # If the value is a dictionary, it is a related object
+            if type(val) is dict:
+                # Check if the related object is empty and skip it
+                # The returned value will be null
+                if "id" in val and val.get("id") is None:
+                    continue
+                rel_obj = cls.related_objects.get(key)
+                rel_obj_class = cls.registry.get(rel_obj.remote_table)
+                rel_obj_schema = rel_obj_class.list_schema
+                schema.update({key: rel_obj_schema(**val)})
+            else:
+                schema.update({key: val})
+        return schema
 
     # UTILITY METHODS END
 
@@ -352,7 +375,8 @@ class UnoObj(BaseModel):
     @classmethod
     async def get_by_id(cls, id: str) -> list[BaseModel]:
         data = await cls.db.select(id)
-        response_schema = cls.construct_response_schemas(data)
+        response_schema = cls.construct_response_schema(data)
+        print(response_schema)
         return getattr(cls, "select_schema")(**response_schema)
 
     @classmethod

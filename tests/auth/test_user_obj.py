@@ -57,10 +57,11 @@ class TestUser(IsolatedAsyncioTestCase):
     """
 
     async def test_select_user(self):
-        first_user = await User.list()
-        user = await User.get_by_id(first_user[0].id)
+        users = await User.list()
+        user = await User.get_by_id(users[0].id)
+        # print("")
         # print(user.model_dump(by_alias=True))
-        print("")
+        # print("")
 
 
 """

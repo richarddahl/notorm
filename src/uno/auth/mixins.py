@@ -6,6 +6,7 @@ from typing import Optional
 
 from sqlalchemy import VARCHAR
 
+from pydantic import BaseModel
 from pydantic.fields import Field
 
 from uno.db.rel_obj import UnoRelObj
@@ -77,13 +78,13 @@ class UserRecordUserAuditMixin(UnoMixin):
         ),
     ]
 
-    created_by_id: Optional[str | UnoRelObj] = Field(
+    created_by_id: Optional[str | BaseModel] = Field(
         None, serialization_alias="Created By"
     )
-    modified_by_id: Optional[str | UnoRelObj] = Field(
+    modified_by_id: Optional[str | BaseModel] = Field(
         None, serialization_alias="Modified By"
     )
-    deleted_by_id: Optional[str | UnoRelObj] = Field(
+    deleted_by_id: Optional[str | BaseModel] = Field(
         None, serialization_alias="Deleted By"
     )
 

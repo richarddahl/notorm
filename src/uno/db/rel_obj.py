@@ -20,15 +20,18 @@ from uno.config import settings
 
 
 class UnoRelObj(BaseModel):
-    table: ClassVar[Optional[Table]]
-    table_alias: ClassVar[Alias]
+    table: ClassVar[Optional[Table]]  # Provided by UnoOBj during initialization
+    table_alias: ClassVar[Alias]  # Provided by UnoOBj during initialization
+
     column: ClassVar[str]
     remote_table: ClassVar[str]
     remote_column: ClassVar[str]
     join_table: ClassVar[str] = None
-    edge_label: ClassVar[Optional[str]] = None
     rel_type: ClassVar[RelType] = RelType.ONE_TO_MANY
     pre_fetch: ClassVar[bool] = True
+
+    edge_label: ClassVar[Optional[str]] = None
+
     remote_table_alias: ClassVar[str] = None
     loc_column_alias: ClassVar[Column] = None
     rem_column_alias: ClassVar[Column] = None
@@ -78,8 +81,8 @@ class GroupRelObj(UnoRelObj):
     column = "group_id"
     remote_table = "group"
     remote_column = "id"
-    edge_label = "IS_ASSIGNED_TO"
     rel_type = RelType.ONE_TO_MANY
+    edge_label = "IS_ASSIGNED_TO"
 
 
 class TenantRelObj(UnoRelObj):
@@ -121,30 +124,3 @@ general_rel_objs = {
     "modified_by_id": ModifiedByRelObj,
     "deleted_by_id": DeletedByRelObj,
 }
-
-
-"""
-SELECT uno."user".id,
-    uno."user".email,
-    uno."user".handle,
-    uno."user".full_name,
-    uno."user".is_superuser,
-    uno."user".tenant_id,
-    uno."user".default_group_id,
-    uno."user".is_active,
-    uno."user".is_deleted,
-    uno."user".created_at,
-    uno."user".modified_at,
-    uno."user".deleted_at,
-    uno."user".created_by_id,
-    uno."user".modified_by_id,
-    uno."user".deleted_by_id 
-FROM uno."user"
-JOIN
-    uno.tenant ON uno."user".tenant_id = uno.tenant.id,
-    uno."user" JOIN uno."user" ON uno."user".created_by_id = uno."user".id,
-    uno."user" JOIN uno."user" ON uno."user".modified_by_id = uno."user".id,
-    uno."user" JOIN uno."user" ON uno."user".deleted_by_id = uno."user".id 
-WHERE uno."user".id = :id_1
-
-"""

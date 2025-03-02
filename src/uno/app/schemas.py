@@ -137,9 +137,9 @@ class SchemaDef(BaseModel, ABC):
             default = ...
 
         if rel_obj.rel_type in [RelType.MANY_TO_ONE, RelType.MANY_TO_MANY]:
-            column_type = list[UnoObj]
+            column_type = list[BaseModel]
         else:
-            column_type = UnoObj
+            column_type = BaseModel
 
         field = Field(
             default=default,

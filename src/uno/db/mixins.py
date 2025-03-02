@@ -203,9 +203,15 @@ class RecordUserAuditMixin(UnoMixin):
         ),
     ]
 
-    created_by_id: Optional[str] = Field(None, serialization_alias="Created By")
-    modified_by_id: Optional[str] = Field(None, serialization_alias="Modified By")
-    deleted_by_id: Optional[str] = Field(None, serialization_alias="Deleted By")
+    created_by_id: Optional[str | BaseModel] = Field(
+        None, serialization_alias="Created By"
+    )
+    modified_by_id: Optional[str | BaseModel] = Field(
+        None, serialization_alias="Modified By"
+    )
+    deleted_by_id: Optional[str | BaseModel] = Field(
+        None, serialization_alias="Deleted By"
+    )
 
 
 class GeneralMixin(

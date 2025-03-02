@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
+from pydantic import BaseModel
 from pydantic.fields import Field
 
 from uno.db.obj import (
@@ -120,15 +121,15 @@ class User(UnoObj, UserMixin):
     handle: str = None
     full_name: Optional[str] = None
     is_superuser: bool = False
-    tenant_id: Optional[str | UnoRelObj] = Field(
+    tenant_id: Optional[str | BaseModel] = Field(
         None,
         serialization_alias="Tenant",
     )
-    default_group_id: Optional[str | UnoRelObj] = Field(
+    default_group_id: Optional[str | BaseModel] = Field(
         None,
         serialization_alias="Default Group",
     )
-    group_id: Optional[str | UnoRelObj] = Field(
+    group_id: Optional[str | BaseModel] = Field(
         None,
         serialization_alias="Group",
     )
