@@ -567,7 +567,7 @@ class InsertMetaRecordFunction(SQLEmitter):
             SQL(
                 """
             DECLARE
-                meta_id VARCHAR(26) := generate_ulid();
+                meta_id VARCHAR(26) := {db_schema}.generate_ulid();
                 table_name VARCHAR(255) := TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME;
             BEGIN
                 /*
@@ -575,7 +575,7 @@ class InsertMetaRecordFunction(SQLEmitter):
                 polymorphic record is inserted.
                 */
                 SET ROLE {writer_role};
-                INSERT INTO meta_record (id, meta_type_id)
+                INSERT INTO {db_schema}.meta_record (id, meta_type_id)
                     VALUES (meta_id, table_name);
                 NEW.id = meta_id;
                 RETURN NEW;

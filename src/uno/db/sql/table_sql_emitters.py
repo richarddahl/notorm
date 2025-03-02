@@ -272,13 +272,13 @@ class InsertMetaTypeRecord(TableSQLEmitter):
                     """
             -- Create the meta_type record
             SET ROLE {writer_role};
-            INSERT INTO {schema}.meta_type (id)
+            INSERT INTO {db_schema}.meta_type (id)
             VALUES ({table_name})
             ON CONFLICT DO NOTHING;
             """
                 )
                 .format(
-                    schema=DB_SCHEMA,
+                    db_schema=DB_SCHEMA,
                     writer_role=WRITER_ROLE,
                     table_name=Literal(self.table_name),
                 )
