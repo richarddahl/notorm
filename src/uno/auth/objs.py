@@ -114,7 +114,6 @@ class User(UnoObj, UserMixin):
     schema_defs = user_schema_defs
     exclude_from_properties = ["is_superuser"]
     related_objects = user_rel_objs
-    summary_fields = ["email", "handle"]
 
     # BaseModel Fields
     email: str = None
