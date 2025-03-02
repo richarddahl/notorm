@@ -180,15 +180,10 @@ class SelectRouter(SchemaRouter):
         async def endpoint(
             self,
             id: str,
-        ) -> BaseModel:
-            result = await self.obj_class.db.select(
-                id=id,
-                response_model=self.response_model,
-                result_type=SelectResultType.FIRST,
-            )
+        ) -> type[BaseModel]:
+            result = await self.obj_class().get_by_id(id)
             if result is None:
                 raise HTTPException(status_code=404, detail="Object not found")
-
             return result
 
         endpoint.__annotations__["return"] = obj_class.select_schema
