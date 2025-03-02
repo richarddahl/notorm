@@ -194,7 +194,7 @@ class UnoObj(BaseModel):
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, cls.app)
         for schema_def in cls.schema_defs:
-            schema_def.set_router(cls, schema_def.schema, cls.app)
+            schema_def.set_router(cls, schema_def.constructed_schema, cls.app)
 
     @classmethod
     def set_graph(cls) -> None:

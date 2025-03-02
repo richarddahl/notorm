@@ -72,7 +72,7 @@ class SchemaDef(BaseModel, ABC):
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
     include_related_fields: bool = False
-    schema: BaseModel | None = None
+    constructed_schema: BaseModel | None = None
 
     model_config = ConfigDict(extra="ignore")
 
@@ -94,7 +94,7 @@ class SchemaDef(BaseModel, ABC):
             __slots__=None,
             **fields,
         )
-        self.schema = schema
+        self.constructed_schema = schema
         setattr(obj_class, f"{self.schema_type}_schema", schema)
 
     def compile_fields(self, obj_class: UnoObj) -> dict[str, Any]:
