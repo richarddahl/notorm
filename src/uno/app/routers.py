@@ -19,7 +19,7 @@ get_db = None
 
 class SchemaRouter(BaseModel, ABC):
     obj_class: type[BaseModel]
-    reponse_model: type[BaseModel]
+    reponse_model: type[BaseModel] | None = None
     path_suffix: str
     method: str
     path_prefix: str = "/api"
@@ -32,9 +32,9 @@ class SchemaRouter(BaseModel, ABC):
         router = APIRouter()
         router.add_api_route(
             f"{self.path_prefix}/{self.api_version}/{self.obj_class.table.name}{self.path_suffix}",
-            response_model=(
-                self.reponse_model if not self.return_list else list[self.reponse_model]
-            ),
+            # response_model=(
+            #    self.reponse_model if not self.return_list else list[self.reponse_model]
+            # ),
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
@@ -45,37 +45,8 @@ class SchemaRouter(BaseModel, ABC):
         app.include_router(router)
 
     @abstractmethod
-    def endpoint_factory(self, schema: type[BaseModel]):
+    def endpoint_factory(self, body_schema: type[BaseModel]):
         raise NotImplementedError
-
-
-class InsertRouter(SchemaRouter):
-    path_suffix: str = ""
-    method: str = "POST"
-    path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
-    # summary: str = "" <- computed_field
-    # description: str = "" <- computed_field
-
-    @computed_field
-    def summary(self) -> str:
-        return f"Create a new {self.obj_class.display_name}"
-
-    @computed_field
-    def description(self) -> str:
-        return f"Create a new {self.obj_class.display_name} using the __{self.obj_class.__name__.title()}Insert__ schema."
-
-    @computed_field
-    def response_model(self) -> BaseModel:
-        return self.obj_class.insert_schema
-
-    @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
-
-        async def endpoint(self, object: BaseModel):
-            return cls.response_model
-
-        setattr(cls, "endpoint", endpoint)
 
 
 class ListRouter(SchemaRouter):
@@ -100,11 +71,13 @@ class ListRouter(SchemaRouter):
         return self.obj_class.list_schema
 
     @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
 
         async def endpoint(self) -> list[BaseModel]:
             results = await self.obj_class.db.list(schema=self.response_model)
             return results
+
+        endpoint.__annotations__["return"] = list[obj_class.list_schema]
 
         setattr(cls, "endpoint", endpoint)
 
@@ -114,7 +87,6 @@ class ImportRouter(SchemaRouter):
     method: str = "PUT"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
 
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
@@ -134,63 +106,49 @@ class ImportRouter(SchemaRouter):
             __{self.obj_class.__name__.title()}Insert__ schema.   
         """
 
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.obj_class.select_schema
+
     @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
 
         async def endpoint(self, body: BaseModel):
             return cls.response_model
 
+        endpoint.__annotations__["body"] = body_schema
+        endpoint.__annotations__["return"] = obj_class.select_schema
         setattr(cls, "endpoint", endpoint)
 
 
-class UpdateRouter(SchemaRouter):
-    path_suffix: str = "/{id}"
-    method: str = "PATCH"
+class InsertRouter(SchemaRouter):
+    path_suffix: str = ""
+    method: str = "POST"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
     @computed_field
     def summary(self) -> str:
-        return f"Update a new {self.obj_class.display_name}"
+        return f"Create a new {self.obj_class.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Update a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Update__ schema."
+        return f"Create a new {self.obj_class.display_name} using the __{self.obj_class.__name__.title()}Insert__ schema."
+
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.obj_class.insert_schema
 
     @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
 
-        async def endpoint(self, id: str, body: BaseModel):
+        async def endpoint(self, body: BaseModel) -> BaseModel:
             return cls.response_model
 
-        setattr(cls, "endpoint", endpoint)
-
-
-class DeleteRouter(SchemaRouter):
-    path_suffix: str = "/{id}"
-    method: str = "DELETE"
-    path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
-    response_model: BaseModel | None = None
-    # summary: str = "" <- computed_field
-    # description: str = "" <- computed_field
-
-    @computed_field
-    def summary(self) -> str:
-        return f"Delete a {self.obj_class.display_name}"
-
-    @computed_field
-    def description(self) -> str:
-        return f"Delete a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Delete__ schema."
-
-    @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
-
-        async def endpoint(self, id: str) -> type[BaseModel]:
-            return {"message": "delete"}
+        endpoint.__annotations__["body"] = body_schema
+        endpoint.__annotations__["return"] = obj_class.select_schema
 
         setattr(cls, "endpoint", endpoint)
 
@@ -214,18 +172,18 @@ class SelectRouter(SchemaRouter):
 
     @computed_field
     def response_model(self) -> BaseModel:
-        return self.obj_class.list_schema
+        return None
 
     @classmethod
-    def endpoint_factory(cls, body: type[BaseModel], response_model: type[BaseModel]):
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
 
         async def endpoint(
             self,
             id: str,
         ) -> BaseModel:
             result = await self.obj_class.db.select(
-                "01JMYNF72N60R5RC1G61E30C1G",
-                response_model=response_model,
+                id=id,
+                response_model=self.response_model,
                 result_type=SelectResultType.FIRST,
             )
             if result is None:
@@ -233,4 +191,66 @@ class SelectRouter(SchemaRouter):
 
             return result
 
+        endpoint.__annotations__["return"] = obj_class.select_schema
+        setattr(cls, "endpoint", endpoint)
+
+
+class UpdateRouter(SchemaRouter):
+    path_suffix: str = "/{id}"
+    method: str = "PATCH"
+    path_prefix: str = "/api"
+    tags: list[str | Enum] | None = None
+    # summary: str = "" <- computed_field
+    # description: str = "" <- computed_field
+
+    @computed_field
+    def summary(self) -> str:
+        return f"Update a new {self.obj_class.display_name}"
+
+    @computed_field
+    def description(self) -> str:
+        return f"Update a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Update__ schema."
+
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.obj_class.update_schema
+
+    @classmethod
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
+
+        async def endpoint(self, id: str, body: BaseModel):
+            return cls.response_model
+
+        endpoint.__annotations__["body"] = body_schema
+        endpoint.__annotations__["return"] = obj_class.select_schema
+        setattr(cls, "endpoint", endpoint)
+
+
+class DeleteRouter(SchemaRouter):
+    path_suffix: str = "/{id}"
+    method: str = "DELETE"
+    path_prefix: str = "/api"
+    tags: list[str | Enum] | None = None
+    # summary: str = "" <- computed_field
+    # description: str = "" <- computed_field
+
+    @computed_field
+    def summary(self) -> str:
+        return f"Delete a {self.obj_class.display_name}"
+
+    @computed_field
+    def description(self) -> str:
+        return f"Delete a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Delete__ schema."
+
+    @computed_field
+    def response_model(self) -> BaseModel:
+        return self.obj_class.delete_schema
+
+    @classmethod
+    def endpoint_factory(cls, obj_class: BaseModel, body_schema: type[BaseModel]):
+
+        async def endpoint(self, id: str) -> BaseModel:
+            return {"message": "delete"}
+
+        endpoint.__annotations__["return"] = bool
         setattr(cls, "endpoint", endpoint)

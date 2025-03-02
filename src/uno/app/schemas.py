@@ -69,10 +69,10 @@ class SchemaDef(BaseModel, ABC):
     schema_type: str
     schema_base: BaseModel
     router: SchemaRouter
-    return_format: str = "native"
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
     include_related_fields: bool = False
+    schema: BaseModel | None = None
 
     model_config = ConfigDict(extra="ignore")
 
@@ -84,11 +84,7 @@ class SchemaDef(BaseModel, ABC):
             )
 
         schema_name = f"{obj_class.__name__}{self.schema_type.capitalize()}"
-
-        fields = self.suss_fields(obj_class)
-        if self.include_related_fields:
-            fields.update(self.suss_related_fields(obj_class))
-
+        fields = self.compile_fields(obj_class)
         schema = create_model(
             schema_name,
             __doc__=self.format_doc(obj_class),
@@ -98,13 +94,14 @@ class SchemaDef(BaseModel, ABC):
             __slots__=None,
             **fields,
         )
-        router = self.router(obj_class=obj_class, reponse_model=schema)
-        endpoint = router.endpoint_factory(
-            body=schema, response_model=router.response_model
-        )
-        router.add_to_app(app)
-
+        self.schema = schema
         setattr(obj_class, f"{self.schema_type}_schema", schema)
+
+    def compile_fields(self, obj_class: UnoObj) -> dict[str, Any]:
+        fields = self.suss_fields(obj_class)
+        if self.include_related_fields:
+            fields.update(self.suss_related_fields(obj_class))
+        return fields
 
     def suss_related_fields(self, obj_class: UnoObj) -> dict[str, Any]:
         fields = {}
@@ -207,6 +204,11 @@ class SchemaDef(BaseModel, ABC):
         if nullable:
             return (column_type | None, field)
         return (column_type, field)
+
+    def set_router(self, obj_class: UnoObj, schema: BaseModel, app: FastAPI) -> None:
+        router = self.router(obj_class=obj_class, response_model=schema)
+        router.endpoint_factory(obj_class=obj_class, body_schema=schema)
+        router.add_to_app(app)
 
     @abstractmethod
     def before_db_state_change(self) -> None:

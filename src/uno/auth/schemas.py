@@ -12,6 +12,13 @@ from uno.app.schemas import (
 )
 
 tenant_schema_defs = [
+    ListSchemaDef(
+        include_fields=[
+            "id",
+            "name",
+            "is_active",
+        ],
+    ),
     InsertSchemaDef(
         exclude_fields=[
             "id",
@@ -21,13 +28,6 @@ tenant_schema_defs = [
             "modified_by_id",
             "deleted_at",
             "deleted_by_id",
-        ],
-    ),
-    ListSchemaDef(
-        include_fields=[
-            "id",
-            "name",
-            "is_active",
         ],
     ),
     SelectSchemaDef(),
@@ -46,6 +46,13 @@ tenant_schema_defs = [
 ]
 
 user_schema_defs = [
+    ListSchemaDef(
+        include_fields=[
+            "id",
+            "handle",
+            "is_active",
+        ],
+    ),
     InsertSchemaDef(
         exclude_fields=[
             "id",
@@ -55,25 +62,18 @@ user_schema_defs = [
             "modified_by_id",
             "deleted_at",
             "deleted_by_id",
-        ],
-    ),
-    ListSchemaDef(
-        include_fields=[
-            "id",
-            "email",
-            "handle",
-            "full_schema_type",
             "is_active",
-            "created_by",
-            "modified_by",
-            "deleted_by_id",
+            "is_deleted",
         ],
     ),
     SelectSchemaDef(),
     UpdateSchemaDef(
         exclude_fields=[
             "id",
+            "is_superuser",
+            "tenant_id",
             "created_at",
+            "created_by_id",
             "modified_at",
             "modified_by_id",
             "deleted_at",
