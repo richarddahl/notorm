@@ -5,7 +5,7 @@
 from typing import ClassVar, Any
 
 from sqlalchemy import MetaData, Table, Column
-from sqlalchemy.sql.expression import Join, join
+from sqlalchemy.sql.expression import Alias
 from sqlalchemy.engine import Connection
 
 from pydantic import BaseModel, ConfigDict, AliasGenerator
@@ -17,7 +17,7 @@ from uno.db.sql.table_sql_emitters import InsertMetaTypeRecord
 from uno.db.graph import GraphNode
 from uno.db.db import UnoDB
 from uno.errors import UnoRegistryError
-from uno.utilities import convert_snake_to_title
+from uno.utilities import convert_snake_to_title, create_random_alias
 from uno.config import settings
 
 
@@ -53,11 +53,15 @@ class UnoObj(BaseModel):
         alias_generator=AliasGenerator(
             validation_alias=None,
             serialization_alias=convert_snake_to_title,
-        )
+        ),
+        validate_assignment=True,
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
     )
 
     table_def: ClassVar[UnoTableDef]
     table: ClassVar[Table]
+    table_alias: ClassVar[Alias]  # Alias is a SQLAlchemy class used in joins
 
     db: ClassVar[UnoDB] = None
     table_name: ClassVar[str] = ""
@@ -92,6 +96,13 @@ class UnoObj(BaseModel):
     update_schema: ClassVar[BaseModel] = None
     delete_schema: ClassVar[BaseModel] = None
     import_schema: ClassVar[BaseModel] = None
+
+    # BaseModel Methods
+    def __getattr__(self, item):
+        for field, meta in self.model_fields.items():
+            if meta.alias == item:
+                return getattr(self, field)
+        return super().__getattr__(item)
 
     # SETUP METHODS BEGIN
     def __init_subclass__(cls) -> None:
@@ -136,6 +147,7 @@ class UnoObj(BaseModel):
             *cls.table_def.args,
             **cls.table_def.kwargs,
         )
+        cls.table_alias = create_random_alias(cls, cls.table)
 
         cls.display_name = (
             convert_snake_to_title(cls.table.name)
@@ -181,6 +193,8 @@ class UnoObj(BaseModel):
     def create_schemas(cls) -> None:
         for schema_def in cls.schema_defs:
             schema_def.create_schema(cls, cls.app)
+        for schema_def in cls.schema_defs:
+            schema_def.set_router(cls, schema_def.schema, cls.app)
 
     @classmethod
     def set_graph(cls) -> None:
@@ -243,7 +257,8 @@ class UnoObj(BaseModel):
         rel_objs = {}
         for name, rel_obj in self.related_objects.items():
             rel_obj.table = self.table
-            rel_obj.create_join()
+            rel_obj.table_alias = self.table_alias
+            rel_obj().create_join()
             edge = GraphEdge(
                 obj_class=self,
                 source_table=self.table.name,
@@ -281,13 +296,64 @@ class UnoObj(BaseModel):
             if field_name in field_names:
                 setattr(self, field_name, fields[field_name])
 
+    @classmethod
+    def query_columns(cls, schema: BaseModel) -> list[Column]:
+        """
+        Extracts a list of SQLAlchemy Column objects based on a Pydantic schema.
+
+        This method generates query columns for both local table fields and related object fields.
+        For related objects, it creates labeled columns with the format "{relation_name}__{field_name}".
+
+        Args:
+            schema (BaseModel): A Pydantic BaseModel class defining the schema for the query.
+
+        Returns:
+            list[Column]: A list of SQLAlchemy Column objects, including both local and related columns.
+                - Local columns are taken directly from the table_alias
+                - Related columns are labeled with the relationship name as prefix
+
+        Example:
+            If a User model has a related Address with fields 'street' and 'city',
+            the related columns would be labeled as 'address__street' and 'address__city'.
+        """
+        local_columns = []
+        related_columns = []
+        for column_name in schema.model_fields.keys():
+            if column_name in cls.related_objects.keys():
+                rel_obj = cls.related_objects.get(column_name)
+                rel_obj_class = cls.registry.get(rel_obj.remote_table)
+                rel_obj_schema = rel_obj_class.list_schema
+                for col_name in rel_obj_schema.model_fields.keys():
+                    related_columns.append(
+                        rel_obj.remote_table_alias.columns.get(col_name).label(
+                            f"{column_name}__{col_name}"
+                        )
+                    )
+            else:
+                local_columns.append(cls.table_alias.columns.get(column_name))
+        return local_columns + related_columns
+
+    @classmethod
+    def construct_response_schemas(cls, data: dict[str:Any]) -> BaseModel:
+        schema_keys = {}
+        for key, value in data.items():
+            if "__" in key:
+                rel_name, field_name = key.split("__")
+                if rel_name not in schema_keys:
+                    schema_keys[rel_name] = {}
+                schema_keys[rel_name].update({field_name: value})
+            else:
+                schema_keys.update({key: value})
+        return schema_keys
+
     # UTILITY METHODS END
 
     # DB METHODS BEGIN
     @classmethod
     async def get_by_id(cls, id: str) -> list[BaseModel]:
         data = await cls.db.select(id)
-        return cls(**data)
+        response_schema = cls.construct_response_schemas(data)
+        return getattr(cls, "select_schema")(**response_schema)
 
     @classmethod
     async def select(cls, id: str) -> BaseModel:

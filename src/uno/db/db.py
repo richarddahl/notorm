@@ -19,6 +19,7 @@ from sqlalchemy import (
     not_,
     create_engine,
     text,
+    alias,
 )
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -83,7 +84,7 @@ class UnoDB:
         include: str = Include.INCLUDE,
         lookup: str = Lookup.EQUAL,
     ) -> Any:
-        column = self.obj_class.table.c.get(field_name)
+        column = self.obj_class.table_alias.c.get(field_name)
         try:
             operation = getattr(column, lookup)(value)
         except AttributeError as e:
@@ -95,6 +96,30 @@ class UnoDB:
             return operation
         else:
             return ~operation
+
+    def add_join(self, stmt: Any, response_schema: BaseModel) -> Any:
+        for f_idx, f_name in enumerate(response_schema.model_fields.keys()):
+            if f_name in self.obj_class.related_objects.keys():
+                rel_obj = self.obj_class.related_objects.get(f_name)
+                if f_idx == 0:
+                    stmt = stmt.select_from(
+                        rel_obj.table_alias.join(
+                            rel_obj.remote_table_alias,
+                            onclause=rel_obj.table_alias.columns[rel_obj.column]
+                            == rel_obj.remote_table_alias.columns[
+                                rel_obj.remote_column
+                            ],
+                            isouter=True,
+                        )
+                    )
+                else:
+                    stmt = stmt.join(
+                        rel_obj.remote_table_alias,
+                        onclause=rel_obj.table_alias.columns[rel_obj.column]
+                        == rel_obj.remote_table_alias.columns[rel_obj.remote_column],
+                        isouter=True,
+                    )
+        return stmt
 
     async def list(self, schema: BaseModel = None) -> list[BaseModel]:
         if schema is None:
@@ -148,13 +173,10 @@ class UnoDB:
         if response_schema is None:
             response_schema = self.obj_class.select_schema
 
-        columns = [
-            self.obj_class.table.c.get(field_name)
-            for field_name in self.obj_class.select_schema.model_fields.keys()
-        ]
-
-        stmt = select(*columns).where(and_(self.where("id", id)))
-
+        columns = self.obj_class.query_columns(response_schema)
+        stmt = select(*columns)
+        stmt = self.add_join(stmt, response_schema)
+        stmt = stmt.where(and_(self.where("id", id)))
         async with engine.begin() as conn:
             await conn.execute(text(self.set_role_text("reader")))
             result = await conn.execute(stmt)

@@ -7,91 +7,109 @@ import enum
 from typing import Optional, ClassVar
 
 from sqlalchemy import Table, Column
-from sqlalchemy.sql.expression import Join, join
+from sqlalchemy.sql.expression import Join, join, Alias
+
+from psycopg.sql import SQL, Identifier
 
 from pydantic import BaseModel, computed_field, field_validator
 
 from uno.db.obj import UnoObj
 from uno.db.enums import RelType
+from uno.utilities import create_random_alias
 from uno.config import settings
 
 
 class UnoRelObj(BaseModel):
+    table: ClassVar[Optional[Table]]
+    table_alias: ClassVar[Alias]
     column: ClassVar[str]
+    remote_table: ClassVar[str]
     remote_column: ClassVar[str]
     join_table: ClassVar[str] = None
     edge_label: ClassVar[Optional[str]] = None
     rel_type: ClassVar[RelType] = RelType.ONE_TO_MANY
+    pre_fetch: ClassVar[bool] = True
+    remote_table_alias: ClassVar[str] = None
+    loc_column_alias: ClassVar[Column] = None
+    rem_column_alias: ClassVar[Column] = None
+    schema_name: ClassVar[str] = "list"
     join: ClassVar[Join] = None
-    table: ClassVar[Optional[Table]] = None
-    pre_fetch: ClassVar[bool] = False
+    schema: ClassVar[BaseModel] = None
+    rel_obj_class: ClassVar[BaseModel] = None
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_obj()
+        self.set_schema()
+        self.create_join()
+
+    @classmethod
+    def set_obj(cls) -> BaseModel:
+        cls.rel_obj_class = UnoObj.registry[cls.remote_table]
+
+    @classmethod
+    def set_schema(cls) -> BaseModel:
+        return getattr(cls.rel_obj_class, f"{cls.schema_name}_schema")
 
     @classmethod
     def create_join(cls) -> Join:
-        local_column = cls.table.columns[cls.column]
-        remote_table = cls.table.metadata.tables[
-            f"{settings.DB_SCHEMA}.{cls.remote_column.split('.')[0]}"
+        rem_table = cls.table.metadata.tables[
+            f"{settings.DB_SCHEMA}.{cls.remote_table}"
         ]
-        remote_column = remote_table.columns[cls.remote_column.split(".")[1]]
+        cls.remote_table_alias = create_random_alias(cls.rel_obj_class, rem_table)
+        cls.rem_column = cls.remote_table_alias.columns[cls.remote_column]
+        cls.loc_column = cls.table_alias.columns[cls.column]
         if cls.rel_type == RelType.MANY_TO_MANY:
             cls.join = join(
-                cls.table,
-                remote_table,
-                onclause=local_column == remote_column,
+                cls.table_alias,
+                cls.remote_table_alias,
+                onclause=cls.loc_column == cls.rem_column,
+                isouter=True,
             )
         cls.join = join(
-            cls.table,
-            remote_table,
-            onclause=local_column == remote_column,
+            cls.table_alias,
+            cls.remote_table_alias,
+            onclause=cls.loc_column == cls.rem_column,
+            isouter=True,
         )
-
-    def _emit_sql(self, table_name: str) -> str:
-        if self.rel_type == RelType.ONE_TO_ONE:
-            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
-        elif self.rel_type == RelType.ONE_TO_MANY:
-            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
-        elif self.rel_type == RelType.MANY_TO_ONE:
-            return f"JOIN {self.obj.table_name} ON {table_name}.{self.column} = {self.obj.table_name}.{self.remote_column}"
-        elif self.rel_type == RelType.MANY_TO_MANY:
-            return f"JOIN {self.join_table} ON {table_name}.{self.column} = {self.join_table}.{self.join_column} JOIN {self.obj.table_name} ON {self.join_table}.{self.join_remote_column} = {self.obj.table_name}.{self.remote_column}"
-        else:
-            raise ValueError(f"Invalid rel_type: {self.rel_type}")
 
 
 class GroupRelObj(UnoRelObj):
     column = "group_id"
-    remote_column = "group.id"
+    remote_table = "group"
+    remote_column = "id"
     edge_label = "IS_ASSIGNED_TO"
     rel_type = RelType.ONE_TO_MANY
 
 
 class TenantRelObj(UnoRelObj):
     column = "tenant_id"
-    remote_column = "tenant.id"
+    remote_table = "tenant"
+    remote_column = "id"
     edge_label = "IS_ASSIGNED_TO"
     rel_type = RelType.ONE_TO_MANY
 
 
 class CreatedByRelObj(UnoRelObj):
     column = "created_by_id"
-    remote_column = "user.id"
+    remote_table = "user"
+    remote_column = "id"
     edge_label = "CREATED_BY"
     rel_type = RelType.ONE_TO_MANY
 
 
 class ModifiedByRelObj(UnoRelObj):
     column = "modified_by_id"
-    remote_column = "user.id"
+    remote_table = "user"
+    remote_column = "id"
     edge_label = "MODIFIED_BY"
     rel_type = RelType.ONE_TO_MANY
 
 
 class DeletedByRelObj(UnoRelObj):
     column = "deleted_by_id"
-    remote_column = "user.id"
+    remote_table = "user"
+    remote_column = "id"
     edge_label = "DELETED_BY"
     rel_type = RelType.ONE_TO_MANY
 
@@ -103,3 +121,30 @@ general_rel_objs = {
     "modified_by_id": ModifiedByRelObj,
     "deleted_by_id": DeletedByRelObj,
 }
+
+
+"""
+SELECT uno."user".id,
+    uno."user".email,
+    uno."user".handle,
+    uno."user".full_name,
+    uno."user".is_superuser,
+    uno."user".tenant_id,
+    uno."user".default_group_id,
+    uno."user".is_active,
+    uno."user".is_deleted,
+    uno."user".created_at,
+    uno."user".modified_at,
+    uno."user".deleted_at,
+    uno."user".created_by_id,
+    uno."user".modified_by_id,
+    uno."user".deleted_by_id 
+FROM uno."user"
+JOIN
+    uno.tenant ON uno."user".tenant_id = uno.tenant.id,
+    uno."user" JOIN uno."user" ON uno."user".created_by_id = uno."user".id,
+    uno."user" JOIN uno."user" ON uno."user".modified_by_id = uno."user".id,
+    uno."user" JOIN uno."user" ON uno."user".deleted_by_id = uno."user".id 
+WHERE uno."user".id = :id_1
+
+"""

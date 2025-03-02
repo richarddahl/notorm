@@ -18,6 +18,7 @@ DB_SCHEMA = settings.DB_SCHEMA
 
 engine = create_async_engine(
     f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    # echo=True,
 )
 
 sync_engine = create_engine(

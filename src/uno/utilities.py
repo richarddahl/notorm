@@ -1,14 +1,27 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-from __future__ import annotations
-from typing import Any
+
+import random
+import string
 import decimal
+
+from typing import Any
 from datetime import datetime, timedelta, date
+from babel import dates, numbers
 
-from babel import dates, numbers  # type: ignore
+from sqlalchemy.sql.expression import Alias, alias
 
-from uno.config import settings  # type: ignore
+from uno.config import settings
+
+
+def random_alias() -> str:
+    return "".join(random.choices(string.ascii_lowercase, k=3))
+
+
+def create_random_alias(obj_class, aliased_obj) -> Alias:
+    rnd_str = "".join(random.choices(string.ascii_lowercase, k=3))
+    return alias(aliased_obj, name=f"{obj_class.__name__.lower()}_{rnd_str}")
 
 
 def convert_snake_to_capital_word(snake_str: str) -> str:

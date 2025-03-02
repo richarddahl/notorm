@@ -14,10 +14,20 @@ from uno.db.rel_obj import (
     DeletedByRelObj,
     general_rel_objs,
 )
+from uno.db.enums import RelType
+
+
+class UserDefaultGroupRelObj(UnoRelObj):
+    column = "default_group_id"
+    remote_table = "group"
+    remote_column = "id"
+    edge_label = "IS_ASSIGNED_TO"
+    rel_type = RelType.ONE_TO_MANY
 
 
 user_rel_objs = {
     "tenant_id": TenantRelObj,
+    "default_group_id": UserDefaultGroupRelObj,
     "created_by_id": CreatedByRelObj,
     "modified_by_id": ModifiedByRelObj,
     "deleted_by_id": DeletedByRelObj,
