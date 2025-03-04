@@ -50,11 +50,31 @@ from uno.auth.rls_sql_emitters import (
     #    TenantRowLevelSecurity,
 )
 from uno.auth.enums import TenantType
-from uno.auth.schemas import (
-    user_schema_defs,
-    tenant_schema_defs,
-    group_schema_defs,
-    role_schema_defs,
+from uno.auth.endpoints import (
+    CreateUser,
+    ViewUser,
+    ViewUserSummary,
+    UpdateUser,
+    DeleteUser,
+    ImportUser,
+    CreateGroup,
+    ViewGroup,
+    ViewGroupSummary,
+    UpdateGroup,
+    DeleteGroup,
+    ImportGroup,
+    CreateRole,
+    ViewRole,
+    ViewRoleSummary,
+    UpdateRole,
+    DeleteRole,
+    ImportRole,
+    CreateTenant,
+    ViewTenant,
+    ViewTenantSummary,
+    UpdateTenant,
+    DeleteTenant,
+    ImportTenant,
 )
 from uno.auth.rel_objs import user_rel_objs, group_rel_objs
 
@@ -112,9 +132,16 @@ class User(UnoObj, UserMixin):
 
     # Class Variables
     sql_emitters = [UserRowLevelSecurity]
-    schema_defs = user_schema_defs
-    exclude_from_properties = ["is_superuser"]
-    related_objects = user_rel_objs
+    # exclude_from_properties = ["is_superuser"]
+    related_object_defs = user_rel_objs
+    endpoints = [
+        CreateUser,
+        ViewUser,
+        ViewUserSummary,
+        UpdateUser,
+        DeleteUser,
+        ImportUser,
+    ]
 
     # BaseModel Fields
     email: str = None
@@ -172,8 +199,15 @@ class Group(UnoObj, GeneralMixin):
 
     # Class Variables
     sql_emitters = [ValidateGroupInsert, DefaultGroupTenant]
-    schema_defs = group_schema_defs
     related_objects = group_rel_objs
+    endpoints = [
+        CreateGroup,
+        ViewGroup,
+        ViewGroupSummary,
+        UpdateGroup,
+        DeleteGroup,
+        ImportGroup,
+    ]
 
     # BaseModel Fields
     name: str
@@ -201,7 +235,15 @@ class Role(UnoObj, GeneralMixin):
             UniqueConstraint("tenant_id", "name"),
         ],
     )
-    schema_defs = role_schema_defs
+    sql_emitters = []
+    endpoints = [
+        CreateRole,
+        ViewRole,
+        ViewRoleSummary,
+        UpdateRole,
+        DeleteRole,
+        ImportRole,
+    ]
 
     # BaseModel fields
     name: str
@@ -236,9 +278,15 @@ class Tenant(UnoObj, GeneralMixin):
     )
 
     # Class Variables
-
     sql_emitters = [InsertGroupForTenant]
-    schema_defs = tenant_schema_defs
+    endpoints = [
+        CreateTenant,
+        ViewTenant,
+        ViewTenantSummary,
+        UpdateTenant,
+        DeleteTenant,
+        ImportTenant,
+    ]
 
     # BaseModel fields
     name: str

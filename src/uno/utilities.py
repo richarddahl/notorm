@@ -15,13 +15,11 @@ from sqlalchemy.sql.expression import Alias, alias
 from uno.config import settings
 
 
-def random_alias() -> str:
-    return "".join(random.choices(string.ascii_lowercase, k=3))
-
-
-def create_random_alias(obj_class, aliased_obj) -> Alias:
+def create_random_alias(aliased_obj, prefix: str = None) -> Alias:
     rnd_str = "".join(random.choices(string.ascii_lowercase, k=3))
-    return alias(aliased_obj, name=f"{obj_class.__name__.lower()}_{rnd_str}")
+    if prefix:
+        return alias(aliased_obj, name=f"{prefix}_{rnd_str}")
+    return alias(aliased_obj, name=rnd_str)
 
 
 def convert_snake_to_capital_word(snake_str: str) -> str:

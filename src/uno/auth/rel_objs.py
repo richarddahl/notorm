@@ -18,11 +18,11 @@ from uno.db.enums import RelType
 
 
 class UserDefaultGroupRelObj(UnoRelObj):
-    column = "default_group_id"
-    remote_table = "group"
-    remote_column = "id"
-    edge_label = "IS_ASSIGNED_TO"
-    rel_type = RelType.ONE_TO_MANY
+    local_column_name: str = "default_group_id"
+    remote_table_name: str = "group"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "IS_ASSIGNED_TO"
 
 
 user_rel_objs = {

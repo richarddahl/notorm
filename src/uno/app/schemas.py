@@ -22,7 +22,7 @@ from sqlalchemy import Column, Table
 from fastapi import FastAPI
 
 from uno.app.routers import (
-    SchemaRouter,
+    UnoRouter,
     InsertRouter,
     ListRouter,
     SelectRouter,
@@ -68,7 +68,7 @@ class ImportSchemaBase(BaseModel):
 class SchemaDef(BaseModel, ABC):
     schema_type: str
     schema_base: BaseModel
-    router: SchemaRouter
+    router: UnoRouter
     exclude_fields: list[str] | None = []
     include_fields: list[str] | None = []
     include_related_fields: bool = False
@@ -207,7 +207,7 @@ class SchemaDef(BaseModel, ABC):
 
     def set_router(self, obj_class: UnoObj, schema: BaseModel, app: FastAPI) -> None:
         router = self.router(obj_class=obj_class, response_model=schema)
-        router.endpoint_factory(obj_class=obj_class, body_schema=schema)
+        router.endpoint_factory(obj_class=obj_class, body_model=schema)
         router.add_to_app(app)
 
     @abstractmethod
@@ -222,7 +222,7 @@ class SchemaDef(BaseModel, ABC):
 class InsertSchemaDef(SchemaDef):
     schema_type: str = "insert"
     schema_base: BaseModel = InsertSchemaBase
-    router: SchemaRouter = InsertRouter
+    router: UnoRouter = InsertRouter
 
     def format_doc(self, obj_class: UnoObj) -> str:
         return f"Create a {obj_class.display_name}"
@@ -240,7 +240,7 @@ class InsertSchemaDef(SchemaDef):
 class ListSchemaDef(SchemaDef):
     schema_type: str = "list"
     schema_base: BaseModel = ListSchemaBase
-    router: SchemaRouter = ListRouter
+    router: UnoRouter = ListRouter
     include_related_fields: bool = True
 
     def format_doc(self, obj_class: UnoObj) -> str:
@@ -259,7 +259,7 @@ class ListSchemaDef(SchemaDef):
 class SelectSchemaDef(SchemaDef):
     schema_type: str = "select"
     schema_base: BaseModel = SelectSchemaBase
-    router: SchemaRouter = SelectRouter
+    router: UnoRouter = SelectRouter
     include_related_fields: bool = True
 
     def format_doc(self, obj_class: UnoObj) -> str:
@@ -278,7 +278,7 @@ class SelectSchemaDef(SchemaDef):
 class UpdateSchemaDef(SchemaDef):
     schema_type: str = "update"
     schema_base: BaseModel = UpdateSchemaBase
-    router: SchemaRouter = UpdateRouter
+    router: UnoRouter = UpdateRouter
 
     def format_doc(self, obj_class: UnoObj) -> str:
         return f"Update a {obj_class.display_name}"
@@ -296,7 +296,7 @@ class UpdateSchemaDef(SchemaDef):
 class DeleteSchemaDef(SchemaDef):
     schema_type: str = "delete"
     schema_base: BaseModel = DeleteSchemaBase
-    router: SchemaRouter = DeleteRouter
+    router: UnoRouter = DeleteRouter
     include_fields: list[str] = ["id"]
 
     def format_doc(self, obj_class: UnoObj) -> str:
@@ -315,7 +315,7 @@ class DeleteSchemaDef(SchemaDef):
 class ImportSchemaDef(SchemaDef):
     schema_type: str = "import"
     schema_base: BaseModel = ImportSchemaBase
-    router: SchemaRouter = ImportRouter
+    router: UnoRouter = ImportRouter
 
     def format_doc(self, obj_class: UnoObj) -> str:
         return f"Schema to Import a {obj_class.display_name}"

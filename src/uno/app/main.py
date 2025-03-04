@@ -19,6 +19,11 @@ for module in settings.LOAD_MODULES:
         f"{module}.objs"
     )
 
+auth_objs.User.configure()
+auth_objs.Group.configure()
+auth_objs.Tenant.configure()
+auth_objs.Role.configure()
+
 
 templates = Jinja2Templates(directory="templates")
 

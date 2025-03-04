@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
+from typing import Any, List
 
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from sqlalchemy import (
     Table,
+    Column,
     inspect,
     select,
     exists,
@@ -97,64 +98,62 @@ class UnoDB:
         else:
             return ~operation
 
-    def add_join(self, stmt: Any, response_schema: BaseModel) -> Any:
-        for f_idx, f_name in enumerate(response_schema.model_fields.keys()):
+    def add_join(self, stmt: Any, response_model: BaseModel) -> Any:
+        for f_idx, f_name in enumerate(response_model.model_fields.keys()):
             if f_name in self.obj_class.related_objects.keys():
                 rel_obj = self.obj_class.related_objects.get(f_name)
                 if f_idx == 0:
                     stmt = stmt.select_from(
-                        rel_obj.table_alias.join(
+                        rel_obj.local_table_alias.join(
                             rel_obj.remote_table_alias,
-                            onclause=rel_obj.table_alias.columns[rel_obj.column]
-                            == rel_obj.remote_table_alias.columns[
-                                rel_obj.remote_column
-                            ],
+                            onclause=rel_obj.local_column_alias
+                            == rel_obj.remote_column_alias,
                             isouter=True,
                         )
                     )
                 else:
                     stmt = stmt.join(
                         rel_obj.remote_table_alias,
-                        onclause=rel_obj.table_alias.columns[rel_obj.column]
-                        == rel_obj.remote_table_alias.columns[rel_obj.remote_column],
+                        onclause=rel_obj.local_column_alias
+                        == rel_obj.remote_column_alias,
                         isouter=True,
                     )
         return stmt
 
     async def list(self, schema: BaseModel = None) -> list[BaseModel]:
         if schema is None:
-            schema = self.obj_class.list_schema
+            schema = self.obj_class.summary_schema
         columns = [
             self.obj_class.table.c.get(field_name)
             for field_name in schema.model_fields.keys()
         ]
         async with engine.connect() as conn:
             await conn.execute(text(self.set_role_text("reader")))
-            stmt = select(self.obj_class.table).with_only_columns(*columns)
+            stmt = select(self.obj_class.local_table).with_only_columns(*columns)
             result = await conn.execute(stmt)
         await conn.close()
         return result.mappings().all()
 
     async def insert(
         self,
-        request_schema: BaseModel = None,
-        response_schema: BaseModel = None,
+        body_model: BaseModel = None,
+        response_model: BaseModel = None,
     ) -> None:
-        if request_schema is None:
-            request_schema = self.obj_class.insert_schema
-        if response_schema is None:
-            response_schema = self.obj_class.select_schema
+        if body_model is None:
+            body_model = self.obj_class.edit_model
+        if response_model is None:
+            response_model = self.obj_class.edit_model
 
         response_columns = [
             self.obj_class.table.c.get(field_name)
-            for field_name in response_schema.model_fields.keys()
+            for field_name in response_model.model_fields.keys()
         ]
 
         async with engine.begin() as conn:
             await conn.execute(text(self.set_role_text("writer")))
             result = await conn.execute(
                 insert(self.obj_class.table)
-                .values(request_schema.model_dump())
+                .values(body_model.model_dump())
                 .returning(*response_columns)
             )
             await conn.commit()
@@ -163,26 +162,25 @@ class UnoDB:
 
     async def select(
         self,
-        id: str,
-        request_schema: BaseModel = None,
-        response_schema: BaseModel = None,
+        response_model: BaseModel,
+        columns: List[Column],
+        id: str | None = None,
+        result_type: SelectResultType = SelectResultType.FETCH_ALL,
     ) -> bool | None:
-
-        if request_schema is None:
-            request_schema = self.obj_class.select_schema
-        if response_schema is None:
-            response_schema = self.obj_class.select_schema
-
-        columns = self.obj_class.query_columns(response_schema)
         stmt = select(*columns)
-        stmt = self.add_join(stmt, response_schema)
-        stmt = stmt.where(and_(self.where("id", id)))
+        stmt = self.add_join(stmt, response_model)
+        if id is not None:
+            stmt = stmt.where(and_(self.where("id", id)))
+            result_type = SelectResultType.FETCH_ONE
         async with engine.begin() as conn:
             await conn.execute(text(self.set_role_text("reader")))
             result = await conn.execute(stmt)
-            row = result.fetchone()
         await conn.close()
-        return row._mapping if row else None
+        if result_type == SelectResultType.FETCH_ONE:
+            row = result.fetchone()
+            return row._mapping if row is not None else None
+        row = result.fetchall()
+        return [r._mapping for r in row if row is not None]
 
     """
     def exists(

@@ -2,16 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
-
 from typing import Optional, ClassVar
 
 from sqlalchemy import Table, Column
 from sqlalchemy.sql.expression import Join, join, Alias
 
-from psycopg.sql import SQL, Identifier
-
 from pydantic import BaseModel, computed_field, field_validator
+from pydantic.fields import Field
 
 from uno.db.obj import UnoObj
 from uno.db.enums import RelType
@@ -19,102 +16,115 @@ from uno.utilities import create_random_alias
 from uno.config import settings
 
 
+def set_local_column_alias(values: dict) -> Alias:
+    local_table_alias = values["local_table_alias"]
+    local_column_name = values["local_column_name"]
+    local_column_alias = local_table_alias.columns[local_column_name]
+    return local_column_alias
+
+
+def set_remote_table(values: dict) -> Table:
+    remote_table_name = values["remote_table_name"]
+    local_table = values["local_table"]
+    remote_table = local_table.metadata.tables[
+        f"{settings.DB_SCHEMA}.{remote_table_name}"
+    ]
+    return remote_table
+
+
+def set_remote_table_alias(values: dict) -> Alias:
+    remote_table = values["remote_table"]
+    remote_table_alias = create_random_alias(
+        remote_table,
+        prefix=remote_table.name,
+    )
+    return remote_table_alias
+
+
+def set_remote_column_alias(values: dict) -> Alias:
+    remote_table_alias = values["remote_table_alias"]
+    remote_column_name = values["remote_column_name"]
+    remote_column_alias = remote_table_alias.columns[remote_column_name]
+    return remote_column_alias
+
+
 class UnoRelObj(BaseModel):
-    table: ClassVar[Optional[Table]]  # Provided by UnoOBj during initialization
-    table_alias: ClassVar[Alias]  # Provided by UnoOBj during initialization
+    obj_class_name: str
+    local_table: Table
+    local_column_name: str
+    local_table_alias: Alias
+    local_column_alias: Alias = Field(default_factory=set_local_column_alias)
 
-    column: ClassVar[str]
-    remote_table: ClassVar[str]
-    remote_column: ClassVar[str]
-    join_table: ClassVar[str] = None
-    rel_type: ClassVar[RelType] = RelType.ONE_TO_MANY
-    pre_fetch: ClassVar[bool] = True
+    remote_table_name: str
+    remote_column_name: str
 
-    edge_label: ClassVar[Optional[str]] = None
+    remote_table: Table = Field(default_factory=set_remote_table)
+    remote_table_alias: Alias = Field(default_factory=set_remote_table_alias)
+    remote_column_alias: Alias = Field(default_factory=set_remote_column_alias)
 
-    remote_table_alias: ClassVar[str] = None
-    loc_column_alias: ClassVar[Column] = None
-    rem_column_alias: ClassVar[Column] = None
-    schema_name: ClassVar[str] = "list"
-    join: ClassVar[Join] = None
-    schema: ClassVar[BaseModel] = None
-    rel_obj_class: ClassVar[BaseModel] = None
+    join_table: str = None
+    # join_table_alias: Alias <-- This is a computed field
+    join_table_column: str = None
+    # join_table_column_alias: Alias <-- This is a computed field
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_obj()
-        self.set_schema()
-        self.create_join()
+    rel_type: RelType = RelType.ONE_TO_MANY
+    pre_fetch: bool = True
+    edge_label: Optional[str] = None
 
-    @classmethod
-    def set_obj(cls) -> BaseModel:
-        cls.rel_obj_class = UnoObj.registry[cls.remote_table]
+    # join: Join <-- this is a computed field
 
-    @classmethod
-    def set_schema(cls) -> BaseModel:
-        return getattr(cls.rel_obj_class, f"{cls.schema_name}_schema")
+    model_config = {"arbitrary_types_allowed": True}
 
-    @classmethod
-    def create_join(cls) -> Join:
-        rem_table = cls.table.metadata.tables[
-            f"{settings.DB_SCHEMA}.{cls.remote_table}"
-        ]
-        cls.remote_table_alias = create_random_alias(cls.rel_obj_class, rem_table)
-        cls.rem_column = cls.remote_table_alias.columns[cls.remote_column]
-        cls.loc_column = cls.table_alias.columns[cls.column]
-        if cls.rel_type == RelType.MANY_TO_MANY:
-            cls.join = join(
-                cls.table_alias,
-                cls.remote_table_alias,
-                onclause=cls.loc_column == cls.rem_column,
-                isouter=True,
-            )
-        cls.join = join(
-            cls.table_alias,
-            cls.remote_table_alias,
-            onclause=cls.loc_column == cls.rem_column,
+    @computed_field
+    def join(self) -> Join:
+        if self.rel_type == RelType.MANY_TO_MANY:
+            pass
+        return join(
+            self.local_table_alias,
+            self.remote_table_alias,
+            onclause=self.local_column_alias == self.remote_column_alias,
             isouter=True,
         )
 
 
 class GroupRelObj(UnoRelObj):
-    column = "group_id"
-    remote_table = "group"
-    remote_column = "id"
-    rel_type = RelType.ONE_TO_MANY
-    edge_label = "IS_ASSIGNED_TO"
+    local_column_name: str = "group_id"
+    remote_table_name: str = "group"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "IS_ASSIGNED_TO"
 
 
 class TenantRelObj(UnoRelObj):
-    column = "tenant_id"
-    remote_table = "tenant"
-    remote_column = "id"
-    edge_label = "IS_ASSIGNED_TO"
-    rel_type = RelType.ONE_TO_MANY
+    local_column_name: str = "tenant_id"
+    remote_table_name: str = "tenant"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "IS_ASSIGNED_TO"
 
 
 class CreatedByRelObj(UnoRelObj):
-    column = "created_by_id"
-    remote_table = "user"
-    remote_column = "id"
-    edge_label = "CREATED_BY"
-    rel_type = RelType.ONE_TO_MANY
+    local_column_name: str = "created_by_id"
+    remote_table_name: str = "user"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "CREATED_BY"
 
 
 class ModifiedByRelObj(UnoRelObj):
-    column = "modified_by_id"
-    remote_table = "user"
-    remote_column = "id"
-    edge_label = "MODIFIED_BY"
-    rel_type = RelType.ONE_TO_MANY
+    local_column_name: str = "modified_by_id"
+    remote_table_name: str = "user"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "MODIFIED_BY"
 
 
 class DeletedByRelObj(UnoRelObj):
-    column = "deleted_by_id"
-    remote_table = "user"
-    remote_column = "id"
-    edge_label = "DELETED_BY"
-    rel_type = RelType.ONE_TO_MANY
+    local_column_name: str = "deleted_by_id"
+    remote_table_name: str = "user"
+    remote_column_name: str = "id"
+    rel_type: RelType = RelType.ONE_TO_MANY
+    edge_label: str = "DELETED_BY"
 
 
 general_rel_objs = {
