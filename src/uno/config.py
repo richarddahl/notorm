@@ -61,12 +61,12 @@ class General(BaseSettings):
     LOAD_MODULES: list[str] = []
     """
         "uno.attr",
-        "uno.auth",
-        "uno.fltr",
-        "uno.meta",
+        "uno.apps.auth",
+        "uno.apps.fltr",
+        "uno.apps.meta",
         "uno.msg",
         "uno.rprt",
-        "uno.val",
+        "uno.apps.val",
         "uno.wkflw",
     ]
     """

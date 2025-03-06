@@ -19,7 +19,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 
 from uno.database.base import engine
-from uno.authorization.models import (
+from uno.apps.authorization.models import (
     Tenant,
     User,
     TableOperation,
@@ -28,7 +28,7 @@ from uno.authorization.models import (
     Group,
     UserGroupRole,
 )
-from uno.authorization.enums import TenantType
+from uno.apps.authorization.enums import TenantType
 from uno.config import settings  # type: ignore
 
 from tests.conftest import (

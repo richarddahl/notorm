@@ -18,22 +18,6 @@ class UnoRegistryError(UnoError):
     pass
 
 
-class SchemaConfigError(UnoError):
-    pass
-
-
-class SchemaFieldListError(UnoError):
-    pass
-
-
-class SchemaRelationConfigError(UnoError):
-    pass
-
-
-class SchemaTableError(UnoError):
-    pass
-
-
 class DataExistsError(HTTPException):
     status_code = 400
     detail = "Record matching data already exists in database."

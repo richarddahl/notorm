@@ -10,7 +10,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.exc import ProgrammingError
 
-# from uno.auth.tables import User
+# from uno.apps.auth.tables import User
 from uno.config import settings
 
 # from tests.conftest import mock_rls_vars
@@ -49,7 +49,7 @@ class TestJWT:
         """Tests that a valid JWT token can be verified and the session variables set."""
         token = encode_test_token()
         with session.begin():
-            result = session.execute(func.uno.authorize_user(token))
+            result = session.execute(func.uno.apps.authorize_user(token))
             assert result.scalars().first() is True
 
             result = session.execute(func.uno.testlist_rls_vars())
@@ -65,7 +65,7 @@ class TestJWT:
         token = encode_test_token(is_expired=True)
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "invalid token" in str(excinfo.value)
 
     def test_invalid_secret_jwt(self, session):
@@ -73,7 +73,7 @@ class TestJWT:
         token = encode_test_token(invalid_secret=True)
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "invalid token" in str(excinfo.value)
 
     def test_invalid_sub_jwt(self, session):
@@ -81,7 +81,7 @@ class TestJWT:
         token = encode_test_token(email="anonymous@nowheres.none")
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "user not found" in str(excinfo.value)
 
     def test_no_sub_jwt(self, session):
@@ -89,7 +89,7 @@ class TestJWT:
         token = encode_test_token(has_sub=False)
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "no sub in token" in str(excinfo.value)
 
     def test_no_exp_jwt(self, session):
@@ -97,7 +97,7 @@ class TestJWT:
         token = encode_test_token(has_exp=False)
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "no exp in token" in str(excinfo.value)
 
     def test_inactive_user_jwt(self, session, superuser_id, user_dict):
@@ -111,7 +111,7 @@ class TestJWT:
             session.commit()
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "user is not active" in str(excinfo.value)
 
     def test_deleted_user_jwt(self, session, superuser_id, user_dict):
@@ -125,6 +125,6 @@ class TestJWT:
             session.commit()
         with session.begin():
             with pytest.raises(ProgrammingError) as excinfo:
-                session.execute(func.uno.authorize_user(token))
+                session.execute(func.uno.apps.authorize_user(token))
             assert "user was deleted" in str(excinfo.value)
 '''

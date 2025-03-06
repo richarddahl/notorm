@@ -6,7 +6,7 @@
 This module contains the global fixtures for the tests in all test modules.
 Each test module has its own conftest.py file that containts the fixtures for that module.
 """
-
+import asyncio
 
 import pytest
 import importlib
@@ -16,12 +16,12 @@ from psycopg.sql import SQL, Identifier, Literal, Placeholder
 from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from uno.db.management.db_manager import DBManager
-
-from uno.auth.enums import TenantType
+from uno.storage.management.db_manager import DBManager
+from uno.record.obj import UnoRecord
+from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
-# from uno.auth.objs import Tenant, Group, User
+# from uno.apps.auth.objs import Tenant, Group, User
 
 # for module in settings.LOAD_MODULES:
 #    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
@@ -167,7 +167,10 @@ def db_column(
 ############
 # FIXTURES #
 ############
-
+# db_manager = DBManager()
+# db_manager.drop_db()
+# db_manager.create_db()
+# asyncio.run(db_manager.create_superuser())
 
 '''
 @pytest.fixture(scope="session")

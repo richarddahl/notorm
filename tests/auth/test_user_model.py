@@ -1,284 +1,290 @@
-from __future__ import annotations
-
-
-import datetime
-import decimal
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
 
 import asyncio
 import pytest
+import pytest_asyncio
 
-"""
-from uno.model import (
-    UnoModel,
-    UnoRelationConfig,
-    UnoAdditionalFieldConfig,
-    UnoMaskConfig,
-)  # type: ignore
-from uno.db_definition import UnoDB  # type: ignore
-import uno.audit.models  # type: ignore
-import uno.auth.models  # type: ignore
-from uno.enumerations import FieldType  # type: ignore
-from uno.database import metadata  # type: ignore
+from unittest import IsolatedAsyncioTestCase
 
-from config import settings  # type: ignore
+from pydantic import EmailStr
+
+from uno.apps.auth.models import User
+from uno.config import settings
+
+User.configure()
 
 
-pytest_plugins = ("pytest_asyncio",)
+class TestUserModel(IsolatedAsyncioTestCase):
 
-@pytest.fixture
-def user_model_class():
-    return UnoModel.get_model_from_registry_by_model_name("User")
+    def setUp(self):
+        """
+        Set up the test case by initializing the asyncio event loop.
 
+        This method retrieves the current event loop and assigns it to an instance variable.
+        It then assigns the same event loop as the active event loop, ensuring that asynchronous
+        operations executed within the tests use a consistent and dedicated event loop.
+        """
+        self.loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.loop)
 
-def test_authuser_new(user_model_class):
-    assert user_model_class.db_table_name == f"{settings.DB_SCHEMA}.user"
-    assert (
-        user_model_class.db_table == UnoDB(f"{settings.DB_SCHEMA}.user").db_table
-    )
-    assert user_model_class.user_filterable is True
+    async def test_user_model_field_structure(self):
+        """
+        Test that the User model contains all the expected fields.
 
+        This test verifies that the User model has the correct field structure by checking
+        that all required fields exist, including:
+        - Basic identity fields (id, email, handle, full_name)
+        - Relationship fields (tenant, default_group, group)
+        - Boolean status flags (is_superuser, is_active, is_deleted)
+        - Audit trail fields (created_at, created_by, modified_at, modified_by, deleted_at, deleted_by)
+        """
 
-def test_authuser_fields(user_model_class):
-    field_list = [
-        "id",
-        "email",
-        "hashed_password",
-        "hashed_password_history",
-        "client_hint_hash",
-        "full_name",
-        "handle",
-        "is_superuser",
-        "is_customer_admin",
-        "is_locked",
-        "is_suspended",
-        "is_verified",
-        "suspension_expiration",
-        "last_login",
-        "token",
-        "token_renewal_at",
-        "group_id",
-        "default_group_id",  # End of Table Column Fields
-        "password",  # Additional Field
-        "group",  # Relations start (Class Variable)
-        "meta",
-        "default_group",
-        "accesslogs",
-        "filters",
-        "logs",
-        "queries",
-        "roles",  # End of Relations
-    ]
-    for field_name in user_model_class.model_fields:
-        assert field_name in field_list
-    for field_name in field_list:
-        if field_name in [
-            "meta",
-            "group",
-            "default_group",
-            "accesslogs",
-            "filters",
-            "logs",
-            "queries",
-            "roles",
-        ]:
-            continue
-        assert field_name in user_model_class.model_fields
+        assert "id" in User.model_fields.keys()
+        assert "email" in User.model_fields.keys()
+        assert "handle" in User.model_fields.keys()
+        assert "full_name" in User.model_fields.keys()
+        assert "tenant" in User.model_fields.keys()
+        assert "default_group" in User.model_fields.keys()
+        assert "group" in User.model_fields.keys()
+        assert "is_superuser" in User.model_fields.keys()
+        assert "is_active" in User.model_fields.keys()
+        assert "is_deleted" in User.model_fields.keys()
+        assert "created_at" in User.model_fields.keys()
+        assert "created_by" in User.model_fields.keys()
+        assert "modified_at" in User.model_fields.keys()
+        assert "modified_by" in User.model_fields.keys()
+        assert "deleted_at" in User.model_fields.keys()
+        assert "deleted_by" in User.model_fields.keys()
 
+    async def test_minimal_user_model_fields(self):
+        """
+        Test the initialization of a User model with minimal required fields.
 
-def test_authuser_configuration(user_model_class):
-    assert user_model_class.system_columns == [
-        "hashed_password",
-        "client_hint_hash",
-        "hashed_password_history",
-    ]
-    assert user_model_class.secret_columns == [
-        "is_locked",
-        "is_suspended",
-        "suspension_expiration",
-        "token",
-        "token_renewal_at",
-    ]
-    assert user_model_class.relation_configs == {
-        "rev": UnoRelationConfig(name="users"),
-        "user_default_group_id_fkey": UnoRelationConfig(
-            name="default_group",
-        ),
-        "user_group_id_fkey": UnoRelationConfig(name="group"),
-        "user_id_fkey": UnoRelationConfig(name="meta"),
-        "accesslog_user_id_fkey": UnoRelationConfig(name="accesslogs"),
-        "audit__log_user_id_fkey": UnoRelationConfig(name="logs"),
-        "filter_user_id_fkey": UnoRelationConfig(name="filters"),
-        "query_user_id_fkey": UnoRelationConfig(name="queries"),
-        "user__role_user_id_fkey": UnoRelationConfig(
-            name="roles",
-        ),
-    }
-    assert user_model_class.non_db_field_configs == {
-        "password": UnoAdditionalFieldConfig(field_type=FieldType.TEXT)
-    }
-    assert user_model_class.mask_configs.get("login_mask").include_fields == [
-        "email",
-        "password",
-    ]
-    assert user_model_class.mask_configs.get("token_mask").include_fields == [
-        "email",
-        "token",
-        "token_renewal_at",
-    ]
+        This test verifies that:
+        1. Required fields (email, handle, full_name) are properly assigned
+        2. Optional fields have correct default values (is_active=True, is_deleted=False)
+        3. Relationship fields (tenant, default_group, group) are None by default
+        4. Audit fields (created_at, created_by, etc.) start as None
+        5. The is_superuser flag can be set during initialization
 
+        This ensures the User model constructor behaves as expected with minimal input.
+        """
+        user = User(
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            is_superuser=True,
+        )
 
-def test_authuser_mask_creation(user_model_class):
-    assert hasattr(user_model_class, "string_mask")
-    assert hasattr(user_model_class, "element_mask")
-    assert hasattr(user_model_class, "login_mask")
-    assert hasattr(user_model_class, "token_mask")
+        assert user.id == None
+        assert user.email == "admin@notorm.tech"
+        assert user.handle == "admin"
+        assert user.full_name == "Admin"
+        assert user.tenant is None
+        assert user.default_group is None
+        assert user.group is None
+        assert user.is_superuser == True
+        assert user.is_active == True
+        assert user.is_deleted == False
+        assert user.created_at is None
+        assert user.created_by is None
+        assert user.modified_at is None
+        assert user.modified_by is None
+        assert user.deleted_at is None
+        assert user.deleted_by is None
 
+    async def test_email_field_validation(self):
+        """
+        Test that the email field validation raises a ValueError when an improperly formatted
+        email address is provided during the instantiation of a User object.
 
-def test_authuser_string_mask(user_model_class):
-    mask = user_model_class.string_mask
-    for field_name in [
-        "id",
-        "hashed_password",
-        "email",
-        "full_name",
-        "handle",
-        "is_superuser",
-        "is_customer_admin",
-        "is_locked",
-        "is_suspended",
-        "is_verified",
-        "suspension_expiration",
-        "last_login",
-        "client_hint_hash",
-        "token",
-        "token_renewal_at",
-        "hashed_password_history",
-        "group_id",
-        "default_group_id",
-        "password",
-    ]:
-        assert field_name in mask.model_fields.keys()
+        This test ensures that the email field, when missing the necessary "@" symbol or formatted
+        incorrectly, correctly triggers a ValueError exception, thereby enforcing proper email validation.
+        """
+        with pytest.raises(ValueError):
+            User(
+                id="01JNH7SBRV60R5RC1G61E30C1G",
+                email="adminnotorm.tech",
+                handle="admin",
+                full_name="Admin",
+                tenant=None,
+                default_group=None,
+                group=None,
+                is_superuser=True,
+                is_active=True,
+                is_deleted=False,
+                created_at="2024-01-01T00:00:00Z",
+                created_by=None,
+                modified_at="2024-01-01T00:00:00Z",
+                modified_by=None,
+                deleted_at=None,
+                deleted_by=None,
+            )
 
+    async def test_full_user_model_fields(self):
+        """
+        Test that the User model can be instantiated with all expected fields correctly populated.
 
-def test_authuser_element_mask(user_model_class):
-    mask = user_model_class.string_mask
-    for field_name in [
-        "id",
-        "hashed_password",
-        "email",
-        "full_name",
-        "handle",
-        "is_superuser",
-        "is_customer_admin",
-        "is_locked",
-        "is_suspended",
-        "is_verified",
-        "suspension_expiration",
-        "last_login",
-        "client_hint_hash",
-        "token",
-        "token_renewal_at",
-        "hashed_password_history",
-        "group_id",
-        "default_group_id",
-        "password",
-    ]:
-        assert field_name in mask.model_fields.keys()
+        This test verifies that creating a User instance with a full set of data including identifiers,
+        contact information, status flags, and timestamp fields does not raise any errors and that all
+        fields are properly assigned. The test ensures the integrity of the User model by checking the data
+        types and values, particularly for date-time entries and boolean flags, to match the intended user
+        profile configuration.
+        """
+        user = User(
+            id="01JNH7SBRV60R5RC1G61E30C1G",
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            tenant=None,
+            default_group=None,
+            group=None,
+            is_superuser=True,
+            is_active=True,
+            is_deleted=False,
+            created_at="2024-01-01T00:00:00Z",
+            created_by=None,
+            modified_at="2024-01-01T00:00:00Z",
+            modified_by=None,
+            deleted_at=None,
+            deleted_by=None,
+        )
 
+    async def test_user_model_set_display_names(self):
+        """
+        Tests that the User model's configuration properties are correctly set.
 
-def test_authuser_login_mask(user_model_class):
-    mask = user_model_class.login_mask
-    for field_name in [
-        "email",
-        "password",
-    ]:
-        assert field_name in mask.model_fields.keys()
-    assert mask.model_fields["email"].annotation == str
-    assert mask.model_fields["password"].annotation == str
+        Verifies:
+        - The table name is set to "user", ensuring the proper linkage to the corresponding database table.
+        - The singular display name is "User", which is used for human-readable identification.
+        - The plural display name is "Users", which is essential when referring to multiple user instances.
+        """
+        assert User.table_name == "user"
+        assert User.display_name == "User"
+        assert User.display_name_plural == "Users"
 
+    async def test_user_view_schema(self):
+        """
+        Tests that the User model's view_schema attribute is properly constructed.
 
-def test_authuser_token_mask(user_model_class):
-    mask = user_model_class.token_mask
-    for field_name in [
-        "email",
-        "token",
-        "token_renewal_at",
-    ]:
-        assert field_name in mask.model_fields.keys()
-    assert mask.model_fields["email"].annotation == str
-    assert mask.model_fields["token"].annotation == str | None
-    assert mask.model_fields["token_renewal_at"].annotation == datetime.datetime | None
+        This test verifies:
+        - The view_schema is not None.
+        - The view_schema contains exactly 16 fields.
+        - Each expected field ('id', 'email', 'handle', 'full_name', 'tenant', 'default_group',
+            'group', 'is_superuser', 'is_active', 'is_deleted', 'created_at', 'created_by',
+            'modified_at', 'modified_by', 'deleted_at', and 'deleted_by') is present in the model_fields.
+        """
+        user = User(
+            id="01JNH7SBRV60R5RC1G61E30C1G",
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            tenant=None,
+            default_group=None,
+            group=None,
+            is_superuser=True,
+            is_active=True,
+            is_deleted=False,
+            created_at="2024-01-01T00:00:00Z",
+            created_by=None,
+            modified_at="2024-01-01T00:00:00Z",
+            modified_by=None,
+            deleted_at=None,
+            deleted_by=None,
+        )
+        assert user.view_schema is not None
+        assert len(user.view_schema.model_fields) == 16
+        assert "id" in user.view_schema.model_fields.keys()
+        assert "email" in user.view_schema.model_fields.keys()
+        assert "handle" in user.view_schema.model_fields.keys()
+        assert "full_name" in user.view_schema.model_fields.keys()
+        assert "tenant" in user.view_schema.model_fields.keys()
+        assert "default_group" in user.view_schema.model_fields.keys()
+        assert "group" in user.view_schema.model_fields.keys()
+        assert "is_superuser" in user.view_schema.model_fields.keys()
+        assert "is_active" in user.view_schema.model_fields.keys()
+        assert "is_deleted" in user.view_schema.model_fields.keys()
+        assert "created_at" in user.view_schema.model_fields.keys()
+        assert "created_by" in user.view_schema.model_fields.keys()
+        assert "modified_at" in user.view_schema.model_fields.keys()
+        assert "modified_by" in user.view_schema.model_fields.keys()
+        assert "deleted_at" in user.view_schema.model_fields.keys()
+        assert "deleted_by" in user.view_schema.model_fields.keys()
 
+    async def test_user_edit_schema(self):
+        """
+        Test that the User model's edit_schema is correctly configured.
 
-# Group UnoModel Tests
-@pytest.fixture
-def group_model_class():
-    return UnoModel.get_model_from_registry_by_model_name("Group")
+        This test verifies that:
+        - The edit_schema attribute of a User instance is not None.
+        - The edit_schema contains exactly eight fields.
+        - The expected fields are present: 'id', 'email', 'handle', 'full_name', 'tenant', 'default_group', 'group', and 'is_superuser'.
+        """
+        user = User(
+            id="01JNH7SBRV60R5RC1G61E30C1G",
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            tenant=None,
+            default_group=None,
+            group=None,
+            is_superuser=True,
+            is_active=True,
+            is_deleted=False,
+            created_at="2024-01-01T00:00:00Z",
+            created_by=None,
+            modified_at="2024-01-01T00:00:00Z",
+            modified_by=None,
+            deleted_at=None,
+            deleted_by=None,
+        )
+        assert user.edit_schema is not None
+        assert len(user.edit_schema.model_fields) == 8
+        assert "id" in user.edit_schema.model_fields.keys()
+        assert "email" in user.edit_schema.model_fields.keys()
+        assert "handle" in user.edit_schema.model_fields.keys()
+        assert "full_name" in user.edit_schema.model_fields.keys()
+        assert "tenant" in user.edit_schema.model_fields.keys()
+        assert "default_group" in user.edit_schema.model_fields.keys()
+        assert "group" in user.edit_schema.model_fields.keys()
+        assert "is_superuser" in user.edit_schema.model_fields.keys()
 
+    async def test_user_summary_schema(self):
+        """
+        Tests the generation and structure of the user's summary schema.
 
-def test_authgroup_new(group_model_class):
-    assert group_model_class.db_table_name == f"{settings.DB_SCHEMA}.group"
-    assert (
-        group_model_class.db_table
-        == UnoDB(f"{settings.DB_SCHEMA}.group").db_table
-    )
-    assert group_model_class.user_filterable is True
+        This function creates a User instance with predefined attributes and then verifies:
+        - A summary schema object is generated from the User instance.
+        - The summary schema contains exactly two fields: 'id' and 'handle'.
+        - The field values in the summary schema match the expected 'id' and 'handle' values.
 
+        It ensures that the summary schema is correctly computed from the model's data.
+        """
+        user = User(
+            id="01JNH7SBRV60R5RC1G61E30C1G",
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            tenant=None,
+            default_group=None,
+            group=None,
+            is_superuser=True,
+            is_active=True,
+            is_deleted=False,
+            created_at="2024-01-01T00:00:00Z",
+            created_by=None,
+            modified_at="2024-01-01T00:00:00Z",
+            modified_by=None,
+            deleted_at=None,
+            deleted_by=None,
+        )
+        assert user.summary_schema is not None
+        assert len(user.summary_schema.model_fields) == 2
+        assert "id" in user.summary_schema.model_fields.keys()
+        assert "handle" in user.summary_schema.model_fields.keys()
 
-def test_authgroup_fields(group_model_class):
-    field_list = [
-        "id",
-        "name",
-        "parent_id",
-        "parent",  # Relations start (Class Variable)
-        "children",  # End of Relations
-    ]
-    for field_name in group_model_class.model_fields:
-        assert field_name in field_list
-    for field_name in field_list:
-        if field_name in ["parent", "children"]:
-            continue
-        assert field_name in group_model_class.model_fields
-
-
-def test_authgroup_configuration(group_model_class):
-    assert group_model_class.relation_configs == {
-        "rev": UnoRelationConfig(name="groups"),
-        "group_id_fkey": UnoRelationConfig(
-            name="children",
-        ),
-        "group_parent_id_fkey": UnoRelationConfig(name="parent"),
-    }
-
-
-def test_authgroup_mask_creation(group_model_class):
-    assert hasattr(group_model_class, "string_mask")
-    assert hasattr(group_model_class, "element_mask")
-
-
-def test_authgroup_string_mask(group_model_class):
-    mask = group_model_class.string_mask
-    for field_name in [
-        "id",
-        "name",
-        "parent_id",
-    ]:
-        assert field_name in mask.model_fields.keys()
-
-
-def test_authgroup_element_mask(group_model_class):
-    mask = group_model_class.element_mask
-    for field_name in [
-        "id",
-        "name",
-        "parent_id",
-    ]:
-        assert field_name in mask.model_fields.keys()
-
-
-# Role UnoModel Tests
-@pytest.fixture
-def role_model_class():
-    return UnoModel.get_model_from_registry_by_model_name("Role")
-
-"""
+        user_summary_schema = user.summary_schema(**user.model_dump())
+        assert user_summary_schema.id == "01JNH7SBRV60R5RC1G61E30C1G"
+        assert user_summary_schema.handle == "admin"

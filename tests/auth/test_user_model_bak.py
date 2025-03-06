@@ -1,71 +1,11 @@
-# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
-#
-# SPDX-License-Identifier: MIT
+from __future__ import annotations
 
-"""
+
+import datetime
+import decimal
+
 import asyncio
 import pytest
-import pytest_asyncio
-
-# from asynctest import TestCase
-
-from unittest import IsolatedAsyncioTestCase
-
-from sqlalchemy import inspect
-from sqlalchemy.dialects.postgresql import VARCHAR
-
-from uno.record.obj import UnoRecord
-from uno.apps.auth.models import User
-from uno.storage.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
-
-from uno.config import settings
-
-
-class TestUser(IsolatedAsyncioTestCase):
-
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    async def test_create_superuser(self):
-
-        db_manager = DBManager()
-        db_manager.create_db()
-        super_user = await db_manager.create_superuser()
-        assert super_user is not None
-        assert isinstance(super_user, User)
-        assert super_user.is_superuser is True
-        assert super_user.is_active is True
-        assert super_user.is_deleted is False
-        assert super_user.email == settings.SUPERUSER_EMAIL
-        assert super_user.handle == settings.SUPERUSER_HANDLE
-        assert super_user.full_name == settings.SUPERUSER_FULL_NAME
-        assert super_user.tenant_id == None
-        assert super_user.default_group_id == None
-
-    async def test_creating_a_second_user_sans_jwt(self):
-
-        user = User(
-            is_superuser=True,
-            email="test@notorm.tech",
-            handle="test",
-            full_name="Test User",
-        )
-        # await user.save()
-        assert user is not None
-
-    #Test the validation of a basemodel prior to sending to the database
-
-    # async def test_select_user(self):
-
-    # print(Usser)
-    # users = await User.select()
-    # user = await User.select(id=users[0].id)
-    # print("")
-    # print(user.model_dump(by_alias=True))
-    # print("")
-"""
-
 
 """
 from uno.model import (
