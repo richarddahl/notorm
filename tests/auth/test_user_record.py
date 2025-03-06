@@ -1,10 +1,14 @@
-from __future__ import annotations
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
 
-''' 
-import datetime
-
+import asyncio
 import pytest
+import pytest_asyncio
 
+from unittest import IsolatedAsyncioTestCase
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import event
 from sqlalchemy import inspect, Inspector, Column
 from sqlalchemy.dialects.postgresql import (
     VARCHAR,
@@ -17,34 +21,66 @@ from sqlalchemy.dialects.postgresql import (
     ARRAY,
     TEXT,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.database.base import engine
-from uno.apps.authorization.models import (
-    Tenant,
-    User,
-    TableOperation,
-    Role,
-    RoleTableOperation,
-    Group,
-    UserGroupRole,
+
+from uno.record.record import UnoRecordBase, meta_data
+from uno.storage.session import engine, sync_engine
+from uno.apps.auth.records import (
+    UserRecord,
+    TenantRecord,
+    GroupRecord,
+    RoleRecord,
+    PermissionRecord,
 )
-from uno.apps.authorization.enums import TenantType
+from uno.apps.auth.enums import TenantType
 from uno.config import settings  # type: ignore
 
-from tests.conftest import (
-    print_indices,
-    print_pk_constraint,
-    print_foreign_keys,
-    print_uq_constraints,
-    print_ck_constraints,
-    db_column,
-)
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-class TestUserStructure:
-    # user Table Tests
-    schema = "uno"
+@pytest.fixture(scope="module")
+async def db():
+    async with engine.begin() as conn:
+        await conn.run_sync(UnoRecordBase.metadata.create_all)
+    yield engine
+    # async with engine.begin() as conn:
+    #    await conn.run_sync(UnoRecordBase.metadata.drop_all)
 
+
+@pytest.fixture(scope="function")
+async def session(db):
+    async with AsyncSessionLocal() as session:
+        yield session
+        await session.rollback()
+
+
+class TestUserModel(IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        """
+        Set up the test case by initializing the asyncio event loop.
+
+                This method retrieves the current event loop and assigns it to an instance variable.
+                It then assigns the same event loop as the active event loop, ensuring that asynchronous
+                operations executed within the tests use a consistent and dedicated event loop.
+        """
+        self.loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    @pytest.mark.asyncio
+    async def test_user_structure(self, session):
+        user = UserRecord(
+            email="admin@notorm.tech",
+            handle="admin",
+            full_name="Admin",
+            is_superuser=True,
+        )
+        session.add(user)
+        session.commit()
+
+
+'''
     def test_user_indices(self, db_connection):
         db_inspector = inspect(db_connection)
         # print_indices(db_inspector, "user", schema=self.schema)

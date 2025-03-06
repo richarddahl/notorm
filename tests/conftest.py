@@ -14,21 +14,50 @@ import importlib
 from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from sqlalchemy import func, select, delete, text, create_engine, Column
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from uno.storage.management.db_manager import DBManager
-from uno.record.obj import UnoRecord
+from uno.record.record import UnoRecordBase
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
-# from uno.apps.auth.objs import Tenant, Group, User
+import pytest
+from uno.storage.session import engine, sync_engine, Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
 
-# for module in settings.LOAD_MODULES:
-#    globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
-#        f"{module}.objs"
-#    )
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+"""
+@pytest.fixture(scope="module")
+async def db():
+    async with engine.begin() as conn:
+        await conn.run_sync(UnoRecordBase.metadata.create_all)
+    yield engine
+    # async with engine.begin() as conn:
+    #    await conn.run_sync(UnoRecordBase.metadata.drop_all)
+
+
+@pytest.fixture(scope="function")
+async def session(db):
+    async with AsyncSessionLocal() as session:
+        yield session
+        await session.rollback()
+"""
+
+
+def db_column(
+    db_inspector, table_name: str, col_name: str, schema: str = settings.DB_SCHEMA
+) -> Column | None:
+    for col in db_inspector.get_columns(table_name, schema=schema):
+        if col.get("name") == col_name:
+            return col
+    return None
+
+
+'''
 ###########################################
 # SQL CONSTANTS FOR TESTING PURPOSES ONLY #
 ###########################################
@@ -155,15 +184,6 @@ def mock_rls_vars(
     return (id, email, is_superuser, is_tenant_admin, tenant_id, role_name)
 
 
-def db_column(
-    db_inspector, table_name: str, col_name: str, schema: str = settings.DB_SCHEMA
-) -> Column | None:
-    for col in db_inspector.get_columns(table_name, schema=schema):
-        if col.get("name") == col_name:
-            return col
-    return None
-
-
 ############
 # FIXTURES #
 ############
@@ -172,7 +192,6 @@ def db_column(
 # db_manager.create_db()
 # asyncio.run(db_manager.create_superuser())
 
-'''
 @pytest.fixture(scope="session")
 def engine():
     DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
