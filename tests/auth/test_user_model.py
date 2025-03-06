@@ -13,8 +13,6 @@ from pydantic import EmailStr
 from uno.apps.auth.models import User
 from uno.config import settings
 
-User.configure()
-
 
 class TestUserModel(IsolatedAsyncioTestCase):
 
@@ -176,6 +174,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
             'group', 'is_superuser', 'is_active', 'is_deleted', 'created_at', 'created_by',
             'modified_at', 'modified_by', 'deleted_at', and 'deleted_by') is present in the model_fields.
         """
+        User.configure()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -222,6 +221,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
         - The edit_schema contains exactly eight fields.
         - The expected fields are present: 'id', 'email', 'handle', 'full_name', 'tenant', 'default_group', 'group', and 'is_superuser'.
         """
+        User.configure()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -262,6 +262,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
 
         It ensures that the summary schema is correctly computed from the model's data.
         """
+        User.configure()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
