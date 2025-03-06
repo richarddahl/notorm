@@ -55,21 +55,8 @@ async def session(db):
         await session.rollback()
 
 
-class TestUserModel(IsolatedAsyncioTestCase):
-
-    def setUp(self):
-        """
-        Set up the test case by initializing the asyncio event loop.
-
-                This method retrieves the current event loop and assigns it to an instance variable.
-                It then assigns the same event loop as the active event loop, ensuring that asynchronous
-                operations executed within the tests use a consistent and dedicated event loop.
-        """
-        self.loop = asyncio.get_event_loop()
-        asyncio.set_event_loop(self.loop)
-
-    @pytest.mark.asyncio
-    async def test_user_structure(self, session):
+@pytest.mark.asyncio
+async def test_user_structure(session):
         user = UserRecord(
             email="admin@notorm.tech",
             handle="admin",
