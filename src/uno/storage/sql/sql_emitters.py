@@ -26,7 +26,7 @@ from uno.config import settings
 
 
 class SetRole(SQLEmitter):
-    def _emit_sql(self, conn: Connection, role_name: str) -> None:
+    def emit_sql(self, conn: Connection, role_name: str) -> None:
         conn.execute(
             text(
                 SQL(
@@ -45,7 +45,7 @@ class SetRole(SQLEmitter):
 
 class DropDatabaseAndRoles(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
 
         self.drop_database(conn)
         self.drop_roles(conn)
@@ -91,7 +91,7 @@ class DropDatabaseAndRoles(SQLEmitter):
 
 class CreateRolesAndDatabase(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         self.create_roles(conn)
         self.create_database(conn)
 
@@ -167,8 +167,8 @@ class CreateRolesAndDatabase(SQLEmitter):
         )
 
 
-class InsertSchemasAndExtensions(SQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class CreateSchemasAndExtensions(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         self.create_schemas(conn)
         self.create_extensions(conn)
 
@@ -177,13 +177,13 @@ class InsertSchemasAndExtensions(SQLEmitter):
             text(
                 SQL(
                     """
-            -- Create the db_schema
-            CREATE SCHEMA IF NOT EXISTS {db_schema} AUTHORIZATION {admin_role};
+            -- Create the schema_name
+            CREATE SCHEMA IF NOT EXISTS {schema_name} AUTHORIZATION {admin_role};
             """
                 )
                 .format(
                     admin_role=ADMIN_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -195,7 +195,7 @@ class InsertSchemasAndExtensions(SQLEmitter):
                 SQL(
                     """
             -- Create the extensions
-            SET search_path TO {db_schema};
+            SET search_path TO {schema_name};
 
             -- Creating the btree_gist extension
             CREATE EXTENSION IF NOT EXISTS btree_gist;
@@ -237,7 +237,7 @@ class InsertSchemasAndExtensions(SQLEmitter):
                     admin_role=ADMIN_ROLE,
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -246,7 +246,7 @@ class InsertSchemasAndExtensions(SQLEmitter):
 
 class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         self.revokePrivileges(conn)
         self.setSearchPath(conn)
         self.grantSchemaPrivileges(conn)
@@ -261,7 +261,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 audit,
                 graph,
                 ag_catalog,
-                {db_schema} 
+                {schema_name} 
             FROM
                 public,
                 {base_role},
@@ -274,7 +274,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 audit,
                 graph,
                 ag_catalog,
-                {db_schema} 
+                {schema_name} 
             FROM
                 public,
                 {base_role},
@@ -293,7 +293,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 )
                 .format(
                     db_name=DB_NAME,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     base_role=BASE_ROLE,
                     login_role=LOGIN_ROLE,
                     reader_role=READER_ROLE,
@@ -313,7 +313,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {base_role}
             SET search_path TO
-                {db_schema},
+                {schema_name},
                 audit,
                 graph,
                 ag_catalog;
@@ -321,7 +321,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {login_role}
             SET search_path TO
-                {db_schema},
+                {schema_name},
                 audit,
                 graph,
                 ag_catalog;
@@ -329,7 +329,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {reader_role}
             SET search_path TO
-                {db_schema},
+                {schema_name},
                 audit,
                 graph,
                 ag_catalog;
@@ -337,7 +337,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {writer_role}
             SET search_path TO
-                {db_schema},
+                {schema_name},
                 audit,
                 graph,
                 ag_catalog;
@@ -345,7 +345,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER ROLE
                 {admin_role}
             SET search_path TO
-                {db_schema},
+                {schema_name},
                 audit,
                 graph,
                 ag_catalog;
@@ -357,7 +357,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
                     admin_role=ADMIN_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -373,7 +373,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             ALTER SCHEMA graph OWNER TO {admin_role};
             ALTER SCHEMA ag_catalog OWNER TO {admin_role};
 
-            ALTER SCHEMA {db_schema} OWNER TO {admin_role};
+            ALTER SCHEMA {schema_name} OWNER TO {admin_role};
             ALTER TABLE audit.record_version OWNER TO {admin_role};
 
             -- Grant connect privileges to the DB login role
@@ -384,7 +384,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 audit,
                 graph,
                 ag_catalog,
-                {db_schema}
+                {schema_name}
             TO
                 {login_role},
                 {admin_role},
@@ -394,7 +394,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             GRANT CREATE ON SCHEMA
                 audit,
                 graph,
-                {db_schema}
+                {schema_name}
             TO
                 {admin_role};
 
@@ -402,7 +402,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 audit,
                 graph,
                 ag_catalog,
-                {db_schema}
+                {schema_name}
             TO
                 {login_role},
                 {admin_role},
@@ -416,7 +416,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 )
                 .format(
                     db_name=DB_NAME,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     admin_role=ADMIN_ROLE,
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
@@ -429,14 +429,14 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
 
 class CreatePGULID(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
-        with open("src/uno/db/sql/pgulid.sql", "r") as file:
+    def emit_sql(self, conn: Connection) -> None:
+        with open("src/uno/storage/sql/pgulid.sql", "r") as file:
             sql = file.read()
-        conn.execute(text(SQL(sql).format(db_schema=DB_SCHEMA).as_string()))
+        conn.execute(text(SQL(sql).format(schema_name=DB_SCHEMA).as_string()))
 
 
 class CreateTokenSecret(SQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -474,7 +474,7 @@ class CreateTokenSecret(SQLEmitter):
                 .format(
                     admin_role=ADMIN_ROLE,
                     db_name=DB_NAME,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -482,7 +482,7 @@ class CreateTokenSecret(SQLEmitter):
 
 
 class GrantPrivileges(SQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         self.grant_table_privileges(conn)
         self.grant_sequence_privileges(conn)
 
@@ -497,7 +497,7 @@ class GrantPrivileges(SQLEmitter):
                 audit,
                 graph,
                 ag_catalog,
-                {db_schema}
+                {schema_name}
             TO
                 {reader_role},
                 {writer_role};
@@ -505,14 +505,10 @@ class GrantPrivileges(SQLEmitter):
             GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER ON ALL TABLES IN SCHEMA
                 audit,
                 graph,
-                {db_schema} 
+                {schema_name} 
             TO
                 {writer_role},
                 {admin_role};
-
-            --REVOKE SELECT, INSERT, UPDATE (id) ON user FROM 
-            --    {reader_role},
-            --    {writer_role};
 
             GRANT ALL ON ALL TABLES IN SCHEMA
                 audit,
@@ -526,7 +522,7 @@ class GrantPrivileges(SQLEmitter):
                     admin_role=ADMIN_ROLE,
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -543,7 +539,7 @@ class GrantPrivileges(SQLEmitter):
                         audit,
                         graph,
                         ag_catalog,
-                        {db_schema}
+                        {schema_name}
                     TO
                         {reader_role},
                         {writer_role};
@@ -554,7 +550,7 @@ class GrantPrivileges(SQLEmitter):
                     admin_role=ADMIN_ROLE,
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
@@ -562,28 +558,33 @@ class GrantPrivileges(SQLEmitter):
 
 
 class InsertMetaRecordFunction(SQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
             DECLARE
-                meta_id VARCHAR(26) := {db_schema}.generate_ulid();
-                table_name VARCHAR(255) := TG_TABLE_SCHEMA || '.' || TG_TABLE_NAME;
+                meta_id VARCHAR(26) := {schema_name}.generate_ulid();
+                meta_type_id VARCHAR(63);
             BEGIN
                 /*
-                Function used to insert a record into the meta_record table, when a 
+                Function used to insert a record into the meta table, when a 
                 polymorphic record is inserted.
                 */
                 SET ROLE {writer_role};
-                INSERT INTO {db_schema}.meta_record (id, meta_type_id)
-                    VALUES (meta_id, table_name);
+
+                SELECT id INTO meta_type_id
+                FROM {schema_name}.meta_type
+                WHERE table_name = TG_TABLE_NAME;
+
+                INSERT INTO {schema_name}.meta (id, meta_type_id)
+                VALUES (meta_id, meta_type_id);
                 NEW.id = meta_id;
                 RETURN NEW;
             END;
             """
             )
             .format(
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
                 writer_role=WRITER_ROLE,
             )
             .as_string()
@@ -596,7 +597,6 @@ class InsertMetaRecordFunction(SQLEmitter):
                     function_string,
                     timing="BEFORE",
                     operation="INSERT",
-                    # security_definer="SECURITY DEFINER",
                     include_trigger=False,
                     db_function=True,
                 )

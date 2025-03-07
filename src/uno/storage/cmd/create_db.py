@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.storage.management.db_manager import DBManager
+from uno.storage.db_manager import DBManager
 
 
 if __name__ == "__main__":

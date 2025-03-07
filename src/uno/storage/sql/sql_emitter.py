@@ -2,16 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any
-
+from typing import Optional
 from abc import ABC, abstractmethod
-
-from pydantic import BaseModel, ConfigDict, computed_field
 
 from psycopg.sql import SQL, Literal
 
+from pydantic import BaseModel
+
 from sqlalchemy.engine.base import Connection
-from sqlalchemy.orm import DeclarativeBase
 
 from uno.config import settings
 
@@ -37,13 +35,10 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 class SQLEmitter(ABC, BaseModel):
-
-    @computed_field
-    def table_name(self) -> str:
-        return None
+    table_name: Optional[str] = None
 
     @abstractmethod
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         raise NotImplementedError
 
     def create_sql_trigger(
@@ -56,15 +51,17 @@ class SQLEmitter(ABC, BaseModel):
     ) -> str:
 
         trigger_scope = (
-            f"{settings.DB_SCHEMA}." if db_function else f"{self.table_name}_"
+            f"{settings.DB_SCHEMA}."
+            if db_function
+            else f"{settings.DB_SCHEMA}.{self.table_name}_"
         )
-        trigger_prefix = self.table_name.split(".")[1]
+        trigger_prefix = self.table_name
         return (
             SQL(
                 """
             CREATE OR REPLACE TRIGGER {trigger_prefix}_{function_name}_trigger
                 {timing} {operation}
-                ON {table_name}
+                ON {schema_name}.{table_name}
                 FOR EACH {for_each}
                 EXECUTE FUNCTION {trigger_scope}{function_name}();
             """
@@ -77,7 +74,7 @@ class SQLEmitter(ABC, BaseModel):
                 operation=SQL(operation),
                 for_each=SQL(for_each),
                 trigger_scope=SQL(trigger_scope),
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
             )
             .as_string()
         )
@@ -147,13 +144,3 @@ class SQLEmitter(ABC, BaseModel):
                 fnct_string=fnct_string, trggr_string=trggr_string
             )
         ).as_string()
-
-
-class TableSQLEmitter(SQLEmitter):
-    obj_class: Any = None
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    @computed_field
-    def table_name(self) -> str:
-        return self.obj_class.table.fullname

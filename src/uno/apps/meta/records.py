@@ -2,14 +2,46 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sqlalchemy import Column, ForeignKey
-from sqlalchemy.dialects.postgresql import VARCHAR
+from sqlalchemy import ForeignKey, Identity
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from uno.record.record import UnoRecord, UnoTableDef, meta_data
-from uno.storage.sql.table_sql_emitters import InsertPermission
+from uno.record.record import UnoRecord, str_63, str_26
 from uno.config import settings
 
 
+class MetaTypeRecord(UnoRecord):
+    __tablename__ = "meta_type"
+    id: Mapped[int] = mapped_column(
+        Identity(start=1, cycle=True),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        doc="Primary Key",
+    )
+    name: Mapped[str_63] = mapped_column(
+        nullable=False,
+        doc="The name of the table",
+    )
+
+
+class MetaRecord(UnoRecord):
+    __tablename__ = "meta"
+    id: Mapped[str_26] = mapped_column(
+        primary_key=True,
+        nullable=False,
+        unique=True,
+        index=True,
+        doc="Primary Key",
+    )
+    meta_type_id = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    meta_type = relationship("MetaTypeRecord")
+
+
+"""
 class MetaTypeRecord(UnoRecord):
     table_def = UnoTableDef(
         table_name="meta_type",
@@ -25,7 +57,6 @@ class MetaTypeRecord(UnoRecord):
             ),
         ],
     )
-    sql_emitters = [InsertPermission]
 
 
 class MetaRecord(UnoRecord):
@@ -49,3 +80,4 @@ class MetaRecord(UnoRecord):
             ),
         ],
     )
+"""

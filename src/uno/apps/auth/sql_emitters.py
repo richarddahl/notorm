@@ -9,7 +9,7 @@ from sqlalchemy.engine import Connection
 
 
 from uno.storage.sql.sql_emitter import (
-    TableSQLEmitter,
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -26,8 +26,8 @@ from uno.storage.sql.sql_emitter import (
 from uno.config import settings
 
 
-class CreateRLSFunctions(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class CreateRLSFunctions(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         self.emit_create_authorize_user_function_sql(conn)
         self.emit_permissible_groups_sql(conn)
 
@@ -36,9 +36,9 @@ class CreateRLSFunctions(TableSQLEmitter):
             text(
                 SQL(
                     """
-
-            DROP FUNCTION IF EXISTS {db_schema}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
-            CREATE OR REPLACE FUNCTION {db_schema}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
+            SET ROLE {admin_role};
+            DROP FUNCTION IF EXISTS {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
+            CREATE OR REPLACE FUNCTION {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
             /*
             Function to verify a JWT token and set the session variables necessary for enforcing RLS
             Ensures that:
@@ -84,11 +84,11 @@ class CreateRLSFunctions(TableSQLEmitter):
                 EXECUTE 'SET ROLE ' || admin_role_name;
 
                 -- Get the secret from the token_secret table
-                SELECT secret FROM {db_schema}.token_secret INTO token_secret;
+                SELECT secret FROM {schema_name}.token_secret INTO token_secret;
 
                 -- Verify the token
                 SELECT header, payload, valid
-                FROM {db_schema}.verify(token, token_secret)
+                FROM {schema_name}.verify(token, token_secret)
                 INTO token_header, token_payload, token_valid;
 
                 IF token_valid THEN
@@ -114,7 +114,7 @@ class CreateRLSFunctions(TableSQLEmitter):
 
                     -- Query the user table for the user to get the values for the session variables
                     SELECT id, email, is_superuser, tenant_id, is_active, is_deleted 
-                    FROM {db_schema}.user
+                    FROM {schema_name}.user
                     WHERE email = sub
                     INTO
                         user_id,
@@ -155,7 +155,11 @@ class CreateRLSFunctions(TableSQLEmitter):
             $$;
             """
                 )
-                .format(db_name=SQL(settings.DB_NAME))
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    db_name=SQL(settings.DB_NAME),
+                    schema_name=DB_SCHEMA,
+                )
                 .as_string()
             )
         )
@@ -165,12 +169,13 @@ class CreateRLSFunctions(TableSQLEmitter):
             text(
                 SQL(
                     """
-            DROP FUNCTION IF EXISTS {db_schema}.permissible_groups(table_name TEXT, operation TEXT);
-            CREATE OR REPLACE FUNCTION {db_schema}.permissible_groups(table_name TEXT, operation TEXT)
+            SET ROLE {admin_role};
+            DROP FUNCTION IF EXISTS {schema_name}.permissible_groups(table_name TEXT, operation TEXT);
+            CREATE OR REPLACE FUNCTION {schema_name}.permissible_groups(table_name TEXT, operation TEXT)
             /*
             Function to get the permissible groups for the user
             */
-                RETURNS SETOF {db_schema}.group
+                RETURNS SETOF {schema_name}.group
                 LANGUAGE plpgsql
             AS $$
             DECLARE
@@ -179,20 +184,25 @@ class CreateRLSFunctions(TableSQLEmitter):
                 user_id := current_setting('s_var.id', true);
                 RETURN QUERY
                 SELECT g.*
-                FROM {db_schema}.group g
-                JOIN {db_schema}.user__group__role ugr ON ugr.group_id = g.id
-                JOIN {db_schema}.user u ON u.id = ugr.user_email
-                JOIN {db_schema}.permission tp ON ugr.role_id = tp.id
+                FROM {schema_name}.group g
+                JOIN {schema_name}.user__group__role ugr ON ugr.group_id = g.id
+                JOIN {schema_name}.user u ON u.id = ugr.user_email
+                JOIN {schema_name}.permission tp ON ugr.role_id = tp.id
                 WHERE u.id = session_user_id AND tp.is_active = TRUE;
             END $$;
             """
                 )
+                .format(
+                    admin_role=ADMIN_ROLE,
+                    schema_name=DB_SCHEMA,
+                )
+                .as_string()
             )
         )
 
 
-class UserRecordAuditFunction(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class UserRecordAuditFunction(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -211,13 +221,13 @@ class UserRecordAuditFunction(TableSQLEmitter):
 
                 SET ROLE {writer_role};
                 IF user_id IS NOT NULL AND
-                    NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                    NOT EXISTS (SELECT id FROM {schema_name}.user WHERE id = user_id) THEN
                         RAISE EXCEPTION 'user_id in rls_vars is not a valid user';
                 END IF;
                 IF user_id IS NULL AND
-                    EXISTS (SELECT id FROM {db_schema}.user) THEN
+                    EXISTS (SELECT id FROM {schema_name}.user) THEN
                         IF TG_OP = 'UPDATE' THEN
-                            IF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = OLD.id) THEN
+                            IF NOT EXISTS (SELECT id FROM {schema_name}.user WHERE id = OLD.id) THEN
                                 RAISE EXCEPTION 'No user defined in rls_vars and this is not the first user being updated';
                             ELSE
                                 user_id := OLD.id;
@@ -245,7 +255,7 @@ class UserRecordAuditFunction(TableSQLEmitter):
             )
             .format(
                 writer_role=WRITER_ROLE,
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
             )
             .as_string()
         )
@@ -264,9 +274,9 @@ class UserRecordAuditFunction(TableSQLEmitter):
         )
 
 
-class GetPermissibleGroupsFunction(TableSQLEmitter):
+class GetPermissibleGroupsFunction(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
         function_string = SQL(
             text(
                 """
@@ -287,7 +297,7 @@ class GetPermissibleGroupsFunction(TableSQLEmitter):
             END;
             """
             )
-            .format(db_schema=DB_SCHEMA)
+            .format(schema_name=DB_SCHEMA)
             .as_string()
         )
 
@@ -299,9 +309,9 @@ class GetPermissibleGroupsFunction(TableSQLEmitter):
         )
 
 
-class ValidateGroupInsert(TableSQLEmitter):
+class ValidateGroupInsert(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
         function_string = (
             SQL(
                 """
@@ -349,7 +359,7 @@ class ValidateGroupInsert(TableSQLEmitter):
             """
             )
             .format(
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
                 ENFORCE_MAX_GROUPS=settings.ENFORCE_MAX_GROUPS,
                 MAX_INDIVIDUAL_GROUPS=settings.MAX_INDIVIDUAL_GROUPS,
                 MAX_BUSINESS_GROUPS=settings.MAX_BUSINESS_GROUPS,
@@ -370,25 +380,26 @@ class ValidateGroupInsert(TableSQLEmitter):
 
 
 # class InsertGroupConstraint(SQLEmitter):
-#    def _emit_sql(self, conn: Connection:Engine)-> str:
+#    def emit_sql(self, conn: Connection:Engine)-> str:
 #        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (validate_group_insert(tenant_id) = true);
 #            """
 
 
-class InsertGroupForTenant(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class InsertGroupForTenant(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
-                CREATE OR REPLACE FUNCTION {db_schema}.insert_group_for_tenant()
+                SET ROLE {admin_role};
+                CREATE OR REPLACE FUNCTION {schema_name}.insert_group_for_tenant()
                 RETURNS TRIGGER
                 LANGUAGE plpgsql
                 AS $$
                 BEGIN
                     SET ROLE {admin_role};
-                    INSERT INTO {db_schema}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
+                    INSERT INTO {schema_name}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
                     RETURN NEW;
                 END;
                 $$;
@@ -397,11 +408,11 @@ class InsertGroupForTenant(TableSQLEmitter):
                 -- The trigger to call the function
                 AFTER INSERT ON tenant
                 FOR EACH ROW
-                EXECUTE FUNCTION {db_schema}.insert_group_for_tenant();
+                EXECUTE FUNCTION {schema_name}.insert_group_for_tenant();
                 """
                 )
                 .format(
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     admin_role=ADMIN_ROLE,
                 )
                 .as_string()
@@ -409,8 +420,8 @@ class InsertGroupForTenant(TableSQLEmitter):
         )
 
 
-class DefaultGroupTenant(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> str:
+class DefaultGroupTenant(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> str:
         function_string = SQL(
             """
             DECLARE

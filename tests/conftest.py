@@ -17,8 +17,8 @@ from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 
-from uno.storage.management.db_manager import DBManager
-from uno.record.record import UnoRecordBase
+from uno.storage.db_manager import DBManager
+from uno.record.record import UnoRecord
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
@@ -26,26 +26,6 @@ import pytest
 from uno.storage.session import engine, sync_engine, Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-"""
-@pytest.fixture(scope="module")
-async def db():
-    async with engine.begin() as conn:
-        await conn.run_sync(UnoRecordBase.metadata.create_all)
-    yield engine
-    # async with engine.begin() as conn:
-    #    await conn.run_sync(UnoRecordBase.metadata.drop_all)
-
-
-@pytest.fixture(scope="function")
-async def session(db):
-    async with AsyncSessionLocal() as session:
-        yield session
-        await session.rollback()
-"""
 
 
 def db_column(

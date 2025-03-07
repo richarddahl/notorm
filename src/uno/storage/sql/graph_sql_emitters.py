@@ -13,7 +13,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
 from uno.storage.sql.sql_emitter import (
-    TableSQLEmitter,
+    SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -31,7 +31,7 @@ from uno.utilities import (
 )
 
 
-class GraphSQLEmitter(TableSQLEmitter):
+class GraphSQLEmitter(SQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
@@ -71,7 +71,7 @@ class PropertySQLEmitter(GraphSQLEmitter):
             return boolean_lookups
         return object_lookups
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         return
         conn.execute(
             text(
@@ -102,7 +102,7 @@ class PropertySQLEmitter(GraphSQLEmitter):
                 )
                 .format(
                     admin_role=ADMIN_ROLE,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     display=Literal(self.display),
                     data_type=Literal(self.data_type),
                     source_meta_type=Literal(self.source_meta_type),
@@ -133,7 +133,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
     def properties(self) -> dict[str, PropertySQLEmitter]:
         return self.node.properties
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         self.create_node_label(conn)
         self.insert_node(conn)
         # self.update_node(conn)
@@ -329,7 +329,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
         )
 
 
-class EdgeSQLEmitter(TableSQLEmitter):
+class EdgeSQLEmitter(SQLEmitter):
     edge: BaseModel = None
 
     """
@@ -358,7 +358,7 @@ class EdgeSQLEmitter(TableSQLEmitter):
         return props
     """
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         self.create_edge_label(conn)
         # self.create_filter_field(conn)
 
@@ -425,7 +425,7 @@ class EdgeSQLEmitter(TableSQLEmitter):
                     admin_role=ADMIN_ROLE,
                     label=Literal(self.label),
                     label_ident=Identifier(self.label),
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     data_type=Literal("object"),
                     source_meta_type=Literal(self.source_meta_type),
                     destination_meta_type=Literal(self.destination_meta_type),

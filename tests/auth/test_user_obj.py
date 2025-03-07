@@ -14,9 +14,9 @@ from unittest import IsolatedAsyncioTestCase
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import VARCHAR
 
-from uno.record.obj import UnoRecordBase
+from uno.record.obj import UnoRecord
 from uno.apps.auth.models import User
-from uno.storage.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
+from uno.storage.sql.table_sql_emitters import AlterGrants, InsertMetaType
 
 from uno.config import settings
 

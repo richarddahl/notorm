@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 from tests.conftest import db_column
 
 from uno.apps.meta.objs import MetaRecord
-from uno.storage.sql.table_sql_emitters import AlterGrants, InsertMetaTypeRecord
+from uno.storage.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.config import settings
 
 
@@ -29,7 +29,7 @@ class TestMetaRecord:
         assert MetaRecord.display_name == "Meta Record"
         assert MetaRecord.display_name_plural == "Meta Records"
         assert AlterGrants in MetaRecord.sql_emitters
-        assert InsertMetaTypeRecord in MetaRecord.sql_emitters
+        assert InsertMetaType in MetaRecord.sql_emitters
         assert MetaRecord.__name__ == "MetaRecord"
         assert MetaRecord.table.schema == "uno"
         assert MetaRecord.table.name == "meta_record"

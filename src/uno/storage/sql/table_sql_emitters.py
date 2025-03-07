@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 from uno.storage.sql.sql_emitter import (
-    TableSQLEmitter,
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -17,44 +17,21 @@ from uno.storage.sql.sql_emitter import (
 )
 
 
-class AlterGrants(TableSQLEmitter):
-    def emit_sql_for_DDL(self) -> None:
-        return (
-            SQL(
-                """
-            SET ROLE {admin_role};
-            -- Configure table ownership and privileges
-            ALTER TABLE {table_name} OWNER TO {admin_role};
-            REVOKE ALL ON {table_name} FROM PUBLIC, {writer_role}, {reader_role};
-            GRANT SELECT ON {table_name} TO
-                {reader_role},
-                {writer_role};
-            GRANT ALL ON {table_name} TO
-                {writer_role};
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                reader_role=READER_ROLE,
-                writer_role=WRITER_ROLE,
-                table_name=SQL(self.table_name),
-            )
-            .as_string()
-        )
+class AlterGrants(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
             SET ROLE {admin_role};
             -- Congigure table ownership and privileges
-            ALTER TABLE {table_name} OWNER TO {admin_role};
-            REVOKE ALL ON {table_name} FROM PUBLIC, {writer_role}, {reader_role};
-            GRANT SELECT ON {table_name} TO
+            ALTER TABLE {schema_name}.{table_name} OWNER TO {admin_role};
+            REVOKE ALL ON {schema_name}.{table_name} FROM PUBLIC, {writer_role}, {reader_role};
+            GRANT SELECT ON {schema_name}.{table_name} TO
                 {reader_role},
                 {writer_role};
-            GRANT ALL ON {table_name} TO
+            GRANT ALL ON {schema_name}.{table_name} TO
                 {writer_role};
             """
                 )
@@ -63,13 +40,14 @@ class AlterGrants(TableSQLEmitter):
                     reader_role=READER_ROLE,
                     writer_role=WRITER_ROLE,
                     table_name=SQL(self.table_name),
+                    schema_name=DB_SCHEMA,
                 )
                 .as_string()
             )
         )
 
 
-class RecordVersionAudit(TableSQLEmitter):
+class RecordVersionAudit(SQLEmitter):
     """Emits SQL to enable record version auditing for a specified table.
 
     This class prepares and executes SQL to enable audit tracking on a database table
@@ -84,7 +62,7 @@ class RecordVersionAudit(TableSQLEmitter):
     Example:
         ```python
         emitter = RecordVersionAudit("my_table")
-        emitter._emit_sql(engine)
+        emitter.emit_sql(engine)
         ```
 
     Note:
@@ -92,7 +70,7 @@ class RecordVersionAudit(TableSQLEmitter):
         Uses the global DB_SCHEMA constant for the schema name.
     """
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
@@ -102,7 +80,7 @@ class RecordVersionAudit(TableSQLEmitter):
             """
                 )
                 .format(
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     table_name=SQL(self.table_name),
                 )
                 .as_string()
@@ -110,7 +88,7 @@ class RecordVersionAudit(TableSQLEmitter):
         )
 
 
-class CreateHistoryTable(TableSQLEmitter):
+class CreateHistoryTable(SQLEmitter):
     """Creates a history/audit table for tracking changes in the main table.
 
     This class generates and executes SQL to create an audit table that mirrors the structure
@@ -127,7 +105,7 @@ class CreateHistoryTable(TableSQLEmitter):
         HistoryTableAuditMixin
 
     Args:
-        None directly, but inherits from TableSQLEmitter which provides table_name
+        None directly, but inherits from SQLEmitter which provides table_name
 
     Returns:
         None
@@ -135,45 +113,45 @@ class CreateHistoryTable(TableSQLEmitter):
     Example:
         ```
         emitter = CreateHistoryTableSQL()
-        emitter._emit_sql(engine)
+        emitter.emit_sql(engine)
         ```
 
     Note:
         - Requires {db_name}_admin role privileges
         - Creates table in the audit schema
-        - Table will be named audit.{db_schema}_{table_name}
+        - Table will be named audit.{schema_name}_{table_name}
     """
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
             SET ROLE {db_name}_admin;
-            CREATE TABLE audit.{db_schema}_{table_name}
+            CREATE TABLE audit.{schema_name}_{table_name}
             AS (
                 SELECT 
                     t1.*,
                     t2.meta_type_id
-                FROM {table_name} t1
+                FROM {schema_name}.{table_name} t1
                 INNER JOIN meta_record t2
                 ON t1.id = t2.id
             )
             WITH NO DATA;
 
-            ALTER TABLE audit.{db_schema}_{table_name}
+            ALTER TABLE audit.{schema_name}_{table_name}
             ADD COLUMN pk INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY;
 
-            CREATE INDEX {db_schema}_{table_name}_pk_idx
-            ON audit.{db_schema}_{table_name} (pk);
+            CREATE INDEX {schema_name}_{table_name}_pk_idx
+            ON audit.{schema_name}_{table_name} (pk);
 
-            CREATE INDEX {db_schema}_{table_name}_id_modified_at_idx
-            ON audit.{db_schema}_{table_name} (id, modified_at);
+            CREATE INDEX {schema_name}_{table_name}_id_modified_at_idx
+            ON audit.{schema_name}_{table_name} (id, modified_at);
             """
                 )
                 .format(
                     db_name=DB_NAME,
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     table_name=SQL(self.table_name),
                 )
                 .as_string()
@@ -181,7 +159,7 @@ class CreateHistoryTable(TableSQLEmitter):
         )
 
 
-class InsertHistoryTableRecord(TableSQLEmitter):
+class InsertHistoryTableRecord(SQLEmitter):
     """A SQL emitter class that generates audit triggers for database tables.
 
     This class creates SQL functions and triggers that automatically track changes to database tables
@@ -209,21 +187,21 @@ class InsertHistoryTableRecord(TableSQLEmitter):
         - The naming convention for audit tables is: audit.{schema}_{table_name}
     """
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
             BEGIN
-                INSERT INTO audit.{db_schema}_{table_name}
+                INSERT INTO audit.{schema_name}_{table_name}
                 SELECT *
-                FROM {table_name}
+                FROM {schema_name}.{table_name}
                 WHERE id = NEW.id;
                 RETURN NEW;
             END;
             """
             )
             .format(
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
                 table_name=SQL(self.table_name),
             )
             .as_string()
@@ -244,41 +222,22 @@ class InsertHistoryTableRecord(TableSQLEmitter):
         )
 
 
-class InsertMetaTypeRecord(TableSQLEmitter):
+class InsertMetaType(SQLEmitter):
 
-    def emit_sql_for_DDL(self) -> str:
-        return (
-            SQL(
-                """
-            -- Create the meta_type record
-            SET ROLE {writer_role};
-            INSERT INTO {schema}.meta_type (id)
-            VALUES ({table_name})
-            ON CONFLICT DO NOTHING;
-            """
-            )
-            .format(
-                schema=DB_SCHEMA,
-                writer_role=WRITER_ROLE,
-                table_name=Literal(self.table_name),
-            )
-            .as_string()
-        )
-
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 SQL(
                     """
             -- Create the meta_type record
             SET ROLE {writer_role};
-            INSERT INTO {db_schema}.meta_type (id)
+            INSERT INTO {schema_name}.meta_type (name)
             VALUES ({table_name})
             ON CONFLICT DO NOTHING;
             """
                 )
                 .format(
-                    db_schema=DB_SCHEMA,
+                    schema_name=DB_SCHEMA,
                     writer_role=WRITER_ROLE,
                     table_name=Literal(self.table_name),
                 )
@@ -287,8 +246,8 @@ class InsertMetaTypeRecord(TableSQLEmitter):
         )
 
 
-class InsertMetaRecordTrigger(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class InsertMetaRecordTrigger(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         conn.execute(
             text(
                 self.create_sql_trigger(
@@ -302,8 +261,8 @@ class InsertMetaRecordTrigger(TableSQLEmitter):
         )
 
 
-class RecordStatusFunction(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class RecordStatusFunction(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -347,8 +306,8 @@ class RecordStatusFunction(TableSQLEmitter):
         )
 
 
-class RecordUserAuditFunction(TableSQLEmitter):
-    def _emit_sql(self, conn: Connection) -> None:
+class RecordUserAuditFunction(SQLEmitter):
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -359,11 +318,11 @@ class RecordUserAuditFunction(TableSQLEmitter):
 
 
                 IF user_id IS NULL OR user_id = '' THEN
-                    IF EXISTS (SELECT id FROM {db_schema}.user) THEN
+                    IF EXISTS (SELECT id FROM {schema_name}.user) THEN
                         RAISE EXCEPTION 'No user defined in rls_vars';
                     END IF;
                 END IF;
-                IF NOT EXISTS (SELECT id FROM {db_schema}.user WHERE id = user_id) THEN
+                IF NOT EXISTS (SELECT id FROM {schema_name}.user WHERE id = user_id) THEN
                     RAISE EXCEPTION 'User ID in rls_vars is not a valid user';
                 END IF;
 
@@ -382,7 +341,7 @@ class RecordUserAuditFunction(TableSQLEmitter):
             )
             .format(
                 writer_role=WRITER_ROLE,
-                db_schema=DB_SCHEMA,
+                schema_name=DB_SCHEMA,
             )
             .as_string()
         )
@@ -401,9 +360,9 @@ class RecordUserAuditFunction(TableSQLEmitter):
         )
 
 
-class InsertPermission(TableSQLEmitter):
+class InsertPermission(SQLEmitter):
 
-    def _emit_sql(self, conn: Connection) -> None:
+    def emit_sql(self, conn: Connection) -> None:
         function_string = (
             SQL(
                 """
@@ -426,7 +385,7 @@ class InsertPermission(TableSQLEmitter):
             END;
             """
             )
-            .format(db_schema=DB_SCHEMA)
+            .format(schema_name=DB_SCHEMA)
             .as_string()
         )
 

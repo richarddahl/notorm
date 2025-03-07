@@ -18,7 +18,7 @@
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE FUNCTION {db_schema}.generate_ulid()
+CREATE FUNCTION {schema_name}.generate_ulid()
 RETURNS TEXT
 AS $$
 DECLARE
@@ -40,7 +40,7 @@ timestamp = SET_BYTE(timestamp, 4, (unix_time >> 8)::BIT(8)::INTEGER);
 timestamp = SET_BYTE(timestamp, 5, unix_time::BIT(8)::INTEGER);
 
 -- 10 entropy bytes
-ulid = timestamp || {db_schema}.gen_random_bytes(10);
+ulid = timestamp || {schema_name}.gen_random_bytes(10);
 
 -- Encode the timestamp
 output = output || CHR(GET_BYTE(encoding, (GET_BYTE(ulid, 0) & 224) >> 5));

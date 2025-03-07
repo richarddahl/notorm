@@ -14,16 +14,6 @@ from uno.record.obj import UnoRecord
 from uno.api.app import app
 from uno.config import settings
 
-for module in settings.LOAD_MODULES:
-    globals()[f"{module.split('.')[1]}_models"] = importlib.import_module(
-        f"{module}.models"
-    )
-
-auth_models.User.configure()
-auth_models.Group.configure()
-auth_models.Tenant.configure()
-auth_models.Role.configure()
-
 
 templates = Jinja2Templates(directory="templates")
 

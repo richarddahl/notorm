@@ -4,14 +4,9 @@
 
 import asyncio
 
-from uno.storage.management.db_manager import DBManager
-from uno.apps.auth.objs import User, Group, Tenant, Role
+from uno.storage.db_manager import DBManager
 
 
 if __name__ == "__main__":
-    User.configure()
-    Group.configure()
-    Tenant.configure()
-    Role.configure()
     db = DBManager()
     asyncio.run(db.create_superuser())

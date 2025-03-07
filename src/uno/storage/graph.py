@@ -17,7 +17,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
 from uno.storage.sql.sql_emitter import (
-    TableSQLEmitter,
+    SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -47,7 +47,7 @@ class GraphBase(BaseModel, ABC):
     sql_emitter: ClassVar[GraphSQLEmitter] = None
 
     @abstractmethod
-    def _emit_sql(self, conn: Connection):
+    def emit_sql(self, conn: Connection):
         raise NotImplementedError
 
 
@@ -80,8 +80,8 @@ class GraphProperty(GraphBase):
             return boolean_lookups
         return object_lookups
 
-    def _emit_sql(self, conn):
-        self.sql_emitter()._emit_sql(conn)
+    def emit_sql(self, conn):
+        self.sql_emitter().emit_sql(conn)
 
 
 class GraphNode(GraphBase):
@@ -114,8 +114,8 @@ class GraphNode(GraphBase):
             )
         return props
 
-    def _emit_sql(self, conn: Connection):
-        self.sql_emitter(obj_class=self.obj_class, node=self)._emit_sql(conn)
+    def emit_sql(self, conn: Connection):
+        self.sql_emitter(obj_class=self.obj_class, node=self).emit_sql(conn)
 
 
 class GraphEdge(GraphBase):
@@ -128,8 +128,8 @@ class GraphEdge(GraphBase):
 
     sql_emitter = EdgeSQLEmitter
 
-    def _emit_sql(self, conn: Connection):
-        self.sql_emitter(edge=self)._emit_sql(conn)
+    def emit_sql(self, conn: Connection):
+        self.sql_emitter(edge=self).emit_sql(conn)
 
 
 class EdgeDef(GraphBase):

@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, AliasGenerator
 from uno.storage.sql.sql_emitter import SQLEmitter
 from uno.storage.sql.table_sql_emitters import AlterGrants
 from uno.storage.graph import GraphEdge
-from uno.storage.sql.table_sql_emitters import InsertMetaTypeRecord
+from uno.storage.sql.table_sql_emitters import InsertMetaType
 from uno.storage.graph import GraphNode
 from uno.storage.db_back import UnoDB
 from uno.api.endpoint import UnoEndpoint, UnoModel
@@ -82,7 +82,7 @@ class UnoRecord(BaseModel):
     # SQL attributes
     sql_emitters: ClassVar[list[SQLEmitter]] = [
         AlterGrants,
-        InsertMetaTypeRecord,
+        InsertMetaType,
     ]
 
     # Graph attributes
@@ -181,9 +181,9 @@ class UnoRecord(BaseModel):
     # End of __init_subclass__
 
     @classmethod
-    def _emit_sql(cls, conn: Connection) -> None:
+    def emit_sql(cls, conn: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(obj_class=cls)._emit_sql(conn)
+            sql_emitter(obj_class=cls).emit_sql(conn)
 
     @classmethod
     def configure(cls, alter_db: bool = False) -> None:
@@ -201,7 +201,7 @@ class UnoRecord(BaseModel):
         cls.graph_node = GraphNode(obj_class=cls)
         if alter_db:
             with cls.db.sync_connection() as conn:
-                cls.graph_node._emit_sql(conn)
+                cls.graph_node.emit_sql(conn)
             conn.commit()
             conn.close()
 
@@ -242,7 +242,7 @@ class UnoRecord(BaseModel):
             )
             cls.graph_edges.update({rel_obj_name: edge})
             with cls.db.sync_connection() as conn:
-                edge._emit_sql(conn)
+                edge.emit_sql(conn)
             rel_objs.update({rel_obj.local_column_name: rel_obj})
         cls.related_objects = rel_objs
 
