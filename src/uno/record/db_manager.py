@@ -160,7 +160,6 @@ class DBManager:
         eng.dispose()
 
     async def drop_db(self) -> None:
-
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
         if settings.ENV == "test":
@@ -168,24 +167,16 @@ class DBManager:
             sys.stdout = output_stream
 
         # Connect to the postgres database as the postgres user
-        eng = self.engine(db_role="postgres", db_name="postgres")
-        with eng.connect() as conn:
+        engine = self.engine(db_role="postgres", db_name="postgres")
+        async with engine.connect() as conn:
             print(
                 f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
             )
             # Drop the Database
+            await conn.execute(text("SET ROLE postgres;"))
             DropDatabaseAndRoles().emit_sql(conn)
-            print(f"Database {settings.DB_NAME} and all assocated roles dropped\n")
+            print(f"Database {settings.DB_NAME} and all associated roles dropped\n")
 
-        # eng = self.engine(db_role="postgres", db_name="postgres")
-        # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        #    print(
-        #        f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
-        #    )
-        #    # Drop the Database
-        #    DropDatabaseAndRoles().emit_sql(eng)
-
-        #
         # Reset the stdout stream
         if settings.ENV == "test":
             sys.stdout = sys.__stdout__
