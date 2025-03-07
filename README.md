@@ -49,7 +49,7 @@ Each of the Entity definition classes isolate the functionality required within 
 
 `UnoRecord` is a subclass of sqlalchemy ORM DeclarativeBase that defines the data structure of the Entities
 
-`UnoStorage` is a subclass of pydantic BaseModel that executes custom sql for the Entities using sqlalchemy session
+`UnoStorage` is a subclass of pydantic BaseModel that executes custom sql for the Entities
 
 `UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers  
 
