@@ -187,10 +187,9 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        session = get_session()
-        # async with session.begin():
-        await session.add(user)
-        await session.commit()
+        async with get_session() as session:
+            await session.add(user)
+            await session.commit()
         return user
 
     def engine(
