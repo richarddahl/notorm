@@ -24,6 +24,8 @@ from uno.storage.sql.sql_emitters import (
 from uno.record.record import meta_data, UnoRecord
 from uno.storage.storage import UnoStorage
 from uno.storage.session import get_session
+from uno.record.obj import Base
+from uno.apps.auth.records import auth_records
 from uno.config import settings
 
 # Import all the modules in the settings.LOAD_MODULES list
