@@ -25,9 +25,63 @@ pip install notorm
 
 Why `notorm`
 
-"uno" is already a project at pypi, the actual name of this library: UNO is Not an ORM.
+"uno" is already a project at pypi, the actual name of this library is UNO, but UNO is NOT an ORM.
 
-It's meant as an homage to GNU of course.
+It's meant as an homage to GNU of course, it also represents the limited nature of the project at its genesis.
+It really is more of an app framework at this point, going well beyond its original intent.
+
+## File Structure
+
+Within UNO, the term "Entity" refers to a type of information that exists within an application.  
+
+Entities are defined by the following:
+
+- UnoModel
+- UnoRecord
+- UnoStorage
+- UnoEndpoint
+
+A deliberate attempt has been made to couple as little as possible within UNO.  
+
+Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.
+
+`UnoModel` is a subclass of pydantic BaseModel with a number of class variables in addition to the fields associated with the Entities
+
+`UnoRecord` is a sqlalchemy ORM Declarative Base representing the data structure of the Entities
+
+`UnoStorage` is a subclass of pydantic BaseModel that executes custom sql on behalf of the Entities
+
+`UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers  
+
+The structure of the project:
+
+| uno  
+&nbsp;&nbsp;&nbsp;&nbsp;
+| api - Code required to use FastAPI to serve an app using UNO  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | apps  - The built in modules:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | attr - Entities to associate user-defined information to Uno entities  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | auth - Entities to manage users and access  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | fltr - Entities support the automatic filtering of the database  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | meta - Entities to manage relationships between entities  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | msg - Entities to communicate between users  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | rprt - Entities to produce reports on entities  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | val - Entities to associate attributes, filters, messages, and reports to thier respective Entities  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | model - Defines UnoModel, the business logic executor  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | record - Defines the UnoRecord, the data definition source: SQL Alchemy ORM Declarative Base  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | storage - Defines the connection and session to the DB using asyncpg  
 
 ## Starting the db with Docker
 
