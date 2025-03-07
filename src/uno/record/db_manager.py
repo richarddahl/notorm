@@ -210,7 +210,7 @@ class DBManager:
             await session.close()
         return user
 
-    async def engine(
+    def engine(
         self,
         db_role: str,
         db_driver: str = settings.DB_ASYNC_DRIVER,
@@ -222,10 +222,4 @@ class DBManager:
         engine = create_async_engine(
             f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
         )
-        # yield engine
-        # engine.dispose()
-        async with engine.connect() as conn:
-            async with conn.begin():
-                yield conn
-            conn.close()
-        engine.dispose()
+        return engine
