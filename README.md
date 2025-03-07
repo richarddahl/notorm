@@ -43,13 +43,13 @@ Entities are defined by the following:
 
 A deliberate attempt has been made to couple as little as possible within UNO.  
 
-Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.
+Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.  
 
 `UnoModel` is a subclass of pydantic BaseModel with a number of class variables in addition to the fields associated with the Entities
 
-`UnoRecord` is a sqlalchemy ORM Declarative Base representing the data structure of the Entities
+`UnoRecord` is a subclass of sqlalchemy ORM DeclarativeBase that defines the data structure of the Entities
 
-`UnoStorage` is a subclass of pydantic BaseModel that executes custom sql on behalf of the Entities
+`UnoStorage` is a subclass of pydantic BaseModel that executes custom sql for the Entities using sqlalchemy session
 
 `UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers  
 
