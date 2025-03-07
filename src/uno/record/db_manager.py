@@ -66,11 +66,13 @@ class DBManager:
 
     async def create_roles_and_database(self) -> None:
 
-        conn = await self.engine(
+        engine = self.engine(
             db_role="postgres", db_password="postgreSQLR0ck%", db_name="postgres"
         )
         # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        CreateRolesAndDatabase().emit_sql(conn)
+        async with engine.connect() as conn:
+            await conn.execute(text("SET ROLE postgres;"))
+            CreateRolesAndDatabase().emit_sql(conn)
         print("Created the roles and the database\n")
         # conn.close()
         # eng.dispose()
