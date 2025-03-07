@@ -81,9 +81,7 @@ The structure of the project:
 &nbsp;&nbsp;&nbsp;&nbsp;
     | model - Defines UnoModel, the business logic executor  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | record - Defines the UnoRecord, the data definition source: SQL Alchemy ORM Declarative Base  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | storage - Defines the connection and session to the DB using asyncpg  
+    | record - Defines the UnoRecord, the persistant data structure, the UnoStorage (Entity custom sql) and the methods to communicate with the persisted data.
 
 ## Starting the db with Docker
 

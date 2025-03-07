@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-import asyncio
-
-from uno.storage.db_manager import DBManager
+from uno.record.db_manager import DBManager
 
 
 if __name__ == "__main__":
     db = DBManager()
-    asyncio.run(db.create_superuser())
+    db.drop_db()
+    db.create_db()

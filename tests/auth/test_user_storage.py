@@ -25,8 +25,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from uno.record.record import UnoRecord, meta_data
-from uno.storage.session import engine, sync_engine
-from uno.storage.db_manager import DBManager
+from uno.record.db import engine, sync_engine
+from uno.record.db_manager import DBManager
 from uno.apps.auth.records import (
     UserRecord,
     TenantRecord,
@@ -53,12 +53,12 @@ class TestUserModel:
     #    session.add(user)
     #    await session.commit()
 
-    def test_db_build(self):
-        db_manager = DBManager()
-        db_manager.create_db()
-        assert True
+    # def test_db_build(self):
+    #    db_manager = DBManager()
+    #    db_manager.create_db()
+    #    assert True
 
-    def test_user_indices(self, connection):
+    def test_user_indices(self, connection, test_db):
         db_inspector = inspect(connection)
         # print(db_inspector.get_indexes("user", schema=settings.DB_SCHEMA))
         assert db_inspector.get_indexes("user", schema=settings.DB_SCHEMA) == [

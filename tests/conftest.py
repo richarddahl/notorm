@@ -15,17 +15,15 @@ from psycopg.sql import SQL, Identifier, Literal, Placeholder
 
 from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
 
-from uno.storage.db_manager import DBManager
+from uno.record.db_manager import DBManager
 from uno.record.record import UnoRecord
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
 import pytest
-from uno.storage.session import engine, sync_engine, Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
+from uno.record.db import sync_engine
 
 
 def db_column(
@@ -35,6 +33,21 @@ def db_column(
         if col.get("name") == col_name:
             return col
     return None
+
+
+@pytest.fixture(scope="session")
+def test_db():
+    db = DBManager()
+    db.drop_db()
+    db.create_db()
+    return db
+
+
+@pytest.fixture(scope="session")
+def connection():
+    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT"):
+        yield sync_engine
+        sync_engine.dispose()
 
 
 '''

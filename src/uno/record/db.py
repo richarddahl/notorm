@@ -3,18 +3,65 @@
 # SPDX-License-Identifier: MIT
 
 
-from typing import List
+import asyncio
+from typing import AsyncIterator
 
-from sqlalchemy import select, insert, delete, update, text
+from sqlalchemy import select, insert, delete, update, text, create_engine
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+    async_scoped_session,
+)
+from sqlalchemy.pool import NullPool
 
-from uno.storage.session import sync_engine, engine
 from uno.model.model import UnoModel
 from uno.record.record import UnoRecord
 from uno.model.model import UnoModel
 from uno.record.enums import SelectResultType
 from uno.errors import UnoError
+from uno.config import settings
+
+
+DB_ROLE = f"{settings.DB_NAME}_login"
+DB_SYNC_DRIVER = settings.DB_SYNC_DRIVER
+DB_ASYNC_DRIVER = settings.DB_ASYNC_DRIVER
+DB_USER_PW = settings.DB_USER_PW
+DB_HOST = settings.DB_HOST
+DB_NAME = settings.DB_NAME
+DB_SCHEMA = settings.DB_SCHEMA
+
+
+sync_engine = create_engine(
+    f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+)
+
+
+engine = create_async_engine(
+    f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    poolclass=NullPool,
+    # echo=True,
+)
+
+# session_maker = async_sessionmaker(
+#    autocommit=False,
+#    autoflush=False,
+#    bind=engine,
+#    expire_on_commit=False,
+# )
+
+
+def current_task():
+    return asyncio.current_task()
+
+
+# scoped_session = async_scoped_session(
+#    session_maker,
+#    scopefunc=current_task,
+# )
 
 
 class IntegrityConflictException(Exception):

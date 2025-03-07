@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 from uno.record.record import UnoRecord, meta_data
-from uno.storage.session import engine, sync_engine
+from uno.record.db import engine, sync_engine
 from uno.apps.auth.records import (
     UserRecord,
     TenantRecord,

@@ -24,8 +24,7 @@ from uno.storage.sql.sql_emitters import (
     InsertMetaRecordFunction,
 )
 from uno.record.record import meta_data
-from uno.storage.storage import UnoStorage
-from uno.storage.session import scoped_session
+from uno.record.storage import UnoStorage
 from uno.config import settings
 
 # Import all the modules in the settings.LOAD_MODULES list
@@ -189,19 +188,19 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        async with scoped_session() as session:
-            await session.execute(
-                text(
-                    SQL("SET ROLE {db_name}_admin;")
-                    .format(
-                        db_name=SQL(settings.DB_NAME),
-                    )
-                    .as_string()
-                )
-            )
-            session.add(user)
-            await session.commit()
-        return user
+        # async with scoped_session() as session:
+        #    await session.execute(
+        #        text(
+        #            SQL("SET ROLE {db_name}_admin;")
+        #            .format(
+        #                db_name=SQL(settings.DB_NAME),
+        #            )
+        #            .as_string()
+        #        )
+        #    )
+        #    session.add(user)
+        #    await session.commit()
+        # return user
 
     def engine(
         self,
@@ -214,5 +213,5 @@ class DBManager:
 
         return create_engine(
             f"{db_sync_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
-            echo=True,
+            # echo=True,
         )

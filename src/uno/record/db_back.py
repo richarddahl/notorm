@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from pydantic import BaseModel
 
-from uno.storage.session import sync_engine, engine
+from uno.record.db import sync_engine, engine
 from uno.record.enums import SelectResultType
 from uno.storage.sql.sql_emitters import SetRole, DB_NAME
 from uno.apps.val.enums import Lookup

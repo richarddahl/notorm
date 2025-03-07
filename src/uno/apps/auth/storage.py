@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from uno.storage.storage import UnoStorage
+from uno.record.storage import UnoStorage
 from uno.apps.auth.rls_sql_emitters import (
     UserRowLevelSecurity,
 )
