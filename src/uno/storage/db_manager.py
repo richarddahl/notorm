@@ -187,7 +187,7 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        async with get_session() as session:
+        async for session in get_session():
             await session.add(user)
             await session.commit()
         return user
