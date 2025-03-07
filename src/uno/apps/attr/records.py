@@ -4,86 +4,66 @@
 
 from typing import Optional, ClassVar
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, Table, Column
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     relationship,
 )
 
-from uno.record.obj import UnoRecord
-
-from uno.apps.meta.objs import (
+from uno.record.record import UnoRecord, str_255, str_26
+from uno.apps.meta.records import (
     MetaRecord,
-    MetaType,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    HistoryTableAuditMixin,
+    MetaTypeRecord,
 )
-from uno.storage.sql.sql_emitter import SQLEmitter
-
-# from uno.apps.auth.rls_sql_emitters import RowLevelSecurity
-from uno.apps.fltr.objs import Query
-
+from uno.record.sql.sql_emitter import SQLEmitter
+from uno.apps.fltr.records import Query
 from uno.config import settings
 
 
-class AttributeValue(UnoRecord):
-    __tablename__ = "attribute__value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationship between attributes and their values",
-        },
-    )
-
-    display_name: ClassVar[str] = "Attribute Object Value"
-    display_name_plural: ClassVar[str] = "Attribute Object Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    attribute_id: Mapped[str_26] = mapped_column(
+attribute_value = Table(
+    "attribute__value",
+    UnoRecord.metadata,
+    Column(
+        "attribute_id",
         ForeignKey(f"{settings.DB_SCHEMA}.attribute.id", ondelete="CASCADE"),
         primary_key=True,
-    )
-    value_id: Mapped[str_26] = mapped_column(
+        index=True,
+        nullable=False,
+    ),
+    Column(
+        "value_id",
         ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
         primary_key=True,
-    )
+        index=True,
+        nullable=False,
+    ),
+    comment="The relationship between attributes and their values",
+)
 
 
-class AttributeTypeMetaType(Base):
-    __tablename__ = "attribute_type__meta_type"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationship between attribute types and the meta_record types they describe",
-        },
-    )
-
-    display_name: ClassVar[str] = "Attribute Type Applicability"
-    display_name_plural: ClassVar[str] = "Attribute Type Applicabilities"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    attribute_type_id: Mapped[str_26] = mapped_column(
+attribute_type___meta_type = Table(
+    "attribute_type__meta_type",
+    UnoRecord.metadata,
+    Column(
+        "attribute_type_id",
         ForeignKey(f"{settings.DB_SCHEMA}.attribute_type.id", ondelete="CASCADE"),
         primary_key=True,
-    )
-    meta_type_id: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+    ),
+    Column(
+        "meta_type_id",
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         primary_key=True,
-    )
+        index=True,
+        nullable=False,
+    ),
+    comment="The relationship between attribute types and the meta_record types they describe",
+)
 
 
-class Attribute(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    HistoryTableAuditMixin,
-):
+class Attribute(UnoRecord):
     __tablename__ = "attribute"
     __table_args__ = (
         {

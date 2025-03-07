@@ -12,13 +12,13 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from uno.record.obj import Base, str_26
-from uno.apps.meta.objs import (
+from uno.apps.meta.records import (
     MetaRecord,
     MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.storage.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLEmitter
 
 from uno.apps.val.enums import (
     Lookup,

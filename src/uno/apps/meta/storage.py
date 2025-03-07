@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from uno.record.storage import UnoStorage
-from uno.storage.sql.table_sql_emitters import (
+from uno.record.sql.table_sql_emitters import (
     AlterGrants,
     InsertPermission,
 )

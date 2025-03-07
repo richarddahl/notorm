@@ -22,14 +22,14 @@ from uno.record.obj import (
     str_26,
     str_255,
 )
-from uno.apps.meta.objs import (
+from uno.apps.meta.records import (
     MetaRecord,
     MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.storage.sql.table_sql_emitters import RecordVersionAudit
-from uno.storage.sql.sql_emitter import SQLEmitter
+from uno.record.sql.table_sql_emitters import RecordVersionAudit
+from uno.record.sql.sql_emitter import SQLEmitter
 from uno.msg.enums import MessageImportance
 from uno.config import settings
 

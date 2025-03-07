@@ -33,8 +33,7 @@ from uno.api.router import (
 
 
 from uno.errors import SchemaConfigError
-from uno.record.obj import UnoRecord
-from uno.record.rel_obj import UnoRelObj, RelType
+from uno.record.record import UnoRecord
 from uno.config import settings  # type: ignore
 
 

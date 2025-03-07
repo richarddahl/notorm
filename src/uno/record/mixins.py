@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import VARCHAR, BOOLEAN, TIMESTAMP
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import Field
 
-from uno.storage.sql.sql_emitter import SQLEmitter
-from uno.storage.sql.table_sql_emitters import (
+from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.table_sql_emitters import (
     InsertMetaRecordTrigger,
     RecordVersionAudit,
     CreateHistoryTable,

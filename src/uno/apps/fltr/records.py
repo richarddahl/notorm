@@ -9,14 +9,14 @@ from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, JSONB
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.record.obj import Base, str_26, str_255
-from uno.apps.meta.objs import (
+from uno.record.db import Base, str_26, str_255
+from uno.apps.meta.records import (
     MetaRecord,
     MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.storage.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLEmitter
 
 from uno.apps.fltr.enums import Include, Match
 from uno.apps.val.enums import Lookup

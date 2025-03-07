@@ -12,7 +12,7 @@ from sqlalchemy import create_engine, Engine, insert, text
 
 from fastapi import FastAPI
 
-from uno.storage.sql.sql_emitters import (
+from uno.record.sql.sql_emitters import (
     SetRole,
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,

@@ -7,7 +7,7 @@ from psycopg.sql import SQL, Identifier
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from uno.storage.sql.sql_emitter import (
+from uno.record.sql.sql_emitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -430,7 +430,7 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
 class CreatePGULID(SQLEmitter):
 
     def emit_sql(self, conn: Connection) -> None:
-        with open("src/uno/storage/sql/pgulid.sql", "r") as file:
+        with open("src/uno/record/sql/pgulid.sql", "r") as file:
             sql = file.read()
         conn.execute(text(SQL(sql).format(schema_name=DB_SCHEMA).as_string()))
 

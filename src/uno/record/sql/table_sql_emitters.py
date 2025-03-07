@@ -7,7 +7,7 @@ from psycopg.sql import SQL, Identifier, Literal
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-from uno.storage.sql.sql_emitter import (
+from uno.record.sql.sql_emitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,

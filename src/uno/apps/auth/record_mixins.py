@@ -18,7 +18,7 @@ from uno.record.mixins import (
     UnoMixinCKConstraint,
     UnoMixinUQConstraint,
 )
-from uno.apps.auth.sql_emitters import UserRecordAuditFunction
+from uno.apps.auth.sql.sql_emitters import UserRecordAuditFunction
 
 
 class UserRecordAuditMixin(UnoRecordMixin):

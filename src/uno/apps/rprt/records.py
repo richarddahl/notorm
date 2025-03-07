@@ -14,13 +14,13 @@ from sqlalchemy.orm import (
 from sqlalchemy.dialects.postgresql import ENUM
 
 from uno.record.obj import Base, str_26, str_64, str_255, bytea
-from uno.apps.meta.objs import (
+from uno.apps.meta.records import (
     MetaRecord,
     MetaRecordMixin,
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.storage.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLEmitter
 from uno.apps.val.enums import ValueType
 from uno.config import settings
 

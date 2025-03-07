@@ -16,7 +16,7 @@ from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
-from uno.storage.sql.sql_emitter import (
+from uno.record.sql.sql_emitter import (
     SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
@@ -29,7 +29,7 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.storage.sql.graph_sql_emitters import (
+from uno.record.sql.graph_sql_emitters import (
     GraphSQLEmitter,
     NodeSQLEmitter,
     PropertySQLEmitter,

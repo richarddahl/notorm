@@ -12,7 +12,7 @@ from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
-from uno.storage.sql.sql_emitter import (
+from uno.record.sql.sql_emitter import (
     SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,

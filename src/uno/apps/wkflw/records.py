@@ -17,13 +17,13 @@ from sqlalchemy.dialects.postgresql import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from uno.record.obj import str_26, str_255
-from uno.apps.meta.objs import (
+from uno.apps.meta.records import (
     MetaRecord,
     MetaRecordMixin,
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.storage.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLEmitter
 from uno.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,

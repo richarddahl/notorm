@@ -7,16 +7,16 @@ from typing import Optional
 from pydantic import BaseModel
 
 from uno.record.storage import UnoStorage
-from uno.apps.auth.rls_sql_emitters import (
+from uno.apps.auth.sql.rls_sql_emitters import (
     UserRowLevelSecurity,
 )
-from uno.apps.auth.sql_emitters import (
+from uno.apps.auth.sql.sql_emitters import (
     ValidateGroupInsert,
     DefaultGroupTenant,
     InsertGroupForTenant,
     UserRecordAuditFunction,
 )
-from uno.storage.sql.table_sql_emitters import (
+from uno.record.sql.table_sql_emitters import (
     AlterGrants,
     InsertMetaType,
     InsertMetaRecordTrigger,
