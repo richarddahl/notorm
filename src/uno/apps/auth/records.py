@@ -16,6 +16,7 @@ from sqlalchemy import (
     text,
     Table,
     Column,
+    FetchedValue,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import (
@@ -107,7 +108,8 @@ class UserRecord(UnoRecord):
         ForeignKey("meta.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        nullable=True,
+        nullable=False,
+        server_default=FetchedValue(),
         doc="Primary Key and Foreign Key to Meta Record",
     )
     is_active: Mapped[bool] = mapped_column(

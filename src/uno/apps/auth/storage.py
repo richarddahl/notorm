@@ -14,11 +14,17 @@ from uno.apps.auth.sql_emitters import (
     ValidateGroupInsert,
     DefaultGroupTenant,
     InsertGroupForTenant,
+    UserRecordAuditFunction,
 )
 from uno.storage.sql.table_sql_emitters import (
     AlterGrants,
     InsertMetaType,
     InsertMetaRecordTrigger,
+    RecordStatusFunction,
+    RecordUserAuditFunction,
+    RecordVersionAudit,
+    CreateHistoryTable,
+    InsertHistoryTableRecord,
 )
 from uno.config import settings
 
@@ -30,6 +36,8 @@ class UserStorage(UnoStorage):
         InsertMetaType,
         InsertMetaRecordTrigger,
         UserRowLevelSecurity,
+        RecordStatusFunction,
+        UserRecordAuditFunction,
     ]
 
 
@@ -39,6 +47,8 @@ class GroupStorage(UnoStorage):
         AlterGrants,
         InsertMetaType,
         InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
         ValidateGroupInsert,
         DefaultGroupTenant,
     ]
@@ -50,6 +60,8 @@ class RoleStorage(UnoStorage):
         AlterGrants,
         InsertMetaType,
         InsertMetaRecordTrigger,
+        RecordUserAuditFunction,
+        RecordStatusFunction,
     ]
 
 
@@ -59,7 +71,9 @@ class TenantStorage(UnoStorage):
         AlterGrants,
         InsertMetaType,
         InsertMetaRecordTrigger,
+        RecordUserAuditFunction,
         InsertGroupForTenant,
+        RecordStatusFunction,
     ]
 
 
@@ -69,4 +83,6 @@ class PermissionStorage(UnoStorage):
         AlterGrants,
         InsertMetaType,
         InsertMetaRecordTrigger,
+        RecordUserAuditFunction,
+        RecordStatusFunction,
     ]

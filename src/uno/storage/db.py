@@ -9,7 +9,7 @@ from sqlalchemy import select, insert, delete, update, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine, AsyncEngine
 
-from uno.storage.conn import sync_engine, engine
+from uno.storage.session import sync_engine, engine
 from uno.model.model import UnoModel
 from uno.record.record import UnoRecord
 from uno.model.model import UnoModel

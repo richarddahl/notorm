@@ -6,7 +6,9 @@ import sys
 import io
 import importlib
 
-from sqlalchemy import create_engine, Engine, insert
+from psycopg.sql import SQL
+
+from sqlalchemy import create_engine, Engine, insert, text
 
 from fastapi import FastAPI
 
@@ -21,9 +23,9 @@ from uno.storage.sql.sql_emitters import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.record.record import meta_data, UnoRecord
+from uno.record.record import meta_data
 from uno.storage.storage import UnoStorage
-from uno.storage.session import get_session
+from uno.storage.session import scoped_session
 from uno.config import settings
 
 # Import all the modules in the settings.LOAD_MODULES list
@@ -187,8 +189,17 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        async for session in get_session():
-            await session.add(user)
+        async with scoped_session() as session:
+            await session.execute(
+                text(
+                    SQL("SET ROLE {db_name}_admin;")
+                    .format(
+                        db_name=SQL(settings.DB_NAME),
+                    )
+                    .as_string()
+                )
+            )
+            session.add(user)
             await session.commit()
         return user
 

@@ -276,7 +276,7 @@ class UserRecordAuditFunction(SQLEmitter):
 
 class GetPermissibleGroupsFunction(SQLEmitter):
 
-    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def emit_sql(self, conn: Connection) -> str:
         function_string = SQL(
             text(
                 """
@@ -311,7 +311,7 @@ class GetPermissibleGroupsFunction(SQLEmitter):
 
 class ValidateGroupInsert(SQLEmitter):
 
-    def emit_sql(self, conn: Connection, table_name: str = None) -> str:
+    def emit_sql(self, conn: Connection) -> str:
         function_string = (
             SQL(
                 """

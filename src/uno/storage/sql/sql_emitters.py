@@ -564,7 +564,7 @@ class InsertMetaRecordFunction(SQLEmitter):
                 """
             DECLARE
                 meta_id VARCHAR(26) := {schema_name}.generate_ulid();
-                meta_type_id VARCHAR(63);
+                meta_type_id BIGINT;
             BEGIN
                 /*
                 Function used to insert a record into the meta table, when a 
@@ -574,7 +574,7 @@ class InsertMetaRecordFunction(SQLEmitter):
 
                 SELECT id INTO meta_type_id
                 FROM {schema_name}.meta_type
-                WHERE table_name = TG_TABLE_NAME;
+                WHERE name = TG_TABLE_NAME;
 
                 INSERT INTO {schema_name}.meta (id, meta_type_id)
                 VALUES (meta_id, meta_type_id);
