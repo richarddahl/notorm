@@ -53,6 +53,8 @@ Each of the Entity definition classes isolate the functionality required within 
 
 `UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers  
 
+Each of these classes are built to be completely independent of one another.  In theory at least.  Care has been taking during development to ensure this is the case.  It should be relatively easy to switch out the SQL Alchemy ORM based Record for a json object used with a NoSQL database or pickle to save the records to the filesystem.  The FastAPI based endpoints could be switched out to use a native application running on a host.   
+
 The structure of the project:
 
 | uno  
