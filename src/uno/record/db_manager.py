@@ -5,10 +5,14 @@
 import sys
 import io
 import importlib
+import asyncio
+
+from typing import AsyncGenerator
 
 from psycopg.sql import SQL
 
-from sqlalchemy import create_engine, Engine, insert, text
+from sqlalchemy import insert, text
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 from fastapi import FastAPI
 
@@ -24,6 +28,7 @@ from uno.record.sql.sql_emitters import (
     InsertMetaRecordFunction,
 )
 from uno.record.record import meta_data
+from uno.record.db import scoped_session
 from uno.record.storage import UnoStorage
 from uno.config import settings
 
@@ -40,18 +45,18 @@ for module in settings.LOAD_MODULES:
 
 
 class DBManager:
-    def create_db(self) -> None:
+    async def create_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
         if settings.ENV == "test":
             output_stream = io.StringIO()
             # sys.stdout = output_stream
-        self.drop_db()
-        self.create_roles_and_database()
-        self.create_schemas_and_extensions()
-        self.set_privileges_and_paths()
-        self.create_functions_triggers_and_tables()
-        self.emit_table_sql()
+        await self.drop_db()
+        await self.create_roles_and_database()
+        await self.create_schemas_and_extensions()
+        await self.set_privileges_and_paths()
+        await self.create_functions_triggers_and_tables()
+        await self.emit_table_sql()
 
         print(f"Database created: {settings.DB_NAME}\n")
 
@@ -59,35 +64,35 @@ class DBManager:
         if settings.ENV == "test":
             sys.stdout = sys.__stdout__
 
-    def create_roles_and_database(self) -> None:
+    async def create_roles_and_database(self) -> None:
 
-        eng = self.engine(
+        conn = await self.engine(
             db_role="postgres", db_password="postgreSQLR0ck%", db_name="postgres"
         )
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            CreateRolesAndDatabase().emit_sql(conn)
-            print("Created the roles and the database\n")
-            conn.close()
-        eng.dispose()
+        # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        CreateRolesAndDatabase().emit_sql(conn)
+        print("Created the roles and the database\n")
+        # conn.close()
+        # eng.dispose()
 
-    def create_schemas_and_extensions(self) -> None:
-        eng = self.engine(db_role="postgres")
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            CreateSchemasAndExtensions().emit_sql(conn)
-            print("Created the schemas and extensions\n")
-            conn.close()
-        eng.dispose()
+    async def create_schemas_and_extensions(self) -> None:
+        conn = await self.engine(db_role="postgres")
+        # with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        CreateSchemasAndExtensions().emit_sql(conn)
+        print("Created the schemas and extensions\n")
+        # conn.close()
+        # eng.dispose()
 
-    def set_privileges_and_paths(self) -> None:
-        eng = self.engine(db_role="postgres")
+    async def set_privileges_and_paths(self) -> None:
+        eng = await self.engine(db_role="postgres")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             GrantPrivilegesAndSetSearchPaths().emit_sql(conn)
             print("Configured the privileges set the search paths\n")
             conn.close()
-        eng.dispose()
+        # eng.dispose()
 
-    def create_functions_triggers_and_tables(self) -> None:
-        eng = self.engine(db_role=f"{settings.DB_NAME}_login")
+    async def create_functions_triggers_and_tables(self) -> None:
+        eng = await self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             CreateTokenSecret().emit_sql(conn)
             print("Created the token_secret table\n")
@@ -100,7 +105,7 @@ class DBManager:
             conn.close()
         eng.dispose()
 
-    def create_tables_functions_and_privileges(self, conn) -> None:
+    async def create_tables_functions_and_privileges(self, conn) -> None:
         meta_data.create_all(bind=conn)
         print("Created the database tables\n")
 
@@ -110,9 +115,9 @@ class DBManager:
         InsertMetaRecordFunction().emit_sql(conn)
         print("Created the insert_meta function\n")
 
-    def emit_table_sql(self) -> None:
+    async def emit_table_sql(self) -> None:
         # Connect to the new database to emit the table specific SQL
-        eng = self.engine(db_role=f"{settings.DB_NAME}_login")
+        eng = await self.engine(db_role=f"{settings.DB_NAME}_login")
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
@@ -152,7 +157,7 @@ class DBManager:
             conn.close()
         eng.dispose()
 
-    def drop_db(self) -> None:
+    async def drop_db(self) -> None:
 
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
@@ -162,15 +167,17 @@ class DBManager:
 
         # Connect to the postgres database as the postgres user
         eng = self.engine(db_role="postgres", db_name="postgres")
-        with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            print(
-                f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
-            )
-            # Drop the Database
-            DropDatabaseAndRoles().emit_sql(conn)
-            print(f"Database {settings.DB_NAME} and all assocated roles dropped\n")
-            conn.close()
-        eng.dispose()
+        # async with eng.connect().execution_options(
+        #    isolation_level="AUTOCOMMIT"
+        # ) as conn:
+        print(
+            f"\nDropping the db: {settings.DB_NAME} and all the roles for the application\n"
+        )
+        # Drop the Database
+        DropDatabaseAndRoles().emit_sql(eng)
+        print(f"Database {settings.DB_NAME} and all assocated roles dropped\n")
+        # conn.close()
+        # eng.dispose()
 
         # Reset the stdout stream
         if settings.ENV == "test":
@@ -188,30 +195,37 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        # async with scoped_session() as session:
-        #    await session.execute(
-        #        text(
-        #            SQL("SET ROLE {db_name}_admin;")
-        #            .format(
-        #                db_name=SQL(settings.DB_NAME),
-        #            )
-        #            .as_string()
-        #        )
-        #    )
-        #    session.add(user)
-        #    await session.commit()
-        # return user
+        async with scoped_session() as session:
+            await session.execute(
+                text(
+                    SQL("SET ROLE {db_name}_admin;")
+                    .format(
+                        db_name=SQL(settings.DB_NAME),
+                    )
+                    .as_string()
+                )
+            )
+            session.add(user)
+            await session.commit()
+            await session.close()
+        return user
 
-    def engine(
+    async def engine(
         self,
         db_role: str,
-        db_sync_driver: str = settings.DB_SYNC_DRIVER,
+        db_driver: str = settings.DB_ASYNC_DRIVER,
         db_password: str = settings.DB_USER_PW,
         db_host: str = settings.DB_HOST,
         db_name: str = settings.DB_NAME,
-    ) -> Engine:
+    ) -> AsyncEngine:
 
-        return create_engine(
-            f"{db_sync_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
-            # echo=True,
+        engine = create_async_engine(
+            f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
         )
+        # yield engine
+        # engine.dispose()
+        async with engine.connect() as conn:
+            async with conn.begin():
+                yield conn
+            conn.close()
+        engine.dispose()
