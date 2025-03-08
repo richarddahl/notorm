@@ -5,8 +5,8 @@
 from pydantic import computed_field
 from psycopg.sql import SQL
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -23,7 +23,7 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class SetRole(SQLStatement):
+class SetRole(SQLEmitter):
     @computed_field
     def set_role(self, role_name: str) -> str:
         return (
@@ -40,7 +40,7 @@ class SetRole(SQLStatement):
         )
 
 
-class DropDatabaseAndRoles(SQLStatement):
+class DropDatabaseAndRoles(SQLEmitter):
     @computed_field
     def drop_database(self) -> str:
         return (
@@ -80,7 +80,7 @@ class DropDatabaseAndRoles(SQLStatement):
         )
 
 
-class CreateRolesAndDatabase(SQLStatement):
+class CreateRolesAndDatabase(SQLEmitter):
     @computed_field
     def create_roles(self) -> str:
         return (
@@ -154,7 +154,7 @@ class CreateRolesAndDatabase(SQLStatement):
         )
 
 
-class CreateSchemasAndExtensions(SQLStatement):
+class CreateSchemasAndExtensions(SQLEmitter):
     @computed_field
     def create_schemas(self) -> str:
         return (
@@ -225,7 +225,7 @@ class CreateSchemasAndExtensions(SQLStatement):
         )
 
 
-class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLStatement):
+class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLEmitter):
     @computed_field
     def revoke_privileges(self) -> str:
         return (
@@ -399,15 +399,15 @@ class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLStatement):
         )
 
 
-class CreatePGULID(SQLStatement):
+class CreatePGULID(SQLEmitter):
     @computed_field
     def create_pgulid(self) -> str:
-        with open("src/uno/record/sql/pgulid.sql", "r") as file:
+        with open("src/uno/db/sql/pgulid.sql", "r") as file:
             sql = file.read()
         return SQL(sql).format(schema_name=DB_SCHEMA).as_string()
 
 
-class CreateTokenSecret(SQLStatement):
+class CreateTokenSecret(SQLEmitter):
     @computed_field
     def create_token_secret_table(self) -> str:
         return (
@@ -452,7 +452,7 @@ class CreateTokenSecret(SQLStatement):
         )
 
 
-class GrantPrivileges(SQLStatement):
+class GrantPrivileges(SQLEmitter):
     @computed_field
     def grant_schema_privileges(self) -> str:
         return (
@@ -507,7 +507,7 @@ class GrantPrivileges(SQLStatement):
         )
 
 
-class InsertMetaRecordFunction(SQLStatement):
+class InsertMetaRecordFunction(SQLEmitter):
     @computed_field
     def insert_meta_record_function(self) -> str:
         function_string = (

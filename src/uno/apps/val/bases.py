@@ -11,14 +11,14 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.record.obj import Base, str_26
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+from uno.db.obj import Base, str_26
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLStatement
+from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.apps.val.enums import (
     Lookup,
@@ -30,16 +30,16 @@ from uno.apps.val.enums import (
 from uno.config import settings
 
 
-class AttachmentMetaRecord(Base):
+class AttachmentMetaBase(Base):
     __tablename__ = "attachment__meta_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "The relationship between attachments and meta_record objects",
     }
-    display_name: ClassVar[str] = "Attachment MetaRecord"
+    display_name: ClassVar[str] = "Attachment MetaBase"
     display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
 
@@ -53,7 +53,7 @@ class AttachmentMetaRecord(Base):
     )
 
 
-class BooleanValue(MetaRecord):
+class BooleanValue(MetaBase):
     __tablename__ = "boolean_value"
     __table_args__ = (
         {
@@ -64,7 +64,7 @@ class BooleanValue(MetaRecord):
     display_name: ClassVar[str] = "Boolean Value"
     display_name_plural: ClassVar[str] = "Boolean Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -86,15 +86,15 @@ class BooleanValue(MetaRecord):
 
     __mapper_args__ = {
         "polymorphic_identity": "boolean_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class DateTimeValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "datetime_value"
     __table_args__ = (
@@ -106,7 +106,7 @@ class DateTimeValue(
     display_name: ClassVar[str] = "Datetime Value"
     display_name_plural: ClassVar[str] = "Datetime Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -128,15 +128,15 @@ class DateTimeValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "datetime_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class DateValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "date_value"
     __table_args__ = (
@@ -148,7 +148,7 @@ class DateValue(
     display_name: ClassVar[str] = "Date Value"
     display_name_plural: ClassVar[str] = "Date Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -170,15 +170,15 @@ class DateValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "date_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class DecimalValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "decimal_value"
     __table_args__ = (
@@ -190,7 +190,7 @@ class DecimalValue(
     display_name: ClassVar[str] = "Decimal Value"
     display_name_plural: ClassVar[str] = "Decimal Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -212,15 +212,15 @@ class DecimalValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "decimal_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class IntegerValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "integer_value"
     __table_args__ = (
@@ -232,7 +232,7 @@ class IntegerValue(
     display_name: ClassVar[str] = "Integer Value"
     display_name_plural: ClassVar[str] = "Integer Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -254,15 +254,15 @@ class IntegerValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "integer_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class TextValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "text_value"
     __table_args__ = (
@@ -274,7 +274,7 @@ class TextValue(
     display_name: ClassVar[str] = "Text Value"
     display_name_plural: ClassVar[str] = "Text Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -296,15 +296,15 @@ class TextValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "text_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class TimeValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "time_value"
     __table_args__ = (
@@ -316,7 +316,7 @@ class TimeValue(
     display_name: ClassVar[str] = "Time Value"
     display_name_plural: ClassVar[str] = "Time Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -338,15 +338,15 @@ class TimeValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "time_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class Attachment(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "attachment"
     __table_args__ = {
@@ -357,7 +357,7 @@ class Attachment(
     display_name: ClassVar[str] = "Attachment"
     display_name_plural: ClassVar[str] = "Attachments"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -371,15 +371,15 @@ class Attachment(
 
     __mapper_args__ = {
         "polymorphic_identity": "attachment",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class Method(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "method"
     __table_args__ = {
@@ -389,7 +389,7 @@ class Method(
     display_name: ClassVar[str] = "Object Function"
     display_name_plural: ClassVar[str] = "Object Functions"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -411,7 +411,7 @@ class Method(
 
     __mapper_args__ = {
         "polymorphic_identity": "method",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
@@ -422,10 +422,10 @@ This is something for Jeff to look at and see if it is useful and feasible, usin
 
 
 class CalculationSymbol(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "calculation_symbol"
     __table_args__ = {
@@ -435,7 +435,7 @@ class CalculationSymbol(
     display_name: ClassVar[str] = "Calculation Input"
     display_name_plural: ClassVar[str] = "Calculation Inputs"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
@@ -443,15 +443,15 @@ class CalculationSymbol(
 
     __mapper_args__ = {
         "polymorphic_identity": "calculation_symbol",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class Calculation(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "calculation"
     __table_args__ = {
@@ -461,7 +461,7 @@ class Calculation(
     display_name: ClassVar[str] = "Calculation"
     display_name_plural: ClassVar[str] = "Calculations"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
@@ -478,7 +478,7 @@ class Calculation(
 
     __mapper_args__ = {
         "polymorphic_identity": "calculation",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 """

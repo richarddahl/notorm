@@ -11,19 +11,19 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.record.record import UnoRecord, str_255, str_26
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaTypeRecord,
+from uno.db.base import UnoBase, str_255, str_26
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaTypeBase,
 )
-from uno.record.sql.sql_emitter import SQLStatement
-from uno.apps.fltr.records import Query
+from uno.db.sql.sql_emitter import SQLEmitter
+from uno.apps.fltr.bases import Query
 from uno.config import settings
 
 
 attribute_value = Table(
     "attribute__value",
-    UnoRecord.metadata,
+    UnoBase.metadata,
     Column(
         "attribute_id",
         ForeignKey(f"{settings.DB_SCHEMA}.attribute.id", ondelete="CASCADE"),
@@ -44,7 +44,7 @@ attribute_value = Table(
 
 attribute_type___meta_type = Table(
     "attribute_type__meta_type",
-    UnoRecord.metadata,
+    UnoBase.metadata,
     Column(
         "attribute_type_id",
         ForeignKey(f"{settings.DB_SCHEMA}.attribute_type.id", ondelete="CASCADE"),
@@ -63,7 +63,7 @@ attribute_type___meta_type = Table(
 )
 
 
-class Attribute(UnoRecord):
+class Attribute(UnoBase):
     __tablename__ = "attribute"
     __table_args__ = (
         {
@@ -74,7 +74,7 @@ class Attribute(UnoRecord):
     display_name: ClassVar[str] = "Attribute"
     display_name_plural: ClassVar[str] = "Attributes"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -100,14 +100,14 @@ class Attribute(UnoRecord):
 
     __mapper_args__ = {
         "polymorphic_identity": "attribute",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class AttributeType(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
     __tablename__ = "attribute_type"
@@ -120,7 +120,7 @@ class AttributeType(
     display_name: ClassVar[str] = "Attribute Type"
     display_name_plural: ClassVar[str] = "Attribute Types"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -208,5 +208,5 @@ class AttributeType(
 
     __mapper_args__ = {
         "polymorphic_identity": "attribute_type",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }

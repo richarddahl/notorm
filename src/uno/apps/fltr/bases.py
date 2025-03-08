@@ -9,14 +9,14 @@ from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, JSONB
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.record.db import Base, str_26, str_255
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+from uno.db.db import Base, str_26, str_255
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLStatement
+from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.apps.fltr.enums import Include, Match
 from uno.apps.val.enums import Lookup
@@ -35,7 +35,7 @@ class QueryFilterValue(Base):
     display_name: ClassVar[str] = "Query Filter Value"
     display_name_plural: ClassVar[str] = "Query Filter Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -60,7 +60,7 @@ class FilterFilterValue(Base):
     display_name: ClassVar[str] = "Filter Filter Value"
     display_name_plural: ClassVar[str] = "Filter Filter Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     filter_id: Mapped[str_26] = mapped_column(
@@ -85,7 +85,7 @@ class QuerySubquery(Base):
     display_name: ClassVar[str] = "Query Subquery"
     display_name_plural: ClassVar[str] = "Query Subqueries"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -117,7 +117,7 @@ class Filter(Base):
     display_name: ClassVar[str] = "Filter"
     display_name_plural: ClassVar[str] = "Filters"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -163,9 +163,9 @@ class Filter(Base):
 
 
 class FilterValue(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
     __tablename__ = "filter_value"
@@ -191,7 +191,7 @@ class FilterValue(
     display_name: ClassVar[str] = "Filter Value"
     display_name_plural: ClassVar[str] = "Filter Values"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(
@@ -237,14 +237,14 @@ class FilterValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "filter_value",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class Query(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
     __tablename__ = "query"
@@ -257,7 +257,7 @@ class Query(
     display_name: ClassVar[str] = "Query"
     display_name_plural: ClassVar[str] = "Queries"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -324,5 +324,5 @@ class Query(
 
     __mapper_args__ = {
         "polymorphic_identity": "query",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }

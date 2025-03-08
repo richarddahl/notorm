@@ -6,8 +6,8 @@ from pydantic import computed_field
 
 from psycopg.sql import SQL
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -24,7 +24,7 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class CreateRLSFunctions(SQLStatement):
+class CreateRLSFunctions(SQLEmitter):
     @computed_field
     def emit_create_authorize_user_function_sql(self) -> str:
         return (
@@ -193,7 +193,7 @@ class CreateRLSFunctions(SQLStatement):
         )
 
 
-class UserRecordAuditFunction(SQLStatement):
+class UserRecordUserAuditFunction(SQLEmitter):
     @computed_field
     def insert_user_user_audit_columns(self) -> str:
         function_string = (
@@ -263,7 +263,7 @@ class UserRecordAuditFunction(SQLStatement):
         )
 
 
-class GetPermissibleGroupsFunction(SQLStatement):
+class GetPermissibleGroupsFunction(SQLEmitter):
 
     @computed_field
     def select_permissible_groups(self) -> str:
@@ -299,7 +299,7 @@ class GetPermissibleGroupsFunction(SQLStatement):
         )
 
 
-class ValidateGroupInsert(SQLStatement):
+class ValidateGroupInsert(SQLEmitter):
 
     @computed_field
     def validate_group_insert(self) -> str:
@@ -370,14 +370,14 @@ class ValidateGroupInsert(SQLStatement):
         )
 
 
-# class InsertGroupConstraint(SQLStatement):
+# class InsertGroupConstraint(SQLEmitter):
 #    def   emit_sql(self, conn: Connection:Engine)-> str:
 #        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (validate_group_insert(tenant_id) = true);
 #            """
 
 
-class InsertGroupForTenant(SQLStatement):
+class InsertGroupForTenant(SQLEmitter):
     @computed_field
     def insert_group_for_tenant(self) -> str:
         return (
@@ -410,7 +410,7 @@ class InsertGroupForTenant(SQLStatement):
         )
 
 
-class DefaultGroupTenant(SQLStatement):
+class DefaultGroupTenant(SQLEmitter):
     @computed_field
     def insert_default_group_column(self) -> str:
         function_string = SQL(

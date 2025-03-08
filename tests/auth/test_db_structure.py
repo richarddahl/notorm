@@ -7,9 +7,8 @@ import pytest
 import pytest_asyncio
 
 from unittest import IsolatedAsyncioTestCase
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import event
-from sqlalchemy import inspect, Inspector, Column
+
+from sqlalchemy import inspect, Inspector, text
 from sqlalchemy.dialects.postgresql import (
     VARCHAR,
     ENUM,
@@ -21,38 +20,106 @@ from sqlalchemy.dialects.postgresql import (
     ARRAY,
     TEXT,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
-
-from uno.record.record import UnoRecord, meta_data
-from uno.record.db import engine, sync_engine
-from uno.apps.auth.records import (
-    UserRecord,
-    TenantRecord,
-    GroupRecord,
-    RoleRecord,
-    PermissionRecord,
-)
 from uno.apps.auth.enums import TenantType
 from uno.config import settings  # type: ignore
 from tests.conftest import db_column
 
 
-class TestUserModel:
+class TestUserDBStructure:
+    def test_user_triggers_and_functions(self, connection, test_db):
 
-    # pytest.mark.asyncio
+        insert_meta_record = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_meta_record')"
+                )
+            )
+            .scalar()
+        )
+        assert insert_meta_record == True
 
-    # async def test_user_structure(self, session):
-    #    user = UserRecord(
-    #        email="admin@notorm.tech",
-    #        handle="admin",
-    #        full_name="Admin",
-    #        is_superuser=True,
-    #    )
-    #    session.add(user)
-    #    await session.commit()
+        user_insert_meta_record_trigger = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_meta_record_trigger')"
+                )
+            )
+            .scalar()
+        )
+        assert user_insert_meta_record_trigger == True
 
-    def test_user_indices(self, connection):
+        insert_record_status_columns = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_record_status_columns')"
+                )
+            )
+            .scalar()
+        )
+        assert insert_record_status_columns == True
+
+        user_insert_record_status_columns_trigger = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_record_status_columns_trigger')"
+                )
+            )
+            .scalar()
+        )
+        assert user_insert_record_status_columns_trigger == True
+
+        user_insert_user_user_audit_columns = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_insert_user_user_audit_columns')"
+                )
+            )
+            .scalar()
+        )
+        assert user_insert_user_user_audit_columns == True
+
+        user_insert_user_user_audit_columns_trigger = (
+            connection.connect()
+            .execute(
+                text(
+                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_user_user_audit_columns_trigger')"
+                )
+            )
+            .scalar()
+        )
+        assert user_insert_user_user_audit_columns_trigger == True
+
+    def test_user_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("user", schema=settings.DB_SCHEMA))
+        assert [
+            "id",
+            "is_active",
+            "is_deleted",
+            "email",
+            "handle",
+            "full_name",
+            "tenant_id",
+            "default_group_id",
+            "is_superuser",
+            "created_at",
+            "created_by_id",
+            "modified_at",
+            "modified_by_id",
+            "deleted_at",
+            "deleted_by_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("user", schema=settings.DB_SCHEMA)
+        ]
+
+    def test_user_indices(self, connection, test_db):
         db_inspector = inspect(connection)
         # print(db_inspector.get_indexes("user", schema=settings.DB_SCHEMA))
         assert db_inspector.get_indexes("user", schema=settings.DB_SCHEMA) == [
@@ -257,201 +324,6 @@ class TestUserModel:
 
 
 """
-
-# hashed_password Table Tests
-
- def test_hashed_password_structure(db_inspector):
-    assert [
-        "id",
-        "hashed_password",
-        "is_active",
-        "created_at",
-        "modified_at",
-    ] == [
-        c.get("name")
-        for c in db_inspector.get_columns("hashed_password", schema="auth")
-    ]
-    assert db_inspector.get_indexes("hashed_password", schema="auth") == []
-    assert db_inspector.get_pk_constraint("hashed_password", schema="auth") == {
-        "constrained_columns": ["id"],
-        "name": "hashed_password_pkey",
-        "comment": None,
-    }
-    assert db_inspector.get_foreign_keys("hashed_password", schema="auth") == [
-        {
-            "name": "hashed_password_id_fkey",
-            "constrained_columns": ["id"],
-            "referred_schema": "auth",
-            "referred_table": "user",
-            "referred_columns": ["id"],
-            "options": {"ondelete": "CASCADE"},
-            "comment": None,
-        }
-    ]
-    assert db_inspector.get_unique_constraints("hashed_password", schema="auth") == []
-
-
-
- def test_hashed_password_id(db_inspector):
-    column = db_column(db_inspector, "hashed_password", "id")
-    assert column is not None
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), TEXT)
-    assert column.get("type").length == 26
-
-
-
- def test_hashed_password_hashed_password(db_inspector):
-    column = db_column(db_inspector, "hashed_password", "hashed_password")
-    assert column is not None
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), TEXT)
-    assert column.get("type").length == 128
-
-
-
- def test_hashed_password_is_active(db_inspector):
-    column = db_column(db_inspector, "hashed_password", "is_active")
-    assert column is not None
-    assert column.get("nullable") is False
-    assert column.get("default") == "true"
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_hashed_password_created_at(db_inspector):
-    column = db_column(db_inspector, "hashed_password", "created_at")
-    assert column is not None
-    assert column.get("nullable") is False
-    assert column.get("default") == "now()"
-    assert isinstance(column.get("type"), TIMESTAMP)
-
-
-
- def test_hashed_password_modified_at(db_inspector):
-    column = db_column(db_inspector, "hashed_password", "modified_at")
-    assert column is not None
-    assert column.get("nullable") is False
-    assert column.get("default") == "now()"
-    assert isinstance(column.get("type"), TIMESTAMP)
-
-
-# user_admin Table Tests
-
- def test_user_admin_structure(db_inspector):
-    assert [
-        "id",
-        "is_superuser",
-        "is_customer_admin",
-        "is_verified",
-        "is_locked",
-        "is_suspended",
-        "suspension_expiration",
-        "customer_id",
-    ] == [c.get("name") for c in db_inspector.get_columns("user_admin", schema="auth")]
-
-    assert db_inspector.get_indexes("user_admin", schema="auth") == [
-        {
-            "name": "auth_user_admin_customer_id_idx",
-            "unique": False,
-            "column_names": ["customer_id"],
-            "include_columns": [],
-            "dialect_options": {"postgresql_include": []},
-        }
-    ]
-
-    assert db_inspector.get_pk_constraint("user_admin", schema="auth") == {
-        "constrained_columns": ["id"],
-        "name": "user_admin_pkey",
-        "comment": None,
-    }
-
-    assert db_inspector.get_foreign_keys("user_admin", schema="auth") == [
-        {
-            "name": "user_admin_customer_id_fkey",
-            "constrained_columns": ["customer_id"],
-            "referred_schema": "auth",
-            "referred_table": "customer",
-            "referred_columns": ["id"],
-            "options": {"ondelete": "CASCADE"},
-            "comment": None,
-        },
-        {
-            "name": "user_admin_id_fkey",
-            "constrained_columns": ["id"],
-            "referred_schema": "auth",
-            "referred_table": "user",
-            "referred_columns": ["id"],
-            "options": {"ondelete": "CASCADE"},
-            "comment": None,
-        },
-    ]
-    assert db_inspector.get_unique_constraints("user_admin", schema="auth") == []
-
-
-
- def test_user_is_superuser(db_inspector):
-    column = db_column(db_inspector, "user_admin", "is_superuser")
-    assert column is not None
-    assert column.get("default") == "false"
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_user_is_customer_admin(db_inspector):
-    column = db_column(db_inspector, "user_admin", "is_customer_admin")
-    assert column is not None
-    assert column.get("default") == "false"
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_user_is_verified(db_inspector):
-    column = db_column(db_inspector, "user_admin", "is_verified")
-    assert column is not None
-    assert column.get("default") == "false"
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_user_is_locked(db_inspector):
-    column = db_column(db_inspector, "user_admin", "is_locked")
-    assert column is not None
-    assert column.get("default") == "false"
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_user_is_suspended(db_inspector):
-    column = db_column(db_inspector, "user_admin", "is_suspended")
-    assert column is not None
-    assert column.get("default") == "false"
-    assert column.get("nullable") is False
-    assert isinstance(column.get("type"), BOOLEAN)
-
-
-
- def test_user_suspension_expiration(db_inspector):
-    column = db_column(db_inspector, "user_admin", "suspension_expiration")
-    assert column is not None
-    assert column.get("default") is None
-    assert column.get("nullable") is True
-    assert isinstance(column.get("type"), TIMESTAMP)
-
-
-
- def test_user_customer_id(db_inspector):
-    column = db_column(db_inspector, "user_admin", "customer_id")
-    assert column is not None
-    assert column.get("nullable") is True
-    assert isinstance(column.get("type"), TEXT)
-    assert column.get("type").length == 26
-
-
 # customer Table Tests
 
  def test_customer_structure(db_inspector):

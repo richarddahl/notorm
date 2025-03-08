@@ -11,7 +11,7 @@ class TenantType(str, enum.Enum):
     Enumeration class representing the types of Tenants.
 
     Each tenant type corresponds to a specific customer group.
-    Tenants are a key concept in the UnoRecord library.
+    Tenants are a key concept in the UnoBase library.
     They represent a group of users that may share permissions and access to data.
     Tenant Types can be configured via the settings to restrict the number of database
     objects, users, and or user groups allowed.
@@ -46,7 +46,7 @@ class Include(str, enum.Enum):
 
 class Match(str, enum.Enum):
     """
-    Enumeration class for UnoRecord match types.
+    Enumeration class for UnoBase match types.
 
     The Match class represents the different match types in db queries.
 
@@ -63,7 +63,7 @@ class Match(str, enum.Enum):
 
 class GraphType(str, enum.Enum):
     """
-    Enumeration class representing the possible field types in the UnoRecord application.
+    Enumeration class representing the possible field types in the UnoBase application.
 
     Attributes:
         ARRAY (str): Represents a list field type.
@@ -96,9 +96,9 @@ class GraphType(str, enum.Enum):
 
 class Lookup(str, enum.Enum):
     """
-    Enumeration class for UnoRecord lookup operations.
+    Enumeration class for UnoBase lookup operations.
 
-    This class defines the available lookup operations that can be used in the UnoRecord framework.
+    This class defines the available lookup operations that can be used in the UnoBase framework.
     Each lookup operation is represented by a string value.
 
     Attributes:

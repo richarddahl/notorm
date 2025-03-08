@@ -17,9 +17,9 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from uno.model.model import UnoModel
-from uno.record.record import UnoRecord
+from uno.db.base import UnoBase
 from uno.model.model import UnoModel
-from uno.record.enums import SelectResultType
+from uno.db.enums import SelectResultType
 from uno.errors import UnoError
 from uno.config import settings
 
@@ -70,14 +70,14 @@ class NotFoundException(Exception):
     pass
 
 
-def UnoDBFactory(record: UnoRecord):
+def UnoDBFactory(record: UnoBase):
     class UnoDB:
         @classmethod
         async def create(
             cls,
             to_db_model: UnoModel,
             from_db_model: UnoModel,
-        ) -> UnoRecord:
+        ) -> UnoBase:
             try:
                 async with engine.begin() as conn:
                     await conn.execute(text(cls.set_role_text("writer")))
@@ -104,7 +104,7 @@ def UnoDBFactory(record: UnoRecord):
             id_: str = None,
             id_column: str = "id",
             result_type: SelectResultType = SelectResultType.FETCH_ONE,
-        ) -> UnoRecord:
+        ) -> UnoBase:
             try:
                 stmt = select(*from_db_model.model_fields.keys())
                 if id_ is not None:

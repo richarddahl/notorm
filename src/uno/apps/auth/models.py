@@ -7,11 +7,11 @@ from typing import Optional, Union
 from pydantic import EmailStr
 from pydantic.fields import Field
 
-from uno.record.enums import SQLOperation
+from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
-from uno.apps.meta.models import MetaRecord
+from uno.apps.meta.models import MetaBase
 from uno.apps.auth.enums import TenantType
 from uno.apps.auth.model_mixins import ModelAuditMixin
 from uno.config import settings
@@ -52,9 +52,9 @@ class User(UnoModel, GeneralModelMixin, ModelAuditMixin):
     is_superuser: bool = False
 
     # roles: Optional[list["Role"]] = None
-    # created_objects: Optional[list[MetaRecord]] = None
-    # modified_objects: Optional[list[MetaRecord]] = None
-    # deleted_objects: Optional[list[MetaRecord]] = None
+    # created_objects: Optional[list[MetaBase]] = None
+    # modified_objects: Optional[list[MetaBase]] = None
+    # deleted_objects: Optional[list[MetaBase]] = None
 
     def __str__(self) -> str:
         return self.handle

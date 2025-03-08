@@ -16,14 +16,14 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.record.obj import str_26, str_255
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+from uno.db.obj import str_26, str_255
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLStatement
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,
@@ -33,9 +33,9 @@ from uno.config import settings
 
 
 class Workflow(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
     __tablename__ = "workflow"
@@ -47,7 +47,7 @@ class Workflow(
     display_name: ClassVar[str] = "Workflow"
     display_name_plural: ClassVar[str] = "Workflows"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -98,7 +98,7 @@ class Workflow(
         doc="Indicates if the workflow should be run automatically",
     )
     record_required: Mapped[bool] = mapped_column(
-        server_default=text("false"), doc="Indicats if a Workflow Record is required"
+        server_default=text("false"), doc="Indicats if a Workflow Base is required"
     )
     """
     limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
@@ -143,13 +143,11 @@ class Workflow(
 
     __mapper_args__ = {
         "polymorphic_identity": "workflow",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
-class WorkflowStep(
-    MetaRecord, MetaRecordMixin, RecordAuditMixin, HistoryTableAuditMixin
-):
+class WorkflowStep(MetaBase, MetaBaseMixin, BaseAuditMixin, HistoryTableAuditMixin):
     __tablename__ = "workflow_step"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -158,7 +156,7 @@ class WorkflowStep(
     display_name: ClassVar[str] = "Workflow Step"
     display_name_plural: ClassVar[str] = "Workflow Steps"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -178,7 +176,7 @@ class WorkflowStep(
     )
     __mapper_args__ = {
         "polymorphic_identity": "workflow_step",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
     # Relationships

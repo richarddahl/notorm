@@ -10,8 +10,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,

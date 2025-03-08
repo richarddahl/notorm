@@ -25,9 +25,23 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.record.record import UnoRecord, meta_data, str_26, str_255
-from uno.record.enums import SQLOperation
+from uno.db.base import UnoBase, meta_data, str_26, str_255
+from uno.db.enums import SQLOperation
 from uno.apps.auth.enums import TenantType
+from uno.apps.auth.sql.rls_sql_statements import (
+    UserRowLevelSecurity,
+)
+from uno.apps.auth.sql.sql_statements import (
+    ValidateGroupInsert,
+    DefaultGroupTenant,
+    InsertGroupForTenant,
+    UserRecordUserAuditFunction,
+)
+from uno.db.sql.table_sql_emitters import (
+    GeneralSqlEmitter,
+    AlterGrants,
+    RecordUserAuditFunction,
+)
 from uno.config import settings
 
 
@@ -85,7 +99,7 @@ role__permission = Table(
 )
 
 
-class UserRecord(UnoRecord):
+class UserBase(UnoBase):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -100,6 +114,13 @@ class UserRecord(UnoRecord):
         ),
         {
             "comment": "Application users",
+            "info": {
+                "sql_emitters": [
+                    GeneralSqlEmitter,
+                    UserRowLevelSecurity,
+                    UserRecordUserAuditFunction,
+                ]
+            },
         },
     )
 
@@ -110,7 +131,7 @@ class UserRecord(UnoRecord):
         index=True,
         nullable=True,
         server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to Meta Record",
+        doc="Primary Key and Foreign Key to Meta Base",
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -184,43 +205,51 @@ class UserRecord(UnoRecord):
     )
 
     # Relationships
-    tenant: Mapped["TenantRecord"] = relationship(
+    tenant: Mapped["TenantBase"] = relationship(
         foreign_keys=[tenant_id],
         doc="Tenant to which the user is assigned",
     )
-    default_group: Mapped["GroupRecord"] = relationship(
+    default_group: Mapped["GroupBase"] = relationship(
         foreign_keys=[default_group_id],
         doc="User's default group, used as default for creating new objects",
     )
-    created_by: Mapped["UserRecord"] = relationship(
+    created_by: Mapped["UserBase"] = relationship(
         foreign_keys=[created_by_id],
         doc="User that created the record",
     )
-    modified_by: Mapped["UserRecord"] = relationship(
+    modified_by: Mapped["UserBase"] = relationship(
         foreign_keys=[modified_by_id],
         doc="User that last modified the record",
     )
-    deleted_by: Mapped["UserRecord"] = relationship(
+    deleted_by: Mapped["UserBase"] = relationship(
         foreign_keys=[deleted_by_id],
         doc="User that deleted the record",
     )
-    groups: Mapped[list["GroupRecord"]] = relationship(
+    groups: Mapped[list["GroupBase"]] = relationship(
         secondary=user__group__role,
         doc="Groups to which the user is assigned",
     )
-    # roles: Mapped[list["RoleRecord"]] = relationship(
+    # roles: Mapped[list["RoleBase"]] = relationship(
     #    secondary="user__group__role",
     #    doc="Roles assigned to the user",
     # )
 
 
-class GroupRecord(UnoRecord):
+class GroupBase(UnoBase):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
         {
             "comment": "Application end-user groups",
+            "info": {
+                "sql_emitters": [
+                    GeneralSqlEmitter,
+                    RecordUserAuditFunction,
+                    ValidateGroupInsert,
+                    DefaultGroupTenant,
+                ]
+            },
         },
     )
 
@@ -231,7 +260,7 @@ class GroupRecord(UnoRecord):
         primary_key=True,
         index=True,
         nullable=False,
-        doc="Primary Key and Foreign Key to Meta Record",
+        doc="Primary Key and Foreign Key to Meta Base",
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -280,49 +309,55 @@ class GroupRecord(UnoRecord):
     )
 
     # Relationships
-    tenant: Mapped[list["TenantRecord"]] = relationship(
+    tenant: Mapped[list["TenantBase"]] = relationship(
         viewonly=True,
         doc="Customer to which the group belongs",
     )
-    default_group_users: Mapped[list[UserRecord]] = relationship(
+    default_group_users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
-        foreign_keys=[UserRecord.default_group_id],
+        foreign_keys=[UserBase.default_group_id],
         doc="Users assigned to the group",
     )
-    created_by: Mapped[UserRecord] = relationship(
+    created_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[created_by_id],
         doc="User that created the record",
     )
-    modified_by: Mapped[UserRecord] = relationship(
+    modified_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[modified_by_id],
         doc="User that last modified the record",
     )
-    deleted_by: Mapped[UserRecord] = relationship(
+    deleted_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[deleted_by_id],
         doc="User that deleted the record",
     )
-    users: Mapped[list[UserRecord]] = relationship(
+    users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
         secondary=user__group__role,
         doc="Users assigned to the group",
     )
-    roles: Mapped[list["RoleRecord"]] = relationship(
+    roles: Mapped[list["RoleBase"]] = relationship(
         viewonly=True,
         secondary=user__group__role,
         doc="Roles assigned to the group",
     )
 
 
-class RoleRecord(UnoRecord):
+class RoleBase(UnoBase):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
         {
             "comment": "Application roles",
+            "info": {
+                "sql_emitters": [
+                    GeneralSqlEmitter,
+                    RecordUserAuditFunction,
+                ]
+            },
         },
     )
 
@@ -331,7 +366,7 @@ class RoleRecord(UnoRecord):
         primary_key=True,
         index=True,
         nullable=False,
-        doc="Primary Key and Foreign Key to Meta Record",
+        doc="Primary Key and Foreign Key to Meta Base",
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -388,49 +423,56 @@ class RoleRecord(UnoRecord):
     )
 
     # Relationships
-    tenant: Mapped[list["TenantRecord"]] = relationship(
+    tenant: Mapped[list["TenantBase"]] = relationship(
         viewonly=True,
         doc="Customer to which the role belongs",
     )
-    created_by: Mapped[UserRecord] = relationship(
+    created_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[created_by_id],
         doc="User that created the record",
     )
-    modified_by: Mapped[UserRecord] = relationship(
+    modified_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[modified_by_id],
         doc="User that last modified the record",
     )
-    deleted_by: Mapped[UserRecord] = relationship(
+    deleted_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[deleted_by_id],
         doc="User that deleted the record",
     )
-    users: Mapped[list["UserRecord"]] = relationship(
+    users: Mapped[list["UserBase"]] = relationship(
         viewonly=True,
         secondary=user__group__role,
         doc="Users assigned to the role",
     )
-    groups: Mapped[list["GroupRecord"]] = relationship(
+    groups: Mapped[list["GroupBase"]] = relationship(
         viewonly=True,
         secondary=user__group__role,
         doc="Groups assigned to the role",
     )
-    permissions: Mapped[list["PermissionRecord"]] = relationship(
+    permissions: Mapped[list["PermissionBase"]] = relationship(
         viewonly=True,
         secondary=role__permission,
         doc="Permissions assigned to the role",
     )
 
 
-class TenantRecord(UnoRecord):
+class TenantBase(UnoBase):
     __tablename__ = "tenant"
     __table_args__ = (
         Index("ix_tenant_name", "name"),
         UniqueConstraint("name"),
         {
             "comment": "Application tenants",
+            "info": {
+                "sql_emitters": [
+                    GeneralSqlEmitter,
+                    RecordUserAuditFunction,
+                    InsertGroupForTenant,
+                ]
+            },
         },
     )
 
@@ -439,7 +481,7 @@ class TenantRecord(UnoRecord):
         primary_key=True,
         index=True,
         nullable=False,
-        doc="Primary Key and Foreign Key to Meta Record",
+        doc="Primary Key and Foreign Key to Meta Base",
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("true"),
@@ -497,45 +539,46 @@ class TenantRecord(UnoRecord):
     )
 
     # Relationships
-    created_by: Mapped[UserRecord] = relationship(
+    created_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[created_by_id],
         doc="User that created the record",
     )
-    modified_by: Mapped[UserRecord] = relationship(
+    modified_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[modified_by_id],
         doc="User that last modified the record",
     )
-    deleted_by: Mapped[UserRecord] = relationship(
+    deleted_by: Mapped[UserBase] = relationship(
         viewonly=True,
         foreign_keys=[deleted_by_id],
         doc="User that deleted the record",
     )
-    users: Mapped[list[UserRecord]] = relationship(
+    users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
-        foreign_keys=[UserRecord.tenant_id],
+        foreign_keys=[UserBase.tenant_id],
         doc="Users assigned to the tenant",
     )
-    groups: Mapped[list[GroupRecord]] = relationship(
+    groups: Mapped[list[GroupBase]] = relationship(
         viewonly=True,
-        foreign_keys=[GroupRecord.tenant_id],
+        foreign_keys=[GroupBase.tenant_id],
         doc="Groups assigned to the tenant",
     )
-    roles: Mapped[list[RoleRecord]] = relationship(
+    roles: Mapped[list[RoleBase]] = relationship(
         viewonly=True,
-        foreign_keys=[RoleRecord.tenant_id],
+        foreign_keys=[RoleBase.tenant_id],
         doc="Roles assigned to the tenant",
     )
 
 
-class PermissionRecord(UnoRecord):
+class PermissionBase(UnoBase):
     __tablename__ = "permission"
     __table_args__ = (
         Index("ix_permission_meta_type_id_operation", "meta_type_id", "operation"),
         UniqueConstraint("meta_type_id", "operation"),
         {
             "comment": "Application permissions",
+            "info": {"sql_emitters": [AlterGrants]},
         },
     )
     id: Mapped[int] = mapped_column(

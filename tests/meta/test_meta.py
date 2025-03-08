@@ -9,8 +9,8 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 
 from tests.conftest import db_column
 
-from uno.apps.meta.records import MetaRecord
-from uno.record.sql.table_sql_statements import AlterGrants, InsertMetaType
+from uno.apps.meta.bases import MetaBase
+from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.config import settings
 
 
@@ -21,20 +21,20 @@ for module in settings.LOAD_MODULES:
     )
 
 
-class TestMetaRecord:
+class TestMetaBase:
     schema = settings.DB_SCHEMA
 
 
     def test_meta_structure(self):
-        assert MetaRecord.display_name == "Meta Record"
-        assert MetaRecord.display_name_plural == "Meta Records"
-        assert AlterGrants in MetaRecord.sql_emitters
-        assert InsertMetaType in MetaRecord.sql_emitters
-        assert MetaRecord.__name__ == "MetaRecord"
-        assert MetaRecord.table.schema == "uno"
-        assert MetaRecord.table.name == "meta_record"
-        # print(list(MetaRecord.table.columns.keys()))
-        assert list(MetaRecord.table.columns.keys()) == [
+        assert MetaBase.display_name == "Meta Base"
+        assert MetaBase.display_name_plural == "Meta Bases"
+        assert AlterGrants in MetaBase.sql_emitters
+        assert InsertMetaType in MetaBase.sql_emitters
+        assert MetaBase.__name__ == "MetaBase"
+        assert MetaBase.table.schema == "uno"
+        assert MetaBase.table.name == "meta_record"
+        # print(list(MetaBase.table.columns.keys()))
+        assert list(MetaBase.table.columns.keys()) == [
             "id",
             "meta_type_id",
         ]

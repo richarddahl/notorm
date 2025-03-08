@@ -2,17 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
 import io
+import sys
+import contextlib
 import importlib
 
 from psycopg.sql import SQL
 
-from sqlalchemy import text, create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy import text
+from sqlalchemy.engine import create_engine, Engine
 
-from uno.record.sql.sql_statements import (
-    SetRole,
+from uno.db.sql.sql_emitters import (
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,
     CreateSchemasAndExtensions,
@@ -22,21 +22,24 @@ from uno.record.sql.sql_statements import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.record.record import meta_data
-from uno.record.db import scoped_session
-from uno.record.storage import UnoStorage
+from uno.db.base import UnoBase, meta_data
+from uno.db.db import scoped_session
+from uno.apps.meta.bases import MetaTypeBase
 from uno.config import settings
 
-# Import all the modules in the settings.LOAD_MODULES list
+# Import all the bases in the settings.LOAD_MODULES list
 for module in settings.LOAD_MODULES:
-    globals()[f"{module.split('.')[1]}_storage"] = importlib.import_module(
-        f"{module}.storage"
+    globals()[f"{module.split('.')[2]}_bases"] = importlib.import_module(
+        f"{module}.bases"
     )
 
-for module in settings.LOAD_MODULES:
-    globals()[f"{module.split('.')[2]}_records"] = importlib.import_module(
-        f"{module}.records"
-    )
+
+@contextlib.contextmanager
+def no_stdout():
+    save_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    yield
+    sys.stdout = save_stdout
 
 
 class DBManager:
@@ -44,20 +47,19 @@ class DBManager:
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
         if settings.ENV == "test":
-            output_stream = io.StringIO()
-            # sys.stdout = output_stream
+            with no_stdout():
+                self.create_db_()
+        else:
+            self.create_db_()
+
+    def create_db_(self) -> None:
         self.drop_db()
         self.create_roles_and_database()
         self.create_schemas_and_extensions()
         self.set_privileges_and_paths()
         self.create_functions_triggers_and_tables()
         self.emit_table_sql()
-
         print(f"Database created: {settings.DB_NAME}\n")
-
-        # Reset the stdout stream
-        if settings.ENV == "test":
-            sys.stdout = sys.__stdout__
 
     def create_roles_and_database(self) -> None:
         engine = self.engine(
@@ -117,56 +119,47 @@ class DBManager:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
-            # and graph nodes, graph_edges, and properties as well as thier
-            # corresponding Filter Records
-
-            # The ordering of these operations are important
-
-            meta_type_storage = UnoStorage.registry["MetaTypeStorage"]()
-            for sql_emitter in meta_type_storage.emit_sql():
+            meta_type_base = MetaTypeBase
+            print("\nEmitting SQL for: MetaType")
+            for sql_emitter in meta_type_base.__table_args__.get("info").get(
+                "sql_emitters"
+            ):
                 sql_emitter(table_name="meta_type").emit_sql(connection=conn)
-            for storage in UnoStorage.registry.values():
-                storage = storage()
-                if storage.table_name == "meta_type":
-                    continue
-                print(f"Emitting SQL for the table: {storage.table_name}")
-                for sql_emitter in storage.emit_sql():
-                    sql_emitter(table_name=storage.table_name).emit_sql(connection=conn)
+            for base in UnoBase.registry.mappers:
+                if base.class_.__name__ == "MetaTypeBase":
+                    continue  # Skip the MetaTypeBase table since it was already done
+                print(f"\nEmitting SQL for: {base.class_.__name__}")
+                if type(base.class_.__table_args__) is dict:
+                    for sql_emitter in base.class_.__table_args__.get("info").get(
+                        "sql_emitters", []
+                    ):
+                        sql_emitter(table_name=base.class_.__tablename__).emit_sql(
+                            connection=conn
+                        )
+                else:
+                    for table_arg in base.class_.__table_args__:
+                        if type(table_arg) is dict:
+                            for sql_emitter in table_arg.get("info", {}).get(
+                                "sql_emitters", []
+                            ):
+                                sql_emitter(
+                                    table_name=base.class_.__tablename__
+                                ).emit_sql(connection=conn)
             conn.close()
         engine.dispose()
         return
 
-    def do_later(self) -> None:
-        if 1 == 1:
-
-            for base in Base.registry.mappers:
-                SetRole().emit_sql(conn, "admin")
-
-                # Emit the SQL to create the graph property filters
-                for property in base.class_.graph_properties.values():
-                    property.emit_sql()
-
-                # Emit the SQL to create the graph graph_node
-                if base.class_.graph_node:
-                    base.class_.graph_node.emit_sql()
-
-                conn.commit()
-            for base in Base.registry.mappers:
-                print(f"Created the graph_edges for: {base.class_.__tablename__}")
-                for edge in base.class_.graph_edges.values():
-                    edge.emit_sql()
-                conn.commit()
-
-            conn.close()
-        eng.dispose()
-
     def drop_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests
         # to prevent the print statements from being displayed in the test output.
-        if settings.ENV == "test":
-            output_stream = io.StringIO()
-            sys.stdout = output_stream
 
+        if settings.ENV == "test":
+            with no_stdout():
+                self.drop_db_()
+        else:
+            self.drop_db_()
+
+    def drop_db_(self) -> None:
         # Connect to the postgres database as the postgres user
         engine = self.engine(db_role="postgres", db_name="postgres")
         with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
@@ -178,17 +171,13 @@ class DBManager:
             print("Dropped the database and the roles associated with it\n")
         engine.dispose()
 
-        # Reset the stdout stream
-        if settings.ENV == "test":
-            sys.stdout = sys.__stdout__
-
     async def create_superuser(
         self,
         email: str = settings.SUPERUSER_EMAIL,
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
     ) -> str:
-        user = auth_records.UserRecord(
+        user = auth_bases.UserRecord(
             email=email,
             handle=handle,
             full_name=full_name,
@@ -216,7 +205,7 @@ class DBManager:
         db_password: str = settings.DB_USER_PW,
         db_host: str = settings.DB_HOST,
         db_name: str = settings.DB_NAME,
-    ) -> AsyncEngine:
+    ) -> Engine:
 
         engine = create_engine(
             f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}",

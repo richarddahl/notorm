@@ -10,7 +10,7 @@ from sqlalchemy.sql.expression import Join, join, Alias
 from pydantic import BaseModel, computed_field, field_validator
 from pydantic.fields import Field
 
-from uno.record.record import UnoRecord
+from uno.db.base import UnoBase
 from uno.utilities import create_random_alias
 from uno.config import settings
 

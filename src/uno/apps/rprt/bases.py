@@ -13,14 +13,14 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.postgresql import ENUM
 
-from uno.record.obj import Base, str_26, str_64, str_255, bytea
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+from uno.db.obj import Base, str_26, str_64, str_255, bytea
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLStatement
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.apps.val.enums import ValueType
 from uno.config import settings
 
@@ -37,7 +37,7 @@ class ReportTypeReportField(Base):
     display_name: ClassVar[str] = "Report Type Field"
     display_name_plural: ClassVar[str] = "Report Type Fields"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     report_type_id: Mapped[str_26] = mapped_column(
@@ -51,10 +51,10 @@ class ReportTypeReportField(Base):
 
 
 class ReportField(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "report_field"
     __table_args__ = (
@@ -67,7 +67,7 @@ class ReportField(
     display_name: ClassVar[str] = "Report Field"
     display_name_plural: ClassVar[str] = "Report Fields"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -96,15 +96,15 @@ class ReportField(
 
     __mapper_args__ = {
         "polymorphic_identity": "report_field",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class ReportType(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "report_type"
     __table_args__ = (
@@ -117,7 +117,7 @@ class ReportType(
     display_name: ClassVar[str] = "Report Type"
     display_name_plural: ClassVar[str] = "Report Types"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -134,15 +134,15 @@ class ReportType(
 
     __mapper_args__ = {
         "polymorphic_identity": "report_type",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
 
 class Report(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "report"
     __table_args__ = (
@@ -155,7 +155,7 @@ class Report(
     display_name: ClassVar[str] = "Report"
     display_name_plural: ClassVar[str] = "Reports"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -177,7 +177,7 @@ class Report(
     )
     __mapper_args__ = {
         "polymorphic_identity": "report",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }
 
     def insert_schema(self):

@@ -33,25 +33,6 @@ def convert_snake_to_title(snake_str: str) -> str:
 
 
 def convert_snake_to_camel(snake_str: str) -> str:
-    """
-    Convert a snake_case string to a CamelCase label.
-
-    This function takes a string in snake_case format (words separated by underscores)
-    and converts it to a CamelCase format by capitalizing the first letter of each word
-    and removing the underscores.
-
-    Args:
-        snake_str (str): The input string in snake_case format.
-
-    Returns:
-        str: The converted string in CamelCase format.
-
-    Examples:
-        >>> convert_snake_to_camel("hello_world")
-        'HelloWorld'
-        >>> convert_snake_to_camel("user_first_name")
-        'UserFirstName'
-    """
     components = snake_str.split("_")
     return "".join(x.title() for x in components)
 

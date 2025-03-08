@@ -6,8 +6,8 @@ from pydantic import computed_field
 
 from psycopg.sql import SQL, Literal
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -16,7 +16,7 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class RowLevelSecurity(SQLStatement):
+class RowLevelSecurity(SQLEmitter):
     @computed_field
     def enable_rls(self) -> str:
         """

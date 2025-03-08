@@ -16,7 +16,7 @@ class MetaType(UnoModel):
         return f"{self.id}"
 
 
-class MetaRecord(UnoModel):
+class MetaBase(UnoModel):
     # Class variables
     table_name = "meta_record"
 

@@ -5,7 +5,7 @@
 import copy
 
 
-from uno.record.rel_obj import (
+from uno.db.rel_obj import (
     UnoRelObj,
     GroupRelObj,
     TenantRelObj,
@@ -14,7 +14,7 @@ from uno.record.rel_obj import (
     DeletedByRelObj,
     general_rel_objs,
 )
-from uno.record.enums import RelType
+from uno.db.enums import RelType
 
 
 class UserDefaultGroupRelObj(UnoRelObj):

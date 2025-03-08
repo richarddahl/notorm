@@ -47,7 +47,7 @@ str_255 = Annotated[VARCHAR, 255]
 decimal = Annotated[Decimal, 19]
 
 
-class UnoRecord(AsyncAttrs, DeclarativeBase):
+class UnoBase(AsyncAttrs, DeclarativeBase):
     registry = registry(
         type_annotation_map={
             int: BIGINT,

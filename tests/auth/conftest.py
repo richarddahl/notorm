@@ -8,20 +8,11 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from uno.record.record import UnoRecord
-from uno.record.db import engine, sync_engine
+from uno.db.base import UnoBase
+from uno.db.db import engine, sync_engine
 
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-# @pytest.fixture(scope="module")
-# async def db():
-#    async with engine.begin() as conn:
-#        await conn.run_sync(UnoRecord.metadata.create_all)
-#    yield engine
-#    # async with engine.begin() as conn:
-#    #    await conn.run_sync(UnoRecord.metadata.drop_all)
 
 
 @pytest.fixture(scope="function")

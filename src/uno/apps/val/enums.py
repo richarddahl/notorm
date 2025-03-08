@@ -28,9 +28,9 @@ class DataType(str, enum.Enum):
 
 class Lookup(str, enum.Enum):
     """
-    Enumeration class for UnoRecord lookup operations.
+    Enumeration class for UnoBase lookup operations.
 
-    This class defines the available lookup operations that can be used in the UnoRecord framework.
+    This class defines the available lookup operations that can be used in the UnoBase framework.
     Each lookup operation is represented by a string value.
 
     Attributes:

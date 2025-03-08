@@ -17,19 +17,19 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.record.obj import (
+from uno.db.obj import (
     Base,
     str_26,
     str_255,
 )
-from uno.apps.meta.records import (
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+from uno.apps.meta.bases import (
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 )
-from uno.record.sql.table_sql_statements import RecordVersionAudit
-from uno.record.sql.sql_emitter import SQLStatement
+from uno.db.sql.table_sql_emitters import BaseVersionAudit
+from uno.db.sql.sql_emitter import SQLEmitter
 from uno.msg.enums import MessageImportance
 from uno.config import settings
 
@@ -43,7 +43,7 @@ class MessageAddressedTo(Base):
     display_name: ClassVar[str] = "Message Addressed To"
     display_name_plural: ClassVar[str] = "Messages Addressed To"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -69,7 +69,7 @@ class MessageCopiedTo(Base):
     display_name: ClassVar[str] = "Message Copied To"
     display_name_plural: ClassVar[str] = "Messages Copied To"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -90,13 +90,13 @@ class MessageRelatedObject(Base):
     __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
-        "comment": "Messages to MetaRecord Objects",
+        "comment": "Messages to MetaBase Objects",
     }
 
-    display_name: ClassVar[str] = "Message MetaRecord Object"
-    display_name_plural: ClassVar[str] = "Message MetaRecord Objects"
+    display_name: ClassVar[str] = "Message MetaBase Object"
+    display_name_plural: ClassVar[str] = "Message MetaBase Objects"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = []
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -110,10 +110,10 @@ class MessageRelatedObject(Base):
 
 
 class Message(
-    MetaRecord,
-    MetaRecordMixin,
-    RecordAuditMixin,
-    RecordVersionAuditMixin,
+    MetaBase,
+    MetaBaseMixin,
+    BaseAuditMixin,
+    BaseVersionAuditMixin,
 ):
     __tablename__ = "message"
     __table_args__ = {
@@ -123,8 +123,8 @@ class Message(
     display_name: ClassVar[str] = "Message"
     display_name_plural: ClassVar[str] = "Messages"
 
-    sql_emitters: ClassVar[list[SQLStatement]] = [
-        RecordVersionAudit,
+    sql_emitters: ClassVar[list[SQLEmitter]] = [
+        BaseVersionAudit,
     ]
 
     # Columns
@@ -186,5 +186,5 @@ class Message(
 
     __mapper_args__ = {
         "polymorphic_identity": "message",
-        "inherit_condition": id == MetaRecord.id,
+        "inherit_condition": id == MetaBase.id,
     }

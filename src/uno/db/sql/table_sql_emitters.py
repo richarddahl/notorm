@@ -6,8 +6,8 @@ from pydantic import computed_field
 
 from psycopg.sql import SQL, Literal
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -16,7 +16,7 @@ from uno.record.sql.sql_emitter import (
 )
 
 
-class AlterGrants(SQLStatement):
+class AlterGrants(SQLEmitter):
 
     @computed_field
     def alter_grants(self) -> str:
@@ -45,7 +45,7 @@ class AlterGrants(SQLStatement):
         )
 
 
-class InsertMetaType(SQLStatement):
+class InsertMetaType(SQLEmitter):
 
     @computed_field
     def insert_meta_type(self) -> str:
@@ -68,7 +68,7 @@ class InsertMetaType(SQLStatement):
         )
 
 
-class InsertMetaRecordTrigger(SQLStatement):
+class InsertMetaRecordTrigger(SQLEmitter):
     @computed_field
     def insert_meta_record_trigger(self) -> str:
         return self.create_sql_trigger(
@@ -80,7 +80,7 @@ class InsertMetaRecordTrigger(SQLStatement):
         )
 
 
-class RecordStatusFunction(SQLStatement):
+class RecordStatusFunction(SQLEmitter):
     @computed_field
     def insert_status_columns(self) -> str:
         function_string = (
@@ -122,7 +122,7 @@ class RecordStatusFunction(SQLStatement):
         )
 
 
-class RecordUserAuditFunction(SQLStatement):
+class RecordUserAuditFunction(SQLEmitter):
     @computed_field
     def insert_record_user_audit_columns(self) -> str:
         function_string = (
@@ -173,7 +173,7 @@ class RecordUserAuditFunction(SQLStatement):
         )
 
 
-class InsertPermission(SQLStatement):
+class InsertPermission(SQLEmitter):
 
     @computed_field
     def insert_permissions(self) -> str:
@@ -213,7 +213,7 @@ class InsertPermission(SQLStatement):
         )
 
 
-class RecordVersionAudit(SQLStatement):
+class RecordVersionAudit(SQLEmitter):
 
     @computed_field
     def enable_version_audit(self) -> str:
@@ -232,7 +232,7 @@ class RecordVersionAudit(SQLStatement):
         )
 
 
-class EnableHistoricalAudit(SQLStatement):
+class EnableHistoricalAudit(SQLEmitter):
 
     @computed_field
     def create_history_table(self) -> str:
@@ -299,3 +299,12 @@ class EnableHistoricalAudit(SQLStatement):
             db_function=False,
             security_definer="SECURITY DEFINER",
         )
+
+
+class GeneralSqlEmitter(
+    AlterGrants,
+    InsertMetaType,
+    InsertMetaRecordTrigger,
+    RecordStatusFunction,
+):
+    pass

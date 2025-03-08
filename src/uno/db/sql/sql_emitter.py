@@ -35,17 +35,6 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 class SQLEmitter(BaseModel):
-    table_name: ClassVar[Optional[str]] = None
-
-    def emit_sql(self, connection: Connection) -> None:
-        for statement_name, sql_statement in self.model_dump(
-            exclude=["table_name"]
-        ).items():
-            print(f"Executing {statement_name}...")
-            connection.execute(text(sql_statement))
-
-
-class SQLStatement(BaseModel):
     table_name: Optional[str] = None
 
     def emit_sql(self, connection: Connection) -> None:

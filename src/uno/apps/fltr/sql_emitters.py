@@ -5,8 +5,8 @@
 from pydantic import computed_field
 from dataclasses import dataclass
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -23,7 +23,7 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class PathEdgeCheck(SQLStatement):
+class PathEdgeCheck(SQLEmitter):
     """ """
 
     @computed_field

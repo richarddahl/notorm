@@ -12,8 +12,8 @@ from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -31,14 +31,14 @@ from uno.utilities import (
 )
 
 
-class GraphSQLStatement(SQLStatement):
+class GraphSQLEmitter(SQLEmitter):
 
     @computed_field
     def source_meta_type(self) -> str:
         return self.obj_class.table.name
 
 
-class PropertySQLStatement(GraphSQLStatement):
+class PropertySQLEmitter(GraphSQLEmitter):
     # obj_class: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
@@ -114,10 +114,10 @@ class PropertySQLStatement(GraphSQLStatement):
         )
 
 
-class NodeSQLStatement(GraphSQLStatement):
+class NodeSQLEmitter(GraphSQLEmitter):
     node: BaseModel = None
     # source_meta_type: str
-    # properties: dict[str, PropertySQLStatement]
+    # properties: dict[str, PropertySQLEmitter]
     # label: str
 
     @computed_field
@@ -129,7 +129,7 @@ class NodeSQLStatement(GraphSQLStatement):
         return self.node.obj_class.table.name
 
     @computed_field
-    def properties(self) -> dict[str, PropertySQLStatement]:
+    def properties(self) -> dict[str, PropertySQLEmitter]:
         return self.node.properties
 
     @computed_field
@@ -323,12 +323,12 @@ class NodeSQLStatement(GraphSQLStatement):
         )
 
 
-class EdgeSQLStatement(SQLStatement):
+class EdgeSQLEmitter(SQLEmitter):
     edge: BaseModel = None
 
     """
     @computed_field
-    def properties(self) -> dict[str, PropertySQLStatement]:
+    def properties(self) -> dict[str, PropertySQLEmitter]:
         if not isinstance(self.secondary, Table):
             return {}
         props = {}
@@ -342,7 +342,7 @@ class EdgeSQLStatement(SQLStatement):
                     break
             props.update(
                 {
-                    column.name: PropertySQLStatement(
+                    column.name: PropertySQLEmitter(
                         obj_class=obj_class,
                         accessor=column.name,
                         data_type=data_type,

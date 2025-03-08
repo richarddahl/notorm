@@ -33,7 +33,7 @@ from uno.api.router import (
 
 
 from uno.errors import SchemaConfigError
-from uno.record.record import UnoRecord
+from uno.db.base import UnoBase
 from uno.config import settings  # type: ignore
 
 
@@ -96,13 +96,13 @@ class SchemaDef(BaseModel, ABC):
         self.constructed_schema = schema
         setattr(obj_class, f"{self.schema_type}_schema", schema)
 
-    def compile_fields(self, obj_class: UnoRecord) -> dict[str, Any]:
+    def compile_fields(self, obj_class: UnoBase) -> dict[str, Any]:
         fields = self.suss_fields(obj_class)
         if self.include_related_fields:
             fields.update(self.suss_related_fields(obj_class))
         return fields
 
-    def suss_related_fields(self, obj_class: UnoRecord) -> dict[str, Any]:
+    def suss_related_fields(self, obj_class: UnoBase) -> dict[str, Any]:
         fields = {}
         for name, rel_obj in obj_class.related_objects.items():  # type: ignore
             if self.include_fields and name not in self.include_fields:
@@ -151,7 +151,7 @@ class SchemaDef(BaseModel, ABC):
             return (column_type | None, field)
         return (column_type, field)
 
-    def suss_fields(self, obj_class: UnoRecord) -> dict[str, Any]:
+    def suss_fields(self, obj_class: UnoBase) -> dict[str, Any]:
         fields = {}
         for col in obj_class.table.columns:  # type: ignore
             if self.include_fields and col.name not in self.include_fields:
@@ -204,7 +204,7 @@ class SchemaDef(BaseModel, ABC):
             return (column_type | None, field)
         return (column_type, field)
 
-    def set_router(self, obj_class: UnoRecord, schema: BaseModel, app: FastAPI) -> None:
+    def set_router(self, obj_class: UnoBase, schema: BaseModel, app: FastAPI) -> None:
         router = self.router(obj_class=obj_class, response_model=schema)
         router.endpoint_factory(obj_class=obj_class, body_model=schema)
         router.add_to_app(app)
@@ -223,10 +223,10 @@ class InsertSchemaDef(SchemaDef):
     schema_base: BaseModel = InsertSchemaBase
     router: UnoRouter = InsertRouter
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"Create a {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.insert_schema = schema
 
     def before_db_state_change(self) -> None:
@@ -242,10 +242,10 @@ class ListSchemaDef(SchemaDef):
     router: UnoRouter = ListRouter
     include_related_fields: bool = True
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"List {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.list_schema = schema
 
     def before_db_state_change(self) -> None:
@@ -261,10 +261,10 @@ class SelectSchemaDef(SchemaDef):
     router: UnoRouter = SelectRouter
     include_related_fields: bool = True
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"Select a {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.select_schema = schema
 
     def before_db_state_change(self) -> None:
@@ -279,10 +279,10 @@ class UpdateSchemaDef(SchemaDef):
     schema_base: BaseModel = UpdateSchemaBase
     router: UnoRouter = UpdateRouter
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"Update a {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.update_schema = schema
 
     def before_db_state_change(self) -> None:
@@ -298,10 +298,10 @@ class DeleteSchemaDef(SchemaDef):
     router: UnoRouter = DeleteRouter
     include_fields: list[str] = ["id"]
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"Delete a {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.delete_schema = schema
 
     def before_db_state_change(self) -> None:
@@ -316,10 +316,10 @@ class ImportSchemaDef(SchemaDef):
     schema_base: BaseModel = ImportSchemaBase
     router: UnoRouter = ImportRouter
 
-    def format_doc(self, obj_class: UnoRecord) -> str:
+    def format_doc(self, obj_class: UnoBase) -> str:
         return f"Schema to Import a {obj_class.display_name}"
 
-    def set_schema(self, obj_class: UnoRecord, schema: Type[BaseModel]) -> None:
+    def set_schema(self, obj_class: UnoBase, schema: Type[BaseModel]) -> None:
         obj_class.import_schema = schema
 
     def before_db_state_change(self) -> None:

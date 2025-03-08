@@ -23,7 +23,7 @@ class Include(str, enum.Enum):
 
 class Match(str, enum.Enum):
     """
-    Enumeration class for UnoRecord match types.
+    Enumeration class for UnoBase match types.
 
     The Match class represents the different match types in db queries.
 

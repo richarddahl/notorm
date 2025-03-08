@@ -16,8 +16,8 @@ from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
-from uno.record.sql.sql_emitter import (
-    SQLStatement,
+from uno.db.sql.sql_emitter import (
+    SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -29,11 +29,11 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.record.sql.graph_sql_statements import (
-    GraphSQLStatement,
-    NodeSQLStatement,
-    PropertySQLStatement,
-    EdgeSQLStatement,
+from uno.apps.fltr.graph_sql_statements import (
+    GraphSQLEmitter,
+    NodeSQLEmitter,
+    PropertySQLEmitter,
+    EdgeSQLEmitter,
 )
 from uno.utilities import (
     convert_snake_to_camel,
@@ -44,7 +44,7 @@ from uno.utilities import (
 class GraphBase(BaseModel, ABC):
     obj_class: type[BaseModel] = None
 
-    sql_emitter: ClassVar[GraphSQLStatement] = None
+    sql_emitter: ClassVar[GraphSQLEmitter] = None
 
     @abstractmethod
     def emit_sql(self):
@@ -58,7 +58,7 @@ class GraphProperty(GraphBase):
     # label: str <- computed_field
     # lookups: Lookup <- computed_field
 
-    sql_emitter = PropertySQLStatement
+    sql_emitter = PropertySQLEmitter
 
     @computed_field
     def label(self) -> str:
@@ -86,7 +86,7 @@ class GraphProperty(GraphBase):
 
 class GraphNode(GraphBase):
 
-    sql_emitter = NodeSQLStatement
+    sql_emitter = NodeSQLEmitter
 
     @computed_field
     def source_meta_type(self) -> str:
@@ -126,7 +126,7 @@ class GraphEdge(GraphBase):
     label: str
     lookups: list[Lookup] = object_lookups
 
-    sql_emitter = EdgeSQLStatement
+    sql_emitter = EdgeSQLEmitter
 
     def emit_sql(self):
         self.sql_emitter(edge=self).emit_sql()
@@ -140,7 +140,7 @@ class EdgeDef(GraphBase):
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
-    # properties: dict[str, PropertySQLStatement] <- computed_field
+    # properties: dict[str, PropertySQLEmitter] <- computed_field
     # label: str <- computed_field
     # nullable: bool = False <- computed_field
 

@@ -17,13 +17,13 @@ from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from uno.record.db_manager import DBManager
-from uno.record.record import UnoRecord
+from uno.db.management.db_manager import DBManager
+from uno.db.base import UnoBase
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
 import pytest
-from uno.record.db import sync_engine
+from uno.db.db import sync_engine
 
 
 def db_column(
@@ -43,7 +43,7 @@ def test_db():
     return db
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def connection():
     with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT"):
         yield sync_engine

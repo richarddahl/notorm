@@ -9,20 +9,20 @@ from sqlalchemy import VARCHAR
 from pydantic import BaseModel
 from pydantic.fields import Field
 
-from uno.record.mixins import (
-    UnoRecordMixin,
-    RecordStatusMixin,
-    InsertMetaRecordMixin,
+from uno.db.mixins import (
+    UnoBaseMixin,
+    BaseStatusMixin,
+    InsertMetaBaseMixin,
     ColumnDef,
     UnoMixinFKConstraint,
     UnoMixinCKConstraint,
     UnoMixinUQConstraint,
 )
-from uno.apps.auth.sql.sql_emitters import UserRecordAuditFunction
+from uno.apps.auth.sql.sql_statements import UserRecordUserAuditFunction
 
 
-class UserRecordAuditMixin(UnoRecordMixin):
-    sql_emitters = [UserRecordAuditFunction]
+class UserBaseAuditMixin(UnoBaseMixin):
+    sql_emitters = [UserRecordUserAuditFunction]
 
     column_defs = [
         ColumnDef(
@@ -89,8 +89,8 @@ class UserRecordAuditMixin(UnoRecordMixin):
 
 
 class UserMixin(
-    InsertMetaRecordMixin,
-    RecordStatusMixin,
-    UserRecordAuditMixin,
+    InsertMetaBaseMixin,
+    BaseStatusMixin,
+    UserBaseAuditMixin,
 ):
     """Mixin for User Objects"""
