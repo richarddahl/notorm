@@ -18,7 +18,7 @@ class MetaType(UnoModel):
 
 class MetaBase(UnoModel):
     # Class variables
-    table_name = "meta_record"
+    table_name = "meta"
 
     id: str
     meta_type_id: str
