@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 from tests.conftest import db_column
 
 from uno.apps.meta.records import MetaRecord
-from uno.record.sql.table_sql_emitters import AlterGrants, InsertMetaType
+from uno.record.sql.table_sql_statements import AlterGrants, InsertMetaType
 from uno.config import settings
 
 

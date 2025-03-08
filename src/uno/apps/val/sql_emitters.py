@@ -11,7 +11,7 @@ from sqlalchemy.engine import Engine
 
 
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,

@@ -2,20 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC, abstractmethod
+from pydantic import computed_field
 
-from typing import Callable
-
-from psycopg.sql import SQL, Identifier, Literal
-
-from pydantic import ConfigDict
-
-from sqlalchemy import text
-from sqlalchemy.engine import Connection
-
+from psycopg.sql import SQL, Literal
 
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -24,26 +16,9 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class RowLevelSecurity(SQLEmitter, ABC):
-    def emit_sql(self, conn: Connection) -> None:
-        """
-        Generates and returns the SQL statements for enabling RLS, forcing RLS,
-        and applying select, insert, update, and delete policies.
-
-        Returns:
-            str: A string containing the concatenated SQL statements, separated by newlines.
-        """
-        self._emit_enable_rls_sql(conn)
-
-        if settings.FORCE_RLS:
-            self._emit_force_rls_sql(conn)
-
-        self._emit_select_policy(conn)
-        self._emit_insert_policy(conn)
-        self._emit_update_policy(conn)
-        self._emit_delete_policy(conn)
-
-    def _emit_enable_rls_sql(self, conn: Connection) -> None:
+class RowLevelSecurity(SQLStatement):
+    @computed_field
+    def enable_rls(self) -> str:
         """
         Emits the SQL statements to enable Row Level Security (RLS)
         on the table.
@@ -51,25 +26,24 @@ class RowLevelSecurity(SQLEmitter, ABC):
         Returns:
             str: A string containing the SQL statements to enable RLS for the table.
         """
-        conn.execute(
-            text(
-                SQL(
-                    """
+        return (
+            SQL(
+                """
             -- Enable RLS for the table {table_name}
             SET ROLE {admin_role};
             ALTER TABLE {schema_name}.{table_name} ENABLE ROW LEVEL SECURITY;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    schema_name=DB_SCHEMA,
-                    table_name=SQL(self.table_name),
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                schema_name=DB_SCHEMA,
+                table_name=SQL(self.table_name),
+            )
+            .as_string()
         )
 
-    def _emit_force_rls_sql(self, conn: Connection) -> None:
+    @computed_field
+    def force_rls(self) -> str:
         """
         Emits the SQL statements to force Row Level Security (RLS)
         on the table for table owners and db superusers.
@@ -80,47 +54,29 @@ class RowLevelSecurity(SQLEmitter, ABC):
             str: A string containing the SQL statements to force RLS for
             the table.
         """
-        conn.execute(
-            text(
-                SQL(
-                    """
+        return (
+            SQL(
+                """
             -- FORCE RLS for the table {table_name}
             SET ROLE {admin_role};
             ALTER TABLE {schema_name}.{table_name} FORCE ROW LEVEL SECURITY;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    table_name=SQL(self.table_name),
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                table_name=SQL(self.table_name),
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
-
-    @abstractmethod
-    def _emit_select_policy(self, conn: Connection) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _emit_insert_policy(self, conn: Connection) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _emit_update_policy(self, conn: Connection) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _emit_delete_policy(self, conn: Connection) -> None:
-        raise NotImplementedError
 
 
 class UserRowLevelSecurity(RowLevelSecurity):
-    def _emit_select_policy(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def select_policy(self) -> str:
+        return (
+            SQL(
+                """
             /* 
             The policy to allow:
                 Superusers to select all records;
@@ -141,22 +97,21 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 )
             );
             """
-                )
-                .format(
-                    schema_name=DB_SCHEMA,
-                    table_name=SQL(self.table_name),
-                    rel_name=Literal(self.table_name),
-                    reader_role=READER_ROLE,
-                )
-                .as_string()
             )
+            .format(
+                schema_name=DB_SCHEMA,
+                table_name=SQL(self.table_name),
+                rel_name=Literal(self.table_name),
+                reader_role=READER_ROLE,
+            )
+            .as_string()
         )
 
-    def _emit_insert_policy(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def insert_policy(self) -> str:
+        return (
+            SQL(
+                """
             /*
             The policy to allow:
                 Superusers to insert records;
@@ -186,22 +141,21 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 )
             );
             """
-                )
-                .format(
-                    writer_role=WRITER_ROLE,
-                    schema_name=DB_SCHEMA,
-                    table_name=SQL(self.table_name),
-                    rel_name=Literal(self.table_name),
-                )
-                .as_string()
             )
+            .format(
+                writer_role=WRITER_ROLE,
+                schema_name=DB_SCHEMA,
+                table_name=SQL(self.table_name),
+                rel_name=Literal(self.table_name),
+            )
+            .as_string()
         )
 
-    def _emit_update_policy(self, conn) -> str:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def update_policy(self) -> str:
+        return (
+            SQL(
+                """
             /* 
             The policy to allow:
                 Superusers to select all records;
@@ -215,20 +169,19 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
             );
             """
-                )
-                .format(
-                    table_name=SQL(self.table_name),
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                table_name=SQL(self.table_name),
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
-    def _emit_delete_policy(self, conn: Connection) -> str:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def delete_policy(self) -> str:
+        return (
+            SQL(
+                """
             /* 
             The policy to allow:
                 Superusers to delete records;
@@ -249,19 +202,18 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 ) 
             );
             """
-                )
-                .format(
-                    table_name=SQL(self.table_name),
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                table_name=SQL(self.table_name),
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
 
 '''
-def tenant__emit_select_policy_sql(self, conn: Connection):
-    conn.execute(
+def tenant__emit_select_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -284,8 +236,8 @@ def tenant__emit_select_policy_sql(self, conn: Connection):
     )
 
 
-def tenant__emit_insert_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def tenant__emit_insert_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -306,8 +258,8 @@ def tenant__emit_insert_policy_sql(self, conn: Connection) -> str:
     )
 
 
-def tenant_update_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def tenant_update_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -333,8 +285,8 @@ def tenant_update_policy_sql(self, conn: Connection) -> str:
     )
 
 
-def tenant_delete_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def tenant_delete_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -360,8 +312,8 @@ class TenantRowLevelSecurity(RowLevelSecurity):
     _emit_delete_policy: Callable = tenant_delete_policy_sql
 
 
-def admin__emit_select_policy_sql(self, conn: Connection):
-    conn.execute(
+def admin__emit_select_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -387,8 +339,8 @@ def admin__emit_select_policy_sql(self, conn: Connection):
     )
 
 
-def admin__emit_insert_policy_sql(self, conn: Connection):
-    conn.execute(
+def admin__emit_insert_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -414,8 +366,8 @@ def admin__emit_insert_policy_sql(self, conn: Connection):
     )
 
 
-def admin_update_policy_sql(self, conn: Connection):
-    conn.execute(
+def admin_update_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -441,8 +393,8 @@ def admin_update_policy_sql(self, conn: Connection):
     )
 
 
-def admin_delete_policy_sql(self, conn: Connection):
-    conn.execute(
+def admin_delete_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -475,8 +427,8 @@ class AdminRowLevelSecurity(RowLevelSecurity):
     _emit_delete_policy: Callable = admin_delete_policy_sql
 
 
-def default__emit_select_policy_sql(self, conn: Connection):
-    conn.execute(
+def def ault__emit_select_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -507,8 +459,8 @@ def default__emit_select_policy_sql(self, conn: Connection):
     )
 
 
-def default__emit_insert_policy_sql(self, conn: Connection):
-    conn.execute(
+def def ault__emit_insert_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -539,8 +491,8 @@ def default__emit_insert_policy_sql(self, conn: Connection):
     )
 
 
-def default_update_policy_sql(self, conn: Connection):
-    conn.execute(
+def def ault_update_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -571,8 +523,8 @@ def default_update_policy_sql(self, conn: Connection):
     )
 
 
-def default_delete_policy_sql(self, conn: Connection):
-    conn.execute(
+def def ault_delete_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -604,14 +556,14 @@ def default_delete_policy_sql(self, conn: Connection):
 
 
 class DefaultRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = default__emit_select_policy_sql
-    _emit_insert_policy: Callable = default__emit_insert_policy_sql
-    _emit_update_policy: Callable = default_update_policy_sql
-    _emit_delete_policy: Callable = default_delete_policy_sql
+    _emit_select_policy: Callable = def ault__emit_select_policy_sql
+    _emit_insert_policy: Callable = def ault__emit_insert_policy_sql
+    _emit_update_policy: Callable = def ault_update_policy_sql
+    _emit_delete_policy: Callable = def ault_delete_policy_sql
 
 
-def superuser__emit_select_policy_sql(self, conn: Connection):
-    conn.execute(
+def superuser__emit_select_policy_sql(self):
+    return (
         text(
             SQL(
                 """
@@ -630,8 +582,8 @@ def superuser__emit_select_policy_sql(self, conn: Connection):
     )
 
 
-def superuser__emit_insert_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def superuser__emit_insert_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -650,8 +602,8 @@ def superuser__emit_insert_policy_sql(self, conn: Connection) -> str:
     )
 
 
-def superuser_update_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def superuser_update_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -670,8 +622,8 @@ def superuser_update_policy_sql(self, conn: Connection) -> str:
     )
 
 
-def superuser_delete_policy_sql(self, conn: Connection) -> str:
-    conn.execute(
+def superuser_delete_policy_sql(self) -> str:
+    return (
         text(
             SQL(
                 """
@@ -697,8 +649,8 @@ class SuperuserRowLevelSecurity(RowLevelSecurity):
     _emit_delete_policy: Callable = superuser_delete_policy_sql
 
 
-def public__emit_select_policy_sql(self, conn: Connection):
-    conn.execute(
+def public__emit_select_policy_sql(self):
+    return (
         text(
             SQL(
                 """

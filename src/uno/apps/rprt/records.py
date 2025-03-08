@@ -20,7 +20,7 @@ from uno.apps.meta.records import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLStatement
 from uno.apps.val.enums import ValueType
 from uno.config import settings
 
@@ -37,7 +37,7 @@ class ReportTypeReportField(Base):
     display_name: ClassVar[str] = "Report Type Field"
     display_name_plural: ClassVar[str] = "Report Type Fields"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     report_type_id: Mapped[str_26] = mapped_column(
@@ -67,7 +67,7 @@ class ReportField(
     display_name: ClassVar[str] = "Report Field"
     display_name_plural: ClassVar[str] = "Report Fields"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -117,7 +117,7 @@ class ReportType(
     display_name: ClassVar[str] = "Report Type"
     display_name_plural: ClassVar[str] = "Report Types"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -155,7 +155,7 @@ class Report(
     display_name: ClassVar[str] = "Report"
     display_name_plural: ClassVar[str] = "Reports"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(

@@ -7,24 +7,23 @@ from typing import Optional
 from pydantic import BaseModel
 
 from uno.record.storage import UnoStorage
-from uno.apps.auth.sql.rls_sql_emitters import (
+from uno.apps.auth.sql.rls_sql_statements import (
     UserRowLevelSecurity,
 )
-from uno.apps.auth.sql.sql_emitters import (
+from uno.apps.auth.sql.sql_statements import (
     ValidateGroupInsert,
     DefaultGroupTenant,
     InsertGroupForTenant,
     UserRecordAuditFunction,
 )
-from uno.record.sql.table_sql_emitters import (
+from uno.record.sql.table_sql_statements import (
     AlterGrants,
     InsertMetaType,
     InsertMetaRecordTrigger,
     RecordStatusFunction,
     RecordUserAuditFunction,
     RecordVersionAudit,
-    CreateHistoryTable,
-    InsertHistoryTableRecord,
+    EnableHistoricalAudit,
 )
 from uno.config import settings
 

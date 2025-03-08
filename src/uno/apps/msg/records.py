@@ -28,8 +28,8 @@ from uno.apps.meta.records import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.record.sql.table_sql_emitters import RecordVersionAudit
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.table_sql_statements import RecordVersionAudit
+from uno.record.sql.sql_emitter import SQLStatement
 from uno.msg.enums import MessageImportance
 from uno.config import settings
 
@@ -43,7 +43,7 @@ class MessageAddressedTo(Base):
     display_name: ClassVar[str] = "Message Addressed To"
     display_name_plural: ClassVar[str] = "Messages Addressed To"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -69,7 +69,7 @@ class MessageCopiedTo(Base):
     display_name: ClassVar[str] = "Message Copied To"
     display_name_plural: ClassVar[str] = "Messages Copied To"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -96,7 +96,7 @@ class MessageRelatedObject(Base):
     display_name: ClassVar[str] = "Message MetaRecord Object"
     display_name_plural: ClassVar[str] = "Message MetaRecord Objects"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
@@ -123,7 +123,7 @@ class Message(
     display_name: ClassVar[str] = "Message"
     display_name_plural: ClassVar[str] = "Messages"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = [
+    sql_emitters: ClassVar[list[SQLStatement]] = [
         RecordVersionAudit,
     ]
 

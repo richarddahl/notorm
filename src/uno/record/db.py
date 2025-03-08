@@ -9,11 +9,9 @@ from typing import AsyncIterator
 from sqlalchemy import select, insert, delete, update, text, create_engine
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine, AsyncEngine
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
-    AsyncSession,
     async_scoped_session,
 )
 from sqlalchemy.pool import NullPool
@@ -46,22 +44,22 @@ engine = create_async_engine(
     # echo=True,
 )
 
-# session_maker = async_sessionmaker(
-#    autocommit=False,
-#    autoflush=False,
-#    bind=engine,
-#    expire_on_commit=False,
-# )
+session_maker = async_sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    expire_on_commit=False,
+)
 
 
 def current_task():
     return asyncio.current_task()
 
 
-# scoped_session = async_scoped_session(
-#    session_maker,
-#    scopefunc=current_task,
-# )
+scoped_session = async_scoped_session(
+    session_maker,
+    scopefunc=current_task,
+)
 
 
 class IntegrityConflictException(Exception):

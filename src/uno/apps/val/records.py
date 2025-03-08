@@ -18,7 +18,7 @@ from uno.apps.meta.records import (
     RecordAuditMixin,
     RecordVersionAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLStatement
 
 from uno.apps.val.enums import (
     Lookup,
@@ -39,7 +39,7 @@ class AttachmentMetaRecord(Base):
     display_name: ClassVar[str] = "Attachment MetaRecord"
     display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
 
@@ -64,7 +64,7 @@ class BooleanValue(MetaRecord):
     display_name: ClassVar[str] = "Boolean Value"
     display_name_plural: ClassVar[str] = "Boolean Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -106,7 +106,7 @@ class DateTimeValue(
     display_name: ClassVar[str] = "Datetime Value"
     display_name_plural: ClassVar[str] = "Datetime Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -148,7 +148,7 @@ class DateValue(
     display_name: ClassVar[str] = "Date Value"
     display_name_plural: ClassVar[str] = "Date Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -190,7 +190,7 @@ class DecimalValue(
     display_name: ClassVar[str] = "Decimal Value"
     display_name_plural: ClassVar[str] = "Decimal Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -232,7 +232,7 @@ class IntegerValue(
     display_name: ClassVar[str] = "Integer Value"
     display_name_plural: ClassVar[str] = "Integer Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -274,7 +274,7 @@ class TextValue(
     display_name: ClassVar[str] = "Text Value"
     display_name_plural: ClassVar[str] = "Text Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -316,7 +316,7 @@ class TimeValue(
     display_name: ClassVar[str] = "Time Value"
     display_name_plural: ClassVar[str] = "Time Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -357,7 +357,7 @@ class Attachment(
     display_name: ClassVar[str] = "Attachment"
     display_name_plural: ClassVar[str] = "Attachments"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -389,7 +389,7 @@ class Method(
     display_name: ClassVar[str] = "Object Function"
     display_name_plural: ClassVar[str] = "Object Functions"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -435,7 +435,7 @@ class CalculationSymbol(
     display_name: ClassVar[str] = "Calculation Input"
     display_name_plural: ClassVar[str] = "Calculation Inputs"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
@@ -461,7 +461,7 @@ class Calculation(
     display_name: ClassVar[str] = "Calculation"
     display_name_plural: ClassVar[str] = "Calculations"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)

@@ -2,14 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from psycopg.sql import SQL, Identifier, Literal
+from pydantic import computed_field
 
-from sqlalchemy import text
-from sqlalchemy.engine import Connection
-
+from psycopg.sql import SQL
 
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -26,16 +24,12 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class CreateRLSFunctions(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        self.emit_create_authorize_user_function_sql(conn)
-        self.emit_permissible_groups_sql(conn)
-
-    def emit_create_authorize_user_function_sql(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class CreateRLSFunctions(SQLStatement):
+    @computed_field
+    def emit_create_authorize_user_function_sql(self) -> str:
+        return (
+            SQL(
+                """
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
             CREATE OR REPLACE FUNCTION {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
@@ -154,21 +148,20 @@ class CreateRLSFunctions(SQLEmitter):
             END;
             $$;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    db_name=SQL(settings.DB_NAME),
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                db_name=SQL(settings.DB_NAME),
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
-    def emit_permissible_groups_sql(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def emit_permissible_groups_sql(self) -> str:
+        return (
+            SQL(
+                """
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.permissible_groups(table_name TEXT, operation TEXT);
             CREATE OR REPLACE FUNCTION {schema_name}.permissible_groups(table_name TEXT, operation TEXT)
@@ -191,18 +184,18 @@ class CreateRLSFunctions(SQLEmitter):
                 WHERE u.id = session_user_id AND tp.is_active = TRUE;
             END $$;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
 
-class UserRecordAuditFunction(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+class UserRecordAuditFunction(SQLStatement):
+    @computed_field
+    def insert_user_user_audit_columns(self) -> str:
         function_string = (
             SQL(
                 """
@@ -228,12 +221,12 @@ class UserRecordAuditFunction(SQLEmitter):
                     EXISTS (SELECT id FROM {schema_name}.user) THEN
                         IF TG_OP = 'UPDATE' THEN
                             IF NOT EXISTS (SELECT id FROM {schema_name}.user WHERE id = OLD.id) THEN
-                                RAISE EXCEPTION 'No user defined in rls_vars and this is not the first user being updated';
+                                RAISE EXCEPTION 'No user def ined in rls_vars and this is not the first user being updated';
                             ELSE
                                 user_id := OLD.id;
                             END IF;
                         ELSE
-                            RAISE EXCEPTION 'No user defined in rls_vars and this is not the first user created';
+                            RAISE EXCEPTION 'No user def ined in rls_vars and this is not the first user created';
                         END IF;
                 END IF;
 
@@ -260,23 +253,20 @@ class UserRecordAuditFunction(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "user_record_audit",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT OR UPDATE OR DELETE",
-                    include_trigger=True,
-                    db_function=False,
-                )
-            )
+        return self.create_sql_function(
+            "insert_user_user_audit_columns",
+            function_string,
+            timing="BEFORE",
+            operation="INSERT OR UPDATE OR DELETE",
+            include_trigger=True,
+            db_function=False,
         )
 
 
-class GetPermissibleGroupsFunction(SQLEmitter):
+class GetPermissibleGroupsFunction(SQLStatement):
 
-    def emit_sql(self, conn: Connection) -> str:
+    @computed_field
+    def select_permissible_groups(self) -> str:
         function_string = SQL(
             text(
                 """
@@ -302,16 +292,17 @@ class GetPermissibleGroupsFunction(SQLEmitter):
         )
 
         return self.create_sql_function(
-            "get_permissible_groups",
+            "select_permissible_groups",
             function_string,
             return_type="VARCHAR[]",
             function_args="meta_type TEXT",
         )
 
 
-class ValidateGroupInsert(SQLEmitter):
+class ValidateGroupInsert(SQLStatement):
 
-    def emit_sql(self, conn: Connection) -> str:
+    @computed_field
+    def validate_group_insert(self) -> str:
         function_string = (
             SQL(
                 """
@@ -320,11 +311,11 @@ class ValidateGroupInsert(SQLEmitter):
                 tenanttype tenanttype;
             BEGIN
                 SELECT tenant_type INTO tenanttype
-                FROM tenant
+                FROM {schema_name}.tenant
                 WHERE id = NEW.tenant_id;
 
                 SELECT COUNT(*) INTO group_count
-                FROM group
+                FROM {schema_name}.group
                 WHERE tenant_id = NEW.tenant_id;
 
                 IF NOT {ENFORCE_MAX_GROUPS} THEN
@@ -379,19 +370,19 @@ class ValidateGroupInsert(SQLEmitter):
         )
 
 
-# class InsertGroupConstraint(SQLEmitter):
-#    def emit_sql(self, conn: Connection:Engine)-> str:
+# class InsertGroupConstraint(SQLStatement):
+#    def   emit_sql(self, conn: Connection:Engine)-> str:
 #        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (validate_group_insert(tenant_id) = true);
 #            """
 
 
-class InsertGroupForTenant(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class InsertGroupForTenant(SQLStatement):
+    @computed_field
+    def insert_group_for_tenant(self) -> str:
+        return (
+            SQL(
+                """
                 SET ROLE {admin_role};
                 CREATE OR REPLACE FUNCTION {schema_name}.insert_group_for_tenant()
                 RETURNS TRIGGER
@@ -410,18 +401,18 @@ class InsertGroupForTenant(SQLEmitter):
                 FOR EACH ROW
                 EXECUTE FUNCTION {schema_name}.insert_group_for_tenant();
                 """
-                )
-                .format(
-                    schema_name=DB_SCHEMA,
-                    admin_role=ADMIN_ROLE,
-                )
-                .as_string()
             )
+            .format(
+                schema_name=DB_SCHEMA,
+                admin_role=ADMIN_ROLE,
+            )
+            .as_string()
         )
 
 
-class DefaultGroupTenant(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> str:
+class DefaultGroupTenant(SQLStatement):
+    @computed_field
+    def insert_default_group_column(self) -> str:
         function_string = SQL(
             """
             DECLARE
@@ -437,15 +428,11 @@ class DefaultGroupTenant(SQLEmitter):
             END;
             """
         ).as_string()
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "set_tenant_id",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT",
-                    include_trigger=True,
-                    db_function=False,
-                )
-            )
+        return self.create_sql_function(
+            "insert_default_group_column",
+            function_string,
+            timing="BEFORE",
+            operation="INSERT",
+            include_trigger=True,
+            db_function=False,
         )

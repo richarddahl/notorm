@@ -13,7 +13,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     ADMIN_ROLE,
     WRITER_ROLE,
@@ -31,14 +31,14 @@ from uno.utilities import (
 )
 
 
-class GraphSQLEmitter(SQLEmitter):
+class GraphSQLStatement(SQLStatement):
 
     @computed_field
     def source_meta_type(self) -> str:
         return self.obj_class.table.name
 
 
-class PropertySQLEmitter(GraphSQLEmitter):
+class PropertySQLStatement(GraphSQLStatement):
     # obj_class: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     accessor: str
@@ -71,12 +71,12 @@ class PropertySQLEmitter(GraphSQLEmitter):
             return boolean_lookups
         return object_lookups
 
-    def emit_sql(self, conn: Connection) -> None:
+    @computed_field
+    def emit_sql(self) -> str:
         return
-        conn.execute(
-            text(
-                SQL(
-                    """
+        return (
+            SQL(
+                """
             DO $$
             BEGIN
                 SET ROLE {admin_role};
@@ -99,26 +99,25 @@ class PropertySQLEmitter(GraphSQLEmitter):
                 RETURNING id;
             END $$;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    schema_name=DB_SCHEMA,
-                    display=Literal(self.display),
-                    data_type=Literal(self.data_type),
-                    source_meta_type=Literal(self.source_meta_type),
-                    destination_meta_type=Literal(self.destination_meta_type),
-                    accessor=Literal(self.accessor),
-                    lookups=Literal(self.lookups),
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                schema_name=DB_SCHEMA,
+                display=Literal(self.display),
+                data_type=Literal(self.data_type),
+                source_meta_type=Literal(self.source_meta_type),
+                destination_meta_type=Literal(self.destination_meta_type),
+                accessor=Literal(self.accessor),
+                lookups=Literal(self.lookups),
+            )
+            .as_string()
         )
 
 
-class NodeSQLEmitter(GraphSQLEmitter):
+class NodeSQLStatement(GraphSQLStatement):
     node: BaseModel = None
     # source_meta_type: str
-    # properties: dict[str, PropertySQLEmitter]
+    # properties: dict[str, PropertySQLStatement]
     # label: str
 
     @computed_field
@@ -130,23 +129,23 @@ class NodeSQLEmitter(GraphSQLEmitter):
         return self.node.obj_class.table.name
 
     @computed_field
-    def properties(self) -> dict[str, PropertySQLEmitter]:
+    def properties(self) -> dict[str, PropertySQLStatement]:
         return self.node.properties
 
-    def emit_sql(self, conn: Connection) -> None:
-        self.create_node_label(conn)
-        self.insert_node(conn)
-        # self.update_node(conn)
-        # self.delete_node(conn)
-        # self.truncate_node(conn)
-        # self.create_filter_field(conn)
+    @computed_field
+    def emit_sql(self) -> str:
+        self.create_node_label()
+        self.insert_node()
+        # self.update_node()
+        # self.delete_node()
+        # self.truncate_node()
+        # self.create_filter_field()
 
-    def create_node_label(self, conn: Connection) -> None:
+    def create_node_label(self) -> str:
         print("HERE IN CREATE NODE LABEL")
-        conn.execute(
-            text(
-                SQL(
-                    """
+        return (
+            SQL(
+                """
             DO $$
             BEGIN
                 SET ROLE {admin_role};
@@ -157,14 +156,13 @@ class NodeSQLEmitter(GraphSQLEmitter):
                 END IF;
             END $$;
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    label=Literal(self.label),
-                    label_ident=Identifier(self.label),
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=Literal(self.label),
+                label_ident=Identifier(self.label),
+            )
+            .as_string()
         )
 
     def insert_node(self, conn: Connection) -> str:
@@ -207,17 +205,13 @@ class NodeSQLEmitter(GraphSQLEmitter):
             .as_string()
         )
 
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "insert_node",
-                    function_string,
-                    operation="INSERT",
-                    timing="AFTER",
-                    include_trigger=True,
-                    db_function=False,
-                )
-            )
+        return self.create_sql_function(
+            "insert_node",
+            function_string,
+            operation="INSERT",
+            timing="AFTER",
+            include_trigger=True,
+            db_function=False,
         )
 
     def update_node(self) -> None:
@@ -329,12 +323,12 @@ class NodeSQLEmitter(GraphSQLEmitter):
         )
 
 
-class EdgeSQLEmitter(SQLEmitter):
+class EdgeSQLStatement(SQLStatement):
     edge: BaseModel = None
 
     """
     @computed_field
-    def properties(self) -> dict[str, PropertySQLEmitter]:
+    def properties(self) -> dict[str, PropertySQLStatement]:
         if not isinstance(self.secondary, Table):
             return {}
         props = {}
@@ -348,7 +342,7 @@ class EdgeSQLEmitter(SQLEmitter):
                     break
             props.update(
                 {
-                    column.name: PropertySQLEmitter(
+                    column.name: PropertySQLStatement(
                         obj_class=obj_class,
                         accessor=column.name,
                         data_type=data_type,
@@ -358,15 +352,15 @@ class EdgeSQLEmitter(SQLEmitter):
         return props
     """
 
-    def emit_sql(self, conn: Connection) -> None:
-        self.create_edge_label(conn)
-        # self.create_filter_field(conn)
+    @computed_field
+    def emit_sql(self) -> str:
+        self.create_edge_label()
+        # self.create_filter_field()
 
-    def create_edge_label(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    def create_edge_label(self) -> str:
+        return (
+            SQL(
+                """
                 DO $$
                 BEGIN
                     SET ROLE {admin_role};
@@ -377,22 +371,20 @@ class EdgeSQLEmitter(SQLEmitter):
                     END IF;
                 END $$;
                 """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    label=Literal(self.edge.label),
-                    label_ident=Identifier(self.edge.label),
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=Literal(self.edge.label),
+                label_ident=Identifier(self.edge.label),
+            )
+            .as_string()
         )
 
-    def create_filter_field(self, conn: Connection) -> None:
+    def create_filter_field(self) -> str:
         return
-        conn.execute(
-            text(
-                SQL(
-                    """
+        return (
+            SQL(
+                """
                 DO $$
                 DECLARE
                     filter_id VARCHAR(26);
@@ -420,22 +412,21 @@ class EdgeSQLEmitter(SQLEmitter):
 
                 END $$;
                 """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    label=Literal(self.label),
-                    label_ident=Identifier(self.label),
-                    schema_name=DB_SCHEMA,
-                    data_type=Literal("object"),
-                    source_meta_type=Literal(self.source_meta_type),
-                    destination_meta_type=Literal(self.destination_meta_type),
-                    display=Literal(self.display),
-                    accessor=Literal(self.accessor),
-                    lookups=Literal(self.lookups),
-                    properties=json.dumps(list(self.properties.keys())),
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=Literal(self.label),
+                label_ident=Identifier(self.label),
+                schema_name=DB_SCHEMA,
+                data_type=Literal("object"),
+                source_meta_type=Literal(self.source_meta_type),
+                destination_meta_type=Literal(self.destination_meta_type),
+                display=Literal(self.display),
+                accessor=Literal(self.accessor),
+                lookups=Literal(self.lookups),
+                properties=json.dumps(list(self.properties.keys())),
+            )
+            .as_string()
         )
 
     def insert_edge_sql(self) -> None:

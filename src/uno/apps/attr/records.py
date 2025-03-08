@@ -16,7 +16,7 @@ from uno.apps.meta.records import (
     MetaRecord,
     MetaTypeRecord,
 )
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLStatement
 from uno.apps.fltr.records import Query
 from uno.config import settings
 
@@ -74,7 +74,7 @@ class Attribute(UnoRecord):
     display_name: ClassVar[str] = "Attribute"
     display_name_plural: ClassVar[str] = "Attributes"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -120,7 +120,7 @@ class AttributeType(
     display_name: ClassVar[str] = "Attribute Type"
     display_name_plural: ClassVar[str] = "Attribute Types"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(

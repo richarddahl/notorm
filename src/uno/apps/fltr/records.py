@@ -16,7 +16,7 @@ from uno.apps.meta.records import (
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLStatement
 
 from uno.apps.fltr.enums import Include, Match
 from uno.apps.val.enums import Lookup
@@ -35,7 +35,7 @@ class QueryFilterValue(Base):
     display_name: ClassVar[str] = "Query Filter Value"
     display_name_plural: ClassVar[str] = "Query Filter Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -60,7 +60,7 @@ class FilterFilterValue(Base):
     display_name: ClassVar[str] = "Filter Filter Value"
     display_name_plural: ClassVar[str] = "Filter Filter Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     filter_id: Mapped[str_26] = mapped_column(
@@ -85,7 +85,7 @@ class QuerySubquery(Base):
     display_name: ClassVar[str] = "Query Subquery"
     display_name_plural: ClassVar[str] = "Query Subqueries"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     query_id: Mapped[str_26] = mapped_column(
@@ -117,7 +117,7 @@ class Filter(Base):
     display_name: ClassVar[str] = "Filter"
     display_name_plural: ClassVar[str] = "Filters"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -191,7 +191,7 @@ class FilterValue(
     display_name: ClassVar[str] = "Filter Value"
     display_name_plural: ClassVar[str] = "Filter Values"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[int] = mapped_column(
@@ -257,7 +257,7 @@ class Query(
     display_name: ClassVar[str] = "Query"
     display_name_plural: ClassVar[str] = "Queries"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(

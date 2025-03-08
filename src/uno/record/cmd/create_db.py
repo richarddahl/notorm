@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import asyncio
+
 from uno.record.db_manager import DBManager
 
 

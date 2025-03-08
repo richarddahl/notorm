@@ -54,16 +54,16 @@ path = "src/uno/__about__.py"
 # Default Environment
 [tool.hatch.envs.default.scripts]
 main = "uvicorn uno.app.main:app {args: --reload}"
-createdb = "python src/uno/storage/cmd/create_db.py"
-dropdb = "python src/uno/storage/cmd/drop_db.py"
-createsuperuser = "ENV=dev python src/uno/storage/cmd/create_superuser.py"
+createdb = "python src/uno/record/cmd/create_db.py"
+dropdb = "python src/uno/record/cmd/drop_db.py"
+createsuperuser = "ENV=dev python src/uno/record/cmd/create_superuser.py"
 
 
 #Development Environment
 [tool.hatch.envs.dev.scripts]
-createdb = "ENV=dev python src/uno/storage/cmd/create_db.py"
-dropdb = "ENV=dev python src/uno/storage/cmd/drop_db.py"
-createsuperuser = "ENV=dev python src/uno/storage/cmd/create_superuser.py"
+createdb = "ENV=dev python src/uno/record/cmd/create_db.py"
+dropdb = "ENV=dev python src/uno/record/cmd/drop_db.py"
+createsuperuser = "ENV=dev python src/uno/record/cmd/create_superuser.py"
 
 
 # Testing Environment

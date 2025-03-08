@@ -58,11 +58,11 @@ class UnoRecord(AsyncAttrs, DeclarativeBase):
             Enum: ENUM,
             bool: BOOLEAN,
             list: ARRAY,
+            decimal: NUMERIC,
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
             str_128: VARCHAR(128),
             str_255: VARCHAR(255),
-            decimal: NUMERIC,
         }
     )
     metadata = meta_data

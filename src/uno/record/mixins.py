@@ -12,8 +12,8 @@ from sqlalchemy.dialects.postgresql import VARCHAR, BOOLEAN, TIMESTAMP
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import Field
 
-from uno.record.sql.sql_emitter import SQLEmitter
-from uno.record.sql.table_sql_emitters import (
+from uno.record.sql.sql_emitter import SQLStatement
+from uno.record.sql.table_sql_statements import (
     InsertMetaRecordTrigger,
     RecordVersionAudit,
     CreateHistoryTable,
@@ -75,7 +75,7 @@ class UnoMixinFKConstraint(BaseModel):
 class UnoRecordMixin(BaseModel):
     """Base class for all database table mixins"""
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
     column_defs: ClassVar[list[ColumnDef]] = []
     constraint_defs: ClassVar[
         list[ForeignKeyConstraint | CheckConstraint | UniqueConstraint]

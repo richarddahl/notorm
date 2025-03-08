@@ -2,16 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from pydantic import computed_field
 from dataclasses import dataclass
 
-from psycopg.sql import SQL, Identifier, Literal
-
-from sqlalchemy import text
-from sqlalchemy.engine import Engine
-
-
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -28,11 +23,11 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-@dataclass
-class PathEdgeChcek(SQLEmitter):
+class PathEdgeCheck(SQLStatement):
     """ """
 
-    def emit_sql(self, conn: Connection) -> None:
+    @computed_field
+    def validate_path(self) -> str:
         function_string = """
             BEGIN
                 SELECT 
@@ -43,14 +38,10 @@ class PathEdgeChcek(SQLEmitter):
             END;
             """
 
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "validate_path",
-                    function_string,
-                    return_type="BOOLEAN",
-                    include_trigger=False,
-                    db_function=False,
-                )
-            )
+        return self.create_sql_function(
+            "validate_path",
+            function_string,
+            return_type="BOOLEAN",
+            include_trigger=False,
+            db_function=False,
         )

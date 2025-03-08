@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
-from abc import ABC, abstractmethod
+from typing import Optional, ClassVar
 
 from psycopg.sql import SQL, Literal
 
 from pydantic import BaseModel
 
+from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Connection
 
 from uno.config import settings
@@ -34,12 +34,26 @@ DB_NAME = SQL(settings.DB_NAME)
 DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
-class SQLEmitter(ABC, BaseModel):
+class SQLEmitter(BaseModel):
+    table_name: ClassVar[Optional[str]] = None
+
+    def emit_sql(self, connection: Connection) -> None:
+        for statement_name, sql_statement in self.model_dump(
+            exclude=["table_name"]
+        ).items():
+            print(f"Executing {statement_name}...")
+            connection.execute(text(sql_statement))
+
+
+class SQLStatement(BaseModel):
     table_name: Optional[str] = None
 
-    @abstractmethod
-    def emit_sql(self, conn: Connection) -> None:
-        raise NotImplementedError
+    def emit_sql(self, connection: Connection) -> None:
+        for statement_name, sql_statement in self.model_dump(
+            exclude=["table_name"]
+        ).items():
+            print(f"Executing {statement_name}...")
+            connection.execute(text(sql_statement))
 
     def create_sql_trigger(
         self,

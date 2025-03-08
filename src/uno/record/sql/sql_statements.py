@@ -2,13 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from psycopg.sql import SQL, Identifier
-
-from sqlalchemy import text
-from sqlalchemy.engine import Connection
+from pydantic import computed_field
+from psycopg.sql import SQL
 
 from uno.record.sql.sql_emitter import (
-    SQLEmitter,
+    SQLStatement,
     DB_SCHEMA,
     DB_NAME,
     ADMIN_ROLE,
@@ -25,50 +23,44 @@ from uno.record.sql.sql_emitter import (
 from uno.config import settings
 
 
-class SetRole(SQLEmitter):
-    def emit_sql(self, conn: Connection, role_name: str) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class SetRole(SQLStatement):
+    @computed_field
+    def set_role(self, role_name: str) -> str:
+        return (
+            SQL(
+                """
             SET ROLE {db_name}_{role};
             """
-                )
-                .format(
-                    db_name=DB_NAME,
-                    role=SQL(role_name),
-                )
-                .as_string()
             )
+            .format(
+                db_name=DB_NAME,
+                role=SQL(role_name),
+            )
+            .as_string()
         )
 
 
-class DropDatabaseAndRoles(SQLEmitter):
-
-    def emit_sql(self, conn: Connection) -> None:
-
-        self.drop_database(conn)
-        self.drop_roles(conn)
-
-    def drop_database(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class DropDatabaseAndRoles(SQLStatement):
+    @computed_field
+    def drop_database(self) -> str:
+        return (
+            SQL(
+                """
             -- Drop the database if it exists
             DROP DATABASE IF EXISTS {db_name} WITH (FORCE);
             """
-                )
-                .format(db_name=DB_NAME)
-                .as_string()
             )
+            .format(
+                db_name=DB_NAME,
+            )
+            .as_string()
         )
 
-    def drop_roles(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def drop_roles(self) -> str:
+        return (
+            SQL(
+                """
             -- Drop the roles if they exist
             DROP ROLE IF EXISTS {admin_role};
             DROP ROLE IF EXISTS {writer_role};
@@ -76,30 +68,24 @@ class DropDatabaseAndRoles(SQLEmitter):
             DROP ROLE IF EXISTS {login_role};
             DROP ROLE IF EXISTS {base_role};
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    writer_role=WRITER_ROLE,
-                    reader_role=READER_ROLE,
-                    login_role=LOGIN_ROLE,
-                    base_role=BASE_ROLE,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                writer_role=WRITER_ROLE,
+                reader_role=READER_ROLE,
+                login_role=LOGIN_ROLE,
+                base_role=BASE_ROLE,
+            )
+            .as_string()
         )
 
 
-class CreateRolesAndDatabase(SQLEmitter):
-
-    def emit_sql(self, conn: Connection) -> None:
-        self.create_roles(conn)
-        self.create_database(conn)
-
-    def create_roles(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class CreateRolesAndDatabase(SQLStatement):
+    @computed_field
+    def create_roles(self) -> str:
+        return (
+            SQL(
+                """
             DO $$
             BEGIN
                 -- Create the base role with permissions that all other users will inherit
@@ -134,66 +120,62 @@ class CreateRolesAndDatabase(SQLEmitter):
                 GRANT {reader_role}, {writer_role}, {admin_role} TO {login_role};
             END $$;
             """
-                )
-                .format(
-                    lit_base_role=LIT_BASE_ROLE,
-                    base_role=BASE_ROLE,
-                    lit_reader_role=LIT_READER_ROLE,
-                    reader_role=READER_ROLE,
-                    lit_writer_role=LIT_WRITER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    lit_admin_role=LIT_ADMIN_ROLE,
-                    admin_role=ADMIN_ROLE,
-                    lit_login_role=LIT_LOGIN_ROLE,
-                    login_role=LOGIN_ROLE,
-                    password=settings.DB_USER_PW,
-                )
-                .as_string()
             )
+            .format(
+                lit_base_role=LIT_BASE_ROLE,
+                base_role=BASE_ROLE,
+                lit_reader_role=LIT_READER_ROLE,
+                reader_role=READER_ROLE,
+                lit_writer_role=LIT_WRITER_ROLE,
+                writer_role=WRITER_ROLE,
+                lit_admin_role=LIT_ADMIN_ROLE,
+                admin_role=ADMIN_ROLE,
+                lit_login_role=LIT_LOGIN_ROLE,
+                login_role=LOGIN_ROLE,
+                password=settings.DB_USER_PW,
+            )
+            .as_string()
         )
 
-    def create_database(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def create_database(self) -> str:
+        return (
+            SQL(
+                """
             -- Create the database
             CREATE DATABASE {db_name} WITH OWNER = {admin_role};
             """
-                )
-                .format(db_name=DB_NAME, admin_role=ADMIN_ROLE)
-                .as_string()
             )
+            .format(
+                db_name=DB_NAME,
+                admin_role=ADMIN_ROLE,
+            )
+            .as_string()
         )
 
 
-class CreateSchemasAndExtensions(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        self.create_schemas(conn)
-        self.create_extensions(conn)
-
-    def create_schemas(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class CreateSchemasAndExtensions(SQLStatement):
+    @computed_field
+    def create_schemas(self) -> str:
+        return (
+            SQL(
+                """
             -- Create the schema_name
             CREATE SCHEMA IF NOT EXISTS {schema_name} AUTHORIZATION {admin_role};
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
-    def create_extensions(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def creaet_extensions(self) -> str:
+        return (
+            SQL(
+                """
             -- Create the extensions
             SET search_path TO {schema_name};
 
@@ -232,30 +214,23 @@ class CreateSchemasAndExtensions(SQLEmitter):
             ALTER SEQUENCE graph._ag_label_vertex_id_seq OWNER TO {admin_role};
             ALTER SEQUENCE graph._label_id_seq OWNER TO {admin_role};
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
 
-class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
-
-    def emit_sql(self, conn: Connection) -> None:
-        self.revokePrivileges(conn)
-        self.setSearchPath(conn)
-        self.grantSchemaPrivileges(conn)
-
-    def revokePrivileges(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLStatement):
+    @computed_field
+    def revoke_privileges(self) -> str:
+        return (
+            SQL(
+                """
             -- Explicitly revoke all privileges on all db_schemas and tables
             REVOKE ALL ON SCHEMA
                 audit,
@@ -290,25 +265,24 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 {writer_role},
                 {admin_role};
             """
-                )
-                .format(
-                    db_name=DB_NAME,
-                    schema_name=DB_SCHEMA,
-                    base_role=BASE_ROLE,
-                    login_role=LOGIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    admin_role=ADMIN_ROLE,
-                )
-                .as_string()
             )
+            .format(
+                db_name=DB_NAME,
+                schema_name=DB_SCHEMA,
+                base_role=BASE_ROLE,
+                login_role=LOGIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                admin_role=ADMIN_ROLE,
+            )
+            .as_string()
         )
 
-    def setSearchPath(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def set_search_paths(self) -> str:
+        return (
+            SQL(
+                """
             -- Set the search paths for the roles
             ALTER ROLE
                 {base_role}
@@ -350,24 +324,23 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
                 graph,
                 ag_catalog;
             """
-                )
-                .format(
-                    base_role=BASE_ROLE,
-                    login_role=LOGIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    admin_role=ADMIN_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                base_role=BASE_ROLE,
+                login_role=LOGIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                admin_role=ADMIN_ROLE,
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
-    def grantSchemaPrivileges(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+    @computed_field
+    def grant_schema_privileges(self) -> str:
+        return (
+            SQL(
+                """
             -- Grant ownership of the db_schemas to the DB admin role
             ALTER SCHEMA audit OWNER TO {admin_role};
             ALTER SCHEMA graph OWNER TO {admin_role};
@@ -413,34 +386,33 @@ class GrantPrivilegesAndSetSearchPaths(SQLEmitter):
             GRANT {writer_role} TO {login_role} WITH INHERIT FALSE, SET TRUE;
             GRANT {reader_role} TO {login_role} WITH INHERIT FALSE, SET TRUE;
             """
-                )
-                .format(
-                    db_name=DB_NAME,
-                    schema_name=DB_SCHEMA,
-                    admin_role=ADMIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    login_role=LOGIN_ROLE,
-                )
-                .as_string()
             )
+            .format(
+                db_name=DB_NAME,
+                schema_name=DB_SCHEMA,
+                admin_role=ADMIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                login_role=LOGIN_ROLE,
+            )
+            .as_string()
         )
 
 
-class CreatePGULID(SQLEmitter):
-
-    def emit_sql(self, conn: Connection) -> None:
+class CreatePGULID(SQLStatement):
+    @computed_field
+    def create_pgulid(self) -> str:
         with open("src/uno/record/sql/pgulid.sql", "r") as file:
             sql = file.read()
-        conn.execute(text(SQL(sql).format(schema_name=DB_SCHEMA).as_string()))
+        return SQL(sql).format(schema_name=DB_SCHEMA).as_string()
 
 
-class CreateTokenSecret(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class CreateTokenSecret(SQLStatement):
+    @computed_field
+    def create_token_secret_table(self) -> str:
+        return (
+            SQL(
+                """
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
             DROP TABLE IF EXISTS audit.token_secret CASCADE;
@@ -470,27 +442,22 @@ class CreateTokenSecret(SQLEmitter):
             FOR EACH ROW
             EXECUTE FUNCTION audit.set_token_secret();
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    db_name=DB_NAME,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
+            .format(
+                admin_role=ADMIN_ROLE,
+                db_name=DB_NAME,
+                schema_name=DB_SCHEMA,
+            )
+            .as_string()
         )
 
 
-class GrantPrivileges(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
-        self.grant_table_privileges(conn)
-        self.grant_sequence_privileges(conn)
-
-    def grant_table_privileges(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
+class GrantPrivileges(SQLStatement):
+    @computed_field
+    def grant_schema_privileges(self) -> str:
+        return (
+            SQL(
+                """
             -- Grant table privileges to the roles
             SET ROLE {admin_role};
             GRANT SELECT ON ALL TABLES IN SCHEMA
@@ -516,49 +483,33 @@ class GrantPrivileges(SQLEmitter):
                 ag_catalog
             TO
                 {admin_role};
+
+            -- Grant table privileges to the roles
+            SET ROLE {admin_role};
+            GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA
+                audit,
+                graph,
+                ag_catalog,
+                {schema_name}
+            TO
+                {reader_role},
+                {writer_role};
+
             """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
             )
-        )
-
-    def grant_sequence_privileges(self, conn: Connection) -> None:
-        conn.execute(
-            text(
-                SQL(
-                    """
-                    -- Grant table privileges to the roles
-                    SET ROLE {admin_role};
-                    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA
-                        audit,
-                        graph,
-                        ag_catalog,
-                        {schema_name}
-                    TO
-                        {reader_role},
-                        {writer_role};
-
-                    """
-                )
-                .format(
-                    admin_role=ADMIN_ROLE,
-                    reader_role=READER_ROLE,
-                    writer_role=WRITER_ROLE,
-                    schema_name=DB_SCHEMA,
-                )
-                .as_string()
+            .format(
+                admin_role=ADMIN_ROLE,
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                schema_name=DB_SCHEMA,
             )
+            .as_string()
         )
 
 
-class InsertMetaRecordFunction(SQLEmitter):
-    def emit_sql(self, conn: Connection) -> None:
+class InsertMetaRecordFunction(SQLStatement):
+    @computed_field
+    def insert_meta_record_function(self) -> str:
         function_string = (
             SQL(
                 """
@@ -590,15 +541,11 @@ class InsertMetaRecordFunction(SQLEmitter):
             .as_string()
         )
 
-        conn.execute(
-            text(
-                self.create_sql_function(
-                    "insert_meta_record",
-                    function_string,
-                    timing="BEFORE",
-                    operation="INSERT",
-                    include_trigger=False,
-                    db_function=True,
-                )
-            )
+        return self.create_sql_function(
+            "insert_meta_record",
+            function_string,
+            timing="BEFORE",
+            operation="INSERT",
+            include_trigger=False,
+            db_function=True,
         )

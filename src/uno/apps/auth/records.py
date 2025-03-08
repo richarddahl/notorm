@@ -108,7 +108,7 @@ class UserRecord(UnoRecord):
         ForeignKey("meta.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        nullable=False,
+        nullable=True,
         server_default=FetchedValue(),
         doc="Primary Key and Foreign Key to Meta Record",
     )

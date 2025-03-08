@@ -36,6 +36,5 @@ class UnoStorage(BaseModel):
                 "CLASS_NAME_EXISTS_IN_REGISTRY",
             )
 
-    def emit_sql(self, conn: Connection) -> None:
-        for sql_emitter in self.sql_emitters:
-            sql_emitter(table_name=self.table_name).emit_sql(conn)
+    def emit_sql(self) -> None:
+        return [sql_emitter for sql_emitter in self.sql_emitters]

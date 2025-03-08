@@ -23,7 +23,7 @@ from uno.apps.meta.records import (
     RecordAuditMixin,
     HistoryTableAuditMixin,
 )
-from uno.record.sql.sql_emitter import SQLEmitter
+from uno.record.sql.sql_emitter import SQLStatement
 from uno.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,
@@ -47,7 +47,7 @@ class Workflow(
     display_name: ClassVar[str] = "Workflow"
     display_name_plural: ClassVar[str] = "Workflows"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -158,7 +158,7 @@ class WorkflowStep(
     display_name: ClassVar[str] = "Workflow Step"
     display_name_plural: ClassVar[str] = "Workflow Steps"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    sql_emitters: ClassVar[list[SQLStatement]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
