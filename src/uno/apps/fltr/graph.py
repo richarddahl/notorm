@@ -29,7 +29,7 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.apps.fltr.graph_sql_statements import (
+from uno.db.graph.sql_emitters import (
     GraphSQLEmitter,
     NodeSQLEmitter,
     PropertySQLEmitter,

@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-'''
 
+'''
 import datetime
 import pytest
 import json
@@ -14,15 +14,16 @@ from sqlalchemy import func, text, select, update, delete, ForeignKey
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.dialects.postgresql import BOOLEAN
 
-from fastapi.testclient import TestClient
+# from fastapi.testclient import TestClient
 
 from uno.config import settings
-from uno.apps.authorization.models import User
+from uno.apps.auth.models import User
 
 # from uno.rltd.models import TableType, RelatedObject
-from tests.pgjwt.test_pgjwt import encode_test_token
-from uno.database.management.db_manager import DBManager
-from tests.conftest import mock_rls_vars
+# from tests.pgjwt.test_pgjwt import encode_test_token
+from uno.db.management.db_manager import DBManager
+
+# from tests.conftest import mock_rls_vars
 
 
 # client = TestClient(app)
@@ -31,7 +32,7 @@ from tests.conftest import mock_rls_vars
 class TestUser:
     """Tests for the User model."""
 
-    def test_create_user(self, session, superuser_id):
+    def test_create_user(self, session, test_db):
         # Creates the superuser and returns it's id.
         db_manager = DBManager()
         new_superuser_id = db_manager.create_user(
@@ -41,6 +42,7 @@ class TestUser:
             is_superuser=True,
         )
         assert new_superuser_id is not None
+
 
         with session.begin():
             stmt = select(User.table).where(User.table.email == "new_admin@notorm.tech")
@@ -780,7 +782,7 @@ async def get_user(user_id: str):
     select_user_model = user_obj.models.get("SelectUser")
     if not select_user_model:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Example user data
     user_data = {
         "id": user_id,
@@ -800,7 +802,7 @@ async def get_user(user_id: str):
         "deleted_at": None,
         "deleted_by_id": None,
     }
-    
+
     return select_user_model(**user_data)
 
 """

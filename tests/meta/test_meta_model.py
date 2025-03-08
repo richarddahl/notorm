@@ -31,6 +31,6 @@ class TestMetaBaseModel(IsolatedAsyncioTestCase):
         assert meta_record.meta_type_id == "01JNH7SBRV60R5RC1G61E30C1G"
 
     def test_meta_record_model_set_display_names(self):
-        assert MetaBase.table_name == "meta_record"
-        assert MetaBase.display_name == "Meta Record"
-        assert MetaBase.display_name_plural == "Meta Records"
+        assert MetaBase.table_name == "meta"
+        assert MetaBase.display_name == "Meta"
+        assert MetaBase.display_name_plural == "Metas"

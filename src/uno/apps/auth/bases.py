@@ -28,20 +28,6 @@ from sqlalchemy.dialects.postgresql import (
 from uno.db.base import UnoBase, meta_data, str_26, str_255
 from uno.db.enums import SQLOperation
 from uno.apps.auth.enums import TenantType
-from uno.apps.auth.sql.rls_sql_statements import (
-    UserRowLevelSecurity,
-)
-from uno.apps.auth.sql.sql_statements import (
-    ValidateGroupInsert,
-    DefaultGroupTenant,
-    InsertGroupForTenant,
-    UserRecordUserAuditFunction,
-)
-from uno.db.sql.table_sql_emitters import (
-    GeneralSqlEmitter,
-    AlterGrants,
-    RecordUserAuditFunction,
-)
 from uno.config import settings
 
 
@@ -114,13 +100,6 @@ class UserBase(UnoBase):
         ),
         {
             "comment": "Application users",
-            "info": {
-                "sql_emitters": [
-                    GeneralSqlEmitter,
-                    UserRowLevelSecurity,
-                    UserRecordUserAuditFunction,
-                ]
-            },
         },
     )
 
@@ -242,14 +221,6 @@ class GroupBase(UnoBase):
         UniqueConstraint("tenant_id", "name"),
         {
             "comment": "Application end-user groups",
-            "info": {
-                "sql_emitters": [
-                    GeneralSqlEmitter,
-                    RecordUserAuditFunction,
-                    ValidateGroupInsert,
-                    DefaultGroupTenant,
-                ]
-            },
         },
     )
 
@@ -352,12 +323,6 @@ class RoleBase(UnoBase):
         UniqueConstraint("tenant_id", "name"),
         {
             "comment": "Application roles",
-            "info": {
-                "sql_emitters": [
-                    GeneralSqlEmitter,
-                    RecordUserAuditFunction,
-                ]
-            },
         },
     )
 
@@ -466,13 +431,6 @@ class TenantBase(UnoBase):
         UniqueConstraint("name"),
         {
             "comment": "Application tenants",
-            "info": {
-                "sql_emitters": [
-                    GeneralSqlEmitter,
-                    RecordUserAuditFunction,
-                    InsertGroupForTenant,
-                ]
-            },
         },
     )
 
@@ -578,7 +536,6 @@ class PermissionBase(UnoBase):
         UniqueConstraint("meta_type_id", "operation"),
         {
             "comment": "Application permissions",
-            "info": {"sql_emitters": [AlterGrants]},
         },
     )
     id: Mapped[int] = mapped_column(

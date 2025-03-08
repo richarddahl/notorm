@@ -24,10 +24,16 @@ from uno.db.sql.sql_emitters import (
 )
 from uno.db.base import UnoBase, meta_data
 from uno.db.db import scoped_session
+from uno.db.sql.sql_emitter import UnoSQL
 from uno.apps.meta.bases import MetaTypeBase
+from uno.apps.meta.sql import MetaTypeSQL
 from uno.config import settings
 
 # Import all the bases in the settings.LOAD_MODULES list
+for module in settings.LOAD_MODULES:
+    print(module)
+    globals()[f"{module.split('.')[2]}._sql"] = importlib.import_module(f"{module}.sql")
+
 for module in settings.LOAD_MODULES:
     globals()[f"{module.split('.')[2]}_bases"] = importlib.import_module(
         f"{module}.bases"
@@ -119,6 +125,26 @@ class DBManager:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
+            meta_type_sql = MetaTypeSQL
+            print("\nEmitting SQL for: MetaType")
+            for sql_emitter in meta_type_sql.sql_emitters:
+                sql_emitter(table_name="meta_type").emit_sql(connection=conn)
+            for name, sql in UnoSQL.registry.items():
+                if name == "MetaTypeSQL":
+                    continue  # Skip the MetaTypeBase table since it was already done
+                print(f"\nEmitting SQL for: {name}")
+                for sql_emitter in sql.sql_emitters:
+                    sql_emitter(table_name=sql.table_name).emit_sql(connection=conn)
+            conn.close()
+        engine.dispose()
+
+    def emit_table_sql_old(self) -> None:
+        # Connect to the new database to emit the table specific SQL
+        engine = self.engine(db_role=f"{settings.DB_NAME}_login")
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            # Must emit the sql for the meta type table first
+            # So that the triggger function can be fired each time
+            # a new table is created to add the corresponding permissions
             meta_type_base = MetaTypeBase
             print("\nEmitting SQL for: MetaType")
             for sql_emitter in meta_type_base.__table_args__.get("info").get(
@@ -147,7 +173,6 @@ class DBManager:
                                 ).emit_sql(connection=conn)
             conn.close()
         engine.dispose()
-        return
 
     def drop_db(self) -> None:
         # Redirect the stdout stream to a StringIO object when running tests

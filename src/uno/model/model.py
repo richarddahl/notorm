@@ -100,7 +100,7 @@ class UnoModel(BaseModel):
         else:
             raise UnoRegistryError(
                 f"A Model class with the name {cls.__name__} already exists in the registry.",
-                "Model_CLASS_EXISTS_IN_REGISTRY",
+                "MODEL_CLASS_EXISTS_IN_REGISTRY",
             )
         cls.set_display_names()
 

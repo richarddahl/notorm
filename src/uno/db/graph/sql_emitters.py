@@ -3,12 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import textwrap
 
-from psycopg.sql import SQL, Identifier, Literal, Placeholder
+from typing import Any, ClassVar
+
+from psycopg.sql import SQL, Identifier, Literal
 
 from pydantic import BaseModel, computed_field
 
-from sqlalchemy import Table
 from sqlalchemy.engine import Connection
 from sqlalchemy.sql import text
 
@@ -114,36 +116,22 @@ class PropertySQLEmitter(GraphSQLEmitter):
         )
 
 
-class NodeSQLEmitter(GraphSQLEmitter):
-    node: BaseModel = None
-    # source_meta_type: str
-    # properties: dict[str, PropertySQLEmitter]
-    # label: str
+class NodeSQLEmitter(SQLEmitter):
+    exclude_fields: ClassVar[list[str]] = ["table_name", "label", "properties"]
+
+    properties: dict[str, Any] = {}
 
     @computed_field
     def label(self) -> str:
-        return convert_snake_to_camel(self.node.label)
+        return convert_snake_to_camel(self.table_name)
+
+    # @computed_field
+    # def properties(self) -> dict[str, PropertySQLEmitter]:
+    #    return self.node.properties
 
     @computed_field
-    def source_meta_type(self) -> str:
-        return self.node.obj_class.table.name
-
-    @computed_field
-    def properties(self) -> dict[str, PropertySQLEmitter]:
-        return self.node.properties
-
-    @computed_field
-    def emit_sql(self) -> str:
-        self.create_node_label()
-        self.insert_node()
-        # self.update_node()
-        # self.delete_node()
-        # self.truncate_node()
-        # self.create_filter_field()
-
-    def create_node_label(self) -> str:
-        print("HERE IN CREATE NODE LABEL")
-        return (
+    def create_vlabel(self) -> str:
+        return textwrap.dedent(
             SQL(
                 """
             DO $$
@@ -165,7 +153,8 @@ class NodeSQLEmitter(GraphSQLEmitter):
             .as_string()
         )
 
-    def insert_node(self, conn: Connection) -> str:
+    @computed_field
+    def insert_node(self) -> str:
         prop_key_str = ""
         prop_val_str = ""
         edge_str = ""
@@ -180,30 +169,47 @@ class NodeSQLEmitter(GraphSQLEmitter):
                     for prop in self.properties.values()
                 ]
             )
-        function_string = (
-            SQL(
+            function_string_ = SQL(
                 """
-            DECLARE 
-                insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        CREATE (v:{label} {{{prop_key_str}}})
-                    $graph$) AS (a agtype);', {prop_val_str});
-            BEGIN
-                SET ROLE {admin_role};
-                EXECUTE insert_node_sql;
-                {edge_str}
-                RETURN NEW;
-            END;
-            """
+                DECLARE 
+                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher({graph},
+                        $graph$
+                            CREATE (v:{label} {{{prop_key_str}}})
+                        $graph$
+                    ) AS (a agtype);', {prop_val_str});
+                BEGIN
+                    SET ROLE {admin_role};
+                    EXECUTE insert_node_sql;
+                    {edge_str}
+                    RETURN NEW;
+                END;
+                """
             )
-            .format(
-                admin_role=ADMIN_ROLE,
-                label=SQL(self.label),
-                prop_key_str=SQL(prop_key_str),
-                prop_val_str=SQL(prop_val_str),
-                edge_str=SQL(edge_str),
+        else:
+            function_string_ = SQL(
+                """
+                DECLARE 
+                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher({graph},
+                        $graph$
+                            CREATE (v:{label})
+                        $graph$
+                    ) AS (a agtype);');
+                BEGIN
+                    SET ROLE {admin_role};
+                    EXECUTE insert_node_sql;
+                    {edge_str}
+                    RETURN NEW;
+                END;
+                """
             )
-            .as_string()
-        )
+        function_string = function_string_.format(
+            graph=Identifier("graph"),
+            admin_role=ADMIN_ROLE,
+            label=SQL(self.label),
+            prop_key_str=SQL(prop_key_str),
+            prop_val_str=SQL(prop_val_str),
+            edge_str=SQL(edge_str),
+        ).as_string()
 
         return self.create_sql_function(
             "insert_node",
