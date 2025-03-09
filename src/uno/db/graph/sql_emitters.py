@@ -155,6 +155,54 @@ class NodeSQLEmitter(SQLEmitter):
 
     @computed_field
     def insert_node(self) -> str:
+
+        function_string = (
+            SQL(
+                """
+                DECLARE
+                    cypher_query text;
+                    properties hstore;
+                    properties_str text;
+                BEGIN
+                    -- Convert the NEW record to hstore to get column names and values
+                    properties := hstore(NEW);
+
+
+                    -- Construct the properties string
+                    properties_str := array_to_string(array(
+                        SELECT FORMAT('%I: %L', key, value) FROM EACH(properties)
+                    ), ', ');
+
+                    -- Construct the Cypher query dynamically
+                    cypher_query := format(
+                        'CREATE (v:{label} {{%s}})',
+                        properties_str
+                    );
+
+                    -- Execute the Cypher query
+                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', %L) AS (result agtype)', cypher_query);
+                    RETURN NEW;
+                END;
+            """
+            )
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=SQL(self.label),
+            )
+            .as_string()
+        )
+
+        return self.create_sql_function(
+            "insert_node",
+            function_string,
+            operation="INSERT",
+            timing="AFTER",
+            include_trigger=True,
+            db_function=False,
+        )
+
+    # @computed_field
+    def insert_node_old(self) -> str:
         prop_key_str = ""
         prop_val_str = ""
         edge_str = ""
@@ -172,11 +220,11 @@ class NodeSQLEmitter(SQLEmitter):
             function_string_ = SQL(
                 """
                 DECLARE 
-                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher({graph},
-                        $graph$
-                            CREATE (v:{label} {{{prop_key_str}}})
-                        $graph$
-                    ) AS (a agtype);', {prop_val_str});
+                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'',
+                        $g$
+                        CREATE (v:{label} {{{prop_key_str}}})
+                        $g$) AS (a agtype);', {prop_val_str}
+                    ');
                 BEGIN
                     SET ROLE {admin_role};
                     EXECUTE insert_node_sql;
@@ -189,11 +237,11 @@ class NodeSQLEmitter(SQLEmitter):
             function_string_ = SQL(
                 """
                 DECLARE 
-                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher({graph},
-                        $graph$
+                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'',
+                        $g$
                             CREATE (v:{label})
-                        $graph$
-                    ) AS (a agtype);');
+                        $g$) AS (a agtype);
+                    ');
                 BEGIN
                     SET ROLE {admin_role};
                     EXECUTE insert_node_sql;
@@ -203,7 +251,7 @@ class NodeSQLEmitter(SQLEmitter):
                 """
             )
         function_string = function_string_.format(
-            graph=Identifier("graph"),
+            graph=Literal("graph"),
             admin_role=ADMIN_ROLE,
             label=SQL(self.label),
             prop_key_str=SQL(prop_key_str),
