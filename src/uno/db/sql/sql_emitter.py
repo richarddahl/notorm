@@ -141,7 +141,7 @@ class SQLEmitter(BaseModel):
             LANGUAGE plpgsql
             {volatile}
             {security_definer}
-            AS $$
+            AS $$ 
             {function_string}
             $$;
             """
