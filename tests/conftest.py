@@ -19,6 +19,7 @@ from sqlalchemy.orm import sessionmaker
 
 from uno.db.management.db_manager import DBManager
 from uno.db.base import UnoBase
+from uno.db.db import engine, sync_engine
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
 
@@ -48,6 +49,16 @@ def connection():
     with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT"):
         yield sync_engine
         sync_engine.dispose()
+
+
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture(scope="function")
+async def session(test_db):
+    async with AsyncSessionLocal() as session:
+        yield session
+        await session.rollback()
 
 
 '''

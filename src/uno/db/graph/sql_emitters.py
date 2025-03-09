@@ -130,7 +130,7 @@ class NodeSQLEmitter(SQLEmitter):
     #    return self.node.properties
 
     @computed_field
-    def create_vlabel(self) -> str:
+    def create_node_label(self) -> str:
         return textwrap.dedent(
             SQL(
                 """
@@ -166,20 +166,16 @@ class NodeSQLEmitter(SQLEmitter):
                     -- Convert the NEW record to hstore to get column names and values
                     properties := hstore(NEW);
 
-
                     -- Construct the properties string
-                    properties_str := array_to_string(array(
-                        SELECT FORMAT('%I: %L', key, value) FROM EACH(properties)
-                    ), ', ');
+                    properties_str := array_to_string(
+                        array(SELECT FORMAT('%s: %L', key, value) FROM EACH(properties)),', ');
 
                     -- Construct the Cypher query dynamically
-                    cypher_query := format(
-                        'CREATE (v:{label} {{%s}})',
-                        properties_str
-                    );
+                    cypher_query := format('CREATE (v:{label} {{%s}})', properties_str);
 
                     -- Execute the Cypher query
-                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', %L) AS (result agtype)', cypher_query);
+                    SET ROLE {admin_role};
+                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                     RETURN NEW;
                 END;
             """
@@ -190,73 +186,6 @@ class NodeSQLEmitter(SQLEmitter):
             )
             .as_string()
         )
-
-        return self.create_sql_function(
-            "insert_node",
-            function_string,
-            operation="INSERT",
-            timing="AFTER",
-            include_trigger=True,
-            db_function=False,
-        )
-
-    # @computed_field
-    def insert_node_old(self) -> str:
-        prop_key_str = ""
-        prop_val_str = ""
-        edge_str = ""
-        # if self.edges:
-        #    edge_str = "\n".join([edge.insert_edge_sql() for edge in self.edges])
-
-        if self.properties:
-            prop_key_str = ", ".join(f"{prop}: %s" for prop in self.properties.keys())
-            prop_val_str = ", ".join(
-                [
-                    f"quote_nullable(NEW.{prop.accessor})"
-                    for prop in self.properties.values()
-                ]
-            )
-            function_string_ = SQL(
-                """
-                DECLARE 
-                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'',
-                        $g$
-                        CREATE (v:{label} {{{prop_key_str}}})
-                        $g$) AS (a agtype);', {prop_val_str}
-                    ');
-                BEGIN
-                    SET ROLE {admin_role};
-                    EXECUTE insert_node_sql;
-                    {edge_str}
-                    RETURN NEW;
-                END;
-                """
-            )
-        else:
-            function_string_ = SQL(
-                """
-                DECLARE 
-                    insert_node_sql TEXT := FORMAT('SELECT * FROM cypher(''graph'',
-                        $g$
-                            CREATE (v:{label})
-                        $g$) AS (a agtype);
-                    ');
-                BEGIN
-                    SET ROLE {admin_role};
-                    EXECUTE insert_node_sql;
-                    {edge_str}
-                    RETURN NEW;
-                END;
-                """
-            )
-        function_string = function_string_.format(
-            graph=Literal("graph"),
-            admin_role=ADMIN_ROLE,
-            label=SQL(self.label),
-            prop_key_str=SQL(prop_key_str),
-            prop_val_str=SQL(prop_val_str),
-            edge_str=SQL(edge_str),
-        ).as_string()
 
         return self.create_sql_function(
             "insert_node",

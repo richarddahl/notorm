@@ -102,7 +102,7 @@ dropdb = "ENV=test python src/uno/cmd/drop_db.py"
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"
-#asyncio_mode = "auto"
+asyncio_mode = "auto"
 
 
 # Documentation Environement

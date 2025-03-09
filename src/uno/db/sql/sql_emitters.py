@@ -185,6 +185,9 @@ class CreateSchemasAndExtensions(SQLEmitter):
             -- Creating the supa_audit extension
             CREATE EXTENSION IF NOT EXISTS supa_audit CASCADE;
 
+            -- Creating the HSTORE extension
+            CREATE EXTENSION IF NOT EXISTS hstore;
+
             -- Set the pgmeta configuration for supa_audit
             SET pgmeta.log = 'all';
             SET pgmeta.log_relation = on;

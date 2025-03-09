@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from uno.db.sql.sql_emitter import UnoSQL
-from uno.apps.auth.sql.rls_sql_statements import (
+from uno.apps.auth.rls_sql_statements import (
     UserRowLevelSecurity,
 )
-from uno.apps.auth.sql.sql_statements import (
+from uno.apps.auth.sql_statements import (
     ValidateGroupInsert,
     DefaultGroupTenant,
     InsertGroupForTenant,

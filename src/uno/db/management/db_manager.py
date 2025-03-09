@@ -27,15 +27,14 @@ from uno.db.db import scoped_session
 from uno.db.sql.sql_emitter import UnoSQL
 from uno.apps.meta.bases import MetaTypeBase
 from uno.apps.meta.sql import MetaTypeSQL
+from uno.apps.auth.bases import UserBase
 from uno.config import settings
 
 # Import all the bases in the settings.LOAD_MODULES list
 for module in settings.LOAD_MODULES:
     print(module)
     globals()[f"{module.split('.')[2]}._sql"] = importlib.import_module(f"{module}.sql")
-
-for module in settings.LOAD_MODULES:
-    globals()[f"{module.split('.')[2]}_bases"] = importlib.import_module(
+    globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
         f"{module}.bases"
     )
 
@@ -202,7 +201,7 @@ class DBManager:
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
     ) -> str:
-        user = auth_bases.UserRecord(
+        user = UserBase(
             email=email,
             handle=handle,
             full_name=full_name,

@@ -2,11 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-'''
 import datetime
-import pytest
 import json
 import pytz
+
+import asyncio
+import pytest
+import pytest_asyncio
+
+from unittest import IsolatedAsyncioTestCase
 
 from pydantic.fields import FieldInfo
 
@@ -29,17 +33,30 @@ from uno.db.management.db_manager import DBManager
 # client = TestClient(app)
 
 
-class TestUser:
+@pytest.mark.asyncio
+async def test_create_user(session, test_db):
+    # Creates the superuser and returns it's id.
+    db_manager = DBManager()
+    new_superuser_id = await db_manager.create_superuser(
+        email="new_admin@notorm.tech",
+        handle="new_admin",
+        full_name="New Admin",
+    )
+    assert new_superuser_id is not None
+
+
+'''
+class TestUser(IsolatedAsyncioTestCase):
     """Tests for the User model."""
 
-    def test_create_user(self, session, test_db):
+    @pytest.mark.asyncio
+    async def test_create_user(self, session, test_db):
         # Creates the superuser and returns it's id.
         db_manager = DBManager()
-        new_superuser_id = db_manager.create_user(
+        new_superuser_id = await db_manager.create_superuser(
             email="new_admin@notorm.tech",
             handle="new_admin",
             full_name="New Admin",
-            is_superuser=True,
         )
         assert new_superuser_id is not None
 

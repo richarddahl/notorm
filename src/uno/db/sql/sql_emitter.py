@@ -141,9 +141,9 @@ class SQLEmitter(BaseModel):
             LANGUAGE plpgsql
             {volatile}
             {security_definer}
-            AS $$ 
+            AS $fnct$ 
             {function_string}
-            $$;
+            $fnct$;
             """
             )
             .format(
