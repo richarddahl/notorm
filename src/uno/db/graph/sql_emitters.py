@@ -155,9 +155,7 @@ class NodeSQLEmitter(SQLEmitter):
 
     @computed_field
     def insert_node(self) -> str:
-        function_string = (
-            SQL(
-                """
+        function_string = """
             DECLARE
                 cypher_query text;
                 properties hstore;
@@ -173,7 +171,7 @@ class NodeSQLEmitter(SQLEmitter):
 
                 -- Construct the Cypher query dynamically
                 cypher_query := format(
-                    'CREATE (v:%s {{%s}})',
+                    'CREATE (v:%s {%s})',
                     {label},
                     properties_str
                 );
@@ -183,13 +181,6 @@ class NodeSQLEmitter(SQLEmitter):
                 RETURN NEW;
             END;
         """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                label=Literal(self.label),
-            )
-            .as_string()
-        )
 
         function_string_old = (
             SQL(
