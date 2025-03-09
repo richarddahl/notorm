@@ -153,44 +153,33 @@ class NodeSQLEmitter(SQLEmitter):
             .as_string()
         )
 
-    @computed_field
     def insert_node(self) -> str:
+        function_string = """
+            DECLARE
+                cypher_query text;
+                properties hstore;
+                properties_str text;
+            BEGIN
+                -- Convert the NEW record to hstore to get column names and values
+                properties := hstore(NEW);
 
-        function_string = (
-            SQL(
-                """
-                DECLARE
-                    cypher_query text;
-                    properties hstore;
-                    properties_str text;
-                BEGIN
-                    -- Convert the NEW record to hstore to get column names and values
-                    properties := hstore(NEW);
+                -- Construct the properties string
+                properties_str := array_to_string(array(
+                    SELECT FORMAT('%I: %L', key, value) FROM EACH(properties)
+                ), ', ');
 
+                -- Construct the Cypher query dynamically
+                cypher_query := format(
+                    'CREATE (v:%s {%s})',
+                    {label},
+                    properties_str
+                );
 
-                    -- Construct the properties string
-                    properties_str := array_to_string(array(
-                        SELECT FORMAT('%I: %L', key, value) FROM EACH(properties)
-                    ), ', ');
-
-                    -- Construct the Cypher query dynamically
-                    cypher_query := format(
-                        'CREATE (v:{label} {{%s}})',
-                        properties_str
-                    );
-
-                    -- Execute the Cypher query
-                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', %L) AS (result agtype)', cypher_query);
-                    RETURN NEW;
-                END;
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                label=SQL(self.label),
-            )
-            .as_string()
-        )
+                -- Execute the Cypher query
+                EXECUTE FORMAT('SELECT * FROM cypher(''graph'', %L) AS (result agtype)', cypher_query);
+                RETURN NEW;
+            END;
+        """
 
         return self.create_sql_function(
             "insert_node",
