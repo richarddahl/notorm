@@ -29,12 +29,7 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.db.graph.sql_emitters import (
-    GraphSQLEmitter,
-    NodeSQLEmitter,
-    PropertySQLEmitter,
-    EdgeSQLEmitter,
-)
+from uno.db.graph.sql_emitters import GraphSQLEmitter
 from uno.utilities import (
     convert_snake_to_camel,
     convert_snake_to_title,
@@ -57,8 +52,6 @@ class GraphProperty(GraphBase):
     data_type: str
     # label: str <- computed_field
     # lookups: Lookup <- computed_field
-
-    sql_emitter = PropertySQLEmitter
 
     @computed_field
     def label(self) -> str:
@@ -85,8 +78,6 @@ class GraphProperty(GraphBase):
 
 
 class GraphNode(GraphBase):
-
-    sql_emitter = NodeSQLEmitter
 
     @computed_field
     def source_meta_type(self) -> str:
@@ -122,11 +113,11 @@ class GraphEdge(GraphBase):
     obj_class: Any = None
     source_table: str
     source_column_name: str
-    destination_column_name: str
+    remote_column_name: str
     label: str
     lookups: list[Lookup] = object_lookups
 
-    sql_emitter = EdgeSQLEmitter
+    sql_emitter = GraphSQLEmitter
 
     def emit_sql(self):
         self.sql_emitter(edge=self).emit_sql()
@@ -136,7 +127,7 @@ class EdgeDef(GraphBase):
     # obj_class: type[DeclarativeBase] <- from GraphBase
     # source_meta_type: str <- computed_field from GraphBase
     label: str
-    destination_meta_type: str
+    remote_meta_type: str
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
@@ -148,7 +139,7 @@ class EdgeDef(GraphBase):
     """
     @computed_field
     def label(self) -> str:
-        return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.destination_meta_type)})"
+        return f"{convert_snake_to_title(self.accessor)} ({convert_snake_to_title(self.remote_meta_type)})"
 
     @computed_field
     def source_meta_type(self) -> str:

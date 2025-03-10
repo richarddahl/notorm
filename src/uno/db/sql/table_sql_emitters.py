@@ -14,7 +14,6 @@ from uno.db.sql.sql_emitter import (
     WRITER_ROLE,
     READER_ROLE,
 )
-from uno.db.graph.sql_emitters import NodeSQLEmitter
 
 
 class AlterGrants(SQLEmitter):
@@ -307,6 +306,5 @@ class GeneralSqlEmitter(
     InsertMetaType,
     InsertMetaRecordTrigger,
     RecordStatusFunction,
-    NodeSQLEmitter,
 ):
     pass

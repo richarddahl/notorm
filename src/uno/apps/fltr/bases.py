@@ -105,9 +105,9 @@ class Filter(Base):
     __table_args__ = (
         UniqueConstraint(
             "source_meta_type",
-            "destination_meta_type",
+            "remote_meta_type",
             "accessor",
-            name="uq_filter__source_meta_type__destination_meta_type__accessor",
+            name="uq_filter__source_meta_type__remote_meta_type__accessor",
         ),
         {
             "schema": settings.DB_SCHEMA,
@@ -136,7 +136,7 @@ class Filter(Base):
         index=True,
         doc="The meta_record type table filtered.",
     )
-    destination_meta_type: Mapped[str_255] = mapped_column(
+    remote_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
         index=True,
         doc="The destination meta_record type table of the filter.",
