@@ -76,7 +76,7 @@ class NodeSQLEmitter(SQLEmitter):
 
                     -- Construct the properties string
                     properties_str := array_to_string(
-                        array(SELECT FORMAT('%s: %L', key, value) FROM EACH(properties)),', ');
+                        array(SELECT FORMAT('%s: %L', key, COALESCE(value, 'NULL')) FROM EACH(properties)),', ');
 
                     -- Construct the Cypher query dynamically
                     cypher_query := format('CREATE (v:{label} {{%s}})', properties_str);
