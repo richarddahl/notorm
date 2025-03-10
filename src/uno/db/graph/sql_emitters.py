@@ -262,15 +262,14 @@ class EdgeSQLEmitter(SQLEmitter):
             SQL(
                 """
                     IF NEW.{column_name} IS NOT NULL THEN
-                        SELECT * FROM cypher('graph', $$
-                            EXECUTE FORMAT('
+                        EXECUTE FORMAT('
+                            SELECT * FROM cypher(''graph'', $$
                             MATCH (l:{node_label} {{id: %s}})
                             MATCH (r:{remote_node_label} {{id: %s}})
-                            CREATE (l)-[e:{label}]->(r)',
+                            CREATE (l)-[e:{label}]->(r)$$) AS (result agtype)',
                             quote_nullable(NEW.{column_name}),
                             quote_nullable(NEW.{remote_column_name})
-                            );
-                        $$) AS (result agtype);
+                        );
                     END IF;
             """
             )
