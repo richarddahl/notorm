@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.db.base import UnoBase, meta_data, str_26, str_255
+from uno.db.base import UnoBase, meta_data, str_26, str_255, GeneralBaseMixin
 from uno.db.enums import SQLOperation
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
@@ -56,7 +56,7 @@ user__group__role = Table(
         nullable=False,
     ),
     Index(
-        "ix_user__group__role_user_id_group_id_role_id",
+        "ix_user_group_role_user_id_group_id_role_id",
         "user_id",
         "group_id",
         "role_id",
@@ -81,11 +81,11 @@ role__permission = Table(
         primary_key=True,
         nullable=False,
     ),
-    Index("ix_role__permission_role_id_permission_id", "role_id", "permission_id"),
+    Index("ix_role_permission_role_id_permission_id", "role_id", "permission_id"),
 )
 
 
-class UserBase(UnoBase):
+class UserBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -104,22 +104,7 @@ class UserBase(UnoBase):
     )
 
     # Columns
-    id: Mapped[int] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to Meta Base",
-    )
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates that the record is currently active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates that the record has been soft deleted",
-    )
+
     email: Mapped[str_255] = mapped_column(
         unique=True,
         index=True,
@@ -152,36 +137,6 @@ class UserBase(UnoBase):
         server_default=text("false"),
         doc="Indicates that the user is a Superuser",
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was created",
-    )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that created the record",
-    )
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was last modified",
-    )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that last modified the record",
-    )
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=True,
-        doc="Timestamp when the record was soft deleted",
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that deleted the record",
-    )
 
     # Relationships
     tenant: Mapped["TenantBase"] = relationship(
@@ -192,29 +147,18 @@ class UserBase(UnoBase):
         foreign_keys=[default_group_id],
         doc="User's default group, used as default for creating new objects",
     )
-    created_by: Mapped["UserBase"] = relationship(
-        foreign_keys=[created_by_id],
-        doc="User that created the record",
-    )
-    modified_by: Mapped["UserBase"] = relationship(
-        foreign_keys=[modified_by_id],
-        doc="User that last modified the record",
-    )
-    deleted_by: Mapped["UserBase"] = relationship(
-        foreign_keys=[deleted_by_id],
-        doc="User that deleted the record",
-    )
     groups: Mapped[list["GroupBase"]] = relationship(
         secondary=user__group__role,
         doc="Groups to which the user is assigned",
     )
+
     # roles: Mapped[list["RoleBase"]] = relationship(
     #    secondary="user__group__role",
     #    doc="Roles assigned to the user",
     # )
 
 
-class GroupBase(UnoBase):
+class GroupBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -225,22 +169,6 @@ class GroupBase(UnoBase):
     )
 
     # Columns
-
-    id: Mapped[int] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        nullable=False,
-        doc="Primary Key and Foreign Key to Meta Base",
-    )
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates that the record is currently active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates that the record has been soft deleted",
-    )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
@@ -248,36 +176,6 @@ class GroupBase(UnoBase):
         info={"edge": "OWNED_BY_TENANT"},
     )
     name: Mapped[str_255] = mapped_column(doc="Group name")
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was created",
-    )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that created the record",
-    )
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was last modified",
-    )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that last modified the record",
-    )
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=True,
-        doc="Timestamp when the record was soft deleted",
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that deleted the record",
-    )
 
     # Relationships
     tenant: Mapped[list["TenantBase"]] = relationship(
@@ -288,21 +186,6 @@ class GroupBase(UnoBase):
         viewonly=True,
         foreign_keys=[UserBase.default_group_id],
         doc="Users assigned to the group",
-    )
-    created_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[created_by_id],
-        doc="User that created the record",
-    )
-    modified_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[modified_by_id],
-        doc="User that last modified the record",
-    )
-    deleted_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[deleted_by_id],
-        doc="User that deleted the record",
     )
     users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
@@ -316,7 +199,7 @@ class GroupBase(UnoBase):
     )
 
 
-class RoleBase(UnoBase):
+class RoleBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -326,21 +209,6 @@ class RoleBase(UnoBase):
         },
     )
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        nullable=False,
-        doc="Primary Key and Foreign Key to Meta Base",
-    )
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates that the record is currently active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates that the record has been soft deleted",
-    )
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
@@ -356,56 +224,11 @@ class RoleBase(UnoBase):
         nullable=False,
         doc="Role description",
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was created",
-    )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that created the record",
-    )
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was last modified",
-    )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that last modified the record",
-    )
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=True,
-        doc="Timestamp when the record was soft deleted",
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that deleted the record",
-    )
 
     # Relationships
     tenant: Mapped[list["TenantBase"]] = relationship(
         viewonly=True,
         doc="Customer to which the role belongs",
-    )
-    created_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[created_by_id],
-        doc="User that created the record",
-    )
-    modified_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[modified_by_id],
-        doc="User that last modified the record",
-    )
-    deleted_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[deleted_by_id],
-        doc="User that deleted the record",
     )
     users: Mapped[list["UserBase"]] = relationship(
         viewonly=True,
@@ -424,7 +247,7 @@ class RoleBase(UnoBase):
     )
 
 
-class TenantBase(UnoBase):
+class TenantBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "tenant"
     __table_args__ = (
         Index("ix_tenant_name", "name"),
@@ -434,21 +257,6 @@ class TenantBase(UnoBase):
         },
     )
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        nullable=False,
-        doc="Primary Key and Foreign Key to Meta Base",
-    )
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates that the record is currently active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates that the record has been soft deleted",
-    )
     name: Mapped[str_255] = mapped_column(
         index=True,
         nullable=False,
@@ -465,53 +273,8 @@ class TenantBase(UnoBase):
         nullable=False,
         doc="Tenant type",
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was created",
-    )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that created the record",
-    )
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        doc="Timestamp when the record was last modified",
-    )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that last modified the record",
-    )
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=True,
-        doc="Timestamp when the record was soft deleted",
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        doc="User that deleted the record",
-    )
 
     # Relationships
-    created_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[created_by_id],
-        doc="User that created the record",
-    )
-    modified_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[modified_by_id],
-        doc="User that last modified the record",
-    )
-    deleted_by: Mapped[UserBase] = relationship(
-        viewonly=True,
-        foreign_keys=[deleted_by_id],
-        doc="User that deleted the record",
-    )
     users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
         foreign_keys=[UserBase.tenant_id],

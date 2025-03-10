@@ -26,7 +26,7 @@ from uno.config import settings
 
 
 class ReportTypeReportField(Base):
-    __tablename__ = "report_type__report_field"
+    # __tablename__ = "report_type__report_field"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -56,7 +56,7 @@ class ReportField(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "report_field"
+    # __tablename__ = "report_field"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -106,7 +106,7 @@ class ReportType(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "report_type"
+    # __tablename__ = "report_type"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -144,7 +144,7 @@ class Report(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "report"
+    # __tablename__ = "report"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,

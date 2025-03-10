@@ -38,7 +38,7 @@ class Workflow(
     BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
-    __tablename__ = "workflow"
+    # __tablename__ = "workflow"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "User-defined workflows",
@@ -148,7 +148,7 @@ class Workflow(
 
 
 class WorkflowStep(MetaBase, MetaBaseMixin, BaseAuditMixin, HistoryTableAuditMixin):
-    __tablename__ = "workflow_step"
+    # __tablename__ = "workflow_step"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Manually created or trigger created workflow activities",

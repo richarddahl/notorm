@@ -22,7 +22,7 @@ class TestMetaType:
         assert MetaType.__name__ == "MetaType"
         assert MetaType.__module__ == f"{settings.DB_SCHEMA}.db.tables"
         assert MetaType.__table_args__.get("schema") == "uno"
-        assert MetaType.__tablename__ == "meta_type"
+        assert MetaType.#__tablename__ == "meta_type"
         # print(list(MetaBase.table.columns.keys()))
         assert list(MetaType.table.columns.keys()) == ["name"]
 

@@ -11,7 +11,6 @@ from pydantic import BaseModel, computed_field, field_validator
 from pydantic.fields import Field
 
 from uno.db.base import UnoBase
-from uno.utilities import create_random_alias
 from uno.config import settings
 
 
@@ -29,15 +28,6 @@ def set_remote_table(values: dict) -> Table:
         f"{settings.DB_SCHEMA}.{remote_table_name}"
     ]
     return remote_table
-
-
-def set_remote_table_alias(values: dict) -> Alias:
-    remote_table = values["remote_table"]
-    remote_table_alias = create_random_alias(
-        remote_table,
-        prefix=remote_table.name,
-    )
-    return remote_table_alias
 
 
 def set_remote_column_alias(values: dict) -> Alias:
@@ -58,7 +48,6 @@ class UnoRelObj(BaseModel):
     remote_column_name: str
 
     remote_table: Table = Field(default_factory=set_remote_table)
-    remote_table_alias: Alias = Field(default_factory=set_remote_table_alias)
     remote_column_alias: Alias = Field(default_factory=set_remote_column_alias)
 
     join_table: str = None

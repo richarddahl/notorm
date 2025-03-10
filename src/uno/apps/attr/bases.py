@@ -64,7 +64,7 @@ attribute_type___meta_type = Table(
 
 
 class Attribute(UnoBase):
-    __tablename__ = "attribute"
+    # __tablename__ = "attribute"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -110,7 +110,7 @@ class AttributeType(
     BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
-    __tablename__ = "attribute_type"
+    # __tablename__ = "attribute_type"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,

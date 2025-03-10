@@ -35,7 +35,7 @@ from uno.config import settings
 
 
 class MessageAddressedTo(Base):
-    __tablename__ = "message__addressed_to"
+    # __tablename__ = "message__addressed_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "User addressed on a message",
@@ -61,7 +61,7 @@ class MessageAddressedTo(Base):
 
 
 class MessageCopiedTo(Base):
-    __tablename__ = "message__copied_to"
+    # __tablename__ = "message__copied_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "User copied on a message",
@@ -87,7 +87,7 @@ class MessageCopiedTo(Base):
 
 
 class MessageRelatedObject(Base):
-    __tablename__ = "message__meta"
+    # __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Messages to MetaBase Objects",
@@ -115,7 +115,7 @@ class Message(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "message"
+    # __tablename__ = "message"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Messages are used to communicate between users",

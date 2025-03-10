@@ -9,15 +9,13 @@ from pydantic.fields import Field
 
 from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
-from uno.model.model import UnoModel
-from uno.model.mixins import GeneralModelMixin
+from uno.model.model import UnoModel, GeneralModelMixin
 from uno.apps.meta.models import MetaBase
 from uno.apps.auth.enums import TenantType
-from uno.apps.auth.model_mixins import ModelAuditMixin
 from uno.config import settings
 
 
-class User(UnoModel, GeneralModelMixin, ModelAuditMixin):
+class User(UnoModel, GeneralModelMixin):
     # Class variables
     table_name = "user"
     schema_configs = {
@@ -42,7 +40,6 @@ class User(UnoModel, GeneralModelMixin, ModelAuditMixin):
         ),
     }
 
-    id: Optional[str] = None
     email: EmailStr
     handle: str
     full_name: str
@@ -60,7 +57,7 @@ class User(UnoModel, GeneralModelMixin, ModelAuditMixin):
         return self.handle
 
 
-class Group(UnoModel, GeneralModelMixin, ModelAuditMixin):
+class Group(UnoModel, GeneralModelMixin):
     # Class variables
     table_name = "group"
 
@@ -76,7 +73,7 @@ class Group(UnoModel, GeneralModelMixin, ModelAuditMixin):
         return self.name
 
 
-class Role(UnoModel, GeneralModelMixin, ModelAuditMixin):
+class Role(UnoModel, GeneralModelMixin):
     # Class variables
     table_name = "role"
 
@@ -89,7 +86,7 @@ class Role(UnoModel, GeneralModelMixin, ModelAuditMixin):
         return self.name
 
 
-class Tenant(UnoModel, GeneralModelMixin, ModelAuditMixin):
+class Tenant(UnoModel, GeneralModelMixin):
     # Class variables
     table_name = "tenant"
 

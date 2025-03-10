@@ -99,15 +99,15 @@ class TestUserDBStructure:
         db_inspector = inspect(connection)
         # print(db_inspector.get_columns("user", schema=settings.DB_SCHEMA))
         assert [
-            "id",
-            "is_active",
-            "is_deleted",
             "email",
             "handle",
             "full_name",
             "tenant_id",
             "default_group_id",
             "is_superuser",
+            "id",
+            "is_active",
+            "is_deleted",
             "created_at",
             "created_by_id",
             "modified_at",

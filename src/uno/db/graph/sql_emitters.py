@@ -225,7 +225,7 @@ class EdgeSQLEmitter(SQLEmitter):
                 continue
             data_type = column.type.python_type.__name__
             for base in self.obj_class.registry.mappers:
-                if base.class_.__tablename__ == self.secondary.name:
+                if base.class_.#__tablename__ == self.secondary.name:
                     obj_class = base.class_
                     break
             props.update(

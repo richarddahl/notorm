@@ -31,7 +31,7 @@ from uno.config import settings
 
 
 class AttachmentMetaBase(Base):
-    __tablename__ = "attachment__meta_record"
+    # __tablename__ = "attachment__meta_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "The relationship between attachments and meta_record objects",
@@ -54,7 +54,7 @@ class AttachmentMetaBase(Base):
 
 
 class BooleanValue(MetaBase):
-    __tablename__ = "boolean_value"
+    # __tablename__ = "boolean_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -96,7 +96,7 @@ class DateTimeValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "datetime_value"
+    # __tablename__ = "datetime_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -138,7 +138,7 @@ class DateValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "date_value"
+    # __tablename__ = "date_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -180,7 +180,7 @@ class DecimalValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "decimal_value"
+    # __tablename__ = "decimal_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -222,7 +222,7 @@ class IntegerValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "integer_value"
+    # __tablename__ = "integer_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -264,7 +264,7 @@ class TextValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "text_value"
+    # __tablename__ = "text_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -306,7 +306,7 @@ class TimeValue(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "time_value"
+    # __tablename__ = "time_value"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
@@ -348,7 +348,7 @@ class Attachment(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "attachment"
+    # __tablename__ = "attachment"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Files attached to db objects",
@@ -381,7 +381,7 @@ class Method(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "method"
+    # __tablename__ = "method"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Methods that can be used in attributes, workflows, and reports",
@@ -427,7 +427,7 @@ class CalculationSymbol(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "calculation_symbol"
+    #__tablename__ = "calculation_symbol"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Inputs to calculations that can be used in attributes, workflows, and reports",
@@ -453,7 +453,7 @@ class Calculation(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    __tablename__ = "calculation"
+    #__tablename__ = "calculation"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Calculations that can be used in attributes, workflows, and reports",

@@ -24,7 +24,7 @@ from uno.config import settings
 
 
 class QueryFilterValue(Base):
-    __tablename__ = "query__filter_value"
+    # __tablename__ = "query__filter_value"
     __table_args__ = (
         Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
         {
@@ -49,7 +49,7 @@ class QueryFilterValue(Base):
 
 
 class FilterFilterValue(Base):
-    __tablename__ = "filter__filter_value"
+    # __tablename__ = "filter__filter_value"
     __table_args__ = (
         Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
         {
@@ -74,7 +74,7 @@ class FilterFilterValue(Base):
 
 
 class QuerySubquery(Base):
-    __tablename__ = "query__sub_query"
+    # __tablename__ = "query__sub_query"
     __table_args__ = (
         Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
         {
@@ -101,7 +101,7 @@ class QuerySubquery(Base):
 
 
 class Filter(Base):
-    __tablename__ = "filter"
+    # __tablename__ = "filter"
     __table_args__ = (
         UniqueConstraint(
             "source_meta_type",
@@ -168,7 +168,7 @@ class FilterValue(
     BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
-    __tablename__ = "filter_value"
+    # __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
             "include",
@@ -247,7 +247,7 @@ class Query(
     BaseAuditMixin,
     HistoryTableAuditMixin,
 ):
-    __tablename__ = "query"
+    # __tablename__ = "query"
     __table_args__ = (
         {
             "schema": settings.DB_SCHEMA,
