@@ -12,14 +12,6 @@ from uno.config import settings
 
 class MetaTypeBase(UnoBase):
     __tablename__ = "meta_type"
-    __table_args__ = {
-        "info": {
-            "sql_emitters": [
-                AlterGrants,
-                InsertPermission,
-            ]
-        }
-    }
 
     id: Mapped[int] = mapped_column(
         Identity(start=1, cycle=True),
@@ -36,7 +28,6 @@ class MetaTypeBase(UnoBase):
 
 class MetaBase(UnoBase):
     __tablename__ = "meta"
-    __table_args__ = {"info": {"sql_emitters": [AlterGrants]}}
 
     id: Mapped[str_26] = mapped_column(
         primary_key=True,
