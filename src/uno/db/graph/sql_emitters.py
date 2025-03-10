@@ -27,107 +27,15 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.utilities import (
-    convert_snake_to_camel,
-    convert_snake_to_title,
-)
-
-
-class GraphSQLEmitter(SQLEmitter):
-
-    @computed_field
-    def source_meta_type(self) -> str:
-        return self.obj_class.table.name
-
-
-class PropertySQLEmitter(GraphSQLEmitter):
-    # obj_class: type[DeclarativeBase] <- from GraphBase
-    # source_meta_type: str <- computed_field from GraphBase
-    accessor: str
-    data_type: str
-    # display: str <- computed_field
-    # destination_meta_type: str <- computed_field
-    # lookups: Lookup <- computed_field
-
-    @computed_field
-    def display(self) -> str:
-        return convert_snake_to_title(self.accessor)
-
-    @computed_field
-    def destination_meta_type(self) -> str:
-        return self.source_meta_type
-
-    @computed_field
-    def lookups(self) -> Lookup:
-        if self.data_type in [
-            "datetime",
-            "date",
-            "Decimal",
-            "int",
-            "time",
-        ]:
-            return numeric_lookups
-        if self.data_type in ["str"]:
-            return text_lookups
-        if self.data_type in ["bool"]:
-            return boolean_lookups
-        return object_lookups
-
-    @computed_field
-    def emit_sql(self) -> str:
-        return
-        return (
-            SQL(
-                """
-            DO $$
-            BEGIN
-                SET ROLE {admin_role};
-                INSERT INTO filter (
-                    display,
-                    data_type,
-                    source_meta_type,
-                    destination_meta_type,
-                    accessor,
-                    lookups
-                )
-                VALUES (
-                    {display},
-                    {data_type},
-                    {source_meta_type},
-                    {destination_meta_type},
-                    {accessor},
-                    {lookups}
-                )
-                RETURNING id;
-            END $$;
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                schema_name=DB_SCHEMA,
-                display=Literal(self.display),
-                data_type=Literal(self.data_type),
-                source_meta_type=Literal(self.source_meta_type),
-                destination_meta_type=Literal(self.destination_meta_type),
-                accessor=Literal(self.accessor),
-                lookups=Literal(self.lookups),
-            )
-            .as_string()
-        )
+from uno.utilities import convert_snake_to_camel
 
 
 class NodeSQLEmitter(SQLEmitter):
     exclude_fields: ClassVar[list[str]] = ["table_name", "label", "properties"]
 
-    properties: dict[str, Any] = {}
-
     @computed_field
     def label(self) -> str:
         return convert_snake_to_camel(self.table_name)
-
-    # @computed_field
-    # def properties(self) -> dict[str, PropertySQLEmitter]:
-    #    return self.node.properties
 
     @computed_field
     def create_node_label(self) -> str:
@@ -306,8 +214,6 @@ class NodeSQLEmitter(SQLEmitter):
 
 
 class EdgeSQLEmitter(SQLEmitter):
-    edge: BaseModel = None
-
     """
     @computed_field
     def properties(self) -> dict[str, PropertySQLEmitter]:
@@ -333,11 +239,6 @@ class EdgeSQLEmitter(SQLEmitter):
             )
         return props
     """
-
-    @computed_field
-    def emit_sql(self) -> str:
-        self.create_edge_label()
-        # self.create_filter_field()
 
     def create_edge_label(self) -> str:
         return (
