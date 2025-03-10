@@ -31,7 +31,7 @@ from uno.utilities import convert_snake_to_camel
 
 
 class NodeSQLEmitter(SQLEmitter):
-    exclude_fields: ClassVar[list[str]] = ["table_name", "label", "properties"]
+    exclude_fields: ClassVar[list[str]] = ["table_name", "label"]
 
     @computed_field
     def label(self) -> str:
@@ -213,33 +213,22 @@ class NodeSQLEmitter(SQLEmitter):
         )
 
 
-class EdgeSQLEmitter(SQLEmitter):
-    """
-    @computed_field
-    def properties(self) -> dict[str, PropertySQLEmitter]:
-        if not isinstance(self.secondary, Table):
-            return {}
-        props = {}
-        for column in self.secondary.columns:
-            if column.foreign_keys and column.primary_key:
-                continue
-            data_type = column.type.python_type.__name__
-            for base in self.obj_class.registry.mappers:
-                if base.class_.#__tablename__ == self.secondary.name:
-                    obj_class = base.class_
-                    break
-            props.update(
-                {
-                    column.name: PropertySQLEmitter(
-                        obj_class=obj_class,
-                        accessor=column.name,
-                        data_type=data_type,
-                    )
-                }
-            )
-        return props
-    """
+class EdgeConfig(BaseModel):
+    table_name: str
+    column_name: str
+    label: str
+    remote_table_name: str
+    remote_column_name: str
+    remote_node_label: str
+    secondary_table_name: str = None
+    secondary_column_name: str = None
+    secondary_remote_column_name: str = None
 
+    @computed_field
+    def node_label(self) -> str:
+        return convert_snake_to_camel(self.table_name)
+
+    @computed_field
     def create_edge_label(self) -> str:
         return (
             SQL(
@@ -257,93 +246,136 @@ class EdgeSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                label=Literal(self.edge.label),
-                label_ident=Identifier(self.edge.label),
+                label=Literal(self.label),
+                label_ident=Identifier(self.label),
             )
             .as_string()
         )
 
-    def create_filter_field(self) -> str:
-        return
+
+class EdgeSQLEmitter(SQLEmitter):
+    exclude_fields: ClassVar[list[str]] = ["table_name"]
+    edge_configs: ClassVar[list[EdgeConfig]] = []
+
+    def insert_edge_sql(self, edge_config: EdgeConfig) -> str:
         return (
             SQL(
                 """
-                DO $$
-                DECLARE
-                    filter_id VARCHAR(26);
-                BEGIN
-                    SET ROLE {admin_role};
-                    INSERT INTO filter (
-                        data_type,
-                        source_meta_type,
-                        destination_meta_type,
-                        accessor,
-                        display,
-                        lookups,
-                        properties
-                    )
-                    VALUES (
-                        {data_type},
-                        {source_meta_type},
-                        {destination_meta_type},
-                        {accessor},
-                        {display},
-                        {lookups},
-                        {properties}
-
-                    ) RETURNING id INTO filter_id;
-
-                END $$;
-                """
+                    IF NEW.{column_name} IS NOT NULL THEN
+                        SELECT * FROM cypher('graph', $$
+                            EXECUTE FORMAT('
+                            MATCH (l:{node_label} {{id: %s}})
+                            MATCH (r:{remote_node_label} {{id: %s}})
+                            CREATE (l)-[e:{label}]->(r)',
+                            quote_nullable(NEW.{column_name}),
+                            quote_nullable(NEW.{remote_column_name})
+                            );
+                        $$) AS (result agtype);
+                    END IF;
+            """
             )
             .format(
-                admin_role=ADMIN_ROLE,
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
-                schema_name=DB_SCHEMA,
-                data_type=Literal("object"),
-                source_meta_type=Literal(self.source_meta_type),
-                destination_meta_type=Literal(self.destination_meta_type),
-                display=Literal(self.display),
-                accessor=Literal(self.accessor),
-                lookups=Literal(self.lookups),
-                properties=json.dumps(list(self.properties.keys())),
+                node_label=SQL(edge_config.node_label),
+                column_name=Identifier(edge_config.column_name),
+                label=SQL(edge_config.label),
+                remote_node_label=SQL(edge_config.remote_node_label),
+                remote_column_name=Identifier(edge_config.remote_column_name),
             )
             .as_string()
         )
 
-    def insert_edge_sql(self) -> None:
-        """
-        Generates an SQL string to create a function and trigger for inserting
-        a relationship between two vertices in a graph database.
+    @computed_field
+    def insert_edge(self) -> str:
+        function_string = (
+            SQL(
+                """
+                BEGIN
 
-        The generated SQL uses the `cypher` function to match the start and end
-        vertices by their IDs and creates a relationship between them with the
-        specified name and properties.
+                    -- Execute the Cypher queries to insert the edges
+                    SET ROLE {admin_role};
+                    {edges}
+                    RETURN NEW;
 
-        Returns:
-            str: The generated SQL string.
-        """
-        prop_key_str = ", ".join(f"{prop.accessor}: %s" for prop in self.properties)
-        prop_val_str = ", ".join([prop.data_type for prop in self.properties])
-        function_string = SQL(
+                END;
             """
-            DECLARE
-                _sql TEXT := FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                    MATCH (v:{self.start_node.name} {{id: %s}})
-                    MATCH (w:{self.end_node.name} {{id: %s}})
-                    CREATE (v)-[e:{self.name} {{{prop_key_str}}}]->(w)
-                $graph$) AS (a agtype);', quote_nullable(NEW.id), quote_nullable(NEW.id){prop_val_str});
-            BEGIN
-                EXECUTE _sql;
-                RETURN NEW;
-            END;
-            """
-        ).format(
-            prop_key_str=SQL(prop_key_str),
-            prop_val_str=SQL(prop_val_str),
+            )
+            .format(
+                admin_role=ADMIN_ROLE,
+                edges=SQL(
+                    "\n".join(
+                        [
+                            self.insert_edge_sql(
+                                edge_config(table_name=self.table_name)
+                            )
+                            for edge_config in self.edge_configs
+                        ]
+                    ),
+                ),
+            )
+            .as_string()
         )
-        return function_string
+
+        return self.create_sql_function(
+            "insert_edges",
+            function_string,
+            operation="INSERT",
+            timing="AFTER",
+            include_trigger=True,
+            db_function=False,
+        )
+
+    def old_insert_edge(self) -> str:
+        function_string = (
+            SQL(
+                """
+                DECLARE
+                    cypher_query text;
+                    properties hstore;
+                    properties_str text;
+                BEGIN
+                    -- Convert the NEW record to hstore to get column names and values
+                    properties := hstore(NEW);
+
+                    -- Construct the properties string
+                    properties_str := array_to_string(
+                        array(SELECT FORMAT('%s: %L', key, value) FROM EACH(properties)),', ');
+
+                    -- Construct the Cypher query dynamically
+                    cypher_query := format('
+                        MATCH (v:{node_label} {{id: %s}})
+                        MATCH (w:{remote_node_label} {{id: %s}})
+                        CREATE (v)-[e:{label} {{%s}}]->(w)',
+                        quote_nullable(NEW.{column_name}),
+                        quote_nullable(NEW.{remote_column_name}),
+                        properties_str
+                    );
+
+                    -- Execute the Cypher query
+                    SET ROLE {admin_role};
+                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
+                    RETURN NEW;
+                END;
+            """
+            )
+            .format(
+                node_label=SQL(self.node_label),
+                column_name=SQL(self.column_name),
+                label=SQL(self.label),
+                remote_node_label=SQL(self.remote_node_label),
+                remote_column_name=SQL(self.remote_column_name),
+                admin_role=ADMIN_ROLE,
+            )
+            .as_string()
+        )
+
+        return self.create_sql_function(
+            "insert_edges",
+            function_string,
+            operation="INSERT",
+            timing="AFTER",
+            include_trigger=True,
+            db_function=False,
+        )
 
     def update_edge_sql(self) -> None:
         """
