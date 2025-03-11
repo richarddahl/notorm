@@ -45,7 +45,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
         assert "full_name" in User.model_fields.keys()
         assert "tenant" in User.model_fields.keys()
         assert "default_group" in User.model_fields.keys()
-        assert "group" in User.model_fields.keys()
         assert "is_superuser" in User.model_fields.keys()
         assert "is_active" in User.model_fields.keys()
         assert "is_deleted" in User.model_fields.keys()
@@ -82,7 +81,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
         assert user.full_name == "Admin"
         assert user.tenant is None
         assert user.default_group is None
-        assert user.group is None
         assert user.is_superuser == True
         assert user.is_active == True
         assert user.is_deleted == False
@@ -109,7 +107,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
                 full_name="Admin",
                 tenant=None,
                 default_group=None,
-                group=None,
                 is_superuser=True,
                 is_active=True,
                 is_deleted=False,
@@ -138,7 +135,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
             full_name="Admin",
             tenant=None,
             default_group=None,
-            group=None,
             is_superuser=True,
             is_active=True,
             is_deleted=False,
@@ -174,7 +170,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
             'group', 'is_superuser', 'is_active', 'is_deleted', 'created_at', 'created_by',
             'modified_at', 'modified_by', 'deleted_at', and 'deleted_by') is present in the model_fields.
         """
-        User.configure()
+        User.set_schemas()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -182,7 +178,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
             full_name="Admin",
             tenant=None,
             default_group=None,
-            group=None,
             is_superuser=True,
             is_active=True,
             is_deleted=False,
@@ -194,23 +189,22 @@ class TestUserModel(IsolatedAsyncioTestCase):
             deleted_by=None,
         )
         assert user.view_schema is not None
-        assert len(user.view_schema.model_fields) == 16
+        assert len(user.view_schema.model_fields) == 15
         assert "id" in user.view_schema.model_fields.keys()
         assert "email" in user.view_schema.model_fields.keys()
         assert "handle" in user.view_schema.model_fields.keys()
         assert "full_name" in user.view_schema.model_fields.keys()
-        assert "tenant" in user.view_schema.model_fields.keys()
-        assert "default_group" in user.view_schema.model_fields.keys()
-        assert "group" in user.view_schema.model_fields.keys()
+        assert "tenant_id" in user.view_schema.model_fields.keys()
+        assert "default_group_id" in user.view_schema.model_fields.keys()
         assert "is_superuser" in user.view_schema.model_fields.keys()
         assert "is_active" in user.view_schema.model_fields.keys()
         assert "is_deleted" in user.view_schema.model_fields.keys()
         assert "created_at" in user.view_schema.model_fields.keys()
-        assert "created_by" in user.view_schema.model_fields.keys()
+        assert "created_by_id" in user.view_schema.model_fields.keys()
         assert "modified_at" in user.view_schema.model_fields.keys()
-        assert "modified_by" in user.view_schema.model_fields.keys()
+        assert "modified_by_id" in user.view_schema.model_fields.keys()
         assert "deleted_at" in user.view_schema.model_fields.keys()
-        assert "deleted_by" in user.view_schema.model_fields.keys()
+        assert "deleted_by_id" in user.view_schema.model_fields.keys()
 
     async def test_user_edit_schema(self):
         """
@@ -221,7 +215,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
         - The edit_schema contains exactly eight fields.
         - The expected fields are present: 'id', 'email', 'handle', 'full_name', 'tenant', 'default_group', 'group', and 'is_superuser'.
         """
-        User.configure()
+        User.set_schemas()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -229,7 +223,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
             full_name="Admin",
             tenant=None,
             default_group=None,
-            group=None,
             is_superuser=True,
             is_active=True,
             is_deleted=False,
@@ -241,14 +234,12 @@ class TestUserModel(IsolatedAsyncioTestCase):
             deleted_by=None,
         )
         assert user.edit_schema is not None
-        assert len(user.edit_schema.model_fields) == 8
-        assert "id" in user.edit_schema.model_fields.keys()
+        assert len(user.edit_schema.model_fields) == 6
         assert "email" in user.edit_schema.model_fields.keys()
         assert "handle" in user.edit_schema.model_fields.keys()
         assert "full_name" in user.edit_schema.model_fields.keys()
-        assert "tenant" in user.edit_schema.model_fields.keys()
-        assert "default_group" in user.edit_schema.model_fields.keys()
-        assert "group" in user.edit_schema.model_fields.keys()
+        assert "tenant_id" in user.edit_schema.model_fields.keys()
+        assert "default_group_id" in user.edit_schema.model_fields.keys()
         assert "is_superuser" in user.edit_schema.model_fields.keys()
 
     async def test_user_summary_schema(self):
@@ -262,7 +253,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
 
         It ensures that the summary schema is correctly computed from the model's data.
         """
-        User.configure()
+        User.set_schemas()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -270,7 +261,6 @@ class TestUserModel(IsolatedAsyncioTestCase):
             full_name="Admin",
             tenant=None,
             default_group=None,
-            group=None,
             is_superuser=True,
             is_active=True,
             is_deleted=False,
