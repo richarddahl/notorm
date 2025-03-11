@@ -30,10 +30,13 @@ from uno.model.model import UnoModel
 from uno.config import settings
 
 # Import all the bases in the settings.LOAD_MODULES list
-# for module in settings.LOAD_MODULES:
-#    globals()[f"{module.split('.')[2]}._models"] = importlib.import_module(
-#        f"{module}.models"
-#    )
+for module in settings.LOAD_MODULES:
+    globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
+        f"{module}.bases"
+    )
+    globals()[f"{module.split('.')[2]}._models"] = importlib.import_module(
+        f"{module}.models"
+    )
 
 
 @contextlib.contextmanager

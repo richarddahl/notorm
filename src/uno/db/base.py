@@ -99,7 +99,7 @@ class GeneralBaseMixin:
         doc="Timestamp when the record was created",
     )
     created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
+        ForeignKey("user.id", ondelete="RESTRICT"),
         index=True,
         nullable=False,
         server_default=FetchedValue(),
@@ -111,7 +111,7 @@ class GeneralBaseMixin:
         doc="Timestamp when the record was last modified",
     )
     modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
+        ForeignKey("user.id", ondelete="RESTRICT"),
         index=True,
         nullable=False,
         server_default=FetchedValue(),
