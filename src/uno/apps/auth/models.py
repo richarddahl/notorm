@@ -10,6 +10,26 @@ from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel, GeneralModelMixin
 from uno.apps.auth.enums import TenantType
 from uno.apps.auth.mixins import RecordAuditMixin
+from uno.apps.auth.rls_sql_emitters import (
+    UserRowLevelSecurity,
+)
+from uno.apps.auth.sql_emitters import (
+    ValidateGroupInsert,
+    DefaultGroupTenant,
+    InsertGroupForTenant,
+    UserRecordUserAuditFunction,
+)
+from uno.db.sql.table_sql_emitters import (
+    AlterGrants,
+    GeneralSqlEmitter,
+    RecordUserAuditFunction,
+)
+from uno.apps.auth.graph_sql_emitters import (
+    UserGraph,
+    GroupGraph,
+    TenantGraph,
+    RoleGraph,
+)
 from uno.config import settings
 
 
@@ -43,6 +63,13 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    sql_emitters = [
+        GeneralSqlEmitter,
+        UserRowLevelSecurity,
+        UserRecordUserAuditFunction,
+        UserGraph,
+        # UserRole,
+    ]
 
     email: EmailStr
     handle: str
@@ -88,6 +115,13 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    sql_emitters = [
+        GeneralSqlEmitter,
+        RecordUserAuditFunction,
+        ValidateGroupInsert,
+        DefaultGroupTenant,
+        GroupGraph,
+    ]
 
     # Fields
     id: Optional[str]
@@ -128,6 +162,11 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    sql_emitters = [
+        GeneralSqlEmitter,
+        RecordUserAuditFunction,
+        RoleGraph,
+    ]
 
     id: Optional[str]
     name: str
@@ -164,6 +203,12 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    sql_emitters = [
+        GeneralSqlEmitter,
+        RecordUserAuditFunction,
+        InsertGroupForTenant,
+        TenantGraph,
+    ]
 
     id: Optional[str]
     name: str
@@ -180,6 +225,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Permission(UnoModel):
     # Class variables
     table_name = "permission"
+    sql_emitters = [AlterGrants]
 
     id: Optional[int]
     meta_type_id: str

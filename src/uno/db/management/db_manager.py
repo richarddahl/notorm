@@ -22,21 +22,18 @@ from uno.db.sql.sql_emitters import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.db.base import UnoBase, meta_data
+from uno.db.base import meta_data
 from uno.db.db import scoped_session
-from uno.db.sql.sql_emitter import UnoSQL
-from uno.apps.meta.bases import MetaTypeBase
-from uno.apps.meta.sql import MetaTypeSQL
+from uno.apps.meta.models import MetaType
 from uno.apps.auth.bases import UserBase
+from uno.model.model import UnoModel
 from uno.config import settings
 
 # Import all the bases in the settings.LOAD_MODULES list
-for module in settings.LOAD_MODULES:
-    print(module)
-    globals()[f"{module.split('.')[2]}._sql"] = importlib.import_module(f"{module}.sql")
-    globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
-        f"{module}.bases"
-    )
+# for module in settings.LOAD_MODULES:
+#    globals()[f"{module.split('.')[2]}._models"] = importlib.import_module(
+#        f"{module}.models"
+#    )
 
 
 @contextlib.contextmanager
@@ -124,52 +121,16 @@ class DBManager:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
-            meta_type_sql = MetaTypeSQL
+            meta_type = MetaType
             print("\nEmitting SQL for: MetaType")
-            for sql_emitter in meta_type_sql.sql_emitters:
+            for sql_emitter in meta_type.sql_emitters:
                 sql_emitter(table_name="meta_type").emit_sql(connection=conn)
-            for name, sql in UnoSQL.registry.items():
-                if name == "MetaTypeSQL":
+            for name, model in UnoModel.registry.items():
+                if name == "MetaType":
                     continue  # Skip the MetaTypeBase table since it was already done
                 print(f"\nEmitting SQL for: {name}")
-                for sql_emitter in sql.sql_emitters:
-                    sql_emitter(table_name=sql.table_name).emit_sql(connection=conn)
-            conn.close()
-        engine.dispose()
-
-    def emit_table_sql_old(self) -> None:
-        # Connect to the new database to emit the table specific SQL
-        engine = self.engine(db_role=f"{settings.DB_NAME}_login")
-        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            # Must emit the sql for the meta type table first
-            # So that the triggger function can be fired each time
-            # a new table is created to add the corresponding permissions
-            meta_type_base = MetaTypeBase
-            print("\nEmitting SQL for: MetaType")
-            for sql_emitter in meta_type_base.__table_args__.get("info").get(
-                "sql_emitters"
-            ):
-                sql_emitter(table_name="meta_type").emit_sql(connection=conn)
-            for base in UnoBase.registry.mappers:
-                if base.class_.__name__ == "MetaTypeBase":
-                    continue  # Skip the MetaTypeBase table since it was already done
-                print(f"\nEmitting SQL for: {base.class_.__name__}")
-                if type(base.class_.__table_args__) is dict:
-                    for sql_emitter in base.class_.__table_args__.get("info").get(
-                        "sql_emitters", []
-                    ):
-                        sql_emitter(table_name=base.class_.__tablename__).emit_sql(
-                            connection=conn
-                        )
-                else:
-                    for table_arg in base.class_.__table_args__:
-                        if type(table_arg) is dict:
-                            for sql_emitter in table_arg.get("info", {}).get(
-                                "sql_emitters", []
-                            ):
-                                sql_emitter(
-                                    table_name=base.class_.__tablename__
-                                ).emit_sql(connection=conn)
+                for sql_emitter in model.sql_emitters:
+                    sql_emitter(table_name=model.table_name).emit_sql(connection=conn)
             conn.close()
         engine.dispose()
 

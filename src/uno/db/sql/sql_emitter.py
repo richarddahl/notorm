@@ -37,26 +37,6 @@ DB_NAME = SQL(settings.DB_NAME)
 DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
-class UnoSQL(BaseModel):
-    registry: ClassVar[dict[str, "UnoSQL"]] = {}
-    sql_emitters: ClassVar[list["SQLEmitter"]] = []
-    table_name: ClassVar[Optional[str]] = None
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        # Don't add the UnoSQL class itself to the registry
-        if cls is UnoSQL:
-            return
-        # Add the subclass to the registry if it is not already there
-        if cls.__name__ not in cls.registry:
-            cls.registry.update({cls.__name__: cls})
-        else:
-            raise UnoRegistryError(
-                f"A SQLEmitter class with the name {cls.__name__} already exists in the registry.",
-                "SQL_CLASS_EXISTS_IN_REGISTRY",
-            )
-
-
 class SQLEmitter(BaseModel):
     exclude_fields: ClassVar[list[str]] = ["table_name"]
 

@@ -9,6 +9,7 @@ from typing import ClassVar, Optional
 from pydantic import BaseModel, ConfigDict
 from fastapi import FastAPI
 
+from uno.db.sql.sql_emitters import SQLEmitter
 from uno.model.schema import UnoSchemaConfig, UnoSchema
 from uno.api.endpoint import (
     CreateEndpoint,
@@ -43,6 +44,7 @@ class UnoModel(BaseModel):
         "Delete",
         "Import",
     ]
+    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
 
