@@ -4,8 +4,6 @@
 
 # Models are the Business Logic Layer Objects
 
-from typing import Union
-
 from pydantic import BaseModel, model_validator, create_model
 
 from uno.errors import UnoError
@@ -83,29 +81,6 @@ class UnoSchemaConfig(BaseModel):
             )
             for field_name in field_names
         }
-        # fields = {}
-        # for field_name in field_names:
-        #    field_annotation = model.model_fields[field_name].annotation
-        #    if (
-        #        hasattr(field_annotation, "__origin__")
-        #        and field_annotation.__origin__ is Union
-        #    ):
-        #        args = field_annotation.__args__
-        #        for arg in args:
-        #            if issubclass(arg, BaseModel):
-        #                rel_model_class_name = arg.__name__
-        #                rel_model_class = arg.registry[rel_model_class_name]
-        #                fields[field_name] = (
-        #                    model.model_fields[field_name].annotation,
-        #                    getattr(
-        #                        rel_model_class,
-        #                        "summary_schema",
-        #                    ),
-        #                )
-        #    fields[field_name] = (
-        #        model.model_fields[field_name].annotation,
-        #        model.model_fields[field_name],
-        #    )
         return create_model(
             schema_title,
             __base__=self.schema_base,
