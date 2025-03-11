@@ -8,8 +8,6 @@ import pytest_asyncio
 
 from unittest import IsolatedAsyncioTestCase
 
-from pydantic import EmailStr
-
 from uno.apps.auth.models import User
 from uno.config import settings
 
