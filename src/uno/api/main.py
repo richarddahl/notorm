@@ -13,13 +13,16 @@ from fastapi.templating import Jinja2Templates
 from uno.db.base import UnoBase
 from uno.api.endpoint import UnoEndpoint
 from uno.model.model import UnoModel
-from uno.api.app import app
+from uno.api.app_def import app
 from uno.config import settings
 
-from uno.apps.auth.models import User
+from uno.apps.auth.models import User, Group, Tenant, Role
 
 
 User.configure(app)
+Group.configure(app)
+Tenant.configure(app)
+Role.configure(app)
 
 
 templates = Jinja2Templates(directory="templates")

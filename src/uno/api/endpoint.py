@@ -3,21 +3,26 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Optional, ClassVar
+from pydantic import BaseModel, ConfigDict
+from fastapi import FastAPI, status
 
-from pydantic import BaseModel, ConfigDict, computed_field, field_validator
-
-from fastapi import FastAPI
-
-from uno.model.model import UnoModel
 from uno.model.schema import UnoSchema
-from uno.api.router import UnoRouter
+from uno.api.router import (
+    UnoRouter,
+    InsertRouter,
+    SummaryRouter,
+    SelectRouter,
+    UpdateRouter,
+    DeleteRouter,
+    ImportRouter,
+)
 from uno.errors import UnoRegistryError
 
 
 class UnoEndpoint(BaseModel):
     registry: ClassVar[dict[str, "UnoEndpoint"]] = {}
 
-    obj_class: type[UnoModel]
+    obj_class: type[BaseModel]
     router: UnoRouter
     body_model: Optional[str | None] = None
     response_model: Optional[str]
@@ -59,3 +64,41 @@ class UnoEndpoint(BaseModel):
                 f"An Endpoint class with the name {cls.__name__} already exists in the registry.",
                 "ENDPOINT_CLASS_EXISTS_IN_REGISTRY",
             )
+
+
+class CreateEndpoint(UnoEndpoint):
+    router: UnoRouter = InsertRouter
+    body_model: UnoSchema = "edit_schema"
+    response_model: UnoSchema = "view_schema"
+    status_code: int = status.HTTP_201_CREATED
+
+
+class ViewEndpoint(UnoEndpoint):
+    router: UnoRouter = SelectRouter
+    body_model: UnoSchema = None
+    response_model: UnoSchema = "view_schema"
+
+
+class SummaryEndpoint(UnoEndpoint):
+    router: UnoRouter = SummaryRouter
+    body_model: UnoSchema = None
+    response_model: UnoSchema = "summary_schema"
+
+
+class UpdateEndpoint(UnoEndpoint):
+    router: UnoRouter = UpdateRouter
+    body_model: UnoSchema = "edit_schema"
+    response_model: UnoSchema = "view_schema"
+
+
+class DeleteEndpoint(UnoEndpoint):
+    router: UnoRouter = DeleteRouter
+    body_model: UnoSchema = None
+    response_model: UnoSchema = None
+
+
+class ImportEndpoint(UnoEndpoint):
+    router: UnoRouter = ImportRouter
+    body_model: UnoSchema = "view_schema"
+    response_model: UnoSchema = "view_schema"
+    status_code: int = status.HTTP_201_CREATED

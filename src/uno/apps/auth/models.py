@@ -2,64 +2,55 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, Union
-
+from typing import Optional
 from pydantic import EmailStr
-from pydantic.fields import Field
 
 from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel, GeneralModelMixin
-from uno.apps.meta.models import MetaBase
 from uno.apps.auth.enums import TenantType
-from uno.apps.auth.endpoints import (
-    CreateUser,
-    ViewUser,
-    ViewUserSummary,
-    UpdateUser,
-    DeleteUser,
-)
+from uno.apps.auth.mixins import RecordAuditMixin
 from uno.config import settings
 
 
-class User(UnoModel, GeneralModelMixin):
+class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     table_name = "user"
     schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "id",
-                "email",
-                "handle",
-                "full_name",
-                "tenant",
-                "group",
-                "is_superuser",
-                "default_group",
-            ],
-        ),
         "summary_schema": UnoSchemaConfig(
             include_fields=[
                 "id",
                 "handle",
             ],
         ),
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+                "tenant",
+                "default_group",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "email",
+                "handle",
+                "full_name",
+                "tenant_id",
+                "default_group_id",
+                "is_superuser",
+            ],
+        ),
     }
-    endpoints = [
-        CreateUser,
-        ViewUser,
-        ViewUserSummary,
-        UpdateUser,
-        DeleteUser,
-    ]
 
     email: EmailStr
     handle: str
     full_name: str
-    tenant: Optional[Union["Tenant", str]] = Field(None, alias="tenant_id")
-    default_group: Optional[Union["Group", str]] = Field(None, alias="default_group_id")
-    group: Optional[Union["Group", str]] = Field(None, alias="group_id")
+    tenant: Optional["Tenant"] = None
+    tenant_id: Optional[str] = None
+    default_group: Optional["Group"] = None
+    default_group_id: Optional[str] = None
     is_superuser: bool = False
 
     # roles: Optional[list["Role"]] = None
@@ -71,12 +62,37 @@ class User(UnoModel, GeneralModelMixin):
         return self.handle
 
 
-class Group(UnoModel, GeneralModelMixin):
+class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     table_name = "group"
 
+    schema_configs = {
+        "summary_schema": UnoSchemaConfig(
+            include_fields=[
+                "id",
+                "name",
+            ],
+        ),
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+                "tenant",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "name",
+                "tenant_id",
+            ],
+        ),
+    }
+
+    # Fields
     id: Optional[str]
     name: str
+    tenant_id: Optional[str]
     tenant: Optional["Tenant"]
 
     # roles: list["Role"] = []
@@ -87,22 +103,67 @@ class Group(UnoModel, GeneralModelMixin):
         return self.name
 
 
-class Role(UnoModel, GeneralModelMixin):
+class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     table_name = "role"
+
+    schema_configs = {
+        "summary_schema": UnoSchemaConfig(
+            include_fields=[
+                "id",
+                "name",
+            ],
+        ),
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+                "tenant",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "name",
+            ],
+        ),
+    }
 
     id: Optional[str]
     name: str
     description: Optional[str]
+    tenant_id: Optional[str]
     tenant: Optional["Tenant"]
 
     def __str__(self) -> str:
         return self.name
 
 
-class Tenant(UnoModel, GeneralModelMixin):
+class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     table_name = "tenant"
+
+    schema_configs = {
+        "summary_schema": UnoSchemaConfig(
+            include_fields=[
+                "id",
+                "name",
+            ],
+        ),
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "name",
+                "tenant_type",
+            ],
+        ),
+    }
 
     id: Optional[str]
     name: str

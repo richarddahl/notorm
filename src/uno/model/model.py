@@ -5,13 +5,19 @@
 # Models are the Business Logic Layer Objects
 
 import datetime
-
 from typing import ClassVar, Optional
 from pydantic import BaseModel, ConfigDict
-
 from fastapi import FastAPI
 
 from uno.model.schema import UnoSchemaConfig, UnoSchema
+from uno.api.endpoint import (
+    CreateEndpoint,
+    ViewEndpoint,
+    SummaryEndpoint,
+    UpdateEndpoint,
+    DeleteEndpoint,
+    ImportEndpoint,
+)
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
 from uno.config import settings
@@ -29,7 +35,14 @@ class UnoModel(BaseModel):
     view_schema: ClassVar[UnoSchema] = None
     edit_schema: ClassVar[UnoSchema] = None
     summary_schema: ClassVar[UnoSchema] = None
-    endpoints: ClassVar[list["UnoEndpoint"]] = []
+    endpoints: ClassVar[list[str]] = [
+        "Create",
+        "View",
+        "Summary",
+        "Update",
+        "Delete",
+        "Import",
+    ]
 
     def __init_subclass__(cls, **kwargs) -> None:
 
@@ -86,7 +99,18 @@ class UnoModel(BaseModel):
     def set_endpoints(cls, app: FastAPI) -> None:
 
         for endpoint in cls.endpoints:
-            endpoint(obj_class=cls, app=app)
+            if endpoint == "Create":
+                CreateEndpoint(obj_class=cls, app=app)
+            elif endpoint == "View":
+                ViewEndpoint(obj_class=cls, app=app)
+            elif endpoint == "Summary":
+                SummaryEndpoint(obj_class=cls, app=app)
+            elif endpoint == "Update":
+                UpdateEndpoint(obj_class=cls, app=app)
+            elif endpoint == "Delete":
+                DeleteEndpoint(obj_class=cls, app=app)
+            elif endpoint == "Import":
+                ImportEndpoint(obj_class=cls, app=app)
 
 
 class GeneralModelMixin(BaseModel):
@@ -96,8 +120,5 @@ class GeneralModelMixin(BaseModel):
     is_active: Optional[bool] = True
     is_deleted: Optional[bool] = False
     created_at: Optional[datetime.datetime] = None
-    created_by: Optional["User"] = None
     modified_at: Optional[datetime.datetime] = None
-    modified_by: Optional["User"] = None
     deleted_at: Optional[datetime.datetime] = None
-    deleted_by: Optional["User"] = None
