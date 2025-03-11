@@ -40,7 +40,7 @@ class UnoRouter(BaseModel, ABC):
         self.endpoint_factory()
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.api_version}/{self.obj_class.table.name}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.obj_class.table_name}{self.path_suffix}",
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,

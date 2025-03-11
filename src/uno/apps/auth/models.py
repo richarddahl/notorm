@@ -12,6 +12,13 @@ from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel, GeneralModelMixin
 from uno.apps.meta.models import MetaBase
 from uno.apps.auth.enums import TenantType
+from uno.apps.auth.endpoints import (
+    CreateUser,
+    ViewUser,
+    ViewUserSummary,
+    UpdateUser,
+    DeleteUser,
+)
 from uno.config import settings
 
 
@@ -39,6 +46,13 @@ class User(UnoModel, GeneralModelMixin):
             ],
         ),
     }
+    endpoints = [
+        CreateUser,
+        ViewUser,
+        ViewUserSummary,
+        UpdateUser,
+        DeleteUser,
+    ]
 
     email: EmailStr
     handle: str

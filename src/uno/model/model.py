@@ -9,6 +9,8 @@ import datetime
 from typing import ClassVar, Optional
 from pydantic import BaseModel, ConfigDict
 
+from fastapi import FastAPI
+
 from uno.model.schema import UnoSchemaConfig, UnoSchema
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
@@ -27,6 +29,7 @@ class UnoModel(BaseModel):
     view_schema: ClassVar[UnoSchema] = None
     edit_schema: ClassVar[UnoSchema] = None
     summary_schema: ClassVar[UnoSchema] = None
+    endpoints: ClassVar[list["UnoEndpoint"]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
 
@@ -45,9 +48,10 @@ class UnoModel(BaseModel):
         cls.set_display_names()
 
     @classmethod
-    def configure(cls) -> None:
+    def configure(cls, app: FastAPI) -> None:
         """Configure the UnoModel class"""
         cls.set_schemas()
+        cls.set_endpoints(app)
 
     # End of __init_subclass__
 
@@ -77,6 +81,12 @@ class UnoModel(BaseModel):
                     model=cls,
                 ),
             )
+
+    @classmethod
+    def set_endpoints(cls, app: FastAPI) -> None:
+
+        for endpoint in cls.endpoints:
+            endpoint(obj_class=cls, app=app)
 
 
 class GeneralModelMixin(BaseModel):

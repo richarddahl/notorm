@@ -27,7 +27,7 @@ tags_metadata.extend(
             },
         }
         for uno_model in UnoModel.registry.values()
-        if getattr(uno_model, "include_in_api_docs", True)
+        if getattr(uno_model, "include_in_schema_docs", True)
     ]
 )
 

@@ -41,28 +41,7 @@ class UnoSchemaConfig(BaseModel):
         return self
 
     def create_schema(self, schema_name: str, model: BaseModel) -> UnoSchema:
-        """
-        Create a schema from a Pydantic model with optional field filtering.
 
-        This method generates a new Pydantic model (schema) based on an existing model,
-        allowing you to include only specific fields or exclude unwanted fields. It validates
-        that all referenced fields exist in the original model before creating the schema.
-
-        Args:
-            schema_name (str): The name to use for the generated schema
-            model (BaseModel): The Pydantic model to use as the base for the schema
-
-        Returns:
-            UnoSchema: A new Pydantic model with the specified fields from the original model
-
-        Raises:
-            SchemaFieldListError: If any specified include or exclude fields don't exist in the model
-
-        Notes:
-            - If include_fields is provided, only those fields will be in the schema
-            - If exclude_fields is provided, all fields except those will be in the schema
-            - If neither is provided, all fields from the original model are included
-        """
         # First validate all field references
         all_model_fields = set(model.model_fields.keys())
 

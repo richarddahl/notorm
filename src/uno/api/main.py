@@ -11,8 +11,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from uno.db.base import UnoBase
+from uno.api.endpoint import UnoEndpoint
+from uno.model.model import UnoModel
 from uno.api.app import app
 from uno.config import settings
+
+from uno.apps.auth.models import User
+
+
+User.configure(app)
 
 
 templates = Jinja2Templates(directory="templates")
