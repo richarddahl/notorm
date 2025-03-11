@@ -301,7 +301,7 @@ class EnableHistoricalAudit(SQLEmitter):
         )
 
 
-class GeneralSqlEmitter(
+class GeneralSQLEmitter(
     AlterGrants,
     InsertMetaType,
     InsertMetaRecordTrigger,

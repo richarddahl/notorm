@@ -21,7 +21,7 @@ from uno.apps.auth.sql_emitters import (
 )
 from uno.db.sql.table_sql_emitters import (
     AlterGrants,
-    GeneralSqlEmitter,
+    GeneralSQLEmitter,
     RecordUserAuditFunction,
 )
 from uno.apps.auth.graph_sql_emitters import (
@@ -64,7 +64,7 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     sql_emitters = [
-        GeneralSqlEmitter,
+        GeneralSQLEmitter,
         UserRowLevelSecurity,
         UserRecordUserAuditFunction,
         UserGraph,
@@ -116,7 +116,7 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     sql_emitters = [
-        GeneralSqlEmitter,
+        GeneralSQLEmitter,
         RecordUserAuditFunction,
         ValidateGroupInsert,
         DefaultGroupTenant,
@@ -163,7 +163,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     sql_emitters = [
-        GeneralSqlEmitter,
+        GeneralSQLEmitter,
         RecordUserAuditFunction,
         RoleGraph,
     ]
@@ -204,7 +204,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     sql_emitters = [
-        GeneralSqlEmitter,
+        GeneralSQLEmitter,
         RecordUserAuditFunction,
         InsertGroupForTenant,
         TenantGraph,

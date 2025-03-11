@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-
 from typing import ClassVar
-
 from psycopg.sql import SQL, Identifier, Literal
-
-from pydantic import BaseModel, computed_field, Field
+from pydantic import BaseModel, computed_field
+from sqlalchemy.sql import text
+from sqlalchemy.engine import Connection
 
 from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import convert_snake_to_camel
@@ -57,6 +56,21 @@ class EdgeConfig(BaseModel):
 class GraphSQLEmitter(SQLEmitter):
     exclude_fields: ClassVar[list[str]] = ["table_name", "node_label"]
     edge_configs: ClassVar[list[EdgeConfig]] = []
+
+    def emit_sql(self, connection: Connection) -> None:
+        for edge_config in self.edge_configs:
+            for statement_name, sql_statement in (
+                edge_config(table_name=self.table_name)
+                .model_dump(include=["create_edge_label"])
+                .items()
+            ):
+                print(f"Executing {statement_name}...")
+                connection.execute(text(sql_statement))
+        for statement_name, sql_statement in self.model_dump(
+            exclude=self.exclude_fields
+        ).items():
+            print(f"Executing {statement_name}...")
+            connection.execute(text(sql_statement))
 
     @computed_field
     def node_label(self) -> str:
@@ -177,12 +191,12 @@ class GraphSQLEmitter(SQLEmitter):
                 """
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
-                        MATCH (l:{node_label} {{id: %s}})
-                        MATCH (r:{remote_node_label} {{id: %s}})
-                        DELETE (l)-[e:{label}]->(r)
-                        MATCH (l:{node_label} {{id: %s}})
-                        MATCH (r:{remote_node_label} {{id: %s}})
-                        CREATE (l)-[e:{label}]->(r)
+                            MATCH (l:{node_label} {{id: %s}})
+                            MATCH (r:{remote_node_label} {{id: %s}})
+                            DELETE (l)-[e:{label}]->(r)
+                            MATCH (l:{node_label} {{id: %s}})
+                            MATCH (r:{remote_node_label} {{id: %s}})
+                            CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(OLD.{column_name}),
                         quote_nullable(OLD.{remote_column_name}),

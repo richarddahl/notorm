@@ -9,7 +9,7 @@ import importlib
 
 from psycopg.sql import SQL
 
-from sqlalchemy import text
+from sqlalchemy import text, func
 from sqlalchemy.engine import create_engine, Engine
 
 from uno.db.sql.sql_emitters import (
@@ -124,16 +124,13 @@ class DBManager:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
-            meta_type = MetaType
             print("\nEmitting SQL for: MetaType")
-            for sql_emitter in meta_type.sql_emitters:
-                sql_emitter(table_name="meta_type").emit_sql(connection=conn)
+            MetaType.emit_sql(connection=conn)
             for name, model in UnoModel.registry.items():
                 if name == "MetaType":
-                    continue  # Skip the MetaTypeBase table since it was already done
+                    continue  # Skip the MetaType since it is done
                 print(f"\nEmitting SQL for: {name}")
-                for sql_emitter in model.sql_emitters:
-                    sql_emitter(table_name=model.table_name).emit_sql(connection=conn)
+                model.emit_sql(connection=conn)
             conn.close()
         engine.dispose()
 

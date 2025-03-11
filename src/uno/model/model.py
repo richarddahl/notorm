@@ -8,6 +8,8 @@ import datetime
 from typing import ClassVar, Optional
 from pydantic import BaseModel, ConfigDict
 from fastapi import FastAPI
+from sqlalchemy import text
+from sqlalchemy.engine import Connection
 
 from uno.db.sql.sql_emitters import SQLEmitter
 from uno.model.schema import UnoSchemaConfig, UnoSchema
@@ -67,6 +69,7 @@ class UnoModel(BaseModel):
         """Configure the UnoModel class"""
         cls.set_schemas()
         cls.set_endpoints(app)
+        cls.set_filters()
 
     # End of __init_subclass__
 
@@ -113,6 +116,15 @@ class UnoModel(BaseModel):
                 DeleteEndpoint(obj_class=cls, app=app)
             elif endpoint == "Import":
                 ImportEndpoint(obj_class=cls, app=app)
+
+    @classmethod
+    def set_filters(cls) -> None:
+        pass
+
+    @classmethod
+    def emit_sql(cls, connection: Connection) -> None:
+        for sql_emitter in cls.sql_emitters:
+            sql_emitter(table_name=cls.table_name).emit_sql(connection=connection)
 
 
 class GeneralModelMixin(BaseModel):

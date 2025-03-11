@@ -200,7 +200,7 @@ class TestUserDBStructure:
                 "referred_schema": "uno",
                 "referred_table": "user",
                 "referred_columns": ["id"],
-                "options": {"ondelete": "SET NULL"},
+                "options": {"ondelete": "RESTRICT"},
                 "comment": None,
             },
             {
@@ -236,7 +236,7 @@ class TestUserDBStructure:
                 "referred_schema": "uno",
                 "referred_table": "user",
                 "referred_columns": ["id"],
-                "options": {"ondelete": "SET NULL"},
+                "options": {"ondelete": "RESTRICT"},
                 "comment": None,
             },
             {

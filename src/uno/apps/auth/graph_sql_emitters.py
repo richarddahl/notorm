@@ -31,7 +31,7 @@ class DeletedByEdge(EdgeConfig):
 
 class TenantEdge(EdgeConfig):
     column_name: str = "tenant_id"
-    label: str = "BELONGS_TO"
+    label: str = "IS_ASSIGNED_TO"
     remote_table_name: str = "tenant"
     remote_column_name: str = "id"
     remote_node_label: str = "Tenant"
