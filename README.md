@@ -79,7 +79,7 @@ The structure of the project:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | db - Defines the UnoBase (persistant data structure) and SQLEmitter (emits custom sql) and the methods to communicate with the database.
+    | db - Defines the UnoBase (persistant data structure) and SQLEmitter (emits custom sql) and the methods to communicate with the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
     | model - Defines UnoModel, the business logic executor  
 
