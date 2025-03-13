@@ -16,6 +16,7 @@ from uno.errors import UnoRegistryError
 class SQLConfig(BaseModel):
     registry: ClassVar[dict[str, type["SQLConfig"]]] = {}
     model: ClassVar[Optional[type[BaseModel]]] = None
+    table: ClassVar[Optional[Any]] = None
     table_name: ClassVar[str] = None
     sql_emitters: ClassVar[dict[str, SQLEmitter]] = {}
 
@@ -39,4 +40,15 @@ class SQLConfig(BaseModel):
     @classmethod
     def emit_sql(cls, connection: Connection) -> None:
         for sql_emitter in cls.sql_emitters:
-            sql_emitter(table_name=cls.table_name).emit_sql(connection)
+            sql_emitter(
+                table_name=cls.table_name,
+                model=cls.model,
+                table=cls.table,
+            ).emit_sql(connection)
+
+
+class TableSQLConfig(SQLConfig):
+    @classmethod
+    def emit_sql(cls, connection: Connection) -> None:
+        for sql_emitter in cls.sql_emitters:
+            sql_emitter.emit_sql(connection)

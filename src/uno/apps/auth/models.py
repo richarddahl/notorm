@@ -101,6 +101,12 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    filter_excludes = [
+        "created_by_id",
+        "modified_by_id",
+        "deleted_by_id",
+        "tenant_id",
+    ]
 
     # Fields
     id: Optional[str]
@@ -142,6 +148,12 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    filter_excludes = [
+        "created_by_id",
+        "modified_by_id",
+        "deleted_by_id",
+        "tenant_id",
+    ]
 
     id: Optional[str]
     name: str
@@ -179,6 +191,11 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
+    filter_excludes = [
+        "created_by_id",
+        "modified_by_id",
+        "deleted_by_id",
+    ]
 
     id: Optional[str]
     name: str

@@ -12,7 +12,8 @@ from fastapi.templating import Jinja2Templates
 
 from uno.db.base import UnoBase
 from uno.api.endpoint import UnoEndpoint
-from uno.model.model import UnoModel, UnoFilter
+from uno.model.model import UnoModel
+from uno.apps.fltr.models import Filter
 from uno.api.app_def import app
 from uno.config import settings
 
@@ -56,7 +57,7 @@ async def app_base(
     tags=["0KUI"],
     summary="Get filters for an object by object name",
 )
-def get_filters(object_name: str) -> list[UnoFilter]:
+def get_filters(object_name: str) -> list[Filter]:
     """Retrieve the generated OpenAPI schema."""
     filters = UnoModel.registry[object_name.title()].filters
     keys = list(filters.keys())

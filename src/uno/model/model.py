@@ -141,7 +141,7 @@ class UnoModel(BaseModel):
                 lookups = object_lookups
             filters.update(
                 {
-                    field_name: UnoFilter(
+                    field_name: Filter(
                         label=field_name.replace("_", " ").title(),
                         accessor=field_name,
                         filter_type="Property",
@@ -157,7 +157,7 @@ class UnoModel(BaseModel):
                 continue
             filters.update(
                 {
-                    relationship.key: UnoFilter(
+                    relationship.key: Filter(
                         label=relationship.key.replace("_id", "")
                         .replace("_", " ")
                         .title(),

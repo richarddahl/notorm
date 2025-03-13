@@ -7,7 +7,7 @@ import textwrap
 from typing import ClassVar
 
 from psycopg.sql import SQL, Identifier, Literal
-from pydantic import computed_field
+from pydantic import BaseModel, computed_field
 from sqlalchemy.sql import text
 from sqlalchemy.engine import Connection
 
@@ -15,12 +15,18 @@ from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import convert_snake_to_camel
 
 
-class GraphSQLEmitter(SQLEmitter):
-    pass
-
-
-class EdgeSQLEmitter(GraphSQLEmitter):
-    exclude_fields: ClassVar[list[str]] = ["table_name", "model", "node_label"]
+class TableGraphSQLEmitter(SQLEmitter):
+    exclude_fields: ClassVar[list[str]] = [
+        "table_name",
+        "model",
+        "node_label",
+        "table",
+        "column_name",
+        "label",
+        "remote_node_label",
+        "remote_column_name",
+        "local_node_label",
+    ]
     column_name: str
     label: str
     remote_node_label: str
@@ -56,8 +62,8 @@ class EdgeSQLEmitter(GraphSQLEmitter):
         )
 
 
-class TableEdgeSQLEmitter(SQLEmitter):
-    # edge_configs: ClassVar[list[EdgeConfig]]
+'''
+class EdgeSQLEmitter(SQLEmitter):
 
     @computed_field
     def insert_graph(self) -> str:
@@ -93,50 +99,18 @@ class TableEdgeSQLEmitter(SQLEmitter):
             include_trigger=True,
             db_function=False,
         )
+'''
 
 
-class NodeSQLEmitter(GraphSQLEmitter):
+class NodeSQLEmitter(SQLEmitter):
     exclude_fields: ClassVar[list[str]] = [
         "table_name",
         "node_label",
         "model",
+        "insert_edges",
+        "update_edges",
+        "table",
     ]
-
-    def emit_sql(self, connection: Connection) -> None:
-        for edge_config in self.edge_configs:
-            for statement_name, sql_statement in edge_config.model_dump(
-                include=["create_edge_label"]
-            ).items():
-                print(f"Executing {statement_name}...")
-                connection.execute(text(sql_statement))
-        for statement_name, sql_statement in self.model_dump(
-            exclude=self.exclude_fields
-        ).items():
-            print(f"Executing {statement_name}...")
-            connection.execute(text(sql_statement))
-
-    """
-    @computed_field
-    def edge_configs(self) -> list[EdgeConfig]:
-        edge_configs = []
-        for relationship in self.model.relationships():
-            if not relationship.info.get("edge"):
-                continue
-            if relationship.secondary is not None:
-                continue
-            print(f"Processing relationship: {relationship}")
-            edge_config = EdgeConfig(
-                table_name=self.table_name,
-                column_name=relationship.info.get("column"),
-                label=relationship.info.get("edge"),
-                remote_node_label=convert_snake_to_camel(
-                    relationship.mapper.class_.__tablename__
-                ),
-                remote_column_name=relationship.info.get("remote_column"),
-            )
-            edge_configs.append(edge_config)
-        return edge_configs
-    """
 
     @computed_field
     def node_label(self) -> str:
@@ -150,11 +124,13 @@ class NodeSQLEmitter(GraphSQLEmitter):
             DO $$
             BEGIN
                 SET ROLE {admin_role};
-                IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label
-                WHERE name = {label}) THEN
+                IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label WHERE name = {label}) THEN
                     PERFORM ag_catalog.create_vlabel('graph', {label});
                     EXECUTE format('CREATE INDEX ON graph.{label_ident} (id);');
                 END IF;
+
+                {edge_labels}
+
             END $$;
             """
             )
@@ -162,13 +138,99 @@ class NodeSQLEmitter(GraphSQLEmitter):
                 admin_role=ADMIN_ROLE,
                 label=Literal(self.node_label),
                 label_ident=Identifier(self.node_label),
+                edge_labels=SQL(self.create_edge_labels()),
             )
             .as_string()
         )
 
+    @computed_field
+    def insert_edges(self) -> str:
+        edges = {}
+        for relationship in self.model.relationships():
+            if not relationship.info.get("edge"):
+                continue
+            if relationship.secondary is not None:
+                continue
+            print(f"Processing relationship: {relationship}")
+            column_name = relationship.info.get("column")
+            label = relationship.info.get("edge")
+            remote_node_label = convert_snake_to_camel(
+                relationship.mapper.class_.__tablename__
+            )
+            remote_column_name = relationship.info.get("remote_column")
+            edges.update(
+                {
+                    label: self.insert_edge_sql(
+                        column_name=column_name,
+                        label=label,
+                        remote_column_name=remote_column_name,
+                        remote_node_label=remote_node_label,
+                    )
+                }
+            )
+        return edges
 
-'''
-    def insert_edge_sql(self, edge_config: EdgeConfig) -> str:
+    @computed_field
+    def update_edges(self) -> str:
+        edges = {}
+        for relationship in self.model.relationships():
+            if not relationship.info.get("edge"):
+                continue
+            if relationship.secondary is not None:
+                continue
+            print(f"Processing relationship: {relationship}")
+            column_name = relationship.info.get("column")
+            label = relationship.info.get("edge")
+            remote_node_label = convert_snake_to_camel(
+                relationship.mapper.class_.__tablename__
+            )
+            remote_column_name = relationship.info.get("remote_column")
+            edges.update(
+                {
+                    label: self.update_edge_sql(
+                        column_name=column_name,
+                        label=label,
+                        remote_column_name=remote_column_name,
+                        remote_node_label=remote_node_label,
+                    )
+                }
+            )
+        return edges
+
+    def create_edge_labels(self) -> str:
+        return "\n".join(
+            [
+                self.create_edge_label_sql(edge_label)
+                for edge_label in self.insert_edges.keys()
+            ]
+        )
+
+    def create_edge_label_sql(self, label: str) -> str:
+        return (
+            SQL(
+                """
+                IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label WHERE name = {label}) THEN
+                    PERFORM ag_catalog.create_elabel('graph', {label});
+                    CREATE INDEX ON graph.{label_ident} (start_id, end_id);
+                END IF;
+                """
+            )
+            .format(
+                admin_role=ADMIN_ROLE,
+                label=Literal(label),
+                label_ident=Identifier(label),
+            )
+            .as_string()
+        )
+
+    def insert_edge_sql(
+        self,
+        column_name: str,
+        label: str,
+        remote_node_label: str,
+        remote_column_name: str,
+        local_node_label: str = None,
+    ) -> str:
         return (
             SQL(
                 """
@@ -187,14 +249,14 @@ class NodeSQLEmitter(GraphSQLEmitter):
             )
             .format(
                 node_label=(
-                    SQL(edge_config.node_label)
-                    if edge_config.local_node_label is None
-                    else SQL(edge_config.local_node_label)
+                    SQL(self.node_label)
+                    if local_node_label is None
+                    else SQL(self.local_node_label)
                 ),
-                column_name=Identifier(edge_config.column_name),
-                label=SQL(edge_config.label),
-                remote_node_label=SQL(edge_config.remote_node_label),
-                remote_column_name=Identifier(edge_config.remote_column_name),
+                column_name=Identifier(column_name),
+                label=SQL(label),
+                remote_node_label=SQL(remote_node_label),
+                remote_column_name=Identifier(remote_column_name),
             )
             .as_string()
         )
@@ -239,12 +301,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
                 admin_role=ADMIN_ROLE,
                 label=SQL(self.node_label),
                 edges=SQL(
-                    "\n".join(
-                        [
-                            self.insert_edge_sql(edge_config)
-                            for edge_config in self.edge_configs
-                        ]
-                    ),
+                    "\n".join([edge for edge in self.insert_edges.values()]),
                 ),
             )
             .as_string()
@@ -259,33 +316,50 @@ class NodeSQLEmitter(GraphSQLEmitter):
             db_function=False,
         )
 
-    def update_edge_sql(self, edge_config: EdgeConfig) -> str:
-
+    def update_edge_sql(
+        self,
+        column_name: str,
+        label: str,
+        remote_node_label: str,
+        remote_column_name: str,
+        local_node_label: str = None,
+    ) -> str:
         return (
             SQL(
                 """
+                    IF OLD.{column_name} IS NOT NULL THEN
+                        EXECUTE FORMAT('
+                            SELECT * FROM cypher(''graph'', $$
+                                MATCH (l:{node_label} {{id: %s}})
+                                MATCH (r:{remote_node_label} {{id: %s}})
+                                DELETE (l)-[e:{label}]->(r)
+                            $$) AS (result agtype)',
+                            quote_nullable(OLD.{column_name}),
+                            quote_nullable(OLD.{remote_column_name})
+                        ); 
+                    END IF;
+
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
                             MATCH (l:{node_label} {{id: %s}})
                             MATCH (r:{remote_node_label} {{id: %s}})
-                            DELETE (l)-[e:{label}]->(r)
-                            MATCH (l:{node_label} {{id: %s}})
-                            MATCH (r:{remote_node_label} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
-                        quote_nullable(OLD.{column_name}),
-                        quote_nullable(OLD.{remote_column_name}),
                         quote_nullable(NEW.{column_name}),
                         quote_nullable(NEW.{remote_column_name})
                     ); 
             """
             )
             .format(
-                node_label=SQL(edge_config.node_label),
-                column_name=Identifier(edge_config.column_name),
-                label=SQL(edge_config.label),
-                remote_node_label=SQL(edge_config.remote_node_label),
-                remote_column_name=Identifier(edge_config.remote_column_name),
+                node_label=(
+                    SQL(self.node_label)
+                    if local_node_label is None
+                    else SQL(self.local_node_label)
+                ),
+                column_name=Identifier(column_name),
+                label=SQL(label),
+                remote_node_label=SQL(remote_node_label),
+                remote_column_name=Identifier(remote_column_name),
             )
             .as_string()
         )
@@ -329,12 +403,7 @@ class NodeSQLEmitter(GraphSQLEmitter):
                 admin_role=ADMIN_ROLE,
                 label=SQL(self.node_label),
                 edges=SQL(
-                    "\n".join(
-                        [
-                            self.update_edge_sql(edge_config)
-                            for edge_config in self.edge_configs
-                        ]
-                    ),
+                    "\n".join([edge for edge in self.update_edges.values()]),
                 ),
             )
             .as_string()
@@ -411,5 +480,3 @@ class NodeSQLEmitter(GraphSQLEmitter):
             for_each="STATEMENT",
             db_function=False,
         )
-
-'''

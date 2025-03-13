@@ -18,10 +18,13 @@ from uno.db.sql.db_sql_emitters import (
     RecordStatusFunction,
 )
 from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
+from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
+from uno.apps.auth.models import User, Group, Role, Tenant, Permission
 
 
 class UserSQLConfig(SQLConfig):
     table_name = "user"
+    model = User
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -29,11 +32,13 @@ class UserSQLConfig(SQLConfig):
         RecordStatusFunction,
         UserRowLevelSecurity,
         UserRecordUserAuditFunction,
+        NodeSQLEmitter,
     ]
 
 
 class GroupSQLConfig(SQLConfig):
     table_name = "group"
+    model = Group
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -42,24 +47,26 @@ class GroupSQLConfig(SQLConfig):
         RecordUserAuditFunction,
         ValidateGroupInsert,
         DefaultGroupTenant,
-        # GroupGraph,
+        NodeSQLEmitter,
     ]
 
 
 class RoleSQLConfig(SQLConfig):
     table_name = "role"
+    model = Role
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        # RoleGraph,
+        NodeSQLEmitter,
     ]
 
 
 class TenantSQLConfig(SQLConfig):
     table_name = "tenant"
+    model = Tenant
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -67,10 +74,11 @@ class TenantSQLConfig(SQLConfig):
         RecordStatusFunction,
         RecordUserAuditFunction,
         InsertGroupForTenant,
-        # TenantGraph,
+        NodeSQLEmitter,
     ]
 
 
 class PermissionSQLConfig(SQLConfig):
     table_name = "permission"
+    model = Permission
     sql_emitters = [AlterGrants]

@@ -35,8 +35,10 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 class SQLEmitter(BaseModel):
-    exclude_fields: ClassVar[list[str]] = ["table_name"]
+    exclude_fields: ClassVar[list[str]] = ["table_name", "model", "table"]
     table_name: str = None
+    model: Optional[type[BaseModel]] = None
+    table: Optional[Any] = None
 
     def emit_sql(self, connection: Connection) -> None:
         for statement_name, sql_statement in self.model_dump(

@@ -22,8 +22,8 @@ from sqlalchemy.dialects.postgresql import (
 
 from uno.db.base import UnoBase, str_26, str_255
 from uno.db.mixins import GeneralBaseMixin
-
-from uno.db.sql.sql_emitter import SQLEmitter
+from uno.db.sql.sql_config import TableSQLConfig
+from uno.db.sql.graph_sql_emitters import TableGraphSQLEmitter
 from uno.db.enums import SQLOperation
 from uno.apps.auth.enums import TenantType
 from uno.config import settings
@@ -52,11 +52,11 @@ user__group = Table(
     ),
 )
 
-"""
-class UserGroupSQLConfig(SQLConfig):
-    edge_configs = [
-        EdgeConfig(
-            table_name="user__group",
+
+class UserGroupSQLConfig(TableSQLConfig):
+    table_name = "user__group"
+    sql_emitters = [
+        TableGraphSQLEmitter(
             local_node_label="User",
             column_name="user_id",
             label="IS_MEMBER_OF",
@@ -64,18 +64,15 @@ class UserGroupSQLConfig(SQLConfig):
             remote_column_name="group_id",
             remote_node_label="Group",
         ),
-        EdgeConfig(
-            table_name="user__group",
+        TableGraphSQLEmitter(
             local_node_label="Group",
             column_name="group_id",
-            label="ALLOWS_ACCESS_FOR",
+            label="ALLOWS_ACCESS_TO",
             remote_table_name="user",
             remote_column_name="user_id",
             remote_node_label="User",
         ),
     ]
-    table_name: str = "user__group"
-"""
 
 
 user__role = Table(
@@ -103,11 +100,10 @@ user__role = Table(
 )
 
 
-"""
-class UserRoleSQLConfig(SQLConfig):
-    edge_configs = [
-        EdgeConfig(
-            table_name="user__role",
+class UserRoleSQLConfig(TableSQLConfig):
+    table_name = "user__role"
+    sql_emitters = [
+        TableGraphSQLEmitter(
             local_node_label="User",
             column_name="user_id",
             label="HAS_ROLE",
@@ -115,8 +111,7 @@ class UserRoleSQLConfig(SQLConfig):
             remote_column_name="role_id",
             remote_node_label="Role",
         ),
-        EdgeConfig(
-            table_name="user__role",
+        TableGraphSQLEmitter(
             local_node_label="Role",
             column_name="role_id",
             label="ALLOWS_ACCESS_TO",
@@ -125,8 +120,6 @@ class UserRoleSQLConfig(SQLConfig):
             remote_node_label="User",
         ),
     ]
-    table_name: str = "user__role"
-"""
 
 
 role__permission = Table(
@@ -153,12 +146,11 @@ role__permission = Table(
     ),
 )
 
-"""
-RolePermisionSQLConfig = SQLConfig(
-    table_name="role__permission",
-    edge_configs=[
-        EdgeConfig(
-            table_name="role__permission",
+
+class RolePermisionSQLConfig(TableSQLConfig):
+    table_name = "role__permission"
+    sql_emitters = [
+        TableGraphSQLEmitter(
             local_node_label="Role",
             column_name="role_id",
             label="HAS_PERMISSIONS",
@@ -166,8 +158,7 @@ RolePermisionSQLConfig = SQLConfig(
             remote_column_name="permission_id",
             remote_node_label="Permission",
         ),
-        EdgeConfig(
-            table_name="role__permission",
+        TableGraphSQLEmitter(
             local_node_label="Permission",
             column_name="permission_id",
             label="HAS_PERMISSIONS_FROM",
@@ -175,9 +166,7 @@ RolePermisionSQLConfig = SQLConfig(
             remote_column_name="role_id",
             remote_node_label="Role",
         ),
-    ],
-)
-"""
+    ]
 
 
 class UserBase(GeneralBaseMixin, UnoBase):
@@ -316,7 +305,7 @@ class GroupBase(GeneralBaseMixin, UnoBase):
         back_populates="groups",
         doc="Users assigned to the group",
         info={
-            "edge": "ALLOWS_ACCESS_FOR",
+            "edge": "ALLOWS_ACCESS_TO",
             "column": "group_id",
             "remote_column": "id",
         },
