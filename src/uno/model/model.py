@@ -4,14 +4,15 @@
 
 # Models are the Business Logic Layer Objects
 
-import datetime
-from typing import ClassVar, Optional
+from datetime import date, datetime, time
+from decimal import Decimal
+from typing import ClassVar, Literal, Any
 from pydantic import BaseModel, ConfigDict
 from fastapi import FastAPI
-from sqlalchemy import text
-from sqlalchemy.engine import Connection
+from sqlalchemy.inspection import inspect
 
-from uno.db.sql.sql_emitters import SQLEmitter
+from uno.db.enums import object_lookups, numeric_lookups, text_lookups
+from uno.db.base import UnoBase
 from uno.model.schema import UnoSchemaConfig, UnoSchema
 from uno.api.endpoint import (
     CreateEndpoint,
@@ -21,6 +22,7 @@ from uno.api.endpoint import (
     DeleteEndpoint,
     ImportEndpoint,
 )
+from uno.apps.fltr.models import Filter
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
 from uno.config import settings
@@ -31,6 +33,7 @@ class UnoModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     registry: ClassVar[dict[str, "UnoModel"]] = {}
+    base: ClassVar[UnoBase] = None
     table_name: ClassVar[str] = None
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
@@ -46,7 +49,8 @@ class UnoModel(BaseModel):
         "Delete",
         "Import",
     ]
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+    filters: ClassVar[dict[str, Filter]] = {}
+    filter_excludes: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
 
@@ -64,14 +68,18 @@ class UnoModel(BaseModel):
             )
         cls.set_display_names()
 
+    # End of __init_subclass__
+
+    @classmethod
+    def relationships(cls) -> list[Any]:
+        return [relationship for relationship in inspect(cls.base).relationships]
+
     @classmethod
     def configure(cls, app: FastAPI) -> None:
         """Configure the UnoModel class"""
         cls.set_schemas()
         cls.set_endpoints(app)
         cls.set_filters()
-
-    # End of __init_subclass__
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -119,20 +127,45 @@ class UnoModel(BaseModel):
 
     @classmethod
     def set_filters(cls) -> None:
-        pass
+        filters = {}
+        if not hasattr(cls.base, "__table__"):
+            return
+        for field_name, field in cls.base.__table__.columns.items():
+            if field_name in cls.filter_excludes:
+                continue
+            if field.type.python_type in [str, bytes]:
+                lookups = text_lookups
+            elif field.type.python_type in [int, Decimal, float, date, datetime, time]:
+                lookups = numeric_lookups
+            else:
+                lookups = object_lookups
+            filters.update(
+                {
+                    field_name: UnoFilter(
+                        label=field_name.replace("_", " ").title(),
+                        accessor=field_name,
+                        filter_type="Property",
+                        lookups=lookups,
+                    )
+                }
+            )
 
-    @classmethod
-    def emit_sql(cls, connection: Connection) -> None:
-        for sql_emitter in cls.sql_emitters:
-            sql_emitter(table_name=cls.table_name).emit_sql(connection=connection)
-
-
-class GeneralModelMixin(BaseModel):
-    """Mixin for General Objects"""
-
-    id: Optional[str] = None
-    is_active: Optional[bool] = True
-    is_deleted: Optional[bool] = False
-    created_at: Optional[datetime.datetime] = None
-    modified_at: Optional[datetime.datetime] = None
-    deleted_at: Optional[datetime.datetime] = None
+        for relationship in cls.relationships():
+            if relationship.key in cls.filter_excludes:
+                continue
+            if not relationship.info.get("edge", False):
+                continue
+            filters.update(
+                {
+                    relationship.key: UnoFilter(
+                        label=relationship.key.replace("_id", "")
+                        .replace("_", " ")
+                        .title(),
+                        accessor=relationship.info.get("edge", "MISSING_EDGE"),
+                        filter_type="Edge",
+                        lookups=object_lookups,
+                        remote_table_name=relationship.mapper.class_.__tablename__,
+                    )
+                }
+            )
+        setattr(cls, "filters", filters)

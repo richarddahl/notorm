@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+
 from typing import ClassVar
+
 from psycopg.sql import SQL, Identifier, Literal
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 from sqlalchemy.sql import text
 from sqlalchemy.engine import Connection
 
@@ -13,16 +15,17 @@ from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import convert_snake_to_camel
 
 
-class EdgeConfig(BaseModel):
-    table_name: str
+class GraphSQLEmitter(SQLEmitter):
+    pass
+
+
+class EdgeSQLEmitter(GraphSQLEmitter):
+    exclude_fields: ClassVar[list[str]] = ["table_name", "model", "node_label"]
     column_name: str
     label: str
-    remote_table_name: str
-    remote_column_name: str
     remote_node_label: str
-    secondary_table_name: str = None
-    secondary_column_name: str = None
-    secondary_remote_column_name: str = None
+    remote_column_name: str
+    local_node_label: str = None
 
     @computed_field
     def node_label(self) -> str:
@@ -53,17 +56,57 @@ class EdgeConfig(BaseModel):
         )
 
 
-class GraphSQLEmitter(SQLEmitter):
-    exclude_fields: ClassVar[list[str]] = ["table_name", "node_label"]
-    edge_configs: ClassVar[list[EdgeConfig]] = []
+class TableEdgeSQLEmitter(SQLEmitter):
+    # edge_configs: ClassVar[list[EdgeConfig]]
+
+    @computed_field
+    def insert_graph(self) -> str:
+        function_string = (
+            SQL(
+                """
+            BEGIN
+                SET ROLE {admin_role};
+                {edges}
+                RETURN NEW;
+            END;
+            """
+            )
+            .format(
+                admin_role=ADMIN_ROLE,
+                edges=SQL(
+                    "\n".join(
+                        [
+                            self.insert_edge_sql(edge_config)
+                            for edge_config in self.edge_configs
+                        ]
+                    ),
+                ),
+            )
+            .as_string()
+        )
+
+        return self.create_sql_function(
+            "insert_graph",
+            function_string,
+            operation="INSERT",
+            timing="AFTER",
+            include_trigger=True,
+            db_function=False,
+        )
+
+
+class NodeSQLEmitter(GraphSQLEmitter):
+    exclude_fields: ClassVar[list[str]] = [
+        "table_name",
+        "node_label",
+        "model",
+    ]
 
     def emit_sql(self, connection: Connection) -> None:
         for edge_config in self.edge_configs:
-            for statement_name, sql_statement in (
-                edge_config(table_name=self.table_name)
-                .model_dump(include=["create_edge_label"])
-                .items()
-            ):
+            for statement_name, sql_statement in edge_config.model_dump(
+                include=["create_edge_label"]
+            ).items():
                 print(f"Executing {statement_name}...")
                 connection.execute(text(sql_statement))
         for statement_name, sql_statement in self.model_dump(
@@ -71,6 +114,29 @@ class GraphSQLEmitter(SQLEmitter):
         ).items():
             print(f"Executing {statement_name}...")
             connection.execute(text(sql_statement))
+
+    """
+    @computed_field
+    def edge_configs(self) -> list[EdgeConfig]:
+        edge_configs = []
+        for relationship in self.model.relationships():
+            if not relationship.info.get("edge"):
+                continue
+            if relationship.secondary is not None:
+                continue
+            print(f"Processing relationship: {relationship}")
+            edge_config = EdgeConfig(
+                table_name=self.table_name,
+                column_name=relationship.info.get("column"),
+                label=relationship.info.get("edge"),
+                remote_node_label=convert_snake_to_camel(
+                    relationship.mapper.class_.__tablename__
+                ),
+                remote_column_name=relationship.info.get("remote_column"),
+            )
+            edge_configs.append(edge_config)
+        return edge_configs
+    """
 
     @computed_field
     def node_label(self) -> str:
@@ -100,6 +166,8 @@ class GraphSQLEmitter(SQLEmitter):
             .as_string()
         )
 
+
+'''
     def insert_edge_sql(self, edge_config: EdgeConfig) -> str:
         return (
             SQL(
@@ -107,9 +175,10 @@ class GraphSQLEmitter(SQLEmitter):
                     IF NEW.{column_name} IS NOT NULL THEN
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{node_label} {{id: %s}})
-                            MATCH (r:{remote_node_label} {{id: %s}})
-                            CREATE (l)-[e:{label}]->(r)$$) AS (result agtype)',
+                                MATCH (l:{node_label} {{id: %s}})
+                                MATCH (r:{remote_node_label} {{id: %s}})
+                                CREATE (l)-[e:{label}]->(r)
+                            $$) AS (result agtype)',
                             quote_nullable(NEW.{column_name}),
                             quote_nullable(NEW.{remote_column_name})
                         );
@@ -117,7 +186,11 @@ class GraphSQLEmitter(SQLEmitter):
             """
             )
             .format(
-                node_label=SQL(edge_config.node_label),
+                node_label=(
+                    SQL(edge_config.node_label)
+                    if edge_config.local_node_label is None
+                    else SQL(edge_config.local_node_label)
+                ),
                 column_name=Identifier(edge_config.column_name),
                 label=SQL(edge_config.label),
                 remote_node_label=SQL(edge_config.remote_node_label),
@@ -141,10 +214,14 @@ class GraphSQLEmitter(SQLEmitter):
 
                     -- Construct the properties string
                     properties_str := array_to_string(
-                        array(SELECT FORMAT('%s: %L', key, COALESCE(value, 'NULL')) FROM EACH(properties)),', ');
+                        array(SELECT FORMAT('%s: %L', key, 
+                            COALESCE(value, 'NULL')) 
+                            FROM EACH(properties)),', ');
 
                     -- Construct the Cypher query dynamically
-                    cypher_query := format('CREATE (v:{label} {{%s}})', properties_str);
+                    cypher_query := format('
+                        CREATE (v:{label} {{%s}})', properties_str
+                    );
 
                     -- Execute the Cypher query
                     SET ROLE {admin_role};
@@ -164,9 +241,7 @@ class GraphSQLEmitter(SQLEmitter):
                 edges=SQL(
                     "\n".join(
                         [
-                            self.insert_edge_sql(
-                                edge_config(table_name=self.table_name)
-                            )
+                            self.insert_edge_sql(edge_config)
                             for edge_config in self.edge_configs
                         ]
                     ),
@@ -256,9 +331,7 @@ class GraphSQLEmitter(SQLEmitter):
                 edges=SQL(
                     "\n".join(
                         [
-                            self.update_edge_sql(
-                                edge_config(table_name=self.table_name)
-                            )
+                            self.update_edge_sql(edge_config)
                             for edge_config in self.edge_configs
                         ]
                     ),
@@ -338,3 +411,5 @@ class GraphSQLEmitter(SQLEmitter):
             for_each="STATEMENT",
             db_function=False,
         )
+
+'''

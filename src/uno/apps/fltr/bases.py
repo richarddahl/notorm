@@ -4,18 +4,13 @@
 
 from typing import Optional, ClassVar, Any
 
-from sqlalchemy import ForeignKey, Index, UniqueConstraint
+from sqlalchemy import Table, Column, ForeignKey, Index, UniqueConstraint
 
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, JSONB
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.db import Base, str_26, str_255
-from uno.apps.meta.bases import (
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    HistoryTableAuditMixin,
-)
+from uno.db.db import UnoBase, meta_data, str_26, str_255
+from uno.db.mixins import GeneralBaseMixin
 from uno.db.sql.sql_emitter import SQLEmitter
 
 from uno.apps.fltr.enums import Include, Match
@@ -23,85 +18,64 @@ from uno.apps.val.enums import Lookup
 from uno.config import settings
 
 
-class QueryFilterValue(Base):
-    # __tablename__ = "query__filter_value"
-    __table_args__ = (
-        Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationships between queries and filter values.",
-        },
-    )
-    display_name: ClassVar[str] = "Query Filter Value"
-    display_name_plural: ClassVar[str] = "Query Filter Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    query_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+query__filter_value = Table(
+    "query__filter_value",
+    meta_data,
+    Column(
+        "query_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
-    )
-    filter_value_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.filter_value.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "filter_value_id",
+        ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
-    )
+        nullable=False,
+    ),
+    Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
+)
 
 
-class FilterFilterValue(Base):
-    # __tablename__ = "filter__filter_value"
-    __table_args__ = (
-        Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationships between filters and filter values.",
-        },
-    )
-    display_name: ClassVar[str] = "Filter Filter Value"
-    display_name_plural: ClassVar[str] = "Filter Filter Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    filter_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.filter.id", ondelete="CASCADE"),
+filter__filter_value = Table(
+    "filter__filter_value",
+    meta_data,
+    Column(
+        "filter_id",
+        ForeignKey("filter.id", ondelete="CASCADE"),
         primary_key=True,
-    )
-    filter_value_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.filter_value.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "filter_value_id",
+        ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
-    )
+        nullable=False,
+    ),
+    Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
+)
 
-
-class QuerySubquery(Base):
-    # __tablename__ = "query__sub_query"
-    __table_args__ = (
-        Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationships between queries and subqueries.",
-        },
-    )
-    display_name: ClassVar[str] = "Query Subquery"
-    display_name_plural: ClassVar[str] = "Query Subqueries"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    query_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+query__sub_query = Table(
+    "query__sub_query",
+    meta_data,
+    Column(
+        "query_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
-        doc="The query the subquery is associated with.",
-    )
-    subquery_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.query.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "subquery_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
-        doc="The subquery associated with the query.",
-    )
+        nullable=False,
+    ),
+    Index("ix_query_id__subquery_id", "query_id", "subquery_id"),
+)
 
 
-class Filter(Base):
-    # __tablename__ = "filter"
+class Filter(UnoBase):
+    __tablename__ = "filter"
     __table_args__ = (
         UniqueConstraint(
             "source_meta_type",
@@ -110,7 +84,6 @@ class Filter(Base):
             name="uq_filter__source_meta_type__remote_meta_type__accessor",
         ),
         {
-            "schema": settings.DB_SCHEMA,
             "comment": "Used to enable user-defined filtering using the graph vertices and graph_edges.",
         },
     )
@@ -162,13 +135,8 @@ class Filter(Base):
     )
 
 
-class FilterValue(
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    HistoryTableAuditMixin,
-):
-    # __tablename__ = "filter_value"
+class FilterValue(UnoBase, GeneralBaseMixin):
+    __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
             "include",
@@ -183,10 +151,7 @@ class FilterValue(
             "lookup",
             "value_id",
         ),
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User definable values for use in queries.",
-        },
+        {"comment": "User definable values for use in queries."},
     )
     display_name: ClassVar[str] = "Filter Value"
     display_name_plural: ClassVar[str] = "Filter Values"
@@ -230,30 +195,15 @@ class FilterValue(
     # Relationships
     queries: Mapped[Optional[list["Query"]]] = relationship(
         # back_populates="filter_values",
-        secondary=QueryFilterValue.__table__,
-        secondaryjoin=QueryFilterValue.filter_value_id == id,
+        secondary=query__filter_value,
+        secondaryjoin=query__filter_value.filter_value_id == id,
         info={"edge": "FILTERS_WITH"},
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "filter_value",
-        "inherit_condition": id == MetaBase.id,
-    }
 
-
-class Query(
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    HistoryTableAuditMixin,
-):
-    # __tablename__ = "query"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User definable queries",
-        },
-    )
+class Query(UnoBase, GeneralBaseMixin):
+    __tablename__ = "query"
+    __table_args__ = ({"comment": "User definable queries"},)
     display_name: ClassVar[str] = "Query"
     display_name_plural: ClassVar[str] = "Queries"
 
@@ -301,28 +251,19 @@ class Query(
 
     # Relationships
     filter_values: Mapped[Optional[list[FilterValue]]] = relationship(
-        # back_populates="queries",
-        secondary=QueryFilterValue.__table__,
-        secondaryjoin=QueryFilterValue.query_id == id,
+        secondary=query__filter_value.__table__,
+        secondaryjoin=query__filter_value.query_id == id,
     )
     sub_queries: Mapped[Optional[list["Query"]]] = relationship(
-        # back_populates="queries",
-        foreign_keys=[QuerySubquery.query_id],
-        secondary=QuerySubquery.__table__,
-        secondaryjoin=QuerySubquery.query_id == id,
+        foreign_keys=[query__sub_query.query_id],
+        secondary=query__sub_query.__table__,
+        secondaryjoin=query__sub_query.query_id == id,
     )
     queries: Mapped[Optional[list["Query"]]] = relationship(
-        # back_populates="sub_queries",
-        foreign_keys=[QuerySubquery.subquery_id],
-        secondary=QuerySubquery.__table__,
-        secondaryjoin=QuerySubquery.subquery_id == id,
+        foreign_keys=[query__sub_query.subquery_id],
+        secondary=query__sub_query.__table__,
+        secondaryjoin=query__sub_query.subquery_id == id,
     )
     attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
-        # back_populates="description_limiting_query",
         primaryjoin="Query.id == AttributeType.description_limiting_query_id",
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "query",
-        "inherit_condition": id == MetaBase.id,
-    }

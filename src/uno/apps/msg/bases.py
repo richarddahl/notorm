@@ -115,7 +115,7 @@ class Message(
     BaseAuditMixin,
     BaseVersionAuditMixin,
 ):
-    # __tablename__ = "message"
+    __tablename__ = "message"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
         "comment": "Messages are used to communicate between users",

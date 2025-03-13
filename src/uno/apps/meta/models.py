@@ -3,13 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 from uno.model.model import UnoModel
-from uno.db.sql.table_sql_emitters import AlterGrants, InsertPermission
 
 
 class MetaType(UnoModel):
     # Class variables
     table_name = "meta_type"
-    sql_emitters = [AlterGrants, InsertPermission]
 
     id: str
     name: str
@@ -21,7 +19,6 @@ class MetaType(UnoModel):
 class MetaBase(UnoModel):
     # Class variables
     table_name = "meta"
-    sql_emitters = [AlterGrants]
 
     id: str
     meta_type_id: str

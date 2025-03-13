@@ -8,11 +8,11 @@ import contextlib
 import importlib
 
 from psycopg.sql import SQL
-
-from sqlalchemy import text, func
+from sqlalchemy import text
 from sqlalchemy.engine import create_engine, Engine
 
-from uno.db.sql.sql_emitters import (
+from uno.db.sql.sql_config import SQLConfig
+from uno.db.sql.db_sql_emitters import (
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,
     CreateSchemasAndExtensions,
@@ -24,9 +24,8 @@ from uno.db.sql.sql_emitters import (
 )
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
-from uno.apps.meta.models import MetaType
 from uno.apps.auth.bases import UserBase
-from uno.model.model import UnoModel
+from uno.apps.meta.sql_configs import MetaTypeSQLConfig
 from uno.config import settings
 
 # Import all the bases in the settings.LOAD_MODULES list
@@ -36,6 +35,9 @@ for module in settings.LOAD_MODULES:
     )
     globals()[f"{module.split('.')[2]}._models"] = importlib.import_module(
         f"{module}.models"
+    )
+    globals()[f"{module.split('.')[2]}._sql_configs"] = importlib.import_module(
+        f"{module}.sql_configs"
     )
 
 
@@ -125,12 +127,12 @@ class DBManager:
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
             print("\nEmitting SQL for: MetaType")
-            MetaType.emit_sql(connection=conn)
-            for name, model in UnoModel.registry.items():
-                if name == "MetaType":
+            MetaTypeSQLConfig.emit_sql(connection=conn)
+            for name, config in SQLConfig.registry.items():
+                if name == "MetaTypeSQLConfig":
                     continue  # Skip the MetaType since it is done
                 print(f"\nEmitting SQL for: {name}")
-                model.emit_sql(connection=conn)
+                config.emit_sql(connection=conn)
             conn.close()
         engine.dispose()
 

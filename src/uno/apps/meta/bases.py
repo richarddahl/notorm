@@ -6,7 +6,6 @@ from sqlalchemy import ForeignKey, Identity
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from uno.db.base import UnoBase, str_63, str_26
-from uno.db.sql.table_sql_emitters import AlterGrants, InsertPermission
 from uno.config import settings
 
 

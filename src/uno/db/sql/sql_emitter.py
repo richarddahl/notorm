@@ -4,16 +4,13 @@
 
 import textwrap
 
-from typing import Optional, ClassVar
+from typing import Optional, ClassVar, Any
 
 from psycopg.sql import SQL, Literal
-
 from pydantic import BaseModel
-
 from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Connection
 
-from uno.errors import UnoRegistryError
 from uno.config import settings
 
 # SQL Literal and Identifier objects are used to create SQL strings
@@ -39,8 +36,7 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 class SQLEmitter(BaseModel):
     exclude_fields: ClassVar[list[str]] = ["table_name"]
-
-    table_name: Optional[str] = None
+    table_name: str = None
 
     def emit_sql(self, connection: Connection) -> None:
         for statement_name, sql_statement in self.model_dump(

@@ -29,7 +29,7 @@ from uno.apps.val.enums import (
     object_lookups,
     boolean_lookups,
 )
-from uno.db.graph.sql_emitters import GraphSQLEmitter
+from uno.db.sql.graph_sql_emitters import GraphSQLConfig
 from uno.utilities import (
     convert_snake_to_camel,
     convert_snake_to_title,
@@ -39,7 +39,7 @@ from uno.utilities import (
 class GraphBase(BaseModel, ABC):
     obj_class: type[BaseModel] = None
 
-    sql_emitter: ClassVar[GraphSQLEmitter] = None
+    sql_emitter: ClassVar[GraphSQLConfig] = None
 
     @abstractmethod
     def emit_sql(self):
@@ -117,7 +117,7 @@ class GraphEdge(GraphBase):
     label: str
     lookups: list[Lookup] = object_lookups
 
-    sql_emitter = GraphSQLEmitter
+    sql_emitter = GraphSQLConfig
 
     def emit_sql(self):
         self.sql_emitter(edge=self).emit_sql()
@@ -131,7 +131,7 @@ class EdgeDef(GraphBase):
     accessor: str
     secondary: Table | None
     lookups: list[Lookup] = object_lookups
-    # properties: dict[str, PropertySQLEmitter] <- computed_field
+    # properties: dict[str, PropertySQLConfig] <- computed_field
     # label: str <- computed_field
     # nullable: bool = False <- computed_field
 

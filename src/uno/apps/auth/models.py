@@ -7,34 +7,17 @@ from pydantic import EmailStr
 
 from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
-from uno.model.model import UnoModel, GeneralModelMixin
+from uno.model.model import UnoModel
+from uno.model.mixins import GeneralModelMixin
 from uno.apps.auth.enums import TenantType
+from uno.apps.auth.bases import UserBase, GroupBase, RoleBase, TenantBase
 from uno.apps.auth.mixins import RecordAuditMixin
-from uno.apps.auth.rls_sql_emitters import (
-    UserRowLevelSecurity,
-)
-from uno.apps.auth.sql_emitters import (
-    ValidateGroupInsert,
-    DefaultGroupTenant,
-    InsertGroupForTenant,
-    UserRecordUserAuditFunction,
-)
-from uno.db.sql.table_sql_emitters import (
-    AlterGrants,
-    GeneralSQLEmitter,
-    RecordUserAuditFunction,
-)
-from uno.apps.auth.graph_sql_emitters import (
-    UserGraph,
-    GroupGraph,
-    TenantGraph,
-    RoleGraph,
-)
 from uno.config import settings
 
 
 class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
+    base = UserBase
     table_name = "user"
     schema_configs = {
         "summary_schema": UnoSchemaConfig(
@@ -63,13 +46,15 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    sql_emitters = [
-        GeneralSQLEmitter,
-        UserRowLevelSecurity,
-        UserRecordUserAuditFunction,
-        UserGraph,
-        # UserRole,
+    filter_excludes = [
+        "created_by_id",
+        "modified_by_id",
+        "deleted_by_id",
+        "tenant_id",
+        "default_group_id",
     ]
+
+    # Fields
 
     email: EmailStr
     handle: str
@@ -91,6 +76,7 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
 class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
+    base = GroupBase
     table_name = "group"
 
     schema_configs = {
@@ -115,13 +101,6 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    sql_emitters = [
-        GeneralSQLEmitter,
-        RecordUserAuditFunction,
-        ValidateGroupInsert,
-        DefaultGroupTenant,
-        GroupGraph,
-    ]
 
     # Fields
     id: Optional[str]
@@ -139,6 +118,7 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
 class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
+    base = RoleBase
     table_name = "role"
 
     schema_configs = {
@@ -162,11 +142,6 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    sql_emitters = [
-        GeneralSQLEmitter,
-        RecordUserAuditFunction,
-        RoleGraph,
-    ]
 
     id: Optional[str]
     name: str
@@ -180,6 +155,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
 class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
+    base = TenantBase
     table_name = "tenant"
 
     schema_configs = {
@@ -203,12 +179,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    sql_emitters = [
-        GeneralSQLEmitter,
-        RecordUserAuditFunction,
-        InsertGroupForTenant,
-        TenantGraph,
-    ]
 
     id: Optional[str]
     name: str
@@ -225,7 +195,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Permission(UnoModel):
     # Class variables
     table_name = "permission"
-    sql_emitters = [AlterGrants]
 
     id: Optional[int]
     meta_type_id: str

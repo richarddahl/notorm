@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.graph.sql_emitters import EdgeConfig, GraphSQLEmitter
+from uno.db.sql.graph_sql_emitters import EdgeConfig, GraphSQLConfig
 
 
 class CreatedByEdge(EdgeConfig):
@@ -31,7 +31,7 @@ class DeletedByEdge(EdgeConfig):
 
 class TenantEdge(EdgeConfig):
     column_name: str = "tenant_id"
-    label: str = "IS_ASSIGNED_TO"
+    label: str = "BELONGS_TO"
     remote_table_name: str = "tenant"
     remote_column_name: str = "id"
     remote_node_label: str = "Tenant"
@@ -64,36 +64,13 @@ class UserRole(EdgeConfig):
     remote_node_label: str = "Role"
 
 
-class UserGraph(GraphSQLEmitter):
+class UserGraphSQLConfig(GraphSQLConfig):
     edge_configs = [
         CreatedByEdge,
         ModifiedByEdge,
         DeletedByEdge,
         TenantEdge,
         DefaultGroupEdge,
-    ]
-
-
-class GroupGraph(GraphSQLEmitter):
-    edge_configs = [
-        CreatedByEdge,
-        ModifiedByEdge,
-        DeletedByEdge,
-        TenantEdge,
-    ]
-
-
-class TenantGraph(GraphSQLEmitter):
-    edge_configs = [
-        CreatedByEdge,
-        ModifiedByEdge,
-        DeletedByEdge,
-    ]
-
-
-class RoleGraph(GraphSQLEmitter):
-    edge_configs = [
-        CreatedByEdge,
-        ModifiedByEdge,
-        DeletedByEdge,
+        # GroupEdge,
+        # UserRole,
     ]

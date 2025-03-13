@@ -5,6 +5,7 @@
 from pydantic import computed_field
 
 from psycopg.sql import SQL
+from sqlalchemy.sql import text
 
 from uno.db.sql.sql_emitter import (
     SQLEmitter,
@@ -299,140 +300,8 @@ class GetPermissibleGroupsFunction(SQLEmitter):
         )
 
 
-class ValidateGroupInsert(SQLEmitter):
-
-    @computed_field
-    def validate_group_insert(self) -> str:
-        function_string = (
-            SQL(
-                """
-            DECLARE
-                group_count INT4;
-                tenanttype tenanttype;
-            BEGIN
-                SELECT tenant_type INTO tenanttype
-                FROM {schema_name}.tenant
-                WHERE id = NEW.tenant_id;
-
-                SELECT COUNT(*) INTO group_count
-                FROM {schema_name}.group
-                WHERE tenant_id = NEW.tenant_id;
-
-                IF NOT {ENFORCE_MAX_GROUPS} THEN
-                    RETURN NEW;
-                END IF;
-
-                IF tenanttype = 'INDIVIDUAL' AND
-                    {MAX_INDIVIDUAL_GROUPS} > 0 AND
-                    group_count >= {MAX_INDIVIDUAL_GROUPS} THEN
-                        RAISE EXCEPTION 'Group Count Exceeded';
-                END IF;
-                IF
-                    tenanttype = 'BUSINESS' AND
-                    {MAX_BUSINESS_GROUPS} > 0 AND
-                    group_count >= {MAX_BUSINESS_GROUPS} THEN
-                        RAISE EXCEPTION 'Group Count Exceeded';
-                END IF;
-                IF
-                    tenanttype = 'CORPORATE' AND
-                    {MAX_CORPORATE_GROUPS} > 0 AND
-                    group_count >= {MAX_CORPORATE_GROUPS} THEN
-                        RAISE EXCEPTION 'Group Count Exceeded';
-                END IF;
-                IF
-                    tenanttype = 'ENTERPRISE' AND
-                    {MAX_ENTERPRISE_GROUPS} > 0 AND
-                    group_count >= {MAX_ENTERPRISE_GROUPS} THEN
-                        RAISE EXCEPTION 'Group Count Exceeded';
-                END IF;
-                RETURN NEW;
-            END;
-            """
-            )
-            .format(
-                schema_name=DB_SCHEMA,
-                ENFORCE_MAX_GROUPS=settings.ENFORCE_MAX_GROUPS,
-                MAX_INDIVIDUAL_GROUPS=settings.MAX_INDIVIDUAL_GROUPS,
-                MAX_BUSINESS_GROUPS=settings.MAX_BUSINESS_GROUPS,
-                MAX_CORPORATE_GROUPS=settings.MAX_CORPORATE_GROUPS,
-                MAX_ENTERPRISE_GROUPS=settings.MAX_ENTERPRISE_GROUPS,
-            )
-            .as_string()
-        )
-
-        return self.create_sql_function(
-            "validate_group_insert",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
-        )
-
-
 # class InsertGroupConstraint(SQLEmitter):
 #    def   emit_sql(self, conn: Connection:Engine)-> str:
 #        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
 #            CHECK (validate_group_insert(tenant_id) = true);
 #            """
-
-
-class InsertGroupForTenant(SQLEmitter):
-    @computed_field
-    def insert_group_for_tenant(self) -> str:
-        return (
-            SQL(
-                """
-                SET ROLE {admin_role};
-                CREATE OR REPLACE FUNCTION {schema_name}.insert_group_for_tenant()
-                RETURNS TRIGGER
-                LANGUAGE plpgsql
-                AS $$
-                BEGIN
-                    SET ROLE {admin_role};
-                    INSERT INTO {schema_name}.group(tenant_id, name) VALUES (NEW.id, NEW.name);
-                    RETURN NEW;
-                END;
-                $$;
-
-                CREATE OR REPLACE TRIGGER insert_group_for_tenant_trigger
-                -- The trigger to call the function
-                AFTER INSERT ON tenant
-                FOR EACH ROW
-                EXECUTE FUNCTION {schema_name}.insert_group_for_tenant();
-                """
-            )
-            .format(
-                schema_name=DB_SCHEMA,
-                admin_role=ADMIN_ROLE,
-            )
-            .as_string()
-        )
-
-
-class DefaultGroupTenant(SQLEmitter):
-    @computed_field
-    def insert_default_group_column(self) -> str:
-        function_string = SQL(
-            """
-            DECLARE
-                tenant_id VARCHAR(26) := current_setting('rls_var.tenant_id', true);
-            BEGIN
-                IF tenant_id IS NULL THEN
-                    RAISE EXCEPTION 'tenant_id is NULL';
-                END IF;
-
-                NEW.tenant_id = tenant_id;
-
-                RETURN NEW;
-            END;
-            """
-        ).as_string()
-        return self.create_sql_function(
-            "insert_default_group_column",
-            function_string,
-            timing="BEFORE",
-            operation="INSERT",
-            include_trigger=True,
-            db_function=False,
-        )

@@ -12,17 +12,20 @@ from fastapi.templating import Jinja2Templates
 
 from uno.db.base import UnoBase
 from uno.api.endpoint import UnoEndpoint
-from uno.model.model import UnoModel
+from uno.model.model import UnoModel, UnoFilter
 from uno.api.app_def import app
 from uno.config import settings
 
 from uno.apps.auth.models import User, Group, Tenant, Role
 
+for module in settings.LOAD_MODULES:
+    globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
+        f"{module}.bases"
+    )
 
-User.configure(app)
-Group.configure(app)
-Tenant.configure(app)
-Role.configure(app)
+for model in UnoModel.registry.values():
+    if hasattr(model, "configure"):
+        model.configure(app)
 
 
 templates = Jinja2Templates(directory="templates")
@@ -50,14 +53,16 @@ async def app_base(
 
 @app.get(
     "/app/filters/{object_name}",
-    response_class=JSONResponse,
     tags=["0KUI"],
     summary="Get filters for an object by object name",
 )
-def get_filters():
+def get_filters(object_name: str) -> list[UnoFilter]:
     """Retrieve the generated OpenAPI schema."""
-    auth_models.User.filters
-    return JSONResponse(content=auth_models.User.filters)
+    filters = UnoModel.registry[object_name.title()].filters
+    keys = list(filters.keys())
+    keys.sort()
+    f = {key: filters[key] for key in keys}
+    return f.values()
 
 
 def generate_openapi_schema():

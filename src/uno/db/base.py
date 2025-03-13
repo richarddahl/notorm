@@ -5,16 +5,12 @@
 import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated
 
-from sqlalchemy import MetaData, ForeignKey, FetchedValue, text
+from sqlalchemy import MetaData
 from sqlalchemy.orm import (
     registry,
     DeclarativeBase,
-    Mapped,
-    mapped_column,
-    declared_attr,
-    relationship,
 )
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.dialects.postgresql import (
@@ -73,81 +69,3 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
         }
     )
     metadata = meta_data
-
-
-class GeneralBaseMixin:
-
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to Meta Base",
-    )
-    is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="Indicates that the record is currently active",
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates that the record has been soft deleted",
-    )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        server_default=FetchedValue(),
-        doc="Timestamp when the record was created",
-    )
-    created_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="RESTRICT"),
-        index=True,
-        nullable=False,
-        server_default=FetchedValue(),
-        doc="User that created the record",
-    )
-    modified_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False,
-        server_default=FetchedValue(),
-        doc="Timestamp when the record was last modified",
-    )
-    modified_by_id: Mapped[str_26] = mapped_column(
-        ForeignKey("user.id", ondelete="RESTRICT"),
-        index=True,
-        nullable=False,
-        server_default=FetchedValue(),
-        doc="User that last modified the record",
-    )
-    deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="Timestamp when the record was soft deleted",
-    )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("user.id", ondelete="SET NULL"),
-        index=True,
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="User that deleted the record",
-    )
-
-    # Relationships
-    @declared_attr
-    def created_by(cls) -> Mapped["UserBase"]:
-        return relationship(
-            foreign_keys=[cls.created_by_id],
-            doc="User that created the record",
-        )
-
-    @declared_attr
-    def modified_by(cls) -> Mapped["UserBase"]:
-        return relationship(
-            foreign_keys=[cls.modified_by_id],
-            doc="User that last modified the record",
-        )
-
-    @declared_attr
-    def deleted_by(cls) -> Mapped["UserBase"]:
-        return relationship(
-            foreign_keys=[cls.deleted_by_id],
-            doc="User that deleted the record",
-        )
