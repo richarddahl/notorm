@@ -10,7 +10,13 @@ from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
 from uno.apps.auth.enums import TenantType
-from uno.apps.auth.bases import UserBase, GroupBase, RoleBase, TenantBase
+from uno.apps.auth.bases import (
+    UserBase,
+    GroupBase,
+    RoleBase,
+    TenantBase,
+    PermissionBase,
+)
 from uno.apps.auth.mixins import RecordAuditMixin
 from uno.config import settings
 
@@ -212,6 +218,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Permission(UnoModel):
     # Class variables
     table_name = "permission"
+    base = PermissionBase
 
     id: Optional[int]
     meta_type_id: str

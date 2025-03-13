@@ -22,7 +22,7 @@ from uno.errors import UnoRegistryError
 class UnoEndpoint(BaseModel):
     registry: ClassVar[dict[str, "UnoEndpoint"]] = {}
 
-    obj_class: type[BaseModel]
+    model: type[BaseModel]
     router: UnoRouter
     body_model: Optional[str | None] = None
     response_model: Optional[str]
@@ -34,16 +34,16 @@ class UnoEndpoint(BaseModel):
     def __init__(self, *args, app: FastAPI, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if self.body_model is not None:
-            body_model = getattr(self.obj_class, self.body_model)
+            body_model = getattr(self.model, self.body_model)
         else:
             body_model = None
         if self.response_model is not None:
-            response_model = getattr(self.obj_class, self.response_model)
+            response_model = getattr(self.model, self.response_model)
         else:
             response_model = None
         self.router(
             app=app,
-            obj_class=self.obj_class,
+            model=self.model,
             body_model=body_model,
             response_model=response_model,
             include_in_schema=self.include_in_schema,

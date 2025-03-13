@@ -20,7 +20,7 @@ from uno.config import settings
 
 
 class UnoRouter(BaseModel, ABC):
-    obj_class: type[BaseModel]
+    model: type[BaseModel]
     response_model: type[BaseModel] | None = None
     body_model: type[BaseModel] | None = None
     path_suffix: str
@@ -40,11 +40,11 @@ class UnoRouter(BaseModel, ABC):
         self.endpoint_factory()
         router = APIRouter()
         router.add_api_route(
-            f"{self.path_prefix}/{self.api_version}/{self.obj_class.table_name}{self.path_suffix}",
+            f"{self.path_prefix}/{self.api_version}/{self.model.table_name}{self.path_suffix}",
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=[self.obj_class.display_name],
+            tags=[self.model.display_name],
             summary=self.summary,
             description=self.description,
             status_code=self.status_code,
@@ -57,7 +57,7 @@ class UnoRouter(BaseModel, ABC):
 
 
 class SummaryRouter(UnoRouter):
-    path_suffix: str = "summary"
+    path_suffix: str = ""
     method: str = "GET"
     path_prefix: str = "/api"
     tags: list[str | Enum] | None = None
@@ -67,16 +67,16 @@ class SummaryRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"List {self.obj_class.display_name} Summary"
+        return f"List {self.model.display_name} Summary"
 
     @computed_field
     def description(self) -> str:
-        return f"Returns a list of {self.obj_class.display_name_plural} with the __{self.obj_class.__name__.title()}Summary__ schema."
+        return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}Summary__ schema."
 
     def endpoint_factory(self):
 
         async def endpoint(self) -> list[BaseModel]:
-            results = await self.obj_class.select(response_model=self.response_model)
+            results = await self.model.db.select(from_db_model=self.response_model)
             return results
 
         endpoint.__annotations__["return"] = list[self.response_model]
@@ -94,23 +94,23 @@ class ImportRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Import a new {self.obj_class.display_name}"
+        return f"Import a new {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
         return f"""
-            Import a new {self.obj_class.display_name} to the database.
+            Import a new {self.model.display_name} to the database.
             This will overwrite the all of the object's fields.
             Generally, this is used to import data from another
-            instance of the database. The {self.obj_class.display_name} 
+            instance of the database. The {self.model.display_name} 
             data must be in the format of the
-            __{self.obj_class.__name__.title()}Insert__ schema.   
+            __{self.model.__name__.title()}Insert__ schema.   
         """
 
     def endpoint_factory(self):
 
         async def endpoint(self, body: BaseModel):
-            result = await self.obj_class.db.import_(body)
+            result = await self.model.db.import_(body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -128,17 +128,17 @@ class InsertRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Create a new {self.obj_class.display_name}"
+        return f"Create a new {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Create a new {self.obj_class.display_name} using the __{self.obj_class.__name__.title()}Insert__ schema."
+        return f"Create a new {self.model.display_name} using the __{self.model.__name__.title()}Insert__ schema."
 
     def endpoint_factory(self):
 
         async def endpoint(self, body: BaseModel, response: Response) -> BaseModel:
             response.status_code = status.HTTP_201_CREATED
-            result = await self.obj_class.db.insert(body)
+            result = await self.model.db.insert(body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -156,16 +156,19 @@ class SelectRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Select a {self.obj_class.display_name}"
+        return f"Select a {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Select a {self.obj_class.display_name}, by its ID. Returns the __{self.obj_class.__name__.title()}Select__ schema."
+        return f"Select a {self.model.display_name}, by its ID. Returns the __{self.model.__name__.title()}Select__ schema."
 
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.obj_class.select(self.response_model, id=id)
+            result = await self.model.db.select(
+                self.response_model,
+                id=id,
+            )
             if result is None:
                 raise HTTPException(status_code=404, detail="Object not found")
             return result
@@ -184,16 +187,16 @@ class UpdateRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Update a new {self.obj_class.display_name}"
+        return f"Update a new {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Update a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Update__ schema."
+        return f"Update a {self.model.display_name}, by its ID, using the __{self.model.__name__.title()}Update__ schema."
 
     def endpoint_factory(self):
 
         async def endpoint(self, id: str, body: BaseModel):
-            result = await self.obj_class().update_by_id(id, body)
+            result = await self.model.db.update_by_id(id, body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -211,16 +214,16 @@ class DeleteRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"Delete a {self.obj_class.display_name}"
+        return f"Delete a {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Delete a {self.obj_class.display_name}, by its ID, using the __{self.obj_class.__name__.title()}Delete__ schema."
+        return f"Delete a {self.model.display_name}, by its ID, using the __{self.model.__name__.title()}Delete__ schema."
 
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.obj_class().delete_by_id(id)
+            result = await self.model.db.delete_by_id(id)
             return {"message": "delete"}
 
         endpoint.__annotations__["return"] = bool

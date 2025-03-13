@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict
 from fastapi import FastAPI
 from sqlalchemy.inspection import inspect
 
+from uno.db.db import UnoDBFactory
 from uno.db.enums import object_lookups, numeric_lookups, text_lookups
 from uno.db.base import UnoBase
 from uno.model.schema import UnoSchemaConfig, UnoSchema
@@ -33,7 +34,8 @@ class UnoModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     registry: ClassVar[dict[str, "UnoModel"]] = {}
-    base: ClassVar[UnoBase] = None
+    db: ClassVar["UnoDB"]
+    base: ClassVar[UnoBase]
     table_name: ClassVar[str] = None
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
@@ -67,6 +69,7 @@ class UnoModel(BaseModel):
                 "MODEL_CLASS_EXISTS_IN_REGISTRY",
             )
         cls.set_display_names()
+        cls.db = UnoDBFactory(base=cls.base)
 
     # End of __init_subclass__
 
@@ -113,17 +116,17 @@ class UnoModel(BaseModel):
 
         for endpoint in cls.endpoints:
             if endpoint == "Create":
-                CreateEndpoint(obj_class=cls, app=app)
+                CreateEndpoint(model=cls, app=app)
             elif endpoint == "View":
-                ViewEndpoint(obj_class=cls, app=app)
+                ViewEndpoint(model=cls, app=app)
             elif endpoint == "Summary":
-                SummaryEndpoint(obj_class=cls, app=app)
+                SummaryEndpoint(model=cls, app=app)
             elif endpoint == "Update":
-                UpdateEndpoint(obj_class=cls, app=app)
+                UpdateEndpoint(model=cls, app=app)
             elif endpoint == "Delete":
-                DeleteEndpoint(obj_class=cls, app=app)
+                DeleteEndpoint(model=cls, app=app)
             elif endpoint == "Import":
-                ImportEndpoint(obj_class=cls, app=app)
+                ImportEndpoint(model=cls, app=app)
 
     @classmethod
     def set_filters(cls) -> None:

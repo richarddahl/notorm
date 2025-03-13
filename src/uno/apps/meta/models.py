@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from uno.model.model import UnoModel
+from uno.apps.meta.bases import MetaTypeBase, MetaBase
 
 
 class MetaType(UnoModel):
     # Class variables
+    base = MetaTypeBase
     table_name = "meta_type"
 
     id: str
@@ -18,6 +20,7 @@ class MetaType(UnoModel):
 
 class MetaBase(UnoModel):
     # Class variables
+    base = MetaBase
     table_name = "meta"
 
     id: str

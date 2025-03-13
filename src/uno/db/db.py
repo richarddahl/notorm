@@ -4,10 +4,10 @@
 
 
 import asyncio
-from typing import AsyncIterator
 
-from sqlalchemy import select, insert, delete, update, text, create_engine
-
+from psycopg.sql import SQL
+from pydantic import BaseModel
+from sqlalchemy import select, insert, delete, update, text, func, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
@@ -16,9 +16,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 
-from uno.model.model import UnoModel
 from uno.db.base import UnoBase
-from uno.model.model import UnoModel
 from uno.db.enums import SelectResultType
 from uno.errors import UnoError
 from uno.config import settings
@@ -70,25 +68,25 @@ class NotFoundException(Exception):
     pass
 
 
-def UnoDBFactory(record: UnoBase):
+def UnoDBFactory(base: UnoBase):
     class UnoDB:
         @classmethod
         async def create(
             cls,
-            to_db_model: UnoModel,
-            from_db_model: UnoModel,
+            to_db_model: BaseModel,
+            from_db_model: BaseModel,
         ) -> UnoBase:
             try:
                 async with engine.begin() as conn:
-                    await conn.execute(text(cls.set_role_text("writer")))
+                    await conn.execute(text(cls.set_role(text("writer"))))
                     result = await conn.execute(
-                        insert(record.table)
+                        insert(base.table)
                         .values(**to_db_model.model_dump())
                         .returning(*from_db_model.model_fields.keys())
                     )
                     await conn.commit()
                     await conn.close()
-                    return cls.record(**result.fetchone()._mapping)
+                    return cls.base(**result.fetchone()._mapping)
             except IntegrityError:
                 raise IntegrityConflictException(
                     f"{to_db_model.__name__} conflicts with existing data.",
@@ -99,32 +97,34 @@ def UnoDBFactory(record: UnoBase):
         @classmethod
         async def select(
             cls,
-            to_db_model: UnoModel,
-            from_db_model: UnoModel,
-            id_: str = None,
+            from_db_model: BaseModel,
+            id: str = None,
             id_column: str = "id",
-            result_type: SelectResultType = SelectResultType.FETCH_ONE,
+            result_type: SelectResultType = SelectResultType.FETCH_ALL,
         ) -> UnoBase:
             try:
-                stmt = select(*from_db_model.model_fields.keys())
-                if id_ is not None:
-                    stmt = stmt.where(record.table.c.id == id)
-                    stmt = stmt.where(getattr(record, id_column) == id_)
+                stmt = select(cls.base)
+                if id is not None:
+                    stmt = stmt.where(base.__table__.c.id == id)
+                    result_type = SelectResultType.FETCH_ONE
+                    # stmt = stmt.where(getattr(base, id_column) == id)
                 async with engine.begin() as conn:
-                    await conn.execute(text(cls.set_role_text("reader")))
+                    await conn.execute(
+                        text(
+                            SQL("SET ROLE {reader_role};")
+                            .format(reader_role=f"{DB_NAME}_reader")
+                            .as_string()
+                        )
+                    )
                     result = await conn.execute(stmt)
                 await conn.close()
                 if result_type == SelectResultType.FETCH_ONE:
                     row = result.fetchone()
-                    return record(**row._mapping) if row is not None else None
+                    return from_db_model(**row._mapping) if row is not None else None
                 row = result.fetchall()
                 return [r._mapping for r in row if row is not None]
-            except IntegrityError:
-                raise IntegrityConflictException(
-                    f"{to_db_model.__name__} conflicts with existing data.",
-                )
             except Exception as e:
                 raise UnoError(f"Unknown error occurred: {e}") from e
 
-    UnoDB.record = record
+    UnoDB.base = base
     return UnoDB
