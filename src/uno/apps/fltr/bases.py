@@ -74,7 +74,7 @@ query__sub_query = Table(
 )
 
 
-class Filter(UnoBase):
+class UnoFilter(UnoBase):
     __tablename__ = "filter"
     __table_args__ = (
         UniqueConstraint(
@@ -87,7 +87,7 @@ class Filter(UnoBase):
             "comment": "Used to enable user-defined filtering using the graph vertices and graph_edges.",
         },
     )
-    display_name: ClassVar[str] = "Filter"
+    display_name: ClassVar[str] = "UnoFilter"
     display_name_plural: ClassVar[str] = "Filters"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
@@ -153,8 +153,8 @@ class FilterValue(UnoBase, GeneralBaseMixin):
         ),
         {"comment": "User definable values for use in queries."},
     )
-    display_name: ClassVar[str] = "Filter Value"
-    display_name_plural: ClassVar[str] = "Filter Values"
+    display_name: ClassVar[str] = "UnoFilter Value"
+    display_name_plural: ClassVar[str] = "UnoFilter Values"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 

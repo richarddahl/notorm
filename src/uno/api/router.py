@@ -3,19 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, computed_field, create_model
+from fastapi import APIRouter, FastAPI, HTTPException, Response, status, Depends
 
-from fastapi import (
-    APIRouter,
-    FastAPI,
-    HTTPException,
-    Response,
-    status,
-)
-
+from uno.apps.fltr.models import UnoFilter
 from uno.config import settings
 
 
@@ -73,9 +68,22 @@ class SummaryRouter(UnoRouter):
     def description(self) -> str:
         return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}Summary__ schema."
 
-    def endpoint_factory(self):
+    def endpoint_factory(self) -> None:
 
-        async def endpoint(self) -> list[BaseModel]:
+        self.model.set_filters()
+        model_filter_dict = OrderedDict()
+        filter_names = list(self.model.filters.keys())
+        filter_names.sort()
+
+        for name in filter_names:
+            model_filter_dict.update(
+                {name: (self.model.filters[name].python_type | None, None)}
+            )
+        filter_params = create_model("params", **model_filter_dict)
+
+        async def endpoint(
+            self, limit: int = 25, offset: int = 0, params: filter_params = Depends()
+        ) -> list[BaseModel]:
             results = await self.model.db.select(from_db_model=self.response_model)
             return results
 

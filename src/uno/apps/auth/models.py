@@ -61,7 +61,6 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     ]
 
     # Fields
-
     email: EmailStr
     handle: str
     full_name: str
@@ -161,6 +160,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "tenant_id",
     ]
 
+    # Fields
     id: Optional[str]
     name: str
     description: Optional[str]
@@ -203,6 +203,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "deleted_by_id",
     ]
 
+    # Fields
     id: Optional[str]
     name: str
     tenant_type: TenantType
@@ -219,7 +220,10 @@ class Permission(UnoModel):
     # Class variables
     table_name = "permission"
     base = PermissionBase
+    endpoints = []
+    schema_configs = {}
 
+    # Fields
     id: Optional[int]
     meta_type_id: str
     operation: SQLOperation

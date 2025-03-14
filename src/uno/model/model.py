@@ -23,7 +23,7 @@ from uno.api.endpoint import (
     DeleteEndpoint,
     ImportEndpoint,
 )
-from uno.apps.fltr.models import Filter
+from uno.apps.fltr.models import UnoFilter
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
 from uno.config import settings
@@ -51,7 +51,7 @@ class UnoModel(BaseModel):
         "Delete",
         "Import",
     ]
-    filters: ClassVar[dict[str, Filter]] = {}
+    filters: ClassVar[dict[str, UnoFilter]] = {}
     filter_excludes: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
@@ -86,7 +86,6 @@ class UnoModel(BaseModel):
 
     @classmethod
     def set_display_names(cls) -> None:
-
         cls.display_name = (
             convert_snake_to_title(cls.table_name)
             if cls.display_name is None
@@ -144,11 +143,12 @@ class UnoModel(BaseModel):
                 lookups = object_lookups
             filters.update(
                 {
-                    field_name: Filter(
+                    field_name: UnoFilter(
                         label=field_name.replace("_", " ").title(),
                         accessor=field_name,
                         filter_type="Property",
                         lookups=lookups,
+                        python_type=field.type.python_type,
                     )
                 }
             )
@@ -160,7 +160,7 @@ class UnoModel(BaseModel):
                 continue
             filters.update(
                 {
-                    relationship.key: Filter(
+                    relationship.key: UnoFilter(
                         label=relationship.key.replace("_id", "")
                         .replace("_", " ")
                         .title(),
@@ -168,6 +168,7 @@ class UnoModel(BaseModel):
                         filter_type="Edge",
                         lookups=object_lookups,
                         remote_table_name=relationship.mapper.class_.__tablename__,
+                        python_type=str,
                     )
                 }
             )
