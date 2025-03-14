@@ -69,7 +69,7 @@ class UnoModel(BaseModel):
                 "MODEL_CLASS_EXISTS_IN_REGISTRY",
             )
         cls.set_display_names()
-        cls.db = UnoDBFactory(base=cls.base)
+        cls.db = UnoDBFactory(base=cls.base, model=cls)
 
     # End of __init_subclass__
 
@@ -158,13 +158,14 @@ class UnoModel(BaseModel):
                 continue
             if not relationship.info.get("edge", False):
                 continue
+            accessor = relationship.info.get("edge")
             filters.update(
                 {
-                    relationship.key: UnoFilter(
+                    accessor: UnoFilter(
                         label=relationship.key.replace("_id", "")
                         .replace("_", " ")
                         .title(),
-                        accessor=relationship.info.get("edge", "MISSING_EDGE"),
+                        accessor=accessor,
                         filter_type="Edge",
                         lookups=object_lookups,
                         remote_table_name=relationship.mapper.class_.__tablename__,

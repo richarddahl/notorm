@@ -77,14 +77,20 @@ class SummaryRouter(UnoRouter):
 
         for name in filter_names:
             model_filter_dict.update(
-                {name: (self.model.filters[name].python_type | None, None)}
+                {name: (str | None, None)}
+                # {name: (self.model.filters[name].python_type | None, None)}
             )
         filter_params = create_model("params", **model_filter_dict)
 
         async def endpoint(
             self, limit: int = 25, offset: int = 0, params: filter_params = Depends()
         ) -> list[BaseModel]:
-            results = await self.model.db.select(from_db_model=self.response_model)
+            results = await self.model.db.select(
+                from_db_model=self.response_model,
+                limit=limit,
+                offset=offset,
+                **params.dict(),
+            )
             return results
 
         endpoint.__annotations__["return"] = list[self.response_model]

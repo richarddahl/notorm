@@ -68,7 +68,7 @@ class NotFoundException(Exception):
     pass
 
 
-def UnoDBFactory(base: UnoBase):
+def UnoDBFactory(base: UnoBase, model: BaseModel):
     class UnoDB:
         @classmethod
         async def create(
@@ -99,15 +99,20 @@ def UnoDBFactory(base: UnoBase):
             cls,
             from_db_model: BaseModel,
             id: str = None,
-            id_column: str = "id",
             result_type: SelectResultType = SelectResultType.FETCH_ALL,
+            limit: int = 25,
+            offset: int = 0,
+            **kwargs,
         ) -> UnoBase:
+            print(base.__table__.columns["id"])
+            # for key, value in kwargs.items():
+            #    if key not in base.__table__.columns:
+            #        raise UnoError(f"Invalid filter key: {key}", error_code=400)
             try:
                 stmt = select(cls.base)
                 if id is not None:
                     stmt = stmt.where(base.__table__.c.id == id)
                     result_type = SelectResultType.FETCH_ONE
-                    # stmt = stmt.where(getattr(base, id_column) == id)
                 async with engine.begin() as conn:
                     await conn.execute(
                         text(
