@@ -10,7 +10,7 @@ from uno.model.schema import UnoSchema
 from uno.api.router import (
     UnoRouter,
     InsertRouter,
-    SummaryRouter,
+    ListRouter,
     SelectRouter,
     UpdateRouter,
     DeleteRouter,
@@ -79,10 +79,10 @@ class ViewEndpoint(UnoEndpoint):
     response_model: UnoSchema = "view_schema"
 
 
-class SummaryEndpoint(UnoEndpoint):
-    router: UnoRouter = SummaryRouter
+class ListEndpoint(UnoEndpoint):
+    router: UnoRouter = ListRouter
     body_model: UnoSchema = None
-    response_model: UnoSchema = "summary_schema"
+    response_model: UnoSchema = "view_schema"
 
 
 class UpdateEndpoint(UnoEndpoint):

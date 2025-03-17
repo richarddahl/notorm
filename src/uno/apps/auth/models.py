@@ -26,7 +26,7 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     base = UserBase
     table_name = "user"
     schema_configs = {
-        "summary_schema": UnoSchemaConfig(
+        "view_schema": UnoSchemaConfig(
             include_fields=[
                 "id",
                 "handle",
@@ -61,9 +61,9 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     ]
 
     # Fields
-    email: EmailStr
-    handle: str
-    full_name: str
+    email: EmailStr = None
+    handle: str = None
+    full_name: str = None
     tenant: Optional["Tenant"] = None
     tenant_id: Optional[str] = None
     default_group: Optional["Group"] = None
@@ -85,7 +85,7 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
     table_name = "group"
 
     schema_configs = {
-        "summary_schema": UnoSchemaConfig(
+        "view_schema": UnoSchemaConfig(
             include_fields=[
                 "id",
                 "name",
@@ -133,7 +133,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
     table_name = "role"
 
     schema_configs = {
-        "summary_schema": UnoSchemaConfig(
+        "view_schema": UnoSchemaConfig(
             include_fields=[
                 "id",
                 "name",
@@ -177,7 +177,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
     table_name = "tenant"
 
     schema_configs = {
-        "summary_schema": UnoSchemaConfig(
+        "view_schema": UnoSchemaConfig(
             include_fields=[
                 "id",
                 "name",
