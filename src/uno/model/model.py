@@ -6,24 +6,28 @@
 
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import ClassVar, Literal, Any
-from pydantic import BaseModel, ConfigDict
+from typing import ClassVar, Any
+from pydantic import BaseModel, ConfigDict, create_model
 from fastapi import FastAPI
 from sqlalchemy.inspection import inspect
 
 from uno.db.db import UnoDBFactory
-from uno.db.enums import object_lookups, numeric_lookups, text_lookups
+from uno.apps.val.enums import (
+    object_lookups,
+    numeric_lookups,
+    text_lookups,
+)
 from uno.db.base import UnoBase
 from uno.model.schema import UnoSchemaConfig, UnoSchema
 from uno.api.endpoint import (
     CreateEndpoint,
     ViewEndpoint,
-    SummaryEndpoint,
+    ListEndpoint,
     UpdateEndpoint,
     DeleteEndpoint,
     ImportEndpoint,
 )
-from uno.apps.fltr.models import UnoFilter
+from uno.apps.fltr.filter import Filter
 from uno.errors import UnoRegistryError
 from uno.utilities import convert_snake_to_title
 from uno.config import settings
@@ -42,16 +46,16 @@ class UnoModel(BaseModel):
     schema_configs: ClassVar[dict[str, "UnoSchemaConfig"]] = {}
     view_schema: ClassVar[UnoSchema] = None
     edit_schema: ClassVar[UnoSchema] = None
-    summary_schema: ClassVar[UnoSchema] = None
+    view_schema: ClassVar[UnoSchema] = None
     endpoints: ClassVar[list[str]] = [
         "Create",
         "View",
-        "Summary",
+        "List",
         "Update",
         "Delete",
         "Import",
     ]
-    filters: ClassVar[dict[str, UnoFilter]] = {}
+    filters: ClassVar[dict[str, BaseModel]] = {}
     filter_excludes: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
@@ -61,11 +65,11 @@ class UnoModel(BaseModel):
         if cls is UnoModel:
             return
         # Add the subclass to the registry if it is not already there
-        if cls.__name__ not in cls.registry:
-            cls.registry.update({cls.__name__: cls})
+        if cls.base.__tablename__ not in cls.registry:
+            cls.registry.update({cls.base.__tablename__: cls})
         else:
             raise UnoRegistryError(
-                f"A Model class with the name {cls.__name__} already exists in the registry.",
+                f"A Model class with the table name {cls.base.__tablename__} already exists in the registry.",
                 "MODEL_CLASS_EXISTS_IN_REGISTRY",
             )
         cls.set_display_names()
@@ -118,8 +122,8 @@ class UnoModel(BaseModel):
                 CreateEndpoint(model=cls, app=app)
             elif endpoint == "View":
                 ViewEndpoint(model=cls, app=app)
-            elif endpoint == "Summary":
-                SummaryEndpoint(model=cls, app=app)
+            elif endpoint == "List":
+                ListEndpoint(model=cls, app=app)
             elif endpoint == "Update":
                 UpdateEndpoint(model=cls, app=app)
             elif endpoint == "Delete":
@@ -143,12 +147,16 @@ class UnoModel(BaseModel):
                 lookups = object_lookups
             filters.update(
                 {
-                    field_name: UnoFilter(
+                    field_name: Filter(
+                        source_model=UnoModel.registry[cls.base.__tablename__],
+                        remote_model=UnoModel.registry[cls.base.__tablename__],
                         label=field_name.replace("_", " ").title(),
+                        data_type=field.type.python_type.__name__,
+                        source_table_name=cls.base.__tablename__,
+                        remote_table_name=cls.base.__tablename__,
                         accessor=field_name,
                         filter_type="Property",
                         lookups=lookups,
-                        python_type=field.type.python_type,
                     )
                 }
             )
@@ -161,15 +169,20 @@ class UnoModel(BaseModel):
             accessor = relationship.info.get("edge")
             filters.update(
                 {
-                    accessor: UnoFilter(
+                    accessor: Filter(
+                        source_model=UnoModel.registry[cls.base.__tablename__],
+                        remote_model=UnoModel.registry[
+                            relationship.mapper.class_.__tablename__
+                        ],
                         label=relationship.key.replace("_id", "")
                         .replace("_", " ")
                         .title(),
+                        data_type="str",
+                        source_table_name=cls.base.__tablename__,
+                        remote_table_name=relationship.mapper.class_.__tablename__,
                         accessor=accessor,
                         filter_type="Edge",
                         lookups=object_lookups,
-                        remote_table_name=relationship.mapper.class_.__tablename__,
-                        python_type=str,
                     )
                 }
             )

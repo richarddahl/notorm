@@ -5,12 +5,12 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, computed_field, create_model
-from fastapi import APIRouter, FastAPI, HTTPException, Response, status, Depends
+from fastapi import APIRouter, FastAPI, HTTPException, Response, status, Depends, Query
 
-from uno.apps.fltr.models import UnoFilter
+# from uno.apps.fltr.models import Filter
 from uno.config import settings
 
 
@@ -43,6 +43,7 @@ class UnoRouter(BaseModel, ABC):
             summary=self.summary,
             description=self.description,
             status_code=self.status_code,
+            response_model_exclude_none=True,
         )
         self.app.include_router(router)
 
@@ -51,7 +52,7 @@ class UnoRouter(BaseModel, ABC):
         raise NotImplementedError
 
 
-class SummaryRouter(UnoRouter):
+class ListRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "GET"
     path_prefix: str = "/api"
@@ -62,11 +63,11 @@ class SummaryRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"List {self.model.display_name} Summary"
+        return f"List {self.model.display_name}"
 
     @computed_field
     def description(self) -> str:
-        return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}Summary__ schema."
+        return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}View__ schema."
 
     def endpoint_factory(self) -> None:
 
@@ -76,19 +77,23 @@ class SummaryRouter(UnoRouter):
         filter_names.sort()
 
         for name in filter_names:
-            model_filter_dict.update(
-                {name: (str | None, None)}
-                # {name: (self.model.filters[name].python_type | None, None)}
-            )
+            model_filter_dict.update({name: (str | None, None)})
         filter_params = create_model("params", **model_filter_dict)
 
         async def endpoint(
-            self, limit: int = 25, offset: int = 0, params: filter_params = Depends()
+            self,
+            limit: int = 25,
+            offset: int = 0,
+            include_fields: List[str] = Query([]),
+            exclude_fields: List[str] = Query([]),
+            params: filter_params = Depends(),
         ) -> list[BaseModel]:
             results = await self.model.db.select(
                 from_db_model=self.response_model,
                 limit=limit,
                 offset=offset,
+                include_fields=include_fields,
+                exclude_fields=exclude_fields,
                 **params.dict(),
             )
             return results

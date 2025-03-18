@@ -102,14 +102,25 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
             result_type: SelectResultType = SelectResultType.FETCH_ALL,
             limit: int = 25,
             offset: int = 0,
+            include_fields: list[str] = [],
+            exclude_fields: list[str] = [],
             **kwargs,
         ) -> UnoBase:
-            print(base.__table__.columns["id"])
             # for key, value in kwargs.items():
             #    if key not in base.__table__.columns:
             #        raise UnoError(f"Invalid filter key: {key}", error_code=400)
+            column_names = base.__table__.columns.keys()
+            if include_fields:
+                column_names = [col for col in include_fields if col in column_names]
+            elif exclude_fields:
+                column_names = [
+                    col
+                    for col in base.__table__.columns.keys()
+                    if col not in exclude_fields
+                ]
+            stmt = select(base.__table__.c[*column_names])
+
             try:
-                stmt = select(cls.base)
                 if id is not None:
                     stmt = stmt.where(base.__table__.c.id == id)
                     result_type = SelectResultType.FETCH_ONE
@@ -127,7 +138,11 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                     row = result.fetchone()
                     return from_db_model(**row._mapping) if row is not None else None
                 row = result.fetchall()
-                return [r._mapping for r in row if row is not None]
+                return [
+                    r._mapping
+                    for r in row
+                    if row is not None  # and r._mapping.name in column_names
+                ]
             except Exception as e:
                 raise UnoError(f"Unknown error occurred: {e}") from e
 
