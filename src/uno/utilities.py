@@ -25,6 +25,11 @@ def convert_snake_to_camel(snake_str: str) -> str:
     return "".join(x.title() for x in components)
 
 
+def convert_snake_to_all_caps_snake(snake_str: str) -> str:
+    components = snake_str.split("_")
+    return "_".join(x.upper() for x in components)
+
+
 # Mask functions
 def boolean_to_string(boolean: bool) -> str:
     return "Yes" if boolean is True else "No"
