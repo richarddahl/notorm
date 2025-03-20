@@ -27,7 +27,6 @@ from uno.api.endpoint import (
     DeleteEndpoint,
     ImportEndpoint,
 )
-from uno.apps.fltr.filter import Filter
 from uno.errors import UnoRegistryError
 from uno.utilities import (
     convert_snake_to_title,
@@ -93,7 +92,6 @@ class UnoModel(BaseModel):
         """Configure the UnoModel class"""
         cls.set_schemas()
         cls.set_endpoints(app)
-        # cls.set_filters()
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -137,78 +135,3 @@ class UnoModel(BaseModel):
                 DeleteEndpoint(model=cls, app=app)
             elif endpoint == "Import":
                 ImportEndpoint(model=cls, app=app)
-
-    @classmethod
-    def set_filters(cls, parent: Filter = None) -> None:
-        if parent is None:
-            klass = cls
-        else:
-            klass = parent.source_model
-        filters = {}
-        if not hasattr(klass.base, "__table__"):
-            return
-        for column_name, column in klass.base.__table__.columns.items():
-            if column_name in klass.filter_excludes:
-                continue
-            if column.type.python_type in [str, bytes]:
-                lookups = text_lookups
-            elif column.type.python_type in [int, Decimal, float, date, datetime, time]:
-                lookups = numeric_lookups
-            else:
-                lookups = object_lookups
-            filters.update(
-                {
-                    column_name: Filter(
-                        source_model=UnoModel.registry[klass.base.__tablename__],
-                        remote_model=UnoModel.registry[klass.base.__tablename__],
-                        label=convert_snake_to_all_caps_snake(column_name),
-                        data_type=column.type.python_type.__name__,
-                        source_table_name=klass.base.__tablename__,
-                        source_node=convert_snake_to_camel(klass.base.__tablename__),
-                        source_column_name="id",
-                        remote_table_name=klass.base.__tablename__,
-                        remote_column_name=column_name,
-                        remote_node=convert_snake_to_camel(column_name),
-                        accessor=column_name,
-                        filter_type="Column",
-                        lookups=lookups,
-                    )
-                }
-            )
-
-        for relationship in klass.relationships():
-            if relationship.key in klass.filter_excludes:
-                continue
-            if not relationship.info.get("edge", False):
-                continue
-            accessor = relationship.info.get("edge")
-            filter = Filter(
-                source_model=UnoModel.registry[klass.base.__tablename__],
-                remote_model=UnoModel.registry[
-                    relationship.mapper.class_.__tablename__
-                ],
-                label=convert_snake_to_all_caps_snake(relationship.info.get("edge")),
-                data_type="str",
-                source_table_name=klass.base.__tablename__,
-                source_node=convert_snake_to_camel(klass.base.__tablename__),
-                source_column_name=relationship.info.get("column"),
-                # source_column_name="id",
-                remote_table_name=relationship.mapper.class_.__tablename__,
-                remote_column_name=relationship.info.get("remote_column"),
-                remote_node=convert_snake_to_camel(
-                    relationship.mapper.class_.__tablename__
-                ),
-                accessor=accessor,
-                filter_type="Relationship",
-                lookups=object_lookups,
-            )
-            filters.update({accessor: filter})
-            print(filter.source_model)
-            print(filter.source_column_name)
-            print(filter.remote_model)
-            print(filter.remote_column_name)
-            print(filter.label)
-            if parent is None or parent.source_column_name != filter.remote_column_name:
-                filters.update(cls.set_filters(parent=filter))
-        # setattr(cls, "filters", filters)
-        return filters

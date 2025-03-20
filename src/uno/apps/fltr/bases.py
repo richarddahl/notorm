@@ -34,45 +34,29 @@ from uno.config import settings
 
 class FilterBase(UnoBase):
     __tablename__ = "filter"
-    __table_args__ = (
-        UniqueConstraint(
-            "source_table_name",
-            "remote_table_name",
-            "accessor",
-            name="uq_filter_path__source_table_name__remote_table_name__accessor",
-        ),
-        {
-            "comment": "Used to enable user-defined filtering using the graph vertices and graph_edges.",
-        },
-    )
+    __table_args__ = ({"comment": "Enables user-defined filtering via the graph DB."},)
 
     id: Mapped[int] = mapped_column(
+        Identity(),
         primary_key=True,
         unique=True,
         index=True,
-        doc="The id of the filter path.",
+        doc="The id of the filter",
     )
-    label: Mapped[str] = mapped_column(
-        doc="The edge label or property display of the filter path.",
-    )
-    data_type: Mapped[str] = mapped_column(
-        doc="The data type of the filter path.",
-    )
-    source_table_name: Mapped[int] = mapped_column(
+    source_meta_type_id: Mapped[str_63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
         doc="The source table filtered.",
     )
-    remote_table_name: Mapped[int] = mapped_column(
+    remote_meta_type_id: Mapped[str_63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        doc="The destination table of the filter path.",
+        doc="The destination table of the filter",
     )
-    accessor: Mapped[str_255] = mapped_column(
-        index=True,
-        doc="The relational db accessor for the filter path.",
+    data_type: Mapped[str] = mapped_column(
+        doc="The data type of the filter",
     )
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
@@ -83,29 +67,21 @@ class FilterBase(UnoBase):
                 schema=settings.DB_SCHEMA,
             )
         ),
-        doc="The lookups for the filter path.",
+        doc="The lookups for the filter",
     )
-    parent_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("filter_path.id", ondelete="CASCADE"),
-        index=True,
-        doc="The parent filter path id.",
+    display: Mapped[str] = mapped_column(
+        doc="The display of the filter",
     )
     path: Mapped[str] = mapped_column(
-        doc="The path of the filter path.",
+        unique=True,
+        index=True,
+        doc="The path of the filter",
     )
-
-    # Relationships
-    children: Mapped[Optional[list["FilterPath"]]] = relationship(
-        "FilterPath",
-        back_populates="parent",
-        # remote_side=[id],
-        info={"edge": "HAS_CHILD"},
+    prepend_path: Mapped[str] = mapped_column(
+        doc="The path of the filter when prepended to a child filter",
     )
-    parent: Mapped[Optional["FilterPath"]] = relationship(
-        "FilterPath",
-        back_populates="children",
-        remote_side=[id],
-        info={"edge": "HAS_PARENT"},
+    append_path: Mapped[str] = mapped_column(
+        doc="The path of the filter when appended to a parent filter",
     )
 
 

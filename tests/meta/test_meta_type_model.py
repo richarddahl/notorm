@@ -20,15 +20,10 @@ class TestMetaTypeModel(IsolatedAsyncioTestCase):
 
     def test_meta_type_model_structure(self):
         assert "id" in MetaType.model_fields.keys()
-        assert "name" in MetaType.model_fields.keys()
 
     def test_minimal_user_model_fields(self):
-        meta_type = MetaType(
-            id="01JNH7SBRV60R5RC1G61E30C1G",
-            name="meta_type",
-        )
-        assert meta_type.id == "01JNH7SBRV60R5RC1G61E30C1G"
-        assert meta_type.name == "meta_type"
+        meta_type = MetaType(id="meta_type")
+        assert meta_type.id == "meta_type"
 
     def test_meta_type_model_set_display_names(self):
         assert MetaType.table_name == "meta_type"

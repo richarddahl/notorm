@@ -10,10 +10,9 @@ class MetaType(UnoModel):
     # Class variables
     base = MetaTypeBase
     table_name = "meta_type"
-    exclude_from_filters = True
+    # exclude_from_filters = True
 
     id: str
-    name: str
 
     def __str__(self) -> str:
         return f"{self.id}"

@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 from uno.db.sql.sql_config import SQLConfig
-from uno.db.sql.table_sql_emitters import AlterGrants
+from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.db.sql.db_sql_emitters import InsertPermission
 
 
 class MetaTypeSQLConfig(SQLConfig):
     table_name = "meta_type"
-    sql_emitters = [AlterGrants, InsertPermission]
+    sql_emitters = [AlterGrants, InsertPermission, InsertMetaType]
 
 
 class MetaSQLConfig(SQLConfig):

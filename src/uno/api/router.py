@@ -71,14 +71,14 @@ class ListRouter(UnoRouter):
 
     def endpoint_factory(self) -> None:
 
-        self.model.set_filters()
+        # self.model.set_filters()
         model_filter_dict = OrderedDict()
         filter_names = list(self.model.filters.keys())
         filter_names.sort()
 
-        for name in filter_names:
-            model_filter_dict.update({name: (str | None, None)})
-        filter_params = create_model("params", **model_filter_dict)
+        # for name in filter_names:
+        #    model_filter_dict.update({name: (str | None, None)})
+        # filter_params = create_model("params", **model_filter_dict)
 
         async def endpoint(
             self,
@@ -86,7 +86,7 @@ class ListRouter(UnoRouter):
             offset: int = 0,
             include_fields: List[str] = Query([]),
             exclude_fields: List[str] = Query([]),
-            params: filter_params = Depends(),
+            # params: filter_params = Depends(),
         ) -> list[BaseModel]:
             results = await self.model.db.select(
                 from_db_model=self.response_model,
@@ -94,7 +94,7 @@ class ListRouter(UnoRouter):
                 offset=offset,
                 include_fields=include_fields,
                 exclude_fields=exclude_fields,
-                **params.dict(),
+                # **params.dict(),
             )
             return results
 

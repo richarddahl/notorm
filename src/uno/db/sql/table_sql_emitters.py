@@ -54,7 +54,7 @@ class InsertMetaType(SQLEmitter):
                 """
             -- Create the meta_type record
             SET ROLE {writer_role};
-            INSERT INTO {schema_name}.meta_type (name)
+            INSERT INTO {schema_name}.meta_type (id)
             VALUES ({table_name})
             ON CONFLICT DO NOTHING;
             """

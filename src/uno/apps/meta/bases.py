@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sqlalchemy import ForeignKey, Identity
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from uno.db.base import UnoBase, str_63, str_26
@@ -12,14 +12,9 @@ from uno.config import settings
 class MetaTypeBase(UnoBase):
     __tablename__ = "meta_type"
 
-    id: Mapped[int] = mapped_column(
-        Identity(start=1, cycle=True),
+    id: Mapped[str_63] = mapped_column(
         primary_key=True,
         index=True,
-        nullable=False,
-        doc="Primary Key",
-    )
-    name: Mapped[str_63] = mapped_column(
         nullable=False,
         doc="The name of the table",
     )
@@ -35,9 +30,9 @@ class MetaBase(UnoBase):
         index=True,
         doc="Primary Key",
     )
-    meta_type_id = mapped_column(
+    meta_type_id: Mapped[str_63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
-        nullable=False,
         index=True,
+        nullable=False,
     )
     meta_type = relationship("MetaTypeBase")

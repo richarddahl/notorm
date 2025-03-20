@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.db.base import UnoBase, str_26, str_255
+from uno.db.base import UnoBase, str_26, str_255, str_63
 from uno.db.mixins import GeneralBaseMixin
 from uno.db.enums import SQLOperation
 from uno.apps.auth.enums import TenantType
@@ -376,7 +376,7 @@ class PermissionBase(UnoBase):
         nullable=False,
         doc="Primary Key",
     )
-    meta_type_id: Mapped[int] = mapped_column(
+    meta_type_id: Mapped[str_63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,

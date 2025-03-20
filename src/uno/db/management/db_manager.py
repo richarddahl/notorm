@@ -23,7 +23,6 @@ from uno.db.sql.db_sql_emitters import (
     InsertMetaRecordFunction,
 )
 from uno.model.model import UnoModel
-from uno.apps.fltr.filter import Filter
 from uno.api.app_def import app
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
@@ -190,34 +189,25 @@ class DBManager:
         return user
 
     async def create_filters(self) -> None:
+        filters = []
         for model in UnoModel.registry.values():
-            # if not model.__name__ == "User":
-            #    continue
-            filters = create_filters(model.base, parent=None)
-            # rel = model.relationships()[0]
-            # print(rel)
-            # print(rel.argument)
-            # print(rel.mapper.class_)
-        # print(model.base.__tablename__)
-        # for filter in filters:
-        #    print(filter.path)
-        #    # for fltr in filter.get_parents():
-        #    #    print(fltr.path)
-        #    print("")
-        # print("")
+            model.configure(app)
+            for fltr in await create_filters(model.base):
+                filters.append(await fltr.edit_data())
 
-        # async with scoped_session() as session:
-        #    await session.execute(
-        #        text(
-        #            SQL("SET ROLE {db_name}_admin;")
-        #            .format(
-        #                db_name=SQL(settings.DB_NAME),
-        #            )
-        #            .as_string()
-        #        )
-        #    )
-        #    await session.commit()
-        #    await session.close()
+        async with scoped_session() as session:
+            await session.execute(
+                text(
+                    SQL("SET ROLE {db_name}_admin;")
+                    .format(
+                        db_name=SQL(settings.DB_NAME),
+                    )
+                    .as_string()
+                )
+            )
+            session.add_all(filters)
+            await session.commit()
+            await session.close()
 
     def engine(
         self,

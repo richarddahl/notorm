@@ -11,7 +11,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.db.obj import Base, str_26
+from uno.db.obj import Base, str_26, str_63
 from uno.apps.meta.bases import (
     MetaBase,
     MetaBaseMixin,
@@ -398,7 +398,7 @@ class Method(
     )
 
     method_meta_type: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         index=True,
     )
     name: Mapped[str] = mapped_column(doc="Label of the function")
@@ -466,8 +466,8 @@ class Calculation(
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
 
-    meta_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+    meta_type_id: Mapped[str_63] = mapped_column(
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         index=True,
     )
     name: Mapped[str] = mapped_column(doc="Name of the calculation.")

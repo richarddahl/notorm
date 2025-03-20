@@ -27,12 +27,6 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     table_name = "user"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
-            include_fields=[
-                "id",
-                "handle",
-            ],
-        ),
-        "view_schema": UnoSchemaConfig(
             exclude_fields=[
                 "created_by",
                 "modified_by",
@@ -87,12 +81,6 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
     schema_configs = {
         "view_schema": UnoSchemaConfig(
-            include_fields=[
-                "id",
-                "name",
-            ],
-        ),
-        "view_schema": UnoSchemaConfig(
             exclude_fields=[
                 "created_by",
                 "modified_by",
@@ -136,12 +124,6 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
     schema_configs = {
         "view_schema": UnoSchemaConfig(
-            include_fields=[
-                "id",
-                "name",
-            ],
-        ),
-        "view_schema": UnoSchemaConfig(
             exclude_fields=[
                 "created_by",
                 "modified_by",
@@ -180,12 +162,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
     table_name = "tenant"
 
     schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            include_fields=[
-                "id",
-                "name",
-            ],
-        ),
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
                 "created_by",
@@ -234,4 +210,4 @@ class Permission(UnoModel):
     operation: SQLOperation
 
     def __str__(self) -> str:
-        return f"{self.meta_type.name}:  {self.operation}"
+        return f"{self.meta_type.id}:  {self.operation}"

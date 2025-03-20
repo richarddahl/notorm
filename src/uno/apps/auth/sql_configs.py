@@ -147,4 +147,4 @@ class TenantSQLConfig(SQLConfig):
 class PermissionSQLConfig(SQLConfig):
     table_name = "permission"
     model = Permission
-    sql_emitters = [AlterGrants]
+    sql_emitters = [AlterGrants, InsertMetaType]

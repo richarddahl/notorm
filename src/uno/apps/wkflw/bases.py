@@ -114,10 +114,10 @@ class Workflow(
         index=True,
     )
     applicable_meta_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
     )
     record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(f"{settings.DB_SCHEMA}.objectfunction.id", ondelete="SET NULL"),

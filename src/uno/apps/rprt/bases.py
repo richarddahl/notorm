@@ -75,7 +75,7 @@ class ReportField(
         primary_key=True,
     )
     field_meta_type: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report field",
     )
     field_type: Mapped[ValueType] = mapped_column(
@@ -125,7 +125,7 @@ class ReportType(
         primary_key=True,
     )
     applicable_meta_type: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report",
     )
     explanation: Mapped[str] = mapped_column(

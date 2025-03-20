@@ -54,7 +54,7 @@ attribute_type___meta_type = Table(
     ),
     Column(
         "meta_type_id",
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=False,
@@ -134,7 +134,7 @@ class AttributeType(
         doc="The parent attribute type",
     )
     describes_id: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         index=True,
         doc="The meta_record types that the attribute type describes.",
     )
@@ -144,7 +144,7 @@ class AttributeType(
         doc="The query that determines which meta_record types are applicable to this attribute type.",
     )
     value_type_name: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.name", ondelete="CASCADE"),
+        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
         doc="The meta_record types that are values for the attribute type",
     )
     value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
