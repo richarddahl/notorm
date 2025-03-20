@@ -10,13 +10,11 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from uno.db.base import UnoBase
-from uno.api.endpoint import UnoEndpoint
 from uno.model.model import UnoModel
-from uno.apps.fltr.models import Filter
 from uno.api.app_def import app
 from uno.config import settings
 
+from uno.apps.fltr.models import Filter, FilterValue
 from uno.apps.auth.models import User, Group, Tenant, Role
 
 for module in settings.LOAD_MODULES:
@@ -52,20 +50,6 @@ async def app_base(
     )
 
 
-@app.get(
-    "/app/filters/{object_name}",
-    tags=["0KUI"],
-    summary="Get filters for an object by object name",
-)
-def get_filters(object_name: str) -> list[Filter]:
-    """Retrieve the generated OpenAPI schema."""
-    filters = UnoModel.registry[object_name.title()].filters
-    keys = list(filters.keys())
-    keys.sort()
-    f = {key: filters[key] for key in keys}
-    return f.values()
-
-
 def generate_openapi_schema():
     """Generate the OpenAPI schema for the FastAPI application."""
     return get_openapi(
@@ -77,9 +61,9 @@ def generate_openapi_schema():
 
 
 @app.get(
-    "/app/schema",
+    "/api/v1.0/schema",
     response_class=JSONResponse,
-    tags=["0KUI"],
+    tags=["Schemas"],
     summary="Get the OpenAPI schema",
     description="Retrieve the generated OpenAPI schema.",
 )
@@ -89,9 +73,9 @@ def get_openapi_endpoint():
 
 
 @app.get(
-    "/app/schema/{schema_name}",
+    "/api/v1.0/schema/{schema_name}",
     response_class=JSONResponse,
-    tags=["0KUI"],
+    tags=["Schemas"],
     summary="Get a schema by name",
     description="Retrieve a schema by name.",
 )

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from uno.model.model import UnoModel
+from uno.model.schema import UnoSchemaConfig
 from uno.apps.meta.bases import MetaTypeBase, MetaBase
 
 
@@ -10,7 +11,12 @@ class MetaType(UnoModel):
     # Class variables
     base = MetaTypeBase
     table_name = "meta_type"
-    # exclude_from_filters = True
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(),
+        "edit_schema": UnoSchemaConfig(),
+    }
+    endpoints = ["List"]
+    endpoint_tags = ["Metadata"]
 
     id: str
 
@@ -18,11 +24,16 @@ class MetaType(UnoModel):
         return f"{self.id}"
 
 
-class MetaBase(UnoModel):
+class Meta(UnoModel):
     # Class variables
     base = MetaBase
     table_name = "meta"
-    exclude_from_filters = True
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(),
+        "edit_schema": UnoSchemaConfig(),
+    }
+    endpoints = ["List"]
+    endpoint_tags = ["Metadata"]
 
     id: str
     meta_type_id: str

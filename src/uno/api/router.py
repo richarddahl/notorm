@@ -39,7 +39,13 @@ class UnoRouter(BaseModel, ABC):
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=[self.model.display_name],
+            tags=[
+                (
+                    self.model.endpoint_tags
+                    if self.model.endpoint_tags
+                    else self.model.display_name_plural
+                )
+            ],
             summary=self.summary,
             description=self.description,
             status_code=self.status_code,
@@ -63,7 +69,7 @@ class ListRouter(UnoRouter):
 
     @computed_field
     def summary(self) -> str:
-        return f"List {self.model.display_name}"
+        return f"List {self.model.display_name_plural}"
 
     @computed_field
     def description(self) -> str:

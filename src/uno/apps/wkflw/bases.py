@@ -50,9 +50,7 @@ class Workflow(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
@@ -103,24 +101,24 @@ class Workflow(
     """
     limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
-            f"{settings.DB_SCHEMA}.query.id",
+            "query.id",
             ondelete="SET NULL",
             name="fk_workflow_query_id",
         ),
         index=True,
     )
     parent_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
+        ForeignKey("workflow.id", ondelete="CASCADE"),
         index=True,
     )
     applicable_meta_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
     )
     record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
     )
     objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.objectfunction.id", ondelete="SET NULL"),
+        ForeignKey("objectfunction.id", ondelete="SET NULL"),
         index=True,
     )
     """
@@ -159,16 +157,14 @@ class WorkflowStep(MetaBase, MetaBaseMixin, BaseAuditMixin, HistoryTableAuditMix
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     workflow_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.workflow.id", ondelete="CASCADE"),
+        ForeignKey("workflow.id", ondelete="CASCADE"),
         index=True,
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         index=True,
     )
     objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(

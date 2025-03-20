@@ -44,11 +44,11 @@ class AttachmentMetaBase(Base):
     # Columns
 
     attachment_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.attachment.id", ondelete="CASCADE"),
+        ForeignKey("attachment.id", ondelete="CASCADE"),
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -67,9 +67,7 @@ class BooleanValue(MetaBase):
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -109,9 +107,7 @@ class DateTimeValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -151,9 +147,7 @@ class DateValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -193,9 +187,7 @@ class DecimalValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -235,9 +227,7 @@ class IntegerValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -277,9 +267,7 @@ class TextValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -319,9 +307,7 @@ class TimeValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -361,7 +347,7 @@ class Attachment(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(unique=True, doc="Name of the file")
@@ -393,12 +379,12 @@ class Method(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
 
     method_meta_type: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
     )
     name: Mapped[str] = mapped_column(doc="Label of the function")
@@ -467,7 +453,7 @@ class Calculation(
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
 
     meta_type_id: Mapped[str_63] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
     )
     name: Mapped[str] = mapped_column(doc="Name of the calculation.")

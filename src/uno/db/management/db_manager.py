@@ -27,7 +27,7 @@ from uno.api.app_def import app
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
 from uno.apps.auth.bases import UserBase
-from uno.apps.fltr.create_filters import create_filters
+from uno.apps.fltr.models import create_filters
 from uno.apps.meta.sql_configs import MetaTypeSQLConfig
 from uno.config import settings
 
@@ -193,7 +193,10 @@ class DBManager:
         for model in UnoModel.registry.values():
             model.configure(app)
             for fltr in await create_filters(model.base):
-                filters.append(await fltr.edit_data())
+                try:
+                    filters.append(await fltr.edit_data())
+                except TypeError:
+                    print(f"Error creating filter for {model.base.__tablename__}")
 
         async with scoped_session() as session:
             await session.execute(

@@ -14,4 +14,4 @@ class MetaTypeSQLConfig(SQLConfig):
 
 class MetaSQLConfig(SQLConfig):
     table_name = "meta"
-    sql_emitters = [AlterGrants]
+    sql_emitters = [AlterGrants, InsertMetaType]

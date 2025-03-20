@@ -4,19 +4,12 @@
 
 # Models are the Business Logic Layer Objects
 
-from datetime import date, datetime, time
-from decimal import Decimal
 from typing import ClassVar, Any
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict
 from fastapi import FastAPI
 from sqlalchemy.inspection import inspect
 
 from uno.db.db import UnoDBFactory
-from uno.apps.val.enums import (
-    object_lookups,
-    numeric_lookups,
-    text_lookups,
-)
 from uno.db.base import UnoBase
 from uno.model.schema import UnoSchemaConfig, UnoSchema
 from uno.api.endpoint import (
@@ -28,12 +21,7 @@ from uno.api.endpoint import (
     ImportEndpoint,
 )
 from uno.errors import UnoRegistryError
-from uno.utilities import (
-    convert_snake_to_title,
-    convert_snake_to_all_caps_snake,
-    convert_snake_to_camel,
-)
-from uno.config import settings
+from uno.utilities import convert_snake_to_title
 
 
 class UnoModel(BaseModel):
@@ -60,6 +48,7 @@ class UnoModel(BaseModel):
         "Delete",
         "Import",
     ]
+    endpoint_tags: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, BaseModel]] = {}
     filter_excludes: ClassVar[list[str]] = []
     terminate_field_filters: ClassVar[list[str]] = []

@@ -32,14 +32,14 @@ user__group = Table(
     Column(
         "user_id",
         VARCHAR(26),
-        ForeignKey("user.id"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
     Column(
         "group_id",
         VARCHAR(26),
-        ForeignKey("group.id"),
+        ForeignKey("group.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
@@ -57,14 +57,14 @@ user__role = Table(
     Column(
         "user_id",
         VARCHAR(26),
-        ForeignKey("user.id"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
     Column(
         "role_id",
         VARCHAR(26),
-        ForeignKey("role.id"),
+        ForeignKey("role.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
@@ -82,14 +82,14 @@ role__permission = Table(
     Column(
         "role_id",
         VARCHAR(26),
-        ForeignKey("role.id"),
+        ForeignKey("role.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
     Column(
         "permission_id",
         BIGINT,
-        ForeignKey("permission.id"),
+        ForeignKey("permission.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
@@ -118,7 +118,6 @@ class UserBase(GeneralBaseMixin, UnoBase):
     )
 
     # Columns
-
     email: Mapped[str_255] = mapped_column(
         unique=True,
         index=True,
@@ -156,40 +155,20 @@ class UserBase(GeneralBaseMixin, UnoBase):
     tenant: Mapped["TenantBase"] = relationship(
         foreign_keys=[tenant_id],
         doc="Tenant to which the user is assigned",
-        info={
-            "edge": "IS_ASSIGNED_TO",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
     default_group: Mapped["GroupBase"] = relationship(
         foreign_keys=[default_group_id],
         doc="User's default group, used as default for creating new objects",
-        info={
-            "edge": "HAS_DEFAULT_GROUP",
-            "column": "default_group_id",
-            "remote_column": "id",
-        },
     )
     groups: Mapped[list["GroupBase"]] = relationship(
         secondary=user__group,
         back_populates="users",
         doc="Groups to which the user is assigned",
-        info={
-            "edge": "IS_MEMBER_OF",
-            "column": "user_id",
-            "remote_column": "id",
-        },
     )
     roles: Mapped[list["RoleBase"]] = relationship(
         secondary=user__role,
         back_populates="users",
         doc="Roles assigned to the user",
-        info={
-            "edge": "HAS_ROLES",
-            "column": "user_id",
-            "remote_column": "id",
-        },
     )
 
 
@@ -216,31 +195,16 @@ class GroupBase(GeneralBaseMixin, UnoBase):
     tenant: Mapped[list["TenantBase"]] = relationship(
         viewonly=True,
         doc="Customer to which the group belongs",
-        info={
-            "edge": "IS_ASSIGNED_TO",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
     default_group_users: Mapped[list[UserBase]] = relationship(
         viewonly=True,
         foreign_keys=[UserBase.default_group_id],
         doc="Users assigned to the group",
-        info={
-            "edge": "IS_DEFAULT_GROUP_FOR",
-            "column": "default_group_id",
-            "remote_column": "id",
-        },
     )
     users: Mapped[list[UserBase]] = relationship(
         secondary=user__group,
         back_populates="groups",
         doc="Users assigned to the group",
-        info={
-            "edge": "GRANTS_ACCESS_TO",
-            "column": "group_id",
-            "remote_column": "id",
-        },
     )
 
 
@@ -249,9 +213,7 @@ class RoleBase(GeneralBaseMixin, UnoBase):
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
-        {
-            "comment": "Application roles",
-        },
+        {"comment": "Application roles"},
     )
 
     tenant_id: Mapped[str_26] = mapped_column(
@@ -274,31 +236,16 @@ class RoleBase(GeneralBaseMixin, UnoBase):
     tenant: Mapped[list["TenantBase"]] = relationship(
         viewonly=True,
         doc="Customer to which the role belongs",
-        info={
-            "edge": "IS_ASSIGNED_TO",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
     permissions: Mapped[list["PermissionBase"]] = relationship(
         viewonly=True,
         secondary=role__permission,
         doc="Permissions assigned to the role",
-        info={
-            "edge": "HAS_PERMISSIONS",
-            "column": "role_id",
-            "remote_column": "id",
-        },
     )
     users: Mapped[list[UserBase]] = relationship(
         secondary=user__role,
         back_populates="roles",
         doc="Users assigned to the role",
-        info={
-            "edge": "GRANTS_ACCESS_TO",
-            "column": "role_id",
-            "remote_column": "id",
-        },
     )
 
 
@@ -332,31 +279,16 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         viewonly=True,
         foreign_keys=[UserBase.tenant_id],
         doc="Users assigned to the tenant",
-        info={
-            "edge": "OWNS",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
     groups: Mapped[list[GroupBase]] = relationship(
         viewonly=True,
         foreign_keys=[GroupBase.tenant_id],
         doc="Groups assigned to the tenant",
-        info={
-            "edge": "OWNS",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
     roles: Mapped[list[RoleBase]] = relationship(
         viewonly=True,
         foreign_keys=[RoleBase.tenant_id],
         doc="Roles assigned to the tenant",
-        info={
-            "edge": "OWNs",
-            "column": "tenant_id",
-            "remote_column": "id",
-        },
     )
 
 
@@ -365,9 +297,7 @@ class PermissionBase(UnoBase):
     __table_args__ = (
         Index("ix_permission_meta_type_id_operation", "meta_type_id", "operation"),
         UniqueConstraint("meta_type_id", "operation"),
-        {
-            "comment": "Application permissions",
-        },
+        {"comment": "Application permissions"},
     )
     id: Mapped[int] = mapped_column(
         Identity(start=1, cycle=True),

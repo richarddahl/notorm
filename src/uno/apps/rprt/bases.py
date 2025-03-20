@@ -41,11 +41,11 @@ class ReportTypeReportField(Base):
 
     # Columns
     report_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.report_type.id", ondelete="CASCADE"),
+        ForeignKey("report_type.id", ondelete="CASCADE"),
         primary_key=True,
     )
     report_field_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.report_field.id", ondelete="CASCADE"),
+        ForeignKey("report_field.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -71,11 +71,11 @@ class ReportField(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     field_meta_type: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report field",
     )
     field_type: Mapped[ValueType] = mapped_column(
@@ -121,11 +121,11 @@ class ReportType(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     applicable_meta_type: Mapped[str_255] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_type.id", ondelete="CASCADE"),
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report",
     )
     explanation: Mapped[str] = mapped_column(
@@ -159,14 +159,14 @@ class Report(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str_255] = mapped_column(
         doc="Name of the report",
     )
     report_type: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.report_type.id", ondelete="CASCADE"),
+        ForeignKey("report_type.id", ondelete="CASCADE"),
         doc="The type of the report",
     )
     data: Mapped[bytea] = mapped_column(

@@ -14,12 +14,20 @@ tags_metadata = [
             "description": "0kui Documentation",
             "url": "http://localhost:8001/okui/",
         },
-    }
+    },
+    {
+        "name": "Schemas",
+        "description": "API Schemas",
+        "externalDocs": {
+            "description": "Documentation",
+            "url": "http://localhost:8001/schema/",
+        },
+    },
 ]
 tags_metadata.extend(
     [
         {
-            "name": uno_model.display_name,
+            "name": uno_model.display_name_plural,
             "description": uno_model.__doc__,
             "externalDocs": {
                 "description": f"{uno_model.display_name} Documentation",

@@ -47,11 +47,11 @@ class MessageAddressedTo(Base):
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
+        ForeignKey("message.id", ondelete="CASCADE"),
         primary_key=True,
     )
     addressed_to_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
     )
     read: Mapped[bool] = mapped_column(
@@ -73,11 +73,11 @@ class MessageCopiedTo(Base):
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
+        ForeignKey("message.id", ondelete="CASCADE"),
         primary_key=True,
     )
     copied_to_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
     )
     read: Mapped[bool] = mapped_column(
@@ -100,11 +100,11 @@ class MessageRelatedObject(Base):
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
+        ForeignKey("message.id", ondelete="CASCADE"),
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -128,15 +128,13 @@ class Message(
     ]
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.meta_record.id"), primary_key=True
-    )
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     sender_id: Mapped[str_26] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.user.id", ondelete="CASCADE"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         index=True,
     )
     parent_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(f"{settings.DB_SCHEMA}.message.id", ondelete="CASCADE"),
+        ForeignKey("message.id", ondelete="CASCADE"),
         index=True,
     )
     flag: Mapped[MessageImportance] = mapped_column(

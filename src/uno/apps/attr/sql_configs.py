@@ -21,7 +21,6 @@ from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
 from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
 from uno.apps.auth.models import User, Group, Role, Tenant, Permission
 
-
 """
 class UserGroupSQLConfig(TableSQLConfig):
     table_name = "user__group"
@@ -88,8 +87,6 @@ class RolePermisionSQLConfig(TableSQLConfig):
         ),
     ]
 
-"""
-
 
 class UserSQLConfig(SQLConfig):
     table_name = "user"
@@ -151,3 +148,5 @@ class PermissionSQLConfig(SQLConfig):
     table_name = "permission"
     model = Permission
     sql_emitters = [AlterGrants, InsertMetaType]
+
+"""
