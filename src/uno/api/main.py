@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from uno.db.base import UnoBase
 from uno.api.endpoint import UnoEndpoint
 from uno.model.model import UnoModel
-from uno.apps.fltr.filter import Filter
+from uno.apps.fltr.models import Filter
 from uno.api.app_def import app
 from uno.config import settings
 
