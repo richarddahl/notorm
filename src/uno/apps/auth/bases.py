@@ -186,7 +186,7 @@ class UserBase(GeneralBaseMixin, UnoBase):
         back_populates="users",
         doc="Roles assigned to the user",
         info={
-            "edge": "HAS_PERMISSIONS_FROM",
+            "edge": "HAS_ROLES",
             "column": "user_id",
             "remote_column": "id",
         },
@@ -237,7 +237,7 @@ class GroupBase(GeneralBaseMixin, UnoBase):
         back_populates="groups",
         doc="Users assigned to the group",
         info={
-            "edge": "ALLOWS_ACCESS_TO",
+            "edge": "GRANTS_ACCESS_TO",
             "column": "group_id",
             "remote_column": "id",
         },
@@ -295,7 +295,7 @@ class RoleBase(GeneralBaseMixin, UnoBase):
         back_populates="roles",
         doc="Users assigned to the role",
         info={
-            "edge": "ALLOWS_ACCESS_TO",
+            "edge": "GRANTS_ACCESS_TO",
             "column": "role_id",
             "remote_column": "id",
         },
@@ -333,7 +333,7 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         foreign_keys=[UserBase.tenant_id],
         doc="Users assigned to the tenant",
         info={
-            "edge": "IS_ASSIGNED_TO",
+            "edge": "OWNS",
             "column": "tenant_id",
             "remote_column": "id",
         },
@@ -343,7 +343,7 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         foreign_keys=[GroupBase.tenant_id],
         doc="Groups assigned to the tenant",
         info={
-            "edge": "IS_ASSIGNED_TO",
+            "edge": "OWNS",
             "column": "tenant_id",
             "remote_column": "id",
         },
@@ -353,7 +353,7 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         foreign_keys=[RoleBase.tenant_id],
         doc="Roles assigned to the tenant",
         info={
-            "edge": "IS_ASSIGNED_TO",
+            "edge": "OWNs",
             "column": "tenant_id",
             "remote_column": "id",
         },

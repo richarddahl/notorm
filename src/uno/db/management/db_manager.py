@@ -28,6 +28,7 @@ from uno.api.app_def import app
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
 from uno.apps.auth.bases import UserBase
+from uno.apps.fltr.create_filters import create_filters
 from uno.apps.meta.sql_configs import MetaTypeSQLConfig
 from uno.config import settings
 
@@ -189,31 +190,34 @@ class DBManager:
         return user
 
     async def create_filters(self) -> None:
-
         for model in UnoModel.registry.values():
-            if hasattr(model, "configure"):
-                model.configure(app)
+            # if not model.__name__ == "User":
+            #    continue
+            filters = create_filters(model.base, parent=None)
+            # rel = model.relationships()[0]
+            # print(rel)
+            # print(rel.argument)
+            # print(rel.mapper.class_)
+        # print(model.base.__tablename__)
+        # for filter in filters:
+        #    print(filter.path)
+        #    # for fltr in filter.get_parents():
+        #    #    print(fltr.path)
+        #    print("")
+        # print("")
 
-        for model in UnoModel.registry.values():
-            print(model.base.__tablename__)
-            for filter_name, filter in model.filters.items():
-                for filter in filter.children:
-                    print(filter_name)
-            print("")
-
-        async with scoped_session() as session:
-            await session.execute(
-                text(
-                    SQL("SET ROLE {db_name}_admin;")
-                    .format(
-                        db_name=SQL(settings.DB_NAME),
-                    )
-                    .as_string()
-                )
-            )
-
-            await session.commit()
-            await session.close()
+        # async with scoped_session() as session:
+        #    await session.execute(
+        #        text(
+        #            SQL("SET ROLE {db_name}_admin;")
+        #            .format(
+        #                db_name=SQL(settings.DB_NAME),
+        #            )
+        #            .as_string()
+        #        )
+        #    )
+        #    await session.commit()
+        #    await session.close()
 
     def engine(
         self,

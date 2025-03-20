@@ -24,6 +24,7 @@ class DataType(str, enum.Enum):
     RECORD = "record"
     TEXT = "str"
     TIME = "time"
+    ENUM = "enum"
 
 
 class Lookup(str, enum.Enum):

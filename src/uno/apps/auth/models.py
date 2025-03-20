@@ -59,6 +59,7 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "tenant_id",
         "default_group_id",
     ]
+    terminate_filters = True
 
     # Fields
     email: EmailStr = None
@@ -112,6 +113,7 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "deleted_by_id",
         "tenant_id",
     ]
+    terminate_filters = True
 
     # Fields
     id: Optional[str]
@@ -159,6 +161,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "deleted_by_id",
         "tenant_id",
     ]
+    terminate_filters = True
 
     # Fields
     id: Optional[str]
@@ -202,6 +205,7 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "modified_by_id",
         "deleted_by_id",
     ]
+    terminate_filters = True
 
     # Fields
     id: Optional[str]
@@ -222,6 +226,7 @@ class Permission(UnoModel):
     base = PermissionBase
     endpoints = []
     schema_configs = {}
+    terminate_filters = True
 
     # Fields
     id: Optional[int]

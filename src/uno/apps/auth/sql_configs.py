@@ -36,7 +36,7 @@ class UserGroupSQLConfig(TableSQLConfig):
         TableGraphSQLEmitter(
             local_node_label="Group",
             column_name="group_id",
-            label="ALLOWS_ACCESS_TO",
+            label="GRANTS_ACCESS_TO",
             remote_table_name="user",
             remote_column_name="user_id",
             remote_node_label="User",
@@ -58,7 +58,7 @@ class UserRoleSQLConfig(TableSQLConfig):
         TableGraphSQLEmitter(
             local_node_label="Role",
             column_name="role_id",
-            label="ALLOWS_ACCESS_TO",
+            label="GRANTS_ACCESS_TO",
             remote_table_name="user",
             remote_column_name="user_id",
             remote_node_label="User",

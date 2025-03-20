@@ -10,6 +10,7 @@ class MetaType(UnoModel):
     # Class variables
     base = MetaTypeBase
     table_name = "meta_type"
+    exclude_from_filters = True
 
     id: str
     name: str
@@ -22,6 +23,7 @@ class MetaBase(UnoModel):
     # Class variables
     base = MetaBase
     table_name = "meta"
+    exclude_from_filters = True
 
     id: str
     meta_type_id: str

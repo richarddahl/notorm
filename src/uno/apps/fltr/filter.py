@@ -6,35 +6,53 @@
 
 from typing import Literal, Optional
 from typing_extensions import Self
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, computed_field
 
 from uno.db.enums import SQLOperation
 
-from uno.apps.fltr.bases import FilterBase
+# from uno.apps.fltr.bases import FilterBase
 from uno.apps.val.enums import DataType
 from uno.errors import UnoRegistryError
+from uno.utilities import convert_snake_to_title
 from uno.config import settings
 
 
 class Filter(BaseModel):
-    source_model: type[BaseModel] = None
-    remote_model: type[BaseModel] = None
+    source_node: str
     label: str
+    remote_node: str
     data_type: str = "str"
-    source_table_name: str
-    remote_table_name: str
-    accessor: str
-    filter_type: Literal["Edge", "Property"] = "Property"
+    filter_type: Literal["Column", "Relationship"] = "Column"
     lookups: list[str]
-    children: Optional[list["Filter"]] = []
+    parent: Optional["Filter"] = None
+    display: Optional[str] = None
+    path: Optional[str] = None
 
     @model_validator(mode="after")
     def model_validator(self) -> Self:
-        print(f"Source: {self.source_table_name} Filter: {self.label}")
-        if self.filter_type == "Edge":
-            for filter in self.remote_model.filters.values():
-                print(
-                    f"(v:{self.source_model.__name__})-[:{self.accessor}]-(:{self.remote_model.__name__} {{{filter.accessor}}})"
+        if self.filter_type == "Relationship":
+            if self.parent is None:
+                self.display = f"{self.source_node} {convert_snake_to_title(self.label)} (:{self.remote_node} {{id: %s, val: %s}})"
+                self.path = f"(:{self.source_node})-[:{self.label}]->(:{self.remote_node} {{id: %s, val: %s}})"
+            else:
+                self.display = f"{self.parent.display} {convert_snake_to_title(self.label)} (:{self.remote_node}  {{id: %s, val: %s}})"
+                self.path = f"{self.parent.path}-[:{self.label}]->(:{self.remote_node})"
+        else:
+            if self.parent is None:
+                self.display = (
+                    f"{self.source_node} {convert_snake_to_title(self.label)}"
                 )
-        print("")
+                self.path = f"(:{self.source_node})-[:{self.label}]->(:{self.remote_node} {{id: %s, val: %s}})"
+            else:
+                self.display = (
+                    f"{self.parent.display} {convert_snake_to_title(self.label)}"
+                )
+                self.path = f"{self.parent.path}-[:{self.label}]->(:{self.remote_node} {{id: %s, val: %s}})"
         return self
+
+    def get_parents(self):
+        parents = []
+        if self.parent:
+            parents.append(self.parent)
+            parents.extend(self.parent.get_parents())
+        return parents

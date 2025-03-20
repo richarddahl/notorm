@@ -29,7 +29,11 @@ from uno.api.endpoint import (
 )
 from uno.apps.fltr.filter import Filter
 from uno.errors import UnoRegistryError
-from uno.utilities import convert_snake_to_title
+from uno.utilities import (
+    convert_snake_to_title,
+    convert_snake_to_all_caps_snake,
+    convert_snake_to_camel,
+)
 from uno.config import settings
 
 
@@ -41,6 +45,8 @@ class UnoModel(BaseModel):
     db: ClassVar["UnoDB"]
     base: ClassVar[UnoBase]
     table_name: ClassVar[str] = None
+    exclude_from_filters: ClassVar[bool] = False
+    terminate_filters: ClassVar[bool] = False
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
     schema_configs: ClassVar[dict[str, "UnoSchemaConfig"]] = {}
@@ -57,6 +63,7 @@ class UnoModel(BaseModel):
     ]
     filters: ClassVar[dict[str, BaseModel]] = {}
     filter_excludes: ClassVar[list[str]] = []
+    terminate_field_filters: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
 
@@ -86,7 +93,7 @@ class UnoModel(BaseModel):
         """Configure the UnoModel class"""
         cls.set_schemas()
         cls.set_endpoints(app)
-        cls.set_filters()
+        # cls.set_filters()
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -132,58 +139,76 @@ class UnoModel(BaseModel):
                 ImportEndpoint(model=cls, app=app)
 
     @classmethod
-    def set_filters(cls) -> None:
+    def set_filters(cls, parent: Filter = None) -> None:
+        if parent is None:
+            klass = cls
+        else:
+            klass = parent.source_model
         filters = {}
-        if not hasattr(cls.base, "__table__"):
+        if not hasattr(klass.base, "__table__"):
             return
-        for field_name, field in cls.base.__table__.columns.items():
-            if field_name in cls.filter_excludes:
+        for column_name, column in klass.base.__table__.columns.items():
+            if column_name in klass.filter_excludes:
                 continue
-            if field.type.python_type in [str, bytes]:
+            if column.type.python_type in [str, bytes]:
                 lookups = text_lookups
-            elif field.type.python_type in [int, Decimal, float, date, datetime, time]:
+            elif column.type.python_type in [int, Decimal, float, date, datetime, time]:
                 lookups = numeric_lookups
             else:
                 lookups = object_lookups
             filters.update(
                 {
-                    field_name: Filter(
-                        source_model=UnoModel.registry[cls.base.__tablename__],
-                        remote_model=UnoModel.registry[cls.base.__tablename__],
-                        label=field_name.replace("_", " ").title(),
-                        data_type=field.type.python_type.__name__,
-                        source_table_name=cls.base.__tablename__,
-                        remote_table_name=cls.base.__tablename__,
-                        accessor=field_name,
-                        filter_type="Property",
+                    column_name: Filter(
+                        source_model=UnoModel.registry[klass.base.__tablename__],
+                        remote_model=UnoModel.registry[klass.base.__tablename__],
+                        label=convert_snake_to_all_caps_snake(column_name),
+                        data_type=column.type.python_type.__name__,
+                        source_table_name=klass.base.__tablename__,
+                        source_node=convert_snake_to_camel(klass.base.__tablename__),
+                        source_column_name="id",
+                        remote_table_name=klass.base.__tablename__,
+                        remote_column_name=column_name,
+                        remote_node=convert_snake_to_camel(column_name),
+                        accessor=column_name,
+                        filter_type="Column",
                         lookups=lookups,
                     )
                 }
             )
 
-        for relationship in cls.relationships():
-            if relationship.key in cls.filter_excludes:
+        for relationship in klass.relationships():
+            if relationship.key in klass.filter_excludes:
                 continue
             if not relationship.info.get("edge", False):
                 continue
             accessor = relationship.info.get("edge")
-            filters.update(
-                {
-                    accessor: Filter(
-                        source_model=UnoModel.registry[cls.base.__tablename__],
-                        remote_model=UnoModel.registry[
-                            relationship.mapper.class_.__tablename__
-                        ],
-                        label=relationship.key.replace("_id", "")
-                        .replace("_", " ")
-                        .title(),
-                        data_type="str",
-                        source_table_name=cls.base.__tablename__,
-                        remote_table_name=relationship.mapper.class_.__tablename__,
-                        accessor=accessor,
-                        filter_type="Edge",
-                        lookups=object_lookups,
-                    )
-                }
+            filter = Filter(
+                source_model=UnoModel.registry[klass.base.__tablename__],
+                remote_model=UnoModel.registry[
+                    relationship.mapper.class_.__tablename__
+                ],
+                label=convert_snake_to_all_caps_snake(relationship.info.get("edge")),
+                data_type="str",
+                source_table_name=klass.base.__tablename__,
+                source_node=convert_snake_to_camel(klass.base.__tablename__),
+                source_column_name=relationship.info.get("column"),
+                # source_column_name="id",
+                remote_table_name=relationship.mapper.class_.__tablename__,
+                remote_column_name=relationship.info.get("remote_column"),
+                remote_node=convert_snake_to_camel(
+                    relationship.mapper.class_.__tablename__
+                ),
+                accessor=accessor,
+                filter_type="Relationship",
+                lookups=object_lookups,
             )
-        setattr(cls, "filters", filters)
+            filters.update({accessor: filter})
+            print(filter.source_model)
+            print(filter.source_column_name)
+            print(filter.remote_model)
+            print(filter.remote_column_name)
+            print(filter.label)
+            if parent is None or parent.source_column_name != filter.remote_column_name:
+                filters.update(cls.set_filters(parent=filter))
+        # setattr(cls, "filters", filters)
+        return filters
