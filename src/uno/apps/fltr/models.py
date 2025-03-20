@@ -23,18 +23,19 @@ from uno.config import settings
 class Filter(UnoModel):
     # Class variables
     base = FilterBase
-    table_name = "user"
+    table_name = "filter"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=["prepend_path", "append_path", "path", "display"]
         ),
         "edit_schema": UnoSchemaConfig(exclude_fields=["label_string"]),
     }
+    endpoints = ["List"]
     exclude_from_filters = True
 
     # Fields
     source_meta_type_id: Optional[str] = None
-    label_string: str
+    label_string: Optional[str] = None
     remote_meta_type_id: Optional[str] = None
     data_type: str = "str"
     lookups: list[str]

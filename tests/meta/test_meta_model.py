@@ -19,8 +19,8 @@ class TestMetaBaseModel(IsolatedAsyncioTestCase):
         asyncio.set_event_loop(self.loop)
 
     def test_meta_record_model_structure(self):
-        assert "id" in MetaBase.model_fields.keys()
-        assert "meta_type_id" in MetaBase.model_fields.keys()
+        assert "id" in MetaBase.__table__.columns.keys()
+        assert "meta_type_id" in MetaBase.__table__.columns.keys()
 
     def test_meta_record_fields(self):
         meta_record = MetaBase(
@@ -31,6 +31,4 @@ class TestMetaBaseModel(IsolatedAsyncioTestCase):
         assert meta_record.meta_type_id == "01JNH7SBRV60R5RC1G61E30C1G"
 
     def test_meta_record_model_set_display_names(self):
-        assert MetaBase.table_name == "meta"
-        assert MetaBase.display_name == "Meta"
-        assert MetaBase.display_name_plural == "Metas"
+        assert MetaBase.__tablename__ == "meta"

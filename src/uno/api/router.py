@@ -72,9 +72,9 @@ class ListRouter(UnoRouter):
     def endpoint_factory(self) -> None:
 
         # self.model.set_filters()
-        model_filter_dict = OrderedDict()
-        filter_names = list(self.model.filters.keys())
-        filter_names.sort()
+        # model_filter_dict = OrderedDict()
+        # filter_names = list(self.model.filters.keys())
+        # filter_names.sort()
 
         # for name in filter_names:
         #    model_filter_dict.update({name: (str | None, None)})
