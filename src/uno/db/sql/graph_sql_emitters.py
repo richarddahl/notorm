@@ -256,7 +256,7 @@ class NodeSQLEmitter(SQLEmitter):
                     PERFORM ag_catalog.create_elabel('graph', {label});
                     CREATE INDEX ON graph.{label_ident} (start_id, end_id);
                 END IF;
-                """
+            """
             )
             .format(
                 label=Literal(label),
