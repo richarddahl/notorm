@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Optional, List
-from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
@@ -11,7 +10,6 @@ from uno.apps.auth.mixins import RecordAuditMixin
 from uno.apps.attr.bases import AttributeBase, AttributeTypeBase
 from uno.apps.fltr.models import Query
 from uno.apps.meta.models import MetaType
-from uno.config import settings
 
 
 class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
@@ -24,14 +22,14 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
-                "tenant",
-                "group",
+                "attribute_type",
             ],
         ),
         "edit_schema": UnoSchemaConfig(
             include_fields=[
-                "tenant_id",
-                "group_id",
+                "attribute_type_id",
+                "comment",
+                "follow_up_required",
             ],
         ),
     }
@@ -39,17 +37,15 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "created_by_id",
         "modified_by_id",
         "deleted_by_id",
-        "tenant_id",
-        "default_group_id",
     ]
     terminate_filters = True
-    endpoint_tags = ["Attributes"]
+    endpoint_tags = ["Metadata"]
 
     # Fields
     attribute_type_id: Optional[str] = None
     attribute_type: Optional["AttributeType"] = None
     comment: Optional[str] = None
-    followw_up_required: bool = False
+    follow_up_required: bool = False
 
     def __str__(self) -> str:
         return self.attribute_type.name
@@ -65,11 +61,23 @@ class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
+                "parent",
+                "describes",
+                "description_limiting_query",
+                "value_type_limiting_query",
             ],
         ),
         "edit_schema": UnoSchemaConfig(
             include_fields=[
                 "name",
+                "text",
+                "parent_id",
+                "description_limiting_query_id",
+                "value_type_limiting_query_id",
+                "required",
+                "multiple_allowed",
+                "comment_required",
+                "initial_comment",
             ],
         ),
     }
@@ -80,7 +88,7 @@ class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
         "tenant_id",
     ]
     terminate_filters = True
-    endpoint_tags = ["Attributes"]
+    endpoint_tags = ["Metadata"]
 
     # Fields
     id: Optional[str]

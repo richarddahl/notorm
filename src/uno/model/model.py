@@ -65,7 +65,7 @@ class UnoModel(BaseModel):
         else:
             raise UnoRegistryError(
                 f"A Model class with the table name {cls.base.__tablename__} already exists in the registry.",
-                "MODEL_CLASS_EXISTS_IN_REGISTRY",
+                "DUPLICATE_MODEL",
             )
         cls.set_display_names()
         cls.db = UnoDBFactory(base=cls.base, model=cls)

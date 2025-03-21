@@ -5,13 +5,26 @@
 from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.db.sql.db_sql_emitters import InsertPermission
+from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
+from uno.apps.meta.models import MetaType, Meta
 
 
 class MetaTypeSQLConfig(SQLConfig):
     table_name = "meta_type"
-    sql_emitters = [AlterGrants, InsertPermission, InsertMetaType]
+    model = MetaType
+    sql_emitters = [
+        AlterGrants,
+        InsertPermission,
+        InsertMetaType,
+        # NodeSQLEmitter,
+    ]
 
 
 class MetaSQLConfig(SQLConfig):
     table_name = "meta"
-    sql_emitters = [AlterGrants, InsertMetaType]
+    model = Meta
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        # NodeSQLEmitter,
+    ]

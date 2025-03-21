@@ -62,7 +62,7 @@ class UnoEndpoint(BaseModel):
         else:
             raise UnoRegistryError(
                 f"An Endpoint class with the name {cls.__name__} already exists in the registry.",
-                "ENDPOINT_CLASS_EXISTS_IN_REGISTRY",
+                "DUPLICATE_ENDPOINT",
             )
 
 

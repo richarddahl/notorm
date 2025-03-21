@@ -152,14 +152,14 @@ class UserBase(GeneralBaseMixin, UnoBase):
     )
 
     # Relationships
-    tenant: Mapped["TenantBase"] = relationship(
-        foreign_keys=[tenant_id],
-        doc="Tenant to which the user is assigned",
-    )
-    default_group: Mapped["GroupBase"] = relationship(
-        foreign_keys=[default_group_id],
-        doc="User's default group, used as default for creating new objects",
-    )
+    # tenant: Mapped["TenantBase"] = relationship(
+    #    foreign_keys=[tenant_id],
+    #    doc="Tenant to which the user is assigned",
+    # )
+    # default_group: Mapped["GroupBase"] = relationship(
+    #    foreign_keys=[default_group_id],
+    #    doc="User's default group, used as default for creating new objects",
+    # )
     groups: Mapped[list["GroupBase"]] = relationship(
         secondary=user__group,
         back_populates="users",

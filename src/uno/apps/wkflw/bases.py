@@ -50,7 +50,7 @@ class Workflow(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
@@ -157,14 +157,14 @@ class WorkflowStep(MetaBase, MetaBaseMixin, BaseAuditMixin, HistoryTableAuditMix
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
     workflow_id: Mapped[str_26] = mapped_column(
         ForeignKey("workflow.id", ondelete="CASCADE"),
         index=True,
     )
     date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
     workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("meta_record.id", ondelete="CASCADE"),
+        ForeignKey("meta.id", ondelete="CASCADE"),
         index=True,
     )
     objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(

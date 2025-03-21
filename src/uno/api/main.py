@@ -15,6 +15,8 @@ from uno.api.app_def import app
 from uno.config import settings
 
 from uno.apps.fltr.models import Filter, FilterValue
+from uno.apps.meta.models import MetaType, Meta
+from uno.apps.attr.models import Attribute, AttributeType
 from uno.apps.auth.models import User, Group, Tenant, Role
 
 for module in settings.LOAD_MODULES:

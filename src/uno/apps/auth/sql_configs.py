@@ -15,80 +15,29 @@ from uno.db.sql.db_sql_emitters import (
     InsertMetaRecordTrigger,
     RecordStatusFunction,
 )
-from uno.db.sql.sql_config import SQLConfig, TableSQLConfig
-from uno.db.sql.graph_sql_emitters import TableGraphSQLEmitter
+from uno.db.sql.sql_config import SQLConfig
 from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
 from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
 from uno.apps.auth.models import User, Group, Role, Tenant, Permission
+from uno.apps.auth.bases import user__group, user__role, role__permission
 
 
-"""
-class UserGroupSQLConfig(TableSQLConfig):
+class UserGroupSQLConfig(SQLConfig):
     table_name = "user__group"
-    sql_emitters = [
-        TableGraphSQLEmitter(
-            local_node_label="User",
-            column_name="user_id",
-            label="IS_MEMBER_OF",
-            remote_table_name="group",
-            remote_column_name="group_id",
-            remote_node_label="Group",
-        ),
-        TableGraphSQLEmitter(
-            local_node_label="Group",
-            column_name="group_id",
-            label="GRANTS_ACCESS_TO",
-            remote_table_name="user",
-            remote_column_name="user_id",
-            remote_node_label="User",
-        ),
-    ]
+    table = user__group
+    sql_emitters = [NodeSQLEmitter]
 
 
-class UserRoleSQLConfig(TableSQLConfig):
+class UserRoleSQLConfig(SQLConfig):
     table_name = "user__role"
-    sql_emitters = [
-        TableGraphSQLEmitter(
-            local_node_label="User",
-            column_name="user_id",
-            label="HAS_ROLE",
-            remote_table_name="role",
-            remote_column_name="role_id",
-            remote_node_label="Role",
-        ),
-        TableGraphSQLEmitter(
-            local_node_label="Role",
-            column_name="role_id",
-            label="GRANTS_ACCESS_TO",
-            remote_table_name="user",
-            remote_column_name="user_id",
-            remote_node_label="User",
-        ),
-    ]
+    table = user__role
+    sql_emitters = [NodeSQLEmitter]
 
 
-class RolePermisionSQLConfig(TableSQLConfig):
+class RolePermisionSQLConfig(SQLConfig):
     table_name = "role__permission"
-    sql_emitters = [
-        TableGraphSQLEmitter(
-            local_node_label="Role",
-            column_name="role_id",
-            label="HAS_PERMISSIONS",
-            remote_table_name="permission",
-            remote_column_name="permission_id",
-            remote_node_label="Permission",
-        ),
-        TableGraphSQLEmitter(
-            local_node_label="Permission",
-            column_name="permission_id",
-            label="HAS_PERMISSIONS_FROM",
-            remote_table_name="role",
-            remote_column_name="role_id",
-            remote_node_label="Role",
-        ),
-    ]
-
-"""
+    table = role__permission
+    sql_emitters = [NodeSQLEmitter]
 
 
 class UserSQLConfig(SQLConfig):

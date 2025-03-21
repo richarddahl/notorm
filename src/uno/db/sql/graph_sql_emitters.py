@@ -7,59 +7,10 @@ import textwrap
 from typing import ClassVar
 
 from psycopg.sql import SQL, Identifier, Literal
-from pydantic import BaseModel, computed_field
-from sqlalchemy.sql import text
-from sqlalchemy.engine import Connection
+from pydantic import computed_field
 
 from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import convert_snake_to_camel, convert_snake_to_all_caps_snake
-
-
-class TableGraphSQLEmitter(SQLEmitter):
-    exclude_fields: ClassVar[list[str]] = [
-        "table_name",
-        "model",
-        "node_label",
-        "table",
-        "column_name",
-        "label",
-        "remote_node_label",
-        "remote_column_name",
-        "local_node_label",
-    ]
-    column_name: str
-    label: str
-    remote_node_label: str
-    remote_column_name: str
-    local_node_label: str = None
-
-    @computed_field
-    def node_label(self) -> str:
-        return convert_snake_to_camel(self.table_name)
-
-    @computed_field
-    def create_edge_label(self) -> str:
-        return (
-            SQL(
-                """
-                DO $$
-                BEGIN
-                    SET ROLE {admin_role};
-                    IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label
-                        WHERE name = {label}) THEN
-                            PERFORM ag_catalog.create_elabel('graph', {label});
-                            CREATE INDEX ON graph.{label_ident} (start_id, end_id);
-                    END IF;
-                END $$;
-                """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
-            )
-            .as_string()
-        )
 
 
 class NodeSQLEmitter(SQLEmitter):
@@ -95,16 +46,16 @@ class NodeSQLEmitter(SQLEmitter):
             DO $$
             BEGIN
                 SET ROLE {admin_role};
-                {edge_labels}
                 {node_labels}
+                {edge_labels}
             END $$;
 
             """
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                edge_labels=SQL(self.create_edge_labels()),
                 node_labels=SQL(self.create_node_labels()),
+                edge_labels=SQL(self.create_edge_labels()),
             )
             .as_string()
         )
@@ -127,32 +78,28 @@ class NodeSQLEmitter(SQLEmitter):
             dict: A dictionary where keys are node labels and values are SQL statements
                   for inserting those nodes into the graph database.
         """
-        nodes = {}
-        nodes.update(
-            {
-                self.table_node_label: {
-                    "column_name": "id",
-                    "label": self.table_node_label,
-                    "sql": self.create_node_label_sql(label=self.table_node_label),
-                }
-            }
-        )
-        for column_name, column in self.model.base.__table__.columns.items():
-            if column_name in self.model.filter_excludes:
+        nodes = []
+        if self.model:
+            table = self.model.base.__table__
+            filter_excludes = self.model.filter_excludes
+        else:
+            table = self.table
+            filter_excludes = []
+        for column_name, column in table.columns.items():
+            if column_name in filter_excludes:
                 continue
             if column.foreign_keys:
-                continue
-            label = convert_snake_to_camel(column_name)
-            if label is not None:
-                nodes.update({label: {"column_name": column_name, "label": label}})
+                label = convert_snake_to_camel(
+                    list(column.foreign_keys)[0].column.table.name
+                )
+            else:
+                label = convert_snake_to_camel(column_name)
+            nodes.append({"column_name": column_name, "label": label})
         return nodes
 
     def create_node_labels(self) -> str:
         return "\n".join(
-            [
-                self.create_node_label_sql(node_label)
-                for node_label in self.graph_nodes.keys()
-            ]
+            [self.create_node_label_sql(node["label"]) for node in self.graph_nodes]
         )
 
     def create_node_label_sql(self, label: str = None) -> str:
@@ -192,8 +139,8 @@ class NodeSQLEmitter(SQLEmitter):
                 """
                 IF NEW.{val} IS NOT NULL THEN
                     cypher_query := FORMAT('
-                        CREATE (v:{label} {{id: %s, val: %s}})
-                    ', quote_nullable(NEW.id), quote_nullable(NEW.{val})
+                        CREATE (v:{label} {{val: %s}})
+                    ', quote_nullable(NEW.{val})
                     );
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                 END IF; 
@@ -210,9 +157,9 @@ class NodeSQLEmitter(SQLEmitter):
                 IF OLD.{val} != NEW.{val} THEN
                     -- Construct the Cypher query dynamically
                     cypher_query := FORMAT('
-                        MATCH (v:{label} {{id: %s}})
+                        MATCH (v:{label} {{val: %s}})
                         SET v.val = %s
-                    ', quote_nullable(OLD.id), quote_nullable(NEW.{val}));
+                    ', quote_nullable(OLD.{val}), quote_nullable(NEW.{val}));
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                 END IF;
             """
@@ -235,52 +182,70 @@ class NodeSQLEmitter(SQLEmitter):
             str: A dictionary where the keys are edge labels and the values are the corresponding
              SQL insert statements.
         """
-        edges = {}
-        for relationship in self.model.relationships():
-            if not relationship.info.get("edge"):
-                continue
-            if relationship.secondary is not None:
-                continue
-            column_name = relationship.info.get("column")
-            label = relationship.info.get("edge")
-            remote_node_label = convert_snake_to_camel(
-                relationship.mapper.class_.__tablename__
-            )
-            remote_column_name = relationship.info.get("remote_column")
-            edges.update(
-                {
-                    label: {
-                        "column_name": column_name,
-                        "label": label,
-                        "remote_column_name": remote_column_name,
-                        "remote_node_label": remote_node_label,
-                    }
-                }
-            )
-        for column_name, column in self.model.base.__table__.columns.items():
-            if column_name in self.model.filter_excludes:
+        edges = []
+        if self.model:
+            table = self.model.base.__table__
+            filter_excludes = self.model.filter_excludes
+        else:
+            table = self.table
+            filter_excludes = []
+        for column_name, column in table.columns.items():
+            if column_name in filter_excludes:
                 continue
             if column.foreign_keys:
-                continue
-            label = convert_snake_to_all_caps_snake(column_name)
-            edges.update(
+                if self.model:
+                    # This is a column from an UnoBase class
+                    local_node_label = convert_snake_to_camel(self.table_name)
+                    column_name_ = list(column.foreign_keys)[0].column.name
+
+                    label = convert_snake_to_all_caps_snake(
+                        column_name.replace("_id", "")
+                    )
+                    remote_node_label = convert_snake_to_camel(
+                        list(column.foreign_keys)[0].column.table.name
+                    )
+                    remote_column_name = column_name
+                else:
+                    # This is a column from an Association Table
+                    local_node_label = convert_snake_to_camel(
+                        column_name.replace("_id", "")
+                    )
+                    column_name_ = column_name
+                    for col_name, col in table.columns.items():
+                        if col_name == column_name:
+                            continue
+                        label = convert_snake_to_all_caps_snake(
+                            col_name.replace("_id", "")
+                        )
+                        remote_node_label = convert_snake_to_camel(
+                            list(col.foreign_keys)[0].column.table.name
+                        )
+                        remote_column_name = col_name
+            else:
+                local_node_label = convert_snake_to_camel(self.table_name)
+                label = convert_snake_to_all_caps_snake(column_name.replace("_id", ""))
+                remote_column_name = column_name
+                remote_node_label = convert_snake_to_camel(
+                    column_name.replace("_id", "")
+                )
+                column_name_ = "id"
+
+            # This is a fallback for when the edge label derived from the column name is not correct
+            label = column.info.get("edge_label", label)
+            edges.append(
                 {
-                    label: {
-                        "column_name": "id",
-                        "label": label,
-                        "remote_column_name": "id",
-                        "remote_node_label": convert_snake_to_camel(column_name),
-                    }
+                    "local_node_label": local_node_label,
+                    "column_name": column_name_,
+                    "label": label,
+                    "remote_column_name": remote_column_name,
+                    "remote_node_label": remote_node_label,
                 }
             )
         return edges
 
     def create_edge_labels(self) -> str:
         return "\n".join(
-            [
-                self.create_edge_label_sql(edge_label)
-                for edge_label in self.graph_edges.keys()
-            ]
+            [self.create_edge_label_sql(edge["label"]) for edge in self.graph_edges]
         )
 
     def create_edge_label_sql(self, label: str) -> str:
@@ -302,20 +267,20 @@ class NodeSQLEmitter(SQLEmitter):
 
     def insert_edge_sql(
         self,
+        local_node_label: str,
         column_name: str,
         label: str,
         remote_column_name: str,
         remote_node_label: str,
-        local_node_label: str = None,
     ) -> str:
         return (
             SQL(
                 """
-                IF NEW.{column_name} IS NOT NULL THEN
+                IF NEW.{remote_column_name} IS NOT NULL THEN
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{node_label} {{id: %s}})
-                            MATCH (r:{remote_node_label} {{id: %s}})
+                            MATCH (l:{local_node_label} {{val: %s}})
+                            MATCH (r:{remote_node_label} {{val: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(NEW.{column_name}),
@@ -325,11 +290,7 @@ class NodeSQLEmitter(SQLEmitter):
             """
             )
             .format(
-                node_label=(
-                    SQL(self.table_node_label)
-                    if local_node_label is None
-                    else SQL(local_node_label)
-                ),
+                local_node_label=(SQL(local_node_label)),
                 column_name=SQL(column_name),
                 label=SQL(label),
                 remote_node_label=SQL(remote_node_label),
@@ -340,11 +301,11 @@ class NodeSQLEmitter(SQLEmitter):
 
     def update_edge_sql(
         self,
+        local_node_label: str,
         column_name: str,
         label: str,
         remote_column_name: str,
         remote_node_label: str,
-        local_node_label: str = None,
     ) -> str:
         return (
             SQL(
@@ -352,8 +313,8 @@ class NodeSQLEmitter(SQLEmitter):
                 IF OLD.{remote_column_name} != NEW.{remote_column_name} THEN
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{node_label} {{id: %s}})
-                            MATCH (r:{remote_node_label} {{id: %s}})
+                            MATCH (l:{local_node_label} {{id: %s}})
+                            MATCH (r:{remote_node_label} {{val: %s}})
                             DELETE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(OLD.{column_name}),
@@ -363,8 +324,8 @@ class NodeSQLEmitter(SQLEmitter):
 
                 EXECUTE FORMAT('
                     SELECT * FROM cypher(''graph'', $$
-                        MATCH (l:{node_label} {{id: %s}})
-                        MATCH (r:{remote_node_label} {{id: %s}})
+                        MATCH (l:{local_node_label} {{id: %s}})
+                        MATCH (r:{remote_node_label} {{val: %s}})
                         CREATE (l)-[e:{label}]->(r)
                     $$) AS (result agtype)',
                     quote_nullable(NEW.{column_name}),
@@ -373,11 +334,7 @@ class NodeSQLEmitter(SQLEmitter):
             """
             )
             .format(
-                node_label=(
-                    SQL(self.table_node_label)
-                    if local_node_label is None
-                    else SQL(local_node_label)
-                ),
+                local_node_label=(SQL(local_node_label)),
                 column_name=SQL(column_name),
                 label=SQL(label),
                 remote_node_label=SQL(remote_node_label),
@@ -408,8 +365,11 @@ class NodeSQLEmitter(SQLEmitter):
                 nodes=SQL(
                     "".join(
                         [
-                            self.insert_node_sql(node_label, node["column_name"])
-                            for node_label, node in self.graph_nodes.items()
+                            self.insert_node_sql(
+                                node["label"],
+                                node["column_name"],
+                            )
+                            for node in self.graph_nodes
                         ]
                     ),
                 ),
@@ -417,12 +377,13 @@ class NodeSQLEmitter(SQLEmitter):
                     "".join(
                         [
                             self.insert_edge_sql(
+                                edge["local_node_label"],
                                 edge["column_name"],
                                 edge["label"],
                                 edge["remote_column_name"],
                                 edge["remote_node_label"],
                             )
-                            for edge_label, edge in self.graph_edges.items()
+                            for edge in self.graph_edges
                         ]
                     ),
                 ),
@@ -461,8 +422,11 @@ class NodeSQLEmitter(SQLEmitter):
                 nodes=SQL(
                     "".join(
                         [
-                            self.update_node_sql(node_label, node["column_name"])
-                            for node_label, node in self.graph_nodes.items()
+                            self.update_node_sql(
+                                node["label"],
+                                node["column_name"],
+                            )
+                            for node in self.graph_nodes
                         ]
                     ),
                 ),
@@ -470,12 +434,13 @@ class NodeSQLEmitter(SQLEmitter):
                     "".join(
                         [
                             self.update_edge_sql(
+                                edge["local_node_label"],
                                 edge["column_name"],
                                 edge["label"],
                                 edge["remote_column_name"],
                                 edge["remote_node_label"],
                             )
-                            for edge_label, edge in self.graph_edges.items()
+                            for edge in self.graph_edges
                         ]
                     ),
                 ),
@@ -500,7 +465,7 @@ class NodeSQLEmitter(SQLEmitter):
                 BEGIN
                     SET ROLE {admin_role};
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        MATCH (v:{node_label} {{id: %s}})
+                        MATCH (v:{local_node_label} {{id: %s}})
                         DELETE v
                     $graph$) AS (e agtype);, OLD.id);');
 
@@ -510,7 +475,7 @@ class NodeSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                node_label=SQL(self.table_node_label),
+                local_node_label=SQL(self.table_node_label),
             )
             .as_string()
         )
@@ -532,7 +497,7 @@ class NodeSQLEmitter(SQLEmitter):
                 BEGIN
                     SET ROLE {admin_role};
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        MATCH (v:{node_label})
+                        MATCH (v:{local_node_label})
                         DELETE v
                     $graph$) AS (e agtype);');
                 END;
@@ -540,7 +505,7 @@ class NodeSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                node_label=SQL(self.table_node_label),
+                local_node_label=SQL(self.table_node_label),
             )
             .as_string()
         )

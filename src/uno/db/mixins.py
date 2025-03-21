@@ -80,11 +80,6 @@ class GeneralBaseMixin:
         return relationship(
             foreign_keys=[cls.created_by_id],
             doc="User that created the record",
-            info={
-                "edge": "CREATED_BY",
-                "column": "created_by_id",
-                "remote_column": "id",
-            },
         )
 
     @declared_attr
@@ -92,11 +87,6 @@ class GeneralBaseMixin:
         return relationship(
             foreign_keys=[cls.modified_by_id],
             doc="User that last modified the record",
-            info={
-                "edge": "MODIFIED_BY",
-                "column": "modified_by_id",
-                "remote_column": "id",
-            },
         )
 
     @declared_attr
@@ -104,9 +94,36 @@ class GeneralBaseMixin:
         return relationship(
             foreign_keys=[cls.deleted_by_id],
             doc="User that deleted the record",
-            info={
-                "edge": "DELETED_BY",
-                "column": "deleted_by_id",
-                "remote_column": "id",
-            },
+        )
+
+
+class BaseMixin(GeneralBaseMixin):
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="RESTRICT"),
+        index=True,
+        nullable=True,
+        server_default=FetchedValue(),
+        doc="Group to which the record belongs",
+    )
+    group_id: Mapped[str_26] = mapped_column(
+        ForeignKey("group.id", ondelete="RESTRICT"),
+        index=True,
+        nullable=True,
+        server_default=FetchedValue(),
+        doc="Group to which the record belongs",
+    )
+
+    # Relationships
+    @declared_attr
+    def tenant(cls) -> Mapped["TenantBase"]:
+        return relationship(
+            foreign_keys=[cls.tenant_id],
+            doc="Tenant to which the record belongs",
+        )
+
+    @declared_attr
+    def group(cls) -> Mapped["GroupBase"]:
+        return relationship(
+            foreign_keys=[cls.group_id],
+            doc="Group to which the record belongs",
         )

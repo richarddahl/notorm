@@ -4,7 +4,7 @@
 
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Table, Column
+from sqlalchemy import ForeignKey, Table, Column, FetchedValue
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -29,7 +29,7 @@ attribute_value = Table(
     ),
     Column(
         "value_id",
-        ForeignKey("meta_record.id", ondelete="CASCADE"),
+        ForeignKey("meta.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=False,
@@ -82,16 +82,24 @@ attribute_type__value_type = Table(
 
 class AttributeBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "attribute"
-    __table_args__ = ({"comment": "Attributes define characteristics of objects"},)
+    __table_args__ = {"comment": "Attributes define characteristics of objects"}
 
     # Columns
     attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("attribute_type.id", ondelete="CASCADE"),
+        ForeignKey(
+            "attribute_type.id",
+            ondelete="CASCADE",
+        ),
         index=True,
         doc="The type of attribute",
     )
-    comment: Mapped[Optional[str]] = mapped_column(doc="A comment about the attribute")
-    follow_up_required: Mapped[bool] = mapped_column(doc="Is follow up required?")
+    comment: Mapped[Optional[str]] = mapped_column(
+        doc="A comment about the attribute",
+    )
+    follow_up_required: Mapped[bool] = mapped_column(
+        server_default="false",
+        doc="Indicates if follow-up is required",
+    )
 
     # Relationships
     attribute_type: Mapped["AttributeTypeBase"] = relationship(
@@ -102,50 +110,67 @@ class AttributeBase(GeneralBaseMixin, UnoBase):
 
 class AttributeTypeBase(UnoBase, GeneralBaseMixin):
     __tablename__ = "attribute_type"
-    __table_args__ = (
-        {
-            "comment": "Defines the type of attribute that can be associated with an object"
-        },
-    )
+    __table_args__ = {
+        "comment": "Defines the type of attribute that can be associated with an object"
+    }
 
     # Columns
+    id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=True,
+        server_default=FetchedValue(),
+        doc="Primary Key and Foreign Key to Meta Base",
+    )
     name: Mapped[str_255] = mapped_column(unique=True)
     text: Mapped[str] = mapped_column()
     parent_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("attribute_type.id", ondelete="SET NULL"),
+        ForeignKey(
+            "attribute_type.id",
+            ondelete="SET NULL",
+        ),
         index=True,
+        nullable=True,
         doc="The parent attribute type",
     )
     description_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("query.id", ondelete="CASCADE"),
         index=True,
-        doc="The query that determines which meta_record types are applicable to this attribute type.",
+        doc="Query that determines which object types are described by Attributes.",
     )
     value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("query.id", ondelete="CASCADE"),
-        doc="The query that determines which meta_record types are used as values for the attribute type.",
+        ForeignKey(
+            "query.id",
+            ondelete="CASCADE",
+        ),
+        doc="Query that determines which object types are values for Attributes.",
     )
     required: Mapped[bool] = mapped_column(
-        default=False, doc="Is the attribute required?"
+        default=False,
+        doc="Indicates the attribute is required",
     )
     multiple_allowed: Mapped[bool] = mapped_column(
-        default=False, doc="Can the attribute have multiple values?"
+        default=False,
+        doc="Indicates the attribute may have multiple values",
     )
     comment_required: Mapped[bool] = mapped_column(
-        default=False, doc="Is a comment required?"
+        default=False,
+        doc="Indicates a comment is required",
     )
     initial_comment: Mapped[Optional[str]] = mapped_column(
-        doc="The initial comment for attributes of this type"
+        doc="The initial comment for attributes of this type",
     )
 
     # Relationships
     parent: Mapped["AttributeTypeBase"] = relationship(
         foreign_keys=[parent_id],
         remote_side=[id],
+        back_populates="children",
         doc="The parent attribute type",
     )
     children: Mapped[list["AttributeTypeBase"]] = relationship(
-        foreign_keys=[id],
+        back_populates="parent",
         doc="The child attribute types",
     )
     describes: Mapped[list[MetaTypeBase]] = relationship(
@@ -154,18 +179,19 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
     )
     description_limiting_query: Mapped[Optional[QueryBase]] = relationship(
         QueryBase,
+        foreign_keys=[description_limiting_query_id],
         doc="The query that determines which meta_record types are applicable to this attribute type.",
     )
     value_types: Mapped[list[MetaTypeBase]] = relationship(
         secondary=attribute_type__value_type,
         doc="The meta_record types that are values for the attribute type",
-        info={"edge": "IS_VALUE_TYPE_FOR"},
     )
     attributes: Mapped[list[AttributeBase]] = relationship(
+        back_populates="attribute_type",
         doc="The attributes with this attribute type",
-        info={"edge": "HAS_ATTRIBUTE"},
     )
     value_type_limiting_query: Mapped[Optional[QueryBase]] = relationship(
         QueryBase,
+        foreign_keys=[value_type_limiting_query_id],
         doc="The query that determines which meta_record types are used as values for the attribute type.",
     )
