@@ -2,10 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.sql.table_sql_emitters import (
-    AlterGrants,
-    InsertMetaType,
-)
+from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.db.sql.db_sql_emitters import (
     RecordUserAuditFunction,
     ValidateGroupInsert,
@@ -25,19 +22,28 @@ from uno.apps.auth.bases import user__group, user__role, role__permission
 class UserGroupSQLConfig(SQLConfig):
     table_name = "user__group"
     table = user__group
-    sql_emitters = [NodeSQLEmitter]
+    sql_emitters = [
+        AlterGrants,
+        NodeSQLEmitter,
+    ]
 
 
 class UserRoleSQLConfig(SQLConfig):
     table_name = "user__role"
     table = user__role
-    sql_emitters = [NodeSQLEmitter]
+    sql_emitters = [
+        AlterGrants,
+        NodeSQLEmitter,
+    ]
 
 
 class RolePermisionSQLConfig(SQLConfig):
     table_name = "role__permission"
     table = role__permission
-    sql_emitters = [NodeSQLEmitter]
+    sql_emitters = [
+        AlterGrants,
+        NodeSQLEmitter,
+    ]
 
 
 class UserSQLConfig(SQLConfig):
@@ -99,4 +105,8 @@ class TenantSQLConfig(SQLConfig):
 class PermissionSQLConfig(SQLConfig):
     table_name = "permission"
     model = Permission
-    sql_emitters = [AlterGrants, InsertMetaType]
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        NodeSQLEmitter,
+    ]
