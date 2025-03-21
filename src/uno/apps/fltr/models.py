@@ -61,7 +61,7 @@ class Filter(UnoModel):
     # Fields
     source_meta_type_id: Optional[str] = None
     label_string: Optional[str] = None
-    remote_meta_type_id: Optional[str] = None
+    destination_meta_type_id: Optional[str] = None
     data_type: str = "str"
     lookups: list[str]
     display: Optional[str] = None
@@ -76,11 +76,11 @@ class Filter(UnoModel):
             self.label_string, convert_snake_to_title(self.label_string)
         )
         source_node = convert_snake_to_camel(self.source_meta_type_id)
-        remote_node = convert_snake_to_camel(self.remote_meta_type_id)
+        destination_node = convert_snake_to_camel(self.destination_meta_type_id)
         label = convert_snake_to_title(self.label_string)
-        self.path = f"{source_node}-[:{label}]->(:{remote_node} {{val: %s}})"
-        self.prepend_path = f"{source_node}-[:{label}]->(:{remote_node})"
-        self.append_path = f"-[:{label}]->(:{remote_node} {{val: %s}})"
+        self.path = f"{source_node}-[:{label}]->(:{destination_node} {{val: %s}})"
+        self.prepend_path = f"{source_node}-[:{label}]->(:{destination_node})"
+        self.append_path = f"-[:{label}]->(:{destination_node} {{val: %s}})"
         return self
 
     def __str__(self) -> str:
@@ -111,7 +111,7 @@ async def create_filters(base: UnoBase) -> None:
         filter = Filter(
             source_meta_type_id=base.__tablename__,
             label_string=column_name,
-            remote_meta_type_id=base.__tablename__,
+            destination_meta_type_id=base.__tablename__,
             data_type=column.type.python_type.__name__,
             lookups=lookups,
         )
@@ -123,7 +123,7 @@ async def create_filters(base: UnoBase) -> None:
         filter = Filter(
             source_meta_type_id=base.__tablename__,
             label_string=relationship.key,
-            remote_meta_type_id=relationship.mapper.class_.__tablename__,
+            destination_meta_type_id=relationship.mapper.class_.__tablename__,
             data_type="str",
             lookups=object_lookups,
         )
@@ -198,8 +198,8 @@ class Query(UnoModel, GeneralModelMixin, RecordAuditMixin):
     id: Optional[str]
     name: Optional[str]
     description: Optional[str]
-    queries_meta_type_id: Optional[str] = None
-    queries_meta_type: Optional[MetaType] = None
+    query_meta_type_id: Optional[str] = None
+    query_meta_type: Optional[MetaType] = None
     include_values: Optional[Include] = Include.INCLUDE
     match_values: Optional[Match] = Match.AND
     include_queries: Optional[Include] = Include.INCLUDE

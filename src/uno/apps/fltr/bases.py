@@ -114,7 +114,7 @@ class FilterBase(BaseMixin, UnoBase):
         nullable=False,
         doc="The source table filtered.",
     )
-    remote_meta_type_id: Mapped[str_63] = mapped_column(
+    destination_meta_type_id: Mapped[str_63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -220,7 +220,7 @@ class QueryBase(BaseMixin, UnoBase):
     description: Mapped[Optional[str]] = mapped_column(
         doc="The description of the query."
     )
-    queries_meta_type_id: Mapped[str_26] = mapped_column(
+    query_meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
     )
