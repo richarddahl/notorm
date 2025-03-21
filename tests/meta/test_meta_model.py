@@ -23,12 +23,12 @@ class TestMetaBaseModel(IsolatedAsyncioTestCase):
         assert "meta_type_id" in MetaBase.__table__.columns.keys()
 
     def test_meta_record_fields(self):
-        meta_record = MetaBase(
+        meta = MetaBase(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             meta_type_id="01JNH7SBRV60R5RC1G61E30C1G",
         )
-        assert meta_record.id == "01JNH7SBRV60R5RC1G61E30C1G"
-        assert meta_record.meta_type_id == "01JNH7SBRV60R5RC1G61E30C1G"
+        assert meta.id == "01JNH7SBRV60R5RC1G61E30C1G"
+        assert meta.meta_type_id == "01JNH7SBRV60R5RC1G61E30C1G"
 
     def test_meta_record_model_set_display_names(self):
         assert MetaBase.__tablename__ == "meta"
