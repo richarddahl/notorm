@@ -51,6 +51,12 @@ class Filter(UnoModel):
     }
     endpoints = ["List"]
     endpoint_tags = ["Search"]
+    filter_excludes = [
+        "path",
+        "prepend_path",
+        "append_path",
+        "display",
+    ]
 
     # Fields
     source_meta_type_id: Optional[str] = None
