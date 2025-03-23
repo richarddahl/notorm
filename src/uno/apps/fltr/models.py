@@ -72,15 +72,18 @@ class Filter(UnoModel):
 
     @model_validator(mode="after")
     def model_validator(self) -> Self:
+        # acronyms is a dictionary of acronyms to be used in the display name, e.g. "id" -> "ID"
         self.display = acronyms.get(
             self.label_string, convert_snake_to_title(self.label_string)
         )
         source_node = convert_snake_to_camel(self.source_meta_type_id)
         destination_node = convert_snake_to_camel(self.destination_meta_type_id)
         label = convert_snake_to_title(self.label_string)
-        self.path = f"{source_node}-[:{label}]->(:{destination_node} {{val: %s}})"
+        self.path = (
+            f"{source_node}-[:{label}]->(:{destination_node} {{id: %s, val: %s}})"
+        )
         self.prepend_path = f"{source_node}-[:{label}]->(:{destination_node})"
-        self.append_path = f"-[:{label}]->(:{destination_node} {{val: %s}})"
+        self.append_path = f"-[:{label}]->(:{destination_node} {{id: %s, val: %s}})"
         return self
 
     def __str__(self) -> str:

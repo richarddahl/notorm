@@ -12,7 +12,7 @@ from uno.db.sql.db_sql_emitters import (
     RecordStatusFunction,
 )
 from uno.db.sql.sql_config import SQLConfig
-from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
+from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
 from uno.apps.fltr.models import Filter, FilterValue, Query
 
 
@@ -22,7 +22,7 @@ class FilterSQLConfig(SQLConfig):
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -35,7 +35,7 @@ class FilterValueSQLConfig(SQLConfig):
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -48,5 +48,5 @@ class QuerySQLConfig(SQLConfig):
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]

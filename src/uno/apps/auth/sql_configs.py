@@ -14,7 +14,7 @@ from uno.db.sql.db_sql_emitters import (
 )
 from uno.db.sql.sql_config import SQLConfig
 from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
-from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
+from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
 from uno.apps.auth.models import User, Group, Role, Tenant, Permission
 from uno.apps.auth.bases import user__group, user__role, role__permission
 
@@ -24,7 +24,7 @@ class UserGroupSQLConfig(SQLConfig):
     table = user__group
     sql_emitters = [
         AlterGrants,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -33,7 +33,7 @@ class UserRoleSQLConfig(SQLConfig):
     table = user__role
     sql_emitters = [
         AlterGrants,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -42,7 +42,7 @@ class RolePermisionSQLConfig(SQLConfig):
     table = role__permission
     sql_emitters = [
         AlterGrants,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -56,7 +56,7 @@ class UserSQLConfig(SQLConfig):
         RecordStatusFunction,
         UserRowLevelSecurity,
         UserRecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -71,7 +71,7 @@ class GroupSQLConfig(SQLConfig):
         RecordUserAuditFunction,
         ValidateGroupInsert,
         DefaultGroupTenant,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -84,7 +84,7 @@ class RoleSQLConfig(SQLConfig):
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -98,7 +98,7 @@ class TenantSQLConfig(SQLConfig):
         RecordStatusFunction,
         RecordUserAuditFunction,
         InsertGroupForTenant,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -108,5 +108,5 @@ class PermissionSQLConfig(SQLConfig):
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]

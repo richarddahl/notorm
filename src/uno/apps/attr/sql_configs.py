@@ -9,7 +9,7 @@ from uno.db.sql.db_sql_emitters import (
     RecordStatusFunction,
 )
 from uno.db.sql.sql_config import SQLConfig
-from uno.db.sql.graph_sql_emitters import NodeSQLEmitter
+from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
 from uno.apps.attr.models import Attribute, AttributeType
 
 
@@ -22,7 +22,7 @@ class AttributeSQLConfig(SQLConfig):
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
 
 
@@ -35,5 +35,5 @@ class AttributeTypeSQLConfig(SQLConfig):
         InsertMetaRecordTrigger,
         RecordStatusFunction,
         RecordUserAuditFunction,
-        NodeSQLEmitter,
+        GraphSQLEmitter,
     ]
