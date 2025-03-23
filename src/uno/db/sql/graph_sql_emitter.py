@@ -257,7 +257,15 @@ class GraphSQLEmitter(SQLEmitter):
             .format(
                 admin_role=ADMIN_ROLE,
                 operation=SQL(operation),
-                nodes=SQL("".join([getattr(node, operation)() for node in self.nodes])),
+                nodes=SQL(
+                    "".join(
+                        [
+                            getattr(node, operation)()
+                            for node in self.nodes
+                            if node.create_node
+                        ]
+                    )
+                ),
                 edges=SQL("".join([getattr(edge, operation)() for edge in self.edges])),
                 return_value=SQL(return_value),
             )
@@ -568,30 +576,35 @@ class Node(BaseModel):
         Returns:
             str: The SQL query string for deleting the specified vertex.
         """
-        return (
-            SQL(
-                """
+        if self.column.name != "id":
+            return ""
+        return SQL(
+            """
+                    /*
+                    Match all of the nodes with the objects id and delete them
+                    Detach delete ensures that all edges using the nodes are also deleted
+                    All "local" nodes, those that are not foreign keys, 
+                        as they have the same id property will be deleted
+                    */
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
-                        MATCH (v:{label} {{val: %s}})
+                        MATCH (v: {id: %s})
                         DETACH DELETE v
                     $graph$) AS (e agtype);, OLD.id);');
             """
-            )
-            .format(label=SQL(self.label))
-            .as_string()
-        )
+        ).as_string()
 
     def truncate_sql(self) -> str:
         """Generates a SQL query string to truncate (delete) all nodes of a specific label
-        from a graph database using the Cypher query language.
+        in a graph database using the Cypher query language.
 
         Returns:
-            str: A SQL query string that matches and deletes all nodes with the specified
-            label in the graph database.
+            str: A SQL query string that deletes all nodes with the specified label
+            if the column name is "id". Returns an empty string otherwise.  All node
         """
         return (
             SQL(
                 """
+                    -- Detach delete ensures that all edges using the node are also deleted
                     SELECT * FROM cypher('graph', $graph$
                         MATCH (v:{label})
                         DETACH DELETE v
@@ -631,11 +644,12 @@ class Edge(BaseModel):
         return (
             SQL(
                 """
+                -- Insert graph edges for association tables
                 IF NEW.{destination_column_name} IS NOT NULL THEN
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{source_node_label} {{val: %s}})
-                            MATCH (r:{destination_node_label} {{val: %s}})
+                            MATCH (l:{source_node_label} {{id: %s}})
+                            MATCH (r:{destination_node_label} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(NEW.{column_name}),
@@ -658,12 +672,13 @@ class Edge(BaseModel):
         return (
             SQL(
                 """
+                -- Update graph edges for association tables
                 IF NEW.{destination_column_name} IS NOT NULL AND NEW.{destination_column_name} != OLD.{destination_column_name} THEN
                     IF OLD.{destination_column_name} != NEW.{destination_column_name} THEN
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
-                                DELETE (l:{source_node_label} {{val: %s}})
-                                DELETE (r:{destination_node_label} {{val: %s}})
+                                DELETE (l:{source_node_label} {{id: %s}})
+                                DELETE (r:{destination_node_label} {{id: %s}})
                                 DELETE (l)-[e:{label}]->(r)
                             $$) AS (result agtype)',
                             quote_nullable(OLD.{column_name}),
@@ -671,13 +686,10 @@ class Edge(BaseModel):
                         ); 
                     END IF;
                     IF NEW.{destination_column_name} IS NOT NULL THEN
-                        -- MERGE must be used in order to prevent duplicate nodes
-                        -- For situations where the node already exists, i.e. when they are the same
-                        -- e.g. User.created_by_id = User.id
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
-                                MERGE (l:{source_node_label} {{val: %s}})
-                                MERGE (r:{destination_node_label} {{val: %s}})
+                                MATCH (l:{source_node_label} {{id: %s}})
+                                MATCH (r:{destination_node_label} {{id: %s}})
                                 CREATE (l)-[e:{label}]->(r)
                             $$) AS (result agtype)',
                             quote_nullable(NEW.{column_name}),
@@ -701,6 +713,7 @@ class Edge(BaseModel):
         return (
             SQL(
                 """
+                -- Delete graph edges for association tables
                 EXECUTE FORMAT('
                     SELECT * FROM cypher(''graph'', $$
                         MATCH (l:{source_node_label} {{val: %s}})-[e:{label}]->()
@@ -724,6 +737,7 @@ class Edge(BaseModel):
         return (
             SQL(
                 """
+                -- Truncate graph edges for association tables
                 SELECT * FROM cypher('graph', $$
                     MATCH [e:{label}]
                     DELETE e
