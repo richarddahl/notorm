@@ -77,7 +77,7 @@ class TestUserDBStructure:
             connection.connect()
             .execute(
                 text(
-                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_insert_user_user_audit_columns')"
+                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_manage_audit_columns')"
                 )
             )
             .scalar()
@@ -88,7 +88,7 @@ class TestUserDBStructure:
             connection.connect()
             .execute(
                 text(
-                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_user_user_audit_columns_trigger')"
+                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_manage_audit_columns_trigger')"
                 )
             )
             .scalar()

@@ -602,7 +602,7 @@ class RecordStatusFunction(SQLEmitter):
 
 class RecordUserAuditFunction(SQLEmitter):
     @computed_field
-    def insert_record_user_audit_columns(self) -> str:
+    def manage_record_user_audit_columns(self) -> str:
         function_string = (
             SQL(
                 """
@@ -642,7 +642,7 @@ class RecordUserAuditFunction(SQLEmitter):
         )
 
         return self.create_sql_function(
-            "insert_record_user_audit_columns",
+            "manage_record_audit_columns",
             function_string,
             timing="BEFORE",
             operation="INSERT OR UPDATE OR DELETE",
@@ -825,7 +825,7 @@ class DefaultGroupTenant(SQLEmitter):
 
 class UserRecordUserAuditFunction(SQLEmitter):
     @computed_field
-    def insert_user_user_audit_columns(self) -> str:
+    def manage_user_user_audit_columns(self) -> str:
         function_string = (
             SQL(
                 """
@@ -884,7 +884,7 @@ class UserRecordUserAuditFunction(SQLEmitter):
         )
 
         return self.create_sql_function(
-            "insert_user_user_audit_columns",
+            "manage_audit_columns",
             function_string,
             timing="BEFORE",
             operation="INSERT OR UPDATE OR DELETE",
