@@ -84,7 +84,7 @@ class Filter(UnoModel):
 def create_filter_for_column(
     column: Column,
     table_name: str,
-    edge_label: str = "edge_label",
+    edge: str = "edge",
 ) -> Filter:
     if column.type.python_type in [str, bytes]:
         lookups = text_lookups
@@ -93,13 +93,13 @@ def create_filter_for_column(
     else:
         lookups = object_lookups
     if column.foreign_keys:
-        if edge_label == "edge_label":
+        if edge == "edge":
             source_node = snake_to_camel(column.table.name)
             destination_node = snake_to_camel(
                 list(column.foreign_keys)[0].column.table.name
             )
             label = snake_to_caps_snake(
-                column.info.get(edge_label, column.name.replace("_id", ""))
+                column.info.get(edge, column.name.replace("_id", ""))
             )
         else:
             source_node = snake_to_camel(list(column.foreign_keys)[0].column.table.name)
@@ -107,13 +107,13 @@ def create_filter_for_column(
                 column.info.get("reverse_node_label", column.table.name)
             )
             label = snake_to_caps_snake(
-                column.info.get(edge_label, column.name.replace("_id", ""))
+                column.info.get(edge, column.name.replace("_id", ""))
             )
     else:
         source_node = snake_to_camel(table_name)
         destination_node = snake_to_camel(column.name)
         label = snake_to_caps_snake(
-            column.info.get(edge_label, column.name.replace("_id", ""))
+            column.info.get(edge, column.name.replace("_id", ""))
         )
     return Filter(
         source_node=source_node,
@@ -129,9 +129,7 @@ def create_filters(table: Table) -> list[Filter]:
     if "id" in table.columns.keys():
         fltr = Filter(
             source_node=snake_to_camel(table.name),
-            label=snake_to_caps_snake(
-                table.columns["id"].info.get("edge_label", table.name)
-            ),
+            label=snake_to_caps_snake(table.columns["id"].info.get("edge", table.name)),
             destination_node="Meta",
             data_type="str",
             lookups=object_lookups,
@@ -145,11 +143,11 @@ def create_filters(table: Table) -> list[Filter]:
         filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
         if filter_key not in filters.keys():
             filters[filter_key] = fltr
-        if column.info.get("reverse_edge_label", False):
+        if column.info.get("reverse_edge", False):
             fltr = create_filter_for_column(
                 column,
                 table.name,
-                edge_label="reverse_edge_label",
+                edge="reverse_edge",
             )
         fltr_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
         if fltr_key not in filters.keys():

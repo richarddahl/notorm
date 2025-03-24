@@ -26,7 +26,7 @@ attribute__value = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "VALUES"},
+        info={"edge": "VALUES"},
     ),
     Column(
         "value_id",
@@ -34,7 +34,7 @@ attribute__value = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "ATTRIBUTES"},
+        info={"edge": "ATTRIBUTES"},
     ),
     comment="The relationship between attributes and their values",
 )
@@ -49,7 +49,7 @@ attribute_type___meta_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "META_TYPES"},
+        info={"edge": "META_TYPES"},
     ),
     Column(
         "meta_type_id",
@@ -57,7 +57,7 @@ attribute_type___meta_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "ATTRIBUTE_TYPES"},
+        info={"edge": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types they describe",
 )
@@ -72,7 +72,7 @@ attribute_type__value_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "VALUE_TYPES"},
+        info={"edge": "VALUE_TYPES"},
     ),
     Column(
         "meta_type_id",
@@ -80,7 +80,7 @@ attribute_type__value_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
-        info={"edge_label": "ATTRIBUTE_TYPES"},
+        info={"edge": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types that are values for the attribute type",
 )
@@ -99,8 +99,8 @@ class AttributeBase(GeneralBaseMixin, UnoBase):
         index=True,
         doc="The type of attribute",
         info={
-            "edge_label": "ATTRIBUTE_TYPE",
-            "reverse_edge_label": "ATTRIBUTES",
+            "edge": "ATTRIBUTE_TYPE",
+            "reverse_edge": "ATTRIBUTES",
         },
     )
     comment: Mapped[Optional[str]] = mapped_column(
@@ -144,8 +144,8 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         nullable=True,
         doc="The parent attribute type",
         info={
-            "edge_label": "PARENT",
-            "reverse_edge_label": "CHILDREN",
+            "edge": "PARENT",
+            "reverse_edge": "CHILDREN",
         },
     )
     description_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
@@ -153,8 +153,8 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         index=True,
         doc="Query that determines which object types are described by Attributes.",
         info={
-            "edge_label": "DESCRIPTION_LIMITING_QUERY",
-            "reverse_edge_label": "DESCRIPTION_LIMITED_ATTRIBUTE_TYPES",
+            "edge": "DESCRIPTION_LIMITING_QUERY",
+            "reverse_edge": "DESCRIPTION_LIMITED_ATTRIBUTE_TYPES",
         },
     )
     value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
@@ -164,8 +164,8 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         ),
         doc="Query that determines which object types are values for Attributes.",
         info={
-            "edge_label": "VALUE_TYPE_LIMITING_QUERY",
-            "reverse_edge_label": "VALUE_TYPE_LIMITED_ATTRIBUTE_TYPES",
+            "edge": "VALUE_TYPE_LIMITING_QUERY",
+            "reverse_edge": "VALUE_TYPE_LIMITED_ATTRIBUTE_TYPES",
         },
     )
     required: Mapped[bool] = mapped_column(

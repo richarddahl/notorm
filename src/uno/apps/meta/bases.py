@@ -34,7 +34,7 @@ class MetaBase(UnoBase):
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        info={"edge_label": "META_TYPE", "reverse_edge_label": "META"},
+        info={"edge": "META_TYPE", "reverse_edge": "META"},
         doc="The type of record",
     )
     meta_type = relationship("MetaTypeBase")

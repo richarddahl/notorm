@@ -49,9 +49,9 @@ class GeneralBaseMixin:
         server_default=FetchedValue(),
         doc="User that created the record",
         info={
-            "edge_label": "CREATED_BY",
+            "edge": "CREATED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge_label": "OBJECTS_CREATED",
+            "reverse_edge": "OBJECTS_CREATED",
         },
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
@@ -66,9 +66,9 @@ class GeneralBaseMixin:
         server_default=FetchedValue(),
         doc="User that last modified the record",
         info={
-            "edge_label": "MODIFIED_BY",
+            "edge": "MODIFIED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge_label": "OBJECTS_MODIFIED",
+            "reverse_edge": "OBJECTS_MODIFIED",
         },
     )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
@@ -83,9 +83,9 @@ class GeneralBaseMixin:
         server_default=FetchedValue(),
         doc="User that deleted the record",
         info={
-            "edge_label": "DELETED_BY",
+            "edge": "DELETED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge_label": "OBJECTS_DELETED",
+            "reverse_edge": "OBJECTS_DELETED",
         },
     )
 
@@ -120,8 +120,8 @@ class BaseMixin(GeneralBaseMixin):
         server_default=FetchedValue(),
         doc="Group to which the record belongs",
         info={
-            "edge_label": "TENANT",
-            "reverse_edge_label": "TENANTS",
+            "edge": "TENANT",
+            "reverse_edge": "TENANTS",
         },
     )
     group_id: Mapped[str_26] = mapped_column(
@@ -131,8 +131,8 @@ class BaseMixin(GeneralBaseMixin):
         server_default=FetchedValue(),
         doc="Group to which the record belongs",
         info={
-            "edge_label": "GROUP",
-            "reverse_edge_label": "GROUPS",
+            "edge": "GROUP",
+            "reverse_edge": "GROUPS",
         },
     )
 

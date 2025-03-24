@@ -35,7 +35,7 @@ user__group = Table(
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "GROUPS"},
+        info={"edge": "GROUPS"},
     ),
     Column(
         "group_id",
@@ -43,7 +43,7 @@ user__group = Table(
         ForeignKey("group.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "USERS"},
+        info={"edge": "USERS"},
     ),
     Index(
         "ix_user_group_user_id_group_id",
@@ -62,7 +62,7 @@ user__role = Table(
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "ROLES"},
+        info={"edge": "ROLES"},
     ),
     Column(
         "role_id",
@@ -70,7 +70,7 @@ user__role = Table(
         ForeignKey("role.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "USERS"},
+        info={"edge": "USERS"},
     ),
     Index(
         "ix_user_role_user_id_role_id",
@@ -89,7 +89,7 @@ role__permission = Table(
         ForeignKey("role.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "PERMISSIONS"},
+        info={"edge": "PERMISSIONS"},
     ),
     Column(
         "permission_id",
@@ -97,7 +97,7 @@ role__permission = Table(
         ForeignKey("permission.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "ROLES"},
+        info={"edge": "ROLES"},
     ),
     Index(
         "ix_role_permission_role_id_permission_id",
@@ -146,8 +146,8 @@ class UserBase(GeneralBaseMixin, UnoBase):
         nullable=True,
         doc="The Tenant to which the user is assigned",
         info={
-            "edge_label": "TENANT",
-            "reverse_edge_label": "USERS",
+            "edge": "TENANT",
+            "reverse_edge": "USERS",
         },
     )
     default_group_id: Mapped[str_26] = mapped_column(
@@ -156,8 +156,8 @@ class UserBase(GeneralBaseMixin, UnoBase):
         nullable=True,
         doc="User's default group, used as default for creating new objects",
         info={
-            "edge_label": "DEFAULT_GROUP",
-            "reverse_edge_label": "DEFAULT_GROUP_USERS",
+            "edge": "DEFAULT_GROUP",
+            "reverse_edge": "DEFAULT_GROUP_USERS",
         },
     )
     is_superuser: Mapped[bool] = mapped_column(
@@ -203,8 +203,8 @@ class GroupBase(GeneralBaseMixin, UnoBase):
         nullable=False,
         doc="The Tenant that owns the group",
         info={
-            "edge_label": "TENANT",
-            "reverse_edge_label": "GROUPS",
+            "edge": "TENANT",
+            "reverse_edge": "GROUPS",
         },
     )
     name: Mapped[str_255] = mapped_column(doc="Group name")
@@ -240,8 +240,8 @@ class RoleBase(GeneralBaseMixin, UnoBase):
         nullable=False,
         doc="The Tenant that owns the role",
         info={
-            "edge_label": "TENANT",
-            "reverse_edge_label": "ROLES",
+            "edge": "TENANT",
+            "reverse_edge": "ROLES",
         },
     )
     name: Mapped[str_255] = mapped_column(
@@ -334,8 +334,8 @@ class PermissionBase(UnoBase):
         nullable=False,
         doc="Foreign Key to Meta Type",
         info={
-            "edge_label": "META_TYPE",
-            "reverse_edge_label": "PERMISSIONS",
+            "edge": "META_TYPE",
+            "reverse_edge": "PERMISSIONS",
         },
     )
     operation: Mapped[SQLOperation] = mapped_column(

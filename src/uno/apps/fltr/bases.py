@@ -32,14 +32,14 @@ filter__filter_value = Table(
         ForeignKey("filter.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "FILTER_VALUES"},
+        info={"edge": "FILTER_VALUES"},
     ),
     Column(
         "filter_value_id",
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "FILTERS"},
+        info={"edge": "FILTERS"},
     ),
     Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
 )
@@ -52,14 +52,14 @@ filter_value__values = Table(
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "FILTER_VALUES"},
+        info={"edge": "FILTER_VALUES"},
     ),
     Column(
         "value_id",
         ForeignKey("meta.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "VALUES"},
+        info={"edge": "VALUES"},
     ),
     Index("ix_filter_value_id__value_id", "filter_value_id", "value_id"),
 )
@@ -72,14 +72,14 @@ query__filter_value = Table(
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "FILTER_VALUES"},
+        info={"edge": "FILTER_VALUES"},
     ),
     Column(
         "filter_value_id",
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "QUERIES"},
+        info={"edge": "QUERIES"},
     ),
     Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
 )
@@ -92,14 +92,14 @@ query__child_query = Table(
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "CHILD_QUERIES"},
+        info={"edge": "CHILD_QUERIES"},
     ),
     Column(
         "childquery_id",
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
-        info={"edge_label": "QUERIES"},
+        info={"edge": "QUERIES"},
     ),
     Index("ix_query_id__child_query_id", "query_id", "childquery_id"),
 )
@@ -192,8 +192,8 @@ class FilterValueBase(BaseMixin, UnoBase):
         nullable=False,
         doc="The filter to which the value belongs",
         info={
-            "edge_label": "FILTER",
-            "reverse_edge_label": "FILTER_VALUES",
+            "edge": "FILTER",
+            "reverse_edge": "FILTER_VALUES",
         },
     )
     include: Mapped[Include] = mapped_column(
@@ -253,8 +253,8 @@ class QueryBase(BaseMixin, UnoBase):
         nullable=False,
         doc="The type of the query.",
         info={
-            "edge_label": "META_TYPE",
-            "reverse_edge_label": "QUERIES",
+            "edge": "META_TYPE",
+            "reverse_edge": "QUERIES",
         },
     )
     include_values: Mapped[Include] = mapped_column(

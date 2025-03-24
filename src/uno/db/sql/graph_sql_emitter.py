@@ -75,7 +75,7 @@ class GraphSQLEmitter(SQLEmitter):
                     False  # FK nodes will be managed by thier source table triggers
                 )
             else:
-                label = snake_to_camel(column.info.get("edge_label", column.name))
+                label = snake_to_camel(column.info.get("edge", column.name))
             nodes.append(
                 Node(
                     column=column,
@@ -85,26 +85,26 @@ class GraphSQLEmitter(SQLEmitter):
             )
         self.nodes = nodes
 
-        if "id" not in self.table.columns:
+        if "id" in self.table.columns:
             return self  # This is not an association table, edges are defined by nodes
         for column_name, column in self.table.columns.items():
             if column.foreign_keys:
-                source_node_label = snake_to_camel(column_name.replace("_id", ""))
+                source_node = snake_to_camel(column.table.name)
                 source_column = column_name
                 label = snake_to_caps_snake(
-                    column.info.get("edge_label", column.name.replace("_id", ""))
+                    column.info.get("edge", column.name.replace("_id", ""))
                 )
-                destination_node_label = snake_to_camel(
+                destination_node = snake_to_camel(
                     list(column.foreign_keys)[0].column.table.name
                 )
-                destination_column_name = column.name
+                destination_column = column.name
                 self.edges.append(
                     Edge(
-                        source_node_label=source_node_label,
+                        source_node=source_node,
                         source_column=source_column,
                         label=label,
-                        destination_column_name=destination_column_name,
-                        destination_node_label=destination_node_label,
+                        destination_column=destination_column,
+                        destination_node=destination_node,
                     )
                 )
         return self
@@ -128,14 +128,14 @@ class GraphSQLEmitter(SQLEmitter):
             BEGIN
                 SET ROLE {admin_role};
                 {node_labels}
-                {edge_labels}
+                {edges}
             END $$;
             """
             )
             .format(
                 admin_role=ADMIN_ROLE,
                 node_labels=SQL("\n".join([node.label_sql() for node in self.nodes])),
-                edge_labels=SQL("\n".join([edge.label_sql() for edge in self.edges])),
+                edges=SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
@@ -263,54 +263,52 @@ class Node(BaseModel):
         if self.column.info.get("graph_excludes", False):
             return self
         if self.column.foreign_keys:
-            source_node_label = snake_to_camel(self.column.table.name)
+            source_node = snake_to_camel(self.column.table.name)
             source_column = list(self.column.foreign_keys)[0].column.name
-            destination_node_label = snake_to_camel(
+            destination_node = snake_to_camel(
                 list(self.column.foreign_keys)[0].column.table.name
             )
-            destination_column_name = self.column.name
+            destination_column = self.column.name
             label = snake_to_caps_snake(
                 self.column.info.get(
-                    "edge_label",
+                    "edge",
                     self.column.name.replace("_id", ""),
                 )
             )
             self.edges.append(
                 Edge(
-                    source_node_label=source_node_label,
+                    source_node=source_node,
                     source_column=source_column,
                     label=label,
-                    destination_column_name=destination_column_name,
-                    destination_node_label=destination_node_label,
+                    destination_column=destination_column,
+                    destination_node=destination_node,
                 )
             )
-            if self.column.info.get("reverse_edge_label", False):
+            if self.column.info.get("reverse_edge", False):
                 self.edges.append(
                     Edge(
-                        source_node_label=destination_node_label,
-                        source_column=destination_column_name,
-                        label=snake_to_caps_snake(
-                            self.column.info["reverse_edge_label"]
-                        ),
-                        destination_column_name=source_column,
-                        destination_node_label=snake_to_camel(source_node_label),
+                        source_node=destination_node,
+                        source_column=destination_column,
+                        label=snake_to_caps_snake(self.column.info["reverse_edge"]),
+                        destination_column=source_column,
+                        destination_node=snake_to_camel(source_node),
                     )
                 )
         else:
-            source_node_label = snake_to_camel(self.column.table.name)
+            source_node = snake_to_camel(self.column.table.name)
             label = snake_to_caps_snake(self.column.name)
-            destination_column_name = self.column.name
-            destination_node_label = snake_to_camel(self.column.name)
+            destination_column = "id"
+            destination_node = snake_to_camel(self.column.name)
             source_column = "id"
             # This is a fallback for when the edge label should not be derived from the column name
-            label = snake_to_caps_snake(self.column.info.get("edge_label", label))
+            label = snake_to_caps_snake(self.column.info.get("edge", label))
             self.edges.append(
                 Edge(
-                    source_node_label=source_node_label,
+                    source_node=source_node,
                     source_column=source_column,
                     label=label,
-                    destination_column_name=destination_column_name,
-                    destination_node_label=destination_node_label,
+                    destination_column=destination_column,
+                    destination_node=destination_node,
                 )
             )
         return self
@@ -337,13 +335,13 @@ class Node(BaseModel):
                     CREATE INDEX ON graph.{label_ident} (id);
                     CREATE INDEX ON graph.{label_ident} USING gin (properties);
                 END IF;
-                {edge_labels}
+                {edges}
             """
             )
             .format(
                 label=Literal(self.label),
                 label_ident=Identifier(self.label),
-                edge_labels=SQL("\n".join([edge.label_sql() for edge in self.edges])),
+                edges=SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
@@ -367,6 +365,8 @@ class Node(BaseModel):
         return (
             SQL(
                 """
+                -- MERGE must be used to ensure that the node is created only if it does not already exist
+                -- This is required as some objects have multiple relationsihps to the same object, i.e. User
                 IF NEW.{column_name} IS NOT NULL THEN
                     cypher_query := FORMAT('
                         MERGE (v:{label} {{id: %s, val: %s}})',
@@ -516,11 +516,11 @@ class Node(BaseModel):
 
 
 class Edge(BaseModel):
-    source_node_label: str
+    source_node: str
     source_column: str
     label: str
-    destination_column_name: str
-    destination_node_label: str
+    destination_column: str
+    destination_node: str
 
     def label_sql(self) -> str:
         return (
@@ -545,21 +545,21 @@ class Edge(BaseModel):
                 """
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{source_node_label} {{id: %s}})
-                            MATCH (r:{destination_node_label} {{id: %s}})
+                            MATCH (l:{source_node} {{id: %s}})
+                            MATCH (r:{destination_node} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(NEW.{source_column}),
-                        quote_nullable(NEW.{source_column})
+                        quote_nullable(NEW.{destination_column})
                     );
             """
             )
             .format(
-                source_node_label=(SQL(self.source_node_label)),
+                source_node=(SQL(self.source_node)),
                 source_column=SQL(self.source_column),
                 label=SQL(self.label),
-                destination_node_label=SQL(self.destination_node_label),
-                destination_column_name=SQL(self.destination_column_name),
+                destination_node=SQL(self.destination_node),
+                destination_column=SQL(self.destination_column),
             )
             .as_string()
         )
@@ -569,14 +569,25 @@ class Edge(BaseModel):
             SQL(
                 """
                 -- Insert graph edges for association tables
-                IF NEW.{destination_column_name} IS NOT NULL THEN
-                    {create_statement}
+                IF NEW.{destination_column} IS NOT NULL THEN
+                                        EXECUTE FORMAT('
+                        SELECT * FROM cypher(''graph'', $$
+                            MATCH (l:{source_node} {{id: %s}})
+                            MATCH (r:{destination_node} {{id: %s}})
+                            CREATE (l)-[e:{label}]->(r)
+                        $$) AS (result agtype)',
+                        quote_nullable(NEW.{source_column}),
+                        quote_nullable(NEW.{destination_column})
+                    );
                 END IF;
             """
             )
             .format(
-                destination_column_name=SQL(self.destination_column_name),
-                create_statement=SQL(self.create_statement()),
+                destination_column=SQL(self.destination_column),
+                source_node=(SQL(self.source_node)),
+                label=SQL(self.label),
+                source_column=SQL(self.source_column),
+                destination_node=SQL(self.destination_node),
             )
             .as_string()
         )
@@ -587,22 +598,22 @@ class Edge(BaseModel):
                 """
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
-                                MATCH (l:{source_node_label} {{id: %s}})
-                                MATCH (r:{destination_node_label} {{id: %s}})
+                                MATCH (l:{source_node} {{id: %s}})
+                                MATCH (r:{destination_node} {{id: %s}})
                                 MATCH (l)-[e:{label}]->(r)
                                 DELETE e
                             $$) AS (result agtype)',
                             quote_nullable(OLD.{source_column}),
-                            quote_nullable(OLD.{source_column})
+                            quote_nullable(OLD.{destination_column})
                         ); 
             """
             )
             .format(
-                source_node_label=(SQL(self.source_node_label)),
+                source_node=(SQL(self.source_node)),
                 source_column=SQL(self.source_column),
                 label=SQL(self.label),
-                destination_node_label=SQL(self.destination_node_label),
-                destination_column_name=SQL(self.destination_column_name),
+                destination_node=SQL(self.destination_node),
+                destination_column=SQL(self.destination_column),
             )
             .as_string()
         )
@@ -612,18 +623,18 @@ class Edge(BaseModel):
             SQL(
                 """
                 -- Update graph edges for association tables
-                IF NEW.{destination_column_name} IS NOT NULL AND NEW.{destination_column_name} != OLD.{destination_column_name} THEN
-                    IF OLD.{destination_column_name} != NEW.{destination_column_name} THEN
+                IF NEW.{destination_column} IS NOT NULL AND NEW.{destination_column} != OLD.{destination_column} THEN
+                    IF OLD.{destination_column} != NEW.{destination_column} THEN
                         {delete_statement}
                     END IF;
-                    IF NEW.{destination_column_name} IS NOT NULL THEN
+                    IF NEW.{destination_column} IS NOT NULL THEN
                         {create_statement}
                     END IF;
                 END IF;
             """
             )
             .format(
-                destination_column_name=SQL(self.destination_column_name),
+                destination_column=SQL(self.destination_column),
                 delete_statement=SQL(self.delete_statement()),
                 create_statement=SQL(self.create_statement()),
             )
@@ -637,22 +648,22 @@ class Edge(BaseModel):
                 -- Delete graph edges for association tables
                 EXECUTE FORMAT('
                     SELECT * FROM cypher(''graph'', $$
-                        MATCH (l:{source_node_label} {{id: %s}})
-                        MATCH (r:{destination_node_label} {{id: %s}})
+                        MATCH (l:{source_node} {{id: %s}})
+                        MATCH (r:{destination_node} {{id: %s}})
                         MATCH (l)-[e:{label}]->(r)
                         DELETE e
                     $$) AS (result agtype)',
                     quote_nullable(OLD.{source_column}),
-                    quote_nullable(OLD.{destination_column_name})
+                    quote_nullable(OLD.{destination_column})
                 );
             """
             )
             .format(
-                source_node_label=(SQL(self.source_node_label)),
-                destination_node_label=SQL(self.destination_node_label),
+                source_node=(SQL(self.source_node)),
+                destination_node=SQL(self.destination_node),
                 label=SQL(self.label),
                 source_column=SQL(self.source_column),
-                destination_column_name=SQL(self.destination_column_name),
+                destination_column=SQL(self.destination_column),
             )
             .as_string()
         )
@@ -669,9 +680,9 @@ class Edge(BaseModel):
             """
             )
             .format(
-                source_node_label=(SQL(self.source_node_label)),
+                source_node=(SQL(self.source_node)),
                 label=SQL(self.label),
-                destination_node_label=SQL(self.destination_node_label),
+                destination_node=SQL(self.destination_node),
             )
             .as_string()
         )
