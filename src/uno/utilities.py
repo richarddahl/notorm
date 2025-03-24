@@ -15,17 +15,24 @@ from sqlalchemy.sql.expression import Alias, alias
 from uno.config import settings
 
 
-def convert_snake_to_title(snake_str: str) -> str:
+def snake_to_title(snake_str: str) -> str:
     components = snake_str.split("_")
     return " ".join(x.title() for x in components)
 
 
-def convert_snake_to_camel(snake_str: str) -> str:
+def snake_to_camel(snake_str: str) -> str:
+    """Converts a snake_case string to a camelCase string."""
     components = snake_str.split("_")
     return "".join(x.title() for x in components)
 
 
-def convert_snake_to_all_caps_snake(snake_str: str) -> str:
+def snake_to_caps_snake(snake_str: str) -> str:
+    """Converts a snake_case string to an ALL_CAPS_SNAKE string.
+
+    Used by graph data base to convert a snake_case string to
+    an ALL_CAPS_SNAKE string for a Edge label.
+
+    """
     components = snake_str.split("_")
     return "_".join(x.upper() for x in components)
 
