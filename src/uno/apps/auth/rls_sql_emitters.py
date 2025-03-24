@@ -37,7 +37,7 @@ class RowLevelSecurity(SQLEmitter):
             .format(
                 admin_role=ADMIN_ROLE,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
             )
             .as_string()
         )
@@ -64,7 +64,7 @@ class RowLevelSecurity(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -100,8 +100,8 @@ class UserRowLevelSecurity(RowLevelSecurity):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
-                rel_name=Literal(self.table_name),
+                table_name=SQL(self.table.name),
+                rel_name=Literal(self.table.name),
                 reader_role=READER_ROLE,
             )
             .as_string()
@@ -145,8 +145,8 @@ class UserRowLevelSecurity(RowLevelSecurity):
             .format(
                 writer_role=WRITER_ROLE,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
-                rel_name=Literal(self.table_name),
+                table_name=SQL(self.table.name),
+                rel_name=Literal(self.table.name),
             )
             .as_string()
         )
@@ -171,7 +171,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             """
             )
             .format(
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -204,7 +204,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             """
             )
             .format(
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -230,7 +230,7 @@ def tenant__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -252,7 +252,7 @@ def tenant__emit_insert_policy_sql(self) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -279,7 +279,7 @@ def tenant_update_policy_sql(self) -> str:
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -299,7 +299,7 @@ def tenant_delete_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -333,7 +333,7 @@ def admin__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -360,7 +360,7 @@ def admin__emit_insert_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -387,7 +387,7 @@ def admin_update_policy_sql(self):
         );
         """
             )
-            .format(table_name=SQL(self.table_name))
+            .format(table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -414,7 +414,7 @@ def admin_delete_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -453,7 +453,7 @@ def def ault__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -485,7 +485,7 @@ def def ault__emit_insert_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -517,7 +517,7 @@ def def ault_update_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -549,7 +549,7 @@ def def ault_delete_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -576,7 +576,7 @@ def superuser__emit_select_policy_sql(self):
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -596,7 +596,7 @@ def superuser__emit_insert_policy_sql(self) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -616,7 +616,7 @@ def superuser_update_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -636,7 +636,7 @@ def superuser_delete_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )
@@ -663,7 +663,7 @@ def public__emit_select_policy_sql(self):
         USING (true);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table_name))
+            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
             .as_string()
         )
     )

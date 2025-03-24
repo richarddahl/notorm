@@ -33,11 +33,6 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Metadata"]
 
@@ -81,12 +76,6 @@ class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-        "tenant_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Metadata"]
 

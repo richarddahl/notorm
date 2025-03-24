@@ -46,13 +46,6 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    # filter_excludes = [
-    #    "created_by_id",
-    #    "modified_by_id",
-    #    "deleted_by_id",
-    #    "tenant_id",
-    #    "default_group_id",
-    # ]
     terminate_filters = True
     endpoint_tags = ["Authorization"]
 
@@ -96,12 +89,6 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-        "tenant_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Authorization"]
 
@@ -139,12 +126,6 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-        "tenant_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Authorization"]
 
@@ -179,11 +160,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Authorization"]
 

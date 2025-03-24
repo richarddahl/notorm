@@ -13,12 +13,11 @@ from uno.db.sql.db_sql_emitters import (
 )
 from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.fltr.models import Filter, FilterValue, Query
+from uno.apps.fltr.bases import FilterBase, FilterValueBase, QueryBase
 
 
 class FilterSQLConfig(SQLConfig):
-    table_name = "filter"
-    model = Filter
+    table = FilterBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -27,8 +26,7 @@ class FilterSQLConfig(SQLConfig):
 
 
 class FilterValueSQLConfig(SQLConfig):
-    table_name = "filter_value"
-    model = FilterValue
+    table = FilterValueBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -40,8 +38,7 @@ class FilterValueSQLConfig(SQLConfig):
 
 
 class QuerySQLConfig(SQLConfig):
-    table_name = "query"
-    model = Query
+    table = QueryBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

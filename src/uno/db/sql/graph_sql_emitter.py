@@ -5,13 +5,14 @@
 import textwrap
 
 from typing import ClassVar
+from typing_extensions import Self
 
 from psycopg.sql import SQL, Identifier, Literal
-from pydantic import BaseModel, computed_field, ConfigDict
+from pydantic import BaseModel, computed_field, ConfigDict, model_validator
 from sqlalchemy import Column, Table
 
 from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
-from uno.utilities import convert_snake_to_camel, convert_snake_to_all_caps_snake
+from uno.utilities import snake_to_camel, snake_to_caps_snake
 
 
 class GraphSQLEmitter(SQLEmitter):
@@ -48,15 +49,65 @@ class GraphSQLEmitter(SQLEmitter):
           (e.g., insert, update, delete, truncate).
     """
 
-    exclude_fields: ClassVar[list[str]] = [
-        "table",
-        "table_name",
-        "model",
-        "nodes",
-        "edges",
-    ]
-    # nodes: list[Node] = [] <- computed field
-    # edges: list[Edge] = [] <- computed field
+    exclude_fields: ClassVar[list[str]] = ["table", "nodes", "edges"]
+    nodes: list["Node"] = []
+    edges: list["Edge"] = []
+
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        nodes = []
+        # create the node that represents the table first
+        if "id" in self.table.columns.keys():
+            nodes.append(
+                Node(
+                    column=self.table.columns["id"],
+                    label=snake_to_camel(self.table.name),
+                    node_triggers=True,
+                )
+            )
+        for column in self.table.columns.values():
+            if column.name == "id" or column.info.get("graph_excludes", False):
+                continue
+            node_triggers = True
+            if column.foreign_keys:
+                label = snake_to_camel(list(column.foreign_keys)[0].column.table.name)
+                node_triggers = (
+                    False  # FK nodes will be managed by thier source table triggers
+                )
+            else:
+                label = snake_to_camel(column.info.get("edge_label", column.name))
+            nodes.append(
+                Node(
+                    column=column,
+                    label=label,
+                    node_triggers=node_triggers,
+                )
+            )
+        self.nodes = nodes
+
+        if "id" not in self.table.columns:
+            return self  # This is not an association table, edges are defined by nodes
+        for column_name, column in self.table.columns.items():
+            if column.foreign_keys:
+                source_node_label = snake_to_camel(column_name.replace("_id", ""))
+                source_column = column_name
+                label = snake_to_caps_snake(
+                    column.info.get("edge_label", column.name.replace("_id", ""))
+                )
+                destination_node_label = snake_to_camel(
+                    list(column.foreign_keys)[0].column.table.name
+                )
+                destination_column_name = column.name
+                self.edges.append(
+                    Edge(
+                        source_node_label=source_node_label,
+                        source_column=source_column,
+                        label=label,
+                        destination_column_name=destination_column_name,
+                        destination_node_label=destination_node_label,
+                    )
+                )
+        return self
 
     @computed_field
     def create_labels(self) -> str:
@@ -83,134 +134,11 @@ class GraphSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                node_labels=SQL(
-                    "\n".join(
-                        [node.label_sql() for node in self.nodes if node.create_node]
-                    )
-                ),
+                node_labels=SQL("\n".join([node.label_sql() for node in self.nodes])),
                 edge_labels=SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
-
-    @computed_field
-    def nodes(self) -> list["Node"]:
-        """Returns a list of `Node` objects representing the columns of a database table.
-
-        This method computes nodes for the table associated with the current instance.
-        It creates a "table node" for the primary key column (if it exists) and additional
-        nodes for each column in the table. Foreign key columns are handled differently,
-        as their nodes are created by their source tables.
-
-        Returns:
-            list[Node]: A list of `Node` objects representing the table's columns.
-
-        Notes:
-            - If the `model` attribute is set, the table and filter excludes are derived
-              from the model's base and filter_excludes attributes.
-            - If the `model` attribute is not set, the table and filter excludes are
-              derived from the `table` attribute and an empty list, respectively.
-            - Columns listed in `filter_excludes` are skipped.
-            - The "table node" is created for the primary key column (named "id").
-            - Foreign key columns do not create standalone nodes, as their nodes are
-              created by their source tables.
-        """
-        print("Computing nodes for", self.table_name)
-        nodes = []
-        if self.model:
-            table = self.model.base.__table__
-            filter_excludes = self.model.filter_excludes
-        else:
-            return nodes
-            table = self.table
-            filter_excludes = []
-
-        # create the "table node" first
-        if "id" in table.columns:
-            nodes.append(
-                Node(
-                    column=table.columns["id"],
-                    label=convert_snake_to_camel(self.table_name),
-                    create_node=True,
-                )
-            )
-        for column_name, column in table.columns.items():
-            if column.name == "id":
-                continue
-            create_node = True
-            if column_name in filter_excludes:
-                continue
-            if column.foreign_keys:
-                label = convert_snake_to_camel(self.table_name)
-                create_node = False  # FK nodes will be created by thier "source table"
-            else:
-                label = convert_snake_to_camel(column_name)
-            nodes.append(
-                Node(
-                    column=column,
-                    label=label,
-                    create_node=create_node,
-                )
-            )
-        return nodes
-
-    @computed_field
-    def edges(self) -> list["Edge"]:
-        """Returns a list of `Edge` objects representing the columns of an association table.
-
-        An edge represents a relationship between two nodes in a graph, where each
-        node corresponds to a table or entity. The edges are derived from the foreign
-        key relationships defined in the table's columns.
-
-        Returns:
-            list[Edge]: A list of `Edge` objects representing the relationships
-            between nodes in the graph. Each `Edge` contains the following attributes:
-                - source_node_label (str): The label of the source node derived from the column name.
-                - column_name (str): The name of the column in the source table.
-                - label (str): The label for the edge, derived from the column name or
-                  overridden by the column's `edge_label` metadata.
-                - destination_column_name (str): The name of the column in the destination table.
-                - destination_node_label (str): The label of the destination node derived
-                  from the foreign key's referenced table.
-
-        Notes:
-            - If the table has no nodes or no model, an empty list is returned.
-            - The function assumes that column names ending with `_id` represent
-              foreign key relationships.
-            - The `convert_snake_to_camel` and `convert_snake_to_all_caps_snake`
-              functions are used to transform column names into appropriate labels.
-        """
-        print("Computing edges for ", self.table_name)
-        if self.model:
-            return []  # Not an association table
-        edges = []
-        for column_name, column in self.table.columns.items():
-            if column.foreign_keys:
-                # This is a column from an Association Table
-                source_node_label = convert_snake_to_camel(
-                    column_name.replace("_id", "")
-                )
-                column_name_ = column_name
-                for col_name, col in self.table.columns.items():
-                    if col_name == column_name:
-                        continue
-                    label = convert_snake_to_all_caps_snake(col_name.replace("_id", ""))
-                    destination_node_label = convert_snake_to_camel(
-                        list(col.foreign_keys)[0].column.table.name
-                    )
-                    destination_column_name = col_name
-                # This is a fallback for when the edge label derived from the column name is not correct
-                label = column.info.get("edge_label", label)
-                edges.append(
-                    Edge(
-                        source_node_label=source_node_label,
-                        column_name=column_name_,
-                        label=label,
-                        destination_column_name=destination_column_name,
-                        destination_node_label=destination_node_label,
-                    )
-                )
-        return edges
 
     def function_string(self, operation: str) -> str:
         """Generates a SQL string for performing a specified operation for nodes and edges.
@@ -262,7 +190,7 @@ class GraphSQLEmitter(SQLEmitter):
                         [
                             getattr(node, operation)()
                             for node in self.nodes
-                            if node.create_node
+                            # if node.node_triggers
                         ]
                     )
                 ),
@@ -325,51 +253,67 @@ class GraphSQLEmitter(SQLEmitter):
 class Node(BaseModel):
     column: Column
     label: str
-    create_node: bool = True
-    # edge: "Edge" <- computed field
+    node_triggers: bool = True
+    edges: list["Edge"] = []
 
     model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)
 
-    @computed_field
-    def edge(self) -> "Edge":
-        """Generates an `Edge` object representing a relationship between nodes in a graph.
-
-        Returns:
-            Edge: An object containing the source node label, column name, edge label,
-                  destination column name, and destination node label.
-
-        The method determines the source and destination node labels, column names, and
-        edge label based on whether the column has foreign keys. If foreign keys are present,
-        the edge is derived from the foreign key relationship. Otherwise, it is inferred
-        from the column name. Additionally, a custom edge label can be provided via the
-        column's `info` dictionary under the key "edge_label".
-        """
-        print("Computing edges for", self.column.name)
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.column.info.get("graph_excludes", False):
+            return self
         if self.column.foreign_keys:
-            source_node_label = convert_snake_to_camel(self.column.table.name)
-            column_name_ = list(self.column.foreign_keys)[0].column.name
-            label = convert_snake_to_all_caps_snake(self.column.name.replace("_id", ""))
-            destination_node_label = convert_snake_to_camel(
+            source_node_label = snake_to_camel(self.column.table.name)
+            source_column = list(self.column.foreign_keys)[0].column.name
+            destination_node_label = snake_to_camel(
                 list(self.column.foreign_keys)[0].column.table.name
             )
             destination_column_name = self.column.name
-        else:
-            source_node_label = convert_snake_to_camel(self.column.table.name)
-            label = convert_snake_to_all_caps_snake(self.column.name.replace("_id", ""))
-            destination_column_name = self.column.name
-            destination_node_label = convert_snake_to_camel(
-                self.column.name.replace("_id", "")
+            label = snake_to_caps_snake(
+                self.column.info.get(
+                    "edge_label",
+                    self.column.name.replace("_id", ""),
+                )
             )
-            column_name_ = "id"
-        # This is a fallback for when the edge label should not be derived from the column name
-        label = self.column.info.get("edge_label", label)
-        return Edge(
-            source_node_label=source_node_label,
-            column_name=column_name_,
-            label=label,
-            destination_column_name=destination_column_name,
-            destination_node_label=destination_node_label,
-        )
+            self.edges.append(
+                Edge(
+                    source_node_label=source_node_label,
+                    source_column=source_column,
+                    label=label,
+                    destination_column_name=destination_column_name,
+                    destination_node_label=destination_node_label,
+                )
+            )
+            if self.column.info.get("reverse_edge_label", False):
+                self.edges.append(
+                    Edge(
+                        source_node_label=destination_node_label,
+                        source_column=destination_column_name,
+                        label=snake_to_caps_snake(
+                            self.column.info["reverse_edge_label"]
+                        ),
+                        destination_column_name=source_column,
+                        destination_node_label=snake_to_camel(source_node_label),
+                    )
+                )
+        else:
+            source_node_label = snake_to_camel(self.column.table.name)
+            label = snake_to_caps_snake(self.column.name)
+            destination_column_name = self.column.name
+            destination_node_label = snake_to_camel(self.column.name)
+            source_column = "id"
+            # This is a fallback for when the edge label should not be derived from the column name
+            label = snake_to_caps_snake(self.column.info.get("edge_label", label))
+            self.edges.append(
+                Edge(
+                    source_node_label=source_node_label,
+                    source_column=source_column,
+                    label=label,
+                    destination_column_name=destination_column_name,
+                    destination_node_label=destination_node_label,
+                )
+            )
+        return self
 
     def label_sql(self) -> str:
         """Generates an SQL string to create a vertex label in a graph database if it does not already exist.
@@ -393,13 +337,13 @@ class Node(BaseModel):
                     CREATE INDEX ON graph.{label_ident} (id);
                     CREATE INDEX ON graph.{label_ident} USING gin (properties);
                 END IF;
-                {edge_label}
+                {edge_labels}
             """
             )
             .format(
                 label=Literal(self.label),
                 label_ident=Identifier(self.label),
-                edge_label=SQL(self.edge.label_sql()),
+                edge_labels=SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
@@ -429,26 +373,16 @@ class Node(BaseModel):
                         quote_nullable(NEW.id), quote_nullable(NEW.{column_name})
                     );
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
-                    EXECUTE FORMAT('
-                        SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{source_node_label} {{id: %s}})
-                            MATCH (r:{destination_node_label} {{id: %s}})
-                            CREATE (l)-[e:{edge_label}]->(r)
-                        $$) AS (result agtype)',
-                        quote_nullable(NEW.id),
-                        quote_nullable(NEW.id)
-                    );
+                    {create_statements}
                 END IF;
             """
             )
             .format(
                 label=SQL(self.label),
                 column_name=SQL(self.column.name),
-                source_node_label=SQL(self.edge.source_node_label),
-                source_column_name=SQL(self.edge.column_name),
-                edge_label=SQL(self.edge.label),
-                destination_node_label=SQL(self.edge.destination_node_label),
-                destination_column_name=SQL(self.edge.destination_column_name),
+                create_statements=SQL(
+                    "\n".join([edge.create_statement() for edge in self.edges])
+                ),
             )
             .as_string()
         )
@@ -492,16 +426,7 @@ class Node(BaseModel):
                         -- Execute the Cypher query
                         EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                         -- Create the edge
-                        cypher_query := FORMAT('
-                            SELECT * FROM cypher(''graph'', $$
-                                MATCH (l:{source_node_label} {{val: %s}})
-                                MATCH (r:{destination_node_label} {{val: %s}})
-                                CREATE (l)-[e:{edge_label}]->(r)
-                            $$) AS (result agtype)',
-                            quote_nullable(NEW.{source_column_name}),
-                            quote_nullable(NEW.{destination_column_name}));
-                        -- Execute the Cypher query
-                        EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
+                        {create_statements}
                     ELSE
                         -- The object previously had a value for this field, but it has changed
                         -- Construct the Cypher query to update the node
@@ -512,26 +437,9 @@ class Node(BaseModel):
                         -- Execute the Cypher query
                         EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                         -- Delete the existing edge
-                        cypher_query := FORMAT('
-                            SELECT * FROM cypher(''graph'', $$
-                                MATCH (l:{source_node_label} {{val: %s}})-[e:{edge_label}]->(r:{destination_node_label} {{val: %s}})
-                                DELETE e
-                            $$) AS (result agtype)',
-                            quote_nullable(OLD.{source_column_name}),
-                            quote_nullable(OLD.{destination_column_name}));
-                        -- Execute the Cypher query
-                        EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
+                        {delete_statements}
                         -- Create the edge
-                        cypher_query := FORMAT('
-                            SELECT * FROM cypher(''graph'', $$
-                                MATCH (l:{source_node_label} {{val: %s}})
-                                MATCH (r:{destination_node_label} {{val: %s}})
-                                CREATE (l)-[e:{edge_label}]->(r)
-                            $$) AS (result agtype)',
-                            quote_nullable(NEW.{source_column_name}),
-                            quote_nullable(NEW.{destination_column_name}));
-                        -- Execute the Cypher query
-                        EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
+                        {create_statements}
                     END IF;
                 ELSIF NEW.{column_name} IS NULL THEN
                     -- The object no longer has a value for this field, but previously did
@@ -540,28 +448,19 @@ class Node(BaseModel):
                     -- Execute the Cypher query
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                     -- Delete the existing edge
-                    cypher_query := FORMAT('
-                        SELECT * FROM cypher(''graph'', $$
-                            MATCH (l:{source_node_label} {{val: %s}})-[e:{edge_label}]->(r:{destination_node_label} {{val: %s}})
-                            DELETE e
-                        $$) AS (result agtype)',
-                        quote_nullable(OLD.{source_column_name}),
-                        quote_nullable(OLD.{destination_column_name}));
-                    -- Execute the Cypher query
-                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query
-                    );
+                    {delete_statements}
                 END IF;
             """
             )
             .format(
                 label=SQL(self.label),
-                val=SQL(self.column.name),
                 column_name=SQL(self.column.name),
-                source_node_label=SQL(self.edge.source_node_label),
-                source_column_name=SQL(self.edge.column_name),
-                edge_label=SQL(self.edge.label),
-                destination_column_name=SQL(self.edge.destination_column_name),
-                destination_node_label=SQL(self.edge.destination_node_label),
+                delete_statements=SQL(
+                    "\n".join([edge.delete_statement() for edge in self.edges])
+                ),
+                create_statements=SQL(
+                    "\n".join([edge.create_statement() for edge in self.edges])
+                ),
             )
             .as_string()
         )
@@ -618,7 +517,7 @@ class Node(BaseModel):
 
 class Edge(BaseModel):
     source_node_label: str
-    column_name: str
+    source_column: str
     label: str
     destination_column_name: str
     destination_node_label: str
@@ -640,27 +539,67 @@ class Edge(BaseModel):
             .as_string()
         )
 
-    def insert_sql(self) -> str:
+    def create_statement(self) -> str:
         return (
             SQL(
                 """
-                -- Insert graph edges for association tables
-                IF NEW.{destination_column_name} IS NOT NULL THEN
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
                             MATCH (l:{source_node_label} {{id: %s}})
                             MATCH (r:{destination_node_label} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
-                        quote_nullable(NEW.{column_name}),
-                        quote_nullable(NEW.{destination_column_name})
+                        quote_nullable(NEW.{source_column}),
+                        quote_nullable(NEW.{source_column})
                     );
-                END IF;
             """
             )
             .format(
                 source_node_label=(SQL(self.source_node_label)),
-                column_name=SQL(self.column_name),
+                source_column=SQL(self.source_column),
+                label=SQL(self.label),
+                destination_node_label=SQL(self.destination_node_label),
+                destination_column_name=SQL(self.destination_column_name),
+            )
+            .as_string()
+        )
+
+    def insert_sql(self) -> str:
+        return (
+            SQL(
+                """
+                -- Insert graph edges for association tables
+                IF NEW.{destination_column_name} IS NOT NULL THEN
+                    {create_statement}
+                END IF;
+            """
+            )
+            .format(
+                destination_column_name=SQL(self.destination_column_name),
+                create_statement=SQL(self.create_statement()),
+            )
+            .as_string()
+        )
+
+    def delete_statement(self) -> str:
+        return (
+            SQL(
+                """
+                        EXECUTE FORMAT('
+                            SELECT * FROM cypher(''graph'', $$
+                                MATCH (l:{source_node_label} {{id: %s}})
+                                MATCH (r:{destination_node_label} {{id: %s}})
+                                MATCH (l)-[e:{label}]->(r)
+                                DELETE e
+                            $$) AS (result agtype)',
+                            quote_nullable(OLD.{source_column}),
+                            quote_nullable(OLD.{source_column})
+                        ); 
+            """
+            )
+            .format(
+                source_node_label=(SQL(self.source_node_label)),
+                source_column=SQL(self.source_column),
                 label=SQL(self.label),
                 destination_node_label=SQL(self.destination_node_label),
                 destination_column_name=SQL(self.destination_column_name),
@@ -675,36 +614,18 @@ class Edge(BaseModel):
                 -- Update graph edges for association tables
                 IF NEW.{destination_column_name} IS NOT NULL AND NEW.{destination_column_name} != OLD.{destination_column_name} THEN
                     IF OLD.{destination_column_name} != NEW.{destination_column_name} THEN
-                        EXECUTE FORMAT('
-                            SELECT * FROM cypher(''graph'', $$
-                                DELETE (l:{source_node_label} {{id: %s}})
-                                DELETE (r:{destination_node_label} {{id: %s}})
-                                DELETE (l)-[e:{label}]->(r)
-                            $$) AS (result agtype)',
-                            quote_nullable(OLD.{column_name}),
-                            quote_nullable(OLD.{destination_column_name})
-                        ); 
+                        {delete_statement}
                     END IF;
                     IF NEW.{destination_column_name} IS NOT NULL THEN
-                        EXECUTE FORMAT('
-                            SELECT * FROM cypher(''graph'', $$
-                                MATCH (l:{source_node_label} {{id: %s}})
-                                MATCH (r:{destination_node_label} {{id: %s}})
-                                CREATE (l)-[e:{label}]->(r)
-                            $$) AS (result agtype)',
-                            quote_nullable(NEW.{column_name}),
-                            quote_nullable(NEW.{destination_column_name})
-                        ); 
+                        {create_statement}
                     END IF;
                 END IF;
             """
             )
             .format(
-                source_node_label=(SQL(self.source_node_label)),
-                column_name=SQL(self.column_name),
-                label=SQL(self.label),
-                destination_node_label=SQL(self.destination_node_label),
                 destination_column_name=SQL(self.destination_column_name),
+                delete_statement=SQL(self.delete_statement()),
+                create_statement=SQL(self.create_statement()),
             )
             .as_string()
         )
@@ -716,18 +637,21 @@ class Edge(BaseModel):
                 -- Delete graph edges for association tables
                 EXECUTE FORMAT('
                     SELECT * FROM cypher(''graph'', $$
-                        MATCH (l:{source_node_label} {{val: %s}})-[e:{label}]->()
+                        MATCH (l:{source_node_label} {{id: %s}})
+                        MATCH (r:{destination_node_label} {{id: %s}})
+                        MATCH (l)-[e:{label}]->(r)
                         DELETE e
                     $$) AS (result agtype)',
-                    quote_nullable(OLD.{column_name}),
+                    quote_nullable(OLD.{source_column}),
                     quote_nullable(OLD.{destination_column_name})
                 );
             """
             )
             .format(
                 source_node_label=(SQL(self.source_node_label)),
+                destination_node_label=SQL(self.destination_node_label),
                 label=SQL(self.label),
-                column_name=SQL(self.column_name),
+                source_column=SQL(self.source_column),
                 destination_column_name=SQL(self.destination_column_name),
             )
             .as_string()

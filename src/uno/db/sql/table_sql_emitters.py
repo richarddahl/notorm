@@ -38,7 +38,7 @@ class AlterGrants(SQLEmitter):
                 admin_role=ADMIN_ROLE,
                 reader_role=READER_ROLE,
                 writer_role=WRITER_ROLE,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -62,7 +62,7 @@ class InsertMetaType(SQLEmitter):
             .format(
                 schema_name=DB_SCHEMA,
                 writer_role=WRITER_ROLE,
-                table_name=Literal(self.table_name),
+                table_name=Literal(self.table.name),
             )
             .as_string()
         )
@@ -81,7 +81,7 @@ class RecordVersionAudit(SQLEmitter):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
             )
             .as_string()
         )
@@ -119,7 +119,7 @@ class EnableHistoricalAudit(SQLEmitter):
             .format(
                 db_name=DB_NAME,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
             )
             .as_string()
         )
@@ -140,7 +140,7 @@ class EnableHistoricalAudit(SQLEmitter):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
             )
             .as_string()
         )

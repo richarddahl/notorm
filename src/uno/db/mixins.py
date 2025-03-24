@@ -48,6 +48,11 @@ class GeneralBaseMixin:
         nullable=False,
         server_default=FetchedValue(),
         doc="User that created the record",
+        info={
+            "edge_label": "CREATED_BY",
+            "reverse_node_label": "Meta",
+            "reverse_edge_label": "OBJECTS_CREATED",
+        },
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False,
@@ -60,6 +65,11 @@ class GeneralBaseMixin:
         nullable=False,
         server_default=FetchedValue(),
         doc="User that last modified the record",
+        info={
+            "edge_label": "MODIFIED_BY",
+            "reverse_node_label": "Meta",
+            "reverse_edge_label": "OBJECTS_MODIFIED",
+        },
     )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         nullable=True,
@@ -72,6 +82,11 @@ class GeneralBaseMixin:
         nullable=True,
         server_default=FetchedValue(),
         doc="User that deleted the record",
+        info={
+            "edge_label": "DELETED_BY",
+            "reverse_node_label": "Meta",
+            "reverse_edge_label": "OBJECTS_DELETED",
+        },
     )
 
     # Relationships
@@ -104,6 +119,10 @@ class BaseMixin(GeneralBaseMixin):
         nullable=True,
         server_default=FetchedValue(),
         doc="Group to which the record belongs",
+        info={
+            "edge_label": "TENANT",
+            "reverse_edge_label": "TENANTS",
+        },
     )
     group_id: Mapped[str_26] = mapped_column(
         ForeignKey("group.id", ondelete="RESTRICT"),
@@ -111,6 +130,10 @@ class BaseMixin(GeneralBaseMixin):
         nullable=True,
         server_default=FetchedValue(),
         doc="Group to which the record belongs",
+        info={
+            "edge_label": "GROUP",
+            "reverse_edge_label": "GROUPS",
+        },
     )
 
     # Relationships

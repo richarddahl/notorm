@@ -32,12 +32,14 @@ filter__filter_value = Table(
         ForeignKey("filter.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "FILTER_VALUES"},
     ),
     Column(
         "filter_value_id",
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "FILTERS"},
     ),
     Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
 )
@@ -50,12 +52,14 @@ filter_value__values = Table(
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "FILTER_VALUES"},
     ),
     Column(
         "value_id",
         ForeignKey("meta.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "VALUES"},
     ),
     Index("ix_filter_value_id__value_id", "filter_value_id", "value_id"),
 )
@@ -68,12 +72,14 @@ query__filter_value = Table(
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "FILTER_VALUES"},
     ),
     Column(
         "filter_value_id",
         ForeignKey("filter_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "QUERIES"},
     ),
     Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
 )
@@ -86,20 +92,30 @@ query__child_query = Table(
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "CHILD_QUERIES"},
     ),
     Column(
         "childquery_id",
         ForeignKey("query.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+        info={"edge_label": "QUERIES"},
     ),
     Index("ix_query_id__child_query_id", "query_id", "childquery_id"),
 )
 
 
-class FilterBase(BaseMixin, UnoBase):
+class FilterBase(UnoBase):
     __tablename__ = "filter"
-    __table_args__ = ({"comment": "Enables user-defined filtering via the graph DB."},)
+    __table_args__ = (
+        UniqueConstraint(
+            "source_path",
+            "label",
+            "destination_path",
+            name="uq_filter__source_path__label__destination_path",
+        ),
+        {"comment": "Enables user-defined filtering via the graph DB."},
+    )
 
     id: Mapped[int] = mapped_column(
         Identity(),
@@ -108,17 +124,20 @@ class FilterBase(BaseMixin, UnoBase):
         index=True,
         doc="The id of the filter",
     )
-    source_meta_type_id: Mapped[str_63] = mapped_column(
-        ForeignKey("meta_type.id", ondelete="CASCADE"),
+    source_node: Mapped[str_63] = mapped_column(
         index=True,
         nullable=False,
-        doc="The source table filtered.",
+        doc="The source node filtered.",
     )
-    destination_meta_type_id: Mapped[str_63] = mapped_column(
-        ForeignKey("meta_type.id", ondelete="CASCADE"),
+    destination_node: Mapped[str_63] = mapped_column(
         index=True,
         nullable=False,
-        doc="The destination table of the filter",
+        doc="The destination node of the filter",
+    )
+    label: Mapped[str] = mapped_column(
+        index=True,
+        nullable=False,
+        doc="The label of the filter",
     )
     data_type: Mapped[str] = mapped_column(
         doc="The data type of the filter",
@@ -137,15 +156,12 @@ class FilterBase(BaseMixin, UnoBase):
     display: Mapped[str] = mapped_column(
         doc="The display of the filter",
     )
-    path: Mapped[str] = mapped_column(
-        unique=True,
-        index=True,
-        doc="The path of the filter",
-    )
-    prepend_path: Mapped[str] = mapped_column(
+    source_path: Mapped[str] = mapped_column(
+        nullable=False,
         doc="The path of the filter when prepended to a child filter",
     )
-    append_path: Mapped[str] = mapped_column(
+    destination_path: Mapped[str] = mapped_column(
+        nullable=False,
         doc="The path of the filter when appended to a parent filter",
     )
 
@@ -173,6 +189,12 @@ class FilterValueBase(BaseMixin, UnoBase):
     filter_id: Mapped[str_26] = mapped_column(
         ForeignKey("filter.id", ondelete="CASCADE"),
         index=True,
+        nullable=False,
+        doc="The filter to which the value belongs",
+        info={
+            "edge_label": "FILTER",
+            "reverse_edge_label": "FILTER_VALUES",
+        },
     )
     include: Mapped[Include] = mapped_column(
         ENUM(
@@ -208,6 +230,7 @@ class FilterValueBase(BaseMixin, UnoBase):
     queries: Mapped[list["QueryBase"]] = relationship(
         secondary=query__filter_value,
         doc="The queries that use the filter value",
+        back_populates="filter_values",
     )
 
 
@@ -216,13 +239,23 @@ class QueryBase(BaseMixin, UnoBase):
     __table_args__ = ({"comment": "User definable queries"},)
 
     # Columns
-    name: Mapped[str_255] = mapped_column(doc="The name of the query.")
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+        doc="The name of the query.",
+    )
     description: Mapped[Optional[str]] = mapped_column(
         doc="The description of the query."
     )
     query_meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
+        nullable=False,
+        doc="The type of the query.",
+        info={
+            "edge_label": "META_TYPE",
+            "reverse_edge_label": "QUERIES",
+        },
     )
     include_values: Mapped[Include] = mapped_column(
         ENUM(
@@ -256,20 +289,20 @@ class QueryBase(BaseMixin, UnoBase):
     )
 
     # Relationships
-    # filter_values: Mapped[Optional[list[FilterValue]]] = relationship(
-    #    secondary=query__filter_value,
-    #    secondaryjoin=query__filter_value.query_id == id,
-    # )
-    # sub_queries: Mapped[Optional[list["Query"]]] = relationship(
-    #    foreign_keys=[query__sub_query.query_id],
-    #    secondary=query__sub_query,
-    #    secondaryjoin=query__sub_query.query_id == id,
-    # )
-    # queries: Mapped[Optional[list["Query"]]] = relationship(
-    #    foreign_keys=[query__sub_query.subquery_id],
-    #    secondary=query__sub_query,
-    #    secondaryjoin=query__sub_query.subquery_id == id,
-    # )
+    filter_values: Mapped[Optional[list[FilterValueBase]]] = relationship(
+        secondary=query__filter_value,
+        back_populates="queries",
+    )
+    sub_queries: Mapped[Optional[list["QueryBase"]]] = relationship(
+        secondary=query__child_query,
+        foreign_keys=[query__child_query.c.query_id],
+        back_populates="queries",
+    )
+    queries: Mapped[Optional[list["QueryBase"]]] = relationship(
+        secondary=query__child_query,
+        foreign_keys=[query__child_query.c.childquery_id],
+        back_populates="sub_queries",
+    )
     # attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
     #    primaryjoin="Query.id == AttributeType.description_limiting_query_id",
     # )

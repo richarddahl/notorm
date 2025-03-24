@@ -189,14 +189,12 @@ class DBManager:
         return user
 
     async def create_filters(self) -> None:
-        filters = []
+        filters = {}
         for model in UnoModel.registry.values():
             model.configure(app)
-            for fltr in await create_filters(model.base):
-                try:
-                    filters.append(await fltr.edit_data())
-                except TypeError:
-                    print(f"Error creating filter for {model.base.__tablename__}")
+            for fltr in create_filters(model.base.__table__):
+                if fltr.__str__() not in filters:
+                    filters.update({fltr.__str__(): fltr.edit_data()})
 
         async with scoped_session() as session:
             await session.execute(
@@ -208,7 +206,7 @@ class DBManager:
                     .as_string()
                 )
             )
-            session.add_all(filters)
+            session.add_all(filters.values())
             await session.commit()
             await session.close()
 

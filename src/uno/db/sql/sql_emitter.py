@@ -4,12 +4,13 @@
 
 import textwrap
 
-from typing import Optional, ClassVar, Any
+from typing import Optional, ClassVar
 
 from psycopg.sql import SQL, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Connection
+from sqlalchemy import Table
 
 from uno.config import settings
 
@@ -35,10 +36,10 @@ DB_SCHEMA = SQL(settings.DB_SCHEMA)
 
 
 class SQLEmitter(BaseModel):
-    exclude_fields: ClassVar[list[str]] = ["table_name", "model", "table"]
-    table_name: str = None
-    model: Optional[type[BaseModel]] = None
-    table: Optional[Any] = None
+    exclude_fields: ClassVar[list[str]] = ["table"]
+    table: Optional[Table] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def emit_sql(self, connection: Connection) -> None:
         for statement_name, sql_statement in self.model_dump(
@@ -59,9 +60,9 @@ class SQLEmitter(BaseModel):
         trigger_scope = (
             f"{settings.DB_SCHEMA}."
             if db_function
-            else f"{settings.DB_SCHEMA}.{self.table_name}_"
+            else f"{settings.DB_SCHEMA}.{self.table.name}_"
         )
-        trigger_prefix = self.table_name
+        trigger_prefix = self.table.name
         return textwrap.dedent(
             SQL(
                 """
@@ -73,7 +74,7 @@ class SQLEmitter(BaseModel):
             """
             )
             .format(
-                table_name=SQL(self.table_name),
+                table_name=SQL(self.table.name),
                 trigger_prefix=SQL(trigger_prefix),
                 function_name=SQL(function_name),
                 timing=SQL(timing),
@@ -107,7 +108,7 @@ class SQLEmitter(BaseModel):
         full_function_name = (
             f"{settings.DB_SCHEMA}.{function_name}"
             if db_function
-            else f"{self.table_name}_{function_name}"
+            else f"{self.table.name}_{function_name}"
         )
         ADMIN_ROLE = SQL(f"{settings.DB_NAME}_admin")
         fnct_string = textwrap.dedent(

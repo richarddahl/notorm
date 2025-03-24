@@ -21,7 +21,7 @@ from uno.api.endpoint import (
     ImportEndpoint,
 )
 from uno.errors import UnoRegistryError
-from uno.utilities import convert_snake_to_title
+from uno.utilities import snake_to_title
 
 
 class UnoModel(BaseModel):
@@ -50,7 +50,6 @@ class UnoModel(BaseModel):
     ]
     endpoint_tags: ClassVar[list[str]] = []
     filters: ClassVar[dict[str, BaseModel]] = {}
-    filter_excludes: ClassVar[list[str]] = []
     terminate_field_filters: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
@@ -85,12 +84,12 @@ class UnoModel(BaseModel):
     @classmethod
     def set_display_names(cls) -> None:
         cls.display_name = (
-            convert_snake_to_title(cls.table_name)
+            snake_to_title(cls.table_name)
             if cls.display_name is None
             else cls.display_name
         )
         cls.display_name_plural = (
-            f"{convert_snake_to_title(cls.table_name)}s"
+            f"{snake_to_title(cls.table_name)}s"
             if cls.display_name_plural is None
             else cls.display_name_plural
         )

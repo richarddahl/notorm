@@ -17,7 +17,7 @@ from uno.apps.fltr.bases import QueryBase
 from uno.apps.meta.bases import MetaTypeBase
 
 
-attribute_value = Table(
+attribute__value = Table(
     "attribute__value",
     UnoBase.metadata,
     Column(
@@ -26,6 +26,7 @@ attribute_value = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "VALUES"},
     ),
     Column(
         "value_id",
@@ -33,6 +34,7 @@ attribute_value = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "ATTRIBUTES"},
     ),
     comment="The relationship between attributes and their values",
 )
@@ -47,6 +49,7 @@ attribute_type___meta_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "META_TYPES"},
     ),
     Column(
         "meta_type_id",
@@ -54,6 +57,7 @@ attribute_type___meta_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types they describe",
 )
@@ -68,6 +72,7 @@ attribute_type__value_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "VALUE_TYPES"},
     ),
     Column(
         "meta_type_id",
@@ -75,6 +80,7 @@ attribute_type__value_type = Table(
         primary_key=True,
         index=True,
         nullable=False,
+        info={"edge_label": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types that are values for the attribute type",
 )
@@ -92,6 +98,10 @@ class AttributeBase(GeneralBaseMixin, UnoBase):
         ),
         index=True,
         doc="The type of attribute",
+        info={
+            "edge_label": "ATTRIBUTE_TYPE",
+            "reverse_edge_label": "ATTRIBUTES",
+        },
     )
     comment: Mapped[Optional[str]] = mapped_column(
         doc="A comment about the attribute",
@@ -133,11 +143,19 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         index=True,
         nullable=True,
         doc="The parent attribute type",
+        info={
+            "edge_label": "PARENT",
+            "reverse_edge_label": "CHILDREN",
+        },
     )
     description_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("query.id", ondelete="CASCADE"),
         index=True,
         doc="Query that determines which object types are described by Attributes.",
+        info={
+            "edge_label": "DESCRIPTION_LIMITING_QUERY",
+            "reverse_edge_label": "DESCRIPTION_LIMITED_ATTRIBUTE_TYPES",
+        },
     )
     value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
@@ -145,6 +163,10 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
             ondelete="CASCADE",
         ),
         doc="Query that determines which object types are values for Attributes.",
+        info={
+            "edge_label": "VALUE_TYPE_LIMITING_QUERY",
+            "reverse_edge_label": "VALUE_TYPE_LIMITED_ATTRIBUTE_TYPES",
+        },
     )
     required: Mapped[bool] = mapped_column(
         default=False,
@@ -165,12 +187,12 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
     # Relationships
     parent: Mapped["AttributeTypeBase"] = relationship(
         foreign_keys=[parent_id],
-        remote_side=[id],
         back_populates="children",
         doc="The parent attribute type",
     )
     children: Mapped[list["AttributeTypeBase"]] = relationship(
         back_populates="parent",
+        remote_side=[id],
         doc="The child attribute types",
     )
     describes: Mapped[list[MetaTypeBase]] = relationship(

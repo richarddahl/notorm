@@ -15,12 +15,19 @@ from uno.db.sql.db_sql_emitters import (
 from uno.db.sql.sql_config import SQLConfig
 from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.auth.models import User, Group, Role, Tenant, Permission
-from uno.apps.auth.bases import user__group, user__role, role__permission
+from uno.apps.auth.bases import (
+    user__group,
+    user__role,
+    role__permission,
+    UserBase,
+    GroupBase,
+    RoleBase,
+    TenantBase,
+    PermissionBase,
+)
 
 
 class UserGroupSQLConfig(SQLConfig):
-    table_name = "user__group"
     table = user__group
     sql_emitters = [
         AlterGrants,
@@ -29,7 +36,6 @@ class UserGroupSQLConfig(SQLConfig):
 
 
 class UserRoleSQLConfig(SQLConfig):
-    table_name = "user__role"
     table = user__role
     sql_emitters = [
         AlterGrants,
@@ -38,7 +44,6 @@ class UserRoleSQLConfig(SQLConfig):
 
 
 class RolePermisionSQLConfig(SQLConfig):
-    table_name = "role__permission"
     table = role__permission
     sql_emitters = [
         AlterGrants,
@@ -47,8 +52,7 @@ class RolePermisionSQLConfig(SQLConfig):
 
 
 class UserSQLConfig(SQLConfig):
-    table_name = "user"
-    model = User
+    table = UserBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -61,8 +65,7 @@ class UserSQLConfig(SQLConfig):
 
 
 class GroupSQLConfig(SQLConfig):
-    table_name = "group"
-    model = Group
+    table = GroupBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -76,8 +79,7 @@ class GroupSQLConfig(SQLConfig):
 
 
 class RoleSQLConfig(SQLConfig):
-    table_name = "role"
-    model = Role
+    table = RoleBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -89,8 +91,7 @@ class RoleSQLConfig(SQLConfig):
 
 
 class TenantSQLConfig(SQLConfig):
-    table_name = "tenant"
-    model = Tenant
+    table = TenantBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -103,8 +104,7 @@ class TenantSQLConfig(SQLConfig):
 
 
 class PermissionSQLConfig(SQLConfig):
-    table_name = "permission"
-    model = Permission
+    table = PermissionBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

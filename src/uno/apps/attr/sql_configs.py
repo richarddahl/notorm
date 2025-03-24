@@ -10,12 +10,53 @@ from uno.db.sql.db_sql_emitters import (
 )
 from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.attr.models import Attribute, AttributeType
+from uno.apps.attr.bases import (
+    attribute__value,
+    attribute_type___meta_type,
+    attribute_type__value_type,
+    AttributeBase,
+    AttributeTypeBase,
+)
+
+
+class AttributeValueSQLConfig(SQLConfig):
+    table = attribute__value
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
+        GraphSQLEmitter,
+    ]
+
+
+class AttributeTypeMetaTypeSQLConfig(SQLConfig):
+    table = attribute_type___meta_type
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
+        GraphSQLEmitter,
+    ]
+
+
+class AttributeTypeValueTypeSQLConfig(SQLConfig):
+    table = attribute_type__value_type
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
+        GraphSQLEmitter,
+    ]
 
 
 class AttributeSQLConfig(SQLConfig):
-    table_name = "attribute"
-    model = Attribute
+    table = AttributeBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -27,8 +68,7 @@ class AttributeSQLConfig(SQLConfig):
 
 
 class AttributeTypeSQLConfig(SQLConfig):
-    table_name = "attribute_type"
-    model = AttributeType
+    table = AttributeTypeBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

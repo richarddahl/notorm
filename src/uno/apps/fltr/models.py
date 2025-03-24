@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import Optional
 from typing_extensions import Self
 from pydantic import model_validator
+from sqlalchemy import Table, Column
 
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
@@ -17,13 +18,11 @@ from uno.apps.auth.mixins import RecordAuditMixin
 from uno.apps.fltr.bases import FilterBase, FilterValueBase, QueryBase
 from uno.apps.meta.models import Meta, MetaType
 from uno.utilities import (
-    convert_snake_to_title,
-    convert_snake_to_camel,
-    convert_snake_to_all_caps_snake,
+    snake_to_title,
+    snake_to_camel,
+    snake_to_caps_snake,
 )
-from uno.acronyms import acronyms
 from uno.db.enums import Include, Match
-from uno.db.base import UnoBase
 from uno.apps.val.enums import object_lookups, numeric_lookups, text_lookups
 from uno.apps.val.enums import Lookup
 from uno.config import settings
@@ -36,9 +35,8 @@ class Filter(UnoModel):
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
-                "prepend_path",
-                "append_path",
-                "path",
+                "source_path",
+                "destination_path",
                 "display",
             ]
         ),
@@ -51,87 +49,112 @@ class Filter(UnoModel):
     }
     endpoints = ["List"]
     endpoint_tags = ["Search"]
-    filter_excludes = [
-        "path",
-        "prepend_path",
-        "append_path",
-        "display",
-    ]
 
     # Fields
-    source_meta_type_id: Optional[str] = None
+    source_node: Optional[str] = None
     label_string: Optional[str] = None
-    destination_meta_type_id: Optional[str] = None
+    label: Optional[str] = None
+    destination_node: Optional[str] = None
     data_type: str = "str"
     lookups: list[str]
     display: Optional[str] = None
-    path: Optional[str] = None
-    prepend_path: Optional[str] = None
-    append_path: Optional[str] = None
+    source_path: Optional[str] = None
+    destination_path: Optional[str] = None
     id: Optional[int] = None
 
     @model_validator(mode="after")
     def model_validator(self) -> Self:
         # acronyms is a dictionary of acronyms to be used in the display name, e.g. "id" -> "ID"
-        self.display = acronyms.get(
-            self.label_string, convert_snake_to_title(self.label_string)
-        )
-        source_node = convert_snake_to_camel(self.source_meta_type_id)
-        destination_node = convert_snake_to_camel(self.destination_meta_type_id)
-        label = convert_snake_to_title(self.label_string)
-        self.path = (
-            f"{source_node}-[:{label}]->(:{destination_node} {{id: %s, val: %s}})"
-        )
-        self.prepend_path = f"{source_node}-[:{label}]->(:{destination_node})"
-        self.append_path = f"-[:{label}]->(:{destination_node} {{id: %s, val: %s}})"
+        self.display = snake_to_title(self.label)
+        self.source_path = f"(:{self.source_node})-[:{self.label}]->"
+        self.destination_path = f"(:{self.destination_node} {{val: %s}})"
         return self
 
     def __str__(self) -> str:
-        return self.path
+        return f"{self.source_node}-{self.label}->{self.destination_node}"
 
     def __repr__(self) -> str:
-        return f"<Filter: {self.path} >"
+        return f"<Filter: {self.source_path}->{self.destination_path}>"
 
-    async def edit_data(self) -> dict:
+    def edit_data(self) -> dict:
+        self.set_schemas()
         return FilterBase(**self.edit_schema(**self.model_dump()).model_dump())
 
 
-async def create_filters(base: UnoBase) -> None:
-    print(f"Filters for {base.__tablename__}")
-    source_model = UnoModel.registry[base.__tablename__]
-    if source_model.exclude_from_filters:
-        return []
-    filters = []
-    for column_name, column in base.__table__.columns.items():
-        if column_name in source_model.filter_excludes:
-            continue
-        if column.type.python_type in [str, bytes]:
-            lookups = text_lookups
-        elif column.type.python_type in [int, Decimal, float, date, datetime, time]:
-            lookups = numeric_lookups
+def create_filter_for_column(
+    column: Column,
+    table_name: str,
+    edge_label: str = "edge_label",
+) -> Filter:
+    if column.type.python_type in [str, bytes]:
+        lookups = text_lookups
+    elif column.type.python_type in [int, Decimal, float, date, datetime, time]:
+        lookups = numeric_lookups
+    else:
+        lookups = object_lookups
+    if column.foreign_keys:
+        if edge_label == "edge_label":
+            source_node = snake_to_camel(column.table.name)
+            destination_node = snake_to_camel(
+                list(column.foreign_keys)[0].column.table.name
+            )
+            label = snake_to_caps_snake(
+                column.info.get(edge_label, column.name.replace("_id", ""))
+            )
         else:
-            lookups = object_lookups
-        filter = Filter(
-            source_meta_type_id=base.__tablename__,
-            label_string=column_name,
-            destination_meta_type_id=base.__tablename__,
-            data_type=column.type.python_type.__name__,
-            lookups=lookups,
+            source_node = snake_to_camel(list(column.foreign_keys)[0].column.table.name)
+            destination_node = snake_to_camel(
+                column.info.get("reverse_node_label", column.table.name)
+            )
+            label = snake_to_caps_snake(
+                column.info.get(edge_label, column.name.replace("_id", ""))
+            )
+    else:
+        source_node = snake_to_camel(table_name)
+        destination_node = snake_to_camel(column.name)
+        label = snake_to_caps_snake(
+            column.info.get(edge_label, column.name.replace("_id", ""))
         )
-        filters.append(filter)
+    return Filter(
+        source_node=source_node,
+        label=label,
+        destination_node=destination_node,
+        data_type=column.type.python_type.__name__,
+        lookups=lookups,
+    )
 
-    for relationship in source_model.relationships():
-        if relationship.key in source_model.filter_excludes:
-            continue
-        filter = Filter(
-            source_meta_type_id=base.__tablename__,
-            label_string=relationship.key,
-            destination_meta_type_id=relationship.mapper.class_.__tablename__,
+
+def create_filters(table: Table) -> list[Filter]:
+    filters = {}
+    if "id" in table.columns.keys():
+        fltr = Filter(
+            source_node=snake_to_camel(table.name),
+            label=snake_to_caps_snake(
+                table.columns["id"].info.get("edge_label", table.name)
+            ),
+            destination_node="Meta",
             data_type="str",
             lookups=object_lookups,
         )
-        filters.append(filter)
-    return filters
+        filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+        filters[filter_key] = fltr
+    for column in table.columns.values():
+        if column.info.get("graph_excludes", False):
+            continue
+        fltr = create_filter_for_column(column, table.name)
+        filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+        if filter_key not in filters.keys():
+            filters[filter_key] = fltr
+        if column.info.get("reverse_edge_label", False):
+            fltr = create_filter_for_column(
+                column,
+                table.name,
+                edge_label="reverse_edge_label",
+            )
+        fltr_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+        if fltr_key not in filters.keys():
+            filters[fltr_key] = fltr
+    return filters.values()
 
 
 class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
@@ -189,11 +212,6 @@ class Query(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    filter_excludes = [
-        "created_by_id",
-        "modified_by_id",
-        "deleted_by_id",
-    ]
     terminate_filters = True
     endpoint_tags = ["Search"]
 
