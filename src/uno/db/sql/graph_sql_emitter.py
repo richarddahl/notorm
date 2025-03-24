@@ -65,39 +65,45 @@ class GraphSQLEmitter(SQLEmitter):
                     node_triggers=True,
                 )
             )
-        for column in self.table.columns.values():
-            if column.name == "id" or column.info.get("graph_excludes", False):
-                continue
-            node_triggers = True
-            if column.foreign_keys:
-                label = snake_to_camel(list(column.foreign_keys)[0].column.table.name)
-                node_triggers = (
-                    False  # FK nodes will be managed by thier source table triggers
+            for column in self.table.columns.values():
+                if column.name == "id" or column.info.get("graph_excludes", False):
+                    continue
+                node_triggers = True
+                if column.foreign_keys:
+                    label = snake_to_camel(
+                        list(column.foreign_keys)[0].column.table.name
+                    )
+                    node_triggers = (
+                        False  # FK nodes will be managed by thier source table triggers
+                    )
+                else:
+                    label = snake_to_camel(column.name)
+                nodes.append(
+                    Node(
+                        column=column,
+                        label=label,
+                        node_triggers=node_triggers,
+                    )
                 )
-            else:
-                label = snake_to_camel(column.info.get("edge", column.name))
-            nodes.append(
-                Node(
-                    column=column,
-                    label=label,
-                    node_triggers=node_triggers,
-                )
-            )
-        self.nodes = nodes
+                print(f"Node: {column} {label}")
+            self.nodes = nodes
+            return self
 
-        if "id" in self.table.columns:
-            return self  # This is not an association table, edges are defined by nodes
-        for column_name, column in self.table.columns.items():
+        # This is for Tables, edges are defined by nodes for Base.tables
+        for column in self.table.columns.values():
             if column.foreign_keys:
-                source_node = snake_to_camel(column.table.name)
-                source_column = column_name
+                source_node = snake_to_camel(column.name.replace("_id", ""))
+                source_column = column.name
                 label = snake_to_caps_snake(
                     column.info.get("edge", column.name.replace("_id", ""))
                 )
                 destination_node = snake_to_camel(
                     list(column.foreign_keys)[0].column.table.name
                 )
-                destination_column = column.name
+                for col in column.table.columns:
+                    if col.name == column.name:
+                        continue
+                    destination_column = col.name
                 self.edges.append(
                     Edge(
                         source_node=source_node,
@@ -296,9 +302,9 @@ class Node(BaseModel):
                 )
         else:
             source_node = snake_to_camel(self.column.table.name)
-            label = snake_to_caps_snake(self.column.name)
+            label = snake_to_caps_snake(self.column.name.replace("_id", ""))
             destination_column = "id"
-            destination_node = snake_to_camel(self.column.name)
+            destination_node = snake_to_camel(self.column.name.replace("_id", ""))
             source_column = "id"
             # This is a fallback for when the edge label should not be derived from the column name
             label = snake_to_caps_snake(self.column.info.get("edge", label))
@@ -369,7 +375,8 @@ class Node(BaseModel):
                 -- This is required as some objects have multiple relationsihps to the same object, i.e. User
                 IF NEW.{column_name} IS NOT NULL THEN
                     cypher_query := FORMAT('
-                        MERGE (v:{label} {{id: %s, val: %s}})',
+                        MERGE (v:{label} {{id: %s}})
+                        SET v.val =  %s',
                         quote_nullable(NEW.id), quote_nullable(NEW.{column_name})
                     );
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
