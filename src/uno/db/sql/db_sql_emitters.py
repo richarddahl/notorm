@@ -201,14 +201,15 @@ class CreateSchemasAndExtensions(SQLEmitter):
             CREATE EXTENSION IF NOT EXISTS age;
 
             -- Configuring the age extension
+            ALTER SCHEMA ag_catalog OWNER TO {admin_role};
             GRANT USAGE ON SCHEMA ag_catalog TO
                 {admin_role},
                 {reader_role},
                 {writer_role};
-            ALTER SCHEMA ag_catalog OWNER TO {admin_role};
             SELECT * FROM ag_catalog.create_graph('graph');
             ALTER TABLE ag_catalog.ag_graph OWNER TO {admin_role};
             ALTER TABLE ag_catalog.ag_label OWNER TO {admin_role};
+            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ag_catalog TO {admin_role};
             ALTER TABLE graph._ag_label_edge OWNER TO {admin_role};
             ALTER TABLE graph._ag_label_vertex OWNER TO {admin_role};
             ALTER SEQUENCE graph._ag_label_edge_id_seq OWNER TO {admin_role};
