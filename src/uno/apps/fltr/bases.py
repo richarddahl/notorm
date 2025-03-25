@@ -166,18 +166,60 @@ class FilterBase(UnoBase):
     )
 
 
+class FilterPathBase(BaseMixin, UnoBase):
+    __tablename__ = "filter_path"
+    __table_args__ = {"comment": "Enables user-defined filtering via the graph DB."}
+
+    # Columns
+    source_meta_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The source node filtered.",
+        info={
+            "edge": "SOURCE_META_TYPE",
+            "reverse_edge": "FILTER_PATHS",
+        },
+    )
+    path: Mapped[str] = mapped_column(
+        index=True,
+        unique=True,
+        nullable=False,
+        doc="The path of the filter",
+    )
+    data_type: Mapped[str] = mapped_column(
+        doc="The data type of the filter",
+    )
+    lookups: Mapped[list[Lookup]] = mapped_column(
+        ARRAY(
+            ENUM(
+                Lookup,
+                name="lookup",
+                create_type=True,
+                schema=settings.DB_SCHEMA,
+            )
+        ),
+        doc="The lookups for the filter",
+    )
+
+    # Relationships
+    source_meta_type: Mapped["MetaBase"] = relationship(
+        doc="The source meta type of the filter",
+    )
+
+
 class FilterValueBase(BaseMixin, UnoBase):
     __tablename__ = "filter_value"
     __table_args__ = (
         UniqueConstraint(
-            "filter_id",
+            "filter_path_id",
             "include",
             "match",
             "lookup",
         ),
         Index(
             "ix_filtervalue__unique_together",
-            "filter_id",
+            "filter_path_id",
             "include",
             "match",
             "lookup",
@@ -186,13 +228,13 @@ class FilterValueBase(BaseMixin, UnoBase):
     )
 
     # Columns
-    filter_id: Mapped[str_26] = mapped_column(
-        ForeignKey("filter.id", ondelete="CASCADE"),
+    filter_path_id: Mapped[str_26] = mapped_column(
+        ForeignKey("filter_path.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        doc="The filter to which the value belongs",
+        doc="The Filter Path to which the value belongs",
         info={
-            "edge": "FILTER",
+            "edge": "FILTER_PATH",
             "reverse_edge": "FILTER_VALUES",
         },
     )

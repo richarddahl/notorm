@@ -51,7 +51,7 @@ class GeneralBaseMixin:
         info={
             "edge": "CREATED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge": "OBJECTS_CREATED",
+            "reverse_edge": "CREATED_OBJECTS",
         },
     )
     modified_at: Mapped[datetime.datetime] = mapped_column(
@@ -68,7 +68,7 @@ class GeneralBaseMixin:
         info={
             "edge": "MODIFIED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge": "OBJECTS_MODIFIED",
+            "reverse_edge": "MODIFIED_OBJECTS",
         },
     )
     deleted_at: Mapped[Optional[datetime.datetime]] = mapped_column(
@@ -85,7 +85,7 @@ class GeneralBaseMixin:
         info={
             "edge": "DELETED_BY",
             "reverse_node_label": "Meta",
-            "reverse_edge": "OBJECTS_DELETED",
+            "reverse_edge": "DELETED_OBJECTS",
         },
     )
 
@@ -121,7 +121,7 @@ class BaseMixin(GeneralBaseMixin):
         doc="Group to which the record belongs",
         info={
             "edge": "TENANT",
-            "reverse_edge": "TENANTS",
+            "reverse_edge": "TENANT_OBJECTS",
         },
     )
     group_id: Mapped[str_26] = mapped_column(
@@ -132,7 +132,7 @@ class BaseMixin(GeneralBaseMixin):
         doc="Group to which the record belongs",
         info={
             "edge": "GROUP",
-            "reverse_edge": "GROUPS",
+            "reverse_edge": "GROUP_OBJECTS",
         },
     )
 
