@@ -17,4 +17,7 @@ class TestUserGraphStructure:
                 """
             )
         )
-        print(r.fetchall())
+        if r.returns_rows:
+            print(r.fetchall())
+        else:
+            print("No rows returned.")
