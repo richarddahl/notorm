@@ -33,6 +33,7 @@ DB_SCHEMA = settings.DB_SCHEMA
 
 sync_engine = create_engine(
     f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
+    # echo=True,
 )
 
 
