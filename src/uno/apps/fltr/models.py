@@ -31,7 +31,6 @@ from uno.config import settings
 class Filter(UnoModel):
     # Class variables
     base = FilterBase
-    table_name = "filter"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
@@ -158,7 +157,6 @@ def create_filters(table: Table) -> list[Filter]:
 class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = FilterValueBase
-    table_name = "filter_value"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
@@ -194,7 +192,6 @@ class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Query(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = QueryBase
-    table_name = "query"
     display_name_plural = "Queries"
     schema_configs = {
         "view_schema": UnoSchemaConfig(

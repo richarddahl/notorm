@@ -24,7 +24,6 @@ from uno.config import settings
 class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = UserBase
-    table_name = "user"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
@@ -71,7 +70,6 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = GroupBase
-    table_name = "group"
 
     schema_configs = {
         "view_schema": UnoSchemaConfig(
@@ -109,7 +107,6 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = RoleBase
-    table_name = "role"
 
     schema_configs = {
         "view_schema": UnoSchemaConfig(
@@ -143,7 +140,6 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = TenantBase
-    table_name = "tenant"
 
     schema_configs = {
         "view_schema": UnoSchemaConfig(
@@ -178,7 +174,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
 class Permission(UnoModel):
     # Class variables
-    table_name = "permission"
     base = PermissionBase
     endpoints = []
     schema_configs = {}

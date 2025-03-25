@@ -30,7 +30,7 @@ class UnoModel(BaseModel):
 
     registry: ClassVar[dict[str, "UnoModel"]] = {}
     db: ClassVar["UnoDB"]
-    base: ClassVar[UnoBase]
+    base: ClassVar[type[UnoBase]]
     table_name: ClassVar[str] = None
     exclude_from_filters: ClassVar[bool] = False
     terminate_filters: ClassVar[bool] = False
@@ -84,12 +84,12 @@ class UnoModel(BaseModel):
     @classmethod
     def set_display_names(cls) -> None:
         cls.display_name = (
-            snake_to_title(cls.table_name)
+            snake_to_title(cls.base.__table__.name)
             if cls.display_name is None
             else cls.display_name
         )
         cls.display_name_plural = (
-            f"{snake_to_title(cls.table_name)}s"
+            f"{snake_to_title(cls.base.__table__.name)}s"
             if cls.display_name_plural is None
             else cls.display_name_plural
         )

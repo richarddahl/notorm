@@ -262,7 +262,7 @@ class FilterValueBase(BaseMixin, UnoBase):
     )
 
     # Relationships
-    filter: Mapped["FilterBase"] = relationship(
+    filter_path: Mapped[FilterPathBase] = relationship(
         doc="The filter to which the value belongs",
     )
     values: Mapped[list["MetaBase"]] = relationship(

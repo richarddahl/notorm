@@ -47,7 +47,7 @@ str_26 = Annotated[VARCHAR, 26]
 str_63 = Annotated[VARCHAR, 63]
 str_128 = Annotated[VARCHAR, 128]
 str_255 = Annotated[VARCHAR, 255]
-decimal = Annotated[Decimal, 19]
+dec = Annotated[Decimal, 19]
 
 
 class UnoBase(AsyncAttrs, DeclarativeBase):
@@ -61,7 +61,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
             Enum: ENUM,
             bool: BOOLEAN,
             list: ARRAY,
-            decimal: NUMERIC,
+            dec: NUMERIC,
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
             str_128: VARCHAR(128),

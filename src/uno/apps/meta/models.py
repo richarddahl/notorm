@@ -10,7 +10,6 @@ from uno.apps.meta.bases import MetaTypeBase, MetaBase
 class MetaType(UnoModel):
     # Class variables
     base = MetaTypeBase
-    table_name = "meta_type"
     schema_configs = {
         "view_schema": UnoSchemaConfig(),
         "edit_schema": UnoSchemaConfig(),
@@ -27,7 +26,6 @@ class MetaType(UnoModel):
 class Meta(UnoModel):
     # Class variables
     base = MetaBase
-    table_name = "meta"
     schema_configs = {
         "view_schema": UnoSchemaConfig(),
         "edit_schema": UnoSchemaConfig(),

@@ -153,7 +153,7 @@ class TestUserModel(IsolatedAsyncioTestCase):
         - The singular display name is "User", which is used for human-readable identification.
         - The plural display name is "Users", which is essential when referring to multiple user instances.
         """
-        assert User.table_name == "user"
+        assert User.base.__table__.name == "user"
         assert User.display_name == "User"
         assert User.display_name_plural == "Users"
 

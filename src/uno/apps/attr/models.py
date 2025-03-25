@@ -15,7 +15,6 @@ from uno.apps.meta.models import MetaType
 class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = AttributeBase
-    table_name = "attribute"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
@@ -49,7 +48,6 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = AttributeTypeBase
-    table_name = "attribute_type"
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
