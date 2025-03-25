@@ -13,14 +13,13 @@ name = "uno"
 dynamic = ["version"]
 description = 'uno is not an orm'
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = []
 authors = [{ name = "Richard Dahl", email = "richard@dahl.us" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
@@ -28,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
   "babel",
-  "fastapi",
+  "fastapi[standard]",
   "jinja2",
   "PyJWT",
   "psycopg",
@@ -72,7 +71,7 @@ createfilters = "ENV=dev python src/uno/db/cmd/create_filters.py"
 # Testing Environment
 [tool.hatch.envs.test]
 dependencies = [
-  "coverage[toml]>=6.5",
+  "coverage[toml]",
   "pytest",
   "pytest-asyncio",
   "asyncio",
@@ -111,8 +110,8 @@ asyncio_mode = "auto"
 # Documentation Environement
 [tool.hatch.envs.docs]
 dependencies = [
-  "mkdocs>=1.0.0",
-  "mkdocs-material>=7.0.0",
+  "mkdocs",
+  "mkdocs-material",
   "mkdocstrings>=0.15.0",
   "mkdocs-autorefs",
   "mkdocs-material-extensions",
