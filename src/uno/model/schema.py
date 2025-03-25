@@ -44,32 +44,31 @@ class UnoSchemaConfig(BaseModel):
 
         # First validate all field references
         all_model_fields = set(model.model_fields.keys())
-
         schema_title = f"{model.__name__}{schema_name.split('_')[0].title()}"
 
         # Validate include fields
         if self.include_fields:
-            invalid_fields = set(self.include_fields) - all_model_fields
+            invalid_fields = set(self.include_fields).difference(all_model_fields)
             if invalid_fields:
                 raise SchemaFieldListError(
-                    f"Fields not found in model {model.__name__}: {', '.join(invalid_fields)} for schema: {schema_name}",
+                    f"Include fields not found in model {model.__name__}: {', '.join(invalid_fields)} for schema: {schema_name}",
                     "INCLUDE_FIELD_NOT_IN_MODEL",
                 )
 
         # Validate exclude fields
         if self.exclude_fields:
-            invalid_fields = set(self.exclude_fields) - all_model_fields
+            invalid_fields = set(self.exclude_fields).difference(all_model_fields)
             if invalid_fields:
                 raise SchemaFieldListError(
-                    f"Fields not found in model {model.__name__}: {', '.join(invalid_fields)} for schema: {schema_name}",
+                    f"Exclude fields not found in model {model.__name__}: {', '.join(invalid_fields)} for schema: {schema_name}",
                     "EXCLUDE_FIELD_NOT_IN_MODEL",
                 )
 
         # Determine which fields to include in the schema
         if self.include_fields:
-            field_names = set(self.include_fields)
+            field_names = all_model_fields.intersection(set(self.include_fields))
         elif self.exclude_fields:
-            field_names = all_model_fields - set(self.exclude_fields)
+            field_names = all_model_fields.difference(set(self.exclude_fields))
         else:
             field_names = all_model_fields
 

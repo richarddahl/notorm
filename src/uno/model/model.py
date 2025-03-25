@@ -96,7 +96,6 @@ class UnoModel(BaseModel):
 
     @classmethod
     def set_schemas(cls) -> None:
-
         for schema_name, schema_config in cls.schema_configs.items():
             setattr(
                 cls,
@@ -109,7 +108,6 @@ class UnoModel(BaseModel):
 
     @classmethod
     def set_endpoints(cls, app: FastAPI) -> None:
-
         for endpoint in cls.endpoints:
             if endpoint == "Create":
                 CreateEndpoint(model=cls, app=app)
