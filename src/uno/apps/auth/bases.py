@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Optional
+
 from sqlalchemy import (
     ForeignKey,
     Index,
@@ -226,6 +228,20 @@ class GroupBase(GeneralBaseMixin, UnoBase):
     )
 
 
+class ResponsibilityRoleBase(GeneralBaseMixin, UnoBase):
+    __tablename__ = "responsibility_role"
+    __table_args__ = {"comment": "Application process responsibility"}
+
+    # Columns
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+    )
+    description: Mapped[str_255] = mapped_column(
+        nullable=False,
+    )
+
+
 class RoleBase(GeneralBaseMixin, UnoBase):
     __tablename__ = "role"
     __table_args__ = (
@@ -234,6 +250,7 @@ class RoleBase(GeneralBaseMixin, UnoBase):
         {"comment": "Application roles"},
     )
 
+    # Columns
     tenant_id: Mapped[str_26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
@@ -253,6 +270,16 @@ class RoleBase(GeneralBaseMixin, UnoBase):
         nullable=False,
         doc="Role description",
     )
+    responsibility_role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Responsibility that the role's assigned user performs",
+        info={
+            "edge": "RESPONSIBILITY_ROLE",
+            "reverse_edge": "RESPONSIBLITY_ROLES",
+        },
+    )
 
     # Relationships
     tenant: Mapped[list["TenantBase"]] = relationship(
@@ -269,6 +296,9 @@ class RoleBase(GeneralBaseMixin, UnoBase):
         back_populates="roles",
         doc="Users assigned to the role",
     )
+    responsibility: Mapped["ResponsibilityRoleBase"] = relationship(
+        doc="The Responsibility that the role's assigned user performs",
+    )
 
 
 class TenantBase(GeneralBaseMixin, UnoBase):
@@ -279,6 +309,7 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         {"comment": "Application tenants"},
     )
 
+    # Columns
     name: Mapped[str_255] = mapped_column(
         index=True,
         nullable=False,
@@ -321,6 +352,8 @@ class PermissionBase(UnoBase):
         UniqueConstraint("meta_type_id", "operation"),
         {"comment": "Application permissions"},
     )
+
+    # Columns
     id: Mapped[int] = mapped_column(
         Identity(start=1, cycle=True),
         primary_key=True,

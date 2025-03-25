@@ -4,56 +4,95 @@
 
 import datetime
 
-from typing import Optional, ClassVar
+from typing import Optional
 
 from sqlalchemy import (
     ForeignKey,
     Index,
+    CheckConstraint,
+    ForeignKey,
+    UniqueConstraint,
+    Identity,
     text,
+    Table,
+    Column,
 )
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import (
     ENUM,
+    VARCHAR,
+    BIGINT,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.db.obj import str_26, str_255
-from uno.apps.meta.bases import (
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    HistoryTableAuditMixin,
-)
-from uno.db.sql.sql_emitter import SQLEmitter
-from uno.wkflw.enums import (
+from uno.db.base import UnoBase, str_26, str_255, str_63
+from uno.db.mixins import GeneralBaseMixin
+from uno.db.enums import SQLOperation
+from uno.apps.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,
 )
-from uno.rprt.enums import Status, State, Flag
+from uno.apps.rprt.enums import Status, State, Flag
 from uno.config import settings
 
 
-class Workflow(
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    HistoryTableAuditMixin,
-):
-    # __tablename__ = "workflow"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "User-defined workflows",
-    }
-
-    display_name: ClassVar[str] = "Workflow"
-    display_name_plural: ClassVar[str] = "Workflows"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+class Workflow(GeneralBaseMixin, UnoBase):
+    __tablename__ = "workflow"
+    __table_args__ = {"comment": "User-defined workflows"}
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
     name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
-    explanation: Mapped[str] = mapped_column(
+    description: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
+    )
+
+    # Relationships
+
+
+class TaskType(GeneralBaseMixin, UnoBase):
+    __tablename__ = "task"
+    __table_args__ = {"comment": "Manually created or trigger created tasks"}
+
+    # Columns
+    name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
+    description: Mapped[str] = mapped_column(
+        doc="Explanation of the workflow indicating the purpose and the expected outcome"
+    )
+    workflow_id: Mapped[str_26] = mapped_column(
+        ForeignKey("workflow.id", ondelete="CASCADE"),
+        index=True,
+    )
+    responsibility_id: Mapped[str_26] = mapped_column(
+        ForeignKey("responsibility.id", ondelete="CASCADE"),
+        index=True,
+    )
+    due_within: Mapped[Optional[int]] = mapped_column(
+        server_default=text("7"),
+        nullable=True,
+        doc="Number of days within which the task must be completed",
+    )
+    record_required: Mapped[bool] = mapped_column(
+        server_default=text("false"),
+        doc="Indicats if a Task Record is required",
+    )
+    applicable_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey(
+            "meta_type.id",
+            ondelete="CASCADE",
+        ),
+    )
+    applicablity_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey(
+            "query.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+    )
+    record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+    )
+    parent_id: Mapped[str_26] = mapped_column(
+        ForeignKey("step.id", ondelete="CASCADE"),
+        index=True,
     )
     trigger: Mapped[WorkflowTrigger] = mapped_column(
         ENUM(
@@ -78,10 +117,7 @@ class Workflow(
         default=Flag.MEDIUM,
         doc="Flag indicating the importance of the workflow",
     )
-    due_within: Mapped[int] = mapped_column(
-        server_default=text("7"), doc="Due within x days"
-    )
-    db_event: Mapped[WorkflowDBEvent] = mapped_column(
+    db_event: Mapped[Optional[WorkflowDBEvent]] = mapped_column(
         ENUM(
             WorkflowDBEvent,
             name="workflowdbevent",
@@ -91,88 +127,77 @@ class Workflow(
         default=WorkflowDBEvent.INSERT,
         doc="The database event that triggers the workflow, if applicable",
     )
-    auto_run: Mapped[bool] = mapped_column(
-        server_default=text("false"),
-        doc="Indicates if the workflow should be run automatically",
+    responsible_role_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        nullable=True,
+        doc="The role responsible for completing the task",
+        info={"edge": "RESPONSIBLE", "reverse_edge": "RESPONSIBLE_OBJECTS"},
     )
-    record_required: Mapped[bool] = mapped_column(
-        server_default=text("false"), doc="Indicats if a Workflow Base is required"
+    accountable_role_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        nullable=True,
+        doc="The role accountable for the task",
+        info={"edge": "ACCOUNTABLE", "reverse_edge": "ACCOUNTABLE_OBJECTS"},
     )
-    """
-    limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(
-            "query.id",
-            ondelete="SET NULL",
-            name="fk_workflow_query_id",
-        ),
-        index=True,
+    consulted_role_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        nullable=True,
+        doc="The role consulted for the task",
+        info={"edge": "CONSULTED", "reverse_edge": "CONSULTED_OBJECTS"},
     )
-    parent_id: Mapped[str_26] = mapped_column(
-        ForeignKey("workflow.id", ondelete="CASCADE"),
-        index=True,
-    )
-    applicable_meta_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_type.id", ondelete="CASCADE"),
-    )
-    record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("meta_type.id", ondelete="CASCADE"),
-    )
-    objectfunction_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("objectfunction.id", ondelete="SET NULL"),
-        index=True,
-    )
-    """
-    process_child_value: Mapped[bool] = mapped_column(
-        server_default=text("true"),
-        doc="The value returned by the Object Function that indicates that any child Workflows must be processed",
-    )
-    Index(
-        "ix_workflow_applicable_meta_type_id",
-        "applicable_meta_type_id",
-        unique=True,
-    )
-    Index(
-        "ix_workflowrecord_meta_type_id",
-        "record_meta_type_id",
-        unique=True,
+    informed_role_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        nullable=True,
+        doc="The role informed for the task",
+        info={"edge": "INFORMED", "reverse_edge": "INFORMED_OBJECTS"},
     )
 
-    # Relationships
 
-    __mapper_args__ = {
-        "polymorphic_identity": "workflow",
-        "inherit_condition": id == MetaBase.id,
-    }
-
-
-class WorkflowStep(MetaBase, MetaBaseMixin, BaseAuditMixin, HistoryTableAuditMixin):
-    # __tablename__ = "workflow_step"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "Manually created or trigger created workflow activities",
-    }
-    display_name: ClassVar[str] = "Workflow Step"
-    display_name_plural: ClassVar[str] = "Workflow Steps"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+class Task(GeneralBaseMixin, UnoBase):
+    __tablename__ = "task"
+    __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
-    workflow_id: Mapped[str_26] = mapped_column(
-        ForeignKey("workflow.id", ondelete="CASCADE"),
+    task_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("task_type.id", ondelete="CASCADE"),
         index=True,
     )
-    date_due: Mapped[datetime.date] = mapped_column(doc="Date the workflow is due")
-    workflow_object_id: Mapped[Optional[str_26]] = mapped_column(
+    task_object_id: Mapped[str_26] = mapped_column(
         ForeignKey("meta.id", ondelete="CASCADE"),
         index=True,
     )
-    objectfunction_return_value: Mapped[Optional[bool]] = mapped_column(
-        doc="Value returned by the Object Function to indicate the workflow is complete"
+    due_date: Mapped[Optional[datetime.date]] = mapped_column(
+        nullable=True,
+        doc="Date the task is due",
     )
-    __mapper_args__ = {
-        "polymorphic_identity": "workflow_step",
-        "inherit_condition": id == MetaBase.id,
-    }
+    completed_date: Mapped[Optional[datetime.date]] = mapped_column(
+        nullable=True,
+        doc="Date the task was completed",
+    )
+    record_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("task_record.id", ondelete="CASCADE"),
+        nullable=True,
+        doc="Record of the task completion",
+        info={"edge": "RECORD", "reverse_edge": "RECORDS"},
+    )
 
-    # Relationships
+
+class TaskRecord(GeneralBaseMixin, UnoBase):
+    __tablename__ = "task_record"
+    __table_args__ = {"comment": "Records of task completions"}
+
+    # Columns
+    task_id: Mapped[str_26] = mapped_column(
+        ForeignKey("task.id", ondelete="CASCADE"),
+        index=True,
+    )
+    completion_date: Mapped[datetime.date] = mapped_column(
+        doc="Date the task was completed",
+    )
+    notes: Mapped[str] = mapped_column(
+        doc="Notes about the completion of the task",
+    )
+    record_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta.id", ondelete="CASCADE"),
+        nullable=True,
+    )
