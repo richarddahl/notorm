@@ -85,7 +85,6 @@ class GraphSQLEmitter(SQLEmitter):
                         node_triggers=node_triggers,
                     )
                 )
-                print(f"Node: {column} {label}")
             self.nodes = nodes
             return self
 
