@@ -15,7 +15,7 @@ from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
 from uno.apps.auth.mixins import RecordAuditMixin
-from uno.apps.fltr.bases import FilterBase, FilterValueBase, QueryBase
+from uno.apps.fltr.bases import FilterBase, FilterPathBase, FilterValueBase, QueryBase
 from uno.apps.meta.models import Meta, MetaType
 from uno.utilities import (
     snake_to_title,
@@ -154,6 +154,37 @@ def create_filters(table: Table) -> list[Filter]:
     return filters.values()
 
 
+class FilterPath(UnoModel, GeneralModelMixin, RecordAuditMixin):
+    # Class variables
+    base = FilterPathBase
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+                "values",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "name",
+                "description",
+            ],
+        ),
+    }
+    endpoint_tags = ["Search"]
+
+    # Fields
+    id: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    values: Optional[list["FilterValue"]] = []
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
     # Class variables
     base = FilterValueBase
@@ -163,7 +194,7 @@ class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
-                "filter",
+                # "filter_path",
                 "values",
                 "queries",
             ],
@@ -180,8 +211,8 @@ class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
 
     # Fields
     id: Optional[str] = None
-    filter_id: Optional[int] = None
-    filter: Optional[Filter] = None
+    filter_path_id: Optional[int] = None
+    # filter_path: Optional[FilterPath] = None
     include: Optional[Include] = Include.INCLUDE
     match: Optional[Match] = Match.AND
     lookup: Optional[Lookup] = Lookup.EQUAL
