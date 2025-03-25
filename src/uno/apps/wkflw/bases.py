@@ -131,25 +131,25 @@ class TaskType(GeneralBaseMixin, UnoBase):
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role responsible for completing the task",
-        info={"edge": "RESPONSIBLE", "reverse_edge": "RESPONSIBLE_OBJECTS"},
+        info={"edge": "RESPONSIBLE", "reverse_edge": "RESPONSIBLE_TASKS"},
     )
     accountable_role_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role accountable for the task",
-        info={"edge": "ACCOUNTABLE", "reverse_edge": "ACCOUNTABLE_OBJECTS"},
+        info={"edge": "ACCOUNTABLE", "reverse_edge": "ACCOUNTABLE_TASKS"},
     )
     consulted_role_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role consulted for the task",
-        info={"edge": "CONSULTED", "reverse_edge": "CONSULTED_OBJECTS"},
+        info={"edge": "CONSULTED", "reverse_edge": "CONSULTED_TASKS"},
     )
     informed_role_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role informed for the task",
-        info={"edge": "INFORMED", "reverse_edge": "INFORMED_OBJECTS"},
+        info={"edge": "INFORMED", "reverse_edge": "INFORMED_TASKS"},
     )
 
 
