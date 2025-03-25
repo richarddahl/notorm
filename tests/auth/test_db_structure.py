@@ -2,11 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import asyncio
 import pytest
-import pytest_asyncio
-
-from unittest import IsolatedAsyncioTestCase
 
 from sqlalchemy import inspect, Inspector, text
 from sqlalchemy.dialects.postgresql import (
@@ -26,74 +22,79 @@ from uno.config import settings  # type: ignore
 from tests.conftest import db_column
 
 
-class TestUserDBStructure:
+class TestUserStructure:
+
     def test_user_triggers_and_functions(self, connection, test_db):
-
-        insert_meta_record = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_meta_record')"
-                )
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_delete_graph')"
             )
-            .scalar()
-        )
-        assert insert_meta_record == True
-
-        user_insert_meta_record_trigger = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_meta_record_trigger')"
-                )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_delete_graph_trigger')"
             )
-            .scalar()
-        )
-        assert user_insert_meta_record_trigger == True
-
-        insert_record_status_columns = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_record_status_columns')"
-                )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_insert_graph')"
             )
-            .scalar()
-        )
-        assert insert_record_status_columns == True
-
-        user_insert_record_status_columns_trigger = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_record_status_columns_trigger')"
-                )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_graph_trigger')"
             )
-            .scalar()
-        )
-        assert user_insert_record_status_columns_trigger == True
-
-        user_insert_user_user_audit_columns = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_manage_audit_columns')"
-                )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_meta_record')"
             )
-            .scalar()
-        )
-        assert user_insert_user_user_audit_columns == True
-
-        user_insert_user_user_audit_columns_trigger = (
-            connection.connect()
-            .execute(
-                text(
-                    "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_manage_audit_columns_trigger')"
-                )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_meta_record_trigger')"
             )
-            .scalar()
-        )
-        assert user_insert_user_user_audit_columns_trigger == True
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_record_status_columns')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_record_status_columns_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_manage_audit_columns')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_manage_audit_columns_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_update_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_update_graph_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_truncate_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_truncate_graph_trigger')"
+            )
+        ).scalar()
 
     def test_user_table(self, connection, test_db):
         db_inspector = inspect(connection)
@@ -321,6 +322,51 @@ class TestUserDBStructure:
         assert column.get("nullable") == False
         assert isinstance(column.get("type"), VARCHAR)
         assert column.get("type").length == 255
+
+
+class TestUserGroupStructure:
+    def test_user_group_triggers_and_functions(self, connection, test_db):
+
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user__group_delete_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user__group_delete_graph_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user__group_insert_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user__group_insert_graph_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user__group_update_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user__group_update_graph_trigger')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user__group_truncate_graph')"
+            )
+        ).scalar()
+        assert connection.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user__group_truncate_graph_trigger')"
+            )
+        ).scalar()
 
 
 """
@@ -590,7 +636,7 @@ class TestUserDBStructure:
     # assert column.get("type").name == "permission"
 
 
-# role Table Tests
+# access_role Table Tests
 
  def test_role_structure(db_inspector):
     assert [
@@ -598,14 +644,14 @@ class TestUserDBStructure:
         "customer_id",
         "name",
         "description",
-    ] == [c.get("name") for c in db_inspector.get_columns("role", schema="auth")]
+    ] == [c.get("name") for c in db_inspector.get_columns("access_role", schema="auth")]
 
-    assert db_inspector.get_pk_constraint("role", schema="auth") == {
+    assert db_inspector.get_pk_constraint("access_role", schema="auth") == {
         "constrained_columns": ["id"],
         "name": "role_pkey",
         "comment": None,
     }
-    assert db_inspector.get_indexes("role", schema="auth") == [
+    assert db_inspector.get_indexes("access_role", schema="auth") == [
         {
             "name": "auth_role_customer_id_idx",
             "unique": False,
@@ -622,7 +668,7 @@ class TestUserDBStructure:
             "dialect_options": {"postgresql_include": []},
         },
     ]
-    assert db_inspector.get_foreign_keys("role", schema="auth") == [
+    assert db_inspector.get_foreign_keys("access_role", schema="auth") == [
         {
             "name": "role_customer_id_fkey",
             "constrained_columns": ["customer_id"],
@@ -642,7 +688,7 @@ class TestUserDBStructure:
             "comment": None,
         },
     ]
-    assert db_inspector.get_unique_constraints("role", schema="auth") == [
+    assert db_inspector.get_unique_constraints("access_role", schema="auth") == [
         {
             "column_names": ["customer_id", "name"],
             "name": "uq_role_customer_id_name",
@@ -653,7 +699,7 @@ class TestUserDBStructure:
 
 
  def test_role_id(db_inspector):
-    column = db_column(db_inspector, "role", "id")
+    column = db_column(db_inspector, "access_role", "id")
     assert column is not None
     assert column.get("nullable") is False
     assert column.get("default") == "audit.create_meta_record()"
@@ -663,7 +709,7 @@ class TestUserDBStructure:
 
 
  def test_role_group_id(db_inspector):
-    column = db_column(db_inspector, "role", "customer_id")
+    column = db_column(db_inspector, "access_role", "customer_id")
     assert column is not None
     assert column.get("nullable") is False
     assert isinstance(column.get("type"), TEXT)
@@ -672,7 +718,7 @@ class TestUserDBStructure:
 
 
  def test_role_name(db_inspector):
-    column = db_column(db_inspector, "role", "name")
+    column = db_column(db_inspector, "access_role", "name")
     assert column is not None
     assert column.get("nullable") is False
     assert isinstance(column.get("type"), TEXT)
@@ -681,7 +727,7 @@ class TestUserDBStructure:
 
 
  def test_role_description(db_inspector):
-    column = db_column(db_inspector, "role", "description")
+    column = db_column(db_inspector, "access_role", "description")
     assert column is not None
     assert column.get("nullable") is True
     assert isinstance(column.get("type"), TEXT)
@@ -716,7 +762,7 @@ class TestUserDBStructure:
             "name": "role__group_permission_role_id_fkey",
             "constrained_columns": ["role_id"],
             "referred_schema": "auth",
-            "referred_table": "role",
+            "referred_table": "access_role",
             "referred_columns": ["id"],
             "options": {"ondelete": "CASCADE"},
             "comment": None,
@@ -772,7 +818,7 @@ class TestUserDBStructure:
             "name": "user__role_role_id_fkey",
             "constrained_columns": ["role_id"],
             "referred_schema": "auth",
-            "referred_table": "role",
+            "referred_table": "access_role",
             "referred_columns": ["id"],
             "options": {"ondelete": "CASCADE"},
             "comment": None,

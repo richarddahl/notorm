@@ -36,7 +36,7 @@ def db_column(
     return None
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def test_db():
     db = DBManager()
     db.drop_db()
@@ -46,9 +46,10 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def connection():
-    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT"):
-        yield sync_engine
-        sync_engine.dispose()
+    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        yield conn
+        conn.close()
+    sync_engine.dispose()
 
 
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
