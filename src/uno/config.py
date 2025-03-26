@@ -4,12 +4,14 @@
 import os
 
 from typing import Type
+from os.path import abspath, dirname
 
 from pydantic_settings import BaseSettings, SecretsSettingsSource, SettingsConfigDict
 
 
 class General(BaseSettings):
     # GENERAL SETTINGS
+    UNO_ROOT: str = dirname(dirname(abspath(__file__)))
     SITE_NAME: str
     DEBUG: bool = True
     LOCALE: str = "en_US"
@@ -58,18 +60,8 @@ class General(BaseSettings):
     SUPERUSER_FULL_NAME: str
 
     # Modules to load
-    LOAD_MODULES_FROM: list[str] = []
-    """
-        "uno.pkgs.attr",
-        "uno.pkgs.auth",
-        "uno.pkgs.fltr",
-        "uno.pkgs.meta",
-        "uno.pkgs.msg",
-        "uno.pkgs.rprt",
-        "uno.pkgs.val",
-        "uno.pkgs.wkflw",
-    ]
-    """
+    LOAD_PACKAGES: list[str] = []
+    APP_PATH: str = ""
 
 
 class Prod(General):

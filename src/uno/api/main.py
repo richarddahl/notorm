@@ -14,15 +14,6 @@ from uno.model.model import UnoModel
 from uno.api.app_def import app
 from uno.config import settings
 
-from uno.pkgs.fltr.models import Filter, FilterValue
-from uno.pkgs.meta.models import MetaType, Meta
-from uno.pkgs.attr.models import Attribute, AttributeType
-from uno.pkgs.auth.models import User, Group, Tenant, Role
-
-for module in settings.LOAD_MODULES_FROM:
-    globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
-        f"{module}.bases"
-    )
 
 for model in UnoModel.registry.values():
     if hasattr(model, "configure"):

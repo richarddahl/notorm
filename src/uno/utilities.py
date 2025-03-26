@@ -2,17 +2,24 @@
 #
 # SPDX-License-Identifier: MIT
 
-import random
-import string
+import sys
+import importlib
 import decimal
 
 from typing import Any
 from datetime import datetime, timedelta, date
 from babel import dates, numbers
 
-from sqlalchemy.sql.expression import Alias, alias
-
 from uno.config import settings
+
+
+def import_from_path(module_name, file_path):
+    """Import a module given its name and file path."""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def snake_to_title(snake_str: str) -> str:

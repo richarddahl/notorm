@@ -404,7 +404,7 @@ class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLEmitter):
 class CreatePGULID(SQLEmitter):
     @computed_field
     def create_pgulid(self) -> str:
-        with open("src/uno/db/sql/pgulid.sql", "r") as file:
+        with open(f"{settings.UNO_ROOT}/uno/db/sql/pgulid.sql", "r") as file:
             sql = file.read()
         return SQL(sql).format(schema_name=DB_SCHEMA).as_string()
 

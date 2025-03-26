@@ -5,7 +5,6 @@
 import io
 import sys
 import contextlib
-import importlib
 
 from psycopg.sql import SQL
 from sqlalchemy import text
@@ -29,84 +28,25 @@ from uno.db.db import scoped_session
 from uno.pkgs.auth.bases import UserBase
 from uno.pkgs.fltr.models import create_filters
 from uno.pkgs.meta.sql_configs import MetaTypeSQLConfig
+import uno.pkgs.attr.sql_configs as attr_sql_configs
+import uno.pkgs.auth.sql_configs as auth_sql_configs
+import uno.pkgs.fltr.sql_configs as fltr_sql_configs
+import uno.pkgs.meta.sql_configs as meta_sql_configs
+
+# import uno.pkgs.msg.sql_configs as msg_sql_configs
+# import uno.pkgs.rprt.sql_configs as rpt_sql_configs
+# import uno.pkgs.val.sql_configs as val_sql_configs
+# import uno.pkgs.wkflw.sql_configs as wkflw_sql_configs
+
+from uno.utilities import import_from_path
 from uno.config import settings
 
-BASES_MODULE_NAME = "bases"
-MODELS_MODULE_NAME = "models"
-SQL_CONFIGS_MODULE_NAME = "sql_configs"
+print(settings.DB_NAME)
 
-
-def import_models(pkg):
-    print(pkg)
-    name = pkg
-
-    if module_has_submodule(pkg, MODELS_MODULE_NAME):
-        models_module_name = "%s.%s" % (name, MODELS_MODULE_NAME)
-        models_module = importlib.import_module(models_module_name)
-
-
-def module_has_submodule(package, module_name):
-    """See if 'module' is in 'package'."""
-    print(package.__name__)
-    print(package.__path__)
-    print(module_name)
-    try:
-        package_name = package.__name__
-        package_path = package.__path__
-    except AttributeError:
-        # package isn't a package.
-        return False
-
-    full_module_name = package_name + "." + module_name
-    try:
-        return importlib.util.find_spec(full_module_name, package_path) is not None
-    except ModuleNotFoundError:
-        # When module_name is an invalid dotted path, Python raises
-        # ModuleNotFoundError.
-        return False
-
-
-def cached_import(module_path, class_name):
-    # Check whether module is loaded and fully initialized.
-    if not (
-        (module := sys.modules.get(module_path))
-        and (spec := getattr(module, "__spec__", None))
-        and getattr(spec, "_initializing", False) is False
-    ):
-        module = importlib.import_module(module_path)
-    return getattr(module, class_name)
-
-
-def import_string(dotted_path):
-    """
-    Import a dotted module path and return the attribute/class designated by the
-    last name in the path. Raise ImportError if the import failed.
-    """
-    try:
-        module_path, class_name = dotted_path.rsplit(".", 1)
-    except ValueError as err:
-        raise ImportError("%s doesn't look like a module path" % dotted_path) from err
-
-    try:
-        return cached_import(module_path, class_name)
-    except AttributeError as err:
-        raise ImportError(
-            'Module "%s" does not define a "%s" attribute/class'
-            % (module_path, class_name)
-        ) from err
-
-
-for pkg in settings.LOAD_MODULES_FROM:
-    import_models(pkg)
-# Import all the bases in the settings.LOAD_MODULES_FROM list
-# for pkg in settings.LOAD_MODULES_FROM:
-#    globals()[f"{pkg.split('.')[-1]}._bases"] = importlib.import_module(f"{pkg}.bases")
-#    globals()[f"{pkg.split('.')[-1]}._models"] = importlib.import_module(
-#        f"{pkg}.models"
-#    )
-#    globals()[f"{pkg.split('.')[-1]}._sql_configs"] = importlib.import_module(
-#        f"{pkg}.sql_configs"
-#    )
+if settings.APP_PATH:
+    for pkg in settings.LOAD_PACKAGES:
+        file_path = f"{settings.APP_PATH}/{pkg.replace('.', '/')}/sql_configs.py"
+        mod_obj = import_from_path(pkg, file_path)
 
 
 @contextlib.contextmanager
