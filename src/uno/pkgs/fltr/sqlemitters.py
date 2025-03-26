@@ -5,7 +5,7 @@
 from pydantic import computed_field
 from dataclasses import dataclass
 
-from uno.db.sql.sql_emitter import (
+from uno.db.sql.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -38,7 +38,7 @@ class PathEdgeCheck(SQLEmitter):
             END;
             """
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "validate_path",
             function_string,
             return_type="BOOLEAN",

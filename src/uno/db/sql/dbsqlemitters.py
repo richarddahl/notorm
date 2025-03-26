@@ -5,7 +5,7 @@
 from pydantic import computed_field
 from psycopg.sql import SQL
 
-from uno.db.sql.sql_emitter import (
+from uno.db.sql.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -537,7 +537,7 @@ class InsertMetaRecordFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "insert_meta_record",
             function_string,
             timing="BEFORE",
@@ -550,7 +550,7 @@ class InsertMetaRecordFunction(SQLEmitter):
 class InsertMetaRecordTrigger(SQLEmitter):
     @computed_field
     def insert_meta_record_trigger(self) -> str:
-        return self.create_sql_trigger(
+        return self.createsqltrigger(
             "insert_meta_record",
             timing="BEFORE",
             operation="INSERT",
@@ -591,7 +591,7 @@ class RecordStatusFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "insert_record_status_columns",
             function_string,
             timing="BEFORE",
@@ -642,7 +642,7 @@ class RecordUserAuditFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "manage_record_audit_columns",
             function_string,
             timing="BEFORE",
@@ -682,7 +682,7 @@ class InsertPermission(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "insert_permissions",
             function_string,
             timing="AFTER",
@@ -753,7 +753,7 @@ class ValidateGroupInsert(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "validate_group_insert",
             function_string,
             timing="BEFORE",
@@ -814,7 +814,7 @@ class DefaultGroupTenant(SQLEmitter):
             END;
             """
         ).as_string()
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "insert_default_group_column",
             function_string,
             timing="BEFORE",
@@ -884,7 +884,7 @@ class UserRecordUserAuditFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "manage_audit_columns",
             function_string,
             timing="BEFORE",

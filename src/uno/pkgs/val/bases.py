@@ -18,7 +18,7 @@ from uno.pkgs.meta.bases import (
     BaseAuditMixin,
     BaseVersionAuditMixin,
 )
-from uno.db.sql.sql_emitter import SQLEmitter
+from uno.db.sql.sqlemitter import SQLEmitter
 
 from uno.pkgs.val.enums import (
     Lookup,

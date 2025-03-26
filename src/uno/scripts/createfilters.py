@@ -4,9 +4,9 @@
 
 import asyncio
 
-from uno.db.management.db_manager import DBManager
+from uno.db.dbmanager import DBManager
 
 
 if __name__ == "__main__":
     db = DBManager()
-    db.drop_db()
+    asyncio.run(db.create_filters())

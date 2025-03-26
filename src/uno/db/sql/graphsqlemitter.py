@@ -11,7 +11,7 @@ from psycopg.sql import SQL, Identifier, Literal
 from pydantic import BaseModel, computed_field, ConfigDict, model_validator
 from sqlalchemy import Column, Table
 
-from uno.db.sql.sql_emitter import SQLEmitter, ADMIN_ROLE
+from uno.db.sql.sqlemitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import snake_to_camel, snake_to_caps_snake
 
 
@@ -208,7 +208,7 @@ class GraphSQLEmitter(SQLEmitter):
     @computed_field
     def create_insert_function(self) -> str:
         function_string = self.function_string("insert_sql")
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "insert_graph",
             function_string,
             timing="AFTER",
@@ -220,7 +220,7 @@ class GraphSQLEmitter(SQLEmitter):
     @computed_field
     def create_update_function(self) -> str:
         function_string = self.function_string("update_sql")
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "update_graph",
             function_string,
             timing="AFTER",
@@ -232,7 +232,7 @@ class GraphSQLEmitter(SQLEmitter):
     @computed_field
     def create_delete_function(self) -> str:
         function_string = self.function_string("delete_sql")
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "delete_graph",
             function_string,
             timing="AFTER",
@@ -244,7 +244,7 @@ class GraphSQLEmitter(SQLEmitter):
     @computed_field
     def create_truncate_function(self) -> str:
         function_string = self.function_string("truncate_sql")
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "truncate_graph",
             function_string,
             timing="BEFORE",

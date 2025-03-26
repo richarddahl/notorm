@@ -10,8 +10,8 @@ from psycopg.sql import SQL
 from sqlalchemy import text
 from sqlalchemy.engine import create_engine, Engine
 
-from uno.db.sql.sql_config import SQLConfig
-from uno.db.sql.db_sql_emitters import (
+from uno.db.sql.sqlconfig import SQLConfig
+from uno.db.sql.dbsqlemitters import (
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,
     CreateSchemasAndExtensions,
@@ -22,30 +22,28 @@ from uno.db.sql.db_sql_emitters import (
     InsertMetaRecordFunction,
 )
 from uno.model.model import UnoModel
-from uno.api.app_def import app
+from uno.api.appdef import app
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
 from uno.pkgs.auth.bases import UserBase
 from uno.pkgs.fltr.models import create_filters
-from uno.pkgs.meta.sql_configs import MetaTypeSQLConfig
-import uno.pkgs.attr.sql_configs as attr_sql_configs
-import uno.pkgs.auth.sql_configs as auth_sql_configs
-import uno.pkgs.fltr.sql_configs as fltr_sql_configs
-import uno.pkgs.meta.sql_configs as meta_sql_configs
+from uno.pkgs.meta.sqlconfigs import MetaTypeSQLConfig
+import uno.pkgs.attr.sqlconfigs as attr_sqlconfigs
+import uno.pkgs.auth.sqlconfigs as auth_sqlconfigs
+import uno.pkgs.fltr.sqlconfigs as fltr_sqlconfigs
+import uno.pkgs.meta.sqlconfigs as meta_sqlconfigs
 
-# import uno.pkgs.msg.sql_configs as msg_sql_configs
-# import uno.pkgs.rprt.sql_configs as rpt_sql_configs
-# import uno.pkgs.val.sql_configs as val_sql_configs
-# import uno.pkgs.wkflw.sql_configs as wkflw_sql_configs
+# import uno.pkgs.msg.sqlconfigs as msg_sqlconfigs
+# import uno.pkgs.rprt.sqlconfigs as rpt_sqlconfigs
+# import uno.pkgs.val.sqlconfigs as val_sqlconfigs
+# import uno.pkgs.wkflw.sqlconfigs as wkflw_sqlconfigs
 
 from uno.utilities import import_from_path
 from uno.config import settings
 
-print(settings.DB_NAME)
-
 if settings.APP_PATH:
     for pkg in settings.LOAD_PACKAGES:
-        file_path = f"{settings.APP_PATH}/{pkg.replace('.', '/')}/sql_configs.py"
+        file_path = f"{settings.APP_PATH}/{pkg.replace('.', '/')}/sqlconfigs.py"
         mod_obj = import_from_path(pkg, file_path)
 
 

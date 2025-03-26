@@ -8,7 +8,7 @@ from pydantic import BaseModel, model_validator
 from sqlalchemy import Table
 from sqlalchemy.engine.base import Connection
 
-from uno.db.sql.sql_emitter import SQLEmitter
+from uno.db.sql.sqlemitter import SQLEmitter
 from uno.errors import UnoRegistryError
 
 

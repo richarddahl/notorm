@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import TEXT, VARCHAR
 from tests.conftest import db_column
 
 from uno.db.tables import MetaType
-from uno.db.sql.table_sql_emitters import AlterGrants
+from uno.db.sql.tablesqlemitters import AlterGrants
 from uno.config import settings
 
 

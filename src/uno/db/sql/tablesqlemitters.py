@@ -6,7 +6,7 @@ from pydantic import computed_field
 
 from psycopg.sql import SQL, Literal
 
-from uno.db.sql.sql_emitter import (
+from uno.db.sql.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -145,7 +145,7 @@ class EnableHistoricalAudit(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "history",
             function_string,
             timing="AFTER",

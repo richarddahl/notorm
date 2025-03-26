@@ -7,7 +7,7 @@ from pydantic import computed_field
 from psycopg.sql import SQL
 from sqlalchemy.sql import text
 
-from uno.db.sql.sql_emitter import (
+from uno.db.sql.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -222,7 +222,7 @@ class GetPermissibleGroupsFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.create_sql_function(
+        return self.createsqlfunction(
             "select_permissible_groups",
             function_string,
             return_type="VARCHAR[]",

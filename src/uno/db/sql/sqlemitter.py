@@ -48,7 +48,7 @@ class SQLEmitter(BaseModel):
             print(f"Executing {statement_name}...")
             connection.execute(text(sql_statement))
 
-    def create_sql_trigger(
+    def createsqltrigger(
         self,
         function_name: str,
         timing: str = "BEFORE",
@@ -86,7 +86,7 @@ class SQLEmitter(BaseModel):
             .as_string()
         )
 
-    def create_sql_function(
+    def createsqlfunction(
         self,
         function_name: str,
         function_string: str,
@@ -139,7 +139,7 @@ class SQLEmitter(BaseModel):
 
         if not include_trigger:
             return textwrap.dedent(fnct_string)
-        trggr_string = self.create_sql_trigger(
+        trggr_string = self.createsqltrigger(
             function_name,
             timing=timing,
             operation=operation,
