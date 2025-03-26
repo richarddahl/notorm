@@ -10,7 +10,7 @@ from uno.db.sql.db_sql_emitters import (
 )
 from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.attr.bases import (
+from uno.pkgs.attr.bases import (
     attribute__value,
     attribute_type___meta_type,
     attribute_type__value_type,

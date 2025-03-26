@@ -10,7 +10,7 @@ from typing import Optional, List
 from pydantic import BaseModel, computed_field, create_model
 from fastapi import APIRouter, FastAPI, HTTPException, Response, status, Depends, Query
 
-# from uno.apps.fltr.models import Filter
+# from uno.pkgs.fltr.models import Filter
 from uno.config import settings
 
 

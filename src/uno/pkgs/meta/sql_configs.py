@@ -6,7 +6,7 @@ from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.db.sql.db_sql_emitters import InsertPermission
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.meta.bases import MetaTypeBase, MetaBase
+from uno.pkgs.meta.bases import MetaTypeBase, MetaBase
 
 
 class MetaTypeSQLConfig(SQLConfig):

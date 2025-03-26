@@ -13,8 +13,8 @@ from sqlalchemy.orm import (
 
 from uno.db.base import UnoBase, str_255, str_26, str_63
 from uno.db.mixins import GeneralBaseMixin
-from uno.apps.fltr.bases import QueryBase
-from uno.apps.meta.bases import MetaTypeBase
+from uno.pkgs.fltr.bases import QueryBase
+from uno.pkgs.meta.bases import MetaTypeBase
 
 
 attribute__value = Table(

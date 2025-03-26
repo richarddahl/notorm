@@ -19,8 +19,8 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from uno.db.base import UnoBase, str_26, str_255, str_63
 from uno.db.mixins import GeneralBaseMixin, BaseMixin
 from uno.db.enums import Include, Match
-from uno.apps.val.enums import Lookup
-from uno.apps.meta.bases import MetaBase
+from uno.pkgs.val.enums import Lookup
+from uno.pkgs.meta.bases import MetaBase
 from uno.config import settings
 
 

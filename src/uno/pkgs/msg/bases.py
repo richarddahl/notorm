@@ -22,7 +22,7 @@ from uno.db.obj import (
     str_26,
     str_255,
 )
-from uno.apps.meta.bases import (
+from uno.pkgs.meta.bases import (
     MetaBase,
     MetaBaseMixin,
     BaseAuditMixin,

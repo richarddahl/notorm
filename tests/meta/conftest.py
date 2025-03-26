@@ -4,7 +4,7 @@
 """
 import pytest  # type: ignore
 
-# from uno.apps.auth.tables import User
+# from uno.pkgs.auth.tables import User
 from tests.conftest import mock_rls_vars
 from uno.config import settings
 """

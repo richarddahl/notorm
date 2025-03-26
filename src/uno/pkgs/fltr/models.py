@@ -14,17 +14,17 @@ from sqlalchemy import Table, Column
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
-from uno.apps.auth.mixins import RecordAuditMixin
-from uno.apps.fltr.bases import FilterBase, FilterPathBase, FilterValueBase, QueryBase
-from uno.apps.meta.models import Meta, MetaType
+from uno.pkgs.auth.mixins import RecordAuditMixin
+from uno.pkgs.fltr.bases import FilterBase, FilterPathBase, FilterValueBase, QueryBase
+from uno.pkgs.meta.models import Meta, MetaType
 from uno.utilities import (
     snake_to_title,
     snake_to_camel,
     snake_to_caps_snake,
 )
 from uno.db.enums import Include, Match
-from uno.apps.val.enums import object_lookups, numeric_lookups, text_lookups
-from uno.apps.val.enums import Lookup
+from uno.pkgs.val.enums import object_lookups, numeric_lookups, text_lookups
+from uno.pkgs.val.enums import Lookup
 from uno.config import settings
 
 

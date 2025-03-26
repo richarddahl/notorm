@@ -27,11 +27,11 @@ from sqlalchemy.dialects.postgresql import (
 from uno.db.base import UnoBase, str_26, str_255, str_63
 from uno.db.mixins import GeneralBaseMixin
 from uno.db.enums import SQLOperation
-from uno.apps.wkflw.enums import (
+from uno.pkgs.wkflw.enums import (
     WorkflowDBEvent,
     WorkflowTrigger,
 )
-from uno.apps.rprt.enums import Status, State, Flag
+from uno.pkgs.rprt.enums import Status, State, Flag
 from uno.config import settings
 
 

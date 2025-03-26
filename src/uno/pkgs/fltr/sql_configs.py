@@ -13,7 +13,7 @@ from uno.db.sql.db_sql_emitters import (
 )
 from uno.db.sql.sql_config import SQLConfig
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.fltr.bases import FilterBase, FilterValueBase, QueryBase
+from uno.pkgs.fltr.bases import FilterBase, FilterValueBase, QueryBase
 
 
 class FilterSQLConfig(SQLConfig):

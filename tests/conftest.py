@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 from uno.db.management.db_manager import DBManager
 from uno.db.base import UnoBase
 from uno.db.db import engine, sync_engine
-from uno.apps.auth.enums import TenantType
+from uno.pkgs.auth.enums import TenantType
 from uno.config import settings
 
 import pytest

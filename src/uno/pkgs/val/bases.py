@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 from uno.db.obj import Base, str_26, str_63
-from uno.apps.meta.bases import (
+from uno.pkgs.meta.bases import (
     MetaBase,
     MetaBaseMixin,
     BaseAuditMixin,
@@ -20,7 +20,7 @@ from uno.apps.meta.bases import (
 )
 from uno.db.sql.sql_emitter import SQLEmitter
 
-from uno.apps.val.enums import (
+from uno.pkgs.val.enums import (
     Lookup,
     boolean_lookups,
     numeric_lookups,

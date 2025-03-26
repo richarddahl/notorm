@@ -4,7 +4,7 @@
 
 from uno.model.model import UnoModel
 from uno.model.schema import UnoSchemaConfig
-from uno.apps.meta.bases import MetaTypeBase, MetaBase
+from uno.pkgs.meta.bases import MetaTypeBase, MetaBase
 
 
 class MetaType(UnoModel):

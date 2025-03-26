@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import BOOLEAN
 # from fastapi.testclient import TestClient
 
 from uno.config import settings
-from uno.apps.auth.models import User
+from uno.pkgs.auth.models import User
 
 # from uno.rltd.models import TableType, RelatedObject
 # from tests.pgjwt.test_pgjwt import encode_test_token

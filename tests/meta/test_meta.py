@@ -9,13 +9,13 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 
 from tests.conftest import db_column
 
-from uno.apps.meta.bases import MetaBase
+from uno.pkgs.meta.bases import MetaBase
 from uno.db.sql.table_sql_emitters import AlterGrants, InsertMetaType
 from uno.config import settings
 
 
 '''
-for module in settings.LOAD_MODULES:
+for module in settings.LOAD_MODULES_FROM:
     globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
         f"{module}.objs"
     )

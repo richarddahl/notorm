@@ -14,12 +14,12 @@ from uno.model.model import UnoModel
 from uno.api.app_def import app
 from uno.config import settings
 
-from uno.apps.fltr.models import Filter, FilterValue
-from uno.apps.meta.models import MetaType, Meta
-from uno.apps.attr.models import Attribute, AttributeType
-from uno.apps.auth.models import User, Group, Tenant, Role
+from uno.pkgs.fltr.models import Filter, FilterValue
+from uno.pkgs.meta.models import MetaType, Meta
+from uno.pkgs.attr.models import Attribute, AttributeType
+from uno.pkgs.auth.models import User, Group, Tenant, Role
 
-for module in settings.LOAD_MODULES:
+for module in settings.LOAD_MODULES_FROM:
     globals()[f"{module.split('.')[2]}._bases"] = importlib.import_module(
         f"{module}.bases"
     )

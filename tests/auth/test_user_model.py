@@ -8,7 +8,7 @@ import pytest_asyncio
 
 from unittest import IsolatedAsyncioTestCase
 
-from uno.apps.auth.models import User
+from uno.pkgs.auth.models import User
 from uno.config import settings
 
 

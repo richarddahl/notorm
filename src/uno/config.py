@@ -58,16 +58,16 @@ class General(BaseSettings):
     SUPERUSER_FULL_NAME: str
 
     # Modules to load
-    LOAD_MODULES: list[str] = []
+    LOAD_MODULES_FROM: list[str] = []
     """
-        "uno.apps.attr",
-        "uno.apps.auth",
-        "uno.apps.fltr",
-        "uno.apps.meta",
-        "uno.apps.msg",
-        "uno.apps.rprt",
-        "uno.apps.val",
-        "uno.apps.wkflw",
+        "uno.pkgs.attr",
+        "uno.pkgs.auth",
+        "uno.pkgs.fltr",
+        "uno.pkgs.meta",
+        "uno.pkgs.msg",
+        "uno.pkgs.rprt",
+        "uno.pkgs.val",
+        "uno.pkgs.wkflw",
     ]
     """
 

@@ -6,10 +6,10 @@ from typing import Optional, List
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
-from uno.apps.auth.mixins import RecordAuditMixin
-from uno.apps.attr.bases import AttributeBase, AttributeTypeBase
-from uno.apps.fltr.models import Query
-from uno.apps.meta.models import MetaType
+from uno.pkgs.auth.mixins import RecordAuditMixin
+from uno.pkgs.attr.bases import AttributeBase, AttributeTypeBase
+from uno.pkgs.fltr.models import Query
+from uno.pkgs.meta.models import MetaType
 
 
 class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):

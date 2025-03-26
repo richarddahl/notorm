@@ -13,9 +13,9 @@ from uno.db.sql.db_sql_emitters import (
     RecordStatusFunction,
 )
 from uno.db.sql.sql_config import SQLConfig
-from uno.apps.auth.rls_sql_emitters import UserRowLevelSecurity
+from uno.pkgs.auth.rls_sql_emitters import UserRowLevelSecurity
 from uno.db.sql.graph_sql_emitter import GraphSQLEmitter
-from uno.apps.auth.bases import (
+from uno.pkgs.auth.bases import (
     user__group,
     user__role,
     role__permission,

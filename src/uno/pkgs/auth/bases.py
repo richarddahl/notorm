@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import (
 from uno.db.base import UnoBase, str_26, str_255, str_63
 from uno.db.mixins import GeneralBaseMixin
 from uno.db.enums import SQLOperation
-from uno.apps.auth.enums import TenantType
+from uno.pkgs.auth.enums import TenantType
 from uno.config import settings
 
 user__group = Table(

@@ -9,15 +9,15 @@ from uno.db.enums import SQLOperation
 from uno.model.schema import UnoSchemaConfig
 from uno.model.model import UnoModel
 from uno.model.mixins import GeneralModelMixin
-from uno.apps.auth.enums import TenantType
-from uno.apps.auth.bases import (
+from uno.pkgs.auth.enums import TenantType
+from uno.pkgs.auth.bases import (
     UserBase,
     GroupBase,
     RoleBase,
     TenantBase,
     PermissionBase,
 )
-from uno.apps.auth.mixins import RecordAuditMixin
+from uno.pkgs.auth.mixins import RecordAuditMixin
 from uno.config import settings
 
 
