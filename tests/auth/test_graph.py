@@ -2,6 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
+from pathlib import Path
+
+# Add local package directories to sys.path
+local_package_paths = [
+    Path(__file__).resolve().parent.parent / "src" / "uno",
+    # Add more paths as needed
+]
+
+for path in local_package_paths:
+    sys.path.append(str(path))
+
 import pytest  # type: ignore
 
 from sqlalchemy import text
