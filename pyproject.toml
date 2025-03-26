@@ -53,19 +53,19 @@ path = "src/uno/__about__.py"
 # Default Environment
 [tool.hatch.envs.default.scripts]
 main = "uvicorn uno.api.main:app {args: --reload}"
-createdb = "python src/uno/db/cmd/create_db.py"
-dropdb = "python src/uno/db/cmd/drop_db.py"
-createsuperuser = "python src/uno/db/cmd/create_superuser.py"
-createfilters = "python src/uno/db/cmd/create_filters.py"
+createdb = "python src/uno/db/scripts/create_db.py"
+dropdb = "python src/uno/db/scripts/drop_db.py"
+createsuperuser = "python src/uno/db/scripts/create_superuser.py"
+createfilters = "python src/uno/db/scripts/create_filters.py"
 
 
 #Development Environment
 [tool.hatch.envs.dev.scripts]
 main = "ENV=dev uvicorn uno.api.main:app {args: --reload}"
-createdb = "ENV=dev python src/uno/db/cmd/create_db.py"
-dropdb = "ENV=dev python src/uno/db/cmd/drop_db.py"
-createsuperuser = "ENV=dev python src/uno/db/cmd/create_superuser.py"
-createfilters = "ENV=dev python src/uno/db/cmd/create_filters.py"
+createdb = "ENV=dev python src/uno/db/scripts/create_db.py"
+dropdb = "ENV=dev python src/uno/db/scripts/drop_db.py"
+createsuperuser = "ENV=dev python src/uno/db/scripts/create_superuser.py"
+createfilters = "ENV=dev python src/uno/db/scripts/create_filters.py"
 
 
 # Testing Environment
@@ -99,8 +99,8 @@ testV = "ENV=test pytest --capture=tee-sys --show-capture=all"
 test-cov = "ENV=test coverage run -m pytest"
 cov-report = ["ENV=test", "- coverage combine", "coverage report"]
 cov = ["ENV=test", "test-cov", "cov-report"]
-createdb = "ENV=test python src/uno/cmd/create_db.py"
-dropdb = "ENV=test python src/uno/cmd/drop_db.py"
+createdb = "ENV=test python src/uno/scripts/create_db.py"
+dropdb = "ENV=test python src/uno/scripts/drop_db.py"
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"
