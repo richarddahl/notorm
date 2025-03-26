@@ -15,7 +15,6 @@ class MetaType(UnoModel):
         "edit_schema": UnoSchemaConfig(),
     }
     endpoints = ["List"]
-    endpoint_tags = ["Metadata"]
 
     id: str
 
@@ -31,7 +30,6 @@ class Meta(UnoModel):
         "edit_schema": UnoSchemaConfig(),
     }
     endpoints = ["List"]
-    endpoint_tags = ["Metadata"]
 
     id: str
     meta_type_id: str

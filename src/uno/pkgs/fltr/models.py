@@ -47,7 +47,6 @@ class Filter(UnoModel):
         ),
     }
     endpoints = ["List"]
-    endpoint_tags = ["Search"]
 
     # Fields
     source_node: Optional[str] = None
@@ -173,7 +172,6 @@ class FilterPath(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    endpoint_tags = ["Search"]
 
     # Fields
     id: Optional[str] = None
@@ -207,7 +205,6 @@ class FilterValue(UnoModel, GeneralModelMixin, RecordAuditMixin):
             ],
         ),
     }
-    endpoint_tags = ["Search"]
 
     # Fields
     id: Optional[str] = None
@@ -239,7 +236,6 @@ class Query(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Search"]
 
     # Fields
     id: Optional[str]

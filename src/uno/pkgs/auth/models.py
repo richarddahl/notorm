@@ -46,7 +46,6 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Authorization"]
 
     # Fields
     email: EmailStr = None
@@ -88,7 +87,6 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Authorization"]
 
     # Fields
     id: Optional[str]
@@ -124,7 +122,6 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Authorization"]
 
     # Fields
     id: Optional[str]
@@ -157,7 +154,6 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Authorization"]
 
     # Fields
     id: Optional[str]
@@ -178,7 +174,6 @@ class Permission(UnoModel):
     endpoints = []
     schema_configs = {}
     terminate_filters = True
-    endpoint_tags = ["Authorization"]
 
     # Fields
     id: Optional[int]

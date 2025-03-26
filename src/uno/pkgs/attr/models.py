@@ -33,7 +33,6 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Metadata"]
 
     # Fields
     attribute_type_id: Optional[str] = None
@@ -75,7 +74,6 @@ class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
         ),
     }
     terminate_filters = True
-    endpoint_tags = ["Metadata"]
 
     # Fields
     id: Optional[str]

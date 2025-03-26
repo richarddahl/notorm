@@ -39,13 +39,7 @@ class UnoRouter(BaseModel, ABC):
             endpoint=self.endpoint,
             methods=[self.method],
             include_in_schema=self.include_in_schema,
-            tags=[
-                (
-                    self.model.endpoint_tags
-                    if self.model.endpoint_tags
-                    else self.model.display_name_plural
-                )
-            ],
+            tags=[self.model.display_name_plural],
             summary=self.summary,
             description=self.description,
             status_code=self.status_code,
