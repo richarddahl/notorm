@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.sql.tablesqlemitters import AlterGrants, InsertMetaType
-from uno.db.sql.dbsqlemitters import (
+from uno.db.sql.tablesql import AlterGrants, InsertMetaType
+from uno.db.sql.dbsql import (
     RecordUserAuditFunction,
     ValidateGroupInsert,
     DefaultGroupTenant,
@@ -13,8 +13,8 @@ from uno.db.sql.dbsqlemitters import (
     RecordStatusFunction,
 )
 from uno.db.sql.sqlconfig import SQLConfig
-from uno.pkgs.auth.rlssqlemitters import UserRowLevelSecurity
-from uno.db.sql.graphsqlemitter import GraphSQLEmitter
+from uno.pkgs.auth.rlssql import UserRowLevelSecurity
+from uno.db.sql.graphsql import GraphSQLEmitter
 from uno.pkgs.auth.bases import (
     user__group,
     user__role,

@@ -11,7 +11,7 @@ from psycopg.sql import SQL, Identifier, Literal
 from pydantic import BaseModel, computed_field, ConfigDict, model_validator
 from sqlalchemy import Column, Table
 
-from uno.db.sql.sqlemitter import SQLEmitter, ADMIN_ROLE
+from uno.db.sql.sql import SQLEmitter, ADMIN_ROLE
 from uno.utilities import snake_to_camel, snake_to_caps_snake
 
 

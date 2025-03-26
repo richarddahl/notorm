@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.db.sql.tablesqlemitters import AlterGrants, InsertMetaType
-from uno.db.sql.dbsqlemitters import (
+from uno.db.sql.tablesql import AlterGrants, InsertMetaType
+from uno.db.sql.dbsql import (
     RecordUserAuditFunction,
     InsertMetaRecordTrigger,
     RecordStatusFunction,
 )
 from uno.db.sql.sqlconfig import SQLConfig
-from uno.db.sql.graphsqlemitter import GraphSQLEmitter
+from uno.db.sql.graphsql import GraphSQLEmitter
 from uno.pkgs.attr.bases import (
     attribute__value,
     attribute_type___meta_type,

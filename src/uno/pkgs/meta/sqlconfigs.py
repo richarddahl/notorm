@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from uno.db.sql.sqlconfig import SQLConfig
-from uno.db.sql.tablesqlemitters import AlterGrants, InsertMetaType
-from uno.db.sql.dbsqlemitters import InsertPermission
-from uno.db.sql.graphsqlemitter import GraphSQLEmitter
+from uno.db.sql.tablesql import AlterGrants, InsertMetaType
+from uno.db.sql.dbsql import InsertPermission
+from uno.db.sql.graphsql import GraphSQLEmitter
 from uno.pkgs.meta.bases import MetaTypeBase, MetaBase
 
 

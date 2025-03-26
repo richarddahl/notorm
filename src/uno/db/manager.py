@@ -11,7 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import create_engine, Engine
 
 from uno.db.sql.sqlconfig import SQLConfig
-from uno.db.sql.dbsqlemitters import (
+from uno.db.sql.dbsql import (
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,
     CreateSchemasAndExtensions,

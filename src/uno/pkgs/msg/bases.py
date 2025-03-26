@@ -28,8 +28,8 @@ from uno.pkgs.meta.bases import (
     BaseAuditMixin,
     BaseVersionAuditMixin,
 )
-from uno.db.sql.tablesqlemitters import BaseVersionAudit
-from uno.db.sql.sqlemitter import SQLEmitter
+from uno.db.sql.tablesql import BaseVersionAudit
+from uno.db.sql.sql import SQLEmitter
 from uno.msg.enums import MessageImportance
 from uno.config import settings
 

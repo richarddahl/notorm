@@ -25,7 +25,7 @@ from uno.pkgs.auth.models import User
 
 # from uno.rltd.models import TableType, RelatedObject
 # from tests.pgjwt.test_pgjwt import encode_test_token
-from uno.db.dbmanager import DBManager
+from uno.db.manager import DBManager
 
 # from tests.conftest import mock_rls_vars
 

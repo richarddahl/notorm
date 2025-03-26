@@ -5,7 +5,7 @@
 from pydantic import computed_field
 from dataclasses import dataclass
 
-from uno.db.sql.sqlemitter import (
+from uno.db.sql.sql import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
