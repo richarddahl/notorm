@@ -248,7 +248,12 @@ class FilterValueBase(BaseMixin, UnoBase):
         insert_default=Include.INCLUDE,
     )
     match: Mapped[Match] = mapped_column(
-        ENUM(Match, name="match", create_type=True, schema="uno"),
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
         insert_default=Match.AND,
     )
     lookup: Mapped[Lookup] = mapped_column(
@@ -310,7 +315,12 @@ class QueryBase(BaseMixin, UnoBase):
         doc="Indicate if the query should return records including or excluding the queries results.",
     )
     match_values: Mapped[Match] = mapped_column(
-        ENUM(Match, name="match", create_type=True, schema="uno"),
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the filter values.",
     )
@@ -325,7 +335,12 @@ class QueryBase(BaseMixin, UnoBase):
         doc="Indicate if the query should return records including or excluding the subqueries results.",
     )
     match_queries: Mapped[Match] = mapped_column(
-        ENUM(Match, name="match", create_type=True, schema="uno"),
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the subquery values.",
     )
