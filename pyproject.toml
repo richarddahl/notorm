@@ -52,20 +52,20 @@ path = "src/uno/__about__.py"
 
 # Default Environment
 [tool.hatch.envs.default.scripts]
-main = "uvicorn uno.api.main:app {args: --reload}"
-createdb = "python src/uno/scripts/createdb.py"
-dropdb = "python src/uno/scripts/dropdb.py"
-createsuperuser = "python src/uno/scripts/createsuperuser.py"
-createfilters = "python src/uno/scripts/createfilters.py"
+main = "uvicorn main:app {args: --reload}"
+createdb = "python src/scripts/createdb.py"
+dropdb = "python src/scripts/dropdb.py"
+createsuperuser = "python src/scripts/createsuperuser.py"
+createfilters = "python src/scripts/createfilters.py"
 
 
 #Development Environment
 [tool.hatch.envs.dev.scripts]
-main = "ENV=dev uvicorn uno.api.main:app {args: --reload}"
-createdb = "ENV=dev python src/uno/scripts/createdb.py"
-dropdb = "ENV=dev python src/uno/scripts/dropdb.py"
-createsuperuser = "ENV=dev python src/uno/scripts/createsuperuser.py"
-createfilters = "ENV=dev python src/uno/scripts/createfilters.py"
+main = "ENV=dev uvicorn main:app {args: --reload}"
+createdb = "ENV=dev python src/scripts/createdb.py"
+dropdb = "ENV=dev python src/scripts/dropdb.py"
+createsuperuser = "ENV=dev python src/scripts/createsuperuser.py"
+createfilters = "ENV=dev python src/scripts/createfilters.py"
 
 
 # Testing Environment
