@@ -120,7 +120,7 @@ class DateTimeValue(
         default=date_lookups,
         doc="The lookups for the value.",
     )
-    datetime_value: Mapped[datetime.datetime] = mapped_column(unique=True, index=True)
+    datetime_value: Mapped[datetime_tz] = mapped_column(unique=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "datetime_value",
@@ -160,7 +160,7 @@ class DateValue(
         default=date_lookups,
         doc="The lookups for the value.",
     )
-    date_value: Mapped[datetime.date] = mapped_column(unique=True, index=True)
+    date_value: Mapped[date_] = mapped_column(unique=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "date_value",
@@ -320,7 +320,7 @@ class TimeValue(
         default=date_lookups,
         doc="The lookups for the value.",
     )
-    time_value: Mapped[datetime.time] = mapped_column(unique=True, index=True)
+    time_value: Mapped[time_] = mapped_column(unique=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "time_value",

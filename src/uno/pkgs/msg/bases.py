@@ -57,7 +57,7 @@ class MessageAddressedTo(Base):
     read: Mapped[bool] = mapped_column(
         server_default=text("false"),
     )
-    read_at: Mapped[datetime.datetime] = mapped_column()
+    read_at: Mapped[datetime_tz] = mapped_column()
 
 
 class MessageCopiedTo(Base):
@@ -83,7 +83,7 @@ class MessageCopiedTo(Base):
     read: Mapped[bool] = mapped_column(
         server_default=text("false"),
     )
-    read_at: Mapped[datetime.datetime] = mapped_column()
+    read_at: Mapped[datetime_tz] = mapped_column()
 
 
 class MessageRelatedObject(Base):
@@ -148,7 +148,7 @@ class Message(
     )
     subject: Mapped[str_255] = mapped_column(doc="Subject of the message")
     body: Mapped[str_255] = mapped_column(doc="Body of the message")
-    sent_at: Mapped[datetime.datetime] = mapped_column(
+    sent_at: Mapped[datetime_tz] = mapped_column(
         server_default=func.current_timestamp(),
         doc="Time the message was sent",
     )

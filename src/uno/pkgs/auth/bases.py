@@ -315,7 +315,7 @@ class TenantBase(GeneralBaseMixin, UnoBase):
         nullable=False,
         doc="Role name",
     )
-    tenant_type = mapped_column(
+    tenant_type: Mapped[TenantType] = mapped_column(
         ENUM(
             TenantType,
             name="tenanttype",

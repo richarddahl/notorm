@@ -191,7 +191,7 @@ class TaskRecord(GeneralBaseMixin, UnoBase):
         ForeignKey("task.id", ondelete="CASCADE"),
         index=True,
     )
-    completion_date: Mapped[datetime.date] = mapped_column(
+    completion_date: Mapped[date_] = mapped_column(
         doc="Date the task was completed",
     )
     notes: Mapped[str] = mapped_column(

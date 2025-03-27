@@ -23,6 +23,7 @@ from sqlalchemy.dialects.postgresql import (
     BOOLEAN,
     ARRAY,
     NUMERIC,
+    INTERVAL,
 )
 
 from uno.config import settings
@@ -48,19 +49,24 @@ str_63 = Annotated[VARCHAR, 63]
 str_128 = Annotated[VARCHAR, 128]
 str_255 = Annotated[VARCHAR, 255]
 dec = Annotated[Decimal, 19]
+datetime_tz = Annotated[TIMESTAMP, ()]
+date_ = Annotated[datetime.date, ()]
+time_ = Annotated[datetime.time, ()]
+interval = Annotated[datetime.timedelta, ()]
 
 
 class UnoBase(AsyncAttrs, DeclarativeBase):
     registry = registry(
         type_annotation_map={
             int: BIGINT,
-            datetime.datetime: TIMESTAMP(timezone=True),
-            datetime.date: DATE,
-            datetime.time: TIME,
             str: VARCHAR,
             Enum: ENUM,
             bool: BOOLEAN,
             list: ARRAY,
+            datetime_tz: TIMESTAMP(timezone=True),
+            date_: DATE,
+            time_: TIME,
+            interval: INTERVAL,
             dec: NUMERIC,
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
