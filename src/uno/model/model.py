@@ -12,7 +12,7 @@ from sqlalchemy.inspection import inspect
 from uno.db.db import UnoDBFactory
 from uno.db.base import UnoBase
 from uno.model.schema import UnoSchemaConfig, UnoSchema
-from uno.api.endpoint import (
+from uno.endpoint import (
     CreateEndpoint,
     ViewEndpoint,
     ListEndpoint,

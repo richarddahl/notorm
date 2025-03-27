@@ -22,7 +22,7 @@ from uno.db.sql.dbsql import (
     InsertMetaRecordFunction,
 )
 from uno.model.model import UnoModel
-from uno.api.appdef import app
+from uno.appdef import app
 from uno.db.base import meta_data
 from uno.db.db import scoped_session
 from uno.pkgs.auth.bases import UserBase

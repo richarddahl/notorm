@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from uno.model.model import UnoModel
-from uno.api.appdef import app
+from uno.appdef import app
 from uno.config import settings
 
 from uno.pkgs.attr import models as attr_models
