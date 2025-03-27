@@ -37,14 +37,26 @@ import uno.pkgs.meta.sqlconfigs as meta_sqlconfigs
 # import uno.pkgs.rprt.sqlconfigs as rpt_sqlconfigs
 # import uno.pkgs.val.sqlconfigs as val_sqlconfigs
 # import uno.pkgs.wkflw.sqlconfigs as wkflw_sqlconfigs
+from uno.pkgs.attr import models as attr_models
+from uno.pkgs.auth import models as auth_models
+from uno.pkgs.fltr import models as fltr_models
+from uno.pkgs.meta import models as meta_models
+
+# from uno.pkgs.msg import models as msg_models
+# from uno.pkgs.rprt import models as rpt_models
+# from uno.pkgs.val import models as val_models
+# from uno.pkgs.wkflw import models as wkflw_models
 
 from uno.utilities import import_from_path
 from uno.config import settings
 
+
 if settings.APP_PATH:
     for pkg in settings.LOAD_PACKAGES:
+        file_path = f"{settings.APP_PATH}/{pkg.replace('.', '/')}/models.py"
+        import_from_path(pkg, file_path)
         file_path = f"{settings.APP_PATH}/{pkg.replace('.', '/')}/sqlconfigs.py"
-        mod_obj = import_from_path(pkg, file_path)
+        import_from_path(pkg, file_path)
 
 
 @contextlib.contextmanager

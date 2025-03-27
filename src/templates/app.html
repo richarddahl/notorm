@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+  <ok-login-form-dialog
+    open
+    {% if error %}error="{{ error }}"{% endif %}
+    siteName="{{ site_name }}"
+    authenticationUrl="{{ authentication_url }}"
+  ></ok-login-form-dialog>
+  <ok-base></ok-base>
+{% endblock %}
