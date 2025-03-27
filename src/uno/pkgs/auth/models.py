@@ -171,8 +171,8 @@ class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
 class Permission(UnoModel):
     # Class variables
     base = PermissionBase
-    endpoints = []
-    schema_configs = {}
+    endpoints = ["List", "View"]
+    schema_configs = {"view_schema": UnoSchemaConfig()}
     terminate_filters = True
 
     # Fields
