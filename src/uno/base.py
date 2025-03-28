@@ -25,6 +25,7 @@ from sqlalchemy.dialects.postgresql import (
     NUMERIC,
     INTERVAL,
     UUID,
+    JSONB,
 )
 
 from uno.config import settings
@@ -55,6 +56,7 @@ datetime_tz = Annotated[TIMESTAMP, ()]
 date_ = Annotated[datetime.date, ()]
 time_ = Annotated[datetime.time, ()]
 interval = Annotated[datetime.timedelta, ()]
+json_ = Annotated[dict, ()]
 
 
 class UnoBase(AsyncAttrs, DeclarativeBase):
@@ -75,6 +77,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
             str_128: VARCHAR(128),
             str_255: VARCHAR(255),
             str_uuid: UUID,
+            json_: JSONB,
         }
     )
     metadata = meta_data
