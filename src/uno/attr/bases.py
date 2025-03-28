@@ -39,6 +39,28 @@ attribute__value = Table(
     comment="The relationship between attributes and their values",
 )
 
+attribute__meta = Table(
+    "attribute__meta",
+    UnoBase.metadata,
+    Column(
+        "attribute_id",
+        ForeignKey("attribute.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        info={"edge": "META"},
+    ),
+    Column(
+        "meta_id",
+        ForeignKey("meta.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        info={"edge": "ATTRIBUTES"},
+    ),
+    comment="The relationship between attributes and their meta_record values",
+)
+
 
 attribute_type___meta_type = Table(
     "attribute_type__meta_type",
@@ -84,38 +106,6 @@ attribute_type__value_type = Table(
     ),
     comment="The relationship between attribute types and the meta_record types that are values for the attribute type",
 )
-
-
-class AttributeBase(GeneralBaseMixin, UnoBase):
-    __tablename__ = "attribute"
-    __table_args__ = {"comment": "Attributes define characteristics of objects"}
-
-    # Columns
-    attribute_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey(
-            "attribute_type.id",
-            ondelete="CASCADE",
-        ),
-        index=True,
-        doc="The type of attribute",
-        info={
-            "edge": "ATTRIBUTE_TYPE",
-            "reverse_edge": "ATTRIBUTES",
-        },
-    )
-    comment: Mapped[Optional[str]] = mapped_column(
-        doc="A comment about the attribute",
-    )
-    follow_up_required: Mapped[bool] = mapped_column(
-        server_default="false",
-        doc="Indicates if follow-up is required",
-    )
-
-    # Relationships
-    attribute_type: Mapped["AttributeTypeBase"] = relationship(
-        foreign_keys=[attribute_type_id],
-        doc="The type of attribute",
-    )
 
 
 class AttributeTypeBase(UnoBase, GeneralBaseMixin):
@@ -180,9 +170,9 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         default=False,
         doc="Indicates a comment is required",
     )
-    display_with_applicable_objects: Mapped[bool] = mapped_column(
+    display_with_objects: Mapped[bool] = mapped_column(
         default=False,
-        doc="Indicates the attribute should be displayed with applicable objects",
+        doc="Indicates the attribute should be displayed with the objects to which it applies",
     )
     initial_comment: Mapped[Optional[str]] = mapped_column(
         doc="The initial comment for attributes of this type",
@@ -212,12 +202,53 @@ class AttributeTypeBase(UnoBase, GeneralBaseMixin):
         secondary=attribute_type__value_type,
         doc="The meta_record types that are values for the attribute type",
     )
-    attributes: Mapped[list[AttributeBase]] = relationship(
-        back_populates="attribute_type",
-        doc="The attributes with this attribute type",
-    )
     value_type_limiting_query: Mapped[Optional[QueryBase]] = relationship(
         QueryBase,
         foreign_keys=[value_type_limiting_query_id],
         doc="The query that determines which meta_record types are used as values for the attribute type.",
+    )
+    attributes: Mapped[list["AttributeBase"]] = relationship(
+        back_populates="attribute_type",
+        doc="The attributes with this attribute type",
+    )
+
+
+class AttributeBase(GeneralBaseMixin, UnoBase):
+    __tablename__ = "attribute"
+    __table_args__ = {"comment": "Attributes define characteristics of objects"}
+
+    # Columns
+    attribute_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey(
+            "attribute_type.id",
+            ondelete="CASCADE",
+        ),
+        index=True,
+        doc="The type of attribute",
+        info={
+            "edge": "ATTRIBUTE_TYPE",
+            "reverse_edge": "ATTRIBUTES",
+        },
+    )
+    comment: Mapped[Optional[str]] = mapped_column(
+        doc="A comment about the attribute",
+    )
+    follow_up_required: Mapped[bool] = mapped_column(
+        server_default="false",
+        doc="Indicates if follow-up is required",
+    )
+
+    # Relationships
+    attribute_type: Mapped[AttributeTypeBase] = relationship(
+        foreign_keys=[attribute_type_id],
+        back_populates="attributes",
+        doc="The type of attribute",
+    )
+    values: Mapped[list["MetaBase"]] = relationship(
+        secondary=attribute__value,
+        doc="The values for the attribute",
+    )
+    meta_records: Mapped[list["MetaBase"]] = relationship(
+        secondary=attribute__meta,
+        doc="The meta_record values for the attribute",
     )
