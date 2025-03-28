@@ -1,6 +1,6 @@
 # uno/db/models.py
   
-## ::: uno.db.models.FieldDefinition
+## ::: uno.models.FieldDefinition
 
     handler: python
     options:

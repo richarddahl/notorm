@@ -8,7 +8,7 @@
       show_root_heading: true
       show_source: true
   
-## ::: uno.db.enums.SQLOperation
+## ::: uno.enums.SQLOperation
 
     handler: python
     options:

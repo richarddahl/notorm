@@ -4,7 +4,7 @@
 
 import asyncio
 
-from uno.db.manager import DBManager
+from uno.dbmanager import DBManager
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # uno/db/models.py
   
-## ::: uno.db.models.SchemaMixin
+## ::: uno.models.SchemaMixin
 
     handler: python
     options:

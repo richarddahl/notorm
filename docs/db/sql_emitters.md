@@ -12,7 +12,7 @@ They are not user input, and are only used to create or update the db during dev
 
 __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
 
-## ::: uno.db.management.db_manager_sql.CONFIGURE_AGE_EXTENSION
+## ::: uno.management.db_manager_sql.CONFIGURE_AGE_EXTENSION
 
     handler: python
     options:
@@ -20,7 +20,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CONFIGURE_ROLE_SCHEMA_PRIVILEGES
+## ::: uno.management.db_manager_sql.CONFIGURE_ROLE_SCHEMA_PRIVILEGES
 
     handler: python
     options:
@@ -28,7 +28,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CONFIGURE_ROLE_TABLE_PRIVILEGES
+## ::: uno.management.db_manager_sql.CONFIGURE_ROLE_TABLE_PRIVILEGES
 
     handler: python
     options:
@@ -36,7 +36,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_AUTHORIZE_USER_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_AUTHORIZE_USER_FUNCTION
 
     handler: python
     options:
@@ -44,7 +44,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_CAN_INSERT_GROUP_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_CAN_INSERT_GROUP_FUNCTION
 
     handler: python
     options:
@@ -52,7 +52,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_DATABASE
+## ::: uno.management.db_manager_sql.CREATE_DATABASE
 
     handler: python
     options:
@@ -60,7 +60,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_EXTENSIONS
+## ::: uno.management.db_manager_sql.CREATE_EXTENSIONS
 
     handler: python
     options:
@@ -68,7 +68,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_GET_PERMISSIBLE_TABLEPERMISSIONS_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_GET_PERMISSIBLE_TABLEPERMISSIONS_FUNCTION
 
     handler: python
     options:
@@ -76,7 +76,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_INSERT_GROUP_CONSTRAINT
+## ::: uno.management.db_manager_sql.CREATE_INSERT_GROUP_CONSTRAINT
 
     handler: python
     options:
@@ -84,7 +84,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_INSERT_GROUP_FOR_TENANT_FUNCTION_AND_TRIGGER
+## ::: uno.management.db_manager_sql.CREATE_INSERT_GROUP_FOR_TENANT_FUNCTION_AND_TRIGGER
 
     handler: python
     options:
@@ -92,7 +92,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_INSERT_db_object_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_INSERT_db_object_FUNCTION
 
     handler: python
     options:
@@ -100,7 +100,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_INSERT_TABLEPERMISSION_FUNCTION_AND_TRIGGER
+## ::: uno.management.db_manager_sql.CREATE_INSERT_TABLEPERMISSION_FUNCTION_AND_TRIGGER
 
     handler: python
     options:
@@ -108,7 +108,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_PGULID
+## ::: uno.management.db_manager_sql.CREATE_PGULID
 
     handler: python
     options:
@@ -116,7 +116,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_ROLES
+## ::: uno.management.db_manager_sql.CREATE_ROLES
 
     handler: python
     options:
@@ -124,7 +124,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_SCHEMAS
+## ::: uno.management.db_manager_sql.CREATE_SCHEMAS
 
     handler: python
     options:
@@ -132,7 +132,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_SET_OWNER_AND_MODIFIED_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_SET_OWNER_AND_MODIFIED_FUNCTION
 
     handler: python
     options:
@@ -140,7 +140,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_TOKEN_SECRET
+## ::: uno.management.db_manager_sql.CREATE_TOKEN_SECRET
 
     handler: python
     options:
@@ -148,7 +148,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_TOKEN_SECRET_TABLE
+## ::: uno.management.db_manager_sql.CREATE_TOKEN_SECRET_TABLE
 
     handler: python
     options:
@@ -156,7 +156,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_USER_TABLE_RLS_SELECT_POLICY
+## ::: uno.management.db_manager_sql.CREATE_USER_TABLE_RLS_SELECT_POLICY
 
     handler: python
     options:
@@ -164,7 +164,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.CREATE_VALIDATE_DELETE_FUNCTION
+## ::: uno.management.db_manager_sql.CREATE_VALIDATE_DELETE_FUNCTION
 
     handler: python
     options:
@@ -172,7 +172,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.DROP_DATABASE
+## ::: uno.management.db_manager_sql.DROP_DATABASE
 
     handler: python
     options:
@@ -180,7 +180,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.DROP_ROLES
+## ::: uno.management.db_manager_sql.DROP_ROLES
 
     handler: python
     options:
@@ -188,7 +188,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: tru
 
-## ::: uno.db.management.db_manager_sql.REVOKE_ACCESS
+## ::: uno.management.db_manager_sql.REVOKE_ACCESS
 
     handler: python
     options:
@@ -196,7 +196,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.SET_PGMETA_CONFIG
+## ::: uno.management.db_manager_sql.SET_PGMETA_CONFIG
 
     handler: python
     options:
@@ -204,7 +204,7 @@ __DON'T ALLOW UNTRUSTED USERS TO EDIT THE .env FILEs!__
       show_source: true
       separate_signature: true
 
-## ::: uno.db.management.db_manager_sql.SET_SEARCH_PATHS
+## ::: uno.management.db_manager_sql.SET_SEARCH_PATHS
 
     handler: python
     options:

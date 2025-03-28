@@ -33,15 +33,14 @@ It also represents the limited nature of the project at its genesis.
 
 It really is more of an app framework at this point, going well beyond its original intent, but the name stuck.
 
-## File Structure
+## Project Structure
 
 Within UNO, the term "Entity" refers to a type of information that exists within an application.  
 
 Entities are defined by the following:
 
-- UnoModel
-- UnoBase
-- Generally one or more UnoEndpoint
+- UnoModel (the business logic)
+- UnoBase (the persistence structure)
 
 A deliberate attempt has been made to couple as little as possible within UNO.  
 
@@ -59,9 +58,7 @@ The structure of the project:
 
 | uno  
 &nbsp;&nbsp;&nbsp;&nbsp;
-| api - Code required to use FastAPI to serve an app using UNO  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | apps  - The built in modules:  
+    | pkgs - The built in packages:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         | attr - Entities to associate user-defined information to Uno entities  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -81,7 +78,8 @@ The structure of the project:
 &nbsp;&nbsp;&nbsp;&nbsp;
     | db - Defines the UnoBase (persistant data structure) and SQLEmitter (emits custom sql) and the methods to communicate with the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | model - Defines UnoModel, the business logic executor  
+    | model.py - Defines UnoModel, the business logic executor  
+
 
 ## Starting the db with Docker
 

@@ -17,14 +17,12 @@ from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from uno.db.manager import DBManager
-from uno.db.base import UnoBase
-from uno.db.db import engine, sync_engine
-from uno.pkgs.auth.enums import TenantType
+from uno.dbmanager import DBManager
+from uno.db import engine, sync_engine
 from uno.config import settings
 
 import pytest
-from uno.db.db import sync_engine
+from uno.db import sync_engine
 
 
 def db_column(

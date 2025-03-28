@@ -5,9 +5,9 @@ import pytest
 
 import sqlalchemy as sa
 
-# from uno.pkgs.auth.tables import Tenant
-# from uno.pkgs.auth.enums import TenantType
-# from uno.pkgs.auth.tables import User
+# from uno.auth.tables import Tenant
+# from uno.enums import TenantType
+# from uno.auth.tables import User
 # from uno.cmd import create_db, drop_db
 
 

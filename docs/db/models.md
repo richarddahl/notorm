@@ -2,7 +2,7 @@
 
 The db/models.py file contains the Schema
 
-## ::: uno.db.models.Schema
+## ::: uno.models.Schema
 
     handler: python
     options:

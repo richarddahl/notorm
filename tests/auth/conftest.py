@@ -8,5 +8,5 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from uno.db.base import UnoBase
-from uno.db.db import engine, sync_engine
+from uno.base import UnoBase
+from uno.db import engine, sync_engine

@@ -8,7 +8,7 @@ import pytest_asyncio
 
 from unittest import IsolatedAsyncioTestCase
 
-from uno.pkgs.meta.models import MetaType
+from uno.meta.models import MetaType
 from uno.config import settings
 
 

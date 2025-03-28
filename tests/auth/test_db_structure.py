@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import (
     TEXT,
 )
 
-from uno.pkgs.auth.enums import TenantType
+from uno.enums import TenantType
 from uno.config import settings  # type: ignore
 from tests.conftest import db_column
 

@@ -6,7 +6,7 @@ import pytest  # type: ignore
 
 import sqlalchemy as sa
 
-# from uno.pkgs.auth.tables import Group
+# from uno.auth.tables import Group
 from uno.config import settings
 
 '''
