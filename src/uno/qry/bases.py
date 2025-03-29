@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
 from uno.db import UnoBase, str_26, str_255, str_63
 from uno.mixins import BaseMixin
-from uno.auth.mixins import RBACBaseMixin
+from uno.auth.mixins import GroupBaseMixin
 from uno.enums import Include, Match, Lookup
 from uno.meta.bases import MetaBase
 from uno.config import settings
@@ -83,7 +83,7 @@ query__child_query = Table(
 )
 
 
-class QueryPathBase(RBACBaseMixin, BaseMixin, UnoBase):
+class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "query_path"
     __table_args__ = {"comment": "Enables user-defined filtering via the graph DB."}
 
@@ -143,7 +143,7 @@ class QueryPathBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class QueryValueBase(RBACBaseMixin, BaseMixin, UnoBase):
+class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "query_value"
     __table_args__ = (
         UniqueConstraint(
@@ -216,7 +216,7 @@ class QueryValueBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class QueryBase(RBACBaseMixin, BaseMixin, UnoBase):
+class QueryBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "query"
     __table_args__ = ({"comment": "User definable queries"},)
 

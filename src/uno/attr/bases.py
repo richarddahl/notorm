@@ -13,9 +13,9 @@ from sqlalchemy.orm import (
 
 from uno.db import UnoBase, str_255, str_26, str_63
 from uno.mixins import BaseMixin
+from uno.meta.bases import MetaTypeBase, MetaBase
+from uno.auth.mixins import GroupBaseMixin
 from uno.qry.bases import QueryBase
-from uno.meta.bases import MetaTypeBase
-from uno.auth.mixins import RBACBaseMixin
 
 
 attribute__value = Table(
@@ -109,7 +109,7 @@ attribute_type__value_type = Table(
 )
 
 
-class AttributeTypeBase(RBACBaseMixin, BaseMixin, UnoBase):
+class AttributeTypeBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "attribute_type"
     __table_args__ = {
         "comment": "Defines the type of attribute that can be associated with an object"
@@ -214,7 +214,7 @@ class AttributeTypeBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class AttributeBase(RBACBaseMixin, BaseMixin, UnoBase):
+class AttributeBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "attribute"
     __table_args__ = {"comment": "Attributes define characteristics of objects"}
 

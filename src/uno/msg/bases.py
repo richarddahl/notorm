@@ -33,7 +33,7 @@ from uno.enums import MessageImportance
 from uno.config import settings
 
 
-class MessageAddressedTo(RBACBaseMixin, BaseMixin, UnoBase):
+class MessageAddressedTo(GroupBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__addressed_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -59,7 +59,7 @@ class MessageAddressedTo(RBACBaseMixin, BaseMixin, UnoBase):
     read_at: Mapped[datetime_tz] = mapped_column()
 
 
-class MessageCopiedTo(RBACBaseMixin, BaseMixin, UnoBase):
+class MessageCopiedTo(GroupBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__copied_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -85,7 +85,7 @@ class MessageCopiedTo(RBACBaseMixin, BaseMixin, UnoBase):
     read_at: Mapped[datetime_tz] = mapped_column()
 
 
-class MessageRelatedObject(RBACBaseMixin, BaseMixin, UnoBase):
+class MessageRelatedObject(GroupBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,

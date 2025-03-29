@@ -34,15 +34,12 @@ from uno.enums import (
 from uno.config import settings
 
 
-class QueryPath(UnoModel, ModelMixin, RecordAuditMixin):
+class QueryPath(UnoModel, ModelMixin):
     # Class variables
     base = QueryPathBase
     schema_configs = {
         "view_schema": UnoSchemaConfig(
             exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
                 "source_meta_type",
                 "destination_meta_type",
                 "filter_ids",

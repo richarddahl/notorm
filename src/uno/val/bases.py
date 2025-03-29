@@ -23,7 +23,7 @@ from uno.enums import (
 from uno.config import settings
 
 
-class AttachmentMetaBase(RBACBaseMixin, BaseMixin, UnoBase):
+class AttachmentMetaBase(GroupBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "attachment__meta_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,

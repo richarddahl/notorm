@@ -12,7 +12,10 @@ from sqlalchemy.orm import (
     declared_attr,
 )
 from sqlalchemy.sql import text
+
 from uno.db import str_26
+
+# from uno.auth.models import UserBase, GroupBase
 
 
 class RecordAuditMixin(BaseModel):
@@ -86,18 +89,12 @@ class RecordAuditBaseMixin:
         )
 
 
-class RBACBaseMixin:
-    tenant_id: Mapped[str_26] = mapped_column(
-        ForeignKey("tenant.id", ondelete="RESTRICT"),
-        index=True,
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="Group to which the record belongs",
-        info={
-            "edge": "TENANT",
-            "reverse_edge": "TENANT_OBJECTS",
-        },
-    )
+class GroupMixin(BaseModel):
+    group_id: Optional[str] = None
+    group: Optional["Group"] = None
+
+
+class GroupBaseMixin:
     group_id: Mapped[str_26] = mapped_column(
         ForeignKey("group.id", ondelete="RESTRICT"),
         index=True,
@@ -111,13 +108,6 @@ class RBACBaseMixin:
     )
 
     # Relationships
-    @declared_attr
-    def tenant(cls) -> Mapped["TenantBase"]:
-        return relationship(
-            foreign_keys=[cls.tenant_id],
-            doc="Tenant to which the record belongs",
-        )
-
     @declared_attr
     def group(cls) -> Mapped["GroupBase"]:
         return relationship(

@@ -17,8 +17,8 @@ from uno.db import str_26, datetime_tz
 
 class ModelMixin(BaseModel):
     id: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_deleted: Optional[bool] = None
+    is_active: Optional[bool] = True
+    is_deleted: Optional[bool] = False
     created_at: Optional[datetime.datetime] = None
     modified_at: Optional[datetime.datetime] = None
     deleted_at: Optional[datetime.datetime] = None
@@ -35,11 +35,11 @@ class BaseMixin:
         doc="Primary Key and Foreign Key to Meta Base",
     )
     is_active: Mapped[bool] = mapped_column(
-        server_default=text("true"),
+        server_default=text("TRUE"),
         doc="Indicates that the record is currently active",
     )
     is_deleted: Mapped[bool] = mapped_column(
-        server_default=text("false"),
+        server_default=text("FALSE"),
         doc="Indicates that the record has been soft deleted",
     )
     created_at: Mapped[datetime_tz] = mapped_column(

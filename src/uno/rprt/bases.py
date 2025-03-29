@@ -25,7 +25,7 @@ from uno.enums import ValueType
 from uno.config import settings
 
 
-class ReportTypeReportField(RBACBaseMixin, BaseMixin, UnoBase):
+class ReportTypeReportField(GroupBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "report_type__report_field"
     __table_args__ = (
         {

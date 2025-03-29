@@ -25,8 +25,9 @@ from uno.model import UnoModel
 from uno.apidef import app
 from uno.db import meta_data, scoped_session
 from uno.auth.bases import UserBase
-from uno.filter import create_filters
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
+from uno.qry.bases import QueryPathBase
+from uno.qry.models import QueryPath
 import uno.attr.sqlconfigs
 import uno.auth.sqlconfigs
 import uno.qry.sqlconfigs
@@ -216,6 +217,7 @@ class DBManager:
             await session.close()
         return user
 
+    """
     async def create_filters(self) -> None:
         filters = {}
         for model in UnoModel.registry.values():
@@ -237,14 +239,15 @@ class DBManager:
             session.add_all(filters.values())
             await session.commit()
             await session.close()
+    """
 
     async def create_query_paths(self) -> None:
         query_paths = []
         for model in UnoModel.registry.values():
             model.configure(app)
-            for fltr in create_filters(model.base.__table__):
+            for fltr in model.filters.values():
                 query_paths.append(
-                    models.QueryPath(
+                    QueryPathBase(
                         source_meta_type_id=fltr.source_node,
                         path=fltr.source_path,
                         data_type=fltr.data_type,

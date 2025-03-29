@@ -37,7 +37,7 @@ from uno.enums import (
 from uno.config import settings
 
 
-class Workflow(RBACBaseMixin, BaseMixin, UnoBase):
+class Workflow(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "workflow"
     __table_args__ = {"comment": "User-defined workflows"}
 
@@ -50,7 +50,7 @@ class Workflow(RBACBaseMixin, BaseMixin, UnoBase):
     # Relationships
 
 
-class TaskType(RBACBaseMixin, BaseMixin, UnoBase):
+class TaskType(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task"
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
@@ -155,7 +155,7 @@ class TaskType(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class Task(RBACBaseMixin, BaseMixin, UnoBase):
+class Task(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task"
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
@@ -184,7 +184,7 @@ class Task(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class TaskRecord(RBACBaseMixin, BaseMixin, UnoBase):
+class TaskRecord(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task_record"
     __table_args__ = {"comment": "Records of task completions"}
 

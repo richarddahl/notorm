@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import (
 
 from uno.db import UnoBase, str_26, str_255, str_63
 from uno.mixins import BaseMixin
-from uno.auth.mixins import RBACBaseMixin
+from uno.auth.mixins import RecordAuditBaseMixin
 from uno.enums import SQLOperation, TenantType
 from uno.config import settings
 
@@ -109,7 +109,7 @@ role__permission = Table(
 )
 
 
-class UserBase(RBACBaseMixin, BaseMixin, UnoBase):
+class UserBase(BaseMixin, RecordAuditBaseMixin, UnoBase):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -188,7 +188,7 @@ class UserBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class GroupBase(RBACBaseMixin, BaseMixin, UnoBase):
+class GroupBase(BaseMixin, UnoBase, RecordAuditBaseMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -228,7 +228,7 @@ class GroupBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class ResponsibilityRoleBase(RBACBaseMixin, BaseMixin, UnoBase):
+class ResponsibilityRoleBase(BaseMixin, UnoBase, RecordAuditBaseMixin):
     __tablename__ = "responsibility_role"
     __table_args__ = {"comment": "Application process responsibility"}
 
@@ -240,9 +240,24 @@ class ResponsibilityRoleBase(RBACBaseMixin, BaseMixin, UnoBase):
     description: Mapped[str_255] = mapped_column(
         nullable=False,
     )
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Tenant that owns the group",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "GROUPS",
+        },
+    )
+    # Relationships
+    tenant: Mapped[list["TenantBase"]] = relationship(
+        viewonly=True,
+        doc="Customer to which the group belongs",
+    )
 
 
-class RoleBase(RBACBaseMixin, BaseMixin, UnoBase):
+class RoleBase(BaseMixin, UnoBase, RecordAuditBaseMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -301,7 +316,7 @@ class RoleBase(RBACBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class TenantBase(RBACBaseMixin, BaseMixin, UnoBase):
+class TenantBase(BaseMixin, UnoBase, RecordAuditBaseMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         Index("ix_tenant_name", "name"),
