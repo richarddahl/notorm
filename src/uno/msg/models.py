@@ -56,9 +56,15 @@ class Message(UnoModel):
         ),
         "edit_schema": UnoSchemaConfig(
             include_fields=[
+                "flag",
+                "is_draft",
+                "parent_id",
+                "to",
+                "cc",
+                "bcc",
+                "attachments",
                 "subject",
                 "body",
-                "flag",
             ],
         ),
     }
@@ -66,9 +72,10 @@ class Message(UnoModel):
 
     # Fields
     id: Optional[str]
+    flag: Optional[MessageImportance]
+    is_draft: Optional[bool] = True
     parent_id: Optional[str]
     parent: Optional["Message"]
-    flag: Optional[MessageImportance]
     to: Optional[list[str]]
     cc: Optional[list[str]]
     bcc: Optional[list[str]]

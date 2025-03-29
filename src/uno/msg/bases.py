@@ -151,6 +151,10 @@ class MessageBase(GroupBaseMixin, BaseMixin, UnoBase):
     body: Mapped[str_255] = mapped_column(
         doc="Body of the message",
     )
+    is_draft: Mapped[bool] = mapped_column(
+        server_default=text("TRUE"),
+        doc="Whether the message is a draft",
+    )
     sent_at: Mapped[datetime_tz] = mapped_column(
         server_default=func.current_timestamp(),
         doc="Time the message was sent",
