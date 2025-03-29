@@ -23,8 +23,7 @@ from uno.sqlemitter import (
 )
 from uno.model import UnoModel
 from uno.apidef import app
-from uno.db import meta_data
-from uno.db import scoped_session
+from uno.db import meta_data, scoped_session
 from uno.auth.bases import UserBase
 from uno.filter import create_filters
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
@@ -176,6 +175,20 @@ class DBManager:
             print("Dropped the database and the roles associated with it\n")
         engine.dispose()
 
+    def engine(
+        self,
+        db_role: str,
+        db_driver: str = settings.DB_SYNC_DRIVER,
+        db_password: str = settings.DB_USER_PW,
+        db_host: str = settings.DB_HOST,
+        db_name: str = settings.DB_NAME,
+    ) -> Engine:
+
+        engine = create_engine(
+            f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
+        )
+        return engine
+
     async def create_superuser(
         self,
         email: str = settings.SUPERUSER_EMAIL,
@@ -252,17 +265,3 @@ class DBManager:
             session.add_all(query_paths)
             await session.commit()
             await session.close()
-
-    def engine(
-        self,
-        db_role: str,
-        db_driver: str = settings.DB_SYNC_DRIVER,
-        db_password: str = settings.DB_USER_PW,
-        db_host: str = settings.DB_HOST,
-        db_name: str = settings.DB_NAME,
-    ) -> Engine:
-
-        engine = create_engine(
-            f"{db_driver}://{db_role}:{db_password}@{db_host}/{db_name}",
-        )
-        return engine

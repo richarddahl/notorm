@@ -144,7 +144,7 @@ class UnoModel(BaseModel):
                 lookups = text_lookups
             elif column.type.python_type in [
                 int,
-                Decimal,
+                decimal.Decimal,
                 float,
                 datetime.date,
                 datetime.datetime,
@@ -202,14 +202,13 @@ class UnoModel(BaseModel):
         for column in table.columns.values():
             if column.info.get("graph_excludes", False):
                 continue
-            fltr = create_filter_for_column(column, table.name)
+            fltr = create_filter_for_column(column)
             filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
             if filter_key not in filters.keys():
                 filters[filter_key] = fltr
             if column.info.get("reverse_edge", False):
                 fltr = create_filter_for_column(
                     column,
-                    table.name,
                     edge="reverse_edge",
                 )
             fltr_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"

@@ -8,5 +8,5 @@ from uno.dbmanager import DBManager
 
 
 if __name__ == "__main__":
-    db = DBManager()
-    asyncio.run(db.create_superuser())
+    db_manager = DBManager()
+    asyncio.run(db_manager.create_superuser())

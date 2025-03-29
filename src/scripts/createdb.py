@@ -8,6 +8,6 @@ from uno.dbmanager import DBManager
 
 
 if __name__ == "__main__":
-    db = DBManager()
-    db.drop_db()
-    db.create_db()
+    db_manager = DBManager()
+    db_manager.drop_db()
+    db_manager.create_db()
