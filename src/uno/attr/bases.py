@@ -13,7 +13,7 @@ from sqlalchemy.orm import (
 
 from uno.db import UnoBase, str_255, str_26, str_63
 from uno.mixins import BaseMixin
-from uno.meta.bases import MetaTypeBase, MetaBase
+from uno.meta.bases import MetaTypeBase, MetaRecordBase
 from uno.auth.mixins import GroupBaseMixin
 from uno.qry.bases import QueryBase
 
@@ -245,11 +245,11 @@ class AttributeBase(GroupBaseMixin, BaseMixin, UnoBase):
         back_populates="attributes",
         doc="The type of attribute",
     )
-    values: Mapped[list["MetaBase"]] = relationship(
+    values: Mapped[list["MetaRecordBase"]] = relationship(
         secondary=attribute__value,
         doc="The values for the attribute",
     )
-    meta_records: Mapped[list["MetaBase"]] = relationship(
+    meta_records: Mapped[list["MetaRecordBase"]] = relationship(
         secondary=attribute__meta,
         doc="The meta_record values for the attribute",
     )

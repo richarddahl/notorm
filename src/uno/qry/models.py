@@ -81,7 +81,7 @@ def create_query_paths(filter: UnoFilter) -> list[QueryPath]:
     )
 
 
-class FilterValue(UnoModel, ModelMixin, RecordAuditMixin):
+class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = QueryValueBase
     schema_configs = {

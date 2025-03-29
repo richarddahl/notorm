@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 
 from uno.db import Base, str_26, str_64, str_255, bytea
 from uno.meta.bases import (
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -51,7 +51,7 @@ class ReportTypeReportField(GroupBaseMixin, BaseMixin, UnoBase):
 
 
 class ReportField(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -96,12 +96,12 @@ class ReportField(
 
     __mapper_args__ = {
         "polymorphic_identity": "report_field",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class ReportType(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -134,12 +134,12 @@ class ReportType(
 
     __mapper_args__ = {
         "polymorphic_identity": "report_type",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class Report(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -177,7 +177,7 @@ class Report(
     )
     __mapper_args__ = {
         "polymorphic_identity": "report",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
     def insert_schema(self):

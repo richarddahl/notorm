@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 
 from tests.conftest import db_column
 
-from uno.meta.bases import MetaBase
+from uno.meta.bases import MetaRecordBase
 from uno.sqlemitter import AlterGrants, InsertMetaType
 from uno.config import settings
 
@@ -26,15 +26,15 @@ class TestMetaBase:
 
 
     def test_meta_structure(self):
-        assert MetaBase.display_name == "MetaRecord Base"
-        assert MetaBase.display_name_plural == "MetaRecord Bases"
-        assert AlterGrants in MetaBase.sql_emitters
-        assert InsertMetaType in MetaBase.sql_emitters
-        assert MetaBase.__name__ == "MetaBase"
-        assert MetaBase.table.schema == "uno"
-        assert MetaBase.table.name == "meta_record"
-        # print(list(MetaBase.table.columns.keys()))
-        assert list(MetaBase.table.columns.keys()) == [
+        assert MetaRecordBase.display_name == "MetaRecord Base"
+        assert MetaRecordBase.display_name_plural == "MetaRecord Bases"
+        assert AlterGrants in MetaRecordBase.sql_emitters
+        assert InsertMetaType in MetaRecordBase.sql_emitters
+        assert MetaRecordBase.__name__ == "MetaRecordBase"
+        assert MetaRecordBase.table.schema == "uno"
+        assert MetaRecordBase.table.name == "meta_record"
+        # print(list(MetaRecordBase.table.columns.keys()))
+        assert list(MetaRecordBase.table.columns.keys()) == [
             "id",
             "meta_type_id",
         ]

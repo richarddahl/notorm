@@ -57,9 +57,9 @@ class User(UnoModel, ModelMixin, RecordAuditMixin):
     is_superuser: bool = False
 
     # roles: Optional[list["Role"]] = None
-    # created_objects: Optional[list[MetaBase]] = None
-    # modified_objects: Optional[list[MetaBase]] = None
-    # deleted_objects: Optional[list[MetaBase]] = None
+    # created_objects: Optional[list[MetaRecordBase]] = None
+    # modified_objects: Optional[list[MetaRecordBase]] = None
+    # deleted_objects: Optional[list[MetaRecordBase]] = None
 
     def __str__(self) -> str:
         return self.handle

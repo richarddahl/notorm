@@ -2,61 +2,71 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
+from typing import Optional
 
-from typing import Optional, ClassVar
+from sqlalchemy import ForeignKey, Table, Column, FetchedValue, func, text
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
-from sqlalchemy import (
-    ForeignKey,
-    Identity,
-    func,
-    text,
-)
-from sqlalchemy.dialects.postgresql import (
-    ENUM,
-)
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from uno.db import (
-    Base,
-    str_26,
-    str_255,
-)
-from uno.meta.bases import (
-    MetaBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-)
-from uno.sqlemitter import BaseVersionAudit, SQLEmitter
+from uno.db import UnoBase, str_255, str_26, datetime_tz
+from uno.mixins import BaseMixin
+from uno.meta.bases import MetaTypeBase, MetaRecordBase
+from uno.auth.mixins import GroupBaseMixin
+from uno.qry.bases import QueryBase
 from uno.enums import MessageImportance
 from uno.config import settings
 
 
-class MessageAddressedTo(GroupBaseMixin, BaseMixin, UnoBase):
-    # __tablename__ = "message__addressed_to"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "User addressed on a message",
-    }
-    display_name: ClassVar[str] = "Message Addressed To"
-    display_name_plural: ClassVar[str] = "Messages Addressed To"
+message__meta_record = Table(
+    "message__meta_record",
+    UnoBase.metadata,
+    Column(
+        "message_id",
+        ForeignKey("message.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        info={"edge": "META_RECORDS"},
+    ),
+    Column(
+        "meta_record_id",
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        info={"edge": "MESSAGES"},
+    ),
+)
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+
+class MessageUser(GroupBaseMixin, BaseMixin, UnoBase):
+    __tablename__ = "message_user"
+    __table_args__ = {"comment": "Message Users"}
 
     # Columns
     message_id: Mapped[str_26] = mapped_column(
         ForeignKey("message.id", ondelete="CASCADE"),
         primary_key=True,
+        index=True,
+        info={"edge": "USERS"},
     )
-    addressed_to_id: Mapped[str_26] = mapped_column(
+    user_id: Mapped[str_26] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
+        index=True,
+        info={"edge": "MESSAGES"},
     )
     read: Mapped[bool] = mapped_column(
-        server_default=text("false"),
+        server_default=text("FALSE"),
+        info={"edge": "READ", "reverse_edge": "READ_MESSAGES"},
     )
-    read_at: Mapped[datetime_tz] = mapped_column()
+    read_at: Mapped[datetime_tz] = mapped_column(
+        server_default=FetchedValue(),
+        info={"edge": "READ_AT", "reverse_edge": "READ_AT_MESSAGES"},
+    )
 
 
 class MessageCopiedTo(GroupBaseMixin, BaseMixin, UnoBase):
@@ -85,31 +95,8 @@ class MessageCopiedTo(GroupBaseMixin, BaseMixin, UnoBase):
     read_at: Mapped[datetime_tz] = mapped_column()
 
 
-class MessageRelatedObject(GroupBaseMixin, BaseMixin, UnoBase):
-    # __tablename__ = "message__meta"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "Messages to MetaBase Objects",
-    }
-
-    display_name: ClassVar[str] = "Message MetaBase Object"
-    display_name_plural: ClassVar[str] = "Message MetaBase Objects"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    message_id: Mapped[str_26] = mapped_column(
-        ForeignKey("message.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-    meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_record.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
-
-
 class Message(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -183,5 +170,5 @@ class Message(
 
     __mapper_args__ = {
         "polymorphic_identity": "message",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }

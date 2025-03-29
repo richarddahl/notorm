@@ -19,7 +19,7 @@ from uno.db import UnoBase, str_26, str_255, str_63
 from uno.mixins import BaseMixin
 from uno.auth.mixins import GroupBaseMixin
 from uno.enums import Include, Match, Lookup
-from uno.meta.bases import MetaBase
+from uno.meta.bases import MetaRecordBase
 from uno.config import settings
 
 query_value__values = Table(
@@ -138,7 +138,7 @@ class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
     )
 
     # Relationships
-    source_meta_type: Mapped["MetaBase"] = relationship(
+    source_meta_type: Mapped["MetaRecordBase"] = relationship(
         doc="The source meta_record type of the filter",
     )
 
@@ -205,7 +205,7 @@ class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
     query_path: Mapped[QueryPathBase] = relationship(
         doc="The filter to which the value belongs",
     )
-    values: Mapped[list["MetaBase"]] = relationship(
+    values: Mapped[list["MetaRecordBase"]] = relationship(
         secondary=query_value__values,
         doc="The value of the filter",
     )

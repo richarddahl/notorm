@@ -27,5 +27,5 @@ class TestMetaTypeModel(IsolatedAsyncioTestCase):
 
     def test_meta_type_model_set_display_names(self):
         assert MetaType.base.__table__.name == "meta_type"
-        assert MetaType.display_name == "MetaRecord Type"
-        assert MetaType.display_name_plural == "MetaRecord Types"
+        assert MetaType.display_name == "Meta Type"
+        assert MetaType.display_name_plural == "Meta Types"

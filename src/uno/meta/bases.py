@@ -20,7 +20,7 @@ class MetaTypeBase(UnoBase):
     )
 
 
-class MetaBase(UnoBase):
+class MetaRecordBase(UnoBase):
     __tablename__ = "meta_record"
 
     id: Mapped[str_26] = mapped_column(

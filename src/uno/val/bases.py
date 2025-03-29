@@ -29,7 +29,7 @@ class AttachmentMetaBase(GroupBaseMixin, BaseMixin, UnoBase):
         "schema": settings.DB_SCHEMA,
         "comment": "The relationship between attachments and meta_record objects",
     }
-    display_name: ClassVar[str] = "Attachment MetaBase"
+    display_name: ClassVar[str] = "Attachment MetaRecordBase"
     display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
 
     sql_emitters: ClassVar[list[SQLEmitter]] = []
@@ -46,7 +46,7 @@ class AttachmentMetaBase(GroupBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class BooleanValue(MetaBase):
+class BooleanValue(MetaRecordBase):
     # __tablename__ = "boolean_value"
     __table_args__ = (
         {
@@ -77,12 +77,12 @@ class BooleanValue(MetaBase):
 
     __mapper_args__ = {
         "polymorphic_identity": "boolean_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class DateTimeValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -117,12 +117,12 @@ class DateTimeValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "datetime_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class DateValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -157,12 +157,12 @@ class DateValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "date_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class DecimalValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -197,12 +197,12 @@ class DecimalValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "decimal_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class IntegerValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -237,12 +237,12 @@ class IntegerValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "integer_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class TextValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -277,12 +277,12 @@ class TextValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "text_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class TimeValue(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -317,12 +317,12 @@ class TimeValue(
 
     __mapper_args__ = {
         "polymorphic_identity": "time_value",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class Attachment(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -350,12 +350,12 @@ class Attachment(
 
     __mapper_args__ = {
         "polymorphic_identity": "attachment",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class Method(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -390,7 +390,7 @@ class Method(
 
     __mapper_args__ = {
         "polymorphic_identity": "method",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
@@ -401,7 +401,7 @@ This is something for Jeff to look at and see if it is useful and feasible, usin
 
 
 class CalculationSymbol(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -422,12 +422,12 @@ class CalculationSymbol(
 
     __mapper_args__ = {
         "polymorphic_identity": "calculation_symbol",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 
 class Calculation(
-    MetaBase,
+    MetaRecordBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
@@ -457,7 +457,7 @@ class Calculation(
 
     __mapper_args__ = {
         "polymorphic_identity": "calculation",
-        "inherit_condition": id == MetaBase.id,
+        "inherit_condition": id == MetaRecordBase.id,
     }
 
 """
