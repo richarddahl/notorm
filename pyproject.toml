@@ -56,7 +56,7 @@ main = "uvicorn main:app {args: --reload}"
 createdb = "python src/scripts/createdb.py"
 dropdb = "python src/scripts/dropdb.py"
 createsuperuser = "python src/scripts/createsuperuser.py"
-createfilters = "python src/scripts/createfilters.py"
+createquerypaths = "python src/scripts/createquerypaths.py"
 
 
 #Development Environment
@@ -65,7 +65,7 @@ main = "ENV=dev uvicorn main:app {args: --reload}"
 createdb = "ENV=dev python src/scripts/createdb.py"
 dropdb = "ENV=dev python src/scripts/dropdb.py"
 createsuperuser = "ENV=dev python src/scripts/createsuperuser.py"
-createfilters = "ENV=dev python src/scripts/createfilters.py"
+createquerypaths = "ENV=dev python src/scripts/createquerypaths.py"
 
 
 # Testing Environment
@@ -95,6 +95,7 @@ exclude_lines = ["no cov", "if __name__ == .__main__.:", "if TYPE_CHECKING:"]
 [tool.hatch.envs.test.scripts]
 test = "ENV=test pytest --tb=no --capture=tee-sys --show-capture=all"
 testv = "ENV=test pytest --tb=short --capture=tee-sys --show-capture=all"
+testvv = "ENV=test pytest -vv --capture=tee-sys --show-capture=all"
 testV = "ENV=test pytest --capture=tee-sys --show-capture=all"
 test-cov = "ENV=test coverage run -m pytest"
 cov-report = ["ENV=test", "- coverage combine", "coverage report"]
