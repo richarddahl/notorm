@@ -4,14 +4,15 @@
 
 from typing import Optional, List
 from uno.schema import UnoSchemaConfig
-from uno.model import UnoModel, GeneralModelMixin
+from uno.model import UnoModel
+from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditMixin
 from uno.attr.bases import AttributeBase, AttributeTypeBase
-from uno.fltr.models import Query
+from uno.qry.models import Query
 from uno.meta.models import MetaType
 
 
-class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class Attribute(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = AttributeBase
     schema_configs = {
@@ -43,7 +44,7 @@ class Attribute(UnoModel, GeneralModelMixin, RecordAuditMixin):
         return self.attribute_type.name
 
 
-class AttributeType(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class AttributeType(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = AttributeTypeBase
     schema_configs = {

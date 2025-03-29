@@ -5,7 +5,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from uno.base import UnoBase, str_63, str_26
+from uno.db import UnoBase, str_63, str_26
 from uno.config import settings
 
 

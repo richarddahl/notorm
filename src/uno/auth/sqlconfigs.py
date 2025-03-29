@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.sql import (
+from uno.sqlemitter import (
     AlterGrants,
     InsertMetaType,
     RecordUserAuditFunction,

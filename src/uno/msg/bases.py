@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from uno.base import (
+from uno.db import (
     Base,
     str_26,
     str_255,
@@ -28,12 +28,12 @@ from uno.meta.bases import (
     BaseAuditMixin,
     BaseVersionAuditMixin,
 )
-from uno.sql import BaseVersionAudit, SQLEmitter
+from uno.sqlemitter import BaseVersionAudit, SQLEmitter
 from uno.enums import MessageImportance
 from uno.config import settings
 
 
-class MessageAddressedTo(Base):
+class MessageAddressedTo(RBACBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__addressed_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -59,7 +59,7 @@ class MessageAddressedTo(Base):
     read_at: Mapped[datetime_tz] = mapped_column()
 
 
-class MessageCopiedTo(Base):
+class MessageCopiedTo(RBACBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__copied_to"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,
@@ -85,7 +85,7 @@ class MessageCopiedTo(Base):
     read_at: Mapped[datetime_tz] = mapped_column()
 
 
-class MessageRelatedObject(Base):
+class MessageRelatedObject(RBACBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "message__meta"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,

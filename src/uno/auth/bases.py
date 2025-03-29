@@ -22,8 +22,9 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.base import UnoBase, str_26, str_255, str_63
-from uno.dbmixins import GeneralBaseMixin
+from uno.db import UnoBase, str_26, str_255, str_63
+from uno.mixins import BaseMixin
+from uno.auth.mixins import RBACBaseMixin
 from uno.enums import SQLOperation, TenantType
 from uno.config import settings
 
@@ -108,7 +109,7 @@ role__permission = Table(
 )
 
 
-class UserBase(GeneralBaseMixin, UnoBase):
+class UserBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -187,7 +188,7 @@ class UserBase(GeneralBaseMixin, UnoBase):
     )
 
 
-class GroupBase(GeneralBaseMixin, UnoBase):
+class GroupBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
@@ -227,7 +228,7 @@ class GroupBase(GeneralBaseMixin, UnoBase):
     )
 
 
-class ResponsibilityRoleBase(GeneralBaseMixin, UnoBase):
+class ResponsibilityRoleBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "responsibility_role"
     __table_args__ = {"comment": "Application process responsibility"}
 
@@ -241,7 +242,7 @@ class ResponsibilityRoleBase(GeneralBaseMixin, UnoBase):
     )
 
 
-class RoleBase(GeneralBaseMixin, UnoBase):
+class RoleBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -300,7 +301,7 @@ class RoleBase(GeneralBaseMixin, UnoBase):
     )
 
 
-class TenantBase(GeneralBaseMixin, UnoBase):
+class TenantBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "tenant"
     __table_args__ = (
         Index("ix_tenant_name", "name"),
@@ -376,5 +377,5 @@ class PermissionBase(UnoBase):
             name="sqloperation",
             create_type=True,
         ),
-        doc="SQL Operation",
+        doc="sql.SQL Operation",
     )

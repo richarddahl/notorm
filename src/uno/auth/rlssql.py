@@ -4,9 +4,9 @@
 
 from pydantic import computed_field
 
-from psycopg.sql import SQL, Literal
+from psycopg import sql
 
-from uno.sql import (
+from uno.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,
@@ -20,14 +20,14 @@ class RowLevelSecurity(SQLEmitter):
     @computed_field
     def enable_rls(self) -> str:
         """
-        Emits the SQL statements to enable Row Level Security (RLS)
+        Emits the sql.SQL statements to enable Row Level Security (RLS)
         on the table.
 
         Returns:
-            str: A string containing the SQL statements to enable RLS for the table.
+            str: A string containing the sql.SQL statements to enable RLS for the table.
         """
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Enable RLS for the table {table_name}
             SET ROLE {admin_role};
@@ -37,7 +37,7 @@ class RowLevelSecurity(SQLEmitter):
             .format(
                 admin_role=ADMIN_ROLE,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
             )
             .as_string()
         )
@@ -45,17 +45,17 @@ class RowLevelSecurity(SQLEmitter):
     @computed_field
     def force_rls(self) -> str:
         """
-        Emits the SQL statements to force Row Level Security (RLS)
+        Emits the sql.SQL statements to force Row Level Security (RLS)
         on the table for table owners and db superusers.
 
         ONLY APPLIED IF settings.FORCE_RLS is True.
 
         Returns:
-            str: A string containing the SQL statements to force RLS for
+            str: A string containing the sql.SQL statements to force RLS for
             the table.
         """
         return (
-            SQL(
+            sql.SQL(
                 """
             -- FORCE RLS for the table {table_name}
             SET ROLE {admin_role};
@@ -64,7 +64,7 @@ class RowLevelSecurity(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -75,7 +75,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
     @computed_field
     def select_policy(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             /* 
             The policy to allow:
@@ -100,8 +100,8 @@ class UserRowLevelSecurity(RowLevelSecurity):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
-                rel_name=Literal(self.table.name),
+                table_name=sql.SQL(self.table.name),
+                rel_name=sql.Literal(self.table.name),
                 reader_role=READER_ROLE,
             )
             .as_string()
@@ -110,7 +110,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
     @computed_field
     def insert_policy(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             /*
             The policy to allow:
@@ -145,8 +145,8 @@ class UserRowLevelSecurity(RowLevelSecurity):
             .format(
                 writer_role=WRITER_ROLE,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
-                rel_name=Literal(self.table.name),
+                table_name=sql.SQL(self.table.name),
+                rel_name=sql.Literal(self.table.name),
             )
             .as_string()
         )
@@ -154,7 +154,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
     @computed_field
     def update_policy(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             /* 
             The policy to allow:
@@ -171,7 +171,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             """
             )
             .format(
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -180,7 +180,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
     @computed_field
     def delete_policy(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             /* 
             The policy to allow:
@@ -204,7 +204,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             """
             )
             .format(
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -215,7 +215,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
 def tenant__emit_select_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -230,7 +230,7 @@ def tenant__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -239,7 +239,7 @@ def tenant__emit_select_policy_sql(self):
 def tenant__emit_insert_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /*
         The policy to allow:
@@ -252,7 +252,7 @@ def tenant__emit_insert_policy_sql(self) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -261,7 +261,7 @@ def tenant__emit_insert_policy_sql(self) -> str:
 def tenant_update_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -279,7 +279,7 @@ def tenant_update_policy_sql(self) -> str:
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -288,7 +288,7 @@ def tenant_update_policy_sql(self) -> str:
 def tenant_delete_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -299,7 +299,7 @@ def tenant_delete_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -315,7 +315,7 @@ class TenantRowLevelSecurity(RowLevelSecurity):
 def admin__emit_select_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -333,7 +333,7 @@ def admin__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -342,7 +342,7 @@ def admin__emit_select_policy_sql(self):
 def admin__emit_insert_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -360,7 +360,7 @@ def admin__emit_insert_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -369,7 +369,7 @@ def admin__emit_insert_policy_sql(self):
 def admin_update_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -387,7 +387,7 @@ def admin_update_policy_sql(self):
         );
         """
             )
-            .format(table_name=SQL(self.table.name))
+            .format(table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -396,7 +396,7 @@ def admin_update_policy_sql(self):
 def admin_delete_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -414,7 +414,7 @@ def admin_delete_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -430,7 +430,7 @@ class AdminRowLevelSecurity(RowLevelSecurity):
 def def ault__emit_select_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -453,7 +453,7 @@ def def ault__emit_select_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -462,7 +462,7 @@ def def ault__emit_select_policy_sql(self):
 def def ault__emit_insert_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -485,7 +485,7 @@ def def ault__emit_insert_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -494,7 +494,7 @@ def def ault__emit_insert_policy_sql(self):
 def def ault_update_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -517,7 +517,7 @@ def def ault_update_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -526,7 +526,7 @@ def def ault_update_policy_sql(self):
 def def ault_delete_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -549,7 +549,7 @@ def def ault_delete_policy_sql(self):
         );
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -565,7 +565,7 @@ class DefaultRowLevelSecurity(RowLevelSecurity):
 def superuser__emit_select_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -576,7 +576,7 @@ def superuser__emit_select_policy_sql(self):
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -585,7 +585,7 @@ def superuser__emit_select_policy_sql(self):
 def superuser__emit_insert_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /*
         The policy to allow:
@@ -596,7 +596,7 @@ def superuser__emit_insert_policy_sql(self) -> str:
         WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -605,7 +605,7 @@ def superuser__emit_insert_policy_sql(self) -> str:
 def superuser_update_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -616,7 +616,7 @@ def superuser_update_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -625,7 +625,7 @@ def superuser_update_policy_sql(self) -> str:
 def superuser_delete_policy_sql(self) -> str:
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -636,7 +636,7 @@ def superuser_delete_policy_sql(self) -> str:
         USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )
@@ -652,7 +652,7 @@ class SuperuserRowLevelSecurity(RowLevelSecurity):
 def public__emit_select_policy_sql(self):
     return (
         text(
-            SQL(
+            sql.SQL(
                 """
         /* 
         The policy to allow:
@@ -663,7 +663,7 @@ def public__emit_select_policy_sql(self):
         USING (true);
         """
             )
-            .format(schema_name=DB_SCHEMA, table_name=SQL(self.table.name))
+            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
             .as_string()
         )
     )

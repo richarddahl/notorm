@@ -3,16 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+import decimal
 
 from typing import ClassVar
-from decimal import Decimal
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 
-from uno.base import Base, str_26, str_63
-from uno.sql import SQLEmitter
+from uno.db import Base, str_26, str_63
+from uno.sqlemitter import SQLEmitter
 from uno.enums import (
     Lookup,
     boolean_lookups,
@@ -23,7 +23,7 @@ from uno.enums import (
 from uno.config import settings
 
 
-class AttachmentMetaBase(Base):
+class AttachmentMetaBase(RBACBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "attachment__meta_record"
     __table_args__ = {
         "schema": settings.DB_SCHEMA,

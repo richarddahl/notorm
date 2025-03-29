@@ -13,19 +13,19 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.dialects.postgresql import ENUM
 
-from uno.base import Base, str_26, str_64, str_255, bytea
+from uno.db import Base, str_26, str_64, str_255, bytea
 from uno.meta.bases import (
     MetaBase,
     MetaBaseMixin,
     BaseAuditMixin,
     BaseVersionAuditMixin,
 )
-from uno.sql import SQLEmitter
+from uno.sqlemitter import SQLEmitter
 from uno.enums import ValueType
 from uno.config import settings
 
 
-class ReportTypeReportField(Base):
+class ReportTypeReportField(RBACBaseMixin, BaseMixin, UnoBase):
     # __tablename__ = "report_type__report_field"
     __table_args__ = (
         {

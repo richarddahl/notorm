@@ -11,7 +11,7 @@ import asyncio
 import pytest
 import importlib
 
-from psycopg.sql import SQL, Identifier, Literal, Placeholder
+from psycopg import sql
 
 from sqlalchemy import func, select, delete, text, create_engine, Column
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -62,7 +62,7 @@ async def session(test_db):
 
 '''
 ###########################################
-# SQL CONSTANTS FOR TESTING PURPOSES ONLY #
+# sql.SQL CONSTANTS FOR TESTING PURPOSES ONLY #
 ###########################################
 CREATE_TEST_RAISE_CURRENT_ROLE_FUNCTION = """
 CREATE OR REPLACE FUNCTION uno.testraise_role()
@@ -139,7 +139,7 @@ $$;
 
 def create_mock_role_function():
     return (
-        SQL(
+        sql.SQL(
             """
         CREATE OR REPLACE FUNCTION uno.mock_role(role_name TEXT)
         RETURNS VOID
@@ -165,7 +165,7 @@ def create_mock_role_function():
         $$;
         """
         )
-        .format(db_name=SQL(settings.DB_NAME))
+        .format(db_name=sql.SQL(settings.DB_NAME))
         .as_string()
     )
 

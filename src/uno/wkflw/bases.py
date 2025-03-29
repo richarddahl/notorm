@@ -24,8 +24,8 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.base import UnoBase, str_26, str_255, str_63
-from uno.dbmixins import GeneralBaseMixin
+from uno.db import UnoBase, str_26, str_255, str_63
+from uno.mixins import BaseMixin
 from uno.enums import (
     SQLOperation,
     WorkflowDBEvent,
@@ -37,7 +37,7 @@ from uno.enums import (
 from uno.config import settings
 
 
-class Workflow(GeneralBaseMixin, UnoBase):
+class Workflow(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "workflow"
     __table_args__ = {"comment": "User-defined workflows"}
 
@@ -50,7 +50,7 @@ class Workflow(GeneralBaseMixin, UnoBase):
     # Relationships
 
 
-class TaskType(GeneralBaseMixin, UnoBase):
+class TaskType(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task"
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
@@ -155,7 +155,7 @@ class TaskType(GeneralBaseMixin, UnoBase):
     )
 
 
-class Task(GeneralBaseMixin, UnoBase):
+class Task(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task"
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
@@ -184,7 +184,7 @@ class Task(GeneralBaseMixin, UnoBase):
     )
 
 
-class TaskRecord(GeneralBaseMixin, UnoBase):
+class TaskRecord(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "task_record"
     __table_args__ = {"comment": "Records of task completions"}
 

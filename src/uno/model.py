@@ -4,14 +4,16 @@
 
 # Models are the Business Logic Layer Objects
 
+import decimal
 import datetime
 from typing import ClassVar, Optional, Any
 from pydantic import BaseModel, ConfigDict
+
 from fastapi import FastAPI
-from sqlalchemy.inspection import inspect
+from sqlalchemy import Column
 
 from uno.db import UnoDBFactory
-from uno.base import UnoBase
+from uno.db import UnoBase
 from uno.schema import UnoSchemaConfig, UnoSchema
 from uno.endpoint import (
     CreateEndpoint,
@@ -22,7 +24,17 @@ from uno.endpoint import (
     ImportEndpoint,
 )
 from uno.errors import UnoRegistryError
-from uno.utilities import snake_to_title
+from uno.utilities import (
+    snake_to_title,
+    snake_to_camel,
+    snake_to_caps_snake,
+)
+from uno.enums import (
+    object_lookups,
+    numeric_lookups,
+    text_lookups,
+)
+from uno.filter import UnoFilter
 
 
 class UnoModel(BaseModel):
@@ -32,7 +44,7 @@ class UnoModel(BaseModel):
     registry: ClassVar[dict[str, "UnoModel"]] = {}
     db: ClassVar["UnoDB"]
     base: ClassVar[type[UnoBase]]
-    table_name: ClassVar[str] = None
+    # table_name: ClassVar[str] = None
     exclude_from_filters: ClassVar[bool] = False
     terminate_filters: ClassVar[bool] = False
     display_name: ClassVar[str] = None
@@ -50,7 +62,7 @@ class UnoModel(BaseModel):
         "Import",
     ]
     endpoint_tags: ClassVar[list[str]] = []
-    filters: ClassVar[dict[str, BaseModel]] = {}
+    filters: ClassVar[dict[str, UnoFilter]] = {}
     terminate_field_filters: ClassVar[list[str]] = []
 
     def __init_subclass__(cls, **kwargs) -> None:
@@ -73,14 +85,11 @@ class UnoModel(BaseModel):
     # End of __init_subclass__
 
     @classmethod
-    def relationships(cls) -> list[Any]:
-        return [relationship for relationship in inspect(cls.base).relationships]
-
-    @classmethod
     def configure(cls, app: FastAPI) -> None:
         """Configure the UnoModel class"""
         cls.set_schemas()
         cls.set_endpoints(app)
+        cls.set_filters()
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -123,13 +132,87 @@ class UnoModel(BaseModel):
             elif endpoint == "Import":
                 ImportEndpoint(model=cls, app=app)
 
+    @classmethod
+    def set_filters(cls) -> None:
+        table = cls.base.__table__
 
-class GeneralModelMixin(BaseModel):
-    """Mixin for General Objects"""
+        def create_filter_for_column(
+            column: Column,
+            edge: str = "edge",
+        ) -> UnoFilter:
+            if column.type.python_type in [str, bytes]:
+                lookups = text_lookups
+            elif column.type.python_type in [
+                int,
+                Decimal,
+                float,
+                datetime.date,
+                datetime.datetime,
+                datetime.time,
+            ]:
+                lookups = numeric_lookups
+            else:
+                lookups = object_lookups
+            if column.foreign_keys:
+                if edge == "edge":
+                    source_node = snake_to_camel(column.table.name)
+                    destination_node = snake_to_camel(
+                        list(column.foreign_keys)[0].column.table.name
+                    )
+                    label = snake_to_caps_snake(
+                        column.info.get(edge, column.name.replace("_id", ""))
+                    )
+                else:
+                    source_node = snake_to_camel(
+                        list(column.foreign_keys)[0].column.table.name
+                    )
+                    destination_node = snake_to_camel(
+                        column.info.get("reverse_node_label", column.table.name)
+                    )
+                    label = snake_to_caps_snake(
+                        column.info.get(edge, column.name.replace("_id", ""))
+                    )
+            else:
+                source_node = snake_to_camel(table.name)
+                destination_node = snake_to_camel(column.name)
+                label = snake_to_caps_snake(
+                    column.info.get(edge, column.name.replace("_id", ""))
+                )
+            return UnoFilter(
+                source_node=source_node,
+                label=label,
+                destination_node=destination_node,
+                data_type=column.type.python_type.__name__,
+                lookups=lookups,
+            )
 
-    id: Optional[str] = None
-    is_active: Optional[bool] = True
-    is_deleted: Optional[bool] = False
-    created_at: Optional[datetime.datetime] = None
-    modified_at: Optional[datetime.datetime] = None
-    deleted_at: Optional[datetime.datetime] = None
+        filters = {}
+        if "id" in table.columns.keys():
+            fltr = UnoFilter(
+                source_node=snake_to_camel(table.name),
+                label=snake_to_caps_snake(
+                    table.columns["id"].info.get("edge", table.name)
+                ),
+                destination_node="Meta",
+                data_type="str",
+                lookups=object_lookups,
+            )
+            filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+            filters[filter_key] = fltr
+        for column in table.columns.values():
+            if column.info.get("graph_excludes", False):
+                continue
+            fltr = create_filter_for_column(column, table.name)
+            filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+            if filter_key not in filters.keys():
+                filters[filter_key] = fltr
+            if column.info.get("reverse_edge", False):
+                fltr = create_filter_for_column(
+                    column,
+                    table.name,
+                    edge="reverse_edge",
+                )
+            fltr_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+            if fltr_key not in filters.keys():
+                filters[fltr_key] = fltr
+        cls.filters = filters

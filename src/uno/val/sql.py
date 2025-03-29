@@ -4,13 +4,13 @@
 
 from dataclasses import dataclass
 
-from psycopg.sql import SQL, Identifier, Literal
+from psycopg import sql
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 
-from uno.sql import (
+from uno.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,

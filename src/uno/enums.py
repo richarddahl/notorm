@@ -30,14 +30,14 @@ class SelectResultType(str, enum.Enum):
 
 class SQLOperation(str, enum.Enum):
     """
-    SQLOperation is an enumeration that represents different types of SQL operations.
+    SQLOperation is an enumeration that represents different types of sql.SQL operations.
 
     Attributes:
-        INSERT (str): Represents a SQL INSERT operation.
-        SELECT (str): Represents a SQL SELECT operation.
-        UPDATE (str): Represents a SQL UPDATE operation.
-        DELETE (str): Represents a SQL DELETE operation.
-        TRUNCATE (str): Represents a SQL TRUNCATE operation.
+        INSERT (str): Represents a sql.SQL INSERT operation.
+        SELECT (str): Represents a sql.SQL SELECT operation.
+        UPDATE (str): Represents a sql.SQL UPDATE operation.
+        DELETE (str): Represents a sql.SQL DELETE operation.
+        TRUNCATE (str): Represents a sql.SQL TRUNCATE operation.
     """
 
     INSERT = "Insert"

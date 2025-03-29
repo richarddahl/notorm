@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from enum import Enum
+import enum
 from typing import Optional, ClassVar, List
 
 from pydantic import BaseModel, ConfigDict, computed_field
@@ -31,7 +31,7 @@ class UnoRouter(BaseModel, ABC):
     path_prefix: str = "/api"
     api_version: str = settings.API_VERSION
     include_in_schema: bool = True
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     return_list: bool = False
     app: FastAPI = None
     status_code: int = status.HTTP_200_OK
@@ -64,7 +64,7 @@ class ListRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "GET"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     return_list: bool = True
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
@@ -114,7 +114,7 @@ class ImportRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "PUT"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
 
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
@@ -149,7 +149,7 @@ class InsertRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "POST"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -177,7 +177,7 @@ class SelectRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "GET"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -208,7 +208,7 @@ class UpdateRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "PATCH"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -235,7 +235,7 @@ class DeleteRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "DELETE"
     path_prefix: str = "/api"
-    tags: list[str | Enum] | None = None
+    tags: list[str | enum.Enum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -342,6 +342,7 @@ class ImportEndpoint(UnoEndpoint):
     status_code: int = status.HTTP_201_CREATED
 
 
+"""
 class UnoEndpoint(BaseModel):
     registry: ClassVar[dict[str, "UnoEndpoint"]] = {}
 
@@ -425,3 +426,5 @@ class ImportEndpoint(UnoEndpoint):
     body_model: UnoSchema = "view_schema"
     response_model: UnoSchema = "view_schema"
     status_code: int = status.HTTP_201_CREATED
+
+"""

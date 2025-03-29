@@ -6,11 +6,11 @@ import io
 import sys
 import contextlib
 
-from psycopg.sql import SQL
+from psycopg import sql
 from sqlalchemy import text
 from sqlalchemy.engine import create_engine, Engine
 
-from uno.sql import (
+from uno.sqlemitter import (
     SQLConfig,
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,
@@ -23,14 +23,14 @@ from uno.sql import (
 )
 from uno.model import UnoModel
 from uno.apidef import app
-from uno.base import meta_data
+from uno.db import meta_data
 from uno.db import scoped_session
 from uno.auth.bases import UserBase
-from uno.fltr.models import create_filters
+from uno.filter import create_filters
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 import uno.attr.sqlconfigs
 import uno.auth.sqlconfigs
-import uno.fltr.sqlconfigs
+import uno.qry.sqlconfigs
 import uno.meta.sqlconfigs
 
 # import uno.msg.sqlconfigs
@@ -39,7 +39,7 @@ import uno.meta.sqlconfigs
 # import uno.wkflw.sqlconfigs
 from uno.attr import models
 from uno.auth import models
-from uno.fltr import models
+from uno.qry import models
 from uno.meta import models
 
 # from uno.msg import models
@@ -138,18 +138,18 @@ class DBManager:
         print("Created the insert_meta function\n")
 
     def emit_table_sql(self) -> None:
-        # Connect to the new database to emit the table specific SQL
+        # Connect to the new database to emit the table specific sql.SQL
         engine = self.engine(db_role=f"{settings.DB_NAME}_login")
         with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             # Must emit the sql for the meta type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
-            print("\nEmitting SQL for: MetaType")
+            print("\nEmitting sql.SQL for: MetaType")
             MetaTypeSQLConfig.emit_sql(connection=conn)
             for name, config in SQLConfig.registry.items():
                 if name == "MetaTypeSQLConfig":
                     continue  # Skip the MetaType since it is done
-                print(f"\nEmitting SQL for: {name}")
+                print(f"\nEmitting sql.SQL for: {name}")
                 config.emit_sql(connection=conn)
             conn.close()
         engine.dispose()
@@ -191,9 +191,9 @@ class DBManager:
         async with scoped_session() as session:
             await session.execute(
                 text(
-                    SQL("SET ROLE {db_name}_admin;")
+                    sql.SQL("SET ROLE {db_name}_admin;")
                     .format(
-                        db_name=SQL(settings.DB_NAME),
+                        db_name=sql.SQL(settings.DB_NAME),
                     )
                     .as_string()
                 )
@@ -214,14 +214,42 @@ class DBManager:
         async with scoped_session() as session:
             await session.execute(
                 text(
-                    SQL("SET ROLE {db_name}_admin;")
+                    sql.SQL("SET ROLE {db_name}_admin;")
                     .format(
-                        db_name=SQL(settings.DB_NAME),
+                        db_name=sql.SQL(settings.DB_NAME),
                     )
                     .as_string()
                 )
             )
             session.add_all(filters.values())
+            await session.commit()
+            await session.close()
+
+    async def create_query_paths(self) -> None:
+        query_paths = []
+        for model in UnoModel.registry.values():
+            model.configure(app)
+            for fltr in create_filters(model.base.__table__):
+                query_paths.append(
+                    models.QueryPath(
+                        source_meta_type_id=fltr.source_node,
+                        path=fltr.source_path,
+                        data_type=fltr.data_type,
+                        lookups=fltr.lookups,
+                    )
+                )
+
+        async with scoped_session() as session:
+            await session.execute(
+                text(
+                    sql.SQL("SET ROLE {db_name}_admin;")
+                    .format(
+                        db_name=sql.SQL(settings.DB_NAME),
+                    )
+                    .as_string()
+                )
+            )
+            session.add_all(query_paths)
             await session.commit()
             await session.close()
 

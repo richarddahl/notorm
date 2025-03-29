@@ -6,7 +6,7 @@ import textwrap
 
 from typing import Optional, ClassVar
 
-from psycopg.sql import SQL, Literal
+from psycopg import sql
 from pydantic import BaseModel, ConfigDict, computed_field
 from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Connection
@@ -15,25 +15,25 @@ from sqlalchemy import Table
 from uno.errors import UnoError
 from uno.config import settings
 
-# SQL Literal and Identifier objects are used to create SQL strings
+# sql.SQL sql.Literal and Identifier objects are used to create sql.SQL strings
 # that are passed to the database for execution.
 
-# SQL Literals
+# sql.SQL Literals
 # These are Necessary for searchiing pg_roles
-LIT_ADMIN_ROLE = Literal(f"{settings.DB_NAME}_admin")
-LIT_WRITER_ROLE = Literal(f"{settings.DB_NAME}_writer")
-LIT_READER_ROLE = Literal(f"{settings.DB_NAME}_reader")
-LIT_LOGIN_ROLE = Literal(f"{settings.DB_NAME}_login")
-LIT_BASE_ROLE = Literal(f"{settings.DB_NAME}_base_role")
+LIT_ADMIN_ROLE = sql.Literal(f"{settings.DB_NAME}_admin")
+LIT_WRITER_ROLE = sql.Literal(f"{settings.DB_NAME}_writer")
+LIT_READER_ROLE = sql.Literal(f"{settings.DB_NAME}_reader")
+LIT_LOGIN_ROLE = sql.Literal(f"{settings.DB_NAME}_login")
+LIT_BASE_ROLE = sql.Literal(f"{settings.DB_NAME}_base_role")
 
-# SQL
-ADMIN_ROLE = SQL(f"{settings.DB_NAME}_admin")
-WRITER_ROLE = SQL(f"{settings.DB_NAME}_writer")
-READER_ROLE = SQL(f"{settings.DB_NAME}_reader")
-LOGIN_ROLE = SQL(f"{settings.DB_NAME}_login")
-BASE_ROLE = SQL(f"{settings.DB_NAME}_base_role")
-DB_NAME = SQL(settings.DB_NAME)
-DB_SCHEMA = SQL(settings.DB_SCHEMA)
+# sql.SQL
+ADMIN_ROLE = sql.SQL(f"{settings.DB_NAME}_admin")
+WRITER_ROLE = sql.SQL(f"{settings.DB_NAME}_writer")
+READER_ROLE = sql.SQL(f"{settings.DB_NAME}_reader")
+LOGIN_ROLE = sql.SQL(f"{settings.DB_NAME}_login")
+BASE_ROLE = sql.SQL(f"{settings.DB_NAME}_base_role")
+DB_NAME = sql.SQL(settings.DB_NAME)
+DB_SCHEMA = sql.SQL(settings.DB_SCHEMA)
 
 
 class SQLEmitter(BaseModel):
@@ -65,7 +65,7 @@ class SQLEmitter(BaseModel):
         )
         trigger_prefix = self.table.name
         return textwrap.dedent(
-            SQL(
+            sql.SQL(
                 """
             CREATE OR REPLACE TRIGGER {trigger_prefix}_{function_name}_trigger
                 {timing} {operation}
@@ -75,13 +75,13 @@ class SQLEmitter(BaseModel):
             """
             )
             .format(
-                table_name=SQL(self.table.name),
-                trigger_prefix=SQL(trigger_prefix),
-                function_name=SQL(function_name),
-                timing=SQL(timing),
-                operation=SQL(operation),
-                for_each=SQL(for_each),
-                trigger_scope=SQL(trigger_scope),
+                table_name=sql.SQL(self.table.name),
+                trigger_prefix=sql.SQL(trigger_prefix),
+                function_name=sql.SQL(function_name),
+                timing=sql.SQL(timing),
+                operation=sql.SQL(operation),
+                for_each=sql.SQL(for_each),
+                trigger_scope=sql.SQL(trigger_scope),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -111,9 +111,9 @@ class SQLEmitter(BaseModel):
             if db_function
             else f"{self.table.name}_{function_name}"
         )
-        ADMIN_ROLE = SQL(f"{settings.DB_NAME}_admin")
+        ADMIN_ROLE = sql.SQL(f"{settings.DB_NAME}_admin")
         fnct_string = textwrap.dedent(
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {admin_role};
             CREATE OR REPLACE FUNCTION {full_function_name}({function_args})
@@ -128,12 +128,12 @@ class SQLEmitter(BaseModel):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                full_function_name=SQL(full_function_name),
-                function_args=SQL(function_args),
-                return_type=SQL(return_type),
-                volatile=SQL(volatile),
-                security_definer=SQL(security_definer),
-                function_string=SQL(function_string),
+                full_function_name=sql.SQL(full_function_name),
+                function_args=sql.SQL(function_args),
+                return_type=sql.SQL(return_type),
+                volatile=sql.SQL(volatile),
+                security_definer=sql.SQL(security_definer),
+                function_string=sql.SQL(function_string),
             )
             .as_string()
         )
@@ -148,7 +148,7 @@ class SQLEmitter(BaseModel):
             db_function=db_function,
         )
         return textwrap.dedent(
-            SQL(
+            sql.SQL(
                 "{fnct_string}\n{trggr_string}".format(
                     fnct_string=fnct_string, trggr_string=trggr_string
                 )
@@ -156,21 +156,21 @@ class SQLEmitter(BaseModel):
         )
 
 
-## DB SQL
+## DB sql.SQL
 
 
 class SetRole(SQLEmitter):
     @computed_field
     def set_role(self, role_name: str) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {db_name}_{role};
             """
             )
             .format(
                 db_name=DB_NAME,
-                role=SQL(role_name),
+                role=sql.SQL(role_name),
             )
             .as_string()
         )
@@ -180,7 +180,7 @@ class DropDatabaseAndRoles(SQLEmitter):
     @computed_field
     def drop_database(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Drop the database if it exists
             DROP DATABASE IF EXISTS {db_name} WITH (FORCE);
@@ -193,7 +193,7 @@ class DropDatabaseAndRoles(SQLEmitter):
     @computed_field
     def drop_roles(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Drop the roles if they exist
             DROP ROLE IF EXISTS {admin_role};
@@ -218,7 +218,7 @@ class CreateRolesAndDatabase(SQLEmitter):
     @computed_field
     def create_roles(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             DO $$
             BEGIN
@@ -274,7 +274,7 @@ class CreateRolesAndDatabase(SQLEmitter):
     @computed_field
     def create_database(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Create the database
             CREATE DATABASE {db_name} WITH OWNER = {admin_role};
@@ -292,7 +292,7 @@ class CreateSchemasAndExtensions(SQLEmitter):
     @computed_field
     def create_schemas(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Create the schema_name
             CREATE SCHEMA IF NOT EXISTS {schema_name} AUTHORIZATION {admin_role};
@@ -308,7 +308,7 @@ class CreateSchemasAndExtensions(SQLEmitter):
     @computed_field
     def creaet_extensions(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Create the extensions
             SET search_path TO {schema_name};
@@ -367,7 +367,7 @@ class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLEmitter):
     @computed_field
     def revoke_privileges(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Explicitly revoke all privileges on all db_schemas and tables
             REVOKE ALL ON SCHEMA
@@ -419,7 +419,7 @@ class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLEmitter):
     @computed_field
     def set_search_paths(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Set the search paths for the roles
             ALTER ROLE
@@ -477,7 +477,7 @@ class RevokeAndGrantPrivilegesAndSetSearchPaths(SQLEmitter):
     @computed_field
     def grant_schema_privileges(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Grant ownership of the db_schemas to the DB admin role
             ALTER SCHEMA audit OWNER TO {admin_role};
@@ -541,15 +541,15 @@ class CreatePGULID(SQLEmitter):
     @computed_field
     def create_pgulid(self) -> str:
         with open(f"{settings.UNO_ROOT}/uno/pgulid.sql", "r") as file:
-            sql = file.read()
-        return SQL(sql).format(schema_name=DB_SCHEMA).as_string()
+            sql_statment = file.read()
+        return sql.SQL(sql_statment).format(schema_name=DB_SCHEMA).as_string()
 
 
 class CreateTokenSecret(SQLEmitter):
     @computed_field
     def create_token_secret_table(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             /* creating the token_secret table in database: {db_name} */
             SET ROLE {admin_role};
@@ -594,7 +594,7 @@ class GrantPrivileges(SQLEmitter):
     @computed_field
     def grant_schema_privileges(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Grant table privileges to the roles
             SET ROLE {admin_role};
@@ -649,7 +649,7 @@ class InsertMetaRecordFunction(SQLEmitter):
     @computed_field
     def insert_meta_record_function(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 meta_id VARCHAR(26) := {schema_name}.generate_ulid();
@@ -699,7 +699,7 @@ class RecordStatusFunction(SQLEmitter):
     @computed_field
     def insert_status_columns(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 now TIMESTAMP := NOW();
@@ -741,7 +741,7 @@ class RecordUserAuditFunction(SQLEmitter):
     @computed_field
     def manage_record_user_audit_columns(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
@@ -793,7 +793,7 @@ class InsertPermission(SQLEmitter):
     @computed_field
     def insert_permissions(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             BEGIN
                 /*
@@ -833,7 +833,7 @@ class ValidateGroupInsert(SQLEmitter):
     @computed_field
     def validate_group_insert(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 group_count INT4;
@@ -903,7 +903,7 @@ class InsertGroupForTenant(SQLEmitter):
     @computed_field
     def insert_group_for_tenant(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 SET ROLE {admin_role};
                 CREATE OR REPLACE FUNCTION {schema_name}.insert_group_for_tenant()
@@ -935,7 +935,7 @@ class InsertGroupForTenant(SQLEmitter):
 class DefaultGroupTenant(SQLEmitter):
     @computed_field
     def insert_default_group_column(self) -> str:
-        function_string = SQL(
+        function_string = sql.SQL(
             """
             DECLARE
                 tenant_id VARCHAR(26) := current_setting('rls_var.tenant_id', true);
@@ -964,7 +964,7 @@ class UserRecordUserAuditFunction(SQLEmitter):
     @computed_field
     def manage_user_user_audit_columns(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 user_id VARCHAR(26) := current_setting('rls_var.user_id', TRUE);
@@ -1030,7 +1030,7 @@ class UserRecordUserAuditFunction(SQLEmitter):
         )
 
 
-## TABLE SQL
+## TABLE sql.SQL
 
 
 class AlterGrants(SQLEmitter):
@@ -1038,7 +1038,7 @@ class AlterGrants(SQLEmitter):
     @computed_field
     def alter_grants(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {admin_role};
             -- Congigure table ownership and privileges
@@ -1055,7 +1055,7 @@ class AlterGrants(SQLEmitter):
                 admin_role=ADMIN_ROLE,
                 reader_role=READER_ROLE,
                 writer_role=WRITER_ROLE,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -1067,7 +1067,7 @@ class InsertMetaType(SQLEmitter):
     @computed_field
     def insert_meta_type(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Create the meta_type record
             SET ROLE {writer_role};
@@ -1079,7 +1079,7 @@ class InsertMetaType(SQLEmitter):
             .format(
                 schema_name=DB_SCHEMA,
                 writer_role=WRITER_ROLE,
-                table_name=Literal(self.table.name),
+                table_name=sql.Literal(self.table.name),
             )
             .as_string()
         )
@@ -1090,7 +1090,7 @@ class RecordVersionAudit(SQLEmitter):
     @computed_field
     def enable_version_audit(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             -- Enable auditing for the table
             SELECT audit.enable_tracking('{table_name}'::regclass);
@@ -1098,7 +1098,7 @@ class RecordVersionAudit(SQLEmitter):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
             )
             .as_string()
         )
@@ -1109,7 +1109,7 @@ class EnableHistoricalAudit(SQLEmitter):
     @computed_field
     def create_history_table(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {db_name}_admin;
             CREATE TABLE audit.{schema_name}_{table_name}
@@ -1136,7 +1136,7 @@ class EnableHistoricalAudit(SQLEmitter):
             .format(
                 db_name=DB_NAME,
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
             )
             .as_string()
         )
@@ -1144,7 +1144,7 @@ class EnableHistoricalAudit(SQLEmitter):
     @computed_field
     def insert_history_record(self) -> str:
         function_string = (
-            SQL(
+            sql.SQL(
                 """
             BEGIN
                 INSERT INTO audit.{schema_name}_{table_name}
@@ -1157,7 +1157,7 @@ class EnableHistoricalAudit(SQLEmitter):
             )
             .format(
                 schema_name=DB_SCHEMA,
-                table_name=SQL(self.table.name),
+                table_name=sql.SQL(self.table.name),
             )
             .as_string()
         )

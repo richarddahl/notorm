@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.sql import (
+from uno.sqlemitter import (
     AlterGrants,
     InsertMetaType,
     RecordUserAuditFunction,
@@ -11,11 +11,11 @@ from uno.sql import (
     SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.fltr.bases import FilterBase, FilterValueBase, QueryBase
+from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
 
 
-class FilterSQLConfig(SQLConfig):
-    table = FilterBase.__table__
+class QueryPathSQLConfig(SQLConfig):
+    table = QueryPathBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -23,8 +23,8 @@ class FilterSQLConfig(SQLConfig):
     ]
 
 
-class FilterValueSQLConfig(SQLConfig):
-    table = FilterValueBase.__table__
+class QueryValueSQLConfig(SQLConfig):
+    table = QueryValueBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

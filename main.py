@@ -16,7 +16,7 @@ from uno.config import settings
 
 from uno.attr import models as attr_models
 from uno.auth import models as auth_models
-from uno.fltr import models as fltr_models
+from uno.qry import models as fltr_models
 from uno.meta import models as meta_models
 
 # from uno.msg import models as msg_models

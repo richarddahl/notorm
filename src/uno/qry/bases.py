@@ -9,46 +9,25 @@ from sqlalchemy import (
     Index,
     ForeignKey,
     UniqueConstraint,
-    Identity,
     Table,
     Column,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import ENUM, ARRAY
+from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
-from uno.base import UnoBase, str_26, str_255, str_63
-from uno.dbmixins import GeneralBaseMixin, BaseMixin
+from uno.db import UnoBase, str_26, str_255, str_63
+from uno.mixins import BaseMixin
+from uno.auth.mixins import RBACBaseMixin
 from uno.enums import Include, Match, Lookup
 from uno.meta.bases import MetaBase
 from uno.config import settings
 
-
-filter__filter_value = Table(
-    "filter__filter_value",
+query_value__values = Table(
+    "query_value__values",
     UnoBase.metadata,
     Column(
-        "filter_id",
-        ForeignKey("filter.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-        info={"edge": "FILTER_VALUES"},
-    ),
-    Column(
-        "filter_value_id",
-        ForeignKey("filter_value.id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-        info={"edge": "FILTERS"},
-    ),
-    Index("ix_filter_id__filter_value_id", "filter_id", "filter_value_id"),
-)
-
-filter_value__values = Table(
-    "filter_value__values",
-    UnoBase.metadata,
-    Column(
-        "filter_value_id",
-        ForeignKey("filter_value.id", ondelete="CASCADE"),
+        "query_value_id",
+        ForeignKey("query_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
         info={"edge": "FILTER_VALUES"},
@@ -60,11 +39,11 @@ filter_value__values = Table(
         nullable=False,
         info={"edge": "VALUES"},
     ),
-    Index("ix_filter_value_id__value_id", "filter_value_id", "value_id"),
+    Index("ix_query_value_id__value_id", "query_value_id", "value_id"),
 )
 
-query__filter_value = Table(
-    "query__filter_value",
+query__query_value = Table(
+    "query__query_value",
     UnoBase.metadata,
     Column(
         "query_id",
@@ -74,13 +53,13 @@ query__filter_value = Table(
         info={"edge": "FILTER_VALUES"},
     ),
     Column(
-        "filter_value_id",
-        ForeignKey("filter_value.id", ondelete="CASCADE"),
+        "query_value_id",
+        ForeignKey("query_value.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
         info={"edge": "QUERIES"},
     ),
-    Index("ix_query_id__filter_value_id", "query_id", "filter_value_id"),
+    Index("ix_query_id__query_value_id", "query_id", "query_value_id"),
 )
 
 query__child_query = Table(
@@ -104,69 +83,8 @@ query__child_query = Table(
 )
 
 
-class FilterBase(UnoBase):
-    __tablename__ = "filter"
-    __table_args__ = (
-        UniqueConstraint(
-            "source_path",
-            "label",
-            "destination_path",
-            name="uq_filter__source_path__label__destination_path",
-        ),
-        {"comment": "Enables user-defined filtering via the graph DB."},
-    )
-
-    id: Mapped[int] = mapped_column(
-        Identity(),
-        primary_key=True,
-        unique=True,
-        index=True,
-        doc="The id of the filter",
-    )
-    source_node: Mapped[str_63] = mapped_column(
-        index=True,
-        nullable=False,
-        doc="The source node filtered.",
-    )
-    destination_node: Mapped[str_63] = mapped_column(
-        index=True,
-        nullable=False,
-        doc="The destination node of the filter",
-    )
-    label: Mapped[str] = mapped_column(
-        index=True,
-        nullable=False,
-        doc="The label of the filter",
-    )
-    data_type: Mapped[str] = mapped_column(
-        doc="The data type of the filter",
-    )
-    lookups: Mapped[list[Lookup]] = mapped_column(
-        ARRAY(
-            ENUM(
-                Lookup,
-                name="lookup",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        doc="The lookups for the filter",
-    )
-    display: Mapped[str] = mapped_column(
-        doc="The display of the filter",
-    )
-    source_path: Mapped[str] = mapped_column(
-        nullable=False,
-        doc="The path of the filter when prepended to a child filter",
-    )
-    destination_path: Mapped[str] = mapped_column(
-        nullable=False,
-        doc="The path of the filter when appended to a parent filter",
-    )
-
-
-class FilterPathBase(BaseMixin, UnoBase):
-    __tablename__ = "filter_path"
+class QueryPathBase(RBACBaseMixin, BaseMixin, UnoBase):
+    __tablename__ = "query_path"
     __table_args__ = {"comment": "Enables user-defined filtering via the graph DB."}
 
     # Columns
@@ -177,6 +95,24 @@ class FilterPathBase(BaseMixin, UnoBase):
         doc="The source node filtered.",
         info={
             "edge": "SOURCE_META_TYPE",
+            "reverse_edge": "SOURCE_FILTER_PATHS",
+        },
+    )
+    destination_meta_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The destination node of the filter",
+        info={
+            "edge": "DESTINATION_META_TYPE",
+            "reverse_edge": "DESTINATION_FILTER_PATHS",
+        },
+    )
+    filter_ids: Mapped[list[str_26]] = mapped_column(
+        ARRAY(VARCHAR(26)),
+        doc="The filters for the filter path",
+        info={
+            "edge": "FILTER_IDS",
             "reverse_edge": "FILTER_PATHS",
         },
     )
@@ -207,18 +143,18 @@ class FilterPathBase(BaseMixin, UnoBase):
     )
 
 
-class FilterValueBase(BaseMixin, UnoBase):
-    __tablename__ = "filter_value"
+class QueryValueBase(RBACBaseMixin, BaseMixin, UnoBase):
+    __tablename__ = "query_value"
     __table_args__ = (
         UniqueConstraint(
-            "filter_path_id",
+            "query_path_id",
             "include",
             "match",
             "lookup",
         ),
         Index(
             "ix_filtervalue__unique_together",
-            "filter_path_id",
+            "query_path_id",
             "include",
             "match",
             "lookup",
@@ -227,11 +163,11 @@ class FilterValueBase(BaseMixin, UnoBase):
     )
 
     # Columns
-    filter_path_id: Mapped[str_26] = mapped_column(
-        ForeignKey("filter_path.id", ondelete="CASCADE"),
+    query_path_id: Mapped[str_26] = mapped_column(
+        ForeignKey("query_path.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        doc="The Filter Path to which the value belongs",
+        doc="The UnoFilter Path to which the value belongs",
         info={
             "edge": "FILTER_PATH",
             "reverse_edge": "FILTER_VALUES",
@@ -266,21 +202,21 @@ class FilterValueBase(BaseMixin, UnoBase):
     )
 
     # Relationships
-    filter_path: Mapped[FilterPathBase] = relationship(
+    query_path: Mapped[QueryPathBase] = relationship(
         doc="The filter to which the value belongs",
     )
     values: Mapped[list["MetaBase"]] = relationship(
-        secondary=filter_value__values,
+        secondary=query_value__values,
         doc="The value of the filter",
     )
     queries: Mapped[list["QueryBase"]] = relationship(
-        secondary=query__filter_value,
+        secondary=query__query_value,
         doc="The queries that use the filter value",
-        back_populates="filter_values",
+        back_populates="query_values",
     )
 
 
-class QueryBase(BaseMixin, UnoBase):
+class QueryBase(RBACBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "query"
     __table_args__ = ({"comment": "User definable queries"},)
 
@@ -345,8 +281,8 @@ class QueryBase(BaseMixin, UnoBase):
     )
 
     # Relationships
-    filter_values: Mapped[Optional[list[FilterValueBase]]] = relationship(
-        secondary=query__filter_value,
+    query_values: Mapped[Optional[list[QueryValueBase]]] = relationship(
+        secondary=query__query_value,
         back_populates="queries",
     )
     sub_queries: Mapped[Optional[list["QueryBase"]]] = relationship(

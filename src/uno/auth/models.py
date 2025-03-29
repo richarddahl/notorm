@@ -7,7 +7,8 @@ from pydantic import EmailStr
 
 from uno.enums import SQLOperation, TenantType
 from uno.schema import UnoSchemaConfig
-from uno.model import UnoModel, GeneralModelMixin
+from uno.model import UnoModel
+from uno.mixins import ModelMixin
 from uno.auth.bases import (
     UserBase,
     GroupBase,
@@ -19,7 +20,7 @@ from uno.auth.mixins import RecordAuditMixin
 from uno.config import settings
 
 
-class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class User(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = UserBase
     schema_configs = {
@@ -64,7 +65,7 @@ class User(UnoModel, GeneralModelMixin, RecordAuditMixin):
         return self.handle
 
 
-class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class Group(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = GroupBase
 
@@ -100,7 +101,7 @@ class Group(UnoModel, GeneralModelMixin, RecordAuditMixin):
         return self.name
 
 
-class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class Role(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = RoleBase
 
@@ -132,7 +133,7 @@ class Role(UnoModel, GeneralModelMixin, RecordAuditMixin):
         return self.name
 
 
-class Tenant(UnoModel, GeneralModelMixin, RecordAuditMixin):
+class Tenant(UnoModel, ModelMixin, RecordAuditMixin):
     # Class variables
     base = TenantBase
 

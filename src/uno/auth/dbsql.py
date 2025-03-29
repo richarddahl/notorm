@@ -4,10 +4,10 @@
 
 from pydantic import computed_field
 
-from psycopg.sql import SQL
+from psycopg import sql
 from sqlalchemy.sql import text
 
-from uno.sql import (
+from uno.sqlemitter import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
@@ -29,7 +29,7 @@ class CreateRLSFunctions(SQLEmitter):
     @computed_field
     def emit_create_authorize_user_function_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
@@ -152,7 +152,7 @@ class CreateRLSFunctions(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                db_name=SQL(settings.DB_NAME),
+                db_name=sql.SQL(settings.DB_NAME),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -161,7 +161,7 @@ class CreateRLSFunctions(SQLEmitter):
     @computed_field
     def emit_permissible_groups_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.permissible_groups(table_name TEXT, operation TEXT);
@@ -198,7 +198,7 @@ class GetPermissibleGroupsFunction(SQLEmitter):
 
     @computed_field
     def select_permissible_groups(self) -> str:
-        function_string = SQL(
+        function_string = sql.SQL(
             text(
                 """
             DECLARE

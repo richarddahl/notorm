@@ -7,11 +7,11 @@ import textwrap
 from typing import ClassVar
 from typing_extensions import Self
 
-from psycopg.sql import SQL, Identifier, Literal
+from psycopg import sql
 from pydantic import BaseModel, computed_field, ConfigDict, model_validator
 from sqlalchemy import Column, Table
 
-from uno.sql import SQLEmitter, ADMIN_ROLE
+from uno.sqlemitter import SQLEmitter, ADMIN_ROLE
 from uno.utilities import snake_to_camel, snake_to_caps_snake
 
 
@@ -84,18 +84,18 @@ class GraphSQLEmitter(SQLEmitter):
 
     @computed_field
     def create_labels(self) -> str:
-        """Returns a SQL script for creating labels for nodes and edges in Apache AGE.
+        """Returns a sql.SQL script for creating labels for nodes and edges in Apache AGE.
 
-        The method constructs a SQL script that:
+        The method constructs a sql.SQL script that:
         - Sets the database role to the specified admin role.
         - Creates labels for nodes that are marked for creation.
         - Creates labels for edges.
 
         Returns:
-            str: A formatted SQL script as a string.
+            str: A formatted sql.SQL script as a string.
         """
         return textwrap.dedent(
-            SQL(
+            sql.SQL(
                 """
             DO $$
             BEGIN
@@ -107,32 +107,34 @@ class GraphSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                node_labels=SQL("\n".join([node.label_sql() for node in self.nodes])),
-                edges=SQL("\n".join([edge.label_sql() for edge in self.edges])),
+                node_labels=sql.SQL(
+                    "\n".join([node.label_sql() for node in self.nodes])
+                ),
+                edges=sql.SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
 
     def function_string(self, operation: str) -> str:
-        """Generates a SQL string for performing a specified operation for nodes and edges.
+        """Generates a sql.SQL string for performing a specified operation for nodes and edges.
 
         Args:
             operation (str): The type of operation to perform. Supported values are:
-                - "insert_sql": Generates SQL for creating or updating nodes and edges.
-                - "update_sql": Generates SQL for creating or updating nodes and edges.
-                - "delete_sql": Generates SQL for deleting nodes and edges.
-                - "truncate_sql": Generates SQL for truncating nodes and edges.
+                - "insert_sql": Generates sql.SQL for creating or updating nodes and edges.
+                - "update_sql": Generates sql.SQL for creating or updating nodes and edges.
+                - "delete_sql": Generates sql.SQL for deleting nodes and edges.
+                - "truncate_sql": Generates sql.SQL for truncating nodes and edges.
 
         Returns:
-            str: A formatted SQL string that includes the operation logic for nodes and edges,
+            str: A formatted sql.SQL string that includes the operation logic for nodes and edges,
             along with the appropriate return value ("OLD", "NULL", or "NEW") based on the operation.
 
         Notes:
-            - The SQL string includes placeholders for administrative roles, nodes, and edges,
+            - The sql.SQL string includes placeholders for administrative roles, nodes, and edges,
               which are dynamically populated using the provided operation and the object's attributes.
             - The function assumes the existence of `self.nodes` and `self.edges`, which are iterated
-              to generate operation-specific SQL fragments.
-            - The `ADMIN_ROLE` constant is used to set the role for executing the SQL.
+              to generate operation-specific sql.SQL fragments.
+            - The `ADMIN_ROLE` constant is used to set the role for executing the sql.SQL.
         """
         if operation == "delete_sql":
             return_value = "OLD"
@@ -141,7 +143,7 @@ class GraphSQLEmitter(SQLEmitter):
         else:
             return_value = "NEW"
         return textwrap.dedent(
-            SQL(
+            sql.SQL(
                 """
             DECLARE
                 cypher_query text;
@@ -157,8 +159,8 @@ class GraphSQLEmitter(SQLEmitter):
             )
             .format(
                 admin_role=ADMIN_ROLE,
-                operation=SQL(operation),
-                nodes=SQL(
+                operation=sql.SQL(operation),
+                nodes=sql.SQL(
                     "".join(
                         [
                             getattr(node, operation)()
@@ -167,8 +169,10 @@ class GraphSQLEmitter(SQLEmitter):
                         ]
                     )
                 ),
-                edges=SQL("".join([getattr(edge, operation)() for edge in self.edges])),
-                return_value=SQL(return_value),
+                edges=sql.SQL(
+                    "".join([getattr(edge, operation)() for edge in self.edges])
+                ),
+                return_value=sql.SQL(return_value),
             )
             .as_string()
         )
@@ -287,21 +291,21 @@ class Node(BaseModel):
         return self
 
     def label_sql(self) -> str:
-        """Generates an SQL string to create a vertex label in a graph database if it does not already exist.
+        """Generates an sql.SQL string to create a vertex label in a graph database if it does not already exist.
 
-        The SQL string performs the following actions:
+        The sql.SQL string performs the following actions:
         - Checks if a label with the specified name exists in the `ag_catalog.ag_label` table.
         - If the label does not exist:
             - Creates a vertex label in the graph using `ag_catalog.create_vlabel`.
             - Creates an index on the `id` column of the label.
             - Creates a GIN index on the `properties` column of the label.
-        - Includes additional SQL for edge labels if applicable.
+        - Includes additional sql.SQL for edge labels if applicable.
 
         Returns:
-            str: The formatted SQL string.
+            str: The formatted sql.SQL string.
         """
         return (
-            SQL(
+            sql.SQL(
                 """
                 IF NOT EXISTS (SELECT * FROM ag_catalog.ag_label WHERE name = {label}) THEN
                     PERFORM ag_catalog.create_vlabel('graph', {label});
@@ -312,31 +316,31 @@ class Node(BaseModel):
             """
             )
             .format(
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
-                edges=SQL("\n".join([edge.label_sql() for edge in self.edges])),
+                label=sql.Literal(self.label),
+                label_ident=sql.Identifier(self.label),
+                edges=sql.SQL("\n".join([edge.label_sql() for edge in self.edges])),
             )
             .as_string()
         )
 
     def insert_sql(self) -> str:
-        """Generates an SQL string for inserting data into a graph database using Cypher queries.
+        """Generates an sql.SQL string for inserting data into a graph database using Cypher queries.
 
         This method constructs a series of Cypher queries to:
         1. Merge a vertex (node) with a specific label and properties.
         2. Create an edge (relationship) between two nodes if certain conditions are met.
 
         Returns:
-            str: The generated SQL string containing the Cypher queries.
+            str: The generated sql.SQL string containing the Cypher queries.
 
         Notes:
             - The method uses placeholders for dynamic values such as labels, column names,
-              and node/edge properties, which are formatted using the `SQL` and `format` methods.
-            - The generated SQL assumes the use of a graph database with Cypher query support.
+              and node/edge properties, which are formatted using the `sql.SQL` and `format` methods.
+            - The generated sql.SQL assumes the use of a graph database with Cypher query support.
             - The `NEW` keyword refers to the new row being inserted in a trigger context.
         """
         return (
-            SQL(
+            sql.SQL(
                 """
                 -- MERGE must be used to ensure that the node is created only if it does not already exist
                 -- This is required as some objects have multiple relationsihps to the same object, i.e. User
@@ -352,9 +356,9 @@ class Node(BaseModel):
             """
             )
             .format(
-                label=SQL(self.label),
-                column_name=SQL(self.column.name),
-                create_statements=SQL(
+                label=sql.SQL(self.label),
+                column_name=sql.SQL(self.column.name),
+                create_statements=sql.SQL(
                     "\n".join([edge.create_statement() for edge in self.edges])
                 ),
             )
@@ -362,7 +366,7 @@ class Node(BaseModel):
         )
 
     def update_sql(self) -> str:
-        """Generates a SQL query string to handle updates to a graph database using Cypher queries.
+        """Generates a sql.SQL query string to handle updates to a graph database using Cypher queries.
 
         This method constructs and executes Cypher queries to manage nodes and edges in a graph
         database based on changes to a specific column in a relational database. It handles the
@@ -377,7 +381,7 @@ class Node(BaseModel):
            - Deletes the corresponding node and its associated edge from the graph.
 
         Returns:
-            str: The generated SQL query string to execute the necessary Cypher queries.
+            str: The generated sql.SQL query string to execute the necessary Cypher queries.
 
         Notes:
             - The method uses the `FORMAT` function to dynamically construct Cypher queries.
@@ -386,11 +390,11 @@ class Node(BaseModel):
               defined in the class attributes (`label`, `column`, `edge`).
 
         Raises:
-            Any exceptions related to SQL execution or Cypher query formatting will propagate
+            Any exceptions related to sql.SQL execution or Cypher query formatting will propagate
             to the caller.
         """
         return (
-            SQL(
+            sql.SQL(
                 """
                 IF NEW.{column_name} IS NOT NULL AND NEW.{column_name} != OLD.{column_name} THEN
                     IF OLD.{column_name} IS NULL THEN 
@@ -427,12 +431,12 @@ class Node(BaseModel):
             """
             )
             .format(
-                label=SQL(self.label),
-                column_name=SQL(self.column.name),
-                delete_statements=SQL(
+                label=sql.SQL(self.label),
+                column_name=sql.SQL(self.column.name),
+                delete_statements=sql.SQL(
                     "\n".join([edge.delete_statement() for edge in self.edges])
                 ),
-                create_statements=SQL(
+                create_statements=sql.SQL(
                     "\n".join([edge.create_statement() for edge in self.edges])
                 ),
             )
@@ -440,18 +444,18 @@ class Node(BaseModel):
         )
 
     def delete_sql(self) -> str:
-        """Generates a SQL query string to delete a vertex from a graph database.
+        """Generates a sql.SQL query string to delete a vertex from a graph database.
 
-        The method constructs a SQL query that uses the `cypher` function to match
+        The method constructs a sql.SQL query that uses the `cypher` function to match
         a vertex with a specific label and value, and then performs a `DETACH DELETE`
         operation on the matched vertex.
 
         Returns:
-            str: The SQL query string for deleting the specified vertex.
+            str: The sql.SQL query string for deleting the specified vertex.
         """
         if self.column.name != "id":
             return ""
-        return SQL(
+        return sql.SQL(
             """
                     /*
                     Match all of the nodes with the objects id and delete them
@@ -462,29 +466,29 @@ class Node(BaseModel):
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                         MATCH (v: {id: %s})
                         DETACH DELETE v
-                    $graph$) AS (e agtype);, OLD.id);');
+                    $graph$) AS (e agtype);', OLD.id);
             """
         ).as_string()
 
     def truncate_sql(self) -> str:
-        """Generates a SQL query string to truncate (delete) all nodes of a specific label
+        """Generates a sql.SQL query string to truncate (delete) all nodes of a specific label
         in a graph database using the Cypher query language.
 
         Returns:
-            str: A SQL query string that deletes all nodes with the specified label
+            str: A sql.SQL query string that deletes all nodes with the specified label
             if the column name is "id". Returns an empty string otherwise.  All node
         """
         return (
-            SQL(
+            sql.SQL(
                 """
                     -- Detach delete ensures that all edges using the node are also deleted
-                    SELECT * FROM cypher('graph', $graph$
+                    EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                         MATCH (v:{label})
                         DETACH DELETE v
-                    $graph$) AS (e agtype);
+                    $graph$) AS (e agtype);');
             """
             )
-            .format(label=SQL(self.label))
+            .format(label=sql.SQL(self.label))
             .as_string()
         )
 
@@ -498,7 +502,7 @@ class Edge(BaseModel):
 
     def label_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label WHERE name = {label}) THEN
                     PERFORM ag_catalog.create_elabel('graph', {label});
@@ -507,15 +511,15 @@ class Edge(BaseModel):
             """
             )
             .format(
-                label=Literal(self.label),
-                label_ident=Identifier(self.label),
+                label=sql.Literal(self.label),
+                label_ident=sql.Identifier(self.label),
             )
             .as_string()
         )
 
     def create_statement(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
@@ -529,18 +533,18 @@ class Edge(BaseModel):
             """
             )
             .format(
-                source_node=(SQL(self.source_node)),
-                source_column=SQL(self.source_column),
-                label=SQL(self.label),
-                destination_node=SQL(self.destination_node),
-                destination_column=SQL(self.destination_column),
+                source_node=(sql.SQL(self.source_node)),
+                source_column=sql.SQL(self.source_column),
+                label=sql.SQL(self.label),
+                destination_node=sql.SQL(self.destination_node),
+                destination_column=sql.SQL(self.destination_column),
             )
             .as_string()
         )
 
     def insert_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 -- Insert graph edges for association tables
                 IF NEW.{destination_column} IS NOT NULL THEN
@@ -557,18 +561,18 @@ class Edge(BaseModel):
             """
             )
             .format(
-                destination_column=SQL(self.destination_column),
-                source_node=(SQL(self.source_node)),
-                label=SQL(self.label),
-                source_column=SQL(self.source_column),
-                destination_node=SQL(self.destination_node),
+                destination_column=sql.SQL(self.destination_column),
+                source_node=(sql.SQL(self.source_node)),
+                label=sql.SQL(self.label),
+                source_column=sql.SQL(self.source_column),
+                destination_node=sql.SQL(self.destination_node),
             )
             .as_string()
         )
 
     def delete_statement(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
@@ -583,18 +587,18 @@ class Edge(BaseModel):
             """
             )
             .format(
-                source_node=(SQL(self.source_node)),
-                source_column=SQL(self.source_column),
-                label=SQL(self.label),
-                destination_node=SQL(self.destination_node),
-                destination_column=SQL(self.destination_column),
+                source_node=(sql.SQL(self.source_node)),
+                source_column=sql.SQL(self.source_column),
+                label=sql.SQL(self.label),
+                destination_node=sql.SQL(self.destination_node),
+                destination_column=sql.SQL(self.destination_column),
             )
             .as_string()
         )
 
     def update_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 -- Update graph edges for association tables
                 IF NEW.{destination_column} IS NOT NULL AND NEW.{destination_column} != OLD.{destination_column} THEN
@@ -608,16 +612,16 @@ class Edge(BaseModel):
             """
             )
             .format(
-                destination_column=SQL(self.destination_column),
-                delete_statement=SQL(self.delete_statement()),
-                create_statement=SQL(self.create_statement()),
+                destination_column=sql.SQL(self.destination_column),
+                delete_statement=sql.SQL(self.delete_statement()),
+                create_statement=sql.SQL(self.create_statement()),
             )
             .as_string()
         )
 
     def delete_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 -- Delete graph edges for association tables
                 EXECUTE FORMAT('
@@ -633,30 +637,32 @@ class Edge(BaseModel):
             """
             )
             .format(
-                source_node=(SQL(self.source_node)),
-                destination_node=SQL(self.destination_node),
-                label=SQL(self.label),
-                source_column=SQL(self.source_column),
-                destination_column=SQL(self.destination_column),
+                source_node=(sql.SQL(self.source_node)),
+                destination_node=sql.SQL(self.destination_node),
+                label=sql.SQL(self.label),
+                source_column=sql.SQL(self.source_column),
+                destination_column=sql.SQL(self.destination_column),
             )
             .as_string()
         )
 
     def truncate_sql(self) -> str:
         return (
-            SQL(
+            sql.SQL(
                 """
                 -- Truncate graph edges for association tables
-                SELECT * FROM cypher('graph', $$
-                    MATCH [e:{label}]
-                    DELETE e
-                $$) AS (result agtype);
+                EXECUTE FORMAT('
+                    SELECT * FROM cypher(''graph'', $$
+                        MATCH [e:{label}]
+                        DELETE e
+                    $$) AS (result agtype)'
+                );
             """
             )
             .format(
-                source_node=(SQL(self.source_node)),
-                label=SQL(self.label),
-                destination_node=SQL(self.destination_node),
+                source_node=(sql.SQL(self.source_node)),
+                label=sql.SQL(self.label),
+                destination_node=sql.SQL(self.destination_node),
             )
             .as_string()
         )
