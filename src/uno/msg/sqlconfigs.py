@@ -9,23 +9,21 @@ from uno.sqlemitter import (
     InsertPermission,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.meta.bases import MetaTypeBase, MetaRecordBase
+from uno.msg.bases import MessageUserBase, MessageBase
 
 
-class MetaTypeSQLConfig(SQLConfig):
-    table = MetaTypeBase.__table__
+class MessageUserSQLConfig(SQLConfig):
+    table = MessageUserBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertPermission,
-        InsertMetaType,
         GraphSQLEmitter,
     ]
 
 
-class MetaSQLConfig(SQLConfig):
-    table = MetaRecordBase.__table__
+class MessageBaseSQLConfig(SQLConfig):
+    table = MessageBase.__table__
     sql_emitters = [
         AlterGrants,
-        InsertMetaType,
         GraphSQLEmitter,
     ]

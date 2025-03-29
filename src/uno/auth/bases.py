@@ -186,6 +186,10 @@ class UserBase(BaseMixin, RecordAuditBaseMixin, UnoBase):
         back_populates="users",
         doc="Roles assigned to the user",
     )
+    messages: Mapped[list["MessageUserBase"]] = relationship(
+        back_populates="user",
+        doc="Messages associated with the user",
+    )
 
 
 class GroupBase(BaseMixin, UnoBase, RecordAuditBaseMixin):

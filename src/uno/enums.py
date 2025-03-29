@@ -105,6 +105,7 @@ class TenantType(str, enum.Enum):
     ENTERPRISE = "Enterprise"
 
 
+# Message Enums
 class MessageImportance(str, enum.Enum):
     INFORMATION = "Information"
     LOW = "Low"
