@@ -4,7 +4,7 @@
 
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Table, Column, FetchedValue
+from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -111,21 +111,37 @@ attribute_type__value_type = Table(
 
 class AttributeTypeBase(GroupBaseMixin, BaseMixin, UnoBase):
     __tablename__ = "attribute_type"
-    __table_args__ = {
-        "comment": "Defines the type of attribute that can be associated with an object"
-    }
+    __table_args__ = (
+        UniqueConstraint(
+            "name",
+            "group_id",
+            name="uqi_attribute_type_name_group_id",
+        ),
+        {
+            "comment": "Defines the type of attribute that can be associated with an object"
+        },
+    )
 
     # Columns
+    # ID  necessary on this base as the relationships apparently need it,
+    # but it is simply superceding the ID column (it is identical to)
+    # of the BaseMixin
     id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
-        nullable=True,
-        server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to MetaRecord Base",
+        doc="The unique identifier for the attribute type",
+        info={
+            "edge": "META_RECORD",
+            "reverse_edge": "ATTRIBUTE_TYPES",
+        },
     )
-    name: Mapped[str_255] = mapped_column(unique=True)
-    text: Mapped[str] = mapped_column()
+    name: Mapped[str_255] = mapped_column(
+        doc="The name of the attribute type",
+    )
+    text: Mapped[str] = mapped_column(
+        doc="The text of the attribute type, usually a question or statement about the meta type it describes",
+    )
     parent_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey(
             "attribute_type.id",
