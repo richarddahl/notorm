@@ -655,12 +655,12 @@ class InsertMetaRecordFunction(SQLEmitter):
                 meta_id VARCHAR(26) := {schema_name}.generate_ulid();
             BEGIN
                 /*
-                Function used to insert a record into the meta table, when a 
+                Function used to insert a record into the meta_record table, when a 
                 polymorphic record is inserted.
                 */
                 SET ROLE {writer_role};
 
-                INSERT INTO {schema_name}.meta (id, meta_type_id) VALUES (meta_id, TG_TABLE_NAME);
+                INSERT INTO {schema_name}.meta_record (id, meta_type_id) VALUES (meta_id, TG_TABLE_NAME);
                 NEW.id = meta_id;
                 RETURN NEW;
             END;

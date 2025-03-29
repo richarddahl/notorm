@@ -41,7 +41,7 @@ class AttachmentMetaBase(GroupBaseMixin, BaseMixin, UnoBase):
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -60,7 +60,7 @@ class BooleanValue(MetaBase):
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -100,7 +100,7 @@ class DateTimeValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -140,7 +140,7 @@ class DateValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -180,7 +180,7 @@ class DecimalValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -220,7 +220,7 @@ class IntegerValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -260,7 +260,7 @@ class TextValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -300,7 +300,7 @@ class TimeValue(
     sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     lookups: Mapped[list[Lookup]] = mapped_column(
         ARRAY(
             ENUM(
@@ -340,7 +340,7 @@ class Attachment(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(unique=True, doc="Name of the file")
@@ -372,7 +372,7 @@ class Method(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
 

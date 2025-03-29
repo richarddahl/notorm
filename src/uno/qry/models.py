@@ -17,7 +17,7 @@ from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditMixin
 from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
 from uno.filter import UnoFilter
-from uno.meta.models import Meta, MetaType
+from uno.meta.models import MetaRecord, MetaType
 from uno.utilities import (
     snake_to_title,
     snake_to_camel,
@@ -111,7 +111,7 @@ class FilterValue(UnoModel, ModelMixin, RecordAuditMixin):
     include: Optional[Include] = Include.INCLUDE
     match: Optional[Match] = Match.AND
     lookup: Optional[Lookup] = Lookup.EQUAL
-    values: Optional[list[Meta]] = []
+    values: Optional[list[MetaRecord]] = []
     queries: Optional[list["Query"]] = []
 
 

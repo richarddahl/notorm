@@ -21,7 +21,7 @@ class MetaTypeBase(UnoBase):
 
 
 class MetaBase(UnoBase):
-    __tablename__ = "meta"
+    __tablename__ = "meta_record"
 
     id: Mapped[str_26] = mapped_column(
         primary_key=True,

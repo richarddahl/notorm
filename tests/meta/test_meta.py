@@ -26,8 +26,8 @@ class TestMetaBase:
 
 
     def test_meta_structure(self):
-        assert MetaBase.display_name == "Meta Base"
-        assert MetaBase.display_name_plural == "Meta Bases"
+        assert MetaBase.display_name == "MetaRecord Base"
+        assert MetaBase.display_name_plural == "MetaRecord Bases"
         assert AlterGrants in MetaBase.sql_emitters
         assert InsertMetaType in MetaBase.sql_emitters
         assert MetaBase.__name__ == "MetaBase"

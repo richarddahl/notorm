@@ -165,7 +165,7 @@ class Task(GroupBaseMixin, BaseMixin, UnoBase):
         index=True,
     )
     task_object_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         index=True,
     )
     due_date: Mapped[Optional[datetime.date]] = mapped_column(
@@ -200,6 +200,6 @@ class TaskRecord(GroupBaseMixin, BaseMixin, UnoBase):
         doc="Notes about the completion of the task",
     )
     record_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         nullable=True,
     )

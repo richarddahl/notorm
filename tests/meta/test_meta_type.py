@@ -16,8 +16,8 @@ class TestMetaType:
     schema = settings.DB_SCHEMA
 
     def test_meta_type_structure(self):
-        assert MetaType.display_name == "Meta Type"
-        assert MetaType.display_name_plural == "Meta Types"
+        assert MetaType.display_name == "MetaRecord Type"
+        assert MetaType.display_name_plural == "MetaRecord Types"
         assert AlterGrants in MetaType.sql_emitters
         assert MetaType.__name__ == "MetaType"
         assert MetaType.__module__ == f"{settings.DB_SCHEMA}.db.tables"

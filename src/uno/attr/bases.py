@@ -31,7 +31,7 @@ attribute__value = Table(
     ),
     Column(
         "value_id",
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=False,
@@ -53,7 +53,7 @@ attribute__meta = Table(
     ),
     Column(
         "meta_id",
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=False,
@@ -117,12 +117,12 @@ class AttributeTypeBase(GroupBaseMixin, BaseMixin, UnoBase):
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=True,
         server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to Meta Base",
+        doc="Primary Key and Foreign Key to MetaRecord Base",
     )
     name: Mapped[str_255] = mapped_column(unique=True)
     text: Mapped[str] = mapped_column()

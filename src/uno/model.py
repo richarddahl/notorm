@@ -87,9 +87,9 @@ class UnoModel(BaseModel):
     @classmethod
     def configure(cls, app: FastAPI) -> None:
         """Configure the UnoModel class"""
+        cls.set_filters()
         cls.set_schemas()
         cls.set_endpoints(app)
-        cls.set_filters()
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -193,7 +193,7 @@ class UnoModel(BaseModel):
                 label=snake_to_caps_snake(
                     table.columns["id"].info.get("edge", table.name)
                 ),
-                destination_node="Meta",
+                destination_node="MetaRecord",
                 data_type="str",
                 lookups=object_lookups,
             )

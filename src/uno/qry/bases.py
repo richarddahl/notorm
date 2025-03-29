@@ -34,7 +34,7 @@ query_value__values = Table(
     ),
     Column(
         "value_id",
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
         info={"edge": "VALUES"},
@@ -139,7 +139,7 @@ class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
 
     # Relationships
     source_meta_type: Mapped["MetaBase"] = relationship(
-        doc="The source meta type of the filter",
+        doc="The source meta_record type of the filter",
     )
 
 

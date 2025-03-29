@@ -103,7 +103,7 @@ class MessageRelatedObject(GroupBaseMixin, BaseMixin, UnoBase):
         primary_key=True,
     )
     meta_id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
@@ -127,7 +127,7 @@ class Message(
     ]
 
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta.id"), primary_key=True)
+    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
     sender_id: Mapped[str_26] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         index=True,

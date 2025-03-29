@@ -107,7 +107,7 @@ def create_filters(table: Table) -> list[UnoFilter]:
         fltr = UnoFilter(
             source_node=snake_to_camel(table.name),
             label=snake_to_caps_snake(table.columns["id"].info.get("edge", table.name)),
-            destination_node="Meta",
+            destination_node="MetaRecord",
             data_type="str",
             lookups=object_lookups,
         )

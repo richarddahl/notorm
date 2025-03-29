@@ -141,7 +141,7 @@ class DBManager:
         # Connect to the new database to emit the table specific sql.SQL
         engine = self.engine(db_role=f"{settings.DB_NAME}_login")
         with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-            # Must emit the sql for the meta type table first
+            # Must emit the sql for the meta_record type table first
             # So that the triggger function can be fired each time
             # a new table is created to add the corresponding permissions
             print("\nEmitting sql.SQL for: MetaType")

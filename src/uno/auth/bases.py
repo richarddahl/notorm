@@ -380,7 +380,7 @@ class PermissionBase(UnoBase):
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
-        doc="Foreign Key to Meta Type",
+        doc="Foreign Key to MetaRecord Type",
         info={
             "edge": "META_TYPE",
             "reverse_edge": "PERMISSIONS",

@@ -27,12 +27,12 @@ class ModelMixin(BaseModel):
 class BaseMixin:
 
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id", ondelete="CASCADE"),
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         nullable=True,
         server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to Meta Base",
+        doc="Primary Key and Foreign Key to MetaRecord Base",
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("TRUE"),

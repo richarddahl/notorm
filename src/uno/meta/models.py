@@ -22,7 +22,7 @@ class MetaType(UnoModel):
         return f"{self.id}"
 
 
-class Meta(UnoModel):
+class MetaRecord(UnoModel):
     # Class variables
     base = MetaBase
     schema_configs = {

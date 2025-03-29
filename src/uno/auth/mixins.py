@@ -37,7 +37,7 @@ class RecordAuditBaseMixin:
         doc="User that created the record",
         info={
             "edge": "CREATED_BY",
-            "reverse_node_label": "Meta",
+            "reverse_node_label": "MetaRecord",
             "reverse_edge": "CREATED_OBJECTS",
         },
     )
@@ -49,7 +49,7 @@ class RecordAuditBaseMixin:
         doc="User that last modified the record",
         info={
             "edge": "MODIFIED_BY",
-            "reverse_node_label": "Meta",
+            "reverse_node_label": "MetaRecord",
             "reverse_edge": "MODIFIED_OBJECTS",
         },
     )
@@ -61,7 +61,7 @@ class RecordAuditBaseMixin:
         doc="User that deleted the record",
         info={
             "edge": "DELETED_BY",
-            "reverse_node_label": "Meta",
+            "reverse_node_label": "MetaRecord",
             "reverse_edge": "DELETED_OBJECTS",
         },
     )

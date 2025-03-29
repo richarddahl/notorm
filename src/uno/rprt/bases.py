@@ -71,7 +71,7 @@ class ReportField(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     field_meta_type: Mapped[str_255] = mapped_column(
@@ -121,7 +121,7 @@ class ReportType(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     applicable_meta_type: Mapped[str_255] = mapped_column(
@@ -159,7 +159,7 @@ class Report(
 
     # Columns
     id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta.id"),
+        ForeignKey("meta_record.id"),
         primary_key=True,
     )
     name: Mapped[str_255] = mapped_column(
