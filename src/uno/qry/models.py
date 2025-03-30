@@ -90,7 +90,7 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
-                # "query_path",
+                "query_path",
                 "values",
                 "queries",
             ],

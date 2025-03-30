@@ -89,7 +89,7 @@ class ListRouter(UnoRouter):
         for name in filter_names:
             fltr = self.model.filters[name]
             label = fltr.label
-            model_filter_dict.update({label: (fltr.raw_data_type, None)})
+            model_filter_dict.update({label: (fltr.raw_data_type | None, None)})
         filter_params = create_model("params", **model_filter_dict)
 
         async def endpoint(
@@ -98,15 +98,26 @@ class ListRouter(UnoRouter):
             offset: int = 0,
             include_fields: List[str] = Query([]),
             exclude_fields: List[str] = Query([]),
-            params: filter_params = Depends(),
+            filter_params: dict = Depends(filter_params),
         ) -> list[BaseModel]:
-            results = await self.model.db.select(
+            filters: dict = {}
+            for filter in filter_params:
+                if filter[1] is not None:
+                    filters.update({filter[0]: filter[1]})
+            # Check if the filter is valid
+            for key in filters.keys():
+                if key not in self.model.filters.keys():
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid filter key: {key}",
+                    )
+            results = await self.model.db.select_(
                 from_db_model=self.response_model,
                 limit=limit,
                 offset=offset,
                 include_fields=include_fields,
                 exclude_fields=exclude_fields,
-                **params.dict(),
+                filters=filters,
             )
             return results
 

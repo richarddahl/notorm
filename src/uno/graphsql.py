@@ -9,10 +9,52 @@ from typing_extensions import Self
 
 from psycopg import sql
 from pydantic import BaseModel, computed_field, ConfigDict, model_validator
-from sqlalchemy import Column, Table
+from sqlalchemy import Column
 
-from uno.sqlemitter import SQLEmitter, ADMIN_ROLE
+from uno.sqlemitter import SQLEmitter, ADMIN_ROLE, READER_ROLE, WRITER_ROLE
 from uno.utilities import snake_to_camel, snake_to_caps_snake
+
+
+class ConvertProperty(SQLEmitter):
+    """Cast the property to the correct data type for the graph database.
+
+    This is needed as the graph database does not support all of the same data types
+    as the relational database.  For example, a timestamp in PostgreSQL is a datetime
+    in Python, but in the graph database it is a string.
+    """
+
+    def convert_property_function(self) -> str:
+        function_string = (
+            sql.SQL(
+                """
+            column := CASE
+            --WHEN pg_typeof(column) = 'text'::pg_catalog.text THEN column
+            --WHEN pg_typeof(column) = 'bool'::pg_catalog.bool THEN column::textpg
+            --WHEN pg_typeof(column) = 'int'::pg_catalog.int THEN column::text
+            --WHEN pg_typeof(column) = 'float'::pg_catalog.float THEN column::text
+            --WHEN pg_typeof(column) = 'double'::pg_catalog.double THEN column::text
+            --WHEN pg_typeof(column) = 'decimal'::pg_catalog.decimal THEN column::text
+            --WHEN pg_typeof(column) = 'date'::pg_catalog.date THEN to_char(column, 'YYYY-MM-DD')
+            --WHEN pg_typeof(column) = 'time'::pg_catalog.time THEN to_char(column, 'HH24:MI:SS')
+            WHEN pg_typeof(column) = 'timestamp'::pg_catalog.timestamp THEN
+                RETURN EXTRACT(EPOCH FROM column)::INT::TEXT
+            END;
+
+            """
+            )
+            .format(
+                column_name=sql.SQL(self.column.name),
+                target_data_type=sql.SQL(self.column.type.python_type.__name__),
+            )
+            .as_string()
+        )
+
+        return self.createsqlfunction(
+            "convert_property",
+            function_string,
+            function_args="column ",
+            return_type="TEXT",
+        )
 
 
 class GraphSQLEmitter(SQLEmitter):
@@ -31,6 +73,7 @@ class GraphSQLEmitter(SQLEmitter):
                     column=self.table.columns["id"],
                     label=snake_to_camel(self.table.name),
                     node_triggers=True,
+                    target_data_type=self.table.columns["id"].type.python_type.__name__,
                 )
             )
             for column in self.table.columns.values():
@@ -51,6 +94,7 @@ class GraphSQLEmitter(SQLEmitter):
                         column=column,
                         label=label,
                         node_triggers=node_triggers,
+                        target_data_type=column.type.python_type.__name__,
                     )
                 )
             self.nodes = nodes
@@ -64,20 +108,21 @@ class GraphSQLEmitter(SQLEmitter):
                 label = snake_to_caps_snake(
                     column.info.get("edge", column.name.replace("_id", ""))
                 )
-                destination_node = snake_to_camel(
+                target_node = snake_to_camel(
                     list(column.foreign_keys)[0].column.table.name
                 )
                 for col in column.table.columns:
                     if col.name == column.name:
                         continue
-                    destination_column = col.name
+                    target_column = col.name
                 self.edges.append(
                     Edge(
                         source_node=source_node,
                         source_column=source_column,
                         label=label,
-                        destination_column=destination_column,
-                        destination_node=destination_node,
+                        target_column=target_column,
+                        target_node=target_node,
+                        target_val_data_type=col.type.python_type.__name__,
                     )
                 )
         return self
@@ -146,7 +191,10 @@ class GraphSQLEmitter(SQLEmitter):
             sql.SQL(
                 """
             DECLARE
-                cypher_query text;
+                cypher_query TEXT;
+                column_type TEXT;
+                column_text TEXT;
+                column_int BIGINT;
             BEGIN
                 SET ROLE {admin_role};
                 -- Execute the Cypher query to {operation} the nodes and thier associated edges, for Base tables
@@ -232,6 +280,7 @@ class Node(BaseModel):
     label: str
     node_triggers: bool = True
     edges: list["Edge"] = []
+    target_data_type: str
 
     model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)
 
@@ -242,10 +291,10 @@ class Node(BaseModel):
         if self.column.foreign_keys:
             source_node = snake_to_camel(self.column.table.name)
             source_column = list(self.column.foreign_keys)[0].column.name
-            destination_node = snake_to_camel(
+            target_node = snake_to_camel(
                 list(self.column.foreign_keys)[0].column.table.name
             )
-            destination_column = self.column.name
+            target_column = self.column.name
             label = snake_to_caps_snake(
                 self.column.info.get(
                     "edge",
@@ -257,25 +306,27 @@ class Node(BaseModel):
                     source_node=source_node,
                     source_column=source_column,
                     label=label,
-                    destination_column=destination_column,
-                    destination_node=destination_node,
+                    target_column=target_column,
+                    target_node=target_node,
+                    target_val_data_type=self.target_data_type,
                 )
             )
             if self.column.info.get("reverse_edge", False):
                 self.edges.append(
                     Edge(
-                        source_node=destination_node,
-                        source_column=destination_column,
+                        source_node=target_node,
+                        source_column=target_column,
                         label=snake_to_caps_snake(self.column.info["reverse_edge"]),
-                        destination_column=source_column,
-                        destination_node=snake_to_camel(source_node),
+                        target_column=source_column,
+                        target_node=snake_to_camel(source_node),
+                        target_val_data_type=self.target_data_type,
                     )
                 )
         else:
             source_node = snake_to_camel(self.column.table.name)
             label = snake_to_caps_snake(self.column.name.replace("_id", ""))
-            destination_column = "id"
-            destination_node = snake_to_camel(self.column.name.replace("_id", ""))
+            target_column = "id"
+            target_node = snake_to_camel(self.column.name.replace("_id", ""))
             source_column = "id"
             # This is a fallback for when the edge label should not be derived from the column name
             label = snake_to_caps_snake(self.column.info.get("edge", label))
@@ -284,8 +335,9 @@ class Node(BaseModel):
                     source_node=source_node,
                     source_column=source_column,
                     label=label,
-                    destination_column=destination_column,
-                    destination_node=destination_node,
+                    target_column=target_column,
+                    target_node=target_node,
+                    target_val_data_type=self.target_data_type,
                 )
             )
         return self
@@ -311,6 +363,8 @@ class Node(BaseModel):
                     PERFORM ag_catalog.create_vlabel('graph', {label});
                     CREATE INDEX ON graph.{label_ident} (id);
                     CREATE INDEX ON graph.{label_ident} USING gin (properties);
+                    GRANT SELECT ON graph.{label_ident} TO {reader_role};
+                    GRANT SELECT, UPDATE, DELETE ON graph.{label_ident} TO {writer_role};
                 END IF;
                 {edges}
             """
@@ -319,36 +373,54 @@ class Node(BaseModel):
                 label=sql.Literal(self.label),
                 label_ident=sql.Identifier(self.label),
                 edges=sql.SQL("\n".join([edge.label_sql() for edge in self.edges])),
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
             )
             .as_string()
         )
 
     def insert_sql(self) -> str:
-        """Generates an sql.SQL string for inserting data into a graph database using Cypher queries.
 
-        This method constructs a series of Cypher queries to:
-        1. Merge a vertex (node) with a specific label and properties.
-        2. Create an edge (relationship) between two nodes if certain conditions are met.
-
-        Returns:
-            str: The generated sql.SQL string containing the Cypher queries.
-
-        Notes:
-            - The method uses placeholders for dynamic values such as labels, column names,
-              and node/edge properties, which are formatted using the `sql.SQL` and `format` methods.
-            - The generated sql.SQL assumes the use of a graph database with Cypher query support.
-            - The `NEW` keyword refers to the new row being inserted in a trigger context.
-        """
         return (
             sql.SQL(
                 """
                 -- MERGE must be used to ensure that the node is created only if it does not already exist
                 -- This is required as some objects have multiple relationsihps to the same object, i.e. User
+
+
+
                 IF NEW.{column_name} IS NOT NULL THEN
+                    SELECT pg_typeof(NEW.{column_name}) INTO column_type;
+                    CASE
+                        WHEN column_type = 'character varying' THEN
+                            column_text = NEW.{column_name}::TEXT;
+                        WHEN column_type = 'text' THEN
+                            column_text = NEW.{column_name}::TEXT;
+                        WHEN column_type = 'bool' THEN
+                            column_text = NEW.{column_name}::TEXT;
+                        WHEN column_type = 'int' THEN
+                            column_text = NEW.{column_name}::TEXT;
+                        WHEN column_type = 'float' THEN
+                            column_text = NEW.{column_name}::TEXT;
+                        WHEN column_type = 'timestamp with time zone' THEN 
+                            column_text := EXTRACT(EPOCH FROM NEW.{column_name})::BIGINT::TEXT;
+                        ELSE column_text = NEW.{column_name}::TEXT;
+                    END CASE;
+                    /*
+                    IF column_int IS NOT NULL THEN
+                        column_text := column_int::TEXT;
+                    END IF;
+                    IF column_type = 'timestamp with time zone' THEN
+                        column_text := EXTRACT(EPOCH FROM NEW.{column_name})::BIGINT::TEXT;
+                    ELSE
+                        column_text := NEW.{column_name}::TEXT;
+                    END IF;
+                    */
+
                     cypher_query := FORMAT('
                         MERGE (v:{label} {{id: %s}})
                         SET v.val =  %s',
-                        quote_nullable(NEW.id), quote_nullable(NEW.{column_name})
+                        quote_nullable(NEW.id), quote_nullable(column_text)
                     );
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                     {create_statements}
@@ -497,8 +569,9 @@ class Edge(BaseModel):
     source_node: str
     source_column: str
     label: str
-    destination_column: str
-    destination_node: str
+    target_column: str
+    target_node: str
+    target_val_data_type: str
 
     def label_sql(self) -> str:
         return (
@@ -507,15 +580,43 @@ class Edge(BaseModel):
                 IF NOT EXISTS (SELECT 1 FROM ag_catalog.ag_label WHERE name = {label}) THEN
                     PERFORM ag_catalog.create_elabel('graph', {label});
                     CREATE INDEX ON graph.{label_ident} (start_id, end_id);
+                    GRANT SELECT ON graph.{label_ident} TO {reader_role};
+                    GRANT SELECT, UPDATE, DELETE ON graph.{label_ident} TO {writer_role};
                 END IF;
             """
             )
             .format(
                 label=sql.Literal(self.label),
                 label_ident=sql.Identifier(self.label),
+                reader_role=READER_ROLE,
+                writer_role=WRITER_ROLE,
+                # mock_edge=sql.SQL(self.mock_edge_for_filter()),
             )
             .as_string()
         )
+
+    '''
+    def mock_edge_for_filter(self) -> str:
+        return (
+            sql.SQL(
+                """
+                SELECT *
+                FROM cypher('graph', $$
+                    MATCH (s:{source_node})
+                    MATCH (t:{target_node})
+                    CREATE (s)-[e:{label}]->(t)
+                $$) AS (result agtype)
+                );
+            """
+            )
+            .format(
+                source_node=sql.SQL(self.source_node),
+                label=sql.SQL(self.label),
+                target_node=sql.SQL(self.target_node),
+            )
+            .as_string()
+        )
+    '''
 
     def create_statement(self) -> str:
         return (
@@ -524,11 +625,11 @@ class Edge(BaseModel):
                     EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
                             MATCH (l:{source_node} {{id: %s}})
-                            MATCH (r:{destination_node} {{id: %s}})
+                            MATCH (r:{target_node} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(NEW.{source_column}),
-                        quote_nullable(NEW.{destination_column})
+                        quote_nullable(NEW.{target_column})
                     );
             """
             )
@@ -536,8 +637,8 @@ class Edge(BaseModel):
                 source_node=(sql.SQL(self.source_node)),
                 source_column=sql.SQL(self.source_column),
                 label=sql.SQL(self.label),
-                destination_node=sql.SQL(self.destination_node),
-                destination_column=sql.SQL(self.destination_column),
+                target_node=sql.SQL(self.target_node),
+                target_column=sql.SQL(self.target_column),
             )
             .as_string()
         )
@@ -547,25 +648,42 @@ class Edge(BaseModel):
             sql.SQL(
                 """
                 -- Insert graph edges for association tables
-                IF NEW.{destination_column} IS NOT NULL THEN
-                                        EXECUTE FORMAT('
+                IF NEW.{target_column} IS NOT NULL THEN
+                    {create_statement}
+                END IF;
+            """
+            )
+            .format(
+                target_column=sql.SQL(self.target_column),
+                create_statement=sql.SQL(self.create_statement()),
+            )
+            .as_string()
+        )
+
+    def insert_sql_old(self) -> str:
+        return (
+            sql.SQL(
+                """
+                -- Insert graph edges for association tables
+                IF NEW.{target_column} IS NOT NULL THEN
+                    EXECUTE FORMAT('
                         SELECT * FROM cypher(''graph'', $$
                             MATCH (l:{source_node} {{id: %s}})
-                            MATCH (r:{destination_node} {{id: %s}})
+                            MATCH (r:{target_node} {{id: %s}})
                             CREATE (l)-[e:{label}]->(r)
                         $$) AS (result agtype)',
                         quote_nullable(NEW.{source_column}),
-                        quote_nullable(NEW.{destination_column})
+                        quote_nullable(NEW.{target_column})
                     );
                 END IF;
             """
             )
             .format(
-                destination_column=sql.SQL(self.destination_column),
+                target_column=sql.SQL(self.target_column),
                 source_node=(sql.SQL(self.source_node)),
                 label=sql.SQL(self.label),
                 source_column=sql.SQL(self.source_column),
-                destination_node=sql.SQL(self.destination_node),
+                target_node=sql.SQL(self.target_node),
             )
             .as_string()
         )
@@ -577,12 +695,12 @@ class Edge(BaseModel):
                         EXECUTE FORMAT('
                             SELECT * FROM cypher(''graph'', $$
                                 MATCH (l:{source_node} {{id: %s}})
-                                MATCH (r:{destination_node} {{id: %s}})
+                                MATCH (r:{target_node} {{id: %s}})
                                 MATCH (l)-[e:{label}]->(r)
                                 DELETE e
                             $$) AS (result agtype)',
                             quote_nullable(OLD.{source_column}),
-                            quote_nullable(OLD.{destination_column})
+                            quote_nullable(OLD.{target_column})
                         ); 
             """
             )
@@ -590,8 +708,8 @@ class Edge(BaseModel):
                 source_node=(sql.SQL(self.source_node)),
                 source_column=sql.SQL(self.source_column),
                 label=sql.SQL(self.label),
-                destination_node=sql.SQL(self.destination_node),
-                destination_column=sql.SQL(self.destination_column),
+                target_node=sql.SQL(self.target_node),
+                target_column=sql.SQL(self.target_column),
             )
             .as_string()
         )
@@ -601,18 +719,18 @@ class Edge(BaseModel):
             sql.SQL(
                 """
                 -- Update graph edges for association tables
-                IF NEW.{destination_column} IS NOT NULL AND NEW.{destination_column} != OLD.{destination_column} THEN
-                    IF OLD.{destination_column} != NEW.{destination_column} THEN
+                IF NEW.{target_column} IS NOT NULL AND NEW.{target_column} != OLD.{target_column} THEN
+                    IF OLD.{target_column} != NEW.{target_column} THEN
                         {delete_statement}
                     END IF;
-                    IF NEW.{destination_column} IS NOT NULL THEN
+                    IF NEW.{target_column} IS NOT NULL THEN
                         {create_statement}
                     END IF;
                 END IF;
             """
             )
             .format(
-                destination_column=sql.SQL(self.destination_column),
+                target_column=sql.SQL(self.target_column),
                 delete_statement=sql.SQL(self.delete_statement()),
                 create_statement=sql.SQL(self.create_statement()),
             )
@@ -627,21 +745,21 @@ class Edge(BaseModel):
                 EXECUTE FORMAT('
                     SELECT * FROM cypher(''graph'', $$
                         MATCH (l:{source_node} {{id: %s}})
-                        MATCH (r:{destination_node} {{id: %s}})
+                        MATCH (r:{target_node} {{id: %s}})
                         MATCH (l)-[e:{label}]->(r)
                         DELETE e
                     $$) AS (result agtype)',
                     quote_nullable(OLD.{source_column}),
-                    quote_nullable(OLD.{destination_column})
+                    quote_nullable(OLD.{target_column})
                 );
             """
             )
             .format(
                 source_node=(sql.SQL(self.source_node)),
-                destination_node=sql.SQL(self.destination_node),
+                target_node=sql.SQL(self.target_node),
                 label=sql.SQL(self.label),
                 source_column=sql.SQL(self.source_column),
-                destination_column=sql.SQL(self.destination_column),
+                target_column=sql.SQL(self.target_column),
             )
             .as_string()
         )
@@ -662,7 +780,7 @@ class Edge(BaseModel):
             .format(
                 source_node=(sql.SQL(self.source_node)),
                 label=sql.SQL(self.label),
-                destination_node=sql.SQL(self.destination_node),
+                target_node=sql.SQL(self.target_node),
             )
             .as_string()
         )

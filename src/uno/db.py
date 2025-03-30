@@ -19,6 +19,7 @@ from sqlalchemy import (
     insert,
     delete,
     update,
+    func,
     text,
     create_engine,
 )
@@ -70,6 +71,7 @@ sync_engine = create_engine(
 
 
 engine = create_async_engine(
+    # f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
     f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
     poolclass=NullPool,
     # echo=True,
@@ -154,22 +156,37 @@ class NotFoundException(Exception):
 
 def UnoDBFactory(base: UnoBase, model: BaseModel):
     class UnoDB:
+
         @classmethod
-        async def insert(
+        def set_role(cls, role_name: str) -> str:
+            return (
+                sql.SQL(
+                    """
+                SET ROLE {db_name}_{role};
+                """
+                )
+                .format(
+                    db_name=sql.SQL(DB_NAME),
+                    role=sql.SQL(role_name),
+                )
+                .as_string()
+            )
+
+        @classmethod
+        async def insert_(
             cls,
             to_db_model: BaseModel,
             from_db_model: BaseModel,
         ) -> UnoBase:
             try:
-                async with engine.begin() as conn:
-                    await conn.execute(text(cls.set_role(text("writer"))))
-                    result = await conn.execute(
+                async with scoped_session() as session:
+                    await session.execute(text(cls.set_role("writer")))
+                    result = await session.execute(
                         insert(base.table)
                         .values(**to_db_model.model_dump())
                         .returning(*from_db_model.model_fields.keys())
                     )
-                    await conn.commit()
-                    await conn.close()
+                    await session.commit()
                     return cls.base(**result.fetchone()._mapping)
             except IntegrityError:
                 raise IntegrityConflictException(
@@ -179,7 +196,7 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                 raise UnoError(f"Unknown error occurred: {e}") from e
 
         @classmethod
-        async def select(
+        async def select_(
             cls,
             from_db_model: BaseModel,
             id: str = None,
@@ -188,11 +205,9 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
             offset: int = 0,
             include_fields: list[str] = [],
             exclude_fields: list[str] = [],
+            filters: dict = {},
             **kwargs,
         ) -> UnoBase:
-            # for key, value in kwargs.items():
-            #    if key not in base.__table__.columns:
-            #        raise UnoError(f"Invalid filter key: {key}", error_code=400)
             column_names = base.__table__.columns.keys()
             if include_fields:
                 column_names = [col for col in include_fields if col in column_names]
@@ -204,20 +219,34 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                 ]
             stmt = select(base.__table__.c[*column_names])
 
+            if filters:
+                for key, value in filters.items():
+                    if key not in model.filters.keys():
+                        raise UnoError(
+                            f"Filter key '{key}' not found in filters.",
+                        )
+                    if value is None:
+                        raise UnoError(
+                            f"Filter value for '{key}' cannot be None.",
+                        )
+                    filter = model.filters[key]
+                    cypher_query = filter.cypher_query_string(value)
+                    subquery = select(text(cypher_query)).scalar_subquery()
+                    stmt = stmt.where(base.id.in_(subquery))
+            # print(f"SQL: {stmt}")
+
+            if limit:
+                stmt = stmt.limit(limit)
+            if offset:
+                stmt = stmt.offset(offset)
+
             try:
                 if id is not None:
-                    stmt = stmt.where(base.__table__.c.id == id)
+                    stmt = stmt.where(base.id == id)
                     result_type = SelectResultType.FETCH_ONE
-                async with engine.begin() as conn:
-                    await conn.execute(
-                        text(
-                            sql.SQL("SET ROLE {reader_role};")
-                            .format(reader_role=f"{DB_NAME}_reader")
-                            .as_string()
-                        )
-                    )
-                    result = await conn.execute(stmt)
-                await conn.close()
+                async with scoped_session() as session:
+                    await session.execute(text(cls.set_role("reader")))
+                    result = await session.execute(stmt)
                 if result_type == SelectResultType.FETCH_ONE:
                     row = result.fetchone()
                     return from_db_model(**row._mapping) if row is not None else None
@@ -228,7 +257,10 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                     if row is not None  # and r._mapping.name in column_names
                 ]
             except Exception as e:
-                raise UnoError(f"Unknown error occurred: {e}") from e
+                raise UnoError(
+                    f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
+                ) from e
 
     UnoDB.base = base
+    UnoDB.model = model
     return UnoDB
