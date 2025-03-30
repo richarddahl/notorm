@@ -180,18 +180,6 @@ class UnoModel(BaseModel):
             )
 
         filters = {}
-        if "id" in table.columns.keys():
-            fltr = UnoFilter(
-                source_node=snake_to_camel(table.name),
-                label=snake_to_caps_snake(
-                    table.columns["id"].info.get("edge", table.name)
-                ),
-                destination_node="MetaRecord",
-                data_type="str",
-                lookups=object_lookups,
-            )
-            filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
-            filters[filter_key] = fltr
         for column in table.columns.values():
             if column.info.get("graph_excludes", False):
                 continue
