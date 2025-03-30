@@ -35,7 +35,7 @@ class Attribute(UnoModel, ModelMixin, RecordAuditMixin):
     terminate_filters = True
 
     # Fields
-    attribute_type_id: Optional[str] = None
+    attribute_type_id: str = None
     attribute_type: Optional["AttributeType"] = None
     comment: Optional[str] = None
     follow_up_required: bool = False
@@ -79,10 +79,10 @@ class AttributeType(UnoModel, ModelMixin, RecordAuditMixin):
     # Fields
     id: Optional[str]
     name: str
-    text: Optional[str]
+    text: str
     parent_id: Optional[str]
     parent: Optional["AttributeType"]
-    describes: Optional[List[MetaType]]
+    describes: List[MetaType]
     description_limiting_query_id: Optional[str]
     description_limiting_query: Optional[Query]
     value_type_limiting_query_id: Optional[str]

@@ -87,8 +87,9 @@ class ListRouter(UnoRouter):
         filter_names.sort()
 
         for name in filter_names:
-            label = self.model.filters[name].label
-            model_filter_dict.update({label: (str | None, None)})
+            fltr = self.model.filters[name]
+            label = fltr.label
+            model_filter_dict.update({label: (fltr.raw_data_type, None)})
         filter_params = create_model("params", **model_filter_dict)
 
         async def endpoint(

@@ -175,6 +175,7 @@ class UnoModel(BaseModel):
                 label=label,
                 destination_node=destination_node,
                 data_type=column.type.python_type.__name__,
+                raw_data_type=column.type.python_type,
                 lookups=lookups,
             )
 

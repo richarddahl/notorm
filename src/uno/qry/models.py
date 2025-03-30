@@ -55,14 +55,14 @@ class QueryPath(UnoModel, ModelMixin):
     }
 
     # Fields
-    source_meta_type_id: Optional[str] = None
+    source_meta_type_id: str
     source_meta_type: Optional[MetaType] = None
-    destination_meta_type_id: Optional[str] = None
+    destination_meta_type_id: str
     destination_meta_type: Optional[MetaType] = None
-    filter_ids: Optional[list[str]] = []
-    path: Optional[str] = None
-    data_type: Optional[str] = None
-    lookups: Optional[list[str]] = None
+    filter_ids: list[str] = []
+    path: str
+    data_type: str
+    lookups: list[str]
 
     def __str__(self) -> str:
         return self.name
@@ -106,13 +106,22 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
 
     # Fields
     id: Optional[str] = None
-    query_path_id: Optional[int] = None
-    # query_path: Optional[QueryPath] = None
-    include: Optional[Include] = Include.INCLUDE
-    match: Optional[Match] = Match.AND
-    lookup: Optional[Lookup] = Lookup.EQUAL
+    query_path_id: int
+    query_path: Optional[QueryPath] = None
+    include: Include = Include.INCLUDE
+    match: Match = Match.AND
+    lookup: Lookup = Lookup.EQUAL
     values: Optional[list[MetaRecord]] = []
     queries: Optional[list["Query"]] = []
+
+    @model_validator(mode="after")
+    def model_validator(self) -> Self:
+        self.lookup = Lookup[self.lookup]
+        self.include = Include[self.include]
+        self.match = Match[self.match]
+        if not self.values and not self.queries:
+            raise ValueError("Must have either values or queries")
+        return self
 
 
 class Query(UnoModel, ModelMixin, RecordAuditMixin):

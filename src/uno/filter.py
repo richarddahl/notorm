@@ -18,6 +18,7 @@ class UnoFilter(BaseModel):
     label: Optional[str] = None
     destination_node: Optional[str] = None
     data_type: str = "str"
+    raw_data_type: type = str
     lookups: list[str]
     display: Optional[str] = None
     source_path: Optional[str] = None
