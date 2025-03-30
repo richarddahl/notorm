@@ -163,15 +163,7 @@ class UnoModel(BaseModel):
                         column.info.get(edge, column.name.replace("_id", ""))
                     )
                 else:
-                    source_node = snake_to_camel(
-                        list(column.foreign_keys)[0].column.table.name
-                    )
-                    destination_node = snake_to_camel(
-                        column.info.get("reverse_node_label", column.table.name)
-                    )
-                    label = snake_to_caps_snake(
-                        column.info.get(edge, column.name.replace("_id", ""))
-                    )
+                    return None
             else:
                 source_node = snake_to_camel(table.name)
                 destination_node = snake_to_camel(column.name)
@@ -202,16 +194,8 @@ class UnoModel(BaseModel):
         for column in table.columns.values():
             if column.info.get("graph_excludes", False):
                 continue
-            fltr = create_filter_for_column(column)
-            filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
-            if filter_key not in filters.keys():
-                filters[filter_key] = fltr
-            if column.info.get("reverse_edge", False):
-                fltr = create_filter_for_column(
-                    column,
-                    edge="reverse_edge",
-                )
-            fltr_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
-            if fltr_key not in filters.keys():
-                filters[fltr_key] = fltr
+            if fltr := create_filter_for_column(column):
+                filter_key = f"{fltr.source_node}{fltr.label}{fltr.destination_node}"
+                if filter_key not in filters.keys():
+                    filters[filter_key] = fltr
         cls.filters = filters

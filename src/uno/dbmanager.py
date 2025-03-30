@@ -218,30 +218,6 @@ class DBManager:
             await session.close()
         return user
 
-    """
-    async def create_filters(self) -> None:
-        filters = {}
-        for model in UnoModel.registry.values():
-            model.configure(app)
-            for fltr in create_filters(model.base.__table__):
-                if fltr.__str__() not in filters:
-                    filters.update({fltr.__str__(): fltr.edit_data()})
-
-        async with scoped_session() as session:
-            await session.execute(
-                text(
-                    sql.SQL("SET ROLE {db_name}_admin;")
-                    .format(
-                        db_name=sql.SQL(settings.DB_NAME),
-                    )
-                    .as_string()
-                )
-            )
-            session.add_all(filters.values())
-            await session.commit()
-            await session.close()
-    """
-
     async def create_query_paths(self) -> None:
         query_paths = []
         for model in UnoModel.registry.values():
