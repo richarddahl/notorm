@@ -209,7 +209,6 @@ class SelectRouter(UnoRouter):
 
         async def endpoint(self, id: str) -> BaseModel:
             result = await self.model.db.select_(
-                self.response_model,
                 id=id,
             )
             if result is None:
