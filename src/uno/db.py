@@ -210,7 +210,6 @@ def UnoDBFactory(model: BaseModel):
 
             if filters:
                 for key, fltr in filters.items():
-                    print(key)
                     value = fltr.get("val", None)
                     comparison_operator = fltr.get("comparison_operator", "EQUAL")
                     if key not in model.filters.keys():
@@ -225,7 +224,6 @@ def UnoDBFactory(model: BaseModel):
                     cypher_query = filter.cypher_query_string(
                         value, comparison_operator=comparison_operator
                     )
-                    print(f"Cypher Query: {cypher_query}")
                     subquery = select(text(cypher_query)).scalar_subquery()
                     stmt = stmt.where(model.base.id.in_(subquery))
 

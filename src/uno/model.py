@@ -9,7 +9,7 @@ import datetime
 from typing import ClassVar, Optional, Any
 from pydantic import BaseModel, ConfigDict
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import Column
 
 from uno.db import UnoDBFactory
@@ -30,10 +30,10 @@ from uno.utilities import (
     snake_to_caps_snake,
 )
 from uno.enums import (
-    GraphLookup,
-    graph_boolean_comparison_operators,
-    graph_numeric_comparison_operators,
-    graph_text_comparison_operators,
+    ComparisonOperator,
+    boolean_comparison_operators,
+    numeric_comparison_operators,
+    text_comparison_operators,
 )
 from uno.filter import UnoFilter
 
@@ -138,7 +138,7 @@ class UnoModel(BaseModel):
             edge: str = "edge",
         ) -> UnoFilter:
             if column.type.python_type == bool:
-                comparison_operators = graph_boolean_comparison_operators
+                comparison_operators = boolean_comparison_operators
             elif column.type.python_type in [
                 int,
                 decimal.Decimal,
@@ -147,9 +147,9 @@ class UnoModel(BaseModel):
                 datetime.datetime,
                 datetime.time,
             ]:
-                comparison_operators = graph_numeric_comparison_operators
+                comparison_operators = numeric_comparison_operators
             else:
-                comparison_operators = graph_text_comparison_operators
+                comparison_operators = text_comparison_operators
             if column.foreign_keys:
                 if edge == "edge":
                     source_node = snake_to_camel(column.table.name)
@@ -186,3 +186,45 @@ class UnoModel(BaseModel):
                 if filter_key not in filters.keys():
                     filters[filter_key] = fltr
         cls.filters = filters
+
+    @classmethod
+    def validate_filters(cls, request_params: dict) -> dict:
+        filters: dict = {}
+        expected_params = set(cls.filters.keys())
+        expected_params.update(["limit", "offset"])
+        unexpected_params = (
+            set([key.split(".")[0] for key in request_params.keys()]) - expected_params
+        )
+        if unexpected_params:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unexpected query parameters: {unexpected_params}, Check the spelling and case of the query parameters.",
+            )
+        for key, val in request_params.items():
+            # Check if the filter is valid
+            filter_component_list = key.split(".")
+            edge = filter_component_list[0]
+            if edge in ["limit", "offset"]:
+                continue
+            if edge not in cls.filters.keys():
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid filter key: {key}",
+                )
+            if val is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Filter value for '{edge}' cannot be None.",
+                )
+            comparison_operator = (
+                filter_component_list[1] if len(filter_component_list) > 1 else "EQUAL"
+            )
+            if comparison_operator not in cls.filters[edge].comparison_operators:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid filter comparison_operator: {comparison_operator}",
+                )
+            filters.update(
+                {edge: {"val": val, "comparison_operator": comparison_operator}}
+            )
+        return filters

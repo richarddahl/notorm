@@ -15,9 +15,9 @@ from uno.db import Base, str_26, str_63
 from uno.sqlemitter import SQLEmitter
 from uno.enums import (
     ComparisonOperator,
-    graph_boolean_comparison_operators,
-    graph_numeric_comparison_operators,
-    graph_text_comparison_operators,
+    boolean_comparison_operators,
+    numeric_comparison_operators,
+    text_comparison_operators,
 )
 from uno.config import settings
 
@@ -69,7 +69,7 @@ class BooleanValue(MetaRecordBase):
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_boolean_comparison_operators,
+        default=boolean_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     boolean_value: Mapped[bool] = mapped_column(unique=True, index=True)
@@ -104,7 +104,7 @@ class DateTimeValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_numeric_comparison_operators,
+        default=numeric_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     datetime_value: Mapped[datetime_tz] = mapped_column(unique=True, index=True)
@@ -139,7 +139,7 @@ class DateValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_numeric_comparison_operators,
+        default=numeric_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     date_value: Mapped[date_] = mapped_column(unique=True, index=True)
@@ -174,7 +174,7 @@ class DecimalValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_numeric_comparison_operators,
+        default=numeric_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     decimal_value: Mapped[Decimal] = mapped_column(unique=True, index=True)
@@ -209,7 +209,7 @@ class IntegerValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_numeric_comparison_operators,
+        default=numeric_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     bigint_value: Mapped[int] = mapped_column(unique=True, index=True)
@@ -244,7 +244,7 @@ class TextValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_text_comparison_operators,
+        default=text_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     text_value: Mapped[str] = mapped_column(unique=True, index=True)
@@ -279,7 +279,7 @@ class TimeValue(
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=graph_numeric_comparison_operators,
+        default=numeric_comparison_operators,
         doc="The comparison_operators for the value.",
     )
     time_value: Mapped[time_] = mapped_column(unique=True, index=True)

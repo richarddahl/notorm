@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pydantic import create_model
 import enum
-from typing import Optional, ClassVar, List
+from typing import Optional, ClassVar
 
 from pydantic import BaseModel, ConfigDict, computed_field
 from fastapi import (
@@ -23,7 +23,6 @@ from fastapi import (
 
 from uno.schema import UnoSchema
 from uno.errors import UnoRegistryError
-from uno.utilities import snake_to_title
 from uno.config import settings
 
 
@@ -101,52 +100,9 @@ class ListRouter(UnoRouter):
             request: Request = None,
             filter_params: dict = Depends(filter_params),
         ) -> list[BaseModel]:
-            print(f"params: {request.query_params}")
-            expected_params = set(filter_params.__fields__.keys())
-            expected_params.add("limit")
-            expected_params.add("offset")
-            unexpected_params = (
-                set([key.split(".")[0] for key in request.query_params.keys()])
-                - expected_params
-            )
-            if unexpected_params:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Unexpected query parameters: {unexpected_params}, Check the spelling and case of the query parameters.",
-                )
-            filters: dict = {}
-            for key, val in request.query_params.items():
-                if val is None:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Filter value for '{key}' cannot be None.",
-                    )
-                # Check if the filter is valid
-                filter_component_list = key.split(".")
-                edge = filter_component_list[0]
-                if edge in ["limit", "offset"]:
-                    continue
-                if edge not in self.model.filters.keys():
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Invalid filter key: {key}",
-                    )
-                comparison_operator = (
-                    filter_component_list[1]
-                    if len(filter_component_list) > 1
-                    else "EQUAL"
-                )
-                if (
-                    comparison_operator
-                    not in self.model.filters[edge].comparison_operators
-                ):
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Invalid filter comparison_operator: {comparison_operator}",
-                    )
-                filters.update(
-                    {edge: {"val": val, "comparison_operator": comparison_operator}}
-                )
+
+            filters = self.model.validate_filters(request.query_params)
+
             # Check if the limit and offset are valid
             if limit < 0:
                 raise HTTPException(

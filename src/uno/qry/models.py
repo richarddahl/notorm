@@ -27,9 +27,9 @@ from uno.enums import (
     Include,
     Match,
     ComparisonOperator,
-    object_comparison_operators,
-    graph_numeric_comparison_operators,
-    graph_text_comparison_operators,
+    boolean_comparison_operators,
+    numeric_comparison_operators,
+    text_comparison_operators,
 )
 from uno.config import settings
 

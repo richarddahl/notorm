@@ -161,78 +161,6 @@ class DataType(enum.StrEnum):
 
 
 class ComparisonOperator(enum.StrEnum):
-    EQUAL = "__eq__"
-    NOT_EQUAL = "__ne__"
-    GREATER_THAN = "__gt__"
-    GREATER_THAN_OR_EQUAL = "__ge__"
-    LESS_THAN = "__lt__"
-    LESS_THAN_OR_EQUAL = "__le__"
-    BETWEEN = "between"
-    IN = "in_"
-    NOT_IN = "not_in"
-    NULL = "is_"
-    NOT_NULL = "is_not"
-    LIKE = "like"
-    I_LIKE = "ilike"
-    NOT_LIKE = "notlike"
-    NOT_I_LIKE = "notilike"
-    STARTS_WITH = "startswith"
-    I_STARTS_WITH = "istartswith"
-    ENDS_WITH = "endswith"
-    I_ENDS_WITH = "iendswith"
-    CONTAINS = "contains"
-    I_CONTAINS = "icontains"
-
-
-object_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOT_EQUAL.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOT_NULL.name,
-    ComparisonOperator.IN.name,
-    ComparisonOperator.NOT_IN.name,
-]
-
-graph_boolean_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOT_EQUAL.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOT_NULL.name,
-]
-
-numeric_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOT_EQUAL.name,
-    ComparisonOperator.BETWEEN.name,
-    ComparisonOperator.GREATER_THAN.name,
-    ComparisonOperator.GREATER_THAN_OR_EQUAL.name,
-    ComparisonOperator.LESS_THAN.name,
-    ComparisonOperator.LESS_THAN_OR_EQUAL.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOT_NULL.name,
-    ComparisonOperator.IN.name,
-    ComparisonOperator.NOT_IN.name,
-]
-
-text_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOT_EQUAL.name,
-    ComparisonOperator.LIKE.name,
-    ComparisonOperator.I_LIKE.name,
-    ComparisonOperator.NOT_LIKE.name,
-    ComparisonOperator.NOT_I_LIKE.name,
-    ComparisonOperator.STARTS_WITH.name,
-    ComparisonOperator.I_STARTS_WITH.name,
-    ComparisonOperator.ENDS_WITH.name,
-    ComparisonOperator.I_ENDS_WITH.name,
-    ComparisonOperator.CONTAINS.name,
-    ComparisonOperator.I_CONTAINS.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOT_NULL.name,
-]
-
-
-class GraphLookup(enum.StrEnum):
     EQUAL = "="
     NOTEQUAL = "<>"
     GT = ">"
@@ -253,43 +181,41 @@ class GraphLookup(enum.StrEnum):
     IENDSWITH = "=~"
 
 
-graph_boolean_comparison_operators = [
-    GraphLookup.EQUAL.name,
-    GraphLookup.NOTEQUAL.name,
-    GraphLookup.NULL.name,
-    GraphLookup.NOTNULL.name,
+boolean_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOTEQUAL.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOTNULL.name,
 ]
 
-graph_numeric_comparison_operators = [
-    GraphLookup.EQUAL.name,
-    GraphLookup.NOTEQUAL.name,
-    GraphLookup.GT.name,
-    GraphLookup.GTE.name,
-    GraphLookup.LT.name,
-    GraphLookup.LTE.name,
-    GraphLookup.NULL.name,
-    GraphLookup.NOTNULL.name,
-    GraphLookup.IN.name,
-    GraphLookup.NOTIN.name,
+numeric_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOTEQUAL.name,
+    ComparisonOperator.GT.name,
+    ComparisonOperator.GTE.name,
+    ComparisonOperator.LT.name,
+    ComparisonOperator.LTE.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOTNULL.name,
+    ComparisonOperator.IN.name,
+    ComparisonOperator.NOTIN.name,
 ]
 
-graph_text_comparison_operators = [
-    GraphLookup.EQUAL.name,
-    GraphLookup.NOTEQUAL.name,
-    GraphLookup.CONTAINS.name,
-    GraphLookup.ICONTAINS.name,
-    GraphLookup.STARTSWITH.name,
-    GraphLookup.ISTARTSWITH.name,
-    GraphLookup.ENDSWITH.name,
-    GraphLookup.IENDSWITH.name,
-    GraphLookup.NULL.name,
-    GraphLookup.NOTNULL.name,
+text_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOTEQUAL.name,
+    ComparisonOperator.CONTAINS.name,
+    ComparisonOperator.ICONTAINS.name,
+    ComparisonOperator.STARTSWITH.name,
+    ComparisonOperator.ISTARTSWITH.name,
+    ComparisonOperator.ENDSWITH.name,
+    ComparisonOperator.IENDSWITH.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOTNULL.name,
 ]
 
 
 # Workflow Enums
-
-
 class WorkflowDBEvent(enum.StrEnum):
     INSERT = "Insert"
     UPDATE = "Update"

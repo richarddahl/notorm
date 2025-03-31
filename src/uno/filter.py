@@ -13,10 +13,10 @@ from psycopg import sql
 from pydantic import BaseModel, model_validator
 
 from uno.enums import (
-    GraphLookup,
-    graph_boolean_comparison_operators,
-    graph_numeric_comparison_operators,
-    graph_text_comparison_operators,
+    ComparisonOperator,
+    boolean_comparison_operators,
+    numeric_comparison_operators,
+    text_comparison_operators,
 )
 from uno.utilities import snake_to_title
 from uno.config import settings
@@ -38,9 +38,7 @@ class UnoFilter(BaseModel):
     @model_validator(mode="after")
     def model_validator(self) -> Self:
         self.display = snake_to_title(self.label)
-        # self.source_path = f"(:{self.source_node})-[:{self.label}]->"
         self.source_path = f"(s:{self.source_node})-[e:{self.label}]"
-        # self.destination_path = f"(:{self.target_node} {{val: %s}})"
         self.destination_path = f"(d:{self.target_node})"
         return self
 
@@ -57,23 +55,30 @@ class UnoFilter(BaseModel):
         self, value: Any, comparison_operator: str = "EQUAL"
     ) -> str:
 
-        print(type(comparison_operator))
-        graph_comparison_operator = GraphLookup.__members__.get(comparison_operator)
+        graph_comparison_operator = ComparisonOperator.__members__.get(
+            comparison_operator
+        )
 
         if self.data_type == "bool":
             val = str(value).lower()
             if not val in ["true", "false", "t", "f", "t"]:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in graph_boolean_comparison_operators:
+            if not comparison_operator in boolean_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for boolean data type."
                 )
         elif self.data_type in ["datetime", "date", "time"]:
             try:
-                val = round(value.timestamp())
+                if self.data_type == "datetime":
+                    val = datetime.datetime.fromisoformat(value)
+                elif self.data_type == "date":
+                    val = datetime.date.fromisoformat(value)
+                elif self.data_type == "time":
+                    val = datetime.time.fromisoformat(value)
+                val = round(val.timestamp())
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in graph_numeric_comparison_operators:
+            if not comparison_operator in numeric_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for datetime data type."
                 )
@@ -82,7 +87,7 @@ class UnoFilter(BaseModel):
                 val = decimal.Decimal(value)
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in graph_numeric_comparison_operators:
+            if not comparison_operator in numeric_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for decimal data type."
                 )
@@ -91,7 +96,7 @@ class UnoFilter(BaseModel):
                 val = int(value)
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in graph_numeric_comparison_operators:
+            if not comparison_operator in numeric_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for int data type."
                 )
@@ -100,13 +105,13 @@ class UnoFilter(BaseModel):
                 val = float(value)
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in graph_numeric_comparison_operators:
+            if not comparison_operator in numeric_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for float data type."
                 )
         else:
             val = str(value)
-            if not comparison_operator in graph_text_comparison_operators:
+            if not comparison_operator in text_comparison_operators:
                 raise TypeError(
                     f"ComparisonOperator {comparison_operator} is not valid for {self.data_type} data type."
                 )
