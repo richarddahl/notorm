@@ -14,11 +14,10 @@ from sqlalchemy.orm import relationship, mapped_column, Mapped
 from uno.db import Base, str_26, str_63
 from uno.sqlemitter import SQLEmitter
 from uno.enums import (
-    Lookup,
-    boolean_lookups,
-    numeric_lookups,
-    text_lookups,
-    date_lookups,
+    ComparisonOperator,
+    graph_boolean_comparison_operators,
+    graph_numeric_comparison_operators,
+    graph_text_comparison_operators,
 )
 from uno.config import settings
 
@@ -61,24 +60,19 @@ class BooleanValue(MetaRecordBase):
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=boolean_lookups,
-        doc="The lookups for the value.",
+        default=graph_boolean_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     boolean_value: Mapped[bool] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "boolean_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class DateTimeValue(
@@ -101,24 +95,19 @@ class DateTimeValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=date_lookups,
-        doc="The lookups for the value.",
+        default=graph_numeric_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     datetime_value: Mapped[datetime_tz] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "datetime_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class DateValue(
@@ -141,24 +130,19 @@ class DateValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=date_lookups,
-        doc="The lookups for the value.",
+        default=graph_numeric_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     date_value: Mapped[date_] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "date_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class DecimalValue(
@@ -181,24 +165,19 @@ class DecimalValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=numeric_lookups,
-        doc="The lookups for the value.",
+        default=graph_numeric_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     decimal_value: Mapped[Decimal] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "decimal_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class IntegerValue(
@@ -221,24 +200,19 @@ class IntegerValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=numeric_lookups,
-        doc="The lookups for the value.",
+        default=graph_numeric_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     bigint_value: Mapped[int] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "integer_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class TextValue(
@@ -261,24 +235,19 @@ class TextValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=text_lookups,
-        doc="The lookups for the value.",
+        default=graph_text_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     text_value: Mapped[str] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "text_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class TimeValue(
@@ -301,24 +270,19 @@ class TimeValue(
 
     # Columns
     id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        default=date_lookups,
-        doc="The lookups for the value.",
+        default=graph_numeric_comparison_operators,
+        doc="The comparison_operators for the value.",
     )
     time_value: Mapped[time_] = mapped_column(unique=True, index=True)
-
-    __mapper_args__ = {
-        "polymorphic_identity": "time_value",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class Attachment(
@@ -347,11 +311,6 @@ class Attachment(
     file: Mapped[str] = mapped_column(doc="Path to the file")
 
     # Relationships
-
-    __mapper_args__ = {
-        "polymorphic_identity": "attachment",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class Method(
@@ -388,11 +347,6 @@ class Method(
     kwargs: Mapped[str] = mapped_column(doc="Keyword arguments of the function")
     # Relationships
 
-    __mapper_args__ = {
-        "polymorphic_identity": "method",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
-
 
 """
 
@@ -419,11 +373,6 @@ class CalculationSymbol(
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
     symbol: Mapped[str] = mapped_column(doc="Symbol of the calculation")
-
-    __mapper_args__ = {
-        "polymorphic_identity": "calculation_symbol",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 
 class Calculation(
@@ -454,10 +403,5 @@ class Calculation(
     content: Mapped[str] = mapped_column(doc="Content of the calculation.")
 
     # Relationships
-
-    __mapper_args__ = {
-        "polymorphic_identity": "calculation",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
 """

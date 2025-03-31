@@ -26,10 +26,10 @@ from uno.utilities import (
 from uno.enums import (
     Include,
     Match,
-    Lookup,
-    object_lookups,
-    numeric_lookups,
-    text_lookups,
+    ComparisonOperator,
+    object_comparison_operators,
+    graph_numeric_comparison_operators,
+    graph_text_comparison_operators,
 )
 from uno.config import settings
 
@@ -62,7 +62,7 @@ class QueryPath(UnoModel, ModelMixin):
     filter_ids: list[str] = []
     path: str
     data_type: str
-    lookups: list[str]
+    comparison_operators: list[str]
 
     def __str__(self) -> str:
         return self.name
@@ -76,7 +76,7 @@ def create_query_paths(filter: UnoFilter) -> list[QueryPath]:
             source_meta_type_id=filter.source_node,
             path=filter.source_path,
             data_type=filter.data_type,
-            lookups=filter.lookups,
+            comparison_operators=filter.comparison_operators,
         )
     )
 
@@ -99,7 +99,7 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
             include_fields=[
                 "include",
                 "match",
-                "lookup",
+                "comparison_operator",
             ],
         ),
     }
@@ -110,13 +110,13 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
     query_path: Optional[QueryPath] = None
     include: Include = Include.INCLUDE
     match: Match = Match.AND
-    lookup: Lookup = Lookup.EQUAL
+    comparison_operator: ComparisonOperator = ComparisonOperator.EQUAL
     values: Optional[list[MetaRecord]] = []
     queries: Optional[list["Query"]] = []
 
     @model_validator(mode="after")
     def model_validator(self) -> Self:
-        self.lookup = Lookup[self.lookup]
+        self.comparison_operator = ComparisonOperator[self.comparison_operator]
         self.include = Include[self.include]
         self.match = Match[self.match]
         if not self.values and not self.queries:

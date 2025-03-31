@@ -127,7 +127,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
         type_annotation_map={
             int: BIGINT,
             str: VARCHAR,
-            enum.Enum: ENUM,
+            enum.StrEnum: ENUM,
             bool: BOOLEAN,
             list: ARRAY,
             datetime_tz: TIMESTAMP(timezone=True),
@@ -154,7 +154,7 @@ class NotFoundException(Exception):
     pass
 
 
-def UnoDBFactory(base: UnoBase, model: BaseModel):
+def UnoDBFactory(model: BaseModel):
     class UnoDB:
 
         @classmethod
@@ -182,7 +182,7 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                 async with scoped_session() as session:
                     await session.execute(text(cls.set_role("writer")))
                     result = await session.execute(
-                        insert(base.table)
+                        insert(model.base.table)
                         .values(**to_db_model.model_dump())
                         .returning(*from_db_model.model_fields.keys())
                     )
@@ -198,29 +198,21 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
         @classmethod
         async def select_(
             cls,
-            from_db_model: BaseModel,
             id: str = None,
             result_type: SelectResultType = SelectResultType.FETCH_ALL,
             limit: int = 25,
             offset: int = 0,
-            include_fields: list[str] = [],
-            exclude_fields: list[str] = [],
             filters: dict = {},
             **kwargs,
         ) -> UnoBase:
-            column_names = base.__table__.columns.keys()
-            if include_fields:
-                column_names = [col for col in include_fields if col in column_names]
-            elif exclude_fields:
-                column_names = [
-                    col
-                    for col in base.__table__.columns.keys()
-                    if col not in exclude_fields
-                ]
-            stmt = select(base.__table__.c[*column_names])
+            column_names = model.base.__table__.columns.keys()
+            stmt = select(model.base.__table__.c[*column_names])
 
             if filters:
-                for key, value in filters.items():
+                for key, fltr in filters.items():
+                    print(key)
+                    value = fltr.get("val", None)
+                    comparison_operator = fltr.get("comparison_operator", "EQUAL")
                     if key not in model.filters.keys():
                         raise UnoError(
                             f"Filter key '{key}' not found in filters.",
@@ -230,10 +222,12 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
                             f"Filter value for '{key}' cannot be None.",
                         )
                     filter = model.filters[key]
-                    cypher_query = filter.cypher_query_string(value)
+                    cypher_query = filter.cypher_query_string(
+                        value, comparison_operator=comparison_operator
+                    )
+                    print(f"Cypher Query: {cypher_query}")
                     subquery = select(text(cypher_query)).scalar_subquery()
-                    stmt = stmt.where(base.id.in_(subquery))
-            # print(f"SQL: {stmt}")
+                    stmt = stmt.where(model.base.id.in_(subquery))
 
             if limit:
                 stmt = stmt.limit(limit)
@@ -242,25 +236,19 @@ def UnoDBFactory(base: UnoBase, model: BaseModel):
 
             try:
                 if id is not None:
-                    stmt = stmt.where(base.id == id)
+                    stmt = stmt.where(model.base.id == id)
                     result_type = SelectResultType.FETCH_ONE
                 async with scoped_session() as session:
                     await session.execute(text(cls.set_role("reader")))
                     result = await session.execute(stmt)
                 if result_type == SelectResultType.FETCH_ONE:
                     row = result.fetchone()
-                    return from_db_model(**row._mapping) if row is not None else None
-                row = result.fetchall()
-                return [
-                    r._mapping
-                    for r in row
-                    if row is not None  # and r._mapping.name in column_names
-                ]
+                    return row._mapping if row is not None else None
+                return result.mappings().all()
             except Exception as e:
                 raise UnoError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
                 ) from e
 
-    UnoDB.base = base
     UnoDB.model = model
     return UnoDB

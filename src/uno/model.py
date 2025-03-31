@@ -14,7 +14,7 @@ from sqlalchemy import Column
 
 from uno.db import UnoDBFactory
 from uno.db import UnoBase
-from uno.schema import UnoSchemaConfig, UnoSchema
+from uno.schema import UnoSchemaConfig
 from uno.endpoint import (
     CreateEndpoint,
     ViewEndpoint,
@@ -30,9 +30,10 @@ from uno.utilities import (
     snake_to_caps_snake,
 )
 from uno.enums import (
-    object_lookups,
-    numeric_lookups,
-    text_lookups,
+    GraphLookup,
+    graph_boolean_comparison_operators,
+    graph_numeric_comparison_operators,
+    graph_text_comparison_operators,
 )
 from uno.filter import UnoFilter
 
@@ -76,7 +77,7 @@ class UnoModel(BaseModel):
                 "DUPLICATE_MODEL",
             )
         cls.set_display_names()
-        cls.db = UnoDBFactory(base=cls.base, model=cls)
+        cls.db = UnoDBFactory(model=cls)
 
     # End of __init_subclass__
 
@@ -136,8 +137,8 @@ class UnoModel(BaseModel):
             column: Column,
             edge: str = "edge",
         ) -> UnoFilter:
-            if column.type.python_type in [str, bytes]:
-                lookups = text_lookups
+            if column.type.python_type == bool:
+                comparison_operators = graph_boolean_comparison_operators
             elif column.type.python_type in [
                 int,
                 decimal.Decimal,
@@ -146,9 +147,9 @@ class UnoModel(BaseModel):
                 datetime.datetime,
                 datetime.time,
             ]:
-                lookups = numeric_lookups
+                comparison_operators = graph_numeric_comparison_operators
             else:
-                lookups = object_lookups
+                comparison_operators = graph_text_comparison_operators
             if column.foreign_keys:
                 if edge == "edge":
                     source_node = snake_to_camel(column.table.name)
@@ -172,8 +173,7 @@ class UnoModel(BaseModel):
                 target_node=target_node,
                 data_type=column.type.python_type.__name__,
                 raw_data_type=column.type.python_type,
-                postgres_type=column.type,
-                lookups=lookups,
+                comparison_operators=comparison_operators,
             )
 
         filters = {}

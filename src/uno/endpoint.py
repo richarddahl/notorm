@@ -15,6 +15,8 @@ from fastapi import (
     APIRouter,
     HTTPException,
     Response,
+    Request,
+    Body,
     Depends,
     Query,
 )
@@ -34,7 +36,7 @@ class UnoRouter(BaseModel, ABC):
     path_prefix: str = "/api"
     api_version: str = settings.API_VERSION
     include_in_schema: bool = True
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     return_list: bool = False
     app: FastAPI = None
     status_code: int = status.HTTP_200_OK
@@ -67,7 +69,7 @@ class ListRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "GET"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     return_list: bool = True
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
@@ -96,27 +98,70 @@ class ListRouter(UnoRouter):
             self,
             limit: int = 25,
             offset: int = 0,
-            include_fields: List[str] = Query([]),
-            exclude_fields: List[str] = Query([]),
+            request: Request = None,
             filter_params: dict = Depends(filter_params),
         ) -> list[BaseModel]:
+            print(f"params: {request.query_params}")
+            expected_params = set(filter_params.__fields__.keys())
+            expected_params.add("limit")
+            expected_params.add("offset")
+            unexpected_params = (
+                set([key.split(".")[0] for key in request.query_params.keys()])
+                - expected_params
+            )
+            if unexpected_params:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unexpected query parameters: {unexpected_params}, Check the spelling and case of the query parameters.",
+                )
             filters: dict = {}
-            for filter in filter_params:
-                if filter[1] is not None:
-                    filters.update({filter[0]: filter[1]})
-            # Check if the filter is valid
-            for key in filters.keys():
-                if key not in self.model.filters.keys():
+            for key, val in request.query_params.items():
+                if val is None:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Filter value for '{key}' cannot be None.",
+                    )
+                # Check if the filter is valid
+                filter_component_list = key.split(".")
+                edge = filter_component_list[0]
+                if edge in ["limit", "offset"]:
+                    continue
+                if edge not in self.model.filters.keys():
                     raise HTTPException(
                         status_code=400,
                         detail=f"Invalid filter key: {key}",
                     )
+                comparison_operator = (
+                    filter_component_list[1]
+                    if len(filter_component_list) > 1
+                    else "EQUAL"
+                )
+                if (
+                    comparison_operator
+                    not in self.model.filters[edge].comparison_operators
+                ):
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid filter comparison_operator: {comparison_operator}",
+                    )
+                filters.update(
+                    {edge: {"val": val, "comparison_operator": comparison_operator}}
+                )
+            # Check if the limit and offset are valid
+            if limit < 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Limit cannot be less than 0.",
+                )
+            if offset < 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Offset cannot be less than 0.",
+                )
             results = await self.model.db.select_(
                 from_db_model=self.response_model,
                 limit=limit,
                 offset=offset,
-                include_fields=include_fields,
-                exclude_fields=exclude_fields,
                 filters=filters,
             )
             return results
@@ -129,7 +174,7 @@ class ImportRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "PUT"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
 
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
@@ -164,7 +209,7 @@ class InsertRouter(UnoRouter):
     path_suffix: str = ""
     method: str = "POST"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -180,7 +225,7 @@ class InsertRouter(UnoRouter):
 
         async def endpoint(self, body: BaseModel, response: Response) -> BaseModel:
             response.status_code = status.HTTP_201_CREATED
-            result = await self.model.db.insert(body)
+            result = await self.model.db.insert_(body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -192,7 +237,7 @@ class SelectRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "GET"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -207,7 +252,7 @@ class SelectRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.model.db.select(
+            result = await self.model.db.select_(
                 self.response_model,
                 id=id,
             )
@@ -223,7 +268,7 @@ class UpdateRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "PATCH"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -238,7 +283,7 @@ class UpdateRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str, body: BaseModel):
-            result = await self.model.db.update_by_id(id, body)
+            result = await self.model.db.update_(id, body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -250,7 +295,7 @@ class DeleteRouter(UnoRouter):
     path_suffix: str = "/{id}"
     method: str = "DELETE"
     path_prefix: str = "/api"
-    tags: list[str | enum.Enum] | None = None
+    tags: list[str | enum.StrEnum] | None = None
     # summary: str = "" <- computed_field
     # description: str = "" <- computed_field
 
@@ -265,7 +310,7 @@ class DeleteRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.model.db.delete_by_id(id)
+            result = await self.model.db.delete_(id)
             return {"message": "delete"}
 
         endpoint.__annotations__["return"] = bool

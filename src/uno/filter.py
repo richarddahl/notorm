@@ -5,12 +5,19 @@
 # Models are the Business Logic Layer Objects
 
 import datetime
+import decimal
 
 from typing import Optional, Any
 from typing_extensions import Self
 from psycopg import sql
 from pydantic import BaseModel, model_validator
 
+from uno.enums import (
+    GraphLookup,
+    graph_boolean_comparison_operators,
+    graph_numeric_comparison_operators,
+    graph_text_comparison_operators,
+)
 from uno.utilities import snake_to_title
 from uno.config import settings
 
@@ -22,7 +29,7 @@ class UnoFilter(BaseModel):
     target_node: Optional[str] = None
     data_type: str = "str"
     raw_data_type: type = str
-    lookups: list[str]
+    comparison_operators: list[str]
     display: Optional[str] = None
     source_path: Optional[str] = None
     destination_path: Optional[str] = None
@@ -46,30 +53,84 @@ class UnoFilter(BaseModel):
     def path(self) -> str:
         return f"{self.source_path}->{self.destination_path}"
 
-    def cypher_query_string(self, value: Any) -> str:
-        if not isinstance(value, self.raw_data_type):
-            raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+    def cypher_query_string(
+        self, value: Any, comparison_operator: str = "EQUAL"
+    ) -> str:
+
+        print(type(comparison_operator))
+        graph_comparison_operator = GraphLookup.__members__.get(comparison_operator)
 
         if self.data_type == "bool":
             val = str(value).lower()
-        elif self.data_type == "datetime":
-            val = round(value.timestamp())
+            if not val in ["true", "false", "t", "f", "t"]:
+                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+            if not comparison_operator in graph_boolean_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for boolean data type."
+                )
+        elif self.data_type in ["datetime", "date", "time"]:
+            try:
+                val = round(value.timestamp())
+            except AttributeError:
+                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+            if not comparison_operator in graph_numeric_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for datetime data type."
+                )
+        elif self.data_type == "decimal":
+            try:
+                val = decimal.Decimal(value)
+            except AttributeError:
+                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+            if not comparison_operator in graph_numeric_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for decimal data type."
+                )
+        elif self.data_type == "int":
+            try:
+                val = int(value)
+            except AttributeError:
+                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+            if not comparison_operator in graph_numeric_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for int data type."
+                )
+        elif self.data_type == "float":
+            try:
+                val = float(value)
+            except AttributeError:
+                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
+            if not comparison_operator in graph_numeric_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for float data type."
+                )
         else:
             val = str(value)
+            if not comparison_operator in graph_text_comparison_operators:
+                raise TypeError(
+                    f"ComparisonOperator {comparison_operator} is not valid for {self.data_type} data type."
+                )
 
-        print(f"Cypher Query String: {self.path()} {val}")
+        if comparison_operator == "NULL":
+            comparison = "IS NULL"
+        elif comparison_operator == "NOTNULL":
+            comparison = "IS NOT NULL"
+        else:
+            comparison = f"{graph_comparison_operator.value} '{val}'"
+
         return (
             sql.SQL(
                 """
         (SELECT * FROM cypher('graph', $subq$
             MATCH {path}
-            WHERE d.val = '{value}'
+            WHERE d.val {comparison}
             RETURN DISTINCT s.id
         $subq$) AS (id TEXT))
         """
             )
             .format(
                 path=sql.SQL(self.path()),
+                comparison=sql.SQL(comparison),
                 value=sql.SQL(str(val)),
             )
             .as_string()

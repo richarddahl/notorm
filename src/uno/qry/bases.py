@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 from uno.db import UnoBase, str_26, str_255, str_63
 from uno.mixins import BaseMixin
 from uno.auth.mixins import GroupBaseMixin
-from uno.enums import Include, Match, Lookup
+from uno.enums import Include, Match, ComparisonOperator
 from uno.meta.bases import MetaRecordBase
 from uno.config import settings
 
@@ -125,16 +125,16 @@ class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
     data_type: Mapped[str] = mapped_column(
         doc="The data type of the filter",
     )
-    lookups: Mapped[list[Lookup]] = mapped_column(
+    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
         ARRAY(
             ENUM(
-                Lookup,
-                name="lookup",
+                ComparisonOperator,
+                name="comparison_operator",
                 create_type=True,
                 schema=settings.DB_SCHEMA,
             )
         ),
-        doc="The lookups for the filter",
+        doc="The comparison_operators for the filter",
     )
 
     # Relationships
@@ -150,14 +150,14 @@ class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
             "query_path_id",
             "include",
             "match",
-            "lookup",
+            "comparison_operator",
         ),
         Index(
             "ix_filtervalue__unique_together",
             "query_path_id",
             "include",
             "match",
-            "lookup",
+            "comparison_operator",
         ),
         {"comment": "User definable values for use in queries."},
     )
@@ -191,14 +191,14 @@ class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
         ),
         insert_default=Match.AND,
     )
-    lookup: Mapped[Lookup] = mapped_column(
+    comparison_operator: Mapped[ComparisonOperator] = mapped_column(
         ENUM(
-            Lookup,
-            name="lookup",
+            ComparisonOperator,
+            name="comparison_operator",
             create_type=True,
             schema=settings.DB_SCHEMA,
         ),
-        insert_default=Lookup.EQUAL,
+        insert_default=ComparisonOperator.EQUAL,
     )
 
     # Relationships

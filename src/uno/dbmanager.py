@@ -228,7 +228,7 @@ class DBManager:
                         source_meta_type_id=fltr.source_node,
                         path=fltr.source_path,
                         data_type=fltr.data_type,
-                        lookups=fltr.lookups,
+                        comparison_operators=fltr.comparison_operators,
                     )
                 )
 

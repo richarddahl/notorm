@@ -38,7 +38,7 @@ class UnoSchemaConfig(BaseModel):
 
         schema_title = f"{model.__name__}{schema_name.split('_')[0].title()}"
 
-        # Convert to set for faster lookup and comparison
+        # Convert to set for faster comparison_operator and comparison
         all_model_fields = set(model.model_fields.keys())
 
         # Validate include fields

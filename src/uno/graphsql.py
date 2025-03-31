@@ -387,35 +387,22 @@ class Node(BaseModel):
                 -- MERGE must be used to ensure that the node is created only if it does not already exist
                 -- This is required as some objects have multiple relationsihps to the same object, i.e. User
 
-
-
                 IF NEW.{column_name} IS NOT NULL THEN
                     SELECT pg_typeof(NEW.{column_name}) INTO column_type;
+                    -- As all graph propertsies are stored as text, 
+                    -- We need to convert the column to text in a format
+                    -- That can be used for comparision during search
                     CASE
-                        WHEN column_type = 'character varying' THEN
-                            column_text = NEW.{column_name}::TEXT;
-                        WHEN column_type = 'text' THEN
-                            column_text = NEW.{column_name}::TEXT;
                         WHEN column_type = 'bool' THEN
-                            column_text = NEW.{column_name}::TEXT;
+                            column_text := NEW.{column_name}::TEXT;
                         WHEN column_type = 'int' THEN
-                            column_text = NEW.{column_name}::TEXT;
+                            column_text := NEW.{column_name}::TEXT;
                         WHEN column_type = 'float' THEN
-                            column_text = NEW.{column_name}::TEXT;
+                            column_text := NEW.{column_name}::TEXT;
                         WHEN column_type = 'timestamp with time zone' THEN 
                             column_text := EXTRACT(EPOCH FROM NEW.{column_name})::BIGINT::TEXT;
-                        ELSE column_text = NEW.{column_name}::TEXT;
+                        ELSE column_text := NEW.{column_name}::TEXT;
                     END CASE;
-                    /*
-                    IF column_int IS NOT NULL THEN
-                        column_text := column_int::TEXT;
-                    END IF;
-                    IF column_type = 'timestamp with time zone' THEN
-                        column_text := EXTRACT(EPOCH FROM NEW.{column_name})::BIGINT::TEXT;
-                    ELSE
-                        column_text := NEW.{column_name}::TEXT;
-                    END IF;
-                    */
 
                     cypher_query := FORMAT('
                         MERGE (v:{label} {{id: %s}})

@@ -5,7 +5,7 @@ import enum
 
 
 # DB Enums
-class SelectResultType(str, enum.Enum):
+class SelectResultType(enum.StrEnum):
     """
     Enumeration representing the result types for database select operations.
 
@@ -28,7 +28,7 @@ class SelectResultType(str, enum.Enum):
     SCALAR = "scalar"
 
 
-class SQLOperation(str, enum.Enum):
+class SQLOperation(enum.StrEnum):
     """
     SQLOperation is an enumeration that represents different types of sql.SQL operations.
 
@@ -47,7 +47,7 @@ class SQLOperation(str, enum.Enum):
     TRUNCATE = "Truncate"
 
 
-class Include(str, enum.Enum):
+class Include(enum.StrEnum):
     """
     Enumeration class for querying the database.
 
@@ -62,7 +62,7 @@ class Include(str, enum.Enum):
     EXCLUDE = "Exclude"
 
 
-class Match(str, enum.Enum):
+class Match(enum.StrEnum):
     """
     Enumeration class for UnoBase match types.
 
@@ -80,7 +80,7 @@ class Match(str, enum.Enum):
 
 
 #  Auth Enums
-class TenantType(str, enum.Enum):
+class TenantType(enum.StrEnum):
     """
     Enumeration class representing the types of Tenants.
 
@@ -106,7 +106,7 @@ class TenantType(str, enum.Enum):
 
 
 # Message Enums
-class MessageImportance(str, enum.Enum):
+class MessageImportance(enum.StrEnum):
     INFORMATION = "Information"
     LOW = "Low"
     MEDIUM = "Medium"
@@ -115,21 +115,21 @@ class MessageImportance(str, enum.Enum):
 
 
 # Report Enumerations
-class Status(str, enum.Enum):
+class Status(enum.StrEnum):
     CLOSED = "Closed"
     OPEN = "Open"
     AT_RISK = "At Risk"
     OVERDUE = "Overdue"
 
 
-class State(str, enum.Enum):
+class State(enum.StrEnum):
     PENDING = "Pending"
     COMPLETE = "Complete"
     CANCELLED = "Cancelled"
     DEFERRED = "Deferred"
 
 
-class Flag(str, enum.Enum):
+class Flag(enum.StrEnum):
     INFORMATION = "Information"
     LOW = "Low"
     MEDIUM = "Medium"
@@ -137,7 +137,7 @@ class Flag(str, enum.Enum):
     CRITICAL = "Critical"
 
 
-class ValueType(str, enum.Enum):
+class ValueType(enum.StrEnum):
     ATTRIBUTE = "attribute"
     # CALCULATION = "calculation"
     METHOD = "method"
@@ -147,7 +147,7 @@ class ValueType(str, enum.Enum):
     REPORT = "report"
 
 
-class DataType(str, enum.Enum):
+class DataType(enum.StrEnum):
     BOOLEAN = "bool"
     DATETIME = "datetime"
     DATE = "date"
@@ -160,34 +160,7 @@ class DataType(str, enum.Enum):
     ENUM = "enum"
 
 
-class Lookup(str, enum.Enum):
-    """
-    Enumeration class for UnoBase lookup operations.
-
-    This class defines the available lookup operations that can be used in the UnoBase framework.
-    Each lookup operation is represented by a string value.
-
-    Attributes:
-        EQUAL (str): uses the sqlalchemy __eq__ method
-        NOT_EQUAL (str): uses the sqlalchemy __ne__ method
-        GREATER_THAN (str): uses the sqlalchemy __gt__ method
-        GREATER_THAN_OR_EQUAL (str): uses the sqlalchemy __ge__ method
-        LESS_THAN (str): uses the sqlalchemy __lt__ method
-        LESS_THAN_OR_EQUAL (str): uses the sqlalchemy __le__ method
-        BETWEEN (str): uses the sqlalchemy between method
-        IN (str): uses the sqlalchemy in_ method
-        NOT_IN (str): uses the sqlalchemy not_in method
-        NULL (str): uses the sqlalchemy is_ method
-        NOT_NULL (str): uses the sqlalchemy is_not method
-        LIKE (str): uses the sqlalchemy like method
-        ILIKE (str): uses the sqlalchemy ilike method
-        NOT_LIKE (str): uses the sqlalchemy notlike method
-        NOT_ILIKE (str): uses the sqlalchemy notilike method
-        STARTS_WITH (str): uses the sqlalchemy startswith method
-        ENDS_WITH (str): uses the sqlalchemy endswith method
-        CONTAINS (str): uses the sqlalchemy contains method
-    """
-
+class ComparisonOperator(enum.StrEnum):
     EQUAL = "__eq__"
     NOT_EQUAL = "__ne__"
     GREATER_THAN = "__gt__"
@@ -200,87 +173,130 @@ class Lookup(str, enum.Enum):
     NULL = "is_"
     NOT_NULL = "is_not"
     LIKE = "like"
-    ILIKE = "ilike"
+    I_LIKE = "ilike"
     NOT_LIKE = "notlike"
-    NOT_ILIKE = "notilike"
+    NOT_I_LIKE = "notilike"
     STARTS_WITH = "startswith"
+    I_STARTS_WITH = "istartswith"
     ENDS_WITH = "endswith"
+    I_ENDS_WITH = "iendswith"
     CONTAINS = "contains"
-    BEFORE = "__lt__"
-    AFTER = "__gt__"
-    ON_OR_BEFORE = "__le__"
-    ON_OR_AFTER = "__ge__"
+    I_CONTAINS = "icontains"
 
 
-object_lookups = [
-    Lookup.EQUAL.name,
-    Lookup.NOT_EQUAL.name,
-    Lookup.NULL.name,
-    Lookup.NOT_NULL.name,
-    Lookup.IN.name,
-    Lookup.NOT_IN.name,
+object_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOT_EQUAL.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOT_NULL.name,
+    ComparisonOperator.IN.name,
+    ComparisonOperator.NOT_IN.name,
 ]
 
-boolean_lookups = [
-    Lookup.EQUAL.name,
-    Lookup.NOT_EQUAL.name,
-    Lookup.NULL.name,
-    Lookup.NOT_NULL.name,
+graph_boolean_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOT_EQUAL.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOT_NULL.name,
 ]
 
-numeric_lookups = [
-    Lookup.EQUAL.name,
-    Lookup.NOT_EQUAL.name,
-    Lookup.BETWEEN.name,
-    Lookup.GREATER_THAN.name,
-    Lookup.GREATER_THAN_OR_EQUAL.name,
-    Lookup.LESS_THAN.name,
-    Lookup.LESS_THAN_OR_EQUAL.name,
-    Lookup.NULL.name,
-    Lookup.NOT_NULL.name,
-    Lookup.IN.name,
-    Lookup.NOT_IN.name,
+numeric_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOT_EQUAL.name,
+    ComparisonOperator.BETWEEN.name,
+    ComparisonOperator.GREATER_THAN.name,
+    ComparisonOperator.GREATER_THAN_OR_EQUAL.name,
+    ComparisonOperator.LESS_THAN.name,
+    ComparisonOperator.LESS_THAN_OR_EQUAL.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOT_NULL.name,
+    ComparisonOperator.IN.name,
+    ComparisonOperator.NOT_IN.name,
 ]
 
-date_lookups = [
-    Lookup.EQUAL.name,
-    Lookup.NOT_EQUAL.name,
-    Lookup.BETWEEN.name,
-    Lookup.BEFORE.name,
-    Lookup.ON_OR_BEFORE.name,
-    Lookup.AFTER.name,
-    Lookup.ON_OR_AFTER.name,
-    Lookup.NULL.name,
-    Lookup.NOT_NULL.name,
-    Lookup.IN.name,
-    Lookup.NOT_IN.name,
+text_comparison_operators = [
+    ComparisonOperator.EQUAL.name,
+    ComparisonOperator.NOT_EQUAL.name,
+    ComparisonOperator.LIKE.name,
+    ComparisonOperator.I_LIKE.name,
+    ComparisonOperator.NOT_LIKE.name,
+    ComparisonOperator.NOT_I_LIKE.name,
+    ComparisonOperator.STARTS_WITH.name,
+    ComparisonOperator.I_STARTS_WITH.name,
+    ComparisonOperator.ENDS_WITH.name,
+    ComparisonOperator.I_ENDS_WITH.name,
+    ComparisonOperator.CONTAINS.name,
+    ComparisonOperator.I_CONTAINS.name,
+    ComparisonOperator.NULL.name,
+    ComparisonOperator.NOT_NULL.name,
 ]
 
-text_lookups = [
-    Lookup.EQUAL.name,
-    Lookup.NOT_EQUAL.name,
-    Lookup.LIKE.name,
-    Lookup.NOT_LIKE.name,
-    Lookup.ILIKE.name,
-    Lookup.NOT_ILIKE.name,
-    Lookup.STARTS_WITH.name,
-    Lookup.ENDS_WITH.name,
-    Lookup.CONTAINS.name,
-    Lookup.NULL.name,
-    Lookup.NOT_NULL.name,
+
+class GraphLookup(enum.StrEnum):
+    EQUAL = "="
+    NOTEQUAL = "<>"
+    GT = ">"
+    GTE = ">="
+    LT = "<"
+    LTE = "<="
+    IN = "IN"
+    NOTIN = "NOT IN"
+    NULL = "IS NULL"
+    NOTNULL = "IS NOT NULL"
+    CONTAINS = "=~"
+    ICONTAINS = "=~"
+    NOTCONTAINS = "=~"
+    NOTICONTAINS = "=~"
+    STARTSWITH = "=~"
+    ISTARTSWITH = "=~"
+    ENDSWITH = "=~"
+    IENDSWITH = "=~"
+
+
+graph_boolean_comparison_operators = [
+    GraphLookup.EQUAL.name,
+    GraphLookup.NOTEQUAL.name,
+    GraphLookup.NULL.name,
+    GraphLookup.NOTNULL.name,
+]
+
+graph_numeric_comparison_operators = [
+    GraphLookup.EQUAL.name,
+    GraphLookup.NOTEQUAL.name,
+    GraphLookup.GT.name,
+    GraphLookup.GTE.name,
+    GraphLookup.LT.name,
+    GraphLookup.LTE.name,
+    GraphLookup.NULL.name,
+    GraphLookup.NOTNULL.name,
+    GraphLookup.IN.name,
+    GraphLookup.NOTIN.name,
+]
+
+graph_text_comparison_operators = [
+    GraphLookup.EQUAL.name,
+    GraphLookup.NOTEQUAL.name,
+    GraphLookup.CONTAINS.name,
+    GraphLookup.ICONTAINS.name,
+    GraphLookup.STARTSWITH.name,
+    GraphLookup.ISTARTSWITH.name,
+    GraphLookup.ENDSWITH.name,
+    GraphLookup.IENDSWITH.name,
+    GraphLookup.NULL.name,
+    GraphLookup.NOTNULL.name,
 ]
 
 
 # Workflow Enums
 
 
-class WorkflowDBEvent(str, enum.Enum):
+class WorkflowDBEvent(enum.StrEnum):
     INSERT = "Insert"
     UPDATE = "Update"
     DELETE = "Delete"
 
 
-class WorkflowTrigger(str, enum.Enum):
+class WorkflowTrigger(enum.StrEnum):
     DB_EVENT = "DB Event"
     SCHEDULE = "Schedule"
     USER = "User"
