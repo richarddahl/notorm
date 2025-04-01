@@ -12,6 +12,7 @@ from uno.mixins import ModelMixin
 from uno.auth.bases import (
     UserBase,
     GroupBase,
+    ResponsibilityRoleBase,
     RoleBase,
     TenantBase,
     PermissionBase,
@@ -96,6 +97,38 @@ class Group(UnoModel, ModelMixin, RecordAuditMixin):
     # roles: list["Role"] = []
     # default_users: list[User] = []
     # members: list[User] = []
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ResponsibilityRole(UnoModel, ModelMixin, RecordAuditMixin):
+    # Class variables
+    base = ResponsibilityRoleBase
+
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=[
+                "created_by",
+                "modified_by",
+                "deleted_by",
+                "tenant",
+            ],
+        ),
+        "edit_schema": UnoSchemaConfig(
+            include_fields=[
+                "name",
+                "description",
+                "tenant_id",
+            ],
+        ),
+    }
+
+    # Fields
+    name: str
+    description: Optional[str]
+    tenant_id: Optional[str]
+    tenant: Optional["Tenant"]
 
     def __str__(self) -> str:
         return self.name

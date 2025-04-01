@@ -17,6 +17,7 @@ class MessageUserSQLConfig(SQLConfig):
     sql_emitters = [
         AlterGrants,
         InsertPermission,
+        InsertMetaType,
         GraphSQLEmitter,
     ]
 
@@ -25,5 +26,6 @@ class MessageBaseSQLConfig(SQLConfig):
     table = MessageBase.__table__
     sql_emitters = [
         AlterGrants,
+        InsertMetaType,
         GraphSQLEmitter,
     ]

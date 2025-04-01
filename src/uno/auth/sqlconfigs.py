@@ -22,6 +22,7 @@ from uno.auth.bases import (
     role__permission,
     UserBase,
     GroupBase,
+    ResponsibilityRoleBase,
     RoleBase,
     TenantBase,
     PermissionBase,
@@ -75,6 +76,18 @@ class GroupSQLConfig(SQLConfig):
         RecordUserAuditFunction,
         ValidateGroupInsert,
         DefaultGroupTenant,
+        GraphSQLEmitter,
+    ]
+
+
+class ResponsibilityRoleSQLConfig(SQLConfig):
+    table = ResponsibilityRoleBase.__table__
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
         GraphSQLEmitter,
     ]
 
