@@ -65,7 +65,7 @@ class UnoFilter(BaseModel):
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
             if not comparison_operator in boolean_comparison_operators:
                 raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for boolean data type."
+                    f"ComparisonOperator {comparison_operator} is not valid for boolean data type"
                 )
         elif self.data_type in ["datetime", "date", "time"]:
             try:
@@ -80,40 +80,13 @@ class UnoFilter(BaseModel):
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
             if not comparison_operator in numeric_comparison_operators:
                 raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for datetime data type."
-                )
-        elif self.data_type == "decimal":
-            try:
-                val = decimal.Decimal(value)
-            except AttributeError:
-                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in numeric_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for decimal data type."
-                )
-        elif self.data_type == "int":
-            try:
-                val = int(value)
-            except AttributeError:
-                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in numeric_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for int data type."
-                )
-        elif self.data_type == "float":
-            try:
-                val = float(value)
-            except AttributeError:
-                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in numeric_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for float data type."
+                    f"ComparisonOperator {comparison_operator} is not valid for datetime data type"
                 )
         else:
             val = str(value)
             if not comparison_operator in text_comparison_operators:
                 raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for {self.data_type} data type."
+                    f"ComparisonOperator {comparison_operator} is not valid for {self.data_type} data type"
                 )
 
         if comparison_operator == "NULL":

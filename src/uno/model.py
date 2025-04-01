@@ -191,20 +191,21 @@ class UnoModel(BaseModel):
     def validate_filters(cls, request_params: dict) -> dict:
         filters: dict = {}
         expected_params = set(cls.filters.keys())
-        expected_params.update(["limit", "offset"])
+        expected_params.update(["LIMIT", "OFFSET"])
         unexpected_params = (
-            set([key.split(".")[0] for key in request_params.keys()]) - expected_params
+            set([key.split(".")[0].upper() for key in request_params.keys()])
+            - expected_params
         )
         if unexpected_params:
             raise HTTPException(
                 status_code=400,
-                detail=f"Unexpected query parameters: {unexpected_params}, Check the spelling and case of the query parameters.",
+                detail=f"Unexpected query parameters: {unexpected_params}",
             )
         for key, val in request_params.items():
             # Check if the filter is valid
             filter_component_list = key.split(".")
-            edge = filter_component_list[0]
-            if edge in ["limit", "offset"]:
+            edge = filter_component_list[0].upper()
+            if edge in ["limit", "offset", "LIMIT", "OFFSET"]:
                 continue
             if edge not in cls.filters.keys():
                 raise HTTPException(
@@ -214,11 +215,11 @@ class UnoModel(BaseModel):
             if val is None:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Filter value for '{edge}' cannot be None.",
+                    detail=f"Filter value for '{edge}' cannot be None",
                 )
             comparison_operator = (
                 filter_component_list[1] if len(filter_component_list) > 1 else "EQUAL"
-            )
+            ).upper()
             if comparison_operator not in cls.filters[edge].comparison_operators:
                 raise HTTPException(
                     status_code=400,
