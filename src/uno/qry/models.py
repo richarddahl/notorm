@@ -73,7 +73,7 @@ def create_query_paths(filter: UnoFilter) -> list[QueryPath]:
     # Create filter paths for the filter
     query_paths.append(
         QueryPath(
-            source_meta_type_id=filter.source_node,
+            source_meta_type_id=filter.source_node_label,
             path=filter.source_path,
             data_type=filter.data_type,
             comparison_operators=filter.comparison_operators,

@@ -135,7 +135,6 @@ class UnoModel(BaseModel):
 
         def create_filter_for_column(
             column: Column,
-            edge: str = "edge",
         ) -> UnoFilter:
             if column.type.python_type == bool:
                 comparison_operators = boolean_comparison_operators
@@ -150,30 +149,31 @@ class UnoModel(BaseModel):
                 comparison_operators = numeric_comparison_operators
             else:
                 comparison_operators = text_comparison_operators
+
+            edge = column.info.get("edge", column.name)
             if column.foreign_keys:
-                if edge == "edge":
-                    source_node = snake_to_camel(column.table.name)
-                    target_node = snake_to_camel(
-                        list(column.foreign_keys)[0].column.table.name
-                    )
-                    label = snake_to_caps_snake(
-                        column.info.get(edge, column.name.replace("_id", ""))
-                    )
-                else:
-                    return None
+                source_node_label = snake_to_camel(column.table.name)
+                target_node_label = snake_to_camel(
+                    list(column.foreign_keys)[0].column.table.name
+                )
+                label = snake_to_caps_snake(
+                    column.info.get(edge, column.name.replace("_id", ""))
+                )
             else:
-                source_node = snake_to_camel(table.name)
-                target_node = snake_to_camel(column.name)
+                source_node_label = snake_to_camel(table.name)
+                target_node_label = snake_to_camel(column.name)
                 label = snake_to_caps_snake(
                     column.info.get(edge, column.name.replace("_id", ""))
                 )
             return UnoFilter(
-                source_node=source_node,
+                source_node_label=source_node_label,
                 label=label,
-                target_node=target_node,
+                target_node_label=target_node_label,
                 data_type=column.type.python_type.__name__,
                 raw_data_type=column.type.python_type,
                 comparison_operators=comparison_operators,
+                source_path=f"(s:{source_node_label})-[e:{label}]",
+                destination_path=f"(t:{target_node_label})",
             )
 
         filters = {}
@@ -181,7 +181,6 @@ class UnoModel(BaseModel):
             if column.info.get("graph_excludes", False):
                 continue
             if fltr := create_filter_for_column(column):
-                # filter_key = f"{fltr.source_node}{fltr.label}{fltr.target_node}"
                 filter_key = fltr.label
                 if filter_key not in filters.keys():
                     filters[filter_key] = fltr

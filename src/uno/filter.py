@@ -23,27 +23,17 @@ from uno.config import settings
 
 
 class UnoFilter(BaseModel):
-    source_node: Optional[str] = None
-    label_string: Optional[str] = None
-    label: Optional[str] = None
-    target_node: Optional[str] = None
-    data_type: str = "str"
-    raw_data_type: type = str
+    source_node_label: str
+    label: str
+    target_node_label: str
+    data_type: str
+    raw_data_type: type
     comparison_operators: list[str]
-    display: Optional[str] = None
-    source_path: Optional[str] = None
-    destination_path: Optional[str] = None
-    id: Optional[int] = None
-
-    @model_validator(mode="after")
-    def model_validator(self) -> Self:
-        self.display = snake_to_title(self.label)
-        self.source_path = f"(s:{self.source_node})-[e:{self.label}]"
-        self.destination_path = f"(d:{self.target_node})"
-        return self
+    source_path: str
+    destination_path: str
 
     def __str__(self) -> str:
-        return f"{self.source_node}-{self.label}->{self.target_node}"
+        return f"{self.source_node_label}-{self.label}->{self.target_node_label}"
 
     def __repr__(self) -> str:
         return f"<UnoFilter: {self.source_path}->{self.destination_path}>"
