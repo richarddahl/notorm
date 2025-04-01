@@ -226,8 +226,7 @@ def UnoDBFactory(model: BaseModel):
                     cypher_query = filter.cypher_query_string(
                         value, comparison_operator=comparison_operator
                     )
-                    subquery = select(text(cypher_query)).scalar_subquery()
-                    stmt = stmt.where(model.base.id.in_(subquery))
+                    stmt = stmt.where(model.base.id.in_(select(text(cypher_query))))
 
             if limit:
                 stmt = stmt.limit(limit)

@@ -83,7 +83,7 @@ query__child_query = Table(
 )
 
 
-class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
+class QueryPathBase(BaseMixin, UnoBase):
     __tablename__ = "query_path"
     __table_args__ = {"comment": "Enables user-defined filtering via the graph DB."}
 
@@ -108,14 +108,6 @@ class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
             "reverse_edge": "DESTINATION_FILTER_PATHS",
         },
     )
-    filter_ids: Mapped[list[str_26]] = mapped_column(
-        ARRAY(VARCHAR(26)),
-        doc="The filters for the filter path",
-        info={
-            "edge": "FILTER_IDS",
-            "reverse_edge": "FILTER_PATHS",
-        },
-    )
     path: Mapped[str] = mapped_column(
         index=True,
         unique=True,
@@ -125,17 +117,17 @@ class QueryPathBase(GroupBaseMixin, BaseMixin, UnoBase):
     data_type: Mapped[str] = mapped_column(
         doc="The data type of the filter",
     )
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        doc="The comparison_operators for the filter",
-    )
+    # comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
+    #    ARRAY(
+    #        ENUM(
+    #            ComparisonOperator,
+    #            name="comparison_operator",
+    #            create_type=True,
+    #            schema=settings.DB_SCHEMA,
+    #        )
+    #    ),
+    #    doc="The comparison_operators for the filter",
+    # )
 
     # Relationships
     source_meta_type: Mapped["MetaRecordBase"] = relationship(

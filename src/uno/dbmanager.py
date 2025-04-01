@@ -26,6 +26,7 @@ from uno.apidef import app
 from uno.db import meta_data, scoped_session
 from uno.auth.bases import UserBase
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
+from uno.filter import UnoFilter
 from uno.qry.bases import QueryPathBase
 from uno.qry.models import QueryPath
 import uno.attr.sqlconfigs
@@ -197,6 +198,28 @@ class DBManager:
         handle: str = settings.SUPERUSER_HANDLE,
         full_name: str = settings.SUPERUSER_FULL_NAME,
     ) -> str:
+        """
+        Creates a superuser with the specified email, handle, and full name.
+
+        This method initializes a superuser instance and saves it to the database
+        with elevated privileges. The database role is temporarily elevated to
+        the admin role during the operation.
+
+        Args:
+            email (str): The email address of the superuser. Defaults to the value
+                of `settings.SUPERUSER_EMAIL`.
+            handle (str): The unique handle/username for the superuser. Defaults to
+                the value of `settings.SUPERUSER_HANDLE`.
+            full_name (str): The full name of the superuser. Defaults to the value
+                of `settings.SUPERUSER_FULL_NAME`.
+
+        Returns:
+            str: The handle of the created superuser.
+
+        Raises:
+            Exception: If an error occurs during the creation of the superuser,
+                it is caught and logged, and the exception is raised.
+        """
         user = UserBase(
             email=email,
             handle=handle,
@@ -223,18 +246,41 @@ class DBManager:
             print(f"Error creating superuser: {e}")
 
     async def create_query_paths(self) -> None:
+
+        def create_query_path(
+            filter: UnoFilter, parent: UnoFilter = None
+        ) -> QueryPathBase:
+            print(
+                f"Creating query path for filter: {filter.label} with parent: {parent.label if parent else None}"
+            )
+            print(fltr.source_meta_type_id)
+
+            return QueryPathBase(
+                source_meta_type_id=filter.source_meta_type_id,
+                destination_meta_type_id=filter.target_meta_type_id,
+                path=filter.path(parent=parent),
+                data_type=filter.data_type,
+                comparison_operators=filter.comparison_operators,
+            )
+
+        # Create the query paths
+        # for each filter in the model
+        # and add the children filters
+        # to the query paths
         query_paths = []
         for model in UnoModel.registry.values():
             model.configure(app)
             for fltr in model.filters.values():
-                query_paths.append(
-                    QueryPathBase(
-                        source_meta_type_id=fltr.source_node_label,
-                        path=fltr.source_path,
-                        data_type=fltr.data_type,
-                        comparison_operators=fltr.comparison_operators,
-                    )
-                )
+                query_paths.append(create_query_path(fltr))
+                if fltr.source_meta_type_id != fltr.target_meta_type_id:
+                    child_model = UnoModel.registry[fltr.target_meta_type_id]
+                    for child_fltr in fltr.children(model=child_model):
+                        query_paths.append(
+                            create_query_path(
+                                child_fltr,
+                                parent=fltr,
+                            )
+                        )
 
         async with scoped_session() as session:
             await session.execute(

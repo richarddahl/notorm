@@ -24,22 +24,32 @@ from uno.config import settings
 
 class UnoFilter(BaseModel):
     source_node_label: str
+    source_meta_type_id: str
     label: str
     target_node_label: str
+    target_meta_type_id: str
     data_type: str
     raw_data_type: type
     comparison_operators: list[str]
     source_path: str
+    parent_path: str
+    child_path: str
     destination_path: str
 
     def __str__(self) -> str:
-        return f"{self.source_node_label}-{self.label}->{self.target_node_label}"
+        return self.path()
 
     def __repr__(self) -> str:
         return f"<UnoFilter: {self.source_path}->{self.destination_path}>"
 
-    def path(self) -> str:
+    def path(self, parent: "UnoFilter" = None) -> str:
+        if parent:
+            return f"{parent.parent_path}-{self.child_path}->{self.destination_path}"
         return f"{self.source_path}->{self.destination_path}"
+
+    def children(self, model: "UnoModel") -> list["UnoFilter"]:
+        """Return a list of child filters."""
+        return [child for child in model.filters.values()]
 
     def cypher_query_string(
         self, value: Any, comparison_operator: str = "EQUAL"
@@ -89,11 +99,11 @@ class UnoFilter(BaseModel):
         return (
             sql.SQL(
                 """
-        (SELECT * FROM cypher('graph', $subq$
+        * FROM cypher('graph', $subq$
             MATCH {path}
-            WHERE d.val {comparison}
+            WHERE t.val {comparison}
             RETURN DISTINCT s.id
-        $subq$) AS (id TEXT))
+        $subq$) AS (a text)
         """
             )
             .format(

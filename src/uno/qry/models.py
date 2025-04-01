@@ -42,14 +42,12 @@ class QueryPath(UnoModel, ModelMixin):
             exclude_fields=[
                 "source_meta_type",
                 "destination_meta_type",
-                "filter_ids",
             ],
         ),
         "edit_schema": UnoSchemaConfig(
             include_fields=[
                 "source_meta_type_id",
                 "destination_meta_type_id",
-                "filter_ids",
             ],
         ),
     }
@@ -59,26 +57,12 @@ class QueryPath(UnoModel, ModelMixin):
     source_meta_type: Optional[MetaType] = None
     destination_meta_type_id: str
     destination_meta_type: Optional[MetaType] = None
-    filter_ids: list[str] = []
     path: str
     data_type: str
-    comparison_operators: list[str]
+    # comparison_operators: list[str]
 
     def __str__(self) -> str:
         return self.name
-
-
-def create_query_paths(filter: UnoFilter) -> list[QueryPath]:
-    query_paths: list = []
-    # Create filter paths for the filter
-    query_paths.append(
-        QueryPath(
-            source_meta_type_id=filter.source_node_label,
-            path=filter.source_path,
-            data_type=filter.data_type,
-            comparison_operators=filter.comparison_operators,
-        )
-    )
 
 
 class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):

@@ -153,26 +153,34 @@ class UnoModel(BaseModel):
             edge = column.info.get("edge", column.name)
             if column.foreign_keys:
                 source_node_label = snake_to_camel(column.table.name)
+                source_meta_type_id = column.table.name
                 target_node_label = snake_to_camel(
                     list(column.foreign_keys)[0].column.table.name
                 )
+                target_meta_type_id = list(column.foreign_keys)[0].column.table.name
                 label = snake_to_caps_snake(
                     column.info.get(edge, column.name.replace("_id", ""))
                 )
             else:
                 source_node_label = snake_to_camel(table.name)
+                source_meta_type_id = table.name
                 target_node_label = snake_to_camel(column.name)
+                target_meta_type_id = source_meta_type_id
                 label = snake_to_caps_snake(
                     column.info.get(edge, column.name.replace("_id", ""))
                 )
             return UnoFilter(
                 source_node_label=source_node_label,
+                source_meta_type_id=source_meta_type_id,
                 label=label,
                 target_node_label=target_node_label,
+                target_meta_type_id=target_meta_type_id,
                 data_type=column.type.python_type.__name__,
                 raw_data_type=column.type.python_type,
                 comparison_operators=comparison_operators,
                 source_path=f"(s:{source_node_label})-[e:{label}]",
+                parent_path=f"(s:{source_node_label})-[:{label}]",
+                child_path=f"(:{source_node_label})-[:{label}]",
                 destination_path=f"(t:{target_node_label})",
             )
 

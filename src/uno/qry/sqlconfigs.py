@@ -19,6 +19,8 @@ class QueryPathSQLConfig(SQLConfig):
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
         GraphSQLEmitter,
     ]
 
