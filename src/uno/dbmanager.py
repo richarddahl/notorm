@@ -203,20 +203,24 @@ class DBManager:
             full_name=full_name,
             is_superuser=True,
         )
-        async with scoped_session() as session:
-            await session.execute(
-                text(
-                    sql.SQL("SET ROLE {db_name}_admin;")
-                    .format(
-                        db_name=sql.SQL(settings.DB_NAME),
+        try:
+            async with scoped_session() as session:
+                await session.execute(
+                    text(
+                        sql.SQL("SET ROLE {db_name}_admin;")
+                        .format(
+                            db_name=sql.SQL(settings.DB_NAME),
+                        )
+                        .as_string()
                     )
-                    .as_string()
                 )
-            )
-            session.add(user)
-            await session.commit()
-            await session.close()
-        return user
+                session.add(user)
+                await session.commit()
+                await session.close()
+            print(f"Superuser created: {user.handle} with email: {user.email}")
+            return user.handle
+        except Exception as e:
+            print(f"Error creating superuser: {e}")
 
     async def create_query_paths(self) -> None:
         query_paths = []
@@ -225,7 +229,7 @@ class DBManager:
             for fltr in model.filters.values():
                 query_paths.append(
                     QueryPathBase(
-                        source_meta_type_id=fltr.source_node,
+                        source_meta_type_id=fltr.source_node_label,
                         path=fltr.source_path,
                         data_type=fltr.data_type,
                         comparison_operators=fltr.comparison_operators,
