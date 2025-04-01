@@ -101,7 +101,7 @@ class ListRouter(UnoRouter):
             filter_params: dict = Depends(filter_params),
         ) -> list[BaseModel]:
 
-            filters = self.model.validate_filters(request.query_params)
+            filters = self.model.validate_request_filters(request.query_params)
 
             # Check if the limit and offset are valid
             if limit < 0:

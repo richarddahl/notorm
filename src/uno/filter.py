@@ -103,7 +103,7 @@ class UnoFilter(BaseModel):
             MATCH {path}
             WHERE t.val {comparison}
             RETURN DISTINCT s.id
-        $subq$) AS (a text)
+        $subq$) AS (id TEXT)
         """
             )
             .format(

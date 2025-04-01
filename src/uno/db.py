@@ -211,9 +211,7 @@ def UnoDBFactory(model: BaseModel):
             if filters:
                 for key, fltr in filters.items():
                     value = fltr.get("val", None)
-                    comparison_operator = fltr.get(
-                        "comparison_operator", "EQUAL"
-                    ).upper()
+                    comparison_operator = fltr.get("comparison_operator", "EQUAL")
                     if key not in model.filters.keys():
                         raise UnoError(
                             f"Filter key '{key}' not found in filters.",

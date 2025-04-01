@@ -239,7 +239,7 @@ class DBManager:
                 )
                 session.add(user)
                 await session.commit()
-                await session.close()
+                # await session.close()
             print(f"Superuser created: {user.handle} with email: {user.email}")
             return user.handle
         except Exception as e:
@@ -253,20 +253,17 @@ class DBManager:
             print(
                 f"Creating query path for filter: {filter.label} with parent: {parent.label if parent else None}"
             )
-            print(fltr.source_meta_type_id)
-
+            source_meta_type = (
+                parent.source_meta_type_id if parent else filter.source_meta_type_id
+            )
             return QueryPathBase(
-                source_meta_type_id=filter.source_meta_type_id,
+                source_meta_type_id=source_meta_type,
                 destination_meta_type_id=filter.target_meta_type_id,
                 path=filter.path(parent=parent),
                 data_type=filter.data_type,
-                comparison_operators=filter.comparison_operators,
+                # comparison_operators=filter.comparison_operators,
             )
 
-        # Create the query paths
-        # for each filter in the model
-        # and add the children filters
-        # to the query paths
         query_paths = []
         for model in UnoModel.registry.values():
             model.configure(app)
@@ -274,6 +271,7 @@ class DBManager:
                 query_paths.append(create_query_path(fltr))
                 if fltr.source_meta_type_id != fltr.target_meta_type_id:
                     child_model = UnoModel.registry[fltr.target_meta_type_id]
+                    child_model.configure(app)
                     for child_fltr in fltr.children(model=child_model):
                         query_paths.append(
                             create_query_path(
@@ -294,4 +292,4 @@ class DBManager:
             )
             session.add_all(query_paths)
             await session.commit()
-            await session.close()
+            # await session.close()

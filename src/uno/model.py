@@ -195,23 +195,58 @@ class UnoModel(BaseModel):
         cls.filters = filters
 
     @classmethod
-    def validate_filters(cls, request_params: dict) -> dict:
+    def validate_request_filters(cls, request_params: dict) -> dict:
+        """
+        Validates and processes request parameters for filtering.
+
+        This method checks the provided request parameters against the expected
+        filters defined in the class. It ensures that only valid filters and
+        comparison operators are used, and raises an HTTPException for any
+        unexpected or invalid parameters.
+
+        Args:
+            request_params (dict): A dictionary of request parameters where keys
+                represent filter names (optionally with a comparison operator) and
+                values represent the filter values.
+
+        Returns:
+            dict: A dictionary of validated filters with their values and
+            comparison operators. The structure is:
+                {
+                    "FILTER_NAME": {
+                        "val": FILTER_VALUE,
+                        "comparison_operator": "COMPARISON_OPERATOR"
+                    },
+                    ...
+                }
+
+        Raises:
+            HTTPException:
+                If unexpected query parameters are found
+                if a filter key is invalid
+                if a filter value is None, or
+                if a comparison operator is invalid.
+        """
         filters: dict = {}
+        # Check for unexpected parameters
+        # Get the expected parameters from the filters
+        # and add the LIMIT and OFFSET keys
+        # to the expected parameters
         expected_params = set(cls.filters.keys())
-        expected_params.update(["LIMIT", "OFFSET"])
+        expected_params.update(["limit", "offset"])
         unexpected_params = (
-            set([key.split(".")[0].upper() for key in request_params.keys()])
-            - expected_params
+            set([key.split(".")[0] for key in request_params.keys()]) - expected_params
         )
         if unexpected_params:
+            unexpected_param_list = ", ".join(unexpected_params)
             raise HTTPException(
                 status_code=400,
-                detail=f"Unexpected query parameters: {unexpected_params}",
+                detail=f"Unexpected query parameter(s): {unexpected_param_list}. Check spelling and case.",
             )
         for key, val in request_params.items():
             # Check if the filter is valid
             filter_component_list = key.split(".")
-            edge = filter_component_list[0].upper()
+            edge = filter_component_list[0]
             if edge in ["limit", "offset", "LIMIT", "OFFSET"]:
                 continue
             if edge not in cls.filters.keys():
@@ -226,7 +261,7 @@ class UnoModel(BaseModel):
                 )
             comparison_operator = (
                 filter_component_list[1] if len(filter_component_list) > 1 else "EQUAL"
-            ).upper()
+            )
             if comparison_operator not in cls.filters[edge].comparison_operators:
                 raise HTTPException(
                     status_code=400,
