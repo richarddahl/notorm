@@ -45,16 +45,8 @@ def user_factory(db_session):
 
     return UserFactory
 
-    full_name = factory.Faker("name")
-    email = factory.lazy_attribute(
-        lambda o: f"{o.full_name.replace(' ', '.').lower()}@example.com"
-    )
-    handle = factory.lazy_attribute(
-        lambda o: f"@{o.full_name.replace(' ', '_').lower()}"
-    )
 
-
-user = UserFactory.create()
+user = user_factory.create()
 print("Creating user with email:", user.email)
 print("Creating user with handle:", user.handle)
 print("Creating user with full name:", user.full_name)
