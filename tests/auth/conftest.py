@@ -52,14 +52,14 @@ def setup_database(db_session):
     """Fixture to set up the database before each test."""
     with db_session.begin():
         db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer"))
-        # Create the database tables if they don't exist
         # Add any additional setup logic here
 
 @pytest.fixture(scope="function")
-def create_user(user_factory):
+def create_user(user_factory, db_session):
     """Fixture to create a user."""
-    user = user_factory.create()
-    print(user.full_name)
-    print(user.email)
-    print(user.handle)
-    return user
+    with db_session.begin():
+        user = user_factory.create()
+        print(user.full_name)
+        print(user.email)
+        print(user.handle)
+        return user
