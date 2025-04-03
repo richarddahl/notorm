@@ -9,6 +9,7 @@ from uno.enums import SQLOperation, TenantType
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
 from uno.mixins import ModelMixin
+from uno.auth.mixins import RecordAuditMixin
 from uno.auth.bases import (
     UserBase,
     GroupBase,
@@ -17,7 +18,6 @@ from uno.auth.bases import (
     TenantBase,
     PermissionBase,
 )
-from uno.auth.mixins import RecordAuditMixin
 from uno.config import settings
 
 

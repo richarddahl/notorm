@@ -19,9 +19,9 @@ from uno.db import str_26
 
 
 class RecordAuditMixin(BaseModel):
-    created_by_id: Optional[str] = None
+    created_by_id: str
     created_by: Optional["User"] = None
-    modified_by_id: Optional[str] = None
+    modified_by_id: str
     modified_by: Optional["User"] = None
     deleted_by_id: Optional[str] = None
     deleted_by: Optional["User"] = None
@@ -90,7 +90,7 @@ class RecordAuditBaseMixin:
 
 
 class GroupMixin(BaseModel):
-    group_id: Optional[str] = None
+    group_id: str
     group: Optional["Group"] = None
 
 
@@ -113,4 +113,31 @@ class GroupBaseMixin:
         return relationship(
             foreign_keys=[cls.group_id],
             doc="Group to which the record belongs",
+        )
+
+
+class TenantMixin(BaseModel):
+    tenant_id: str
+    tenant: Optional["Tenant"] = None
+
+
+class TenantBaseMixin:
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="RESTRICT"),
+        index=True,
+        nullable=True,
+        server_default=FetchedValue(),
+        doc="Tenant to which the record belongs",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "TENANT_OBJECTS",
+        },
+    )
+
+    # Relationships
+    @declared_attr
+    def tenant(cls) -> Mapped["TenantBase"]:
+        return relationship(
+            foreign_keys=[cls.tenant_id],
+            doc="Tenant to which the record belongs",
         )

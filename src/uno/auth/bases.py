@@ -109,7 +109,7 @@ role__permission = Table(
 )
 
 
-class UserBase(BaseMixin, RecordAuditBaseMixin, UnoBase):
+class UserBase(BaseMixin, UnoBase, RecordAuditBaseMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -190,6 +190,9 @@ class UserBase(BaseMixin, RecordAuditBaseMixin, UnoBase):
         back_populates="user",
         doc="Messages associated with the user",
     )
+
+    def __str__(self) -> str:
+        return self.email
 
 
 class GroupBase(BaseMixin, UnoBase, RecordAuditBaseMixin):

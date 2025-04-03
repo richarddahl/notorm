@@ -6,13 +6,13 @@ from typing import Optional, List
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
 from uno.mixins import ModelMixin
-from uno.auth.mixins import RecordAuditMixin
+from uno.auth.mixins import RecordAuditMixin, GroupMixin, TenantMixin
 from uno.attr.bases import AttributeBase, AttributeTypeBase
 from uno.qry.models import Query
 from uno.meta.models import MetaType
 
 
-class Attribute(UnoModel, ModelMixin, RecordAuditMixin):
+class Attribute(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
     # Class variables
     base = AttributeBase
     schema_configs = {
@@ -22,6 +22,8 @@ class Attribute(UnoModel, ModelMixin, RecordAuditMixin):
                 "modified_by",
                 "deleted_by",
                 "attribute_type",
+                "group",
+                "tenant",
             ],
         ),
         "edit_schema": UnoSchemaConfig(
@@ -29,6 +31,7 @@ class Attribute(UnoModel, ModelMixin, RecordAuditMixin):
                 "attribute_type_id",
                 "comment",
                 "follow_up_required",
+                "group_id",
             ],
         ),
     }

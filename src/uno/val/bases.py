@@ -2,332 +2,235 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
-import decimal
-
-from typing import ClassVar
-
-from sqlalchemy import ForeignKey
-from sqlalchemy.dialects.postgresql import ENUM, ARRAY
-from sqlalchemy.orm import relationship, mapped_column, Mapped
-
-from uno.db import Base, str_26, str_63
-from uno.sqlemitter import SQLEmitter
-from uno.enums import (
-    ComparisonOperator,
-    boolean_comparison_operators,
-    numeric_comparison_operators,
-    text_comparison_operators,
+from sqlalchemy import (
+    ForeignKey,
+    Index,
+    ForeignKey,
+    UniqueConstraint,
+    Table,
+    Column,
 )
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
+
+from uno.db import (
+    UnoBase,
+    str_255,
+    date_,
+    time_,
+    datetime_tz,
+    dec,
+)
+from uno.mixins import BaseMixin
+from uno.auth.mixins import (
+    RecordAuditBaseMixin,
+    GroupBaseMixin,
+    GroupMixin,
+    TenantBaseMixin,
+    TenantMixin,
+)
+from uno.filter import boolean_lookups, numeric_lookups, text_lookups, datetime_lookups
 from uno.config import settings
 
 
-class AttachmentMetaBase(GroupBaseMixin, BaseMixin, UnoBase):
-    # __tablename__ = "attachment__meta_record"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "The relationship between attachments and meta_record objects",
-    }
-    display_name: ClassVar[str] = "Attachment MetaRecordBase"
-    display_name_plural: ClassVar[str] = "Attachment RelatedObjects"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-
-    attachment_id: Mapped[str_26] = mapped_column(
+attachment__meta_record = Table(
+    "attachment__meta_record",
+    UnoBase.metadata,
+    Column(
+        "attachment_id",
+        VARCHAR(26),
         ForeignKey("attachment.id", ondelete="CASCADE"),
         primary_key=True,
-    )
-    meta_id: Mapped[str_26] = mapped_column(
+        nullable=False,
+        info={"edge": "META_RECORDS"},
+    ),
+    Column(
+        "meta_record_id",
+        VARCHAR(26),
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
-    )
+        nullable=False,
+        info={"edge": "ATTACHMENTS"},
+    ),
+    Index(
+        "ix_attachment__meta_record_attachment_id_meta_record_id",
+        "attachment_id",
+        "meta_record_id",
+    ),
+)
 
 
-class BooleanValue(MetaRecordBase):
-    # __tablename__ = "boolean_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined boolean (True/False) values.",
-        },
-    )
-    display_name: ClassVar[str] = "Boolean Value"
-    display_name_plural: ClassVar[str] = "Boolean Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=boolean_comparison_operators,
-        doc="The comparison_operators for the value.",
-    )
-    boolean_value: Mapped[bool] = mapped_column(unique=True, index=True)
-
-
-class DateTimeValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
+class AttachmentBase(
+    BaseMixin,
+    GroupBaseMixin,
+    TenantBaseMixin,
+    UnoBase,
+    RecordAuditBaseMixin,
 ):
-    # __tablename__ = "datetime_value"
+    __tablename__ = "attachment"
     __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined datetime values.",
-        },
-    )
-    display_name: ClassVar[str] = "Datetime Value"
-    display_name_plural: ClassVar[str] = "Datetime Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
+        UniqueConstraint(
+            "tenant_id", "file_path", name="uq_attachment_tenant_id_file_path"
         ),
-        default=numeric_comparison_operators,
-        doc="The comparison_operators for the value.",
+        Index("ix_attachment_tenant_id_file_path", "tenant_id", "file_path"),
+        {"comment": "User defined file attachments."},
     )
-    datetime_value: Mapped[datetime_tz] = mapped_column(unique=True, index=True)
-
-
-class DateValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "date_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined date values.",
-        },
-    )
-    display_name: ClassVar[str] = "Date Value"
-    display_name_plural: ClassVar[str] = "Date Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
     # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=numeric_comparison_operators,
-        doc="The comparison_operators for the value.",
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=text_lookups,
+        doc="The lookups for the value.",
     )
-    date_value: Mapped[date_] = mapped_column(unique=True, index=True)
-
-
-class DecimalValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "decimal_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined decimal values.",
-        },
-    )
-    display_name: ClassVar[str] = "Decimal Value"
-    display_name_plural: ClassVar[str] = "Decimal Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=numeric_comparison_operators,
-        doc="The comparison_operators for the value.",
-    )
-    decimal_value: Mapped[Decimal] = mapped_column(unique=True, index=True)
-
-
-class IntegerValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "integer_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined integer (whole number) values.",
-        },
-    )
-    display_name: ClassVar[str] = "Integer Value"
-    display_name_plural: ClassVar[str] = "Integer Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=numeric_comparison_operators,
-        doc="The comparison_operators for the value.",
-    )
-    bigint_value: Mapped[int] = mapped_column(unique=True, index=True)
-
-
-class TextValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "text_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined values.",
-        },
-    )
-    display_name: ClassVar[str] = "Text Value"
-    display_name_plural: ClassVar[str] = "Text Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=text_comparison_operators,
-        doc="The comparison_operators for the value.",
-    )
-    text_value: Mapped[str] = mapped_column(unique=True, index=True)
-
-
-class TimeValue(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "time_value"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "User defined time values.",
-        },
-    )
-    display_name: ClassVar[str] = "Time Value"
-    display_name_plural: ClassVar[str] = "Time Values"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(ForeignKey("meta_record.id"), primary_key=True)
-    comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-        ARRAY(
-            ENUM(
-                ComparisonOperator,
-                name="comparison_operator",
-                create_type=True,
-                schema=settings.DB_SCHEMA,
-            )
-        ),
-        default=numeric_comparison_operators,
-        doc="The comparison_operators for the value.",
-    )
-    time_value: Mapped[time_] = mapped_column(unique=True, index=True)
-
-
-class Attachment(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "attachment"
-    __table_args__ = {
-        "schema": settings.DB_SCHEMA,
-        "comment": "Files attached to db objects",
-    }
-
-    display_name: ClassVar[str] = "Attachment"
-    display_name_plural: ClassVar[str] = "Attachments"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
-
-    # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_record.id"),
-        primary_key=True,
-    )
-    name: Mapped[str] = mapped_column(unique=True, doc="Name of the file")
-    file: Mapped[str] = mapped_column(doc="Path to the file")
+    name: Mapped[str_255] = mapped_column(doc="Name of the file")
+    file_path: Mapped[str] = mapped_column(doc="Path to the file")
 
     # Relationships
 
 
-class Method(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
+class BooleanValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
 ):
-    # __tablename__ = "method"
+    __tablename__ = "boolean_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_boolean_value_tenant_id_value"),
+        Index("ix_boolean_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined boolean (True/False) values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=boolean_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[bool] = mapped_column(
+        doc="The boolean value.",
+    )
+
+
+class DateTimeValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "datetime_value"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "value", name="uq_datetime_value_tenant_id_value"
+        ),
+        Index("ix_datetime_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined datetime values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=datetime_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[datetime_tz] = mapped_column(doc="The datetime value.")
+
+
+class DateValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "date_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_date_value_tenant_id_value"),
+        Index("ix_date_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined date values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=datetime_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[date_] = mapped_column(doc="The date value.")
+
+
+class DecimalValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "decimal_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_decimal_value_tenant_id_value"),
+        Index("ix_decimal_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined decimal values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=numeric_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[dec] = mapped_column(doc="The decimal value.")
+
+
+class IntegerValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "integer_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_integer_value_tenant_id_value"),
+        Index("ix_integer_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined integer (whole number) values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=numeric_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[int] = mapped_column()
+
+
+class TextValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "text_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_text_value_tenant_id_value"),
+        Index("ix_text_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined text values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=text_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[str] = mapped_column()
+
+
+class TimeValueBase(
+    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
+):
+    __tablename__ = "time_value"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "value", name="uq_time_value_tenant_id_value"),
+        Index("ix_time_value_tenant_id_value", "tenant_id", "value"),
+        {"comment": "User defined time values."},
+    )
+
+    # Columns
+    lookups: Mapped[list[str]] = mapped_column(
+        ARRAY(VARCHAR(12)),
+        default=datetime_lookups,
+        doc="The lookups for the value.",
+    )
+    value: Mapped[time_] = mapped_column()
+
+
+"""
+class Method(
+):
+    __tablename__ = "method"
     __table_args__ = {
-        "schema": settings.DB_SCHEMA,
         "comment": "Methods that can be used in attributes, workflows, and reports",
     }
-    display_name: ClassVar[str] = "Object Function"
-    display_name_plural: ClassVar[str] = "Object Functions"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
     id: Mapped[str_26] = mapped_column(
@@ -348,7 +251,6 @@ class Method(
     # Relationships
 
 
-"""
 
 This is something for Jeff to look at and see if it is useful and feasible, using sympy
 

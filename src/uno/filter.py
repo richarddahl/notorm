@@ -62,7 +62,7 @@ datetime_lookups = [
     "not_in",
 ]
 
-string_lookups = [
+text_lookups = [
     "equal",
     "not_equal",
     "null",

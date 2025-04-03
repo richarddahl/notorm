@@ -37,7 +37,7 @@ from uno.filter import (
     boolean_lookups,
     numeric_lookups,
     datetime_lookups,
-    string_lookups,
+    text_lookups,
 )
 
 
@@ -195,7 +195,7 @@ class UnoModel(BaseModel):
             ]:
                 lookups = datetime_lookups
             else:
-                lookups = string_lookups
+                lookups = text_lookups
 
             # Get the edge label from the column info or use the column name
             edge = column.info.get("edge", column.name)

@@ -11,6 +11,7 @@ from uno.sqlemitter import (
     SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
+
 from uno.attr.bases import (
     attribute__value,
     attribute_type___meta_type,

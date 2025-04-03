@@ -35,7 +35,8 @@ import uno.meta.sqlconfigs
 import uno.msg.sqlconfigs
 
 # import uno.rprt.sqlconfigs
-# import uno.val.sqlconfigs
+import uno.val.sqlconfigs
+
 # import uno.wkflw.sqlconfigs
 from uno.attr import models
 from uno.auth import models
@@ -45,7 +46,8 @@ from uno.meta import models
 from uno.msg import models
 
 # from uno.rprt import models
-# from uno.val import models
+from uno.val import models
+
 # from uno.wkflw import models
 
 from uno.utilities import import_from_path
