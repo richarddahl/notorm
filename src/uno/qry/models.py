@@ -4,32 +4,19 @@
 
 # Models are the Business Logic Layer Objects
 
-import datetime
-import decimal
 from typing import Optional
 from typing_extensions import Self
-from pydantic import BaseModel, model_validator
-from sqlalchemy import Table, Column
+from pydantic import model_validator
 
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
 from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditMixin
 from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
-from uno.filter import UnoFilter
 from uno.meta.models import MetaRecord, MetaType
-from uno.utilities import (
-    snake_to_title,
-    snake_to_camel,
-    snake_to_caps_snake,
-)
 from uno.enums import (
     Include,
     Match,
-    ComparisonOperator,
-    boolean_comparison_operators,
-    numeric_comparison_operators,
-    text_comparison_operators,
 )
 from uno.config import settings
 
@@ -59,7 +46,7 @@ class QueryPath(UnoModel, ModelMixin):
     destination_meta_type: Optional[MetaType] = None
     path: str
     data_type: str
-    # comparison_operators: list[str]
+    # lookups: list[str]
 
     def __str__(self) -> str:
         return self.name
@@ -83,7 +70,7 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
             include_fields=[
                 "include",
                 "match",
-                "comparison_operator",
+                "lookup",
             ],
         ),
     }
@@ -94,13 +81,13 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
     query_path: Optional[QueryPath] = None
     include: Include = Include.INCLUDE
     match: Match = Match.AND
-    comparison_operator: ComparisonOperator = ComparisonOperator.EQUAL
+    lookup: str = "equal"
     values: Optional[list[MetaRecord]] = []
     queries: Optional[list["Query"]] = []
 
     @model_validator(mode="after")
     def model_validator(self) -> Self:
-        self.comparison_operator = ComparisonOperator[self.comparison_operator]
+        self.lookup = self.lookup
         self.include = Include[self.include]
         self.match = Match[self.match]
         if not self.values and not self.queries:

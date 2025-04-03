@@ -52,6 +52,7 @@ from sqlalchemy.dialects.postgresql import (
 
 from uno.enums import SelectResultType
 from uno.errors import UnoError
+from uno.filter import FilterParam
 from uno.config import settings
 
 
@@ -109,6 +110,7 @@ meta_data = MetaData(
     schema=settings.DB_SCHEMA,
 )
 
+str_12 = Annotated[VARCHAR, 12]
 str_26 = Annotated[VARCHAR, 26]
 str_63 = Annotated[VARCHAR, 63]
 str_128 = Annotated[VARCHAR, 128]
@@ -135,6 +137,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
             time_: TIME,
             interval: INTERVAL,
             dec: NUMERIC,
+            str_12: VARCHAR(12),
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
             str_128: VARCHAR(128),
@@ -200,36 +203,71 @@ def UnoDBFactory(model: BaseModel):
             cls,
             id: str = None,
             result_type: SelectResultType = SelectResultType.FETCH_ALL,
-            limit: int = 25,
-            offset: int = 0,
-            filters: dict = {},
-            **kwargs,
+            filters: FilterParam = None,
         ) -> UnoBase:
+            """
+            Perform a database query to select records based on the provided parameters.
+
+            Args:
+                cls: The class on which the method is called.
+                id (str, optional): The ID of the record to fetch. If provided, only a single record
+                with the matching ID will be retrieved.
+                result_type (SelectResultType, optional): Specifies the type of result to return.
+                Defaults to SelectResultType.FETCH_ALL. Use SelectResultType.FETCH_ONE to fetch
+                a single record.
+                filters (FilterParam, optional): A list of filters to apply to the query. Filters
+                can include parameters like "limit", "offset", "order_by", and "order", as well
+                as custom filters defined in the model.
+
+            Returns:
+                UnoBase: The result of the query. If `result_type` is FETCH_ONE, a single record
+                is returned as a mapping. If `result_type` is FETCH_ALL, a list of mappings
+                is returned.
+
+            Raises:
+                UnoError: If an unhandled error occurs during query execution. The error will
+                include a message and an error code "SELECT_ERROR".
+
+            Notes:
+                - The method constructs a SQLAlchemy query using the provided filters and executes
+                  it asynchronously.
+                - If `id` is provided, the query is restricted to a single record with the matching ID.
+                - The method uses a scoped session to execute the query and ensures the database role
+                  is set to "reader" for the operation.
+            """
+            limit = None
+            offset = None
+            order_by = None
+            order = "asc"
+
             column_names = model.base.__table__.columns.keys()
             stmt = select(model.base.__table__.c[*column_names])
 
             if filters:
-                for key, fltr in filters.items():
-                    value = fltr.get("val", None)
-                    comparison_operator = fltr.get("comparison_operator", "EQUAL")
-                    if key not in model.filters.keys():
-                        raise UnoError(
-                            f"Filter key '{key}' not found in filters.",
-                        )
-                    if value is None:
-                        raise UnoError(
-                            f"Filter value for '{key}' cannot be None.",
-                        )
-                    filter = model.filters[key]
-                    cypher_query = filter.cypher_query_string(
-                        value, comparison_operator=comparison_operator
-                    )
+                for fltr in filters:
+                    if fltr.label in ["limit", "offset", "order_by", "order"]:
+                        if fltr.label == "limit":
+                            limit = fltr.val
+                        if fltr.label == "offset":
+                            offset = fltr.val
+                        if fltr.label == "order_by":
+                            order_by = fltr.val
+                        if fltr.label == "order":
+                            order = fltr.val
+                    label = fltr.label.split(".")[0]
+                    filter = model.filters.get(label)
+                    cypher_query = filter.cypher_query(fltr.val, fltr.lookup)
                     stmt = stmt.where(model.base.id.in_(select(text(cypher_query))))
 
             if limit:
                 stmt = stmt.limit(limit)
             if offset:
                 stmt = stmt.offset(offset)
+            if order_by:
+                if order == "desc":
+                    stmt = stmt.order_by(getattr(model.base, order_by).desc())
+                else:
+                    stmt = stmt.order_by(getattr(model.base, order_by).asc())
 
             try:
                 if id is not None:

@@ -160,61 +160,6 @@ class DataType(enum.StrEnum):
     ENUM = "enum"
 
 
-class ComparisonOperator(enum.StrEnum):
-    EQUAL = "="
-    NOTEQUAL = "<>"
-    GT = ">"
-    GTE = ">="
-    LT = "<"
-    LTE = "<="
-    IN = "IN"
-    NOTIN = "NOT IN"
-    NULL = "IS NULL"
-    NOTNULL = "IS NOT NULL"
-    CONTAINS = "=~"
-    ICONTAINS = "=~"
-    NOTCONTAINS = "=~"
-    NOTICONTAINS = "=~"
-    STARTSWITH = "=~"
-    ISTARTSWITH = "=~"
-    ENDSWITH = "=~"
-    IENDSWITH = "=~"
-
-
-boolean_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOTEQUAL.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOTNULL.name,
-]
-
-numeric_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOTEQUAL.name,
-    ComparisonOperator.GT.name,
-    ComparisonOperator.GTE.name,
-    ComparisonOperator.LT.name,
-    ComparisonOperator.LTE.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOTNULL.name,
-    ComparisonOperator.IN.name,
-    ComparisonOperator.NOTIN.name,
-]
-
-text_comparison_operators = [
-    ComparisonOperator.EQUAL.name,
-    ComparisonOperator.NOTEQUAL.name,
-    ComparisonOperator.CONTAINS.name,
-    ComparisonOperator.ICONTAINS.name,
-    ComparisonOperator.STARTSWITH.name,
-    ComparisonOperator.ISTARTSWITH.name,
-    ComparisonOperator.ENDSWITH.name,
-    ComparisonOperator.IENDSWITH.name,
-    ComparisonOperator.NULL.name,
-    ComparisonOperator.NOTNULL.name,
-]
-
-
 # Workflow Enums
 class WorkflowDBEvent(enum.StrEnum):
     INSERT = "Insert"

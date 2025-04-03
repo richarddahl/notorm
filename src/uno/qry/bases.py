@@ -15,10 +15,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
-from uno.db import UnoBase, str_26, str_255, str_63
+from uno.db import UnoBase, str_26, str_255, str_12
 from uno.mixins import BaseMixin
 from uno.auth.mixins import GroupBaseMixin
-from uno.enums import Include, Match, ComparisonOperator
+from uno.enums import Include, Match
 from uno.meta.bases import MetaRecordBase
 from uno.config import settings
 
@@ -117,21 +117,15 @@ class QueryPathBase(BaseMixin, UnoBase):
     data_type: Mapped[str] = mapped_column(
         doc="The data type of the filter",
     )
-    # comparison_operators: Mapped[list[ComparisonOperator]] = mapped_column(
-    #    ARRAY(
-    #        ENUM(
-    #            ComparisonOperator,
-    #            name="comparison_operator",
-    #            create_type=True,
-    #            schema=settings.DB_SCHEMA,
-    #        )
-    #    ),
-    #    doc="The comparison_operators for the filter",
-    # )
 
     # Relationships
     source_meta_type: Mapped["MetaRecordBase"] = relationship(
+        viewonly=True,
         doc="The source meta_record type of the filter",
+    )
+    target_meta_type: Mapped["MetaRecordBase"] = relationship(
+        viewonly=True,
+        doc="The target meta_record type of the filter",
     )
 
 
@@ -142,14 +136,14 @@ class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
             "query_path_id",
             "include",
             "match",
-            "comparison_operator",
+            "lookup",
         ),
         Index(
             "ix_filtervalue__unique_together",
             "query_path_id",
             "include",
             "match",
-            "comparison_operator",
+            "lookup",
         ),
         {"comment": "User definable values for use in queries."},
     )
@@ -183,14 +177,8 @@ class QueryValueBase(GroupBaseMixin, BaseMixin, UnoBase):
         ),
         insert_default=Match.AND,
     )
-    comparison_operator: Mapped[ComparisonOperator] = mapped_column(
-        ENUM(
-            ComparisonOperator,
-            name="comparison_operator",
-            create_type=True,
-            schema=settings.DB_SCHEMA,
-        ),
-        insert_default=ComparisonOperator.EQUAL,
+    lookup: Mapped[str_12] = mapped_column(
+        insert_default="equal",
     )
 
     # Relationships

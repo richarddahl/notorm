@@ -3,10 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from pydantic import create_model
 import enum
-from typing import Optional, ClassVar
+from typing import Optional, ClassVar, Annotated
 
 from pydantic import BaseModel, ConfigDict, computed_field
 from fastapi import (
@@ -23,6 +21,7 @@ from fastapi import (
 
 from uno.schema import UnoSchema
 from uno.errors import UnoRegistryError
+from uno.filter import FilterParam
 from uno.config import settings
 
 
@@ -82,44 +81,32 @@ class ListRouter(UnoRouter):
         return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}View__ schema."
 
     def endpoint_factory(self) -> None:
-
-        model_filter_dict = OrderedDict()
-        filter_names = list(self.model.filters.keys())
-        filter_names.sort()
-
-        for name in filter_names:
-            fltr = self.model.filters[name]
-            label = fltr.label
-            model_filter_dict.update({label: (fltr.raw_data_type | None, None)})
-        filter_params = create_model("params", **model_filter_dict)
+        filter_params = self.model.create_filter_params()
+        # for filter in filter_params.model_fields:
+        #    print(filter)
+        """
+        for field in filter_params.model_fields:
+            # Add the filter to the endpoint
+            setattr(
+                self,
+                field,
+                Query(
+                    default=None,
+                    title=field,
+                    description=f"Filter by {field}",
+                    example=filter_params.model_fields[field].example,
+                ),
+            )
+        """
 
         async def endpoint(
             self,
-            limit: int = 25,
-            offset: int = 0,
-            request: Request = None,
-            filter_params: dict = Depends(filter_params),
+            filter_params: Annotated[filter_params, Query()] = None,
         ) -> list[BaseModel]:
 
-            filters = self.model.validate_request_filters(request.query_params)
-
-            # Check if the limit and offset are valid
-            if limit < 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Limit cannot be less than 0.",
-                )
-            if offset < 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Offset cannot be less than 0.",
-                )
-            results = await self.model.db.select_(
-                from_db_model=self.response_model,
-                limit=limit,
-                offset=offset,
-                filters=filters,
-            )
+            # Validate the filters
+            filters = self.model.validate_filter_params(filter_params)
+            results = await self.model.db.select_(filters=filters)
             return results
 
         endpoint.__annotations__["return"] = list[self.response_model]

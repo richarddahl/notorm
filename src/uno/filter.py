@@ -4,22 +4,78 @@
 
 # Models are the Business Logic Layer Objects
 
-import datetime
-import decimal
-
-from typing import Optional, Any
-from typing_extensions import Self
+from typing import Any
 from psycopg import sql
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict
 
-from uno.enums import (
-    ComparisonOperator,
-    boolean_comparison_operators,
-    numeric_comparison_operators,
-    text_comparison_operators,
-)
-from uno.utilities import snake_to_title
-from uno.config import settings
+
+lookups = {
+    "equal": "t.val = '{val}'",
+    "not_equal": "t.val <> '{val}'",
+    "gt": "t.val > '{val}'",
+    "gte": "t.val >= '{val}'",
+    "lt": "t.val < '{val}'",
+    "lte": "t.val <= '{val}'",
+    "in": "t.val IN ({val})",
+    "not_in": "t.val NOT IN ({val})",
+    "null": "NOT EXISTS(t.val)",
+    "not_null": "EXISTS(t.val)",
+    "contains": "t.val CONTAINS '{val}'",
+    "i_contains": "t.val =~ '(?i){val}'",
+    "not_contains": "t.val NOT CONTAINS '{val}'",
+    "not_i_contains": "t.val NOT =~ '(?i){val}'",
+    "starts_with": "t.val STARTS WITH '{val}'",
+    "i_starts_with": "t.val =~ '^(?i){val}'",
+    "ends_with": "t.val ENDS WITH '{val}'",
+    "i_ends_with": "t.val =~ '(?i){val}$'",
+    "after": "t.val < '{val}'",
+    "at_or_after": "t.val <= '{val}'",
+    "before": "t.val > '{val}'",
+    "at_or_before": "t.val >= '{val}'",
+}
+
+boolean_lookups = ["equal", "not_equal", "null", "not_null"]
+
+numeric_lookups = [
+    "equal",
+    "not_equal",
+    "null",
+    "not_null",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "in",
+    "not_in",
+]
+
+datetime_lookups = [
+    "equal",
+    "not_equal",
+    "null",
+    "not_null",
+    "after",
+    "at_or_after",
+    "before",
+    "at_or_before",
+    "in",
+    "not_in",
+]
+
+string_lookups = [
+    "equal",
+    "not_equal",
+    "null",
+    "not_null",
+    "contains",
+    "i_contains",
+    "not_contains",
+    "not_i_contains",
+    "starts_with",
+    "i_starts_with",
+    "ends_with",
+    "i_ends_with",
+]
 
 
 class UnoFilter(BaseModel):
@@ -30,86 +86,61 @@ class UnoFilter(BaseModel):
     target_meta_type_id: str
     data_type: str
     raw_data_type: type
-    comparison_operators: list[str]
-    source_path: str
-    parent_path: str
-    child_path: str
-    destination_path: str
+    lookups: list[str]
+    source_path_fragment: str
+    middle_path_fragment: str
+    target_path_fragment: str
+    documentation: str
 
     def __str__(self) -> str:
         return self.path()
 
     def __repr__(self) -> str:
-        return f"<UnoFilter: {self.source_path}->{self.destination_path}>"
+        return f"<UnoFilter: {self.source_path_fragment}->{self.target_path_fragment}>"
 
     def path(self, parent: "UnoFilter" = None) -> str:
         if parent:
-            return f"{parent.parent_path}-{self.child_path}->{self.destination_path}"
-        return f"{self.source_path}->{self.destination_path}"
+            return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}"
+        return f"{self.source_path_fragment}->{self.target_path_fragment}"
 
     def children(self, model: "UnoModel") -> list["UnoFilter"]:
         """Return a list of child filters."""
         return [child for child in model.filters.values()]
 
-    def cypher_query_string(
-        self, value: Any, comparison_operator: str = "EQUAL"
-    ) -> str:
-
-        graph_comparison_operator = ComparisonOperator.__members__.get(
-            comparison_operator
-        )
-
+    def cypher_query(self, value: Any, lookup: str) -> str:
         if self.data_type == "bool":
             val = str(value).lower()
-            if not val in ["true", "false", "t", "f", "t"]:
-                raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in boolean_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for boolean data type"
-                )
         elif self.data_type in ["datetime", "date", "time"]:
             try:
-                if self.data_type == "datetime":
-                    val = datetime.datetime.fromisoformat(value)
-                elif self.data_type == "date":
-                    val = datetime.date.fromisoformat(value)
-                elif self.data_type == "time":
-                    val = datetime.time.fromisoformat(value)
-                val = round(val.timestamp())
+                val = value.timestamp()
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            if not comparison_operator in numeric_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for datetime data type"
-                )
+            print(val)
         else:
             val = str(value)
-            if not comparison_operator in text_comparison_operators:
-                raise TypeError(
-                    f"ComparisonOperator {comparison_operator} is not valid for {self.data_type} data type"
-                )
 
-        if comparison_operator == "NULL":
-            comparison = "IS NULL"
-        elif comparison_operator == "NOTNULL":
-            comparison = "IS NOT NULL"
-        else:
-            comparison = f"{graph_comparison_operator.value} '{val}'"
+        where_clause = lookups.get(lookup)
 
         return (
             sql.SQL(
                 """
         * FROM cypher('graph', $subq$
             MATCH {path}
-            WHERE t.val {comparison}
+            WHERE {where_clause}
             RETURN DISTINCT s.id
         $subq$) AS (id TEXT)
         """
             )
             .format(
                 path=sql.SQL(self.path()),
-                comparison=sql.SQL(comparison),
+                where_clause=sql.SQL(where_clause),
                 value=sql.SQL(str(val)),
             )
             .as_string()
         )
+
+
+class FilterParam(BaseModel):
+    """FilterParam is used to validate the filter parameters for the ListRouter."""
+
+    model_config = ConfigDict(extra="forbid")
