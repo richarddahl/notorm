@@ -3,10 +3,24 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
+import sqlalchemy
 import pytest
 import factory
 
+from sqlalchemy.orm import sessionmaker
 from tests.conftest import session
+
+# Assuming `engine` is defined in your main application code
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@pytest.fixture(scope="function")
+def db_session():
+    """Fixture to provide a SQLAlchemy session for the tests."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 from uno.auth.bases import UserBase
 from uno.auth.models import User
