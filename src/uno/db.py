@@ -245,15 +245,16 @@ def UnoDBFactory(model: BaseModel):
 
             if filters:
                 for fltr in filters:
-                    if fltr.label in ["limit", "offset", "order_by", "order"]:
+                    if fltr.label in ["limit", "offset", "order_by"]:
                         if fltr.label == "limit":
                             limit = fltr.val
+                            continue
                         if fltr.label == "offset":
                             offset = fltr.val
+                            continue
                         if fltr.label == "order_by":
                             order_by = fltr.val
-                        if fltr.label == "order":
-                            order = fltr.val
+                            continue
                     label = fltr.label.split(".")[0]
                     filter = model.filters.get(label)
                     cypher_query = filter.cypher_query(fltr.val, fltr.lookup)

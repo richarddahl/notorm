@@ -379,14 +379,7 @@ class UnoModel(BaseModel):
         # and add the limit and offset keys
         # to the expected parameters
         expected_params = set([key.lower() for key in cls.filters.keys()])
-        expected_params.update(
-            [
-                "limit",
-                "offset",
-                "order_by",
-                "order",
-            ]
-        )
+        expected_params.update(["limit", "offset", "order_by"])
         unexpected_params = (
             set([key.split(".")[0] for key in filter_params.model_fields])
             - expected_params
@@ -403,7 +396,7 @@ class UnoModel(BaseModel):
                 continue
             filter_component_list = key.split(".")
             edge = filter_component_list[0]
-            if edge in ["limit", "offset", "order_by", "order"]:
+            if edge in ["limit", "offset", "order_by"]:
                 if edge == "order_by":
                     order_by_choices = [
                         name for name in cls.view_schema.model_fields.keys()
@@ -413,11 +406,14 @@ class UnoModel(BaseModel):
                             status_code=400,
                             detail=f"Invalid order_by value: {val}. Must be one of {order_by_choices}.",
                         )
-                if edge == "order":
-                    if val not in ["asc", "desc"]:
+                    if filter_component_list[1] == "asc":
+                        filters.append(filter_tuple(edge, val, "asc"))
+                    elif filter_component_list[1] == "desc":
+                        filters.append(filter_tuple(edge, val, "desc"))
+                    else:
                         raise HTTPException(
                             status_code=400,
-                            detail=f"Invalid order value: {val}. Must be 'asc' or 'desc'.",
+                            detail=f"Invalid order_by value: {val}. Must be 'asc' or 'desc'.",
                         )
                 if edge == "limit":
                     if not isinstance(val, int) or val < 0:
@@ -425,12 +421,14 @@ class UnoModel(BaseModel):
                             status_code=400,
                             detail=f"Invalid limit value: {val}. Must be a positive integer.",
                         )
+                    filters.append(filter_tuple(edge, val, "limit"))
                 if edge == "offset":
                     if not isinstance(val, int) or val < 0:
                         raise HTTPException(
                             status_code=400,
                             detail=f"Invalid offset value: {val}. Must be a positive integer.",
                         )
+                    filters.append(filter_tuple(edge, val, "offset"))
                 continue
             edge_upper = edge.upper()
             if edge_upper not in cls.filters.keys():
