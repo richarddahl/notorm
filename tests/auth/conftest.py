@@ -50,9 +50,13 @@ def user_factory(db_session):
 @pytest.fixture(scope="function", autouse=True)
 def setup_database(db_session):
     """Fixture to set up the database before each test."""
-    with db_session.begin():
-        db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer;"))
-        # Add any additional setup logic here
+    try:
+        with db_session.begin():
+            db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer;"))
+            # Add any additional setup logic here
+    except sqlalchemy.exc.OperationalError as e:
+        print("OperationalError during setup_database:", e)
+        raise
 
 
 @pytest.fixture(scope="function")
