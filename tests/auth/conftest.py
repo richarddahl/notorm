@@ -51,8 +51,9 @@ def user_factory(db_session):
 def setup_database(db_session):
     """Fixture to set up the database before each test."""
     with db_session.begin():
-        db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer"))
+        db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer;"))
         # Add any additional setup logic here
+
 
 @pytest.fixture(scope="function")
 def create_user(user_factory, db_session):
