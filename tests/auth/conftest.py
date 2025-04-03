@@ -28,10 +28,22 @@ from uno.auth.bases import UserBase
 from uno.auth.models import User
 
 
-class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
-    class Meta:
-        model = UserBase
-        sqlalchemy_session_factory = lambda: db_session
+@pytest.fixture(scope="function")
+def user_factory(db_session):
+    class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
+        class Meta:
+            model = UserBase
+            sqlalchemy_session = db_session
+
+        full_name = factory.Faker("name")
+        email = factory.lazy_attribute(
+            lambda o: f"{o.full_name.replace(' ', '.').lower()}@example.com"
+        )
+        handle = factory.lazy_attribute(
+            lambda o: f"@{o.full_name.replace(' ', '_').lower()}"
+        )
+
+    return UserFactory
 
     full_name = factory.Faker("name")
     email = factory.lazy_attribute(
