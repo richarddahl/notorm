@@ -9,10 +9,10 @@ import factory
 
 from sqlalchemy.orm import sessionmaker
 from tests.conftest import engine
+from uno.auth.bases import UserBase
 
 # Assuming `engine` is defined in your main application code
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -23,30 +23,21 @@ def db_session():
     finally:
         db.close()
 
+class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = UserBase
+        sqlalchemy_session = SessionLocal()
 
-from uno.auth.bases import UserBase
-from uno.auth.models import User
-
+    full_name = factory.Faker("name")
+    email = factory.lazy_attribute(
+        lambda o: f"{o.full_name.replace(' ', '.').lower()}@example.com"
+    )
+    handle = factory.lazy_attribute(
+        lambda o: f"@{o.full_name.replace(' ', '_').lower()}"
+    )
 
 @pytest.fixture(scope="function")
 def user_factory(db_session):
-    class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
-        class Meta:
-            model = UserBase
-            sqlalchemy_session = db_session
-
-        full_name = factory.Faker("name")
-        email = factory.lazy_attribute(
-            lambda o: f"{o.full_name.replace(' ', '.').lower()}@example.com"
-        )
-        handle = factory.lazy_attribute(
-            lambda o: f"@{o.full_name.replace(' ', '_').lower()}"
-        )
-
+    """Fixture to provide a UserFactory with a session."""
+    UserFactory._meta.sqlalchemy_session = db_session
     return UserFactory
-
-
-user = user_factory.create()
-print("Creating user with email:", user.email)
-print("Creating user with handle:", user.handle)
-print("Creating user with full name:", user.full_name)
