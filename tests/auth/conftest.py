@@ -22,7 +22,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
         lambda o: f"{o.full_name.replace(' ', '.').lower()}@example.com"
     )
     handle = factory.lazy_attribute(
-        lambda o: f"@{o.full_name.replace(" ", "_").lower()}"
+        lambda o: f"@{o.full_name.replace(' ', '_').lower()}"
     )
 
 
