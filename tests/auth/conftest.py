@@ -8,10 +8,11 @@ import pytest
 import factory
 
 from sqlalchemy.orm import sessionmaker
-from tests.conftest import session
+from tests.conftest import engine
 
 # Assuming `engine` is defined in your main application code
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -22,6 +23,7 @@ def db_session():
     finally:
         db.close()
 
+
 from uno.auth.bases import UserBase
 from uno.auth.models import User
 
@@ -29,7 +31,7 @@ from uno.auth.models import User
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = UserBase
-        sqlalchemy_session_factory = lambda: session
+        sqlalchemy_session_factory = lambda: db_session
 
     full_name = factory.Faker("name")
     email = factory.lazy_attribute(
