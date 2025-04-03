@@ -237,8 +237,8 @@ class UnoModel(BaseModel):
                 data_type=column.type.python_type.__name__,
                 raw_data_type=column.type.python_type,
                 lookups=lookups,
-                source_path_fragment=f"(s:{source_node_label})-[\\:{label}]",
-                middle_path_fragment=f"(\\:{source_node_label})-[\\:{label}]",
+                source_path_fragment=f"(s:{source_node_label})-[:{label}]",
+                middle_path_fragment=f"(:{source_node_label})-[:{label}]",
                 target_path_fragment=f"(t:{target_node_label})",
                 documentation=column.doc or label,
             )

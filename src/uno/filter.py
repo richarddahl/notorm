@@ -98,10 +98,32 @@ class UnoFilter(BaseModel):
     def __repr__(self) -> str:
         return f"<UnoFilter: {self.source_path_fragment}->{self.target_path_fragment}>"
 
-    def path(self, parent: "UnoFilter" = None) -> str:
+    def path(self, parent=None) -> str:
+        """
+        Constructs a formatted path string based on the provided fragments and an optional parent.
+        Args:
+            parent (Optional): An optional object that provides a `source_path_fragment`.
+                If provided, the resulting path will include the parent's source path fragment.
+        Returns:
+            str: A formatted path string. If `parent` is provided, the path will include
+            the parent's source path fragment, the middle path fragment, and the target
+            path fragment, separated by `-` and `->`. If `parent` is not provided, the
+            path will only include the source and target path fragments separated by `->`.
+        Notes:
+            - The method escapes occurrences of `[:` and `(:` in the resulting path string
+              by replacing them with `[\\:` and `(\\:`, respectively. This is done to
+              prevent sqlalchemy from interpreting these characters as SQL placeholders.
+        """
+
         if parent:
-            return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}"
-        return f"{self.source_path_fragment}->{self.target_path_fragment}"
+            return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}".replace(
+                "[:", "[\\:"
+            ).replace(
+                "(:", "(\\:"
+            )
+        return f"{self.source_path_fragment}->{self.target_path_fragment}".replace(
+            "[:", "[\\:"
+        ).replace("(:", "(\\:")
 
     def children(self, model: "UnoModel") -> list["UnoFilter"]:
         """Return a list of child filters."""
@@ -115,11 +137,10 @@ class UnoFilter(BaseModel):
                 val = value.timestamp()
             except AttributeError:
                 raise TypeError(f"Value {value} is not of type {self.raw_data_type}")
-            print(val)
         else:
             val = str(value)
 
-        where_clause = lookups.get(lookup)
+        where_clause = lookups.get(lookup, "t.val = '{val}'")
 
         return (
             sql.SQL(

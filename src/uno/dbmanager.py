@@ -28,7 +28,6 @@ from uno.auth.bases import UserBase
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 from uno.filter import UnoFilter
 from uno.qry.bases import QueryPathBase
-from uno.qry.models import QueryPath
 import uno.attr.sqlconfigs
 import uno.auth.sqlconfigs
 import uno.qry.sqlconfigs
@@ -239,7 +238,7 @@ class DBManager:
                 )
                 session.add(user)
                 await session.commit()
-                # await session.close()
+            await session.close()
             print(f"Superuser created: {user.handle} with email: {user.email}")
             return user.handle
         except Exception as e:
@@ -261,7 +260,6 @@ class DBManager:
                 destination_meta_type_id=filter.target_meta_type_id,
                 path=filter.path(parent=parent),
                 data_type=filter.data_type,
-                # comparison_operators=filter.comparison_operators,
             )
 
         query_paths = []
@@ -292,4 +290,4 @@ class DBManager:
             )
             session.add_all(query_paths)
             await session.commit()
-            # await session.close()
+        await session.close()
