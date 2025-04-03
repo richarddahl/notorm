@@ -47,11 +47,19 @@ def user_factory(db_session):
     return UserFactory
 
 
-with db_session().begin():
-    # Create the database tables if they don't exist
-    engine.execute(sqlalchemy.text("SET ROLE uno_test_writer"))
-user = UserFactory.create()
+@pytest.fixture(scope="function", autouse=True)
+def setup_database(db_session):
+    """Fixture to set up the database before each test."""
+    with db_session.begin():
+        db_session.execute(sqlalchemy.text("SET ROLE uno_test_writer"))
+        # Create the database tables if they don't exist
+        # Add any additional setup logic here
 
-print(user.full_name)
-print(user.email)
-print(user.handle)
+@pytest.fixture(scope="function")
+def create_user(user_factory):
+    """Fixture to create a user."""
+    user = user_factory.create()
+    print(user.full_name)
+    print(user.email)
+    print(user.handle)
+    return user
