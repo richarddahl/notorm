@@ -24,10 +24,11 @@ from uno.sqlemitter import (
 from uno.model import UnoModel
 from uno.apidef import app
 from uno.db import meta_data, scoped_session
-from uno.auth.bases import UserBase
+from uno.auth.models import User
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 from uno.filter import UnoFilter
 from uno.qry.bases import QueryPathBase
+from uno.qry.models import QueryPath
 import uno.attr.sqlconfigs
 import uno.auth.sqlconfigs
 import uno.qry.sqlconfigs
@@ -41,9 +42,7 @@ from uno.attr import models
 from uno.auth import models
 from uno.qry import models
 from uno.meta import models
-
 from uno.msg import models
-
 from uno.rprt import models
 from uno.val import models
 
@@ -220,26 +219,14 @@ class DBManager:
             Exception: If an error occurs during the creation of the superuser,
                 it is caught and logged, and the exception is raised.
         """
-        user = UserBase(
+        user = User(
             email=email,
             handle=handle,
             full_name=full_name,
             is_superuser=True,
         )
         try:
-            async with scoped_session() as session:
-                await session.execute(
-                    text(
-                        sql.SQL("SET ROLE {db_name}_admin;")
-                        .format(
-                            db_name=sql.SQL(settings.DB_NAME),
-                        )
-                        .as_string()
-                    )
-                )
-                session.add(user)
-                await session.commit()
-            await session.close()
+            await user.save()
             print(f"Superuser created: {user.handle} with email: {user.email}")
             return user.handle
         except Exception as e:
@@ -247,37 +234,43 @@ class DBManager:
 
     async def create_query_paths(self) -> None:
 
-        def create_query_path(
+        def add_query_path(
             filter: UnoFilter, parent: UnoFilter = None
         ) -> QueryPathBase:
-            print(
-                f"Creating query path for filter: {filter.label} with parent: {parent.label if parent else None}"
-            )
             source_meta_type = (
                 parent.source_meta_type_id if parent else filter.source_meta_type_id
             )
-            return QueryPathBase(
+            query_path = QueryPath(
                 source_meta_type_id=source_meta_type,
-                destination_meta_type_id=filter.target_meta_type_id,
+                target_meta_type_id=filter.target_meta_type_id,
                 path=filter.path(parent=parent),
                 data_type=filter.data_type,
             )
+            if query_path.path not in query_paths:
+                # If the query path is not in the query paths
+                # then add it to the query paths
+                query_paths[query_path.path] = query_path
 
-        query_paths = []
+        def add_child_query_paths(fltr: UnoFilter, app) -> list:
+            child_model = UnoModel.registry[fltr.target_meta_type_id]
+            # child_model.configure(app)
+            for child_fltr in fltr.children(model=child_model):
+                add_query_path(child_fltr, parent=fltr)
+                if child_fltr.source_meta_type_id != child_fltr.target_meta_type_id:
+                    print(
+                        f"Adding child query path: {child_fltr.path(parent=child_fltr)}"
+                    )
+                    add_child_query_paths(child_fltr, app=app)
+
+        query_paths = {}
         for model in UnoModel.registry.values():
             model.configure(app)
             for fltr in model.filters.values():
-                query_paths.append(create_query_path(fltr))
+                add_query_path(fltr)
+                # Check if the source and target meta types are different
+                # and if so, add the child query paths
                 if fltr.source_meta_type_id != fltr.target_meta_type_id:
-                    child_model = UnoModel.registry[fltr.target_meta_type_id]
-                    child_model.configure(app)
-                    for child_fltr in fltr.children(model=child_model):
-                        query_paths.append(
-                            create_query_path(
-                                child_fltr,
-                                parent=fltr,
-                            )
-                        )
+                    add_child_query_paths(fltr, app)
 
         async with scoped_session() as session:
             await session.execute(
@@ -289,6 +282,76 @@ class DBManager:
                     .as_string()
                 )
             )
-            session.add_all(query_paths)
-            await session.commit()
+            for query_path in query_paths.values():
+                if query_path is None:
+                    continue
+                query_path, created = await QueryPath.db.get_or_create(
+                    query_path.to_base(schema_name="edit_schema")
+                )
+                if created:
+                    print(f"Created query path: {query_path.path}")
+                else:
+                    print(f"Query path already exists: {query_path.path}")
+        await session.close()
+
+    async def create_query_paths_HOOMAN(self) -> None:
+
+        def add_query_path(
+            filter: UnoFilter, parent: UnoFilter = None
+        ) -> QueryPathBase:
+            source_meta_type = (
+                parent.source_meta_type_id if parent else filter.source_meta_type_id
+            )
+            query_path = QueryPath(
+                source_meta_type_id=source_meta_type,
+                target_meta_type_id=filter.target_meta_type_id,
+                path=filter.path(parent=parent),
+                data_type=filter.data_type,
+            )
+            if query_path.path not in query_paths:
+                # If the query path is not in the query paths
+                # then add it to the query paths
+                query_paths[query_path.path] = query_path
+
+        def add_child_query_paths(fltr: UnoFilter, app) -> list:
+            child_model = UnoModel.registry[fltr.target_meta_type_id]
+            # child_model.configure(app)
+            for child_fltr in fltr.children(model=child_model):
+                add_query_path(child_fltr, parent=fltr)
+                if child_fltr.source_meta_type_id != child_fltr.target_meta_type_id:
+                    print(
+                        f"Adding child query path: {child_fltr.path(parent=child_fltr)}"
+                    )
+                    add_child_query_paths(child_fltr, app=app)
+
+        query_paths = {}
+        for model in UnoModel.registry.values():
+            model.configure(app)
+            for fltr in model.filters.values():
+                add_query_path(fltr)
+                # Check if the source and target meta types are different
+                # and if so, add the child query paths
+                if fltr.source_meta_type_id != fltr.target_meta_type_id:
+                    add_child_query_paths(fltr, app)
+
+        async with scoped_session() as session:
+            await session.execute(
+                text(
+                    sql.SQL("SET ROLE {db_name}_admin;")
+                    .format(
+                        db_name=sql.SQL(settings.DB_NAME),
+                    )
+                    .as_string()
+                )
+            )
+            for query_path in query_paths.values():
+                if query_path is None:
+                    continue
+                query_path, created = await QueryPath.db.get_or_create(
+                    query_path.to_base(schema_name="edit_schema")
+                )
+                if created:
+                    print(f"Created query path: {query_path.path}")
+                else:
+                    print(f"Query path already exists: {query_path.path}")
         await session.close()
