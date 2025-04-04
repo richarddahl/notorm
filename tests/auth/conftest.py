@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from tests.conftest import sync_engine as engine
 from uno.auth.bases import UserBase
 
-# Assuming `engine` is defined in your main application code
+'''
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -68,3 +68,5 @@ def create_user(user_factory, db_session):
         print(user.email)
         print(user.handle)
         return user
+
+'''
