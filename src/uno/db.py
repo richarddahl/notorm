@@ -13,7 +13,6 @@ from typing import Annotated
 from psycopg import sql
 
 from asyncpg.exceptions import UniqueViolationError
-import asyncpg
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
@@ -199,21 +198,14 @@ def UnoDBFactory(model: BaseModel):
                     obj = await cls.insert_(to_db_model)
                     return obj, True
                 except IntegrityError as e:
-                    print("HERE")
-                    print(e.orig)
-                    print(type(e.orig))
-                    if isinstance(e.orig, UniqueViolationError):
-                        print("THERE")
-                        print(f"get_or_create: {to_db_model.path} already exists")
+                    if "duplicate key value violates unique constraint" in str(e):
                         # Handle the case where the object already exists
                         await session.rollback()
                         await session.execute(text(cls.set_role("reader")))
                         obj = await cls.select_(
                             to_db_model=to_db_model,
                             result_type=SelectResultType.FETCH_ONE,
-                            filters=[
-                                FilterParam(label="path", val=to_db_model.path),
-                            ],
+                            path=to_db_model.path,
                         )
                         return obj, False
                     else:
@@ -246,6 +238,7 @@ def UnoDBFactory(model: BaseModel):
             id: str = None,
             result_type: SelectResultType = SelectResultType.FETCH_ALL,
             filters: FilterParam = None,
+            **kwargs,
         ) -> UnoBase:
             """
             Perform a database query to select records based on the provided parameters.
@@ -301,6 +294,13 @@ def UnoDBFactory(model: BaseModel):
                     filter = model.filters.get(label)
                     cypher_query = filter.cypher_query(fltr.val, fltr.lookup)
                     stmt = stmt.where(model.base.id.in_(select(text(cypher_query))))
+            if kwargs:
+                for key, val in kwargs.items():
+                    if key in column_names:
+                        stmt = stmt.where(getattr(model.base, key) == val)
+                    else:
+                        continue
+                        # raise ValueError(f"Invalid filter key: {key}")
 
             if limit:
                 stmt = stmt.limit(limit)
