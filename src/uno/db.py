@@ -12,7 +12,9 @@ from typing import Annotated
 
 from psycopg import sql
 
-from pydantic import BaseModel
+import asyncpg  # type: ignore
+
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
     MetaData,
     select,
@@ -26,6 +28,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import (
     registry,
     DeclarativeBase,
+    Query,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
@@ -49,11 +52,11 @@ from sqlalchemy.dialects.postgresql import (
     UUID,
     JSONB,
     BYTEA,
+    TEXT,
 )
 
 from uno.enums import SelectResultType
 from uno.errors import UnoError
-from uno.filter import FilterParam
 from uno.config import settings
 
 
@@ -131,7 +134,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
     registry = registry(
         type_annotation_map={
             int: BIGINT,
-            str: VARCHAR,
+            str: TEXT,
             enum.StrEnum: ENUM,
             bool: BOOLEAN,
             bytea: BYTEA,
@@ -162,6 +165,12 @@ class NotFoundException(Exception):
     pass
 
 
+class FilterParam(BaseModel):
+    """FilterParam is used to validate the filter parameters for the ListRouter."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
 def UnoDBFactory(model: BaseModel):
     class UnoDB:
 
@@ -181,27 +190,50 @@ def UnoDBFactory(model: BaseModel):
             )
 
         @classmethod
+        async def get_or_create(cls, to_db_model: BaseModel) -> tuple[BaseModel, bool]:
+            async with scoped_session() as session:
+                await session.execute(text(cls.set_role("writer")))
+                try:
+                    obj = await cls.insert_(to_db_model)
+                    return obj, True
+                except asyncpg.exceptions.UniqueViolationError:
+                    print(f"get_or_create: {to_db_model.path} already exists")
+                    print(f"get_or_create: {to_db_model.path} already exists")
+                    print(f"get_or_create: {to_db_model.path} already exists")
+                except IntegrityError as e:
+                    # Handle the IntegrityError and rollback the session
+                    raise e
+                    # print(f"get_or_create: {to_db_model.path} already exists")
+                    # await session.rollback()
+                    # await session.execute(text(cls.set_role("reader")))
+                    # obj = await cls.select_(
+                    #    to_db_model=to_db_model,
+                    #    result_type=SelectResultType.FETCH_ONE,
+                    #    filters=[
+                    #        FilterParam(label="path", val=model.path),
+                    #    ],
+                    # )
+                    # return obj, False
+
+        @classmethod
         async def insert_(
             cls,
             to_db_model: BaseModel,
-            from_db_model: BaseModel,
+            # from_db_model: BaseModel,
         ) -> UnoBase:
-            try:
-                async with scoped_session() as session:
-                    await session.execute(text(cls.set_role("writer")))
-                    result = await session.execute(
-                        insert(model.base.table)
-                        .values(**to_db_model.model_dump())
-                        .returning(*from_db_model.model_fields.keys())
-                    )
-                    await session.commit()
-                    return cls.base(**result.fetchone()._mapping)
-            except IntegrityError:
-                raise IntegrityConflictException(
-                    f"{to_db_model.__name__} conflicts with existing data.",
-                )
-            except Exception as e:
-                raise UnoError(f"Unknown error occurred: {e}") from e
+            # try:
+            async with scoped_session() as session:
+                await session.execute(text(cls.set_role("writer")))
+                session.add(to_db_model)
+                await session.commit()
+                return to_db_model
+
+        # except IntegrityError:
+        #     raise IntegrityConflictException(
+        #         f"{to_db_model.__name__} conflicts with existing data.",
+        #     )
+        # except Exception as e:
+        #     raise UnoError(f"Unknown error occurred: {e}") from e
 
         @classmethod
         async def select_(
