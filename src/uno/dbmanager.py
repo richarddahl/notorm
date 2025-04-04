@@ -234,14 +234,7 @@ class DBManager:
 
     async def create_query_paths(self) -> None:
 
-        def add_query_path(
-            filter: UnoFilter, parent: UnoFilter = None, visited=None, depth=0, max_depth=100
-        ) -> QueryPathBase:
-            if visited is None:
-                visited = set()
-            if depth > max_depth:
-                print(f"Max recursion depth reached for path: {filter.path(parent=parent)}")
-                return
+        def add_query_path(filter: UnoFilter, parent: UnoFilter = None) -> QueryPathBase:
             source_meta_type = (
                 parent.source_meta_type_id if parent else filter.source_meta_type_id
             )
@@ -251,29 +244,30 @@ class DBManager:
                 path=filter.path(parent=parent),
                 data_type=filter.data_type,
             )
-            if query_path.path not in query_paths and query_path.path not in visited:
-                visited.add(query_path.path)
+            if query_path.path not in query_paths:
                 query_paths[query_path.path] = query_path
 
-        def add_child_query_paths(fltr: UnoFilter, app, visited=None, depth=0, max_depth=100) -> list:
-            if visited is None:
-                visited = set()
-            child_model = UnoModel.registry[fltr.target_meta_type_id]
-            for child_fltr in fltr.children(model=child_model):
-                add_query_path(child_fltr, parent=fltr, visited=visited, depth=depth+1, max_depth=max_depth)
-                if child_fltr.source_meta_type_id != child_fltr.target_meta_type_id:
-                    print(
-                        f"Adding child query path: {child_fltr.path(parent=child_fltr)}"
-                    )
-                    add_child_query_paths(child_fltr, app=app, visited=visited, depth=depth+1, max_depth=max_depth)
+        def process_filters(fltr: UnoFilter, app) -> None:
+            stack = [(fltr, None)]
+            visited = set()
+
+            while stack:
+                current_filter, parent = stack.pop()
+                if current_filter.path(parent=parent) in visited:
+                    continue
+                visited.add(current_filter.path(parent=parent))
+                add_query_path(current_filter, parent)
+
+                child_model = UnoModel.registry[current_filter.target_meta_type_id]
+                for child_fltr in current_filter.children(model=child_model):
+                    if child_fltr.source_meta_type_id != child_fltr.target_meta_type_id:
+                        stack.append((child_fltr, current_filter))
 
         query_paths = {}
         for model in UnoModel.registry.values():
             model.configure(app)
             for fltr in model.filters.values():
-                add_query_path(fltr)
-                if fltr.source_meta_type_id != fltr.target_meta_type_id:
-                    add_child_query_paths(fltr, app)
+                process_filters(fltr, app)
 
         async with scoped_session() as session:
             await session.execute(
