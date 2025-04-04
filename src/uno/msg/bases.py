@@ -54,10 +54,7 @@ class MessageUserBase(UnoBase):
         primary_key=True,
         index=True,
         doc="The unique identifier for the attribute type",
-        info={
-            "edge": "META_RECORD",
-            "reverse_edge": "MESAAGE_USERS",
-        },
+        info={"graph_excludes": True},
     )
     message_id: Mapped[str_26] = mapped_column(
         ForeignKey("message.id", ondelete="CASCADE"),
@@ -128,6 +125,7 @@ class MessageBase(GroupBaseMixin, BaseMixin, UnoBase):
         index=True,
         nullable=False,
         doc="Primary Key",
+        info={"graph_excludes": True},
     )
     parent_id: Mapped[Optional[str_26]] = mapped_column(
         ForeignKey("message.id", ondelete="CASCADE"),

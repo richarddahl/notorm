@@ -130,10 +130,7 @@ class AttributeTypeBase(DefaultBaseMixin, UnoBase):
         primary_key=True,
         index=True,
         doc="The unique identifier for the attribute type",
-        info={
-            "edge": "META_RECORD",
-            "reverse_edge": "ATTRIBUTE_TYPES",
-        },
+        info={"graph_excludes": True},
     )
     name: Mapped[str_255] = mapped_column(
         doc="The name of the attribute type",
