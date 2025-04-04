@@ -95,6 +95,6 @@ The structure of the project (only primary files listed):
 
 ## Starting the db with Docker
 
-`cd to notorm/docker`
-`docker build -t pg16_uno .`
-`docker-compose up`
+`cd to notorm/docker`  
+`docker build -t pg16_uno .`  
+`docker-compose up`  
