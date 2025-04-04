@@ -39,6 +39,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import NullPool
 from sqlalchemy.dialects.postgresql import (
+    ARRAY,
     BIGINT,
     TIMESTAMP,
     DATE,
@@ -114,7 +115,7 @@ meta_data = MetaData(
     schema=settings.DB_SCHEMA,
 )
 
-str_12 = Annotated[VARCHAR, 12]
+str_12 = ARRAY(VARCHAR(12))
 str_26 = Annotated[VARCHAR, 26]
 str_63 = Annotated[VARCHAR, 63]
 str_64 = Annotated[VARCHAR, 64]
