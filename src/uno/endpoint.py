@@ -21,7 +21,7 @@ from fastapi import (
 
 from uno.schema import UnoSchema
 from uno.errors import UnoRegistryError
-from uno.filter import FilterParam
+from uno.db import FilterParam
 from uno.config import settings
 
 
