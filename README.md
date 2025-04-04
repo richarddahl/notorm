@@ -74,7 +74,7 @@ The structure of the project (only primary files listed):
 &nbsp;&nbsp;&nbsp;&nbsp;
     | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | db.py - Defines the UnoBase (sqlalchemy declarative bases) and the UnoDB object used to communicate with the database.  
+    | db.py - Defines the UnoBase (declarative base) and the UnoDB object used for db communication.  
 &nbsp;&nbsp;&nbsp;&nbsp;
     | dbmanager.py - Defines DBManager class used to create and update the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
