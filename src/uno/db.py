@@ -12,7 +12,8 @@ from typing import Annotated
 
 from psycopg import sql
 
-import asyncpg  # type: ignore
+from asyncpg.exceptions import UniqueViolationError  # type: ignore
+import asyncpg
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
@@ -115,7 +116,7 @@ meta_data = MetaData(
     schema=settings.DB_SCHEMA,
 )
 
-str_12 = ARRAY(VARCHAR(12))
+str_12 = Annotated[VARCHAR, 12]
 str_26 = Annotated[VARCHAR, 26]
 str_63 = Annotated[VARCHAR, 63]
 str_64 = Annotated[VARCHAR, 64]
@@ -197,24 +198,27 @@ def UnoDBFactory(model: BaseModel):
                 try:
                     obj = await cls.insert_(to_db_model)
                     return obj, True
-                except asyncpg.exceptions.UniqueViolationError:
-                    print(f"get_or_create: {to_db_model.path} already exists")
-                    print(f"get_or_create: {to_db_model.path} already exists")
-                    print(f"get_or_create: {to_db_model.path} already exists")
                 except IntegrityError as e:
-                    # Handle the IntegrityError and rollback the session
-                    raise e
-                    # print(f"get_or_create: {to_db_model.path} already exists")
-                    # await session.rollback()
-                    # await session.execute(text(cls.set_role("reader")))
-                    # obj = await cls.select_(
-                    #    to_db_model=to_db_model,
-                    #    result_type=SelectResultType.FETCH_ONE,
-                    #    filters=[
-                    #        FilterParam(label="path", val=model.path),
-                    #    ],
-                    # )
-                    # return obj, False
+                    print("HERE")
+                    print(e.orig)
+                    print(type(e.orig))
+                    if isinstance(e, asyncpg.exceptions.UniqueViolationError):
+                        print("THERE")
+                        print(f"get_or_create: {to_db_model.path} already exists")
+                        # Handle the case where the object already exists
+                        await session.rollback()
+                        await session.execute(text(cls.set_role("reader")))
+                        obj = await cls.select_(
+                            to_db_model=to_db_model,
+                            result_type=SelectResultType.FETCH_ONE,
+                            filters=[
+                                FilterParam(label="path", val=to_db_model.path),
+                            ],
+                        )
+                        return obj, False
+                    else:
+                        # Re-raise the IntegrityError if it's not a UniqueViolationError
+                        raise
 
         @classmethod
         async def insert_(
