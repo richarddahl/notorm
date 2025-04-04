@@ -27,18 +27,9 @@ class ConvertProperty(SQLEmitter):
         function_string = (
             sql.SQL(
                 """
-            column := CASE
-            --WHEN pg_typeof(column) = 'text'::pg_catalog.text THEN column
-            --WHEN pg_typeof(column) = 'bool'::pg_catalog.bool THEN column::textpg
-            --WHEN pg_typeof(column) = 'int'::pg_catalog.int THEN column::text
-            --WHEN pg_typeof(column) = 'float'::pg_catalog.float THEN column::text
-            --WHEN pg_typeof(column) = 'double'::pg_catalog.double THEN column::text
-            --WHEN pg_typeof(column) = 'decimal'::pg_catalog.decimal THEN column::text
-            --WHEN pg_typeof(column) = 'date'::pg_catalog.date THEN to_char(column, 'YYYY-MM-DD')
-            --WHEN pg_typeof(column) = 'time'::pg_catalog.time THEN to_char(column, 'HH24:MI:SS')
-            WHEN pg_typeof(column) = 'timestamp'::pg_catalog.timestamp THEN
+            IF pg_typeof(column) = 'timestamp'::pg_catalog.timestamp THEN
                 RETURN EXTRACT(EPOCH FROM column)::INT::TEXT
-            END;
+            END IF;
 
             """
             )
