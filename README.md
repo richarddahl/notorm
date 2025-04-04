@@ -76,21 +76,21 @@ The structure of the project (only primary files listed):
 &nbsp;&nbsp;&nbsp;&nbsp;
     | db.py - Defines the UnoBase (sqlalchemy declarative bases) and the UnoDB object used to communicate with the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | dbmanager.py - Defines DBManager class used to create and update the database.
+    | dbmanager.py - Defines DBManager class used to create and update the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | endpoint.py - Defines the CRUD endpoints for each entity.
+    | endpoint.py - Defines the CRUD endpoints for each entity.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | filter.py - Defines the basic filters for use in the automatic queries.
+    | filter.py - Defines the basic filters for use in the automatic queries.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | graphsql.py - Defines SQLEmitter used to create the graph nodes and edges.
+    | graphsql.py - Defines SQLEmitter used to create the graph nodes and edges.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | mixins.py - Defines Base and Model mixins.
+    | mixins.py - Defines Base and Model mixins.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | model.py - Defines UnoModel, the business logic executor  
+    | model.py - Defines UnoModel, the business logic executor.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | schema.py - Defines schemas used by the endpoints.
+    | schema.py - Defines schemas used by the endpoints.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | sqlemitter.py - Defines SQLEmitter class used to emit raw sql to the database.
+    | sqlemitter.py - Defines SQLEmitter class used to emit raw sql to the database.  
 
 
 ## Starting the db with Docker
