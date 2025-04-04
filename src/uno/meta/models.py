@@ -15,6 +15,7 @@ class MetaType(UnoModel):
         "edit_schema": UnoSchemaConfig(),
     }
     endpoints = ["List"]
+    exclude_from_filters = True
 
     id: str
 
@@ -30,6 +31,7 @@ class MetaRecord(UnoModel):
         "edit_schema": UnoSchemaConfig(),
     }
     endpoints = ["List"]
+    exclude_from_filters = True
 
     id: str
     meta_type_id: str

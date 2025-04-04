@@ -98,7 +98,7 @@ class UnoFilter(BaseModel):
     def __repr__(self) -> str:
         return f"<UnoFilter: {self.source_path_fragment}->{self.target_path_fragment}>"
 
-    def path(self, parent=None) -> str:
+    def path(self, parent=None, for_cypher: bool = False) -> str:
         """
         Constructs a formatted path string based on the provided fragments and an optional parent.
         Args:
@@ -112,18 +112,24 @@ class UnoFilter(BaseModel):
         Notes:
             - The method escapes occurrences of `[:` and `(:` in the resulting path string
               by replacing them with `[\\:` and `(\\:`, respectively. This is done to
-              prevent sqlalchemy from interpreting these characters as SQL placeholders.
+              prevent sqlalchemy from interpreting these characters as SQL placeholders when
+              used as part of a cypher query.  This is indicated by passing for_cypher=True
+              when calling the function.
         """
 
         if parent:
-            return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}".replace(
+            if for_cypher:
+                return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}".replace(
+                    "[:", "[\\:"
+                ).replace(
+                    "(:", "(\\:"
+                )
+            return f"{parent.source_path_fragment}-{self.middle_path_fragment}->{self.target_path_fragment}"
+        if for_cypher:
+            return f"{self.source_path_fragment}->{self.target_path_fragment}".replace(
                 "[:", "[\\:"
-            ).replace(
-                "(:", "(\\:"
-            )
-        return f"{self.source_path_fragment}->{self.target_path_fragment}".replace(
-            "[:", "[\\:"
-        ).replace("(:", "(\\:")
+            ).replace("(:", "(\\:")
+        return f"{self.source_path_fragment}->{self.target_path_fragment}"
 
     def children(self, model: "UnoModel") -> list["UnoFilter"]:
         """Return a list of child filters."""
@@ -153,7 +159,7 @@ class UnoFilter(BaseModel):
         """
             )
             .format(
-                path=sql.SQL(self.path()),
+                path=sql.SQL(self.path(for_cypher=True)),
                 where_clause=sql.SQL(where_clause),
                 value=sql.SQL(str(val)),
             )

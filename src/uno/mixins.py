@@ -33,6 +33,7 @@ class BaseMixin:
         nullable=True,
         server_default=FetchedValue(),
         doc="Primary Key and Foreign Key to MetaRecord Base",
+        info={"graph_excludes": True},
     )
     is_active: Mapped[bool] = mapped_column(
         server_default=text("TRUE"),

@@ -145,6 +145,24 @@ class UnoModel(BaseModel):
         The filters are constructed using the `create_filter` function, which determines
         the appropriate metadata, comparison operators, and relationships for each column.
 
+            - Models with `exclude_from_filters` set to `True` will not have filters created.
+            - Columns with foreign keys are treated as relationships, and the source and
+              target node labels are derived from the foreign key relationships.
+            - The `edge` label is derived from the column's `info` metadata or defaults to
+              the column name.
+            - The `source_path_fragment`, `middle_path_fragment`, and `target_path_fragment`
+              are constructed based on the source and target node labels, allowing for
+              flexible query generation.
+            - The `lookups` are determined based on the column's data type, allowing for
+              appropriate filtering options (e.g., boolean, numeric, datetime, text).
+            - The `documentation` for each filter is derived from the column's docstring
+              or the label, providing context for API documentation.
+            - Filters are created for each column in the table, excluding those marked
+              with `exclude_from_filters` or `graph_excludes`.
+            - The `filters` attribute is a dictionary where keys are filter labels and
+              values are `UnoFilter` objects.
+            - The `create_filter` function is responsible for generating the filter
+              objects based on the column properties.
             - Columns marked with `graph_excludes` in their `info` metadata are skipped.
             - Filters are keyed by their label, ensuring uniqueness.
 
@@ -153,6 +171,8 @@ class UnoModel(BaseModel):
             `UnoFilter` objects representing the filtering configuration for each column.
         """
         table = cls.base.__table__
+        if cls.exclude_from_filters:
+            return
 
         def create_filter(column: Column) -> UnoFilter:
             """

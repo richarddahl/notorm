@@ -14,14 +14,13 @@ from sqlalchemy.orm import (
 from sqlalchemy.sql import text
 
 from uno.db import str_26
-
-# from uno.auth.models import UserBase, GroupBase
+from uno.mixins import BaseMixin, ModelMixin
 
 
 class RecordAuditMixin(BaseModel):
-    created_by_id: str
+    created_by_id: Optional[str] = None
     created_by: Optional["User"] = None
-    modified_by_id: str
+    modified_by_id: Optional[str] = None
     modified_by: Optional["User"] = None
     deleted_by_id: Optional[str] = None
     deleted_by: Optional["User"] = None
@@ -141,3 +140,13 @@ class TenantBaseMixin:
             foreign_keys=[cls.tenant_id],
             doc="Tenant to which the record belongs",
         )
+
+
+class DefaultBaseMixin(
+    RecordAuditBaseMixin, TenantBaseMixin, GroupBaseMixin, BaseMixin
+):
+    pass
+
+
+class DefaultModelMixin(RecordAuditMixin, TenantMixin, GroupMixin, ModelMixin):
+    pass

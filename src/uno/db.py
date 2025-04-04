@@ -48,6 +48,7 @@ from sqlalchemy.dialects.postgresql import (
     INTERVAL,
     UUID,
     JSONB,
+    BYTEA,
 )
 
 from uno.enums import SelectResultType
@@ -113,6 +114,7 @@ meta_data = MetaData(
 str_12 = Annotated[VARCHAR, 12]
 str_26 = Annotated[VARCHAR, 26]
 str_63 = Annotated[VARCHAR, 63]
+str_64 = Annotated[VARCHAR, 64]
 str_128 = Annotated[VARCHAR, 128]
 str_255 = Annotated[VARCHAR, 255]
 str_uuid = Annotated[str, 36]
@@ -122,6 +124,7 @@ date_ = Annotated[datetime.date, ()]
 time_ = Annotated[datetime.time, ()]
 interval = Annotated[datetime.timedelta, ()]
 json_ = Annotated[dict, ()]
+bytea = Annotated[bytes, ()]
 
 
 class UnoBase(AsyncAttrs, DeclarativeBase):
@@ -131,6 +134,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
             str: VARCHAR,
             enum.StrEnum: ENUM,
             bool: BOOLEAN,
+            bytea: BYTEA,
             list: ARRAY,
             datetime_tz: TIMESTAMP(timezone=True),
             date_: DATE,
@@ -140,6 +144,7 @@ class UnoBase(AsyncAttrs, DeclarativeBase):
             str_12: VARCHAR(12),
             str_26: VARCHAR(26),
             str_63: VARCHAR(63),
+            str_64: VARCHAR(64),
             str_128: VARCHAR(128),
             str_255: VARCHAR(255),
             str_uuid: UUID,
