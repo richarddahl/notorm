@@ -54,31 +54,43 @@ Each of the Entity definition classes isolate the functionality required within 
 
 Each of these classes are built to be completely independent of one another.  In theory at least.  Care has been taking during development to ensure this is the case.  It should be relatively easy to switch out the SQL Alchemy ORM base for a json object used with a NoSQL database or pickle to save the records to the filesystem.  The FastAPI based endpoints could be switched out to use a native application running on a host.  etc...   
 
-The structure of the project:
+The structure of the project (only primary files listed):
 
 | uno  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | pkgs - The built in packages:  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | attr - Entities to associate user-defined information to Uno entities  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | auth - Entities to manage users and access  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | fltr - Entities support the automatic filtering of the database  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | meta - Entities to manage relationships between entities  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | msg - Entities to communicate between users  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | rprt - Entities to produce reports on entities  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | val - Entities to associate attributes, filters, messages, and reports to thier respective Entities  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
+    | attr - Entities to associate user-defined information to Uno entities  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | db - Defines the UnoBase (persistant data structure) and SQLEmitter (emits custom sql) and the methods to communicate with the database.  
+    | auth - Entities to manage users and access  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | meta - Entities to manage relationships between entities  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | msg - Entities to communicate between users  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | qry - Entities support the end-user defined stored queries for the database  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | rprt - Entities to produce reports on entities  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | val - Entities to associate attributes, filters, messages, and reports to thier respective Entities  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | db.py - Defines the UnoBase (sqlalchemy declarative bases) and the UnoDB object used to communicate with the database.  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | dbmanager.py - Defines DBManager class used to create and update the database.
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | endpoint.py - Defines the CRUD endpoints for each entity.
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | filter.py - Defines the basic filters for use in the automatic queries.
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | graphsql.py - Defines SQLEmitter used to create the graph nodes and edges.
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | mixins.py - Defines Base and Model mixins.
 &nbsp;&nbsp;&nbsp;&nbsp;
     | model.py - Defines UnoModel, the business logic executor  
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | schema.py - Defines schemas used by the endpoints.
+&nbsp;&nbsp;&nbsp;&nbsp;
+    | sqlemitter.py - Defines SQLEmitter class used to emit raw sql to the database.
 
 
 ## Starting the db with Docker
