@@ -12,7 +12,7 @@ from typing import Annotated
 
 from psycopg import sql
 
-from asyncpg.exceptions import UniqueViolationError  # type: ignore
+from psycopg2.errors import UniqueViolation
 import asyncpg
 
 from pydantic import BaseModel, ConfigDict
@@ -202,7 +202,7 @@ def UnoDBFactory(model: BaseModel):
                     print("HERE")
                     print(e.orig)
                     print(type(e.orig))
-                    if isinstance(e, asyncpg.exceptions.UniqueViolationError):
+                    if isinstance(e.orig, UniqueViolation):
                         print("THERE")
                         print(f"get_or_create: {to_db_model.path} already exists")
                         # Handle the case where the object already exists
