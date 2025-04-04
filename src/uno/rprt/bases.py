@@ -2,81 +2,64 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import ClassVar, Optional
+from typing import Optional
 
-
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
+from sqlalchemy import (
+    ForeignKey,
+    Index,
+    ForeignKey,
+    UniqueConstraint,
 )
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM
 
-from uno.db import Base, str_26, str_64, str_255, bytea
-from uno.meta.bases import (
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-)
-from uno.sqlemitter import SQLEmitter
+from uno.db import UnoBase, str_26, str_128, str_255, str_64, bytea
+from uno.auth.mixins import DefaultBaseMixin
 from uno.enums import ValueType
 from uno.config import settings
 
 
-class ReportTypeReportField(GroupBaseMixin, BaseMixin, UnoBase):
-    # __tablename__ = "report_type__report_field"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The relationship between report_types and their fields",
-        },
-    )
-
-    display_name: ClassVar[str] = "Report Type Field"
-    display_name_plural: ClassVar[str] = "Report Type Fields"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+class ReportFieldConfigBase(DefaultBaseMixin, UnoBase):
+    __tablename__ = "report_field_config"
+    __table_args__ = ({"comment": "Configuration of fields in a report"},)
 
     # Columns
-    report_type_id: Mapped[str_26] = mapped_column(
-        ForeignKey("report_type.id", ondelete="CASCADE"),
-        primary_key=True,
-    )
     report_field_id: Mapped[str_26] = mapped_column(
         ForeignKey("report_field.id", ondelete="CASCADE"),
-        primary_key=True,
+        doc="The report field",
+        info={"edge": "REPORT_FIELD", "reverse_edge": "REPORT_FIELD_CONFIGS"},
+    )
+    report_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("report_type.id", ondelete="CASCADE"),
+        doc="The report type",
+        info={"edge": "REPORT_TYPE", "reverse_edge": "REPORT_FIELD_CONFIGS"},
+    )
+    parent_field_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("report_field.id", ondelete="CASCADE"),
+        doc="The parent field for this field",
+        info={"edge": "PARENT_FIELD", "reverse_edge": "CHILD_FIELDS"},
+    )
+    is_label_included: Mapped[bool] = mapped_column(
+        doc="Whether the label for this field is included in the report",
+    )
+    field_format: Mapped[Optional[str]] = mapped_column(
+        doc="Format for the field in the report",
     )
 
 
-class ReportField(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "report_field"
+class ReportFieldBase(DefaultBaseMixin, UnoBase):
+    __tablename__ = "report_field"
     __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "Fields that can be included in reports",
-        },
+        UniqueConstraint("tenant_id", "name"),
+        Index("ix_report_field_tenant_id_name", "tenant_id", "name"),
+        {"comment": "Fields that can be included in reports"},
     )
-
-    display_name: ClassVar[str] = "Report Field"
-    display_name_plural: ClassVar[str] = "Report Fields"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_record.id"),
-        primary_key=True,
-    )
     field_meta_type: Mapped[str_255] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report field",
+        info={"edge": "META_TYPE", "reverse_edge": "REPORT_FIELDS"},
     )
     field_type: Mapped[ValueType] = mapped_column(
         ENUM(
@@ -87,87 +70,47 @@ class ReportField(
         ),
         doc="The type of the report field",
     )
-    label: Mapped[Optional[str_255]] = mapped_column(
-        doc="The label for the report field displayed on the report",
-    )
+    name: Mapped[Optional[str_255]] = mapped_column(doc="The name of the report field.")
     explanation: Mapped[str] = mapped_column(
         doc="Explanation of the report field",
     )
 
-    __mapper_args__ = {
-        "polymorphic_identity": "report_field",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
 
-
-class ReportType(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "report_type"
+class ReportTypeBase(DefaultBaseMixin, UnoBase):
+    __tablename__ = "report_type"
     __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "The types of reports that can be generated",
-        },
+        UniqueConstraint("tenant_id", "name"),
+        Index("ix_report_type_tenant_id_name", "tenant_id", "name"),
+        Index("ix_report_type_meta_type", "meta_type"),
+        {"comment": "The types of reports that can be generated"},
     )
-
-    display_name: ClassVar[str] = "Report Type"
-    display_name_plural: ClassVar[str] = "Report Types"
-
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_record.id"),
-        primary_key=True,
-    )
-    applicable_meta_type: Mapped[str_255] = mapped_column(
+    meta_type: Mapped[str_255] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         doc="The meta_record type of the report",
+        info={"edge": "META_TYPE", "reverse_edge": "REPORT_TYPES"},
     )
-    explanation: Mapped[str] = mapped_column(
-        doc="Explanation of the report type",
+    name: Mapped[str_128] = mapped_column(
+        doc="The name of the report type",
     )
-
-    __mapper_args__ = {
-        "polymorphic_identity": "report_type",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
-
-
-class Report(
-    MetaRecordBase,
-    MetaBaseMixin,
-    BaseAuditMixin,
-    BaseVersionAuditMixin,
-):
-    # __tablename__ = "report"
-    __table_args__ = (
-        {
-            "schema": settings.DB_SCHEMA,
-            "comment": "Reports generated by the system",
-        },
+    description: Mapped[str] = mapped_column(
+        doc="Description of the report type",
     )
 
-    display_name: ClassVar[str] = "Report"
-    display_name_plural: ClassVar[str] = "Reports"
 
-    sql_emitters: ClassVar[list[SQLEmitter]] = []
+class ReportBase(DefaultBaseMixin, UnoBase):
+    __tablename__ = "report"
+    __table_args__ = ({"comment": "Reports generated by the system"},)
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
-        ForeignKey("meta_record.id"),
-        primary_key=True,
-    )
     name: Mapped[str_255] = mapped_column(
         doc="Name of the report",
     )
     report_type: Mapped[str_26] = mapped_column(
         ForeignKey("report_type.id", ondelete="CASCADE"),
         doc="The type of the report",
+        info={"edge": "REPORT_TYPE", "reverse_edge": "REPORTS"},
     )
     data: Mapped[bytea] = mapped_column(
         doc="Data for the report",
@@ -175,11 +118,3 @@ class Report(
     data_hash: Mapped[str_64] = mapped_column(
         doc="Hash of the data for the report",
     )
-    __mapper_args__ = {
-        "polymorphic_identity": "report",
-        "inherit_condition": id == MetaRecordBase.id,
-    }
-
-    def insert_schema(self):
-        """Create the BaseModel used for the report"""
-        pass

@@ -5,14 +5,13 @@
 from typing import Optional, List
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
-from uno.mixins import ModelMixin
-from uno.auth.mixins import RecordAuditMixin, GroupMixin, TenantMixin
+from uno.auth.mixins import DefaultModelMixin
 from uno.attr.bases import AttributeBase, AttributeTypeBase
 from uno.qry.models import Query
 from uno.meta.models import MetaType
 
 
-class Attribute(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class Attribute(UnoModel, DefaultModelMixin):
     # Class variables
     base = AttributeBase
     schema_configs = {
@@ -47,7 +46,7 @@ class Attribute(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin)
         return self.attribute_type.name
 
 
-class AttributeType(UnoModel, ModelMixin, RecordAuditMixin):
+class AttributeType(UnoModel, DefaultModelMixin):
     # Class variables
     base = AttributeTypeBase
     schema_configs = {
@@ -56,6 +55,8 @@ class AttributeType(UnoModel, ModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
+                "group",
+                "tenant",
                 "parent",
                 "describes",
                 "description_limiting_query",

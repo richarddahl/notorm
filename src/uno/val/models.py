@@ -7,8 +7,7 @@ import decimal
 
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
-from uno.mixins import ModelMixin
-from uno.auth.mixins import RecordAuditMixin, GroupMixin, TenantMixin
+from uno.auth.mixins import DefaultModelMixin
 from uno.val.bases import (
     AttachmentBase,
     BooleanValueBase,
@@ -21,7 +20,7 @@ from uno.val.bases import (
 )
 
 
-class Attachment(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class Attachment(UnoModel, DefaultModelMixin):
     # Class variables
     base = AttachmentBase
     schema_configs = {
@@ -48,7 +47,7 @@ class Attachment(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin
     file_path: str
 
 
-class BooleanValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class BooleanValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = BooleanValueBase
     schema_configs = {
@@ -75,7 +74,7 @@ class BooleanValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMix
     value: bool
 
 
-class DateTimeValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class DateTimeValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = DateTimeValueBase
     schema_configs = {
@@ -102,7 +101,7 @@ class DateTimeValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMi
     value: datetime.datetime
 
 
-class DateValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class DateValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = DateValueBase
     schema_configs = {
@@ -129,7 +128,7 @@ class DateValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin)
     value: datetime.date
 
 
-class DecimalValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class DecimalValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = DecimalValueBase
     schema_configs = {
@@ -156,7 +155,7 @@ class DecimalValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMix
     value: decimal.Decimal
 
 
-class IntegerValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class IntegerValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = IntegerValueBase
     schema_configs = {
@@ -183,7 +182,7 @@ class IntegerValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMix
     value: int
 
 
-class TextValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class TextValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = TextValueBase
     schema_configs = {
@@ -210,7 +209,7 @@ class TextValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin)
     value: str
 
 
-class TimeValue(UnoModel, ModelMixin, RecordAuditMixin, GroupMixin, TenantMixin):
+class TimeValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = TimeValueBase
     schema_configs = {

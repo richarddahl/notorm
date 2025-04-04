@@ -3,29 +3,64 @@
 # SPDX-License-Identifier: MIT
 
 from uno.sqlemitter import (
-    SQLConfig,
     AlterGrants,
     InsertMetaType,
-    InsertPermission,
+    RecordUserAuditFunction,
+    InsertMetaRecordTrigger,
+    RecordStatusFunction,
+    SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.meta.bases import MetaTypeBase, MetaRecordBase
+from uno.rprt.bases import (
+    ReportFieldConfigBase,
+    ReportFieldBase,
+    ReportTypeBase,
+    ReportBase,
+)
 
 
-class MetaTypeSQLConfig(SQLConfig):
-    table = MetaTypeBase.__table__
+class ReportFieldConfSQLConfig(SQLConfig):
+    table = ReportFieldConfigBase.__table__
     sql_emitters = [
         AlterGrants,
-        InsertPermission,
         InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
         GraphSQLEmitter,
     ]
 
 
-class MetaSQLConfig(SQLConfig):
-    table = MetaRecordBase.__table__
+class ReportFielSQLConfig(SQLConfig):
+    table = ReportFieldBase.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
+        GraphSQLEmitter,
+    ]
+
+
+class ReportTypeSQLConfig(SQLConfig):
+    table = ReportTypeBase.__table__
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
+        GraphSQLEmitter,
+    ]
+
+
+class ReportSQLConfig(SQLConfig):
+    table = ReportBase.__table__
+    sql_emitters = [
+        AlterGrants,
+        InsertMetaType,
+        InsertMetaRecordTrigger,
+        RecordStatusFunction,
+        RecordUserAuditFunction,
         GraphSQLEmitter,
     ]

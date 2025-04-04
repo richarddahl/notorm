@@ -11,10 +11,9 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db import UnoBase, str_255, str_26, str_63
-from uno.mixins import BaseMixin
+from uno.db import UnoBase, str_255, str_26
 from uno.meta.bases import MetaTypeBase, MetaRecordBase
-from uno.auth.mixins import GroupBaseMixin
+from uno.auth.mixins import DefaultBaseMixin
 from uno.qry.bases import QueryBase
 
 
@@ -109,7 +108,7 @@ attribute_type__value_type = Table(
 )
 
 
-class AttributeTypeBase(GroupBaseMixin, BaseMixin, UnoBase):
+class AttributeTypeBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "attribute_type"
     __table_args__ = (
         UniqueConstraint(
@@ -230,7 +229,7 @@ class AttributeTypeBase(GroupBaseMixin, BaseMixin, UnoBase):
     )
 
 
-class AttributeBase(GroupBaseMixin, BaseMixin, UnoBase):
+class AttributeBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "attribute"
     __table_args__ = {"comment": "Attributes define characteristics of objects"}
 

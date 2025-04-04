@@ -11,7 +11,7 @@ from pydantic import model_validator
 from uno.schema import UnoSchemaConfig
 from uno.model import UnoModel
 from uno.mixins import ModelMixin
-from uno.auth.mixins import RecordAuditMixin
+from uno.auth.mixins import DefaultModelMixin
 from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
 from uno.meta.models import MetaRecord, MetaType
 from uno.enums import (
@@ -38,6 +38,7 @@ class QueryPath(UnoModel, ModelMixin):
             ],
         ),
     }
+    endpoints = ["List", "View"]
 
     # Fields
     source_meta_type_id: str
@@ -52,7 +53,7 @@ class QueryPath(UnoModel, ModelMixin):
         return self.name
 
 
-class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
+class QueryValue(UnoModel, DefaultModelMixin):
     # Class variables
     base = QueryValueBase
     schema_configs = {
@@ -61,6 +62,8 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
+                "group",
+                "tenant",
                 "query_path",
                 "values",
                 "queries",
@@ -76,7 +79,6 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
     }
 
     # Fields
-    id: Optional[str] = None
     query_path_id: int
     query_path: Optional[QueryPath] = None
     include: Include = Include.INCLUDE
@@ -95,7 +97,7 @@ class QueryValue(UnoModel, ModelMixin, RecordAuditMixin):
         return self
 
 
-class Query(UnoModel, ModelMixin, RecordAuditMixin):
+class Query(UnoModel, DefaultModelMixin):
     # Class variables
     base = QueryBase
     display_name_plural = "Queries"
@@ -105,6 +107,9 @@ class Query(UnoModel, ModelMixin, RecordAuditMixin):
                 "created_by",
                 "modified_by",
                 "deleted_by",
+                "group",
+                "tenant",
+                "query_meta_type",
             ],
         ),
         "edit_schema": UnoSchemaConfig(

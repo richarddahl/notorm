@@ -21,16 +21,8 @@ from uno.db import (
     datetime_tz,
     dec,
 )
-from uno.mixins import BaseMixin
-from uno.auth.mixins import (
-    RecordAuditBaseMixin,
-    GroupBaseMixin,
-    GroupMixin,
-    TenantBaseMixin,
-    TenantMixin,
-)
+from uno.auth.mixins import DefaultBaseMixin
 from uno.filter import boolean_lookups, numeric_lookups, text_lookups, datetime_lookups
-from uno.config import settings
 
 
 attachment__meta_record = Table(
@@ -60,13 +52,7 @@ attachment__meta_record = Table(
 )
 
 
-class AttachmentBase(
-    BaseMixin,
-    GroupBaseMixin,
-    TenantBaseMixin,
-    UnoBase,
-    RecordAuditBaseMixin,
-):
+class AttachmentBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "attachment"
     __table_args__ = (
         UniqueConstraint(
@@ -87,9 +73,7 @@ class AttachmentBase(
     # Relationships
 
 
-class BooleanValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class BooleanValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "boolean_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_boolean_value_tenant_id_value"),
@@ -108,9 +92,7 @@ class BooleanValueBase(
     )
 
 
-class DateTimeValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class DateTimeValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "datetime_value"
     __table_args__ = (
         UniqueConstraint(
@@ -129,9 +111,7 @@ class DateTimeValueBase(
     value: Mapped[datetime_tz] = mapped_column(doc="The datetime value.")
 
 
-class DateValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class DateValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "date_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_date_value_tenant_id_value"),
@@ -148,9 +128,7 @@ class DateValueBase(
     value: Mapped[date_] = mapped_column(doc="The date value.")
 
 
-class DecimalValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class DecimalValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "decimal_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_decimal_value_tenant_id_value"),
@@ -167,9 +145,7 @@ class DecimalValueBase(
     value: Mapped[dec] = mapped_column(doc="The decimal value.")
 
 
-class IntegerValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class IntegerValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "integer_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_integer_value_tenant_id_value"),
@@ -186,9 +162,7 @@ class IntegerValueBase(
     value: Mapped[int] = mapped_column()
 
 
-class TextValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class TextValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "text_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_text_value_tenant_id_value"),
@@ -205,9 +179,7 @@ class TextValueBase(
     value: Mapped[str] = mapped_column()
 
 
-class TimeValueBase(
-    BaseMixin, GroupBaseMixin, TenantBaseMixin, UnoBase, RecordAuditBaseMixin
-):
+class TimeValueBase(DefaultBaseMixin, UnoBase):
     __tablename__ = "time_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_time_value_tenant_id_value"),
