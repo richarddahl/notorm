@@ -89,8 +89,8 @@ class QueryPathBase(BaseMixin, UnoBase):
         Index(
             "ix_query_path__source_meta_type_id",
             "source_meta_type_id",
-            "destination_meta_type_id",
-            "path",
+            "target_meta_type_id",
+            "cypher_path",
         ),
         {"comment": "Enables user-defined filtering via the graph DB."},
     )
@@ -105,7 +105,7 @@ class QueryPathBase(BaseMixin, UnoBase):
             "reverse_edge": "SOURCE_FILTER_PATHS",
         },
     )
-    destination_meta_type_id: Mapped[str_26] = mapped_column(
+    target_meta_type_id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -115,11 +115,11 @@ class QueryPathBase(BaseMixin, UnoBase):
             "reverse_edge": "DESTINATION_FILTER_PATHS",
         },
     )
-    path: Mapped[str] = mapped_column(
+    cypher_path: Mapped[str] = mapped_column(
         index=True,
         unique=True,
         nullable=False,
-        doc="The path of the filter",
+        doc="The cypher_path of the filter",
     )
     data_type: Mapped[str] = mapped_column(
         doc="The data type of the filter",

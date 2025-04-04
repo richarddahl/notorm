@@ -4,9 +4,11 @@
 
 # Models are the Business Logic Layer Objects
 
-from typing import Any
+from typing import Any, ClassVar
 from psycopg import sql
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+from uno.db import UnoDBFactory
 
 
 lookups = {
@@ -79,6 +81,9 @@ text_lookups = [
 
 
 class UnoFilter(BaseModel):
+
+    db: ClassVar["UnoDB"]
+
     source_node_label: str
     source_meta_type_id: str
     label: str
@@ -92,25 +97,29 @@ class UnoFilter(BaseModel):
     target_path_fragment: str
     documentation: str
 
+    def __subclass_init__(cls, *args, **kwargs):
+        super().__subclass_init__(*args, **kwargs)
+        cls.db = UnoDBFactory(model=cls)
+
     def __str__(self) -> str:
-        return self.path()
+        return self.cypher_path()
 
     def __repr__(self) -> str:
         return f"<UnoFilter: {self.source_path_fragment}->{self.target_path_fragment}>"
 
-    def path(self, parent=None, for_cypher: bool = False) -> str:
+    def cypher_path(self, parent=None, for_cypher: bool = False) -> str:
         """
-        Constructs a formatted path string based on the provided fragments and an optional parent.
+        Constructs a formatted cypher_path string based on the provided fragments and an optional parent.
         Args:
             parent (Optional): An optional object that provides a `source_path_fragment`.
-                If provided, the resulting path will include the parent's source path fragment.
+                If provided, the resulting cypher_path will include the parent's source cypher_path fragment.
         Returns:
-            str: A formatted path string. If `parent` is provided, the path will include
-            the parent's source path fragment, the middle path fragment, and the target
-            path fragment, separated by `-` and `->`. If `parent` is not provided, the
-            path will only include the source and target path fragments separated by `->`.
+            str: A formatted cypher_path string. If `parent` is provided, the cypher_path will include
+            the parent's source cypher_path fragment, the middle cypher_path fragment, and the target
+            cypher_path fragment, separated by `-` and `->`. If `parent` is not provided, the
+            cypher_path will only include the source and target cypher_path fragments separated by `->`.
         Notes:
-            - The method escapes occurrences of `[:` and `(:` in the resulting path string
+            - The method escapes occurrences of `[:` and `(:` in the resulting cypher_path string
               by replacing them with `[\\:` and `(\\:`, respectively. This is done to
               prevent sqlalchemy from interpreting these characters as SQL placeholders when
               used as part of a cypher query.  This is indicated by passing for_cypher=True
@@ -152,22 +161,16 @@ class UnoFilter(BaseModel):
             sql.SQL(
                 """
         * FROM cypher('graph', $subq$
-            MATCH {path}
+            MATCH {cypher_path}
             WHERE {where_clause}
             RETURN DISTINCT s.id
         $subq$) AS (id TEXT)
         """
             )
             .format(
-                path=sql.SQL(self.path(for_cypher=True)),
+                cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
                 where_clause=sql.SQL(where_clause),
                 value=sql.SQL(str(val)),
             )
             .as_string()
         )
-
-
-class FilterParam(BaseModel):
-    """FilterParam is used to validate the filter parameters for the ListRouter."""
-
-    model_config = ConfigDict(extra="forbid")

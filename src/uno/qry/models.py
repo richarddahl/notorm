@@ -34,7 +34,9 @@ class QueryPath(UnoModel, ModelMixin):
         "edit_schema": UnoSchemaConfig(
             include_fields=[
                 "source_meta_type_id",
-                "destination_meta_type_id",
+                "cypher_path",
+                "target_meta_type_id",
+                "data_type",
             ],
         ),
     }
@@ -43,14 +45,14 @@ class QueryPath(UnoModel, ModelMixin):
     # Fields
     source_meta_type_id: str
     source_meta_type: Optional[MetaType] = None
-    destination_meta_type_id: str
+    target_meta_type_id: str
     destination_meta_type: Optional[MetaType] = None
-    path: str
+    cypher_path: str
     data_type: str
     # lookups: list[str]
 
     def __str__(self) -> str:
-        return self.name
+        return self.cypher_path
 
 
 class QueryValue(UnoModel, DefaultModelMixin):

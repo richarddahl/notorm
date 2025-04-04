@@ -198,6 +198,9 @@ def UnoDBFactory(model: BaseModel):
                     obj = await cls.insert_(to_db_model)
                     return obj, True
                 except IntegrityError as e:
+                    # This is the only way I can find to check for a unique constraint violation
+                    # As the asyncpg.UniqueViolationError gets wrapped in a SQLAlchemy IntegrityError
+                    # And isinstance(e.orig, UniqueViolationError) doesn't work
                     if "duplicate key value violates unique constraint" in str(e):
                         # Handle the case where the object already exists
                         await session.rollback()
@@ -205,7 +208,7 @@ def UnoDBFactory(model: BaseModel):
                         obj = await cls.select_(
                             to_db_model=to_db_model,
                             result_type=SelectResultType.FETCH_ONE,
-                            path=to_db_model.path,
+                            cypher_path=to_db_model.cypher_path,
                         )
                         return obj, False
                     else:

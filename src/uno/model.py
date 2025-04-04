@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, create_model
 from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import Column
 
-from uno.db import UnoDBFactory
+from uno.db import UnoDBFactory, FilterParam
 from uno.db import UnoBase
 from uno.schema import UnoSchemaConfig
 from uno.endpoint import (
@@ -33,12 +33,12 @@ from uno.utilities import (
 )
 from uno.filter import (
     UnoFilter,
-    FilterParam,
     boolean_lookups,
     numeric_lookups,
     datetime_lookups,
     text_lookups,
 )
+from uno.config import settings
 
 
 class UnoModel(BaseModel):
@@ -84,12 +84,51 @@ class UnoModel(BaseModel):
 
     # End of __init_subclass__
 
+    async def get_or_create(
+        self,
+        **kwargs,
+    ) -> "UnoModel":
+        return await self.db.get_or_create(self.to_base(schema_name="edit_schema"))
+
+    # End of get_or_create
+
+    async def save(self) -> "UnoModel":
+        """
+        Save the model instance to the database.
+
+        This method uses the `db` class variable to save the instance to the database.
+        It returns the saved instance.
+
+        Returns:
+            UnoModel: The saved instance of the model.
+        """
+        if self.id:
+            self.db.update_(self.to_base(schema_name="edit_schema"))
+        else:
+            await self.db.insert_(to_db_model=self.to_base(schema_name="edit_schema"))
+        return self
+
+    def to_base(self, schema_name: str) -> dict:
+        self.set_schemas()
+        if not hasattr(self, schema_name):
+            raise UnoRegistryError(
+                f"Schema {schema_name} not found in {self.__class__.__name__}",
+                "SCHEMA_NOT_FOUND",
+            )
+        schema_ = getattr(self, schema_name)
+        schema = schema_(**self.model_dump())
+        return self.base(**schema.model_dump())
+
+    # End of to_base
+
     @classmethod
     def configure(cls, app: FastAPI) -> None:
         """Configure the UnoModel class"""
         cls.set_filters()
         cls.set_schemas()
         cls.set_endpoints(app)
+
+    # End of configure
 
     @classmethod
     def set_display_names(cls) -> None:
@@ -104,6 +143,8 @@ class UnoModel(BaseModel):
             else cls.display_name_plural
         )
 
+    # End of set_display_names
+
     @classmethod
     def set_schemas(cls) -> None:
         for schema_name, schema_config in cls.schema_configs.items():
@@ -115,6 +156,8 @@ class UnoModel(BaseModel):
                     model=cls,
                 ),
             )
+
+    # End of set_schemas
 
     @classmethod
     def set_endpoints(cls, app: FastAPI) -> None:
@@ -131,6 +174,8 @@ class UnoModel(BaseModel):
                 DeleteEndpoint(model=cls, app=app)
             elif endpoint == "Import":
                 ImportEndpoint(model=cls, app=app)
+
+    # End of set_endpoints
 
     @classmethod
     def set_filters(cls) -> None:
@@ -170,9 +215,6 @@ class UnoModel(BaseModel):
             filters (dict): A dictionary where keys are filter labels and values are
             `UnoFilter` objects representing the filtering configuration for each column.
         """
-        table = cls.base.__table__
-        if cls.exclude_from_filters:
-            return
 
         def create_filter(column: Column) -> UnoFilter:
             """
@@ -199,7 +241,7 @@ class UnoModel(BaseModel):
                   appropriate comparison operators (boolean, numeric, or text).
             """
 
-            # Determine the comparison operators based on the column type
+            # Determine the lookups based on the column type
             if column.type.python_type == bool:
                 lookups = boolean_lookups
             elif column.type.python_type in [
@@ -219,6 +261,7 @@ class UnoModel(BaseModel):
 
             # Get the edge label from the column info or use the column name
             edge = column.info.get("edge", column.name)
+
             # Determine the source and target node labels and meta_types
             if column.foreign_keys:
                 # If the column has foreign keys, use the foreign key to determine the
@@ -243,11 +286,6 @@ class UnoModel(BaseModel):
                     column.info.get(edge, column.name.replace("_id", ""))
                 )
 
-            # the path fragments are used to build the cypher query for the filter,
-            # the source_path_fragment is used by querypaths from the origin table
-            # the middle_path_fragment is used by querypaths when the filter is a related table
-            # the target_path_fragment is used by querypaths when the filter is the target table
-
             return UnoFilter(
                 source_node_label=source_node_label,
                 source_meta_type_id=source_meta_type_id,
@@ -263,7 +301,10 @@ class UnoModel(BaseModel):
                 documentation=column.doc or label,
             )
 
+        if cls.exclude_from_filters:
+            return
         filters = {}
+        table = cls.base.__table__
         for column in table.columns.values():
             if column.info.get("graph_excludes", False):
                 continue
@@ -272,6 +313,8 @@ class UnoModel(BaseModel):
                 if filter_key not in filters.keys():
                     filters[filter_key] = fltr
         cls.filters = filters
+
+    # End of set_filters
 
     @classmethod
     def create_filter_params(cls) -> "FilterParam":
@@ -365,6 +408,8 @@ class UnoModel(BaseModel):
             **model_filter_dict,
             __base__=FilterParam,
         )
+
+    # End of create_filter_params
 
     @classmethod
     def validate_filter_params(cls, filter_params: FilterParam) -> dict:
@@ -466,3 +511,5 @@ class UnoModel(BaseModel):
                 )
             filters.append(filter_tuple(edge_upper, val, lookup))
         return filters
+
+    # End of validate_filter_params
