@@ -19,8 +19,7 @@ from uno.auth import models as auth_models
 from uno.qry import models as fltr_models
 from uno.meta import models as meta_models
 from uno.msg import models as msg_models
-
-# from uno.rprt import models as rpt_models
+from uno.rprt import models as rpt_models
 from uno.val import models as val_models
 
 # from uno.wkflw import models as wkflw_models
