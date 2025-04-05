@@ -1,6 +1,6 @@
 # uno/auth/models.py
 
-## ::: uno.auth.models.Schema
+## ::: uno.auth.models.UserModel
 
     handler: python
     options:

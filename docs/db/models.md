@@ -1,8 +1,17 @@
-# uno/db/models.py
+# uno/model.py
 
-The db/models.py file contains the Schema
+The model.py file contains ...
 
-## ::: uno.models.Schema
+## ::: uno.model.UnoModel
+
+    handler: python
+    options:
+      members:
+      show_root_heading: true
+      show_source: true
+
+
+## ::: uno.model.UnoDBFactory
 
     handler: python
     options:

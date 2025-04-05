@@ -1,16 +1,8 @@
-# uno/auth/tables.py
+# uno/auth/objects.py
 
-The tables.py file contains the following DeclarativeBase classes.
+The objects.py file contains the following DeclarativeBase classes.
 
-## ::: uno.auth.tables.Group
-
-    handler: python
-    options:
-      members:
-      show_root_heading: true
-      show_source: true
-
-## ::: uno.auth.tables.Role
+## ::: uno.auth.objects.Group
 
     handler: python
     options:
@@ -18,7 +10,7 @@ The tables.py file contains the following DeclarativeBase classes.
       show_root_heading: true
       show_source: true
 
-## ::: uno.auth.tables.RoleTableOperation
+## ::: uno.auth.objects.Role
 
     handler: python
     options:
@@ -26,15 +18,7 @@ The tables.py file contains the following DeclarativeBase classes.
       show_root_heading: true
       show_source: true
 
-## ::: uno.auth.tables.TableOperation
-
-    handler: python
-    options:
-      members:
-      show_root_heading: true
-      show_source: true 
-
-## ::: uno.auth.tables.Tenant
+## ::: uno.auth.objects.Tenant
 
     handler: python
     options:
@@ -42,7 +26,7 @@ The tables.py file contains the following DeclarativeBase classes.
       show_root_heading: true
       show_source: true  
   
-## ::: uno.auth.tables.User
+## ::: uno.auth.objects.User
 
     handler: python
     options:
@@ -50,10 +34,3 @@ The tables.py file contains the following DeclarativeBase classes.
       show_root_heading: true
       show_source: true
   
-## ::: uno.auth.tables.UserGroupRole
-
-    handler: python
-    options:
-      members:
-      show_root_heading: true
-      show_source: true

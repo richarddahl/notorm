@@ -8,25 +8,14 @@ uno has (what I think is) a typical python library "src" structure
     | docs
     | src
       | uno
-        | attr
-        | auth
-        | cmd
-        | db
-        | fltr
-        | msg
-        | rltd
-        | rprt
-        | wkflw
     | Tests
 
 ### App Modules
 
-Each module within uno that provides database tables and associated functionailty is considered an app module.
-
 App modules generally contain the following files:
 
-- enums.py: Contains enums used as values in the database
-- models.py: Contains the UN0Schema objects for the database tables
-- tables.py:  Contains the sqlalchemy DeclarativeBase tables
+- objects.py: Contains the UnoObjs for the entities
+- models.py:  Contains the sqlalchemy DeclarativeBase models for the entities
+- sqlconfigs.py Contains the configuration of custom SQL executed for the entities
 
 ## Code Style

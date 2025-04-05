@@ -1,3 +1,3 @@
-# UNO FAQ
+# Uno FAQ
 
 More to come...
