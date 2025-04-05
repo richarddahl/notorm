@@ -173,17 +173,25 @@ def UnoDBFactory(obj: BaseModel):
         @classmethod
         def set_role(cls, role_name: str) -> str:
             return (
-                sql.SQL(
-                    """
-                SET ROLE {db_name}_{role};
-                """
-                )
+                sql.SQL("SET ROLE {db_name}_{role};")
                 .format(
                     db_name=sql.SQL(DB_NAME),
                     role=sql.SQL(role_name),
                 )
                 .as_string()
             )
+
+        @classmethod
+        def get_natural_key(cls) -> str:
+            """
+            Returns the natural key for the database object.
+
+            This method retrieves the natural key from the model's metadata.
+
+            Returns:
+                str: The natural key for the database object.
+            """
+            pass
 
         @classmethod
         async def get_or_create(cls, to_db_model: BaseModel) -> tuple[BaseModel, bool]:
