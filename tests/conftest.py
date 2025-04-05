@@ -18,11 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from uno.dbmanager import DBManager
-from uno.db import engine, sync_engine
+from uno.model import engine, sync_engine
 from uno.config import settings
 
 import pytest
-from uno.db import sync_engine
+from uno.model import sync_engine
 
 
 def db_column(

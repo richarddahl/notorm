@@ -26,6 +26,7 @@ from uno.auth.objects import User
 # from uno.rltd.models import TableType, RelatedObject
 # from tests.pgjwt.test_pgjwt import encode_test_token
 from uno.dbmanager import DBManager
+from uno.auth.objects import User
 
 # from tests.conftest import mock_rls_vars
 
@@ -43,6 +44,13 @@ async def test_create_user(session, test_db):
         full_name="New Admin",
     )
     assert new_superuser_id is not None
+
+
+@pytest.mark.asyncio
+async def test_user_table_keys(session, test_db):
+    user_table_keys = User.db.table_keys()
+    print(user_table_keys)
+    assert user_table_keys is not None
 
 
 '''

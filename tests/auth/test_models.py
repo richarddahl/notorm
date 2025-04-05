@@ -87,7 +87,7 @@ class TestUserTable:
             },
             {
                 "name": "ix_uno_user_id",
-                "unique": False,
+                "unique": True,
                 "column_names": ["id"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
@@ -456,7 +456,7 @@ class TestTenantTable:
             },
             {
                 "name": "ix_uno_tenant_id",
-                "unique": False,
+                "unique": True,
                 "column_names": ["id"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
@@ -730,7 +730,7 @@ class TestRoleTable:
             },
             {
                 "name": "ix_uno_role_id",
-                "unique": False,
+                "unique": True,
                 "column_names": ["id"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
