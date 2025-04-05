@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.db import UnoModel, str_26, str_255, str_63
+from uno.model import UnoModel, str_26, str_255, str_63
 from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditModelMixin
 from uno.enums import SQLOperation, TenantType
@@ -116,9 +116,6 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             """
                 is_superuser = 'false' AND default_group_id IS NOT NULL OR 
                 is_superuser = 'true' AND default_group_id IS NULL
-                --is_superuser = 'false' AND is_tenant_admin = 'false' OR
-                --is_superuser = 'true' AND is_tenant_admin = 'false' OR
-                --is_superuser = 'false' AND is_tenant_admin = 'true'
             """,
             name="ck_user_is_superuser",
         ),

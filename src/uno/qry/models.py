@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
-from uno.db import UnoModel, str_26, str_255, str_12
+from uno.model import UnoModel, str_26, str_255, str_12
 from uno.mixins import ModelMixin
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import Include, Match

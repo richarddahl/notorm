@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
 
-from uno.db import (
+from uno.model import (
     UnoModel,
     str_255,
     date_,

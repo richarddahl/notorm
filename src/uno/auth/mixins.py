@@ -13,7 +13,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import text
 
-from uno.db import str_26
+from uno.model import str_26
 from uno.mixins import ObjectMixin, ModelMixin
 
 

@@ -5,7 +5,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from uno.db import UnoModel, str_63, str_26
+from uno.model import UnoModel, str_63, str_26
 
 
 class MetaTypeModel(UnoModel):

@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM
 
-from uno.db import UnoModel, str_26, str_128, str_255, str_64, bytea
+from uno.model import UnoModel, str_26, str_128, str_255, str_64, bytea
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import ValueType
 from uno.config import settings

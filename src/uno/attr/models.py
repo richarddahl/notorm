@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db import UnoModel, str_255, str_26
+from uno.model import UnoModel, str_255, str_26
 from uno.meta.objects import MetaTypeModel, MetaRecordModel
 from uno.auth.mixins import DefaultModelMixin
 from uno.qry.models import QueryModel

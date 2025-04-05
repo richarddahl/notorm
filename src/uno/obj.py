@@ -14,8 +14,8 @@ from pydantic import BaseModel, ConfigDict, create_model
 from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import Column
 
-from uno.db import UnoDBFactory, FilterParam
-from uno.db import UnoModel
+from uno.model import UnoDBFactory, FilterParam
+from uno.model import UnoModel
 from uno.schema import UnoSchemaConfig
 from uno.endpoint import (
     CreateEndpoint,

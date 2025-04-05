@@ -30,7 +30,7 @@ from typing import Any, ClassVar
 from psycopg import sql
 from pydantic import BaseModel
 
-from uno.db import UnoDBFactory
+from uno.model import UnoDBFactory
 
 # This dictionary contains predefined SQL templates for various lookup operations.
 # Each key represents a lookup name, and the corresponding value is the SQL template.

@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.db import UnoModel, str_255, str_26, datetime_tz
+from uno.model import UnoModel, str_255, str_26, datetime_tz
 from uno.mixins import ModelMixin
 from uno.meta.objects import MetaRecordModel
 from uno.auth.mixins import GroupModelMixin

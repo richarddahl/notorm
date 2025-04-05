@@ -11,7 +11,7 @@ import enum
 from typing import Annotated
 
 from psycopg import sql
-from asyncpg.exceptions import UniqueViolationError
+from asyncpg.exceptions import UniqueViolationError  # type: ignore
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
@@ -20,7 +20,9 @@ from sqlalchemy import (
     delete,
     update,
     text,
+    func,
     create_engine,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     registry,
@@ -52,7 +54,6 @@ from sqlalchemy.dialects.postgresql import (
     TEXT,
 )
 
-from uno.enums import SelectResultType
 from uno.errors import UnoError
 from uno.config import settings
 
@@ -171,68 +172,60 @@ def UnoDBFactory(obj: BaseModel):
     class UnoDB:
 
         @classmethod
-        def set_role(cls, role_name: str) -> str:
-            return (
-                sql.SQL("SET ROLE {db_name}_{role};")
-                .format(
-                    db_name=sql.SQL(DB_NAME),
-                    role=sql.SQL(role_name),
-                )
-                .as_string()
-            )
-
-        @classmethod
-        def get_natural_key(cls) -> str:
+        def table_keys(cls) -> dict[str, list[str]]:
             """
-            Returns the natural key for the database object.
+            Retrieve a dictionary of table keys, including primary keys and unique constraints.
 
-            This method retrieves the natural key from the model's metadata.
+            This method gathers information about the primary keys and unique constraints
+            defined in the table schema of the associated model. It checks for unique constraints
+            defined in `__table_args__` as well as unique constraints on individual columns.
 
             Returns:
-                str: The natural key for the database object.
+                dict[str, list[str]]: A dictionary where the keys are the names of the constraints
+                (e.g., "pk" for primary key or the name of the unique constraint) and the values
+                are lists of column names that make up the constraint.
             """
-            from sqlalchemy import inspect
 
-            # Use SQLAlchemy's inspect to get the table information
-            inspector = inspect(obj.model)
-            unique_constraints = inspector.get_unique_constraints(obj.model.__tablename__)
+            # Initialize a dictionary to store table keys, starting with the primary key columns
+            table_keys = {"pk": obj.model.__table__.primary_key.columns.keys()}
 
-            # Extract the column names from the unique constraints
-            natural_keys = []
-            for constraint in unique_constraints:
-                natural_keys.extend(constraint['column_names'])
+            # Check for unique constraints defined in the `__table_args__` attribute of the model
+            if hasattr(cls.obj.model, "__table_args__"):
+                for constraint in cls.obj.model.__table_args__:
+                    # If the constraint is a UniqueConstraint, process it
+                    if isinstance(constraint, UniqueConstraint):
+                        # Ensure the unique constraint columns are not already in the table_keys
+                        if not constraint.columns.keys() in table_keys.values():
+                            # Add the unique constraint to the table_keys dictionary
+                            table_keys.update(
+                                {constraint.name: constraint.columns.keys()}
+                            )
 
-            return natural_keys
+            # Check for unique constraints defined on individual columns of the table
+            for column in cls.obj.model.__table__.columns:
+                if column.unique is not None:
+                    # Ensure the column is not already in the table_keys
+                    if not [column.name] in table_keys.values():
+                        # Add the column as a unique constraint to the table_keys dictionary
+                        table_keys.update({column.name: [column.name]})
+
+            # Return the dictionary containing all primary keys and unique constraints
+            return table_keys
 
         @classmethod
-        async def get_or_create(cls, to_db_model: BaseModel) -> tuple[BaseModel, bool]:
-            """
-            Attempts to retrieve an existing database object or create a new one.
-
-            This method tries to insert a new object into the database. If a unique
-            constraint violation occurs (indicating the object already exists), it
-            retrieves the existing object instead.
-
-            Args:
-                to_db_model (BaseModel): The data model instance to be inserted or retrieved.
-
-            Returns:
-                tuple[BaseModel, bool]: A tuple containing the database object and a boolean
-                indicating whether the object was created (True) or already existed (False).
-
-            Raises:
-                IntegrityError: If an integrity error occurs that is not related to a unique
-                constraint violation.
-            """
+        async def get_or_create(
+            cls, to_db_model: BaseModel = None, **kwargs
+        ) -> tuple[BaseModel, bool]:
+            table_keys = cls.table_keys()
             async with scoped_session() as session:
-                await session.execute(text(cls.set_role("writer")))
+                await session.execute(func.set_role("writer"))
                 try:
                     result = await cls.create(to_db_model)
                     return result
                 except UniqueViolationError:
                     # Handle the case where the object already exists
                     await session.rollback()
-                    await session.execute(text(cls.set_role("reader")))
+                    await session.execute(func.set_role("reader"))
                     result = await cls.get(
                         cypher_path=to_db_model.cypher_path,  # kwargs sent to get must be natural db key
                     )
@@ -247,7 +240,7 @@ def UnoDBFactory(obj: BaseModel):
         ) -> tuple[BaseModel, bool]:
             try:
                 async with scoped_session() as session:
-                    await session.execute(text(cls.set_role("writer")))
+                    await session.execute(func.set_role("writer"))
                     session.add(to_db_model)
                     await session.commit()
                     return to_db_model, True
@@ -271,7 +264,7 @@ def UnoDBFactory(obj: BaseModel):
             try:
                 obj = await cls.get(to_db_model=to_db_model, **kwargs)
                 async with scoped_session() as session:
-                    await session.execute(text(cls.set_role("writer")))
+                    await session.execute(func.set_role("writer"))
                     session.add(to_db_model)
                     await session.commit()
                     return to_db_model
@@ -304,7 +297,7 @@ def UnoDBFactory(obj: BaseModel):
 
             try:
                 async with scoped_session() as session:
-                    await session.execute(text(cls.set_role("reader")))
+                    await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
                     rows = result.fetchall()
                     row_count = len(rows)
@@ -362,7 +355,7 @@ def UnoDBFactory(obj: BaseModel):
 
             try:
                 async with scoped_session() as session:
-                    await session.execute(text(cls.set_role("reader")))
+                    await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
                 return result.mappings().all()
             except Exception as e:

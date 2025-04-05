@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
 )
 from pydantic import BaseModel
 
-from uno.db import str_26, datetime_tz
+from uno.model import str_26, datetime_tz
 
 
 class ObjectMixin(BaseModel):
@@ -29,6 +29,7 @@ class ModelMixin:
     id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
+        unique=True,
         index=True,
         nullable=True,
         server_default=FetchedValue(),

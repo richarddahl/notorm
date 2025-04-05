@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.db import UnoModel, str_26, str_255, str_63
+from uno.model import UnoModel, str_26, str_255, str_63
 from uno.mixins import ModelMixin
 from uno.enums import (
     SQLOperation,
