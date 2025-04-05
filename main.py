@@ -58,7 +58,7 @@ def generate_openapi_schema():
     return get_openapi(
         title="My API",
         version="1.0.0",
-        description="UNO API",
+        description="Uno API",
         routes=app.routes,
     )
 

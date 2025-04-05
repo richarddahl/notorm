@@ -25,7 +25,7 @@ pip install notorm
 
 Why `notorm`
 
-"uno" is already a project at pypi, the actual name of this library is UNO, and UNO is NOT an ORM.
+"uno" is already a project at pypi, the actual name of this library is Uno, and Uno is NOT an ORM.
 
 It's meant as an homage to GNU of course.
 
@@ -35,14 +35,14 @@ It really is more of an app framework at this point, going well beyond its origi
 
 ## Project Structure
 
-Within UNO, the term "Entity" refers to a type of information that exists within an application.  
+Within Uno, the term "Entity" refers to a type of information that exists within an application.  
 
 Entities are defined by the following:
 
 - UnoObj (the business logic)
-- UnoModel (SQL alchemy ORM declarative base model)
+- Model (SQL alchemy ORM declarative base model)
 
-A deliberate attempt has been made to couple as little as possible within UNO.  
+A deliberate attempt has been made to couple as little as possible within Uno.  
 
 Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.  
 
