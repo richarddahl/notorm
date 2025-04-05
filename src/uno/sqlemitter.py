@@ -159,23 +159,6 @@ class SQLEmitter(BaseModel):
 ## DB sql.SQL
 
 
-class SetRole(SQLEmitter):
-    @computed_field
-    def set_role(self, role_name: str) -> str:
-        return (
-            sql.SQL(
-                """
-            SET ROLE {db_name}_{role};
-            """
-            )
-            .format(
-                db_name=DB_NAME,
-                role=sql.SQL(role_name),
-            )
-            .as_string()
-        )
-
-
 class DropDatabaseAndRoles(SQLEmitter):
     @computed_field
     def drop_database(self) -> str:
@@ -306,7 +289,7 @@ class CreateSchemasAndExtensions(SQLEmitter):
         )
 
     @computed_field
-    def creaet_extensions(self) -> str:
+    def create_extensions(self) -> str:
         return (
             sql.SQL(
                 """
@@ -1170,6 +1153,80 @@ class EnableHistoricalAudit(SQLEmitter):
             include_trigger=True,
             db_function=False,
             security_definer="SECURITY DEFINER",
+        )
+
+
+class SetRole(SQLEmitter):
+    """
+    A class that generates SQL statements for managing roles and permissions in a database.
+
+    Methods:
+        create_set_role() -> str:
+            Generates the SQL statement to create the `set_role` function, which allows
+            setting the role dynamically based on the current database and a provided role name.
+
+        set_role_permissions() -> str:
+            Generates the SQL statement to manage permissions for the `set_role` function,
+            revoking public access and granting execute permissions to specific roles.
+    """
+
+    @computed_field
+    def create_set_role(self) -> str:
+        """
+        Generates a SQL script to create a helper function for dynamically
+        setting roles within the database.
+
+        Returns:
+            str: A SQL script that:
+                1. Sets the role to `{db_name}_admin`.
+                2. Creates or replaces a `set_role` function in the database. This function accepts
+                   a role name as input, constructs a `SET ROLE` command dynamically using the
+                   current database name and the provided role name, and executes it.
+
+        Notes:
+            - The `set_role` function uses PL/pgSQL as its language.
+            - The `db_name` is dynamically injected into the SQL script using the `DB_NAME` variable.
+            - The function raises a log in the database to confirm the role change.
+        """
+        return (
+            sql.SQL(
+                """
+            SET ROLE {db_name}_admin;
+            -- Create the set_role function
+            CREATE OR REPLACE FUNCTION set_role(role_name TEXT)
+            RETURNS VOID
+            LANGUAGE plpgsql
+            AS $$
+            DECLARE
+                db_name text := current_database();
+                set_role_command TEXT;  
+                complete_role_name TEXT:= CONCAT(db_name, '_', role_name);
+            BEGIN
+                set_role_command := CONCAT('SET ROLE ', complete_role_name);
+                EXECUTE set_role_command;
+                RAISE LOG 'Role set to: % by User: %, in Database: %', complete_role_name, current_user, db_name;
+            END $$;
+            """
+            )
+            .format(db_name=DB_NAME)
+            .as_string()
+        )
+
+    @computed_field
+    def set_role_permissions(self) -> str:
+        return (
+            sql.SQL(
+                """
+            -- REVOKE EXECUTE permission on the set_role function from public
+            REVOKE EXECUTE ON FUNCTION set_role(TEXT) FROM public;
+            -- Grant EXECUTE permission on the set_role function to the login role
+            GRANT EXECUTE ON FUNCTION set_role(TEXT) TO {login_role}, {reader_role}, {writer_role};
+            """
+            )
+            .format(
+                login_role=LOGIN_ROLE, reader_role=READER_ROLE, writer_role=WRITER_ROLE
+            )
+            .as_string()
         )
 
 

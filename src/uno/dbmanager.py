@@ -18,9 +18,10 @@ from uno.sqlemitter import (
     CreateTokenSecret,
     GrantPrivileges,
     InsertMetaRecordFunction,
+    SetRole,
 )
 from uno.obj import UnoObj
-from uno.db import meta_data
+from uno.model import meta_data
 from uno.auth.objects import User
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 from uno.filter import UnoFilter
@@ -288,9 +289,12 @@ class DBManager:
             # Emit SQL commands to create schemas and extensions in the database
             # The `CreateSchemasAndExtensions` class is responsible for generating and executing these commands
             CreateSchemasAndExtensions().emit_sql(connection=conn)
-
             # Print a confirmation message indicating that schemas and extensions have been created
             print("Created the schemas and extensions\n")
+
+            # Emit SQL commands create the set_role function
+            SetRole().emit_sql(connection=conn)
+            print("Created the set_role function\n")
 
         # Dispose of the engine to release resources
         engine.dispose()
