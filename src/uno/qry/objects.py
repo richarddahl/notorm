@@ -9,7 +9,7 @@ from typing_extensions import Self
 from pydantic import model_validator
 
 from uno.schema import UnoSchemaConfig
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.mixins import ObjectMixin
 from uno.auth.mixins import DefaultObjectMixin
 from uno.qry.models import QueryPathModel, QueryValueModel, QueryModel

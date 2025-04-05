@@ -39,22 +39,19 @@ Within UNO, the term "Entity" refers to a type of information that exists within
 
 Entities are defined by the following:
 
-- UnoModel (the business logic)
-- UnoBase (the persistence structure)
+- UnoObj (the business logic)
+- UnoModel (SQL alchemy ORM declarative base model)
 
 A deliberate attempt has been made to couple as little as possible within UNO.  
 
 Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.  
 
-`UnoModel` is a subclass of pydantic BaseModel with a number of class variables in addition to the fields associated with the Entities. This is where all of your business logic is processed and the data to be presented to a user or persisted is validated.
+`UnoObj` is a subclass of pydantic BaseModel with a number of class variables in addition to the fields associated with the Entities. This is where all of your business logic is processed and the data to be presented to a user or persisted is validated.
 
-`UnoBase` is a subclass of sqlalchemy ORM DeclarativeBase that defines the data structure of the Entities.  This handles all querying and editing of the data.
+`UnoModel` is a subclass of sqlalchemy ORM DeclarativeBase that defines the data structure of the Entities.  This handles all querying and editing of the data.
 
 `UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers.  This obviously facilitates user IO.
 
-Each of these classes are built to be completely independent of one another.  In theory at least.  Care has been taking during development to ensure this is the case.  It should be relatively easy to switch out the SQL Alchemy ORM base for a json object used with a NoSQL database or pickle to save the records to the filesystem.  The FastAPI based endpoints could be switched out to use a native application running on a host.  etc...   
-
-The structure of the project (only primary files listed):
 
 | uno  
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -74,11 +71,11 @@ The structure of the project (only primary files listed):
 &nbsp;&nbsp;&nbsp;&nbsp;
     | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | db.py - Defines the UnoBase (declarative base) and the UnoDB object used for db communication.  
+    | db.py - Defines the UnoModel (declarative base) and the UnoDB class used for db communication.  
 &nbsp;&nbsp;&nbsp;&nbsp;
     | dbmanager.py - Defines DBManager class used to create and update the database.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | endpoint.py - Defines the CRUD endpoints for each entity.  
+    | endpoint.py - Defines the CRUD endpoints for each obj.  
 &nbsp;&nbsp;&nbsp;&nbsp;
     | filter.py - Defines the basic filters for use in the automatic queries.  
 &nbsp;&nbsp;&nbsp;&nbsp;
@@ -86,7 +83,7 @@ The structure of the project (only primary files listed):
 &nbsp;&nbsp;&nbsp;&nbsp;
     | mixins.py - Defines Base and Model mixins.  
 &nbsp;&nbsp;&nbsp;&nbsp;
-    | model.py - Defines UnoModel, the business logic executor.  
+    | obj.py - Defines UnoObj, the business logic executor.  
 &nbsp;&nbsp;&nbsp;&nbsp;
     | schema.py - Defines schemas used by the endpoints.  
 &nbsp;&nbsp;&nbsp;&nbsp;

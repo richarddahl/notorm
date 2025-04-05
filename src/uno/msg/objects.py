@@ -6,7 +6,7 @@ import datetime
 
 from typing import Optional
 
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.schema import UnoSchemaConfig
 from uno.enums import MessageImportance
 from uno.msg.models import MessageUserModel, MessageModel

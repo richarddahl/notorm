@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.schema import UnoSchemaConfig
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 

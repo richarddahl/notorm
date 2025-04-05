@@ -6,7 +6,7 @@ import datetime
 import decimal
 
 from uno.schema import UnoSchemaConfig
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.auth.mixins import DefaultObjectMixin
 from uno.val.models import (
     AttachmentModel,

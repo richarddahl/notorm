@@ -4,7 +4,7 @@
 
 from fastapi import FastAPI
 
-from uno.object import UnoObj
+from uno.obj import UnoObj
 
 tags_metadata = [
     {

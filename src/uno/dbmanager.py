@@ -19,7 +19,7 @@ from uno.sqlemitter import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.db import meta_data
 from uno.auth.objects import User
 from uno.meta.sqlconfigs import MetaTypeSQLConfig

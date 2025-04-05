@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.apidef import app
 from uno.config import settings
 

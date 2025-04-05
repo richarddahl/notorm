@@ -5,7 +5,7 @@
 from typing import Optional
 
 from uno.schema import UnoSchemaConfig
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.auth.mixins import DefaultObjectMixin
 from uno.meta.objects import MetaType
 from uno.rprt.models import (

@@ -4,7 +4,7 @@
 
 from typing import Optional, List
 from uno.schema import UnoSchemaConfig
-from uno.object import UnoObj
+from uno.obj import UnoObj
 from uno.auth.mixins import DefaultObjectMixin
 from uno.attr.models import AttributeModel, AttributeTypeModel
 from uno.qry.objects import Query
