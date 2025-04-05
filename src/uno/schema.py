@@ -13,13 +13,13 @@ from uno.config import settings
 
 
 class UnoSchema(BaseModel):
-    """Base class for all model schemas"""
+    """Model class for all model schemas"""
 
     pass
 
 
 class UnoSchemaConfig(BaseModel):
-    """Base class for all model schema configs"""
+    """Model class for all model schema configs"""
 
     schema_base: BaseModel = UnoSchema
     exclude_fields: Set[str] = set()

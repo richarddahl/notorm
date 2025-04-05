@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from uno.db import str_26, datetime_tz
 
 
-class ModelMixin(BaseModel):
+class ObjectMixin(BaseModel):
     id: Optional[str] = None
     is_active: Optional[bool] = True
     is_deleted: Optional[bool] = False
@@ -24,7 +24,7 @@ class ModelMixin(BaseModel):
     deleted_at: Optional[datetime.datetime] = None
 
 
-class BaseMixin:
+class ModelMixin:
 
     id: Mapped[str_26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
@@ -32,7 +32,7 @@ class BaseMixin:
         index=True,
         nullable=True,
         server_default=FetchedValue(),
-        doc="Primary Key and Foreign Key to MetaRecord Base",
+        doc="Primary Key and Foreign Key to MetaRecord Model",
         info={"graph_excludes": True},
     )
     is_active: Mapped[bool] = mapped_column(

@@ -81,22 +81,6 @@ class ListRouter(UnoRouter):
 
     def endpoint_factory(self) -> None:
         filter_params = self.model.create_filter_params()
-        # for filter in filter_params.model_fields:
-        #    print(filter)
-        """
-        for field in filter_params.model_fields:
-            # Add the filter to the endpoint
-            setattr(
-                self,
-                field,
-                Query(
-                    default=None,
-                    title=field,
-                    description=f"Filter by {field}",
-                    example=filter_params.model_fields[field].example,
-                ),
-            )
-        """
 
         async def endpoint(
             self,
@@ -105,7 +89,7 @@ class ListRouter(UnoRouter):
 
             # Validate the filters
             filters = self.model.validate_filter_params(filter_params)
-            results = await self.model.db.select_(filters=filters)
+            results = await self.model.filter(filters=filters)
             return results
 
         endpoint.__annotations__["return"] = list[self.response_model]
@@ -139,7 +123,7 @@ class ImportRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, body: BaseModel):
-            result = await self.model.db.import_(body)
+            result = await self.model.save(body, importing=True)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -167,7 +151,7 @@ class InsertRouter(UnoRouter):
 
         async def endpoint(self, body: BaseModel, response: Response) -> BaseModel:
             response.status_code = status.HTTP_201_CREATED
-            result = await self.model.db.insert_(body)
+            result = await self.model.save(body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -194,9 +178,7 @@ class SelectRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.model.db.select_(
-                id=id,
-            )
+            result = await self.model.get(id=id)
             if result is None:
                 raise HTTPException(status_code=404, detail="Object not found")
             return result
@@ -224,7 +206,7 @@ class UpdateRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str, body: BaseModel):
-            result = await self.model.db.update_(id, body)
+            result = await self.model.save(body)
             return result
 
         endpoint.__annotations__["body"] = self.body_model
@@ -251,7 +233,7 @@ class DeleteRouter(UnoRouter):
     def endpoint_factory(self):
 
         async def endpoint(self, id: str) -> BaseModel:
-            result = await self.model.db.delete_(id)
+            result = await self.model.delete_(id)
             return {"message": "delete"}
 
         endpoint.__annotations__["return"] = bool

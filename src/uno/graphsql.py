@@ -91,7 +91,7 @@ class GraphSQLEmitter(SQLEmitter):
             self.nodes = nodes
             return self
 
-        # This is for Tables, edges are defined by nodes for Base.tables
+        # This is for Tables, edges are defined by nodes for Model.tables
         for column in self.table.columns.values():
             if column.foreign_keys:
                 source_node_label = snake_to_camel(column.name.replace("_id", ""))
@@ -188,7 +188,7 @@ class GraphSQLEmitter(SQLEmitter):
                 column_int BIGINT;
             BEGIN
                 SET ROLE {admin_role};
-                -- Execute the Cypher query to {operation} the nodes and thier associated edges, for Base tables
+                -- Execute the Cypher query to {operation} the nodes and thier associated edges, for Model tables
                 {nodes}
                 -- Execute the Cypher queries to {operation} the edges for association tables
                 {edges}

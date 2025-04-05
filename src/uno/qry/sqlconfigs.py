@@ -11,11 +11,11 @@ from uno.sqlemitter import (
     SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
+from uno.qry.models import QueryPathModel, QueryValueModel, QueryModel
 
 
 class QueryPathSQLConfig(SQLConfig):
-    table = QueryPathBase.__table__
+    table = QueryPathModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -26,7 +26,7 @@ class QueryPathSQLConfig(SQLConfig):
 
 
 class QueryValueSQLConfig(SQLConfig):
-    table = QueryValueBase.__table__
+    table = QueryValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -38,7 +38,7 @@ class QueryValueSQLConfig(SQLConfig):
 
 
 class QuerySQLConfig(SQLConfig):
-    table = QueryBase.__table__
+    table = QueryModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

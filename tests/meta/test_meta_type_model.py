@@ -8,7 +8,7 @@ import pytest_asyncio
 
 from unittest import IsolatedAsyncioTestCase
 
-from uno.meta.models import MetaType
+from uno.meta.objects import MetaType
 from uno.config import settings
 
 
@@ -26,6 +26,6 @@ class TestMetaTypeModel(IsolatedAsyncioTestCase):
         assert meta_type.id == "meta_type"
 
     def test_meta_type_model_set_display_names(self):
-        assert MetaType.base.__table__.name == "meta_type"
+        assert MetaType.model.__table__.name == "meta_type"
         assert MetaType.display_name == "Meta Type"
         assert MetaType.display_name_plural == "Meta Types"

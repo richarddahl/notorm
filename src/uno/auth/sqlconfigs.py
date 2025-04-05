@@ -16,16 +16,16 @@ from uno.sqlemitter import (
 )
 from uno.auth.rlssql import UserRowLevelSecurity
 from uno.graphsql import GraphSQLEmitter
-from uno.auth.bases import (
+from uno.auth.models import (
     user__group,
     user__role,
     role__permission,
-    UserBase,
-    GroupBase,
-    ResponsibilityRoleBase,
-    RoleBase,
-    TenantBase,
-    PermissionBase,
+    UserModel,
+    GroupModel,
+    ResponsibilityRoleModel,
+    RoleModel,
+    TenantModel,
+    PermissionModel,
 )
 
 
@@ -54,7 +54,7 @@ class RolePermisionSQLConfig(SQLConfig):
 
 
 class UserSQLConfig(SQLConfig):
-    table = UserBase.__table__
+    table = UserModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -67,7 +67,7 @@ class UserSQLConfig(SQLConfig):
 
 
 class GroupSQLConfig(SQLConfig):
-    table = GroupBase.__table__
+    table = GroupModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -81,7 +81,7 @@ class GroupSQLConfig(SQLConfig):
 
 
 class ResponsibilityRoleSQLConfig(SQLConfig):
-    table = ResponsibilityRoleBase.__table__
+    table = ResponsibilityRoleModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -93,7 +93,7 @@ class ResponsibilityRoleSQLConfig(SQLConfig):
 
 
 class RoleSQLConfig(SQLConfig):
-    table = RoleBase.__table__
+    table = RoleModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -105,7 +105,7 @@ class RoleSQLConfig(SQLConfig):
 
 
 class TenantSQLConfig(SQLConfig):
-    table = TenantBase.__table__
+    table = TenantModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -118,7 +118,7 @@ class TenantSQLConfig(SQLConfig):
 
 
 class PermissionSQLConfig(SQLConfig):
-    table = PermissionBase.__table__
+    table = PermissionModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

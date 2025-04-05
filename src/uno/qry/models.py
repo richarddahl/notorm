@@ -2,136 +2,290 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Models are the Business Logic Layer Objects
-
 from typing import Optional
-from typing_extensions import Self
-from pydantic import model_validator
 
-from uno.schema import UnoSchemaConfig
-from uno.model import UnoModel
+from sqlalchemy import (
+    ForeignKey,
+    Index,
+    ForeignKey,
+    UniqueConstraint,
+    Table,
+    Column,
+)
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
+
+from uno.db import UnoModel, str_26, str_255, str_12
 from uno.mixins import ModelMixin
 from uno.auth.mixins import DefaultModelMixin
-from uno.qry.bases import QueryPathBase, QueryValueBase, QueryBase
-from uno.meta.models import MetaRecord, MetaType
-from uno.enums import (
-    Include,
-    Match,
-)
+from uno.enums import Include, Match
+from uno.meta.objects import MetaRecordModel
 from uno.config import settings
 
+query_value__values = Table(
+    "query_value__values",
+    UnoModel.metadata,
+    Column(
+        "query_value_id",
+        ForeignKey("query_value.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "FILTER_VALUES"},
+    ),
+    Column(
+        "value_id",
+        ForeignKey("meta_record.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "VALUES"},
+    ),
+    Index("ix_query_value_id__value_id", "query_value_id", "value_id"),
+)
 
-class QueryPath(UnoModel, ModelMixin):
-    # Class variables
-    base = QueryPathBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "source_meta_type",
-                "destination_meta_type",
-            ],
+query__query_value = Table(
+    "query__query_value",
+    UnoModel.metadata,
+    Column(
+        "query_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "FILTER_VALUES"},
+    ),
+    Column(
+        "query_value_id",
+        ForeignKey("query_value.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "QUERIES"},
+    ),
+    Index("ix_query_id__query_value_id", "query_id", "query_value_id"),
+)
+
+query__child_query = Table(
+    "query__child_query",
+    UnoModel.metadata,
+    Column(
+        "query_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "CHILD_QUERIES"},
+    ),
+    Column(
+        "childquery_id",
+        ForeignKey("query.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "QUERIES"},
+    ),
+    Index("ix_query_id__child_query_id", "query_id", "childquery_id"),
+)
+
+
+class QueryPathModel(ModelMixin, UnoModel):
+    __tablename__ = "query_path"
+    __table_args__ = (
+        Index(
+            "ix_query_path__source_meta_type_id",
+            "source_meta_type_id",
+            "target_meta_type_id",
+            "cypher_path",
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "source_meta_type_id",
-                "cypher_path",
-                "target_meta_type_id",
-                "data_type",
-            ],
+        {"comment": "Enables user-defined filtering via the graph DB."},
+    )
+    # Columns
+    # name: Mapped[str_255] = mapped_column(
+    #    nullable=False,
+    #    doc="The name of the query path.",
+    # )
+    source_meta_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The source node filtered.",
+        info={
+            "edge": "SOURCE_META_TYPE",
+            "reverse_edge": "SOURCE_FILTER_PATHS",
+        },
+    )
+    target_meta_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The destination node of the filter",
+        info={
+            "edge": "DESTINATION_META_TYPE",
+            "reverse_edge": "DESTINATION_FILTER_PATHS",
+        },
+    )
+    cypher_path: Mapped[str] = mapped_column(
+        index=True,
+        unique=True,
+        nullable=False,
+        doc="The cypher_path of the filter",
+    )
+    data_type: Mapped[str] = mapped_column(
+        doc="The data type of the filter",
+    )
+
+    # Relationships
+    source_meta_type: Mapped["MetaRecordModel"] = relationship(
+        viewonly=True,
+        doc="The source meta_record type of the filter",
+    )
+    target_meta_type: Mapped["MetaRecordModel"] = relationship(
+        viewonly=True,
+        doc="The target meta_record type of the filter",
+    )
+
+
+class QueryValueModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "query_value"
+    __table_args__ = (
+        UniqueConstraint(
+            "query_path_id",
+            "include",
+            "match",
+            "lookup",
         ),
-    }
-    endpoints = ["List", "View"]
-
-    # Fields
-    source_meta_type_id: str
-    source_meta_type: Optional[MetaType] = None
-    target_meta_type_id: str
-    destination_meta_type: Optional[MetaType] = None
-    cypher_path: str
-    data_type: str
-    # lookups: list[str]
-
-    def __str__(self) -> str:
-        return self.cypher_path
-
-
-class QueryValue(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = QueryValueBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "group",
-                "tenant",
-                "query_path",
-                "values",
-                "queries",
-            ],
+        Index(
+            "ix_filtervalue__unique_together",
+            "query_path_id",
+            "include",
+            "match",
+            "lookup",
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "include",
-                "match",
-                "lookup",
-            ],
+        {"comment": "User definable values for use in queries."},
+    )
+
+    # Columns
+    query_path_id: Mapped[str_26] = mapped_column(
+        ForeignKey("query_path.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The UnoFilter Path to which the value belongs",
+        info={
+            "edge": "FILTER_PATH",
+            "reverse_edge": "FILTER_VALUES",
+        },
+    )
+    include: Mapped[Include] = mapped_column(
+        ENUM(
+            Include,
+            name="include",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
         ),
-    }
-
-    # Fields
-    query_path_id: int
-    query_path: Optional[QueryPath] = None
-    include: Include = Include.INCLUDE
-    match: Match = Match.AND
-    lookup: str = "equal"
-    values: Optional[list[MetaRecord]] = []
-    queries: Optional[list["Query"]] = []
-
-    @model_validator(mode="after")
-    def model_validator(self) -> Self:
-        self.lookup = self.lookup
-        self.include = Include[self.include]
-        self.match = Match[self.match]
-        if not self.values and not self.queries:
-            raise ValueError("Must have either values or queries")
-        return self
-
-
-class Query(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = QueryBase
-    display_name_plural = "Queries"
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "group",
-                "tenant",
-                "query_meta_type",
-            ],
+        insert_default=Include.INCLUDE,
+    )
+    match: Mapped[Match] = mapped_column(
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-            ],
+        insert_default=Match.AND,
+    )
+    lookup: Mapped[str_12] = mapped_column(
+        insert_default="equal",
+    )
+
+    # Relationships
+    query_path: Mapped[QueryPathModel] = relationship(
+        doc="The filter to which the value belongs",
+    )
+    values: Mapped[list[MetaRecordModel]] = relationship(
+        secondary=query_value__values,
+        doc="The value of the filter",
+    )
+    queries: Mapped[list["QueryModel"]] = relationship(
+        secondary=query__query_value,
+        doc="The queries that use the filter value",
+        back_populates="query_values",
+    )
+
+
+class QueryModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "query"
+    __table_args__ = ({"comment": "User definable queries"},)
+
+    # Columns
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+        doc="The name of the query.",
+    )
+    description: Mapped[Optional[str]] = mapped_column(
+        doc="The description of the query."
+    )
+    query_meta_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The type of the query.",
+        info={
+            "edge": "META_TYPE",
+            "reverse_edge": "QUERIES",
+        },
+    )
+    include_values: Mapped[Include] = mapped_column(
+        ENUM(
+            Include,
+            name="include",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
         ),
-    }
-    terminate_filters = True
+        insert_default=Include.INCLUDE,
+        doc="Indicate if the query should return records including or excluding the queries results.",
+    )
+    match_values: Mapped[Match] = mapped_column(
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
+        insert_default=Match.AND,
+        doc="Indicate if the query should return records matching all or any of the filter values.",
+    )
+    include_queries: Mapped[Include] = mapped_column(
+        ENUM(
+            Include,
+            name="include",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
+        insert_default=Include.INCLUDE,
+        doc="Indicate if the query should return records including or excluding the subqueries results.",
+    )
+    match_queries: Mapped[Match] = mapped_column(
+        ENUM(
+            Match,
+            name="match",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
+        ),
+        insert_default=Match.AND,
+        doc="Indicate if the query should return records matching all or any of the subquery values.",
+    )
 
-    # Fields
-    id: Optional[str]
-    name: Optional[str]
-    description: Optional[str]
-    query_meta_type_id: Optional[str] = None
-    query_meta_type: Optional[MetaType] = None
-    include_values: Optional[Include] = Include.INCLUDE
-    match_values: Optional[Match] = Match.AND
-    include_queries: Optional[Include] = Include.INCLUDE
-    match_queries: Optional[Match] = Match.AND
-
-    def __str__(self) -> str:
-        return self.name
+    # Relationships
+    query_values: Mapped[Optional[list[QueryValueModel]]] = relationship(
+        secondary=query__query_value,
+        back_populates="queries",
+    )
+    sub_queries: Mapped[Optional[list["QueryModel"]]] = relationship(
+        secondary=query__child_query,
+        foreign_keys=[query__child_query.c.query_id],
+        back_populates="queries",
+    )
+    queries: Mapped[Optional[list["QueryModel"]]] = relationship(
+        secondary=query__child_query,
+        foreign_keys=[query__child_query.c.childquery_id],
+        back_populates="sub_queries",
+    )
+    # attribute_type_applicability: Mapped[Optional["AttributeType"]] = relationship(
+    #    primaryjoin="Query.id == AttributeType.description_limiting_query_id",
+    # )

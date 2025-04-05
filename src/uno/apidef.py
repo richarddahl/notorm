@@ -4,7 +4,7 @@
 
 from fastapi import FastAPI
 
-from uno.model import UnoModel
+from uno.object import UnoObj
 
 tags_metadata = [
     {
@@ -27,15 +27,15 @@ tags_metadata = [
 tags_metadata.extend(
     [
         {
-            "name": uno_model.display_name_plural,
-            "description": uno_model.__doc__,
+            "name": uno_object.display_name_plural,
+            "description": uno_object.__doc__,
             "externalDocs": {
-                "description": f"{uno_model.display_name} Documentation",
-                "url": f"http://localhost:8001/{uno_model.display_name}",
+                "description": f"{uno_object.display_name} Documentation",
+                "url": f"http://localhost:8001/{uno_object.display_name}",
             },
         }
-        for uno_model in UnoModel.registry.values()
-        if getattr(uno_model, "include_in_schema_docs", True)
+        for uno_object in UnoObj.registry.values()
+        if getattr(uno_object, "include_in_schema_docs", True)
     ]
 )
 

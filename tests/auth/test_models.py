@@ -2,240 +2,1087 @@
 #
 # SPDX-License-Identifier: MIT
 
-import asyncio
 import pytest
-import pytest_asyncio
 
-from unittest import IsolatedAsyncioTestCase
+from sqlalchemy import inspect, Inspector, text
+from sqlalchemy.dialects.postgresql import (
+    VARCHAR,
+    ENUM,
+    TEXT,
+    BOOLEAN,
+    TIMESTAMP,
+    BIGINT,
+    JSONB,
+    ARRAY,
+    TEXT,
+)
 
-from uno.auth.models import User
-from uno.config import settings
+from uno.enums import TenantType
+from uno.config import settings  # type: ignore
+from tests.conftest import db_column
 
 
-class TestUserModel(IsolatedAsyncioTestCase):
+class TestUserTable:
 
-    def setUp(self):
-        """
-        Set up the test case by initializing the asyncio event loop.
+    def test_user_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("user", schema=settings.DB_SCHEMA))
+        assert [
+            "email",
+            "handle",
+            "full_name",
+            "tenant_id",
+            "default_group_id",
+            "is_superuser",
+            "id",
+            "is_active",
+            "is_deleted",
+            "created_at",
+            "modified_at",
+            "deleted_at",
+            "created_by_id",
+            "modified_by_id",
+            "deleted_by_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("user", schema=settings.DB_SCHEMA)
+        ]
 
-        This method retrieves the current event loop and assigns it to an instance variable.
-        It then assigns the same event loop as the active event loop, ensuring that asynchronous
-        operations executed within the tests use a consistent and dedicated event loop.
-        """
-        self.loop = asyncio.get_event_loop()
-        asyncio.set_event_loop(self.loop)
+        # print(db_inspector.get_indexes("user", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("user", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "ix_uno_user_created_by_id",
+                "unique": False,
+                "column_names": ["created_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_default_group_id",
+                "unique": False,
+                "column_names": ["default_group_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_deleted_by_id",
+                "unique": False,
+                "column_names": ["deleted_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_email",
+                "unique": True,
+                "column_names": ["email"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_handle",
+                "unique": True,
+                "column_names": ["handle"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_id",
+                "unique": False,
+                "column_names": ["id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_modified_by_id",
+                "unique": False,
+                "column_names": ["modified_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_user_tenant_id",
+                "unique": False,
+                "column_names": ["tenant_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+        ]
 
-    async def test_user_model_field_structure(self):
-        """
-        Test that the User model contains all the expected fields.
+        # print(db_inspector.get_pk_constraint("user", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint("user", schema=settings.DB_SCHEMA) == {
+            "constrained_columns": ["id"],
+            "name": "pk_user",
+            "comment": None,
+        }
 
-        This test verifies that the User model has the correct field structure by checking
-        that all required fields exist, including:
-        - Basic identity fields (id, email, handle, full_name)
-        - Relationship fields (tenant, default_group, group)
-        - Boolean status flags (is_superuser, is_active, is_deleted)
-        - Audit trail fields (created_at, created_by, modified_at, modified_by, deleted_at, deleted_by)
-        """
+        # print(db_inspector.get_foreign_keys("user", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys("user", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "fk_user_created_by_id",
+                "constrained_columns": ["created_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user_default_group_id",
+                "constrained_columns": ["default_group_id"],
+                "referred_schema": "uno",
+                "referred_table": "group",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "SET NULL"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user_deleted_by_id",
+                "constrained_columns": ["deleted_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "SET NULL"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user_id",
+                "constrained_columns": ["id"],
+                "referred_schema": "uno",
+                "referred_table": "meta_record",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user_modified_by_id",
+                "constrained_columns": ["modified_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user_tenant_id",
+                "constrained_columns": ["tenant_id"],
+                "referred_schema": "uno",
+                "referred_table": "tenant",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+        ]
 
-        assert "id" in User.model_fields.keys()
-        assert "email" in User.model_fields.keys()
-        assert "handle" in User.model_fields.keys()
-        assert "full_name" in User.model_fields.keys()
-        assert "tenant" in User.model_fields.keys()
-        assert "default_group" in User.model_fields.keys()
-        assert "is_superuser" in User.model_fields.keys()
-        assert "is_active" in User.model_fields.keys()
-        assert "is_deleted" in User.model_fields.keys()
-        assert "created_at" in User.model_fields.keys()
-        assert "created_by" in User.model_fields.keys()
-        assert "modified_at" in User.model_fields.keys()
-        assert "modified_by" in User.model_fields.keys()
-        assert "deleted_at" in User.model_fields.keys()
-        assert "deleted_by" in User.model_fields.keys()
-
-    async def test_minimal_user_model_fields(self):
-        """
-        Test the initialization of a User model with minimal required fields.
-
-        This test verifies that:
-        1. Required fields (email, handle, full_name) are properly assigned
-        2. Optional fields have correct default values (is_active=True, is_deleted=False)
-        3. Relationship fields (tenant, default_group, group) are None by default
-        4. Audit fields (created_at, created_by, etc.) start as None
-        5. The is_superuser flag can be set during initialization
-
-        This ensures the User model constructor behaves as expected with minimal input.
-        """
-        user = User(
-            email="admin@notorm.tech",
-            handle="admin",
-            full_name="Admin",
-            is_superuser=True,
+        # print(db_inspector.get_unique_constraints("user", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_unique_constraints("user", schema=settings.DB_SCHEMA) == []
         )
 
-        assert user.id == None
-        assert user.email == "admin@notorm.tech"
-        assert user.handle == "admin"
-        assert user.full_name == "Admin"
-        assert user.tenant is None
-        assert user.default_group is None
-        assert user.is_superuser == True
-        assert user.is_active == True
-        assert user.is_deleted == False
-        assert user.created_at is None
-        assert user.created_by is None
-        assert user.modified_at is None
-        assert user.modified_by is None
-        assert user.deleted_at is None
-        assert user.deleted_by is None
+        # print(db_inspector.get_check_constraints("user", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_check_constraints(
+            "user", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "name": "ck_user_ck_user_is_superuser",
+                "sqltext": "is_superuser = false AND default_group_id IS NOT NULL OR is_superuser = true AND default_group_id IS NULL",
+                "comment": None,
+            }
+        ]
 
-    async def test_email_field_validation(self):
-        """
-        Test that the email field validation raises a ValueError when an improperly formatted
-        email address is provided during the instantiation of a User object.
+    def test_user_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user",
+            "id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
 
-        This test ensures that the email field, when missing the necessary "@" symbol or formatted
-        incorrectly, correctly triggers a ValueError exception, thereby enforcing proper email validation.
-        """
-        with pytest.raises(ValueError):
-            User(
-                id="01JNH7SBRV60R5RC1G61E30C1G",
-                email="adminnotorm.tech",
-                handle="admin",
-                full_name="Admin",
-                tenant=None,
-                default_group=None,
-                is_superuser=True,
-                is_active=True,
-                is_deleted=False,
-                created_at="2024-01-01T00:00:00Z",
-                created_by=None,
-                modified_at="2024-01-01T00:00:00Z",
-                modified_by=None,
-                deleted_at=None,
-                deleted_by=None,
+    def test_user_email(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user",
+            "email",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 255
+
+    def test_user_handle(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user",
+            "handle",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 255
+
+    def test_user_full_name(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user",
+            "full_name",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 255
+
+
+class TestUserGroupTable:
+
+    def test_user_group_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("user_group", schema=settings.DB_SCHEMA))
+        assert [
+            "user_id",
+            "group_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("user__group", schema=settings.DB_SCHEMA)
+        ]
+
+        # print(db_inspector.get_pk_constraint("user__group", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint(
+            "user__group", schema=settings.DB_SCHEMA
+        ) == {
+            "constrained_columns": ["user_id", "group_id"],
+            "name": "pk_user__group",
+            "comment": None,
+        }
+
+        assert db_inspector.get_foreign_keys(
+            "user__group", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "name": "fk_user__group_group_id",
+                "constrained_columns": ["group_id"],
+                "referred_schema": "uno",
+                "referred_table": "group",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user__group_user_id",
+                "constrained_columns": ["user_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+        ]
+
+        # print(db_inspector.get_indexes("user__group", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("user__group", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "ix_user_group_user_id_group_id",
+                "unique": False,
+                "column_names": ["user_id", "group_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            }
+        ]
+
+        # print(db_inspector.get_unique_constraints("user_group", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_unique_constraints(
+                "user__group", schema=settings.DB_SCHEMA
             )
-
-    async def test_full_user_model_fields(self):
-        """
-        Test that the User model can be instantiated with all expected fields correctly populated.
-
-        This test verifies that creating a User instance with a full set of data including identifiers,
-        contact information, status flags, and timestamp fields does not raise any errors and that all
-        fields are properly assigned. The test ensures the integrity of the User model by checking the data
-        types and values, particularly for date-time entries and boolean flags, to match the intended user
-        profile configuration.
-        """
-        user = User(
-            id="01JNH7SBRV60R5RC1G61E30C1G",
-            email="admin@notorm.tech",
-            handle="admin",
-            full_name="Admin",
-            tenant=None,
-            default_group=None,
-            is_superuser=True,
-            is_active=True,
-            is_deleted=False,
-            created_at="2024-01-01T00:00:00Z",
-            created_by=None,
-            modified_at="2024-01-01T00:00:00Z",
-            modified_by=None,
-            deleted_at=None,
-            deleted_by=None,
+            == []
         )
 
-    async def test_user_model_set_display_names(self):
-        """
-        Tests that the User model's configuration properties are correctly set.
-
-        Verifies:
-        - The table name is set to "user", ensuring the proper linkage to the corresponding database table.
-        - The singular display name is "User", which is used for human-readable identification.
-        - The plural display name is "Users", which is essential when referring to multiple user instances.
-        """
-        assert User.base.__table__.name == "user"
-        assert User.display_name == "User"
-        assert User.display_name_plural == "Users"
-
-    async def test_user_view_schema(self):
-        """
-        Tests that the User model's view_schema attribute is properly constructed.
-
-        This test verifies:
-        - The view_schema is not None.
-        - The view_schema contains exactly 16 fields.
-        - Each expected field ('id', 'email', 'handle', 'full_name', 'tenant', 'default_group',
-            'group', 'is_superuser', 'is_active', 'is_deleted', 'created_at', 'created_by',
-            'modified_at', 'modified_by', 'deleted_at', and 'deleted_by') is present in the model_fields.
-        """
-        User.set_schemas()
-        user = User(
-            id="01JNH7SBRV60R5RC1G61E30C1G",
-            email="admin@notorm.tech",
-            handle="admin",
-            full_name="Admin",
-            tenant=None,
-            default_group=None,
-            is_superuser=True,
-            is_active=True,
-            is_deleted=False,
-            created_at="2024-01-01T00:00:00Z",
-            created_by=None,
-            modified_at="2024-01-01T00:00:00Z",
-            modified_by=None,
-            deleted_at=None,
-            deleted_by=None,
+        # print(db_inspector.get_check_constraints("user_group", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_check_constraints("user__group", schema=settings.DB_SCHEMA)
+            == []
         )
-        assert user.view_schema is not None
-        assert len(user.view_schema.model_fields) == 15
-        assert "id" in user.view_schema.model_fields.keys()
-        assert "email" in user.view_schema.model_fields.keys()
-        assert "handle" in user.view_schema.model_fields.keys()
-        assert "full_name" in user.view_schema.model_fields.keys()
-        assert "tenant_id" in user.view_schema.model_fields.keys()
-        assert "default_group_id" in user.view_schema.model_fields.keys()
-        assert "is_superuser" in user.view_schema.model_fields.keys()
-        assert "is_active" in user.view_schema.model_fields.keys()
-        assert "is_deleted" in user.view_schema.model_fields.keys()
-        assert "created_at" in user.view_schema.model_fields.keys()
-        assert "created_by_id" in user.view_schema.model_fields.keys()
-        assert "modified_at" in user.view_schema.model_fields.keys()
-        assert "modified_by_id" in user.view_schema.model_fields.keys()
-        assert "deleted_at" in user.view_schema.model_fields.keys()
-        assert "deleted_by_id" in user.view_schema.model_fields.keys()
 
-    async def test_user_edit_schema(self):
-        """
-        Test that the User model's edit_schema is correctly configured.
-
-        This test verifies that:
-        - The edit_schema attribute of a User instance is not None.
-        - The edit_schema contains exactly eight fields.
-        - The expected fields are present: 'id', 'email', 'handle', 'full_name', 'tenant', 'default_group', 'group', and 'is_superuser'.
-        """
-        User.set_schemas()
-        user = User(
-            id="01JNH7SBRV60R5RC1G61E30C1G",
-            email="admin@notorm.tech",
-            handle="admin",
-            full_name="Admin",
-            tenant=None,
-            default_group=None,
-            is_superuser=True,
-            is_active=True,
-            is_deleted=False,
-            created_at="2024-01-01T00:00:00Z",
-            created_by=None,
-            modified_at="2024-01-01T00:00:00Z",
-            modified_by=None,
-            deleted_at=None,
-            deleted_by=None,
+    def test_user_group_user_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user__group",
+            "user_id",
+            schema=settings.DB_SCHEMA,
         )
-        assert user.edit_schema is not None
-        assert len(user.edit_schema.model_fields) == 6
-        assert "email" in user.edit_schema.model_fields.keys()
-        assert "handle" in user.edit_schema.model_fields.keys()
-        assert "full_name" in user.edit_schema.model_fields.keys()
-        assert "tenant_id" in user.edit_schema.model_fields.keys()
-        assert "default_group_id" in user.edit_schema.model_fields.keys()
-        assert "is_superuser" in user.edit_schema.model_fields.keys()
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_user_group_group_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "user__group",
+            "group_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+
+class TestUserRoleTable:
+
+    def test_user_role_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("user_role", schema=settings.DB_SCHEMA))
+        assert [
+            "user_id",
+            "role_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("user__role", schema=settings.DB_SCHEMA)
+        ]
+
+        # print(db_inspector.get_pk_constraint("user__role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint(
+            "user__role", schema=settings.DB_SCHEMA
+        ) == {
+            "constrained_columns": ["user_id", "role_id"],
+            "name": "pk_user__role",
+            "comment": None,
+        }
+
+        # print(db_inspector.get_foreign_keys("user__role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys(
+            "user__role", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "name": "fk_user__role_role_id",
+                "constrained_columns": ["role_id"],
+                "referred_schema": "uno",
+                "referred_table": "role",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_user__role_user_id",
+                "constrained_columns": ["user_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+        ]
+
+        # print(db_inspector.get_indexes("user__role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("user__role", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "ix_user_role_user_id_role_id",
+                "unique": False,
+                "column_names": ["user_id", "role_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            }
+        ]
+
+        # print(db_inspector.get_unique_constraints("user_role", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_unique_constraints("user__role", schema=settings.DB_SCHEMA)
+            == []
+        )
+
+        # print(db_inspector.get_check_constraints("user_role", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_check_constraints("user__role", schema=settings.DB_SCHEMA)
+            == []
+        )
+
+
+class TestTenantTable:
+
+    def test_tenant_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("tenant", schema=settings.DB_SCHEMA))
+        assert [
+            "name",
+            "tenant_type",
+            "id",
+            "is_active",
+            "is_deleted",
+            "created_at",
+            "modified_at",
+            "deleted_at",
+            "created_by_id",
+            "modified_by_id",
+            "deleted_by_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("tenant", schema=settings.DB_SCHEMA)
+        ]
+
+        # print(db_inspector.get_indexes("tenant", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("tenant", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "ix_tenant_name",
+                "unique": False,
+                "column_names": ["name"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_tenant_created_by_id",
+                "unique": False,
+                "column_names": ["created_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_tenant_deleted_by_id",
+                "unique": False,
+                "column_names": ["deleted_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_tenant_id",
+                "unique": False,
+                "column_names": ["id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_tenant_modified_by_id",
+                "unique": False,
+                "column_names": ["modified_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_tenant_name",
+                "unique": False,
+                "column_names": ["name"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "uq_tenant_name",
+                "unique": True,
+                "column_names": ["name"],
+                "duplicates_constraint": "uq_tenant_name",
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+        ]
+
+        # print(db_inspector.get_pk_constraint("tenant", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint("tenant", schema=settings.DB_SCHEMA) == {
+            "constrained_columns": ["id"],
+            "name": "pk_tenant",
+            "comment": None,
+        }
+
+        # print(db_inspector.get_foreign_keys("tenant", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys("tenant", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "fk_tenant_created_by_id",
+                "constrained_columns": ["created_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+            {
+                "name": "fk_tenant_deleted_by_id",
+                "constrained_columns": ["deleted_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "SET NULL"},
+                "comment": None,
+            },
+            {
+                "name": "fk_tenant_id",
+                "constrained_columns": ["id"],
+                "referred_schema": "uno",
+                "referred_table": "meta_record",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_tenant_modified_by_id",
+                "constrained_columns": ["modified_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+        ]
+
+        # print(db_inspector.get_unique_constraints("tenant", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_unique_constraints(
+            "tenant", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "column_names": ["name"],
+                "comment": None,
+                "name": "uq_tenant_name",
+            },
+        ]
+
+        # print(db_inspector.get_check_constraints("tenant", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_check_constraints("tenant", schema=settings.DB_SCHEMA)
+            == []
+        )
+
+    def test_tenant_type(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "tenant_type",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), ENUM)
+        assert column.get("type").name == "tenanttype"
+        assert column.get("type").enums == [
+            TenantType.INDIVIDUAL.name,
+            TenantType.PROFESSIONAL.name,
+            TenantType.TEAM.name,
+            TenantType.CORPORATE.name,
+            TenantType.ENTERPRISE.name,
+        ]
+
+    def test_tenant_name(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "name",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 255
+
+    def test_tenant_is_active(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "is_active",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), BOOLEAN)
+
+    def test_tenant_is_deleted(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "is_deleted",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), BOOLEAN)
+
+    def test_tenant_created_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "created_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_tenant_modified_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "modified_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_tenant_deleted_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "deleted_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == True
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_tenant_created_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "created_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_tenant_modified_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "modified_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_tenant_deleted_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "tenant",
+            "deleted_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == True
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+
+class TestRoleTable:
+    def test_role_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("role", schema=settings.DB_SCHEMA))
+        assert [
+            "tenant_id",
+            "name",
+            "description",
+            "responsibility_role_id",
+            "id",
+            "is_active",
+            "is_deleted",
+            "created_at",
+            "modified_at",
+            "deleted_at",
+            "created_by_id",
+            "modified_by_id",
+            "deleted_by_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns("role", schema=settings.DB_SCHEMA)
+        ]
+
+        # print(db_inspector.get_indexes("role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("role", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "ix_role_tenant_id_name",
+                "unique": False,
+                "column_names": ["tenant_id", "name"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_created_by_id",
+                "unique": False,
+                "column_names": ["created_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_deleted_by_id",
+                "unique": False,
+                "column_names": ["deleted_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_id",
+                "unique": False,
+                "column_names": ["id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_modified_by_id",
+                "unique": False,
+                "column_names": ["modified_by_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_name",
+                "unique": False,
+                "column_names": ["name"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_responsibility_role_id",
+                "unique": False,
+                "column_names": ["responsibility_role_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "ix_uno_role_tenant_id",
+                "unique": False,
+                "column_names": ["tenant_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "uq_role_tenant_id",
+                "unique": True,
+                "column_names": ["tenant_id", "name"],
+                "duplicates_constraint": "uq_role_tenant_id",
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+        ]
+
+        # print(db_inspector.get_pk_constraint("role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint("role", schema=settings.DB_SCHEMA) == {
+            "constrained_columns": ["id"],
+            "name": "pk_role",
+            "comment": None,
+        }
+
+        # print(db_inspector.get_foreign_keys("role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys("role", schema=settings.DB_SCHEMA) == [
+            {
+                "name": "fk_role_created_by_id",
+                "constrained_columns": ["created_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role_deleted_by_id",
+                "constrained_columns": ["deleted_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "SET NULL"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role_id",
+                "constrained_columns": ["id"],
+                "referred_schema": "uno",
+                "referred_table": "meta_record",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role_modified_by_id",
+                "constrained_columns": ["modified_by_id"],
+                "referred_schema": "uno",
+                "referred_table": "user",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "RESTRICT"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role_responsibility_role_id",
+                "constrained_columns": ["responsibility_role_id"],
+                "referred_schema": "uno",
+                "referred_table": "responsibility_role",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role_tenant_id",
+                "constrained_columns": ["tenant_id"],
+                "referred_schema": "uno",
+                "referred_table": "tenant",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+        ]
+
+        # print(db_inspector.get_unique_constraints("role", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_unique_constraints(
+            "role", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "column_names": ["tenant_id", "name"],
+                "name": "uq_role_tenant_id",
+                "comment": None,
+            }
+        ]
+
+        # print(db_inspector.get_check_constraints("role", schema=settings.DB_SCHEMA))
+        assert (
+            db_inspector.get_check_constraints("role", schema=settings.DB_SCHEMA) == []
+        )
+
+    def test_role_tenant_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "tenant_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_role_name(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "name",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 255
+
+    def test_role_description(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "description",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+
+    def test_role_is_active(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "is_active",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), BOOLEAN)
+
+    def test_role_is_deleted(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "is_deleted",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), BOOLEAN)
+
+    def test_role_created_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "created_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_role_modified_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "modified_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_role_deleted_at(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "deleted_at",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == True
+        assert isinstance(column.get("type"), TIMESTAMP)
+
+    def test_role_created_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "created_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_role_modified_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "modified_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_role_deleted_by_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "deleted_by_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == True
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+    def test_role_responsibility_role_id(self, connection):
+        db_inspector = inspect(connection)
+        column = db_column(
+            db_inspector,
+            "role",
+            "responsibility_role_id",
+            schema=settings.DB_SCHEMA,
+        )
+        assert column is not None
+        assert column.get("nullable") == False
+        assert isinstance(column.get("type"), VARCHAR)
+        assert column.get("type").length == 26
+
+
+class TestRolePermission:
+    def test_role_permission_table(self, connection, test_db):
+        db_inspector = inspect(connection)
+        # print(db_inspector.get_columns("role_permission", schema=settings.DB_SCHEMA))
+        assert [
+            "role_id",
+            "permission_id",
+        ] == [
+            c.get("name")
+            for c in db_inspector.get_columns(
+                "role__permission", schema=settings.DB_SCHEMA
+            )
+        ]
+
+        assert db_inspector.get_pk_constraint(
+            "role__permission", schema=settings.DB_SCHEMA
+        ) == {
+            "constrained_columns": ["role_id", "permission_id"],
+            "name": "pk_role__permission",
+            "comment": None,
+        }
+
+        assert db_inspector.get_foreign_keys(
+            "role__permission", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "name": "fk_role__permission_permission_id",
+                "constrained_columns": ["permission_id"],
+                "referred_schema": "uno",
+                "referred_table": "permission",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+            {
+                "name": "fk_role__permission_role_id",
+                "constrained_columns": ["role_id"],
+                "referred_schema": "uno",
+                "referred_table": "role",
+                "referred_columns": ["id"],
+                "options": {"ondelete": "CASCADE"},
+                "comment": None,
+            },
+        ]
+
+        # print(db_inspector.get_indexes("role_permission", schema=settings.DB_SCHEMA))
+        assert db_inspector.get_indexes(
+            "role__permission", schema=settings.DB_SCHEMA
+        ) == [
+            {
+                "column_names": [
+                    "role_id",
+                    "permission_id",
+                ],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+                "name": "ix_role_permission_role_id_permission_id",
+                "unique": False,
+            },
+        ]
+
+        assert (
+            db_inspector.get_check_constraints(
+                "role__permission", schema=settings.DB_SCHEMA
+            )
+            == []
+        )
+
+        assert (
+            db_inspector.get_unique_constraints(
+                "role__permission", schema=settings.DB_SCHEMA
+            )
+            == []
+        )
+        assert db_inspector.get_pk_constraint(
+            "role__permission", schema=settings.DB_SCHEMA
+        ) == {
+            "constrained_columns": ["role_id", "permission_id"],
+            "name": "pk_role__permission",
+            "comment": None,
+        }

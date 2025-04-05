@@ -11,24 +11,20 @@ import enum
 from typing import Annotated
 
 from psycopg import sql
-
 from asyncpg.exceptions import UniqueViolationError
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
     MetaData,
     select,
-    insert,
     delete,
     update,
-    func,
     text,
     create_engine,
 )
 from sqlalchemy.orm import (
     registry,
     DeclarativeBase,
-    Query,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
@@ -77,7 +73,6 @@ sync_engine = create_engine(
 
 
 engine = create_async_engine(
-    # f"{DB_SYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
     f"{DB_ASYNC_DRIVER}://{DB_ROLE}:{DB_USER_PW}@{DB_HOST}/{DB_NAME}",
     poolclass=NullPool,
     # echo=True,
@@ -131,7 +126,7 @@ json_ = Annotated[dict, ()]
 bytea = Annotated[bytes, ()]
 
 
-class UnoBase(AsyncAttrs, DeclarativeBase):
+class UnoModel(AsyncAttrs, DeclarativeBase):
     registry = registry(
         type_annotation_map={
             int: BIGINT,
@@ -172,7 +167,7 @@ class FilterParam(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-def UnoDBFactory(model: BaseModel):
+def UnoDBFactory(obj: BaseModel):
     class UnoDB:
 
         @classmethod
@@ -192,118 +187,149 @@ def UnoDBFactory(model: BaseModel):
 
         @classmethod
         async def get_or_create(cls, to_db_model: BaseModel) -> tuple[BaseModel, bool]:
+            """
+            Attempts to retrieve an existing database object or create a new one.
+
+            This method tries to insert a new object into the database. If a unique
+            constraint violation occurs (indicating the object already exists), it
+            retrieves the existing object instead.
+
+            Args:
+                to_db_model (BaseModel): The data model instance to be inserted or retrieved.
+
+            Returns:
+                tuple[BaseModel, bool]: A tuple containing the database object and a boolean
+                indicating whether the object was created (True) or already existed (False).
+
+            Raises:
+                IntegrityError: If an integrity error occurs that is not related to a unique
+                constraint violation.
+            """
             async with scoped_session() as session:
                 await session.execute(text(cls.set_role("writer")))
                 try:
-                    obj = await cls.insert_(to_db_model)
-                    return obj, True
-                except IntegrityError as e:
-                    # This is the only way I can find to check for a unique constraint violation
-                    # As the asyncpg.UniqueViolationError gets wrapped in a SQLAlchemy IntegrityError
-                    # And isinstance(e.orig, UniqueViolationError) doesn't work
-                    if "duplicate key value violates unique constraint" in str(e):
-                        # Handle the case where the object already exists
-                        await session.rollback()
-                        await session.execute(text(cls.set_role("reader")))
-                        obj = await cls.select_(
-                            to_db_model=to_db_model,
-                            result_type=SelectResultType.FETCH_ONE,
-                            cypher_path=to_db_model.cypher_path,
-                        )
-                        return obj, False
-                    else:
-                        # Re-raise the IntegrityError if it's not a UniqueViolationError
-                        raise
+                    result = await cls.create(to_db_model)
+                    return result
+                except UniqueViolationError:
+                    # Handle the case where the object already exists
+                    await session.rollback()
+                    await session.execute(text(cls.set_role("reader")))
+                    result = await cls.get(
+                        cypher_path=to_db_model.cypher_path,  # kwargs sent to get must be natural db key
+                    )
+                    return result, False
+                    # Re-raise the IntegrityError if it's not a UniqueViolationError
+                    raise
 
         @classmethod
-        async def insert_(
+        async def create(
             cls,
             to_db_model: BaseModel,
-            # from_db_model: BaseModel,
-        ) -> UnoBase:
-            # try:
-            async with scoped_session() as session:
-                await session.execute(text(cls.set_role("writer")))
-                session.add(to_db_model)
-                await session.commit()
-                return to_db_model
+        ) -> tuple[BaseModel, bool]:
+            try:
+                async with scoped_session() as session:
+                    await session.execute(text(cls.set_role("writer")))
+                    session.add(to_db_model)
+                    await session.commit()
+                    return to_db_model, True
 
-        # except IntegrityError:
-        #     raise IntegrityConflictException(
-        #         f"{to_db_model.__name__} conflicts with existing data.",
-        #     )
-        # except Exception as e:
-        #     raise UnoError(f"Unknown error occurred: {e}") from e
+            except IntegrityError as e:
+                # This is the only way I can find to check for a unique constraint violation
+                # As the asyncpg.UniqueViolationError gets wrapped in a SQLAlchemy IntegrityError
+                # And isinstance(e.orig, UniqueViolationError) doesn't work
+                if "duplicate key value violates unique constraint" in str(e):
+                    # Handle the case where the object already exists
+                    raise UniqueViolationError
+            except Exception as e:
+                raise UnoError(f"Unknown error occurred: {e}") from e
 
         @classmethod
-        async def select_(
+        async def update(
             cls,
-            id: str = None,
-            result_type: SelectResultType = SelectResultType.FETCH_ALL,
-            filters: FilterParam = None,
+            to_db_model: BaseModel,
             **kwargs,
-        ) -> UnoBase:
-            """
-            Perform a database query to select records based on the provided parameters.
+        ) -> UnoModel:
+            try:
+                obj = await cls.get(to_db_model=to_db_model, **kwargs)
+                async with scoped_session() as session:
+                    await session.execute(text(cls.set_role("writer")))
+                    session.add(to_db_model)
+                    await session.commit()
+                    return to_db_model
 
-            Args:
-                cls: The class on which the method is called.
-                id (str, optional): The ID of the record to fetch. If provided, only a single record
-                with the matching ID will be retrieved.
-                result_type (SelectResultType, optional): Specifies the type of result to return.
-                Defaults to SelectResultType.FETCH_ALL. Use SelectResultType.FETCH_ONE to fetch
-                a single record.
-                filters (FilterParam, optional): A list of filters to apply to the query. Filters
-                can include parameters like "limit", "offset", "order_by", and "order", as well
-                as custom filters defined in the model.
+            except IntegrityError as e:
+                # This is the only way I can find to check for a unique constraint violation
+                # As the asyncpg.UniqueViolationError gets wrapped in a SQLAlchemy IntegrityError
+                # And isinstance(e.orig, UniqueViolationError) doesn't work
+                if "duplicate key value violates unique constraint" in str(e):
+                    # Handle the case where the object already exists
+                    raise UniqueViolationError
+            except Exception as e:
+                raise UnoError(f"Unknown error occurred: {e}") from e
 
-            Returns:
-                UnoBase: The result of the query. If `result_type` is FETCH_ONE, a single record
-                is returned as a mapping. If `result_type` is FETCH_ALL, a list of mappings
-                is returned.
+        @classmethod
+        async def get(cls, **kwargs) -> UnoModel:
+            column_names = obj.model.__table__.columns.keys()
+            stmt = select(obj.model.__table__.c[*column_names])
 
-            Raises:
-                UnoError: If an unhandled error occurs during query execution. The error will
-                include a message and an error code "SELECT_ERROR".
-
-            Notes:
-                - The method constructs a SQLAlchemy query using the provided filters and executes
-                  it asynchronously.
-                - If `id` is provided, the query is restricted to a single record with the matching ID.
-                - The method uses a scoped session to execute the query and ensures the database role
-                  is set to "reader" for the operation.
-            """
-            limit = None
-            offset = None
-            order_by = None
-            order = "asc"
-
-            column_names = model.base.__table__.columns.keys()
-            stmt = select(model.base.__table__.c[*column_names])
-
-            if filters:
-                for fltr in filters:
-                    if fltr.label in ["limit", "offset", "order_by"]:
-                        if fltr.label == "limit":
-                            limit = fltr.val
-                            continue
-                        if fltr.label == "offset":
-                            offset = fltr.val
-                            continue
-                        if fltr.label == "order_by":
-                            order_by = fltr.val
-                            continue
-                    label = fltr.label.split(".")[0]
-                    filter = model.filters.get(label)
-                    cypher_query = filter.cypher_query(fltr.val, fltr.lookup)
-                    stmt = stmt.where(model.base.id.in_(select(text(cypher_query))))
             if kwargs:
                 for key, val in kwargs.items():
-                    if key in column_names:
-                        stmt = stmt.where(getattr(model.base, key) == val)
-                    else:
+                    if key == "to_db_model":
                         continue
-                        # raise ValueError(f"Invalid filter key: {key}")
+                    if key in column_names:
+                        stmt = stmt.where(getattr(obj.model, key) == val)
+                    else:
+                        raise ValueError(
+                            f"Invalid natural key field provided in kwargs: {key}"
+                        )
+
+            try:
+                async with scoped_session() as session:
+                    await session.execute(text(cls.set_role("reader")))
+                    result = await session.execute(stmt)
+                    rows = result.fetchall()
+                    row_count = len(rows)
+                    if row_count == 0:
+                        raise NotFoundException(
+                            f"Record not found for the provided natural key: {kwargs}"
+                        )
+                    if row_count > 1:
+                        # This should never happen, but if it does, raise an exception
+                        raise IntegrityConflictException(
+                            f"Multiple records found for the provided natural key: {kwargs}"
+                        )
+                    row = rows[0]
+                    return row._mapping if row is not None else None
+            except Exception as e:
+                raise UnoError(
+                    f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
+                ) from e
+
+        @classmethod
+        async def filter(cls, filters: FilterParam = None) -> UnoModel:
+            limit = 25
+            offset = 0
+            order_by = None
+            order = "asc"
+            column_names = obj.model.__table__.columns.keys()
+            stmt = select(obj.model.__table__.c[*column_names])
+
+            for fltr in filters:
+                if fltr.label in ["limit", "offset", "order_by"]:
+                    if fltr.label == "limit":
+                        limit = fltr.val
+                        continue
+                    if fltr.label == "offset":
+                        offset = fltr.val
+                        continue
+                    if fltr.label == "order_by":
+                        order_by = fltr.val
+                        continue
+                label = fltr.label.split(".")[0]
+                filter = obj.filters.get(label)
+                cypher_query = filter.cypher_query(fltr.val, fltr.lookup)
+                print(cypher_query)
+                stmt = stmt.where(obj.model.id.in_(select(text(cypher_query))))
 
             if limit:
                 stmt = stmt.limit(limit)
@@ -311,25 +337,19 @@ def UnoDBFactory(model: BaseModel):
                 stmt = stmt.offset(offset)
             if order_by:
                 if order == "desc":
-                    stmt = stmt.order_by(getattr(model.base, order_by).desc())
+                    stmt = stmt.order_by(getattr(obj.model, order_by).desc())
                 else:
-                    stmt = stmt.order_by(getattr(model.base, order_by).asc())
+                    stmt = stmt.order_by(getattr(obj.model, order_by).asc())
 
             try:
-                if id is not None:
-                    stmt = stmt.where(model.base.id == id)
-                    result_type = SelectResultType.FETCH_ONE
                 async with scoped_session() as session:
                     await session.execute(text(cls.set_role("reader")))
                     result = await session.execute(stmt)
-                if result_type == SelectResultType.FETCH_ONE:
-                    row = result.fetchone()
-                    return row._mapping if row is not None else None
                 return result.mappings().all()
             except Exception as e:
                 raise UnoError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
                 ) from e
 
-    UnoDB.model = model
+    UnoDB.obj = obj
     return UnoDB

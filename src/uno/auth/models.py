@@ -3,214 +3,401 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Optional
-from pydantic import EmailStr
 
-from uno.enums import SQLOperation, TenantType
-from uno.schema import UnoSchemaConfig
-from uno.model import UnoModel
-from uno.mixins import ModelMixin
-from uno.auth.mixins import RecordAuditMixin
-from uno.auth.bases import (
-    UserBase,
-    GroupBase,
-    ResponsibilityRoleBase,
-    RoleBase,
-    TenantBase,
-    PermissionBase,
+from sqlalchemy import (
+    ForeignKey,
+    Index,
+    CheckConstraint,
+    ForeignKey,
+    UniqueConstraint,
+    Identity,
+    text,
+    Table,
+    Column,
 )
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import (
+    ENUM,
+    VARCHAR,
+    BIGINT,
+)
+
+from uno.db import UnoModel, str_26, str_255, str_63
+from uno.mixins import ModelMixin
+from uno.auth.mixins import RecordAuditModelMixin
+from uno.enums import SQLOperation, TenantType
 from uno.config import settings
 
+user__group = Table(
+    "user__group",
+    UnoModel.metadata,
+    Column(
+        "user_id",
+        VARCHAR(26),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "GROUPS"},
+    ),
+    Column(
+        "group_id",
+        VARCHAR(26),
+        ForeignKey("group.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "USERS"},
+    ),
+    Index(
+        "ix_user_group_user_id_group_id",
+        "user_id",
+        "group_id",
+    ),
+)
 
-class User(UnoModel, ModelMixin, RecordAuditMixin):
-    # Class variables
-    base = UserBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "tenant",
-                "default_group",
-            ],
+
+user__role = Table(
+    "user__role",
+    UnoModel.metadata,
+    Column(
+        "user_id",
+        VARCHAR(26),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "ROLES"},
+    ),
+    Column(
+        "role_id",
+        VARCHAR(26),
+        ForeignKey("role.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "USERS"},
+    ),
+    Index(
+        "ix_user_role_user_id_role_id",
+        "user_id",
+        "role_id",
+    ),
+)
+
+
+role__permission = Table(
+    "role__permission",
+    UnoModel.metadata,
+    Column(
+        "role_id",
+        VARCHAR(26),
+        ForeignKey("role.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "PERMISSIONS"},
+    ),
+    Column(
+        "permission_id",
+        BIGINT,
+        ForeignKey("permission.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+        info={"edge": "ROLES"},
+    ),
+    Index(
+        "ix_role_permission_role_id_permission_id",
+        "role_id",
+        "permission_id",
+    ),
+)
+
+
+class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+    __tablename__ = "user"
+    __table_args__ = (
+        CheckConstraint(
+            """
+                is_superuser = 'false' AND default_group_id IS NOT NULL OR 
+                is_superuser = 'true' AND default_group_id IS NULL
+                --is_superuser = 'false' AND is_tenant_admin = 'false' OR
+                --is_superuser = 'true' AND is_tenant_admin = 'false' OR
+                --is_superuser = 'false' AND is_tenant_admin = 'true'
+            """,
+            name="ck_user_is_superuser",
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "email",
-                "handle",
-                "full_name",
-                "tenant_id",
-                "default_group_id",
-                "is_superuser",
-            ],
-        ),
-    }
-    terminate_filters = True
+        {"comment": "Application users"},
+    )
 
-    # Fields
-    email: EmailStr = None
-    handle: str = None
-    full_name: str = None
-    tenant: Optional["Tenant"] = None
-    tenant_id: Optional[str] = None
-    default_group: Optional["Group"] = None
-    default_group_id: Optional[str] = None
-    is_superuser: bool = False
+    # Columns
+    email: Mapped[str_255] = mapped_column(
+        unique=True,
+        index=True,
+        nullable=False,
+        doc="Email address, used as login ID",
+    )
+    handle: Mapped[str_255] = mapped_column(
+        unique=True,
+        index=True,
+        nullable=False,
+        doc="User's displayed name and alternate login ID",
+    )
+    full_name: Mapped[str_255] = mapped_column(
+        nullable=False,
+        doc="User's full name",
+    )
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
+        doc="The Tenant to which the user is assigned",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "USERS",
+        },
+    )
+    default_group_id: Mapped[str_26] = mapped_column(
+        ForeignKey("group.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+        doc="User's default group, used as default for creating new objects",
+        info={
+            "edge": "DEFAULT_GROUP",
+            "reverse_edge": "DEFAULT_GROUP_USERS",
+        },
+    )
+    is_superuser: Mapped[bool] = mapped_column(
+        server_default=text("false"),
+        doc="Indicates that the user is a Superuser",
+    )
 
-    # roles: Optional[list["Role"]] = None
-    # created_objects: Optional[list[MetaRecordBase]] = None
-    # modified_objects: Optional[list[MetaRecordBase]] = None
-    # deleted_objects: Optional[list[MetaRecordBase]] = None
+    # Relationships
+    tenant: Mapped["TenantModel"] = relationship(
+        foreign_keys=[tenant_id],
+        doc="Tenant to which the user is assigned",
+    )
+    default_group: Mapped["GroupModel"] = relationship(
+        foreign_keys=[default_group_id],
+        doc="User's default group, used as default for creating new objects",
+    )
+    groups: Mapped[list["GroupModel"]] = relationship(
+        secondary=user__group,
+        back_populates="users",
+        doc="Groups to which the user is assigned",
+    )
+    roles: Mapped[list["RoleModel"]] = relationship(
+        secondary=user__role,
+        back_populates="users",
+        doc="Roles assigned to the user",
+    )
+    messages: Mapped[list["MessageUserModel"]] = relationship(
+        back_populates="user",
+        doc="Messages associated with the user",
+    )
 
     def __str__(self) -> str:
-        return self.handle
+        return self.email
 
 
-class Group(UnoModel, ModelMixin, RecordAuditMixin):
-    # Class variables
-    base = GroupBase
+class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+    __tablename__ = "group"
+    __table_args__ = (
+        Index("ix_group_tenant_id_name", "tenant_id", "name"),
+        UniqueConstraint("tenant_id", "name"),
+        {
+            "comment": "Application end-user groups",
+        },
+    )
 
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "tenant",
-            ],
+    # Columns
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Tenant that owns the group",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "GROUPS",
+        },
+    )
+    name: Mapped[str_255] = mapped_column(doc="Group name")
+
+    # Relationships
+    tenant: Mapped[list["TenantModel"]] = relationship(
+        viewonly=True,
+        doc="Customer to which the group belongs",
+    )
+    default_group_users: Mapped[list[UserModel]] = relationship(
+        viewonly=True,
+        foreign_keys=[UserModel.default_group_id],
+        doc="Users assigned to the group",
+    )
+    users: Mapped[list[UserModel]] = relationship(
+        secondary=user__group,
+        back_populates="groups",
+        doc="Users assigned to the group",
+    )
+
+
+class ResponsibilityRoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+    __tablename__ = "responsibility_role"
+    __table_args__ = {"comment": "Application process responsibility"}
+
+    # Columns
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+    )
+    description: Mapped[str_255] = mapped_column(
+        nullable=False,
+    )
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Tenant that owns the group",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "GROUPS",
+        },
+    )
+    # Relationships
+    tenant: Mapped[list["TenantModel"]] = relationship(
+        viewonly=True,
+        doc="Customer to which the group belongs",
+    )
+
+
+class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+    __tablename__ = "role"
+    __table_args__ = (
+        Index("ix_role_tenant_id_name", "tenant_id", "name"),
+        UniqueConstraint("tenant_id", "name"),
+        {"comment": "Application roles"},
+    )
+
+    # Columns
+    tenant_id: Mapped[str_26] = mapped_column(
+        ForeignKey("tenant.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Tenant that owns the role",
+        info={
+            "edge": "TENANT",
+            "reverse_edge": "ROLES",
+        },
+    )
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+        doc="Role name",
+    )
+    description: Mapped[str_255] = mapped_column(
+        nullable=False,
+        doc="Role description",
+    )
+    responsibility_role_id: Mapped[str_26] = mapped_column(
+        ForeignKey("responsibility_role.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="The Responsibility that the role's assigned user performs",
+        info={
+            "edge": "RESPONSIBILITY_ROLE",
+            "reverse_edge": "RESPONSIBLITY_ROLES",
+        },
+    )
+
+    # Relationships
+    tenant: Mapped[list["TenantModel"]] = relationship(
+        viewonly=True,
+        doc="Customer to which the role belongs",
+    )
+    permissions: Mapped[list["PermissionModel"]] = relationship(
+        viewonly=True,
+        secondary=role__permission,
+        doc="Permissions assigned to the role",
+    )
+    users: Mapped[list[UserModel]] = relationship(
+        secondary=user__role,
+        back_populates="roles",
+        doc="Users assigned to the role",
+    )
+    responsibility: Mapped["ResponsibilityRoleModel"] = relationship(
+        doc="The Responsibility that the role's assigned user performs",
+    )
+
+
+class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+    __tablename__ = "tenant"
+    __table_args__ = (
+        Index("ix_tenant_name", "name"),
+        UniqueConstraint("name"),
+        {"comment": "Application tenants"},
+    )
+
+    # Columns
+    name: Mapped[str_255] = mapped_column(
+        index=True,
+        nullable=False,
+        doc="Role name",
+    )
+    tenant_type: Mapped[TenantType] = mapped_column(
+        ENUM(
+            TenantType,
+            name="tenanttype",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-                "tenant_id",
-            ],
+        server_default=TenantType.INDIVIDUAL.name,
+        nullable=False,
+        doc="Tenant type",
+    )
+
+    # Relationships
+    users: Mapped[list[UserModel]] = relationship(
+        viewonly=True,
+        foreign_keys=[UserModel.tenant_id],
+        doc="Users assigned to the tenant",
+    )
+    groups: Mapped[list[GroupModel]] = relationship(
+        viewonly=True,
+        foreign_keys=[GroupModel.tenant_id],
+        doc="Groups assigned to the tenant",
+    )
+    roles: Mapped[list[RoleModel]] = relationship(
+        viewonly=True,
+        foreign_keys=[RoleModel.tenant_id],
+        doc="Roles assigned to the tenant",
+    )
+
+
+class PermissionModel(UnoModel):
+    __tablename__ = "permission"
+    __table_args__ = (
+        Index("ix_permission_meta_type_id_operation", "meta_type_id", "operation"),
+        UniqueConstraint("meta_type_id", "operation"),
+        {"comment": "Application permissions"},
+    )
+
+    # Columns
+    id: Mapped[int] = mapped_column(
+        Identity(start=1, cycle=True),
+        primary_key=True,
+        index=True,
+        nullable=False,
+        doc="Primary Key",
+    )
+    meta_type_id: Mapped[str_63] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        doc="Foreign Key to MetaRecord Type",
+        info={
+            "edge": "META_TYPE",
+            "reverse_edge": "PERMISSIONS",
+        },
+    )
+    operation: Mapped[SQLOperation] = mapped_column(
+        ENUM(
+            SQLOperation,
+            name="sqloperation",
+            create_type=True,
         ),
-    }
-    terminate_filters = True
-
-    # Fields
-    id: Optional[str]
-    name: str
-    tenant_id: Optional[str]
-    tenant: Optional["Tenant"]
-
-    # roles: list["Role"] = []
-    # default_users: list[User] = []
-    # members: list[User] = []
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class ResponsibilityRole(UnoModel, ModelMixin, RecordAuditMixin):
-    # Class variables
-    base = ResponsibilityRoleBase
-
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "tenant",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-                "description",
-                "tenant_id",
-            ],
-        ),
-    }
-
-    # Fields
-    name: str
-    description: Optional[str]
-    tenant_id: Optional[str]
-    tenant: Optional["Tenant"]
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Role(UnoModel, ModelMixin, RecordAuditMixin):
-    # Class variables
-    base = RoleBase
-
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "tenant",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-            ],
-        ),
-    }
-    terminate_filters = True
-
-    # Fields
-    id: Optional[str]
-    name: str
-    description: Optional[str]
-    tenant_id: Optional[str]
-    tenant: Optional["Tenant"]
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Tenant(UnoModel, ModelMixin, RecordAuditMixin):
-    # Class variables
-    base = TenantBase
-
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-                "tenant_type",
-            ],
-        ),
-    }
-    terminate_filters = True
-
-    # Fields
-    id: Optional[str]
-    name: str
-    tenant_type: TenantType
-
-    # users: list["User"] = []
-    # groups: list["Group"] = []
-    # roles: list["Role"] = []
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Permission(UnoModel):
-    # Class variables
-    base = PermissionBase
-    endpoints = ["List", "View"]
-    schema_configs = {"view_schema": UnoSchemaConfig()}
-    terminate_filters = True
-
-    # Fields
-    id: Optional[int]
-    meta_type_id: str
-    operation: SQLOperation
-
-    def __str__(self) -> str:
-        return f"{self.meta_type.id}:  {self.operation}"
+        doc="sql.SQL Operation",
+    )

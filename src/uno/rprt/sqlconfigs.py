@@ -11,16 +11,16 @@ from uno.sqlemitter import (
     SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.rprt.bases import (
-    ReportFieldConfigBase,
-    ReportFieldBase,
-    ReportTypeBase,
-    ReportBase,
+from uno.rprt.objects import (
+    ReportFieldConfigModel,
+    ReportFieldModel,
+    ReportTypeModel,
+    ReportModel,
 )
 
 
 class ReportFieldConfSQLConfig(SQLConfig):
-    table = ReportFieldConfigBase.__table__
+    table = ReportFieldConfigModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -31,7 +31,7 @@ class ReportFieldConfSQLConfig(SQLConfig):
 
 
 class ReportFielSQLConfig(SQLConfig):
-    table = ReportFieldBase.__table__
+    table = ReportFieldModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -43,7 +43,7 @@ class ReportFielSQLConfig(SQLConfig):
 
 
 class ReportTypeSQLConfig(SQLConfig):
-    table = ReportTypeBase.__table__
+    table = ReportTypeModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -55,7 +55,7 @@ class ReportTypeSQLConfig(SQLConfig):
 
 
 class ReportSQLConfig(SQLConfig):
-    table = ReportBase.__table__
+    table = ReportModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

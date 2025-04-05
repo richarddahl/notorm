@@ -2,39 +2,38 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.model import UnoModel
-from uno.schema import UnoSchemaConfig
-from uno.meta.bases import MetaTypeBase, MetaRecordBase
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from uno.db import UnoModel, str_63, str_26
 
 
-class MetaType(UnoModel):
-    # Class variables
-    base = MetaTypeBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
-    }
-    endpoints = ["List"]
-    exclude_from_filters = True
+class MetaTypeModel(UnoModel):
+    __tablename__ = "meta_type"
 
-    id: str
-
-    def __str__(self) -> str:
-        return f"{self.id}"
+    id: Mapped[str_63] = mapped_column(
+        primary_key=True,
+        index=True,
+        nullable=False,
+        doc="The name of the table",
+    )
 
 
-class MetaRecord(UnoModel):
-    # Class variables
-    base = MetaRecordBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
-    }
-    endpoints = ["List"]
-    exclude_from_filters = True
+class MetaRecordModel(UnoModel):
+    __tablename__ = "meta_record"
 
-    id: str
-    meta_type_id: str
-
-    def __str__(self) -> str:
-        return f"{self.meta_type_id}: {self.id}"
+    id: Mapped[str_26] = mapped_column(
+        primary_key=True,
+        nullable=False,
+        unique=True,
+        index=True,
+        doc="Primary Key",
+    )
+    meta_type_id: Mapped[str_63] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+        info={"edge": "META_TYPE", "reverse_edge": "OBJECTS"},
+        doc="The type of record",
+    )
+    meta_type = relationship("MetaTypeModel")

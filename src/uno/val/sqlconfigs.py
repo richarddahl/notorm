@@ -12,20 +12,20 @@ from uno.sqlemitter import (
     SQLConfig,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.val.bases import (
-    AttachmentBase,
-    BooleanValueBase,
-    DateTimeValueBase,
-    DateValueBase,
-    DecimalValueBase,
-    IntegerValueBase,
-    TextValueBase,
-    TimeValueBase,
+from uno.val.objects import (
+    AttachmentModel,
+    BooleanValueModel,
+    DateTimeValueModel,
+    DateValueModel,
+    DecimalValueModel,
+    IntegerValueModel,
+    TextValueModel,
+    TimeValueModel,
 )
 
 
 class AttachmentSQLConfig(SQLConfig):
-    table = AttachmentBase.__table__
+    table = AttachmentModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -37,7 +37,7 @@ class AttachmentSQLConfig(SQLConfig):
 
 
 class BooleanValueSQLConfig(SQLConfig):
-    table = BooleanValueBase.__table__
+    table = BooleanValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -49,7 +49,7 @@ class BooleanValueSQLConfig(SQLConfig):
 
 
 class DateTimeValueSQLConfig(SQLConfig):
-    table = DateTimeValueBase.__table__
+    table = DateTimeValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -61,7 +61,7 @@ class DateTimeValueSQLConfig(SQLConfig):
 
 
 class DateValueSQLConfig(SQLConfig):
-    table = DateValueBase.__table__
+    table = DateValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -73,7 +73,7 @@ class DateValueSQLConfig(SQLConfig):
 
 
 class DecimalValueSQLConfig(SQLConfig):
-    table = DecimalValueBase.__table__
+    table = DecimalValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -85,7 +85,7 @@ class DecimalValueSQLConfig(SQLConfig):
 
 
 class IntegerValueSQLConfig(SQLConfig):
-    table = IntegerValueBase.__table__
+    table = IntegerValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -97,7 +97,7 @@ class IntegerValueSQLConfig(SQLConfig):
 
 
 class TextValueSQLConfig(SQLConfig):
-    table = TextValueBase.__table__
+    table = TextValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -109,7 +109,7 @@ class TextValueSQLConfig(SQLConfig):
 
 
 class TimeValueSQLConfig(SQLConfig):
-    table = TimeValueBase.__table__
+    table = TimeValueModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

@@ -2,151 +2,119 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
-import decimal
-
 from typing import Optional
 
-from uno.schema import UnoSchemaConfig
-from uno.model import UnoModel
-from uno.auth.mixins import DefaultModelMixin
-from uno.rprt.bases import (
-    ReportFieldConfigBase,
-    ReportFieldBase,
-    ReportTypeBase,
-    ReportBase,
+from sqlalchemy import (
+    ForeignKey,
+    Index,
+    ForeignKey,
+    UniqueConstraint,
 )
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ENUM
+
+from uno.db import UnoModel, str_26, str_128, str_255, str_64, bytea
+from uno.auth.mixins import DefaultModelMixin
+from uno.enums import ValueType
+from uno.config import settings
 
 
-class ReportFieldConfig(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = ReportFieldConfigBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "report_field",
-                "report_type",
-                "parent_field",
-                "group",
-                "tenant",
-            ],
+class ReportFieldConfigModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "report_field_config"
+    __table_args__ = ({"comment": "Configuration of fields in a report"},)
+
+    # Columns
+    report_field_id: Mapped[str_26] = mapped_column(
+        ForeignKey("report_field.id", ondelete="CASCADE"),
+        doc="The report field",
+        info={"edge": "REPORT_FIELD", "reverse_edge": "REPORT_FIELD_CONFIGS"},
+    )
+    report_type_id: Mapped[str_26] = mapped_column(
+        ForeignKey("report_type.id", ondelete="CASCADE"),
+        doc="The report type",
+        info={"edge": "REPORT_TYPE", "reverse_edge": "REPORT_FIELD_CONFIGS"},
+    )
+    parent_field_id: Mapped[Optional[str_26]] = mapped_column(
+        ForeignKey("report_field.id", ondelete="CASCADE"),
+        doc="The parent field for this field",
+        info={"edge": "PARENT_FIELD", "reverse_edge": "CHILD_FIELDS"},
+    )
+    is_label_included: Mapped[bool] = mapped_column(
+        doc="Whether the label for this field is included in the report",
+    )
+    field_format: Mapped[Optional[str]] = mapped_column(
+        doc="Format for the field in the report",
+    )
+
+
+class ReportFieldModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "report_field"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name"),
+        Index("ix_report_field_tenant_id_name", "tenant_id", "name"),
+        {"comment": "Fields that can be included in reports"},
+    )
+
+    # Columns
+    field_meta_type: Mapped[str_255] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        doc="The meta_record type of the report field",
+        info={"edge": "META_TYPE", "reverse_edge": "REPORT_FIELDS"},
+    )
+    field_type: Mapped[ValueType] = mapped_column(
+        ENUM(
+            ValueType,
+            name="report_field_type",
+            create_type=True,
+            schema=settings.DB_SCHEMA,
         ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "report_field_id",
-                "report_type_id",
-                "parent_field_id",
-                "is_label_included",
-                "field_format",
-            ],
-        ),
-    }
-
-    # Fields
-    report_field_id: str
-    report_field: "ReportField"
-    report_type_id: str
-    report_type: "ReportType"
-    parent_field_id: Optional[str]
-    parent_field: Optional["ReportField"]
-    is_label_included: bool
-    field_format: str
+        doc="The type of the report field",
+    )
+    name: Mapped[Optional[str_255]] = mapped_column(doc="The name of the report field.")
+    explanation: Mapped[str] = mapped_column(
+        doc="Explanation of the report field",
+    )
 
 
-class ReportField(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = ReportFieldBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "group",
-                "tenant",
-                "field_meta_type",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "field_meta_type_id",
-                "field_type",
-                "name",
-                "description",
-            ],
-        ),
-    }
+class ReportTypeModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "report_type"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "name"),
+        Index("ix_report_type_tenant_id_name", "tenant_id", "name"),
+        Index("ix_report_type_meta_type", "meta_type"),
+        {"comment": "The types of reports that can be generated"},
+    )
 
-    # Fields
-    field_meta_type_id: str
-    field_meta_type: Optional["MetaType"]
-    field_type: str
-    name: str
-    description: Optional[str]
+    # Columns
+    meta_type: Mapped[str_255] = mapped_column(
+        ForeignKey("meta_type.id", ondelete="CASCADE"),
+        doc="The meta_record type of the report",
+        info={"edge": "META_TYPE", "reverse_edge": "REPORT_TYPES"},
+    )
+    name: Mapped[str_128] = mapped_column(
+        doc="The name of the report type",
+    )
+    description: Mapped[str] = mapped_column(
+        doc="Description of the report type",
+    )
 
 
-class ReportType(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = ReportTypeBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "group",
-                "tenant",
-                "report_fields",
-                "report_field_configs",
-                "report_type_configs",
-                "report_type_field_configs",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-                "description",
-            ],
-        ),
-    }
+class ReportModel(DefaultModelMixin, UnoModel):
+    __tablename__ = "report"
+    __table_args__ = ({"comment": "Reports generated by the system"},)
 
-    # Fields
-    name: str
-    description: Optional[str]
-    report_fields: list[ReportField]
-    report_field_configs: list[ReportFieldConfig]
-    report_type_configs: list[ReportFieldConfig]
-    report_type_field_configs: list[ReportFieldConfig]
-
-
-class Report(UnoModel, DefaultModelMixin):
-    # Class variables
-    base = ReportBase
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=[
-                "created_by",
-                "modified_by",
-                "deleted_by",
-                "group",
-                "tenant",
-                "report_type",
-            ],
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include_fields=[
-                "name",
-                "description",
-                "report_type_id",
-            ],
-        ),
-    }
-
-    # Fields
-    name: str
-    description: Optional[str]
-    report_type_id: str
-    report_type: Optional[ReportType]
+    # Columns
+    name: Mapped[str_255] = mapped_column(
+        doc="Name of the report",
+    )
+    report_type: Mapped[str_26] = mapped_column(
+        ForeignKey("report_type.id", ondelete="CASCADE"),
+        doc="The type of the report",
+        info={"edge": "REPORT_TYPE", "reverse_edge": "REPORTS"},
+    )
+    data: Mapped[bytea] = mapped_column(
+        doc="Data for the report",
+    )
+    data_hash: Mapped[str_64] = mapped_column(
+        doc="Hash of the data for the report",
+    )

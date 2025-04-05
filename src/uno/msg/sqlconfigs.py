@@ -9,11 +9,11 @@ from uno.sqlemitter import (
     InsertPermission,
 )
 from uno.graphsql import GraphSQLEmitter
-from uno.msg.bases import MessageUserBase, MessageBase
+from uno.msg.models import MessageUserModel, MessageModel
 
 
 class MessageUserSQLConfig(SQLConfig):
-    table = MessageUserBase.__table__
+    table = MessageUserModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertPermission,
@@ -22,8 +22,8 @@ class MessageUserSQLConfig(SQLConfig):
     ]
 
 
-class MessageBaseSQLConfig(SQLConfig):
-    table = MessageBase.__table__
+class MessageModelSQLConfig(SQLConfig):
+    table = MessageModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,

@@ -19,13 +19,13 @@ from uno.sqlemitter import (
     GrantPrivileges,
     InsertMetaRecordFunction,
 )
-from uno.model import UnoModel
+from uno.object import UnoObj
 from uno.db import meta_data
-from uno.auth.models import User
+from uno.auth.objects import User
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 from uno.filter import UnoFilter
-from uno.qry.bases import QueryPathBase
-from uno.qry.models import QueryPath
+from uno.qry.models import QueryPathModel
+from uno.qry.objects import QueryPath
 import uno.attr.sqlconfigs
 import uno.auth.sqlconfigs
 import uno.qry.sqlconfigs
@@ -35,13 +35,13 @@ import uno.rprt.sqlconfigs
 import uno.val.sqlconfigs
 
 # import uno.wkflw.sqlconfigs
-from uno.attr import models
-from uno.auth import models
-from uno.qry import models
-from uno.meta import models
-from uno.msg import models
-from uno.rprt import models
-from uno.val import models
+from uno.attr import objects
+from uno.auth import objects
+from uno.qry import objects
+from uno.meta import objects
+from uno.msg import objects
+from uno.rprt import objects
+from uno.val import objects
 
 # from uno.wkflw import models
 
@@ -150,10 +150,10 @@ class DBManager:
 
         async create_query_paths() -> None:
             Asynchronously generates and persists query paths for database
-            operations based on filters defined in the UnoModel registry.
+            operations based on filters defined in the UnoObj registry.
 
     Helper Functions (within create_query_paths):
-        add_query_path(filter: UnoFilter, parent: UnoFilter = None) -> QueryPathBase:
+        add_query_path(filter: UnoFilter, parent: UnoFilter = None) -> QueryPathModel:
 
         process_filters(fltr: UnoFilter) -> None:
             Processes a hierarchy of filters and applies query paths for each
@@ -589,14 +589,14 @@ class DBManager:
         """
         Asynchronously creates and manages query paths for database operations.
 
-        This method processes filters defined in the `UnoModel` registry to generate
+        This method processes filters defined in the `UnoObj` registry to generate
         query paths, ensuring that each cypher_path is unique. It then interacts with the
         database to persist these query paths, creating new entries if they do not
         already exist.
 
         Steps:
-        1. Iterates through all models in the `UnoModel` registry.
-        2. Configures each model with the provided application context.
+        1. Iterates through all models in the `UnoObj` registry.
+        2. Configures each obj with the provided application context.
         3. Processes filters to build a set of unique query paths.
         4. Persists the query paths to the database using an asynchronous session.
 
@@ -620,7 +620,7 @@ class DBManager:
 
         def add_query_path(
             filter: UnoFilter, parent: UnoFilter = None
-        ) -> QueryPathBase:
+        ) -> QueryPathModel:
             """
             Adds a query cypher_path to the collection of query paths.
 
@@ -637,7 +637,7 @@ class DBManager:
                 source meta type ID. Defaults to None.
 
             Returns:
-                QueryPathBase: The created `QueryPath` object.
+                QueryPathModel: The created `QueryPath` object.
             """
             # Determine the source meta type ID for the query cypher_path.
             # If a parent filter is provided, use its source meta type ID;
@@ -667,7 +667,7 @@ class DBManager:
             This function traverses a tree of `UnoFilter` objects using a depth-first
             search approach. It ensures that each filter's query cypher_path is added only once
             by maintaining a set of visited paths. For each filter, it determines the
-            corresponding child model and recursively processes its child filters.
+            corresponding child obj and recursively processes its child filters.
 
             Args:
                 fltr (UnoFilter): The root filter to start processing from.
@@ -702,11 +702,11 @@ class DBManager:
                     current_filter.source_meta_type_id
                     != current_filter.target_meta_type_id
                 ):
-                    # Retrieve the model corresponding to the target meta type ID of the current filter.
-                    child_model = UnoModel.registry[current_filter.target_meta_type_id]
+                    # Retrieve the obj corresponding to the target meta type ID of the current filter.
+                    child_obj = UnoObj.registry[current_filter.target_meta_type_id]
 
-                    # Iterate over the child filters of the current filter, using the child model.
-                    for child_fltr in current_filter.children(model=child_model):
+                    # Iterate over the child filters of the current filter, using the child obj.
+                    for child_fltr in current_filter.children(obj=child_obj):
                         # Add each child filter and its parent (current filter) to the stack
                         # for further processing in the depth-first search.
                         stack.append((child_fltr, current_filter))
@@ -714,13 +714,13 @@ class DBManager:
         # Initialize an empty dictionary to store query paths
         query_paths = {}
 
-        # Iterate over all models registered in the UnoModel registry
-        for model in UnoModel.registry.values():
-            # Configure the model with the application context
-            model.set_filters()
+        # Iterate over all models registered in the UnoObj registry
+        for obj in UnoObj.registry.values():
+            # Configure the obj with the application context
+            obj.set_filters()
 
-            # Iterate over all filters defined for the current model
-            for fltr in model.filters.values():
+            # Iterate over all filters defined for the current obj
+            for fltr in obj.filters.values():
                 # Process each filter to generate and add query paths
                 process_filters(fltr)
 
@@ -731,7 +731,7 @@ class DBManager:
                 continue
 
             # Attempt to retrieve or create a `QueryPath` object in the database
-            # `query_path.to_base(schema_name="edit_schema")` converts the `query_path` to a base representation
+            # `query_path.to_model(schema_name="edit_schema")` converts the `query_path` to its obj representation
             # with the specified schema name.
             query_path, created = await query_path.get_or_create()
 

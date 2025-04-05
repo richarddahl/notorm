@@ -9,7 +9,7 @@ import factory
 
 from sqlalchemy.orm import sessionmaker
 from tests.conftest import sync_engine as engine
-from uno.auth.bases import UserBase
+from uno.auth.models import UserModel
 
 '''
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -27,7 +27,7 @@ def db_session():
 
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
-        model = UserBase
+        model = UserModel
         sqlalchemy_session = SessionLocal()
         sqlalchemy_session_persistence = "commit"
 

@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import Column
 
 from uno.db import UnoDBFactory, FilterParam
-from uno.db import UnoBase
+from uno.db import UnoModel
 from uno.schema import UnoSchemaConfig
 from uno.endpoint import (
     CreateEndpoint,
@@ -41,13 +41,13 @@ from uno.filter import (
 from uno.config import settings
 
 
-class UnoModel(BaseModel):
+class UnoObj(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    registry: ClassVar[dict[str, "UnoModel"]] = {}
+    registry: ClassVar[dict[str, "UnoObj"]] = {}
     db: ClassVar["UnoDB"]
-    base: ClassVar[type[UnoBase]]
+    model: ClassVar[type[UnoModel]]
     exclude_from_filters: ClassVar[bool] = False
     terminate_filters: ClassVar[bool] = False
     display_name: ClassVar[str] = None
@@ -68,47 +68,107 @@ class UnoModel(BaseModel):
     def __init_subclass__(cls, **kwargs) -> None:
 
         super().__init_subclass__(**kwargs)
-        # Don't add the UnoModel class itself to the registry
-        if cls is UnoModel:
+        # Don't add the UnoObj class itself to the registry
+        if cls is UnoObj:
             return
         # Add the subclass to the registry if it is not already there
-        if cls.base.__tablename__ not in cls.registry:
-            cls.registry.update({cls.base.__tablename__: cls})
+        if cls.model.__tablename__ not in cls.registry:
+            cls.registry.update({cls.model.__tablename__: cls})
         else:
             raise UnoRegistryError(
-                f"A Model class with the table name {cls.base.__tablename__} already exists in the registry.",
+                f"A Model class with the table name {cls.model.__tablename__} already exists in the registry.",
                 "DUPLICATE_MODEL",
             )
         cls.set_display_names()
-        cls.db = UnoDBFactory(model=cls)
+        cls.db = UnoDBFactory(obj=cls)
 
     # End of __init_subclass__
 
+    # Active Record style methods
     async def get_or_create(
         self,
         **kwargs,
-    ) -> "UnoModel":
-        return await self.db.get_or_create(self.to_base(schema_name="edit_schema"))
+    ) -> "UnoObj":
+        """
+        Asynchronously retrieves an existing record or creates a new one in the database.
+
+        This method attempts to find a record in the database that matches the provided
+        keyword arguments. If no such record exists, it creates a new one using the
+        specified schema.
+
+        Returns:
+            UnoObj: The retrieved or newly created model instance.
+
+        Raises:
+            Exception: If there is an issue with the database operation.
+
+        Keyword Args:
+            **kwargs: Arbitrary keyword arguments used to filter or create the record,
+            the combination of which must form a unique key in the database.
+        """
+        return await self.db.get_or_create(self.to_model(schema_name="edit_schema"))
 
     # End of get_or_create
 
-    async def save(self) -> "UnoModel":
+    async def save(self, importing: bool = False) -> "UnoObj":
         """
-        Save the model instance to the database.
+        Save the current UnoObj instance to the database.
 
-        This method uses the `db` class variable to save the instance to the database.
-        It returns the saved instance.
+        This method handles both creating and updating the model in the database,
+        depending on the state of the instance and the `importing` flag.
+
+        Args:
+            importing (bool): If True, the model is being imported and will be
+                              created in the database using the "view_schema".
+                              Defaults to False.
 
         Returns:
-            UnoModel: The saved instance of the model.
-        """
-        if self.id:
-            self.db.update_(self.to_base(schema_name="edit_schema"))
-        else:
-            await self.db.insert_(to_db_model=self.to_base(schema_name="edit_schema"))
-        return self
+            UnoObj: The saved UnoObj instance.
 
-    def to_base(self, schema_name: str) -> dict:
+        Behavior:
+            - If `importing` is True, the model is created using the "view_schema".
+            - If the instance has an `id`, it is created using the "edit_schema".
+            - Otherwise, the model is updated using the "edit_schema".
+        """
+        if importing:
+            return await self.db.create(self.to_model(schema_name="view_schema"))
+        if self.id:
+            return self.db.update(self.to_model(schema_name="edit_schema"))
+        return await self.db.create(
+            to_db_model=self.to_model(schema_name="edit_schema")
+        )
+
+    # End of save
+
+    async def delete(self) -> None:
+        """
+        Delete the current UnoObj instance from the database.
+
+        This method removes the instance from the database using the "edit_schema".
+
+        Returns:
+            None: The method does not return anything.
+
+        Raises:
+            Exception: If there is an issue with the database operation.
+        """
+        await self.db.delete(self.to_model(schema_name="edit_schema"))
+
+    # End of delete
+
+    @classmethod
+    async def get(cls, **kwargs) -> "UnoObj":
+        return await cls.db.get(**kwargs)
+
+    # End of get
+
+    @classmethod
+    async def filter(cls, filters: FilterParam | None = None) -> list["UnoObj"]:
+        return await cls.db.filter(filters=filters)
+
+    # End of filter
+
+    def to_model(self, schema_name: str) -> dict:
         self.set_schemas()
         if not hasattr(self, schema_name):
             raise UnoRegistryError(
@@ -117,13 +177,13 @@ class UnoModel(BaseModel):
             )
         schema_ = getattr(self, schema_name)
         schema = schema_(**self.model_dump())
-        return self.base(**schema.model_dump())
+        return self.model(**schema.model_dump())
 
-    # End of to_base
+    # End of to_model
 
     @classmethod
     def configure(cls, app: FastAPI) -> None:
-        """Configure the UnoModel class"""
+        """Configure the UnoObj class"""
         cls.set_filters()
         cls.set_schemas()
         cls.set_endpoints(app)
@@ -133,12 +193,12 @@ class UnoModel(BaseModel):
     @classmethod
     def set_display_names(cls) -> None:
         cls.display_name = (
-            snake_to_title(cls.base.__table__.name)
+            snake_to_title(cls.model.__table__.name)
             if cls.display_name is None
             else cls.display_name
         )
         cls.display_name_plural = (
-            f"{snake_to_title(cls.base.__table__.name)}s"
+            f"{snake_to_title(cls.model.__table__.name)}s"
             if cls.display_name_plural is None
             else cls.display_name_plural
         )
@@ -304,7 +364,7 @@ class UnoModel(BaseModel):
         if cls.exclude_from_filters:
             return
         filters = {}
-        table = cls.base.__table__
+        table = cls.model.__table__
         for column in table.columns.values():
             if column.info.get("graph_excludes", False):
                 continue

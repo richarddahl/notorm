@@ -64,7 +64,7 @@ class Include(enum.StrEnum):
 
 class Match(enum.StrEnum):
     """
-    Enumeration class for UnoBase match types.
+    Enumeration class for UnoModel match types.
 
     The Match class represents the different match types in db queries.
 
@@ -85,7 +85,7 @@ class TenantType(enum.StrEnum):
     Enumeration class representing the types of Tenants.
 
     Each tenant type corresponds to a specific customer group.
-    Tenants are a key concept in the UnoBase library.
+    Tenants are a key concept in the UnoModel library.
     They represent an individual or a group of users that may share permissions and access to data.
     Tenant Types can be configured via the settings to restrict the number of database
     objects, users, and or user groups allowed.

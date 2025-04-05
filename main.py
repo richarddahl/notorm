@@ -10,22 +10,22 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from uno.model import UnoModel
+from uno.object import UnoObj
 from uno.apidef import app
 from uno.config import settings
 
-from uno.attr import models as attr_models
-from uno.auth import models as auth_models
+from uno.attr import objects as attr_models
+from uno.auth import objects as auth_models
 from uno.qry import models as fltr_models
-from uno.meta import models as meta_models
-from uno.msg import models as msg_models
-from uno.rprt import models as rpt_models
-from uno.val import models as val_models
+from uno.meta import objects as meta_models
+from uno.msg import objects as msg_models
+from uno.rprt import objects as rpt_models
+from uno.val import objects as val_models
 
 # from uno.wkflw import models as wkflw_models
 
 
-for model in UnoModel.registry.values():
+for model in UnoObj.registry.values():
     if hasattr(model, "configure"):
         model.configure(app)
 

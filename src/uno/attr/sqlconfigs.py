@@ -12,12 +12,12 @@ from uno.sqlemitter import (
 )
 from uno.graphsql import GraphSQLEmitter
 
-from uno.attr.bases import (
+from uno.attr.models import (
     attribute__value,
     attribute_type___meta_type,
     attribute_type__value_type,
-    AttributeBase,
-    AttributeTypeBase,
+    AttributeModel,
+    AttributeTypeModel,
 )
 
 
@@ -58,7 +58,7 @@ class AttributeTypeValueTypeSQLConfig(SQLConfig):
 
 
 class AttributeSQLConfig(SQLConfig):
-    table = AttributeBase.__table__
+    table = AttributeModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
@@ -70,7 +70,7 @@ class AttributeSQLConfig(SQLConfig):
 
 
 class AttributeTypeSQLConfig(SQLConfig):
-    table = AttributeTypeBase.__table__
+    table = AttributeTypeModel.__table__
     sql_emitters = [
         AlterGrants,
         InsertMetaType,
