@@ -19,11 +19,16 @@ BEGIN
     SELECT array_agg(key) INTO columns_array
     FROM jsonb_object_keys(data) AS key;
 
-    SELECT array_agg(format('%%L AS %I', value, key)) INTO values_array
+    SELECT array_agg(value) INTO values_array
     FROM jsonb_each_text(data) AS key_value(key, value);
 
     columns := array_to_string(columns_array, ', ');
-    values := array_to_string(values_array, ', ');
+    values := array_to_string(
+        ARRAY(
+            SELECT format('%%L', value)
+            FROM unnest(values_array) AS value
+        ), ', '
+    );
 
     -- Generate the update set clause
     SELECT string_agg(format('%I = EXCLUDED.%I', key, key), ', ') INTO update_set
