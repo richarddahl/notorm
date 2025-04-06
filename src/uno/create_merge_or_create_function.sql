@@ -5,11 +5,18 @@ CREATE OR REPLACE FUNCTION merge_or_insert(
     uq_fields jsonb[]
 ) RETURNS TABLE (result jsonb) AS $$
 DECLARE
+    columns_array text[];
+    values_array text[];
+    update_set_array text[];
+    pk_match_conditions_array text[];
+    uq_match_conditions_array text[];
     columns text;
     values text;
     update_set text;
     sql text;
     match_conditions text;
+    pk_match_conditions text;
+    uq_match_conditions text;
 BEGIN
     -- Extract column names and values from the JSONB data
     SELECT array_agg(key) INTO columns_array
