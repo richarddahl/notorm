@@ -231,7 +231,7 @@ def UnoDBFactory(obj: BaseModel):
                 try:
                     query = text(
                         """
-                        SELECT * FROM merge_or_insert(:table_name\\:\\:TEXT, :data\\:\\:JSONB, :pk_fields\\:\\:TEXT[], uq_field_sets\\:\\:JSONB[]);
+                        SELECT * FROM merge_or_insert(:table_name\\:\\:TEXT, :data\\:\\:JSONB, :pk_fields\\:\\:TEXT[], :uq_field_sets\\:\\:JSONB[]);
                         """
                     )
                     result = await session.execute(
