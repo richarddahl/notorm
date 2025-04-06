@@ -43,7 +43,6 @@ BEGIN
             ' OR '
         ) INTO uq_match_conditions
         FROM unnest(uq_field_sets) AS uq_set, unnest(uq_set::TEXT[]) AS field;
-        FROM unnest(uq_field_sets) AS uq_set, unnest(uq_set::TEXT[]) AS field;
 
         IF match_conditions <> '' THEN
             match_conditions := match_conditions || ' OR ' || uq_match_conditions;
