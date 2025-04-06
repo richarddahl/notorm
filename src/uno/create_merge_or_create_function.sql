@@ -12,6 +12,8 @@ DECLARE
     sql text;
     pk_match_conditions text;
     uq_match_conditions text;
+    columns_array text[];
+    values_array text[];
 BEGIN
     -- Extract column names and values from the JSONB data
     SELECT array_agg(key) INTO columns_array
