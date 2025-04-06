@@ -172,7 +172,7 @@ def UnoDBFactory(obj: BaseModel):
     class UnoDB:
 
         @classmethod
-        def table_keys(cls) -> dict[str, list[str]]:
+        def table_keys(cls) -> tuple[list[str], list[list[str]]]:
             """
             Retrieve a dictionary of table keys, including primary keys and unique constraints.
 
@@ -187,30 +187,23 @@ def UnoDBFactory(obj: BaseModel):
             """
 
             # Initialize a dictionary to store table keys, starting with the primary key columns
-            table_keys = {"pk": obj.model.__table__.primary_key.columns.keys()}
+            pk_fields = obj.model.__table__.primary_key.columns.keys()
+            uq_fields = []
 
             # Check for unique constraints defined in the `__table_args__` attribute of the model
             if hasattr(cls.obj.model, "__table_args__"):
                 for constraint in cls.obj.model.__table_args__:
                     # If the constraint is a UniqueConstraint, process it
                     if isinstance(constraint, UniqueConstraint):
-                        # Ensure the unique constraint columns are not already in the table_keys
-                        if not constraint.columns.keys() in table_keys.values():
-                            # Add the unique constraint to the table_keys dictionary
-                            table_keys.update(
-                                {constraint.name: constraint.columns.keys()}
-                            )
+                        # Add the unique constraint to the table_keys dictionary
+                        uq_fields.append(constraint.columns.keys())
 
             # Check for unique constraints defined on individual columns of the table
             for column in cls.obj.model.__table__.columns:
-                if column.unique is not None:
-                    # Ensure the column is not already in the table_keys
-                    if not [column.name] in table_keys.values():
-                        # Add the column as a unique constraint to the table_keys dictionary
-                        table_keys.update({column.name: [column.name]})
+                if column.unique is not None and column.name not in pk_fields:
+                    uq_fields.append([column.name])
 
-            # Return the dictionary containing all primary keys and unique constraints
-            return table_keys
+            return pk_fields, uq_fields
 
         @classmethod
         async def merge_or_create(
@@ -218,11 +211,7 @@ def UnoDBFactory(obj: BaseModel):
         ) -> tuple[BaseModel, bool] | tuple[BaseModel, list[str]]:
 
             obj.set_schemas()
-            table_keys = cls.table_keys()
-            pk_fields = table_keys["pk"]
-            uq_field_sets = json.dumps(
-                {k: v for k, v in table_keys.items() if k != "pk"}
-            )
+            pk_fields, uq_field_sets = cls.table_keys()
             print(f"pk_fields: {pk_fields}")
             print(f"uq_field_sets: {uq_field_sets}")
 
