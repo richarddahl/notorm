@@ -46,7 +46,6 @@ class SQLEmitter(BaseModel):
         for statement_name, sql_statement in self.model_dump(
             exclude=self.exclude_fields
         ).items():
-            print(f"Executing {statement_name}...")
             connection.execute(text(sql_statement))
 
     def createsqltrigger(
@@ -1188,7 +1187,7 @@ class SetRole(SQLEmitter):
             - The `db_name` is dynamically injected into the SQL script using the `DB_NAME` variable.
             - The function raises a log in the database to confirm the role change.
         """
-        return (
+        return textwrap.dedent(
             sql.SQL(
                 """
             SET ROLE {db_name}_admin;
@@ -1198,13 +1197,13 @@ class SetRole(SQLEmitter):
             LANGUAGE plpgsql
             AS $$
             DECLARE
-                db_name text := current_database();
+                db_name TEXT := current_database();
                 set_role_command TEXT;  
                 complete_role_name TEXT:= CONCAT(db_name, '_', role_name);
             BEGIN
                 set_role_command := CONCAT('SET ROLE ', complete_role_name);
                 EXECUTE set_role_command;
-                RAISE LOG 'Role set to: % by User: %, in Database: %', complete_role_name, current_user, db_name;
+                --RAISE LOG 'Role set to: % by User: %, in Database: %', complete_role_name, current_user, db_name;
             END $$;
             """
             )
@@ -1226,6 +1225,90 @@ class SetRole(SQLEmitter):
             .format(
                 login_role=LOGIN_ROLE, reader_role=READER_ROLE, writer_role=WRITER_ROLE
             )
+            .as_string()
+        )
+
+
+class MergeOrCreate(SQLEmitter):
+
+    @computed_field
+    def create_merge_or_create_function(self) -> str:
+        return textwrap.dedent(
+            sql.SQL(
+                """
+                CREATE OR REPLACE FUNCTION merge_or_insert(
+                    table_name TEXT, 
+                    data JSONB, 
+                    pk_fields TEXT[], 
+                    uq_field_sets JSONB[]
+                ) RETURNS TABLE (result JSONB) AS $$
+                DECLARE
+                    columns TEXT;
+                    values TEXT;
+                    match_conditions TEXT;
+                    update_set TEXT;
+                    sql TEXT;
+                    pk_match_conditions TEXT;
+                    uq_match_conditions TEXT;
+                BEGIN
+                    -- Extract column names and values from the JSONB data
+                    SELECT string_agg(key, ', ') INTO columns
+                    FROM jsonb_object_keys(data);
+
+                    SELECT string_agg(format('%%L AS %I', value, key), ', ') INTO values
+                    FROM jsonb_each_text(data);
+
+                    -- Generate the update set clause
+                    SELECT string_agg(format('%I = EXCLUDED.%I', key, key), ', ') INTO update_set
+                    FROM jsonb_object_keys(data);
+
+                    -- Initialize match conditions
+                    match_conditions := '';
+
+                    -- Add primary key conditions
+                    IF array_length(pk_fields, 1) > 0 THEN
+                        SELECT string_agg(format('%I = EXCLUDED.%I', field, field), ' AND ') INTO pk_match_conditions
+                        FROM unnest(pk_fields) AS field;
+
+                        match_conditions := format('(%s)', pk_match_conditions);
+                    END IF;
+
+                    -- Add unique field sets conditions
+                    IF jsonb_array_length(uq_field_sets) > 0 THEN
+                        SELECT string_agg(
+                            format('(%s)', string_agg(format('%I = EXCLUDED.%I', field, field), ' AND ')),
+                            ' OR '
+                        ) INTO uq_match_conditions
+                        FROM jsonb_array_elements(uq_field_sets) AS uq_set, jsonb_array_elements_text(uq_set) AS field;
+
+                        IF match_conditions <> '' THEN
+                            match_conditions := match_conditions || ' OR ' || uq_match_conditions;
+                        ELSE
+                            match_conditions := uq_match_conditions;
+                        END IF;
+                    END IF;
+
+                    -- Construct the MERGE statement with a RETURNING clause
+                    sql := format(
+                        'MERGE INTO %I AS target
+                        USING (VALUES (%s)) AS source (%s)
+                        ON %s
+                        WHEN MATCHED THEN
+                            UPDATE SET %s
+                            RETURNING target.*
+                        WHEN NOT MATCHED THEN
+                            INSERT (%s) VALUES (%s)
+                            RETURNING target.*',
+                        table_name, values, columns, match_conditions, update_set, columns, columns
+                    );
+
+                    -- Execute the MERGE statement and return the results
+                    RETURN QUERY EXECUTE sql;
+                END;
+                $$ LANGUAGE plpgsql;
+            """
+            )
+            .format(schema_name=DB_SCHEMA)
             .as_string()
         )
 
