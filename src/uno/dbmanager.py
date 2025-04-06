@@ -19,6 +19,7 @@ from uno.sqlemitter import (
     GrantPrivileges,
     InsertMetaRecordFunction,
     SetRole,
+    MergeOrCreate,
 )
 from uno.obj import UnoObj
 from uno.model import meta_data
@@ -295,6 +296,10 @@ class DBManager:
             # Emit SQL commands create the set_role function
             SetRole().emit_sql(connection=conn)
             print("Created the set_role function\n")
+
+            # Emit SQL commands to create the merge_or_create function
+            MergeOrCreate().emit_sql(connection=conn)
+            print("Created the merge_or_create function\n")
 
         # Dispose of the engine to release resources
         engine.dispose()
@@ -717,6 +722,8 @@ class DBManager:
 
         # Initialize an empty dictionary to store query paths
         query_paths = {}
+        # existing_query_paths = await QueryPath.filter()
+        # print(f"Existing query paths: {existing_query_paths}")
 
         # Iterate over all models registered in the UnoObj registry
         for obj in UnoObj.registry.values():
@@ -737,7 +744,10 @@ class DBManager:
             # Attempt to retrieve or create a `QueryPath` object in the database
             # `query_path.to_model(schema_name="edit_schema")` converts the `query_path` to its obj representation
             # with the specified schema name.
-            query_path, created = await query_path.get_or_create()
+            # query_path, created = await query_path.merge_or_create()
+            query_path = await query_path.merge_or_create()
+            # query_path, created = await query_path.get_or_create()
+            continue
 
             # If the `QueryPath` object was newly created, log that it was created
             if created:

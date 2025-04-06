@@ -36,6 +36,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
 )
 from sqlalchemy.pool import NullPool
+from sqlalchemy.sql import bindparam
 from sqlalchemy.dialects.postgresql import (
     ARRAY,
     BIGINT,
@@ -206,6 +207,70 @@ def UnoDBFactory(obj: BaseModel):
             return pk_fields, uq_fields
 
         @classmethod
+        async def merge_or_update_record_sa(cls, data):
+            """
+            Call the PostgreSQL merge_or_insert function with escaped colons in the data values.
+            """
+            pk_fields, unique_constraints = cls.table_keys()
+            table_name = cls.table_name
+
+            # Create a deep copy of the data to avoid modifying the original
+            import copy
+
+            data_copy = copy.deepcopy(data)
+
+            # Function to escape colons in string values
+            def escape_colons(value):
+                if isinstance(value, str):
+                    # Escape colons with backslashes
+                    return value.replace(":", "\\:")
+                return value
+
+            # Process all values in the data dictionary
+            for key, value in data_copy.items():
+                data_copy[key] = escape_colons(value)
+
+            # Convert data to JSON string
+            import json
+
+            data_json = json.dumps(data_copy)
+
+            # Prepare unique constraints
+            uc = (
+                unique_constraints[0]
+                if unique_constraints and len(unique_constraints) > 0
+                else []
+            )
+
+            # Format arrays as PostgreSQL literals
+            pk_array_str = "ARRAY[" + ",".join(f"'{pk}'" for pk in pk_fields) + "]"
+            uc_array_str = "ARRAY[" + ",".join(f"'{uc_field}'" for uc_field in uc) + "]"
+
+            # Create raw SQL with the E'' string syntax for proper escape handling
+            raw_sql = f"""
+                SELECT merge_or_insert(
+                    '{table_name}', 
+                    E'{data_json}'::jsonb, 
+                    {pk_array_str}, 
+                    {uc_array_str}
+                )
+            """
+
+            try:
+                async with scoped_session() as session:
+                    await session.execute(func.set_role("writer"))
+
+                    # Execute raw SQL
+                    result = await session.execute(text(raw_sql))
+
+                    await session.commit()
+                    return result.scalar()
+            except Exception as e:
+                print(f"Error in merge_or_update_record_sa: {e}")
+                print(f"SQL: {raw_sql}")
+                raise
+
+        @classmethod
         async def merge_or_create(
             cls, data: dict[str, str]
         ) -> tuple[BaseModel, bool] | tuple[BaseModel, list[str]]:
@@ -225,13 +290,14 @@ def UnoDBFactory(obj: BaseModel):
             async with scoped_session() as session:
                 await session.execute(func.set_role("writer"))
                 try:
+                    '''
                     query = text(
                         """
                         SELECT * FROM merge_or_insert(
-                            :table_name, 
-                            :data,
-                            :pk_fields,
-                            :uq_field_sets::jsonb[]
+                            :table_name\\:\\:text,
+                            :data\\:\\:jsonb,
+                            :pk_cols\\:\\:text[],
+                            :uq_cols\\:\\:text[]
                         )
                         """
                     )
@@ -240,12 +306,35 @@ def UnoDBFactory(obj: BaseModel):
                         {
                             "table_name": cls.table_name,
                             "data": data_json,
-                            "pk_fields": pk_fields,
-                            "uq_field_sets": uq_field_sets_list,
+                            "pk_cols": pk_fields,
+                            "uq_cols": uq_field_sets_list,
+                        },
+                    )
+                    '''
+                    query = text(
+                        """
+                        SELECT * FROM merge_or_insert(
+                            :table_name\\:\\:text, 
+                            :data\\:\\:jsonb,
+                            :pk_cols\\:\\:text[],
+                            :uq_cols\\:\\:text[]
+                        )
+                        """
+                    )
+                    result = await session.execute(
+                        query,
+                        {
+                            "table_name": cls.table_name,
+                            "data": data_json,
+                            "pk_cols": pk_fields,
+                            "uq_cols": uq_field_sets_list,
                         },
                     )
                     result = result.fetchone()
-                    return result['result'], True
+                    return result["result"], True
+
+                    result = result.fetchone()
+                    return result["result"], True
                 except Exception as e:
                     raise
                     await session.rollback()

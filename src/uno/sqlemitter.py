@@ -1237,7 +1237,8 @@ class MergeOrCreate(SQLEmitter):
             f"{settings.UNO_ROOT}/uno/create_merge_or_create_function.sql", "r"
         ) as file:
             sql_statment = file.read()
-        return sql.SQL(sql_statment).format(schema_name=DB_SCHEMA).as_string()
+        # return sql.SQL(sql_statment).format(schema_name=DB_SCHEMA).as_string()
+        return sql_statment
 
 
 class SQLConfig(BaseModel):

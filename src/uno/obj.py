@@ -85,6 +85,43 @@ class UnoObj(BaseModel):
     # End of __init_subclass__
 
     # Active Record style methods
+
+    def to_model(self, schema_name: str) -> dict:
+        self.set_schemas()
+        if not hasattr(self, schema_name):
+            raise UnoRegistryError(
+                f"Schema {schema_name} not found in {self.__class__.__name__}",
+                "SCHEMA_NOT_FOUND",
+            )
+        schema_ = getattr(self, schema_name)
+        schema = schema_(**self.model_dump())
+        return self.model(**schema.model_dump())
+
+    # End of to_model
+
+    async def merge_or_create(
+        self,
+        **kwargs,
+    ) -> "UnoObj":
+        """
+        Asynchronously merges the current record with an existing one in the database.
+        This method attempts to find a record in the database that matches the provided
+        keyword arguments. If no such record exists, it creates a new one using the
+        specified schema.
+        Returns:
+            UnoObj: The merged or newly created model instance.
+        Raises:
+            Exception: If there is an issue with the database operation.
+        Keyword Args:
+            **kwargs: Arbitrary keyword arguments used to filter or create the record,
+            the combination of which must form a unique key in the database.
+        """
+        self.set_schemas()
+        return await self.db.merge_or_update_record_sa(
+            self.edit_schema(**self.model_dump()).model_dump()
+        )
+        # return await self.db.merge_or_create(self.model_dump())
+
     async def get_or_create(
         self,
         **kwargs,
@@ -167,19 +204,6 @@ class UnoObj(BaseModel):
         return await cls.db.filter(filters=filters)
 
     # End of filter
-
-    def to_model(self, schema_name: str) -> dict:
-        self.set_schemas()
-        if not hasattr(self, schema_name):
-            raise UnoRegistryError(
-                f"Schema {schema_name} not found in {self.__class__.__name__}",
-                "SCHEMA_NOT_FOUND",
-            )
-        schema_ = getattr(self, schema_name)
-        schema = schema_(**self.model_dump())
-        return self.model(**schema.model_dump())
-
-    # End of to_model
 
     @classmethod
     def configure(cls, app: FastAPI) -> None:

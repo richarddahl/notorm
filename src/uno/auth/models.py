@@ -119,6 +119,7 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             """,
             name="ck_user_is_superuser",
         ),
+        UniqueConstraint("handle", "tenant_id", name="uq_user_handle_tenant_id"),
         {"comment": "Application users"},
     )
 
@@ -130,7 +131,6 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
         doc="Email address, used as login ID",
     )
     handle: Mapped[str_255] = mapped_column(
-        unique=True,
         index=True,
         nullable=False,
         doc="User's displayed name and alternate login ID",
