@@ -14,11 +14,14 @@ DECLARE
     uq_match_conditions text;
 BEGIN
     -- Extract column names and values from the JSONB data
-    SELECT string_agg(key, ', ') INTO columns
+    SELECT array_agg(key) INTO columns_array
     FROM jsonb_object_keys(data) AS key;
 
-    SELECT string_agg(format('%%L AS %I', value, key), ', ') INTO values
+    SELECT array_agg(format('%%L AS %I', value, key)) INTO values_array
     FROM jsonb_each_text(data) AS key_value(key, value);
+
+    columns := array_to_string(columns_array, ', ');
+    values := array_to_string(values_array, ', ');
 
     -- Generate the update set clause
     SELECT string_agg(format('%I = EXCLUDED.%I', key, key), ', ') INTO update_set
