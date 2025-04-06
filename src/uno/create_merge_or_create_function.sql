@@ -18,7 +18,7 @@ BEGIN
     SELECT string_agg(quote_ident(key), ', ') INTO columns
     FROM jsonb_object_keys(data);
 
-    SELECT string_agg(format('%%L AS %I', value, key), ', ') INTO values
+    SELECT string_agg(format('%%L', value), ', ') INTO values
     FROM jsonb_each_text(data);
 
     -- Generate the update set clause
