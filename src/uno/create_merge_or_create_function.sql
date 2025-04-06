@@ -22,8 +22,8 @@ BEGIN
     SELECT array_agg(key) INTO columns_array
     FROM jsonb_object_keys(data) AS key;
 
-    SELECT array_agg(value) INTO values_array
-    FROM jsonb_each_text(data) AS key_value(key, value);
+    SELECT array_agg(format('%%L', value)) INTO values_array
+    FROM jsonb_each(data) AS key_value(key, value);
 
     columns := array_to_string(columns_array, ', ');
     values := array_to_string(
@@ -45,16 +45,26 @@ BEGIN
 
     pk_match_conditions := array_to_string(pk_match_conditions_array, ' AND ');
 
+    pk_match_conditions := array_to_string(pk_match_conditions_array, ' AND ');
+
     IF array_length(uq_fields, 1) > 0 THEN
-        SELECT array_agg(
-            format('(%s)', array_to_string(
-                ARRAY(
-                    SELECT format('%I = EXCLUDED.%I', field, field)
-                    FROM unnest(uq_set) AS field
-                ), ' AND '
-            ))
-        ) INTO uq_match_conditions_array
-        FROM unnest(uq_fields) AS uq_set;
+        IF array_length(uq_fields, 1) > 0 THEN
+            SELECT array_agg(
+                format('(%s)', array_to_string(
+                    ARRAY(
+                        SELECT format('%I = EXCLUDED.%I', field, field)
+                        FROM unnest(uq_set) AS field
+                    ), ' AND '
+                ))
+            ) INTO uq_match_conditions_array
+            FROM unnest(uq_fields) AS uq_set;
+
+            uq_match_conditions := array_to_string(uq_match_conditions_array, ' OR ');
+
+            match_conditions := format('(%s) OR (%s)', pk_match_conditions, uq_match_conditions);
+        ELSE
+            match_conditions := pk_match_conditions;
+        END IF;
 
         uq_match_conditions := array_to_string(uq_match_conditions_array, ' OR ');
 
