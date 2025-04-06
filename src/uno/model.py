@@ -231,12 +231,12 @@ def UnoDBFactory(obj: BaseModel):
                     query = text(
                         """
                         SELECT * FROM merge_or_insert(
-                            :table_name\\:\\:TEXT, 
-                            :data\\:\\:JSONB,
-                            :pk_fields\\:\\:TEXT[],
-                            :uq_field_sets\\:\\:JSONB
+                            :table_name, 
+                            :data,
+                            :pk_fields,
+                            :uq_field_sets
                         )
-                    """
+                        """
                     )
                     result = await session.execute(
                         query,
@@ -247,8 +247,8 @@ def UnoDBFactory(obj: BaseModel):
                             "uq_field_sets": uq_field_sets_json,
                         },
                     )
-                    result = result.fetchone()._mappings()
-                    return result, True
+                    result = result.fetchone()
+                    return result['result'], True
                 except Exception as e:
                     raise
                     await session.rollback()

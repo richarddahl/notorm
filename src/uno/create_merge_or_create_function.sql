@@ -50,26 +50,15 @@ BEGIN
         END IF;
     END IF;
 
-    -- Construct the MERGE statement with a RETURNING clause
+    -- Construct the SQL statement with a RETURNING clause
     sql := format(
-        'WITH source AS (
-            SELECT %s
-        )
-        MERGE INTO %I AS target
-        USING source
-        ON %s
-        WHEN MATCHED THEN
-            UPDATE SET %s
-        WHEN NOT MATCHED THEN
-            INSERT (%s) VALUES (%s)
-        RETURNING *',
-        values, table_name, match_conditions, update_set, columns, values
+        'INSERT INTO %I (%s) VALUES (%s)
+        ON CONFLICT (%s) DO UPDATE SET %s
+        RETURNING to_jsonb(%I.*)',
+        table_name, columns, values, match_conditions, update_set, table_name
     );
 
-    -- Debugging: Print the generated SQL
-    RAISE NOTICE 'Generated SQL: %', sql;
-
-    -- Execute the MERGE statement and return the results
+    -- Execute the SQL statement and return the results
     RETURN QUERY EXECUTE sql;
 END;
 $$ LANGUAGE plpgsql;
