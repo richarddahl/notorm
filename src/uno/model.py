@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-
+import json
 import asyncio
 import datetime
 import decimal
@@ -213,6 +213,44 @@ def UnoDBFactory(obj: BaseModel):
             return table_keys
 
         @classmethod
+        async def merge_or_create(
+            cls, data: dict[str, str]
+        ) -> tuple[BaseModel, bool] | tuple[BaseModel, list[str]]:
+
+            obj.set_schemas()
+            table_keys = cls.table_keys()
+            pk_fields = table_keys["pk"]
+            uq_field_sets = json.dumps(
+                {k: v for k, v in table_keys.items() if k != "pk"}
+            )
+            print(f"pk_fields: {pk_fields}")
+            print(f"uq_field_sets: {uq_field_sets}")
+
+            async with scoped_session() as session:
+                await session.execute(func.set_role("writer"))
+                try:
+                    query = text(
+                        """
+                        SELECT * FROM merge_or_insert(:table_name\\:\\:TEXT, :data\\:\\:JSONB, :pk_fields\\:\\:TEXT[], uq_field_sets\\:\\:JSONB[]);
+                        """
+                    )
+                    result = await session.execute(
+                        query,
+                        {
+                            "table_name": cls.table_name,
+                            "data": json.dumps(data),
+                            "pk_fields": pk_fields,
+                            "uq_field_sets": uq_field_sets,
+                        },
+                    )
+                    result = result.fetchone()._mappings()
+                    return result, True
+                except Exception as e:
+                    raise
+                    await session.rollback()
+                    return "HERE", False
+
+        @classmethod
         async def get_or_create(
             cls, to_db_model: BaseModel = None, **kwargs
         ) -> tuple[BaseModel, bool]:
@@ -364,4 +402,5 @@ def UnoDBFactory(obj: BaseModel):
                 ) from e
 
     UnoDB.obj = obj
+    UnoDB.table_name = obj.model.__table__.name
     return UnoDB
