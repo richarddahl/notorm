@@ -48,7 +48,9 @@ BEGIN
     pk_match_conditions := array_to_string(pk_match_conditions_array, ' AND ');
 
     IF array_length(uq_fields, 1) > 0 THEN
+        -- Check if there are any unique fields to consider for conflict resolution
         IF array_length(uq_fields, 1) > 0 THEN
+            -- Construct match conditions for unique fields
             SELECT array_agg(
                 format('(%s)', array_to_string(
                     ARRAY(
@@ -59,19 +61,26 @@ BEGIN
             ) INTO uq_match_conditions_array
             FROM unnest(uq_fields) AS uq_set;
 
+            -- Combine unique field conditions with OR logic
             uq_match_conditions := array_to_string(uq_match_conditions_array, ' OR ');
 
+            -- Combine primary key and unique field conditions
             match_conditions := format('(%s) OR (%s)', pk_match_conditions, uq_match_conditions);
         ELSE
+            -- If no unique fields, use only primary key conditions
             match_conditions := pk_match_conditions;
         END IF;
 
-        uq_match_conditions := array_to_string(uq_match_conditions_array, ' OR ');
+        -- Construct the SQL statement with a RETURNING clause
+        sql := format(
+            'INSERT INTO %I (%s) VALUES (%s)
+            ON CONFLICT (%s) DO UPDATE SET %s
+            RETURNING to_jsonb(%I.*)',
+            table_name, columns, values, match_conditions, update_set, table_name
+        );
 
-        match_conditions := format('(%s) OR (%s)', pk_match_conditions, uq_match_conditions);
-    ELSE
-        match_conditions := pk_match_conditions;
-    END IF;
+        -- Execute the SQL statement and return the results
+        RETURN QUERY EXECUTE sql;
 
     -- Construct the SQL statement with a RETURNING clause
     sql := format(
