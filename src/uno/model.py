@@ -229,7 +229,7 @@ def UnoDBFactory(obj: BaseModel):
                             "table_name": cls.table_name,
                             "data": json.dumps(data, default=str),
                             "pk_fields": pk_fields,
-                            "uq_field_sets": json.dumps(uq_field_sets),
+                            "uq_field_sets": uq_field_sets,
                         },
                     )
                     result = result.fetchone()._mappings()
