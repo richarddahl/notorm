@@ -15,7 +15,7 @@ DECLARE
 BEGIN
     --RAISE EXCEPTION 'data: %', data;
     -- Extract column names and values from the JSONB data
-    SELECT string_agg(key, ', ') INTO columns
+    SELECT string_agg(quote_ident(key), ', ') INTO columns
     FROM jsonb_object_keys(data);
 
     SELECT string_agg(format('%%L AS %I', value, key), ', ') INTO values
