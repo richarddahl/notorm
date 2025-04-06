@@ -56,15 +56,12 @@ BEGIN
         'WITH source AS (
             SELECT %s
         )
-        MERGE INTO %I AS target
-        USING source
-        ON %s
-        WHEN MATCHED THEN
-            UPDATE SET %s
-            RETURNING target.*
-        WHEN NOT MATCHED THEN
-            INSERT (%s) VALUES (%s)
-            RETURNING target.*',
+        INSERT INTO %I (%s)
+        SELECT %s
+        FROM source
+        ON CONFLICT (%s) DO UPDATE
+        SET %s
+        RETURNING *',
         values, table_name, match_conditions, update_set, columns, columns
     );
 
