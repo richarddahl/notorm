@@ -1279,7 +1279,7 @@ class MergeOrCreate(SQLEmitter):
                             format('(%s)', string_agg(format('%I = EXCLUDED.%I', field, field), ' AND ')),
                             ' OR '
                         ) INTO uq_match_conditions
-                        FROM jsonb_array_elements(uq_field_sets) AS uq_set, jsonb_array_elements_text(uq_set) AS field;
+                        FROM unnest(uq_field_sets) AS uq_set, unnest(uq_set::TEXT[]) AS field;
 
                         IF match_conditions <> '' THEN
                             match_conditions := match_conditions || ' OR ' || uq_match_conditions;
