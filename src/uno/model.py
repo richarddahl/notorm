@@ -155,20 +155,7 @@ class UnoModel(AsyncAttrs, DeclarativeBase):
 
 
 class IntegrityConflictException(Exception):
-    @staticmethod
-    def get_natural_keys(obj):
-        from sqlalchemy import inspect
-
-        # Use SQLAlchemy's inspect to get the table information
-        inspector = inspect(obj.model)
-        unique_constraints = inspector.get_unique_constraints(obj.model.__tablename__)
-
-        # Extract the column names from the unique constraints
-        natural_keys = []
-        for constraint in unique_constraints:
-            natural_keys.extend(constraint['column_names'])
-
-        return natural_keys
+    pass
 
 
 class NotFoundException(Exception):
