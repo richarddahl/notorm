@@ -12,26 +12,48 @@ DECLARE
     match_conditions text;
 BEGIN
     -- Extract column names and values from the JSONB data
-    SELECT string_agg(key, ', ') INTO columns
+    SELECT array_agg(key) INTO columns_array
     FROM jsonb_object_keys(data) AS key;
 
-    SELECT string_agg(format('%%L', value), ', ') INTO values
+    SELECT array_agg(value) INTO values_array
     FROM jsonb_each_text(data) AS key_value(key, value);
 
+    columns := array_to_string(columns_array, ', ');
+    values := array_to_string(
+        ARRAY(
+            SELECT format('%%L', value)
+            FROM unnest(values_array) AS value
+        ), ', '
+    );
+
     -- Generate the update set clause
-    SELECT string_agg(format('%I = EXCLUDED.%I', key, key), ', ') INTO update_set
+    SELECT array_agg(format('%I = EXCLUDED.%I', key, key)) INTO update_set_array
     FROM jsonb_object_keys(data) AS key;
 
+    update_set := array_to_string(update_set_array, ', ');
+
     -- Construct match conditions for primary keys and unique fields
-    SELECT string_agg(format('%I = EXCLUDED.%I', field, field), ' AND ') INTO match_conditions
+    SELECT array_agg(format('%I = EXCLUDED.%I', field, field)) INTO pk_match_conditions_array
     FROM unnest(pk_fields) AS field;
 
+    pk_match_conditions := array_to_string(pk_match_conditions_array, ' AND ');
+
     IF array_length(uq_fields, 1) > 0 THEN
-        SELECT string_agg(
-            format('(%s)', string_agg(format('%I = EXCLUDED.%I', field, field), ' AND ')),
-            ' OR '
-        ) INTO match_conditions
-        FROM unnest(uq_fields) AS uq_set, unnest(uq_set) AS field;
+        SELECT array_agg(
+            format('(%s)', array_to_string(
+                ARRAY(
+                    SELECT format('%I = EXCLUDED.%I', field, field)
+                    FROM unnest(uq_set) AS field
+                ), ' AND '
+            ))
+        ) INTO uq_match_conditions_array
+        FROM unnest(uq_fields) AS uq_set;
+
+        uq_match_conditions := array_to_string(uq_match_conditions_array, ' OR ');
+
+        match_conditions := format('(%s) OR (%s)', pk_match_conditions, uq_match_conditions);
+    ELSE
+        match_conditions := pk_match_conditions;
     END IF;
 
     -- Construct the SQL statement with a RETURNING clause
