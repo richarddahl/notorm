@@ -219,11 +219,8 @@ def UnoDBFactory(obj: BaseModel):
             data = {k: v for k, v in data.items() if v is not None}
             # Convert the data dictionary to a JSON string
             data_json = json.dumps(data)
-            # Convert the uq_field_sets to JSON strings
-            # uq_field_sets_json = [
-            #    json.dumps(uq_field_set) for uq_field_set in uq_field_sets
-            # ]
-            uq_field_sets_json = json.dumps(uq_field_sets)
+            # Ensure uq_field_sets is a list of lists
+            uq_field_sets_list = [list(uq_field_set) for uq_field_set in uq_field_sets]
 
             async with scoped_session() as session:
                 await session.execute(func.set_role("writer"))
@@ -234,7 +231,7 @@ def UnoDBFactory(obj: BaseModel):
                             :table_name, 
                             :data,
                             :pk_fields,
-                            :uq_field_sets
+                            :uq_field_sets::jsonb[]
                         )
                         """
                     )
@@ -244,7 +241,7 @@ def UnoDBFactory(obj: BaseModel):
                             "table_name": cls.table_name,
                             "data": data_json,
                             "pk_fields": pk_fields,
-                            "uq_field_sets": uq_field_sets_json,
+                            "uq_field_sets": uq_field_sets_list,
                         },
                     )
                     result = result.fetchone()
