@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION merge_or_insert(
     table_name text, 
     data jsonb, 
     pk_fields text[], 
-    uq_field_sets jsonb[]
+    uq_field_sets jsonb
 ) RETURNS TABLE (result jsonb) AS $$
 DECLARE
     columns text;
@@ -14,16 +14,15 @@ DECLARE
     uq_match_conditions text;
 BEGIN
     -- Extract column names and values from the JSONB data
-    RAISE EXCEPTION 'jsonb_object_keys(data) = %', jsonb_object_keys(data);
     SELECT string_agg(key, ', ') INTO columns
-    FROM jsonb_object_keys(data);
+    FROM jsonb_object_keys(data) AS key;
 
     SELECT string_agg(format('%%L AS %I', value, key), ', ') INTO values
-    FROM jsonb_each_text(data);
+    FROM jsonb_each_text(data) AS key_value(key, value);
 
     -- Generate the update set clause
     SELECT string_agg(format('%I = EXCLUDED.%I', key, key), ', ') INTO update_set
-    FROM jsonb_object_keys(data);
+    FROM jsonb_object_keys(data) AS key;
 
     -- Initialize match conditions
     match_conditions := '';
@@ -56,13 +55,15 @@ BEGIN
         'WITH source AS (
             SELECT %s
         )
-        INSERT INTO %I (%s)
-        SELECT %s
-        FROM source
-        ON CONFLICT (%s) DO UPDATE
-        SET %s
+        MERGE INTO %I AS target
+        USING source
+        ON %s
+        WHEN MATCHED THEN
+            UPDATE SET %s
+        WHEN NOT MATCHED THEN
+            INSERT (%s) VALUES (%s)
         RETURNING *',
-        values, table_name, match_conditions, update_set, columns, columns
+        values, table_name, match_conditions, update_set, columns, values
     );
 
     -- Debugging: Print the generated SQL

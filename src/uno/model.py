@@ -214,24 +214,37 @@ def UnoDBFactory(obj: BaseModel):
             pk_fields, uq_field_sets = cls.table_keys()
             print(f"pk_fields: {pk_fields}")
             print(f"uq_field_sets: {uq_field_sets}")
-            print(f"data: {data}")
-            print(json.dumps(data))
+
+            # Remove None values from the data dictionary
+            data = {k: v for k, v in data.items() if v is not None}
+            # Convert the data dictionary to a JSON string
+            data_json = json.dumps(data)
+            # Convert the uq_field_sets to JSON strings
+            # uq_field_sets_json = [
+            #    json.dumps(uq_field_set) for uq_field_set in uq_field_sets
+            # ]
+            uq_field_sets_json = json.dumps(uq_field_sets)
 
             async with scoped_session() as session:
                 await session.execute(func.set_role("writer"))
                 try:
                     query = text(
                         """
-                        SELECT * FROM merge_or_insert(:table_name\\:\\:TEXT, :data\\:\\:JSONB, :pk_fields\\:\\:TEXT[], :uq_field_sets\\:\\:JSONB[]);
-                        """
+                        SELECT * FROM merge_or_insert(
+                            :table_name\\:\\:TEXT, 
+                            :data\\:\\:JSONB,
+                            :pk_fields\\:\\:TEXT[],
+                            :uq_field_sets\\:\\:JSONB
+                        )
+                    """
                     )
                     result = await session.execute(
                         query,
                         {
                             "table_name": cls.table_name,
-                            "data": json.dumps(data),
+                            "data": data_json,
                             "pk_fields": pk_fields,
-                            "uq_field_sets": [json.dumps(uq_set) for uq_set in uq_field_sets],
+                            "uq_field_sets": uq_field_sets_json,
                         },
                     )
                     result = result.fetchone()._mappings()
