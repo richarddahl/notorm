@@ -744,8 +744,8 @@ class DBManager:
             # Attempt to retrieve or create a `QueryPath` object in the database
             # `query_path.to_model(schema_name="edit_schema")` converts the `query_path` to its obj representation
             # with the specified schema name.
-            # query_path, created = await query_path.merge_or_create()
-            query_path = await query_path.merge_or_create()
+            query_path, action = await query_path.merge()
+            print(f"QueryPath: {query_path.cypher_path}, _action: {action}")
             # query_path, created = await query_path.get_or_create()
             continue
 

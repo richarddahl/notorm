@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION merge_or_insert(
     data jsonb,
     primary_keys text[],
     unique_constraints text[]
-) RETURNS void AS $$
+) RETURNS jsonb AS $$
 DECLARE
     merge_query text;
     source_query text;
@@ -18,6 +18,12 @@ DECLARE
     match_type text;
     has_pk boolean;
     has_unique boolean;
+    result_record jsonb;
+    select_query text;
+    temp_table_name text;
+    action_performed text;
+    existing_record_count integer;
+    needs_update boolean;
 BEGIN
     -- Validate inputs
     IF table_name IS NULL OR data IS NULL THEN
@@ -76,6 +82,9 @@ BEGIN
             RAISE EXCEPTION 'Required % column "%" not found in data', match_type, column_name;
         END IF;
     END LOOP;
+    
+    -- Check if the record already exists
+    EXECUTE format('SELECT COUNT(*) FROM %I t WHERE %s', table_name, match_condition) INTO existing_record_count;
     
     -- Build UPDATE clause for WHEN MATCHED
     update_clause := '';
@@ -143,15 +152,31 @@ BEGIN
         insert_clause := format('(%s) VALUES (%s)', columns, values);
     END;
     
+    -- Set the default action based on whether the record exists
+    IF existing_record_count > 0 THEN
+        -- Record exists, determine if it needs to be updated
+        needs_update := update_clause <> '';
+        
+        IF needs_update THEN
+            action_performed := 'updated';
+        ELSE
+            action_performed := 'retrieved';
+        END IF;
+    ELSE
+        -- Record doesn't exist, will be inserted
+        action_performed := 'created';
+        needs_update := false;
+    END IF;
+    
     -- Build source query for MERGE
     source_query := format('(SELECT 1 AS dummy) s');
     
-    -- Construct the complete MERGE statement
+    -- Construct the complete MERGE statement without RETURNING
     merge_query := format('
         MERGE INTO %I t
         USING %s
         ON %s
-        WHEN MATCHED AND (%s IS NOT NULL) THEN
+        WHEN MATCHED AND %s THEN
             UPDATE SET %s
         WHEN NOT MATCHED THEN
             INSERT %s',
@@ -168,5 +193,23 @@ BEGIN
     
     -- Execute the MERGE statement
     EXECUTE merge_query;
+    
+    -- Now build a SELECT query to fetch the row we just merged/inserted
+    select_query := format('
+        SELECT to_jsonb(t.*) 
+        FROM %I t 
+        WHERE %s',
+        table_name,
+        match_condition
+    );
+    
+    -- Execute the SELECT query to get the result
+    EXECUTE select_query INTO result_record;
+    
+    -- Add the action performed to the result
+    result_record := jsonb_set(result_record, '{_action}', to_jsonb(action_performed));
+    
+    -- Return the result
+    RETURN result_record;
 END;
 $$ LANGUAGE plpgsql;

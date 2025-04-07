@@ -207,7 +207,7 @@ def UnoDBFactory(obj: BaseModel):
             return pk_fields, uq_fields
 
         @classmethod
-        async def merge_or_update_record_sa(cls, data):
+        async def merge(cls, data):
             """
             Call the PostgreSQL merge_or_insert function with escaped colons in the data values.
             """
@@ -262,9 +262,8 @@ def UnoDBFactory(obj: BaseModel):
 
                     # Execute raw SQL
                     result = await session.execute(text(raw_sql))
-
                     await session.commit()
-                    return result.scalar()
+                    return result.fetchone()
             except Exception as e:
                 print(f"Error in merge_or_update_record_sa: {e}")
                 print(f"SQL: {raw_sql}")

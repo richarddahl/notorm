@@ -99,10 +99,10 @@ class UnoObj(BaseModel):
 
     # End of to_model
 
-    async def merge_or_create(
+    async def merge(
         self,
         **kwargs,
-    ) -> "UnoObj":
+    ) -> tuple["UnoObj", str]:
         """
         Asynchronously merges the current record with an existing one in the database.
         This method attempts to find a record in the database that matches the provided
@@ -117,10 +117,9 @@ class UnoObj(BaseModel):
             the combination of which must form a unique key in the database.
         """
         self.set_schemas()
-        return await self.db.merge_or_update_record_sa(
-            self.edit_schema(**self.model_dump()).model_dump()
-        )
-        # return await self.db.merge_or_create(self.model_dump())
+        obj = await self.db.merge(self.edit_schema(**self.model_dump()).model_dump())
+        _action = obj[0].pop("_action")
+        return self.model(**obj[0]), _action
 
     async def get_or_create(
         self,
