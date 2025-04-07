@@ -209,10 +209,10 @@ def UnoDBFactory(obj: BaseModel):
         @classmethod
         async def merge(cls, data):
             """
-            Call the PostgreSQL merge_or_insert function with escaped colons in the data values.
+            Call the PostgreSQL merge_record function with escaped colons in the data values.
             """
-            pk_fields, unique_constraints = cls.table_keys()
-            table_name = cls.table_name
+            # pk_fields, unique_constraints = cls.table_keys()
+            table_name = f"{obj.model.__table__.schema}.{cls.table_name}"
 
             # Create a deep copy of the data to avoid modifying the original
             import copy
@@ -230,31 +230,33 @@ def UnoDBFactory(obj: BaseModel):
             for key, value in data_copy.items():
                 data_copy[key] = escape_colons(value)
 
-            # Convert data to JSON string
-            import json
-
             data_json = json.dumps(data_copy)
 
             # Prepare unique constraints
-            uc = (
-                unique_constraints[0]
-                if unique_constraints and len(unique_constraints) > 0
-                else []
-            )
+            # uc = (
+            #    unique_constraints[0]
+            #    if unique_constraints and len(unique_constraints) > 0
+            #    else []
+            # )
 
             # Format arrays as PostgreSQL literals
-            pk_array_str = "ARRAY[" + ",".join(f"'{pk}'" for pk in pk_fields) + "]"
-            uc_array_str = "ARRAY[" + ",".join(f"'{uc_field}'" for uc_field in uc) + "]"
+            # pk_array_str = "ARRAY[" + ",".join(f"'{pk}'" for pk in pk_fields) + "]"
+            # uc_array_str = "ARRAY[" + ",".join(f"'{uc_field}'" for uc_field in uc) + "]"
 
             # Create raw SQL with the E'' string syntax for proper escape handling
-            raw_sql = f"""
-                SELECT merge_or_insert(
-                    '{table_name}', 
-                    E'{data_json}'::jsonb, 
-                    {pk_array_str}, 
-                    {uc_array_str}
-                )
-            """
+            raw_sql = (
+                sql.SQL("SELECT merge_record('{table_name}', E'{data_json}'::jsonb)")
+                .format(table_name=sql.SQL(table_name), data_json=sql.SQL(data_json))
+                .as_string()
+            )
+            # raw_sql = f"""
+            #    SELECT merge_record(
+            #        '{table_name}',
+            #        E'{data_json}'::jsonb,
+            #        {pk_array_str},
+            #        {uc_array_str}
+            #    )
+            # """
 
             try:
                 async with scoped_session() as session:
@@ -292,7 +294,7 @@ def UnoDBFactory(obj: BaseModel):
                     '''
                     query = text(
                         """
-                        SELECT * FROM merge_or_insert(
+                        SELECT * FROM merge_record(
                             :table_name\\:\\:text,
                             :data\\:\\:jsonb,
                             :pk_cols\\:\\:text[],
@@ -312,7 +314,7 @@ def UnoDBFactory(obj: BaseModel):
                     '''
                     query = text(
                         """
-                        SELECT * FROM merge_or_insert(
+                        SELECT * FROM merge_record(
                             :table_name\\:\\:text, 
                             :data\\:\\:jsonb,
                             :pk_cols\\:\\:text[],
