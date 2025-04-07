@@ -115,7 +115,7 @@ BEGIN
 
     -- Raise exception if no usable keys found
     IF all_keys IS NULL OR array_length(all_keys, 1) = 0 THEN
-        -- Last attempt: try direct match with single-column unique constraints
+        -- Attempt to use single-column unique constraints if available
         FOR i IN 1..array_length(unique_constraints, 1) LOOP
             current_constraint := unique_constraints[i];
             
@@ -129,9 +129,9 @@ BEGIN
             END IF;
         END LOOP;
         
-        -- If still no keys, raise exception
+        -- If still no keys, raise a more informative exception
         IF all_keys IS NULL OR array_length(all_keys, 1) = 0 THEN
-            RAISE EXCEPTION 'Neither primary keys nor usable unique constraints are available in the data. Debug: %', debug_info;
+            RAISE EXCEPTION 'No primary keys or unique constraints found in the data. Ensure that the data includes at least one primary key or unique constraint. Debug: %', debug_info;
         END IF;
     END IF;
 
