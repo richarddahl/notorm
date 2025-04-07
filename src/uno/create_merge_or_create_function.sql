@@ -29,7 +29,7 @@ BEGIN
     END IF;
 
     -- Build match condition
-    FOREACH column_name IN ARRAY all_keys LOOP
+    FOR column_name IN SELECT unnest(all_keys) LOOP
         IF match_condition != '' THEN
             match_condition := match_condition || ' AND ';
         END IF;
