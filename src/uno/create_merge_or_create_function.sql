@@ -1,35 +1,142 @@
 CREATE OR REPLACE FUNCTION merge_or_insert(
     table_name text,
-    data jsonb,
-    primary_keys text[],
-    unique_constraints text[]
+    data jsonb
 ) RETURNS jsonb AS $$
 DECLARE
     match_condition text := '';
     update_clause text := '';
     insert_columns text := '';
     insert_values text := '';
+    primary_keys text[] := '{}';
+    unique_constraints text[][] := '{}';
     all_keys text[];
     existing_record jsonb;
     action_performed text;
     needs_update boolean := false;
+    column_name text;
+    column_value jsonb;
+    schema_name text := 'public';
+    table_parts text[];
+    qualified_table text;
+    i integer;
+    current_constraint text[];
+    debug_info jsonb;
+    has_all_keys boolean;
+    data_keys text[];
+    constraint_checks jsonb := '[]'::jsonb;
 BEGIN
     -- Validate inputs
     IF table_name IS NULL OR data IS NULL THEN
         RAISE EXCEPTION 'Invalid parameters: table_name and data must be provided';
     END IF;
-
-    -- Determine matching keys
-    IF array_length(primary_keys, 1) > 0 AND (SELECT bool_and(data ? key) FROM unnest(primary_keys) AS key) THEN
-        all_keys := primary_keys;
-    ELSIF array_length(unique_constraints, 1) > 0 AND (SELECT bool_and(data ? key) FROM unnest(unique_constraints) AS key) THEN
-        all_keys := unique_constraints;
+    
+    -- Extract schema if provided in table_name (schema.table format)
+    IF position('.' in table_name) > 0 THEN
+        table_parts := string_to_array(table_name, '.');
+        schema_name := table_parts[1];
+        table_name := table_parts[2];
+        qualified_table := quote_ident(schema_name) || '.' || quote_ident(table_name);
     ELSE
-        RAISE EXCEPTION 'Neither primary keys nor unique constraints are available in the data';
+        qualified_table := quote_ident(table_name);
+    END IF;
+
+    -- Get all keys from the data
+    SELECT array_agg(key) INTO data_keys FROM jsonb_object_keys(data) AS key;
+
+    -- Get primary keys
+    SELECT array_agg(a.attname::text) INTO primary_keys
+    FROM pg_index i
+    JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+    WHERE i.indrelid = (schema_name || '.' || table_name)::regclass
+    AND i.indisprimary;
+    
+    -- Get unique constraints
+    WITH unique_idx AS (
+        SELECT 
+            i.indexrelid,
+            array_agg(a.attname::text ORDER BY array_position(i.indkey, a.attnum)) as cols
+        FROM pg_index i
+        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+        WHERE i.indrelid = (schema_name || '.' || table_name)::regclass
+        AND i.indisunique AND NOT i.indisprimary
+        GROUP BY i.indexrelid
+    )
+    SELECT array_agg(cols) INTO unique_constraints
+    FROM unique_idx;
+
+    -- Check if primary keys are usable
+    IF primary_keys IS NOT NULL AND array_length(primary_keys, 1) > 0 THEN
+        has_all_keys := true;
+        FOREACH column_name IN ARRAY primary_keys LOOP
+            IF NOT data ? column_name THEN
+                has_all_keys := false;
+                EXIT;
+            END IF;
+        END LOOP;
+        
+        IF has_all_keys THEN
+            all_keys := primary_keys;
+        END IF;
+    END IF;
+
+    -- If primary keys aren't usable, try unique constraints
+    IF all_keys IS NULL AND unique_constraints IS NOT NULL AND array_length(unique_constraints, 1) > 0 THEN
+        -- Try each unique constraint
+        FOR i IN 1..array_length(unique_constraints, 1) LOOP
+            current_constraint := unique_constraints[i];
+            
+            IF current_constraint IS NOT NULL THEN
+                has_all_keys := true;
+                
+                FOREACH column_name IN ARRAY current_constraint LOOP
+                    IF NOT data ? column_name THEN
+                        has_all_keys := false;
+                        EXIT;
+                    END IF;
+                END LOOP;
+                
+                IF has_all_keys THEN
+                    all_keys := current_constraint;
+                    EXIT;
+                END IF;
+            END IF;
+        END LOOP;
+    END IF;
+
+    -- Create debug info
+    debug_info := jsonb_build_object(
+        'table', table_name,
+        'schema', schema_name,
+        'data_keys', to_jsonb(data_keys),
+        'primary_keys', to_jsonb(primary_keys),
+        'unique_constraints', to_jsonb(unique_constraints),
+        'selected_keys', to_jsonb(all_keys)
+    );
+
+    -- Raise exception if no usable keys found
+    IF all_keys IS NULL OR array_length(all_keys, 1) = 0 THEN
+        -- Last attempt: try direct match with single-column unique constraints
+        FOR i IN 1..array_length(unique_constraints, 1) LOOP
+            current_constraint := unique_constraints[i];
+            
+            IF current_constraint IS NOT NULL AND array_length(current_constraint, 1) = 1 THEN
+                column_name := current_constraint[1];
+                
+                IF data ? column_name THEN
+                    all_keys := ARRAY[column_name];
+                    EXIT;
+                END IF;
+            END IF;
+        END LOOP;
+        
+        -- If still no keys, raise exception
+        IF all_keys IS NULL OR array_length(all_keys, 1) = 0 THEN
+            RAISE EXCEPTION 'Neither primary keys nor usable unique constraints are available in the data. Debug: %', debug_info;
+        END IF;
     END IF;
 
     -- Build match condition
-    FOR column_name IN SELECT unnest(all_keys) LOOP
+    FOREACH column_name IN ARRAY all_keys LOOP
         IF match_condition != '' THEN
             match_condition := match_condition || ' AND ';
         END IF;
@@ -40,10 +147,9 @@ BEGIN
             END);
     END LOOP;
 
-    -- Check for existing record
-    EXECUTE format('SELECT to_jsonb(t.*) FROM %I t WHERE %s', table_name, match_condition) INTO existing_record;
+    -- Execute the rest of the function as provided
+    EXECUTE format('SELECT to_jsonb(t.*) FROM %s t WHERE %s', qualified_table, match_condition) INTO existing_record;
 
-    -- Build update and insert clauses
     FOR column_name, column_value IN SELECT * FROM jsonb_each(data) LOOP
         IF NOT (column_name = ANY(all_keys)) THEN
             IF existing_record IS NOT NULL AND existing_record ? column_name AND existing_record->>column_name IS DISTINCT FROM column_value#>>'{}' THEN
@@ -72,21 +178,19 @@ BEGIN
             END;
     END LOOP;
 
-    -- Determine action
     IF existing_record IS NOT NULL THEN
-        IF needs_update THEN
-            EXECUTE format('UPDATE %I SET %s WHERE %s', table_name, update_clause, match_condition);
+        IF needs_update AND update_clause != '' THEN
+            EXECUTE format('UPDATE %s SET %s WHERE %s', qualified_table, update_clause, match_condition);
             action_performed := 'updated';
         ELSE
             action_performed := 'retrieved';
         END IF;
     ELSE
-        EXECUTE format('INSERT INTO %I (%s) VALUES (%s)', table_name, insert_columns, insert_values);
+        EXECUTE format('INSERT INTO %s (%s) VALUES (%s)', qualified_table, insert_columns, insert_values);
         action_performed := 'created';
     END IF;
 
-    -- Return the final record with action
-    EXECUTE format('SELECT to_jsonb(t.*) FROM %I t WHERE %s', table_name, match_condition) INTO existing_record;
+    EXECUTE format('SELECT to_jsonb(t.*) FROM %s t WHERE %s', qualified_table, match_condition) INTO existing_record;
     RETURN jsonb_set(existing_record, '{_action}', to_jsonb(action_performed));
 END;
 $$ LANGUAGE plpgsql;
