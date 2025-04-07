@@ -117,6 +117,7 @@ BEGIN
             IF found_constraint IS NOT NULL AND array_length(found_constraint, 1) = 1 THEN
                 column_name := found_constraint[1];
                 
+                -- Check if the data contains the column for the unique constraint
                 IF data ? column_name THEN
                     all_keys := ARRAY[column_name];
                     EXIT;
