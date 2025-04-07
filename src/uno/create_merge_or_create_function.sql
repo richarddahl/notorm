@@ -27,6 +27,12 @@ BEGIN
     /*
         Function: merge_record
 
+        TODO:
+        PG16's MERGE statement does not support RETURNING, so we need to do a
+        SELECT after the MERGE to get the final state of the record.
+        Once uno is updated to PG17 (assuming apache age gets updated to PG 17), 
+        we can use the RETURNING clause in the MERGE statement.
+
         Description:
         This function performs a "merge" or "upsert" operation on a specified table. 
         It attempts to insert a new record into the table or update an existing record 
@@ -251,6 +257,9 @@ BEGIN
             WHEN NOT MATCHED THEN
                 INSERT (%s)
                 VALUES (%s);
+            --RETURNING merge_action(), target.*
+            -- TODO: No RETURNING clause in PG16,
+            -- so select after the MERGE for now
         ',
         source_clause,
         qualified_table,
