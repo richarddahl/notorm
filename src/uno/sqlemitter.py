@@ -1229,13 +1229,12 @@ class SetRole(SQLEmitter):
         )
 
 
-class MergeOrCreate(SQLEmitter):
+class MergeRecord(SQLEmitter):
 
     @computed_field
-    def create_merge_or_create_function(self) -> str:
+    def create_merge_record(self) -> str:
         with open(f"{settings.UNO_ROOT}/uno/merge_record.sql", "r") as file:
             sql_statment = file.read()
-        # return sql.SQL(sql_statment).format(schema_name=DB_SCHEMA).as_string()
         return sql_statment
 
 

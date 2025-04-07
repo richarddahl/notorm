@@ -19,7 +19,7 @@ from uno.sqlemitter import (
     GrantPrivileges,
     InsertMetaRecordFunction,
     SetRole,
-    MergeOrCreate,
+    MergeRecord,
 )
 from uno.obj import UnoObj
 from uno.model import meta_data
@@ -297,9 +297,9 @@ class DBManager:
             SetRole().emit_sql(connection=conn)
             print("Created the set_role function\n")
 
-            # Emit SQL commands to create the merge_or_create function
-            MergeOrCreate().emit_sql(connection=conn)
-            print("Created the merge_or_create function\n")
+            # Emit SQL commands to create the merge_record function
+            MergeRecord().emit_sql(connection=conn)
+            print("Created the merge_record function\n")
 
         # Dispose of the engine to release resources
         engine.dispose()

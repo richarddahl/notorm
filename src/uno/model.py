@@ -232,135 +232,24 @@ def UnoDBFactory(obj: BaseModel):
 
             data_json = json.dumps(data_copy)
 
-            # Prepare unique constraints
-            # uc = (
-            #    unique_constraints[0]
-            #    if unique_constraints and len(unique_constraints) > 0
-            #    else []
-            # )
-
-            # Format arrays as PostgreSQL literals
-            # pk_array_str = "ARRAY[" + ",".join(f"'{pk}'" for pk in pk_fields) + "]"
-            # uc_array_str = "ARRAY[" + ",".join(f"'{uc_field}'" for uc_field in uc) + "]"
-
             # Create raw SQL with the E'' string syntax for proper escape handling
-            raw_sql = (
+            query = (
                 sql.SQL("SELECT merge_record('{table_name}', E'{data_json}'::jsonb)")
                 .format(table_name=sql.SQL(table_name), data_json=sql.SQL(data_json))
                 .as_string()
             )
-            # raw_sql = f"""
-            #    SELECT merge_record(
-            #        '{table_name}',
-            #        E'{data_json}'::jsonb,
-            #        {pk_array_str},
-            #        {uc_array_str}
-            #    )
-            # """
-
             try:
                 async with scoped_session() as session:
                     await session.execute(func.set_role("writer"))
 
                     # Execute raw SQL
-                    result = await session.execute(text(raw_sql))
+                    result = await session.execute(text(query))
                     await session.commit()
                     return result.fetchone()
             except Exception as e:
                 print(f"Error in merge_or_update_record_sa: {e}")
-                print(f"SQL: {raw_sql}")
+                print(f"SQL: {query}")
                 raise
-
-        @classmethod
-        async def merge_or_create(
-            cls, data: dict[str, str]
-        ) -> tuple[BaseModel, bool] | tuple[BaseModel, list[str]]:
-
-            obj.set_schemas()
-            pk_fields, uq_field_sets = cls.table_keys()
-            print(f"pk_fields: {pk_fields}")
-            print(f"uq_field_sets: {uq_field_sets}")
-
-            # Remove None values from the data dictionary
-            data = {k: v for k, v in data.items() if v is not None}
-            # Convert the data dictionary to a JSON string
-            data_json = json.dumps(data)
-            # Ensure uq_field_sets is a list of lists
-            uq_field_sets_list = [list(uq_field_set) for uq_field_set in uq_field_sets]
-
-            async with scoped_session() as session:
-                await session.execute(func.set_role("writer"))
-                try:
-                    '''
-                    query = text(
-                        """
-                        SELECT * FROM merge_record(
-                            :table_name\\:\\:text,
-                            :data\\:\\:jsonb,
-                            :pk_cols\\:\\:text[],
-                            :uq_cols\\:\\:text[]
-                        )
-                        """
-                    )
-                    result = await session.execute(
-                        query,
-                        {
-                            "table_name": cls.table_name,
-                            "data": data_json,
-                            "pk_cols": pk_fields,
-                            "uq_cols": uq_field_sets_list,
-                        },
-                    )
-                    '''
-                    query = text(
-                        """
-                        SELECT * FROM merge_record(
-                            :table_name\\:\\:text, 
-                            :data\\:\\:jsonb,
-                            :pk_cols\\:\\:text[],
-                            :uq_cols\\:\\:text[]
-                        )
-                        """
-                    )
-                    result = await session.execute(
-                        query,
-                        {
-                            "table_name": cls.table_name,
-                            "data": data_json,
-                            "pk_cols": pk_fields,
-                            "uq_cols": uq_field_sets_list,
-                        },
-                    )
-                    result = result.fetchone()
-                    return result["result"], True
-
-                    result = result.fetchone()
-                    return result["result"], True
-                except Exception as e:
-                    raise
-                    await session.rollback()
-                    return "HERE", False
-
-        @classmethod
-        async def get_or_create(
-            cls, to_db_model: BaseModel = None, **kwargs
-        ) -> tuple[BaseModel, bool]:
-            table_keys = cls.table_keys()
-            async with scoped_session() as session:
-                await session.execute(func.set_role("writer"))
-                try:
-                    result = await cls.create(to_db_model)
-                    return result
-                except UniqueViolationError:
-                    # Handle the case where the object already exists
-                    await session.rollback()
-                    await session.execute(func.set_role("reader"))
-                    result = await cls.get(
-                        cypher_path=to_db_model.cypher_path,  # kwargs sent to get must be natural db key
-                    )
-                    return result, False
-                    # Re-raise the IntegrityError if it's not a UniqueViolationError
-                    raise
 
         @classmethod
         async def create(
