@@ -20,10 +20,11 @@ DECLARE
     has_unique boolean;
     result_record jsonb;
     select_query text;
-    temp_table_name text;
+    existing_record jsonb;
     action_performed text;
     existing_record_count integer;
     needs_update boolean;
+    update_condition text;
 BEGIN
     -- Validate inputs
     IF table_name IS NULL OR data IS NULL THEN
@@ -83,14 +84,52 @@ BEGIN
         END IF;
     END LOOP;
     
-    -- Check if the record already exists
-    EXECUTE format('SELECT COUNT(*) FROM %I t WHERE %s', table_name, match_condition) INTO existing_record_count;
+    -- Check if the record already exists and get its current state
+    select_query := format('
+        SELECT to_jsonb(t.*) 
+        FROM %I t 
+        WHERE %s',
+        table_name,
+        match_condition
+    );
     
-    -- Build UPDATE clause for WHEN MATCHED
+    EXECUTE select_query INTO existing_record;
+    existing_record_count := CASE WHEN existing_record IS NOT NULL THEN 1 ELSE 0 END;
+    
+    -- Build UPDATE clause and update condition for WHEN MATCHED
     update_clause := '';
+    update_condition := '';
+    
     FOR column_name, column_value IN SELECT * FROM jsonb_each(data) LOOP
         -- Skip key columns in updates
         IF NOT (column_name = ANY(all_keys)) THEN
+            -- Check if the value is different from the existing record
+            IF existing_record_count > 0 AND existing_record ? column_name THEN
+                -- Compare the values to see if an update is needed
+                IF (jsonb_typeof(column_value) = 'null' AND jsonb_typeof(existing_record->column_name) <> 'null') OR
+                   (jsonb_typeof(column_value) <> 'null' AND jsonb_typeof(existing_record->column_name) = 'null') OR
+                   (jsonb_typeof(column_value) <> 'null' AND jsonb_typeof(existing_record->column_name) <> 'null' AND 
+                    column_value <> existing_record->column_name) THEN
+                    
+                    -- Value is different, add to update condition
+                    IF update_condition != '' THEN
+                        update_condition := update_condition || ' OR ';
+                    END IF;
+                    
+                    -- Add this column to the update condition
+                    IF jsonb_typeof(column_value) = 'null' THEN
+                        update_condition := update_condition || format('t.%I IS NOT NULL', column_name);
+                    ELSIF jsonb_typeof(existing_record->column_name) = 'null' THEN
+                        update_condition := update_condition || format('t.%I IS NULL', column_name);
+                    ELSE
+                        update_condition := update_condition || format('t.%I <> %L', 
+                                                                    column_name, 
+                                                                    column_value#>>'{}');
+                    END IF;
+                END IF;
+            END IF;
+            
+            -- Always build the update clause
             IF update_clause != '' THEN
                 update_clause := update_clause || ', ';
             END IF;
@@ -119,6 +158,9 @@ BEGIN
             END IF;
         END IF;
     END LOOP;
+    
+    -- If update_condition is empty but update_clause isn't, it means all values are the same
+    needs_update := update_condition <> '';
     
     -- Build INSERT clause for WHEN NOT MATCHED
     insert_clause := '';
@@ -151,59 +193,58 @@ BEGIN
         
         insert_clause := format('(%s) VALUES (%s)', columns, values);
     END;
-    
-    -- Set the default action based on whether the record exists
+    -- Set the action based on whether the record exists and needs update
     IF existing_record_count > 0 THEN
-        -- Record exists, determine if it needs to be updated
-        needs_update := update_clause <> '';
-        
         IF needs_update THEN
             action_performed := 'updated';
         ELSE
             action_performed := 'retrieved';
         END IF;
     ELSE
-        -- Record doesn't exist, will be inserted
         action_performed := 'created';
-        needs_update := false;
     END IF;
     
     -- Build source query for MERGE
     source_query := format('(SELECT 1 AS dummy) s');
     
-    -- Construct the complete MERGE statement without RETURNING
-    merge_query := format('
-        MERGE INTO %I t
-        USING %s
-        ON %s
-        WHEN MATCHED AND %s THEN
-            UPDATE SET %s
-        WHEN NOT MATCHED THEN
-            INSERT %s',
-        table_name,
-        source_query,
-        match_condition,
-        CASE WHEN update_clause = '' THEN 'FALSE' ELSE 'TRUE' END,
-        CASE WHEN update_clause = '' THEN 'dummy = dummy' ELSE update_clause END,
-        insert_clause
-    );
+    -- Construct the complete MERGE statement
+    IF existing_record_count > 0 AND needs_update THEN
+        -- Record exists and needs update
+        merge_query := format('
+            MERGE INTO %I t
+            USING %s
+            ON %s
+            WHEN MATCHED THEN
+                UPDATE SET %s',
+            table_name,
+            source_query,
+            match_condition,
+            update_clause
+        );
+    ELSIF existing_record_count = 0 THEN
+        -- Record doesn't exist, insert it
+        merge_query := format('
+            MERGE INTO %I t
+            USING %s
+            ON %s
+            WHEN NOT MATCHED THEN
+                INSERT %s',
+            table_name,
+            source_query,
+            match_condition,
+            insert_clause
+        );
+    ELSE
+        -- Record exists and doesn't need update, do nothing
+        merge_query := NULL;
+    END IF;
     
-    -- Log the query for debugging (optional)
-    RAISE NOTICE 'Executing: %', merge_query;
+    -- Execute the MERGE statement if needed
+    IF merge_query IS NOT NULL THEN
+        EXECUTE merge_query;
+    END IF;
     
-    -- Execute the MERGE statement
-    EXECUTE merge_query;
-    
-    -- Now build a SELECT query to fetch the row we just merged/inserted
-    select_query := format('
-        SELECT to_jsonb(t.*) 
-        FROM %I t 
-        WHERE %s',
-        table_name,
-        match_condition
-    );
-    
-    -- Execute the SELECT query to get the result
+    -- Get the final record
     EXECUTE select_query INTO result_record;
     
     -- Add the action performed to the result
