@@ -8,7 +8,7 @@ import contextlib
 
 from sqlalchemy.engine import create_engine, Engine
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     SQLConfig,
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,

@@ -7,7 +7,7 @@ from pydantic import computed_field
 from psycopg import sql
 from sqlalchemy.sql import text
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,

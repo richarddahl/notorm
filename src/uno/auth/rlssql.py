@@ -6,7 +6,7 @@ from pydantic import computed_field
 
 from psycopg import sql
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     SQLEmitter,
     DB_SCHEMA,
     ADMIN_ROLE,

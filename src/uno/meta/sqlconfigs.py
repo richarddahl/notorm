@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     SQLConfig,
     AlterGrants,
     InsertMetaType,
     InsertPermission,
 )
-from uno.graphsql import GraphSQLEmitter
+from uno.sqlgraph import GraphSQLEmitter
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 
 

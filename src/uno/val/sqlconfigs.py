@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     AlterGrants,
     InsertMetaType,
     RecordUserAuditFunction,
@@ -11,7 +11,7 @@ from uno.sqlemitter import (
     RecordStatusFunction,
     SQLConfig,
 )
-from uno.graphsql import GraphSQLEmitter
+from uno.sqlgraph import GraphSQLEmitter
 from uno.val.objects import (
     AttachmentModel,
     BooleanValueModel,

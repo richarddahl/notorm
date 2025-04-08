@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 
-from uno.sqlemitter import (
+from uno.sqlclasses import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
