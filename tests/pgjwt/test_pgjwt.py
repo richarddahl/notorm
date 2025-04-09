@@ -11,14 +11,14 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import ProgrammingError
 
 # from uno.auth.tables import User
-from uno.config import settings
+from uno.settings import uno_settings
 
 # from tests.conftest import mock_rls_vars
 
 
 # Not marked as a fixture as need to call it with different parameters for testing
 def encode_test_token(
-    email: str = settings.SUPERUSER_EMAIL,  # Email for sub
+    email: str = uno_settings.SUPERUSER_EMAIL,  # Email for sub
     has_sub: bool = True,  # Has subject
     has_exp: bool = True,  # Has expiration
     is_expired: bool = False,  # Expired token
@@ -29,18 +29,20 @@ def encode_test_token(
     if has_exp and not is_expired:
         token_payload["exp"] = datetime.datetime.now(
             datetime.timezone.utc
-        ) + datetime.timedelta(minutes=settings.TOKEN_EXPIRE_MINUTES)
+        ) + datetime.timedelta(minutes=uno_settings.TOKEN_EXPIRE_MINUTES)
     elif has_exp and is_expired:
         token_payload["exp"] = datetime.datetime.now(
             datetime.timezone.utc
-        ) - datetime.timedelta(minutes=settings.TOKEN_EXPIRE_MINUTES)
+        ) - datetime.timedelta(minutes=uno_settings.TOKEN_EXPIRE_MINUTES)
 
     if has_sub:
         token_payload["sub"] = email
 
     if invalid_secret:
-        return jwt.encode(token_payload, "FAKE SECRET", settings.TOKEN_ALGORITHM)
-    return jwt.encode(token_payload, settings.TOKEN_SECRET, settings.TOKEN_ALGORITHM)
+        return jwt.encode(token_payload, "FAKE SECRET", uno_settings.TOKEN_ALGORITHM)
+    return jwt.encode(
+        token_payload, uno_settings.TOKEN_SECRET, uno_settings.TOKEN_ALGORITHM
+    )
 
 
 '''
@@ -54,7 +56,7 @@ class TestJWT:
 
             result = session.execute(func.uno.testlist_rls_vars())
             session_variables = result.scalars().first()
-            assert session_variables.get("email") == settings.SUPERUSER_EMAIL
+            assert session_variables.get("email") == uno_settings.SUPERUSER_EMAIL
             assert session_variables.get("id") != ""
             assert session_variables.get("is_superuser") == "true"
             assert session_variables.get("is_tenant_admin") == "false"

@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import ENUM
 from uno.model import UnoModel, str_26, str_128, str_255, str_64, bytea
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import ValueType
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class ReportFieldConfigModel(DefaultModelMixin, UnoModel):
@@ -66,7 +66,7 @@ class ReportFieldModel(DefaultModelMixin, UnoModel):
             ValueType,
             name="report_field_type",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         doc="The type of the report field",
     )

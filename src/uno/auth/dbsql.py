@@ -7,22 +7,22 @@ from pydantic import computed_field
 from psycopg import sql
 from sqlalchemy.sql import text
 
-from uno.sqlclasses import (
+from uno.db.sql.classes import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
-    ADMIN_ROLE,
-    WRITER_ROLE,
-    READER_ROLE,
-    LOGIN_ROLE,
-    BASE_ROLE,
-    LIT_BASE_ROLE,
-    LIT_READER_ROLE,
-    LIT_WRITER_ROLE,
-    LIT_ADMIN_ROLE,
-    LIT_LOGIN_ROLE,
+    admin_role,
+    writer_role,
+    reader_role,
+    login_role,
+    base_role,
+    base_role,
+    reader_role,
+    writer_role,
+    admin_role,
+    login_role,
 )
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class CreateRLSFunctions(SQLEmitter):
@@ -151,8 +151,8 @@ class CreateRLSFunctions(SQLEmitter):
             """
             )
             .format(
-                admin_role=ADMIN_ROLE,
-                db_name=sql.SQL(settings.DB_NAME),
+                admin_role=admin_role,
+                db_name=sql.SQL(config.DB_NAME),
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -187,7 +187,7 @@ class CreateRLSFunctions(SQLEmitter):
             """
             )
             .format(
-                admin_role=ADMIN_ROLE,
+                admin_role=admin_role,
                 schema_name=DB_SCHEMA,
             )
             .as_string()
@@ -222,7 +222,7 @@ class GetPermissibleGroupsFunction(SQLEmitter):
             .as_string()
         )
 
-        return self.createsqlfunction(
+        return self.create_sql_function(
             "select_permissible_groups",
             function_string,
             return_type="VARCHAR[]",

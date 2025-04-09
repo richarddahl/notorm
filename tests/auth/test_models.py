@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 
 from uno.enums import TenantType
-from uno.config import settings  # type: ignore
+from uno.settings import uno_settings  # type: ignore
 from tests.conftest import db_column
 
 
@@ -26,7 +26,7 @@ class TestUserTable:
 
     def test_user_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("user", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("user", schema=uno_settings.DB_SCHEMA))
         assert [
             "email",
             "handle",
@@ -45,11 +45,11 @@ class TestUserTable:
             "deleted_by_id",
         ] == [
             c.get("name")
-            for c in db_inspector.get_columns("user", schema=settings.DB_SCHEMA)
+            for c in db_inspector.get_columns("user", schema=uno_settings.DB_SCHEMA)
         ]
 
-        # print(db_inspector.get_indexes("user", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_indexes("user", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_indexes("user", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("user", schema=uno_settings.DB_SCHEMA) == [
             {
                 "name": "ix_uno_user_created_by_id",
                 "unique": False,
@@ -108,15 +108,17 @@ class TestUserTable:
             },
         ]
 
-        # print(db_inspector.get_pk_constraint("user", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_pk_constraint("user", schema=settings.DB_SCHEMA) == {
+        # print(db_inspector.get_pk_constraint("user", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint(
+            "user", schema=uno_settings.DB_SCHEMA
+        ) == {
             "constrained_columns": ["id"],
             "name": "pk_user",
             "comment": None,
         }
 
-        # print(db_inspector.get_foreign_keys("user", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_foreign_keys("user", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_foreign_keys("user", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys("user", schema=uno_settings.DB_SCHEMA) == [
             {
                 "name": "fk_user_created_by_id",
                 "constrained_columns": ["created_by_id"],
@@ -173,14 +175,15 @@ class TestUserTable:
             },
         ]
 
-        # print(db_inspector.get_unique_constraints("user", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_unique_constraints("user", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_unique_constraints("user", schema=settings.DB_SCHEMA) == []
+            db_inspector.get_unique_constraints("user", schema=uno_settings.DB_SCHEMA)
+            == []
         )
 
-        # print(db_inspector.get_check_constraints("user", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_check_constraints("user", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_check_constraints(
-            "user", schema=settings.DB_SCHEMA
+            "user", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "name": "ck_user_ck_user_is_superuser",
@@ -195,7 +198,7 @@ class TestUserTable:
             db_inspector,
             "user",
             "id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -208,7 +211,7 @@ class TestUserTable:
             db_inspector,
             "user",
             "email",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -221,7 +224,7 @@ class TestUserTable:
             db_inspector,
             "user",
             "handle",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -234,7 +237,7 @@ class TestUserTable:
             db_inspector,
             "user",
             "full_name",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -246,18 +249,20 @@ class TestUserGroupTable:
 
     def test_user_group_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("user_group", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("user_group", schema=uno_settings.DB_SCHEMA))
         assert [
             "user_id",
             "group_id",
         ] == [
             c.get("name")
-            for c in db_inspector.get_columns("user__group", schema=settings.DB_SCHEMA)
+            for c in db_inspector.get_columns(
+                "user__group", schema=uno_settings.DB_SCHEMA
+            )
         ]
 
-        # print(db_inspector.get_pk_constraint("user__group", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_pk_constraint("user__group", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_pk_constraint(
-            "user__group", schema=settings.DB_SCHEMA
+            "user__group", schema=uno_settings.DB_SCHEMA
         ) == {
             "constrained_columns": ["user_id", "group_id"],
             "name": "pk_user__group",
@@ -265,7 +270,7 @@ class TestUserGroupTable:
         }
 
         assert db_inspector.get_foreign_keys(
-            "user__group", schema=settings.DB_SCHEMA
+            "user__group", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "name": "fk_user__group_group_id",
@@ -287,8 +292,10 @@ class TestUserGroupTable:
             },
         ]
 
-        # print(db_inspector.get_indexes("user__group", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_indexes("user__group", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_indexes("user__group", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_indexes(
+            "user__group", schema=uno_settings.DB_SCHEMA
+        ) == [
             {
                 "name": "ix_user_group_user_id_group_id",
                 "unique": False,
@@ -298,17 +305,19 @@ class TestUserGroupTable:
             }
         ]
 
-        # print(db_inspector.get_unique_constraints("user_group", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_unique_constraints("user_group", schema=uno_settings.DB_SCHEMA))
         assert (
             db_inspector.get_unique_constraints(
-                "user__group", schema=settings.DB_SCHEMA
+                "user__group", schema=uno_settings.DB_SCHEMA
             )
             == []
         )
 
-        # print(db_inspector.get_check_constraints("user_group", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_check_constraints("user_group", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_check_constraints("user__group", schema=settings.DB_SCHEMA)
+            db_inspector.get_check_constraints(
+                "user__group", schema=uno_settings.DB_SCHEMA
+            )
             == []
         )
 
@@ -318,7 +327,7 @@ class TestUserGroupTable:
             db_inspector,
             "user__group",
             "user_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -331,7 +340,7 @@ class TestUserGroupTable:
             db_inspector,
             "user__group",
             "group_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -343,27 +352,29 @@ class TestUserRoleTable:
 
     def test_user_role_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("user_role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("user_role", schema=uno_settings.DB_SCHEMA))
         assert [
             "user_id",
             "role_id",
         ] == [
             c.get("name")
-            for c in db_inspector.get_columns("user__role", schema=settings.DB_SCHEMA)
+            for c in db_inspector.get_columns(
+                "user__role", schema=uno_settings.DB_SCHEMA
+            )
         ]
 
-        # print(db_inspector.get_pk_constraint("user__role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_pk_constraint("user__role", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_pk_constraint(
-            "user__role", schema=settings.DB_SCHEMA
+            "user__role", schema=uno_settings.DB_SCHEMA
         ) == {
             "constrained_columns": ["user_id", "role_id"],
             "name": "pk_user__role",
             "comment": None,
         }
 
-        # print(db_inspector.get_foreign_keys("user__role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_foreign_keys("user__role", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_foreign_keys(
-            "user__role", schema=settings.DB_SCHEMA
+            "user__role", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "name": "fk_user__role_role_id",
@@ -385,8 +396,10 @@ class TestUserRoleTable:
             },
         ]
 
-        # print(db_inspector.get_indexes("user__role", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_indexes("user__role", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_indexes("user__role", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_indexes(
+            "user__role", schema=uno_settings.DB_SCHEMA
+        ) == [
             {
                 "name": "ix_user_role_user_id_role_id",
                 "unique": False,
@@ -396,15 +409,19 @@ class TestUserRoleTable:
             }
         ]
 
-        # print(db_inspector.get_unique_constraints("user_role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_unique_constraints("user_role", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_unique_constraints("user__role", schema=settings.DB_SCHEMA)
+            db_inspector.get_unique_constraints(
+                "user__role", schema=uno_settings.DB_SCHEMA
+            )
             == []
         )
 
-        # print(db_inspector.get_check_constraints("user_role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_check_constraints("user_role", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_check_constraints("user__role", schema=settings.DB_SCHEMA)
+            db_inspector.get_check_constraints(
+                "user__role", schema=uno_settings.DB_SCHEMA
+            )
             == []
         )
 
@@ -413,7 +430,7 @@ class TestTenantTable:
 
     def test_tenant_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("tenant", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("tenant", schema=uno_settings.DB_SCHEMA))
         assert [
             "name",
             "tenant_type",
@@ -428,11 +445,11 @@ class TestTenantTable:
             "deleted_by_id",
         ] == [
             c.get("name")
-            for c in db_inspector.get_columns("tenant", schema=settings.DB_SCHEMA)
+            for c in db_inspector.get_columns("tenant", schema=uno_settings.DB_SCHEMA)
         ]
 
-        # print(db_inspector.get_indexes("tenant", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_indexes("tenant", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_indexes("tenant", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("tenant", schema=uno_settings.DB_SCHEMA) == [
             {
                 "name": "ix_tenant_name",
                 "unique": False,
@@ -485,15 +502,19 @@ class TestTenantTable:
             },
         ]
 
-        # print(db_inspector.get_pk_constraint("tenant", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_pk_constraint("tenant", schema=settings.DB_SCHEMA) == {
+        # print(db_inspector.get_pk_constraint("tenant", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint(
+            "tenant", schema=uno_settings.DB_SCHEMA
+        ) == {
             "constrained_columns": ["id"],
             "name": "pk_tenant",
             "comment": None,
         }
 
-        # print(db_inspector.get_foreign_keys("tenant", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_foreign_keys("tenant", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_foreign_keys("tenant", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys(
+            "tenant", schema=uno_settings.DB_SCHEMA
+        ) == [
             {
                 "name": "fk_tenant_created_by_id",
                 "constrained_columns": ["created_by_id"],
@@ -532,9 +553,9 @@ class TestTenantTable:
             },
         ]
 
-        # print(db_inspector.get_unique_constraints("tenant", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_unique_constraints("tenant", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_unique_constraints(
-            "tenant", schema=settings.DB_SCHEMA
+            "tenant", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "column_names": ["name"],
@@ -543,9 +564,9 @@ class TestTenantTable:
             },
         ]
 
-        # print(db_inspector.get_check_constraints("tenant", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_check_constraints("tenant", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_check_constraints("tenant", schema=settings.DB_SCHEMA)
+            db_inspector.get_check_constraints("tenant", schema=uno_settings.DB_SCHEMA)
             == []
         )
 
@@ -555,7 +576,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "tenant_type",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -575,7 +596,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "name",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -588,7 +609,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "is_active",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -600,7 +621,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "is_deleted",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -612,7 +633,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "created_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -624,7 +645,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "modified_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -636,7 +657,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "deleted_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == True
@@ -648,7 +669,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "created_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -661,7 +682,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "modified_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -674,7 +695,7 @@ class TestTenantTable:
             db_inspector,
             "tenant",
             "deleted_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == True
@@ -685,7 +706,7 @@ class TestTenantTable:
 class TestRoleTable:
     def test_role_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("role", schema=uno_settings.DB_SCHEMA))
         assert [
             "tenant_id",
             "name",
@@ -702,11 +723,11 @@ class TestRoleTable:
             "deleted_by_id",
         ] == [
             c.get("name")
-            for c in db_inspector.get_columns("role", schema=settings.DB_SCHEMA)
+            for c in db_inspector.get_columns("role", schema=uno_settings.DB_SCHEMA)
         ]
 
-        # print(db_inspector.get_indexes("role", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_indexes("role", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_indexes("role", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_indexes("role", schema=uno_settings.DB_SCHEMA) == [
             {
                 "name": "ix_role_tenant_id_name",
                 "unique": False,
@@ -773,15 +794,17 @@ class TestRoleTable:
             },
         ]
 
-        # print(db_inspector.get_pk_constraint("role", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_pk_constraint("role", schema=settings.DB_SCHEMA) == {
+        # print(db_inspector.get_pk_constraint("role", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_pk_constraint(
+            "role", schema=uno_settings.DB_SCHEMA
+        ) == {
             "constrained_columns": ["id"],
             "name": "pk_role",
             "comment": None,
         }
 
-        # print(db_inspector.get_foreign_keys("role", schema=settings.DB_SCHEMA))
-        assert db_inspector.get_foreign_keys("role", schema=settings.DB_SCHEMA) == [
+        # print(db_inspector.get_foreign_keys("role", schema=uno_settings.DB_SCHEMA))
+        assert db_inspector.get_foreign_keys("role", schema=uno_settings.DB_SCHEMA) == [
             {
                 "name": "fk_role_created_by_id",
                 "constrained_columns": ["created_by_id"],
@@ -838,9 +861,9 @@ class TestRoleTable:
             },
         ]
 
-        # print(db_inspector.get_unique_constraints("role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_unique_constraints("role", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_unique_constraints(
-            "role", schema=settings.DB_SCHEMA
+            "role", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "column_names": ["tenant_id", "name"],
@@ -849,9 +872,10 @@ class TestRoleTable:
             }
         ]
 
-        # print(db_inspector.get_check_constraints("role", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_check_constraints("role", schema=uno_settings.DB_SCHEMA))
         assert (
-            db_inspector.get_check_constraints("role", schema=settings.DB_SCHEMA) == []
+            db_inspector.get_check_constraints("role", schema=uno_settings.DB_SCHEMA)
+            == []
         )
 
     def test_role_tenant_id(self, connection):
@@ -860,7 +884,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "tenant_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -873,7 +897,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "name",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -886,7 +910,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "description",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -898,7 +922,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "is_active",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -910,7 +934,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "is_deleted",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -922,7 +946,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "created_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -934,7 +958,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "modified_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -946,7 +970,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "deleted_at",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == True
@@ -958,7 +982,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "created_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -971,7 +995,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "modified_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -984,7 +1008,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "deleted_by_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == True
@@ -997,7 +1021,7 @@ class TestRoleTable:
             db_inspector,
             "role",
             "responsibility_role_id",
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         )
         assert column is not None
         assert column.get("nullable") == False
@@ -1008,19 +1032,19 @@ class TestRoleTable:
 class TestRolePermission:
     def test_role_permission_table(self, connection, test_db):
         db_inspector = inspect(connection)
-        # print(db_inspector.get_columns("role_permission", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_columns("role_permission", schema=uno_settings.DB_SCHEMA))
         assert [
             "role_id",
             "permission_id",
         ] == [
             c.get("name")
             for c in db_inspector.get_columns(
-                "role__permission", schema=settings.DB_SCHEMA
+                "role__permission", schema=uno_settings.DB_SCHEMA
             )
         ]
 
         assert db_inspector.get_pk_constraint(
-            "role__permission", schema=settings.DB_SCHEMA
+            "role__permission", schema=uno_settings.DB_SCHEMA
         ) == {
             "constrained_columns": ["role_id", "permission_id"],
             "name": "pk_role__permission",
@@ -1028,7 +1052,7 @@ class TestRolePermission:
         }
 
         assert db_inspector.get_foreign_keys(
-            "role__permission", schema=settings.DB_SCHEMA
+            "role__permission", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "name": "fk_role__permission_permission_id",
@@ -1050,9 +1074,9 @@ class TestRolePermission:
             },
         ]
 
-        # print(db_inspector.get_indexes("role_permission", schema=settings.DB_SCHEMA))
+        # print(db_inspector.get_indexes("role_permission", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_indexes(
-            "role__permission", schema=settings.DB_SCHEMA
+            "role__permission", schema=uno_settings.DB_SCHEMA
         ) == [
             {
                 "column_names": [
@@ -1068,19 +1092,19 @@ class TestRolePermission:
 
         assert (
             db_inspector.get_check_constraints(
-                "role__permission", schema=settings.DB_SCHEMA
+                "role__permission", schema=uno_settings.DB_SCHEMA
             )
             == []
         )
 
         assert (
             db_inspector.get_unique_constraints(
-                "role__permission", schema=settings.DB_SCHEMA
+                "role__permission", schema=uno_settings.DB_SCHEMA
             )
             == []
         )
         assert db_inspector.get_pk_constraint(
-            "role__permission", schema=settings.DB_SCHEMA
+            "role__permission", schema=uno_settings.DB_SCHEMA
         ) == {
             "constrained_columns": ["role_id", "permission_id"],
             "name": "pk_role__permission",

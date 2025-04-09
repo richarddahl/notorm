@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import (
 )
 
 from uno.enums import TenantType
-from uno.config import settings  # type: ignore
+from uno.settings import uno_settings  # type: ignore
 from tests.conftest import db_column
 
 

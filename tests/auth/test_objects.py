@@ -9,7 +9,7 @@ import pytest_asyncio
 from unittest import IsolatedAsyncioTestCase
 
 from uno.auth.objects import User
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class TestUser(IsolatedAsyncioTestCase):

@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, create_model
 from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import Column
 
-from uno.model import UnoDBFactory, FilterParam
+from uno.db.db import UnoDBFactory, FilterParam
 from uno.model import UnoModel
 from uno.schema import UnoSchemaConfig
 from uno.endpoint import (
@@ -38,7 +38,7 @@ from uno.filter import (
     datetime_lookups,
     text_lookups,
 )
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class UnoObj(BaseModel):
@@ -170,9 +170,11 @@ class UnoObj(BaseModel):
             return await self.db.create(self.to_model(schema_name="view_schema"))
         if self.id:
             return self.db.update(self.to_model(schema_name="edit_schema"))
-        return await self.db.create(
-            to_db_model=self.to_model(schema_name="edit_schema")
+        saved_data = await self.db.create(
+            schema=self.to_model(schema_name="edit_schema")
         )
+        print(self.model.__dict__)
+        # return self.model(**saved_data[0].__dict__)
 
     # End of save
 

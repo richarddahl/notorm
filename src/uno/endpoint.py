@@ -21,7 +21,7 @@ from fastapi import (
 
 from uno.schema import UnoSchema
 from uno.errors import UnoRegistryError
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class UnoRouter(BaseModel, ABC):
@@ -31,7 +31,7 @@ class UnoRouter(BaseModel, ABC):
     path_suffix: str
     method: str
     path_prefix: str = "/api"
-    api_version: str = settings.API_VERSION
+    api_version: str = uno_settings.API_VERSION
     include_in_schema: bool = True
     tags: list[str | enum.StrEnum] | None = None
     return_list: bool = False

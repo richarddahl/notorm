@@ -9,7 +9,7 @@ from typing import Set
 from pydantic import BaseModel, model_validator, create_model
 
 from uno.errors import UnoError
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class UnoSchema(BaseModel):

@@ -10,7 +10,7 @@ from typing import Any
 from datetime import datetime, timedelta, date
 from babel import dates, numbers
 
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 def import_from_path(module_name, file_path):
@@ -55,7 +55,7 @@ def date_to_string(date: date | None) -> str | None:
 
 def datetime_to_string(datetime: datetime | None) -> str | None:
     return (
-        dates.format_datetime(datetime, format="medium", locale=settings.LOCALE)
+        dates.format_datetime(datetime, format="medium", locale=config.LOCALE)
         if datetime
         else None
     )
@@ -106,7 +106,5 @@ def obj_to_okui(model: Any) -> str | None:
 
 def timedelta_to_okui(time_delta: timedelta | None) -> str | None:
     return (
-        dates.format_timedelta(time_delta, locale=settings.LOCALE)
-        if time_delta
-        else None
+        dates.format_timedelta(time_delta, locale=config.LOCALE) if time_delta else None
     )

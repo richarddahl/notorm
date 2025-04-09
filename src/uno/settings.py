@@ -79,4 +79,4 @@ class Test(General):
 # Create a dictionary of environment settings
 env_settings: dict[str, Type[General]] = {"dev": Dev, "test": Test, "prod": Prod}
 # Select the environment settings based on the ENV variable
-settings: Dev | Test | Prod = env_settings[os.environ.get("ENV", "dev").lower()]()
+uno_settings: Dev | Test | Prod = env_settings[os.environ.get("ENV", "dev").lower()]()

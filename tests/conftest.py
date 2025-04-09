@@ -13,20 +13,18 @@ import importlib
 
 from psycopg import sql
 
-from sqlalchemy import func, select, delete, text, create_engine, Column
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func, Column
 
-from uno.dbmanager import DBManager
-from uno.model import engine, sync_engine
-from uno.config import settings
+from uno.db.manager import DBManager
+from uno.settings import uno_settings
+
+from uno.db.engine import async_session, sync_connection
 
 import pytest
-from uno.model import sync_engine
 
 
 def db_column(
-    db_inspector, table_name: str, col_name: str, schema: str = settings.DB_SCHEMA
+    db_inspector, table_name: str, col_name: str, schema: str = uno_settings.DB_SCHEMA
 ) -> Column | None:
     for col in db_inspector.get_columns(table_name, schema=schema):
         if col.get("name") == col_name:
@@ -44,20 +42,12 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def connection():
-    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        yield conn
-        conn.close()
-    sync_engine.dispose()
-
-
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    return sync_connection
 
 
 @pytest.fixture(scope="function")
 async def session(test_db):
-    async with AsyncSessionLocal() as session:
-        yield session
-        await session.rollback()
+    return async_session
 
 
 '''
@@ -165,7 +155,7 @@ def create_mock_role_function():
         $$;
         """
         )
-        .format(db_name=sql.SQL(settings.DB_NAME))
+        .format(db_name=sql.SQL(uno_settings.DB_NAME))
         .as_string()
     )
 
@@ -178,7 +168,7 @@ def create_mock_role_function():
 # NOT FIXTUREs as fixtures are not expected to be called directly
 def mock_rls_vars(
     id: str,
-    email: str = settings.SUPERUSER_EMAIL,
+    email: str = uno_settings.SUPERUSER_EMAIL,
     is_superuser: str = "true",
     is_tenant_admin: str = "false",
     tenant_id: str = "",
@@ -197,19 +187,19 @@ def mock_rls_vars(
 
 @pytest.fixture(scope="session")
 def engine():
-    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    DB_URL = f"{uno_settings.DB_SYNC_DRIVER}://{uno_settings.DB_NAME}_login:{uno_settings.DB_USER_PW}@{uno_settings.DB_HOST}/{uno_settings.DB_NAME}"
     return create_engine(DB_URL)
 
 
 @pytest.fixture(scope="session")
 def echo_engine():
-    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    DB_URL = f"{uno_settings.DB_SYNC_DRIVER}://{uno_settings.DB_NAME}_login:{uno_settings.DB_USER_PW}@{uno_settings.DB_HOST}/{uno_settings.DB_NAME}"
     return create_engine(DB_URL, echo=True)
 
 
 @pytest.fixture(scope="session")
 def async_engine():
-    DB_URL = f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    DB_URL = f"{uno_settings.DB_SYNC_DRIVER}://{uno_settings.DB_NAME}_login:{uno_settings.DB_USER_PW}@{uno_settings.DB_HOST}/{uno_settings.DB_NAME}"
     return create_async_engine(DB_URL)
 
 
@@ -237,7 +227,7 @@ def db_connection(engine):
 
 @pytest.fixture(scope="session")
 def test_async_engine():
-    DB_URL = f"{settings.DB_ASYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+    DB_URL = f"{uno_settings.DB_ASYNC_DRIVER}://{uno_settings.DB_NAME}_login:{uno_settings.DB_USER_PW}@{uno_settings.DB_HOST}/{uno_settings.DB_NAME}"
     return create_async_engine(DB_URL)
 
 
@@ -252,7 +242,7 @@ async def superuser_id():
 
 @pytest.fixture(scope="class")
 def echo_session(superuser_id, create_test_functions):
-    engine = create_engine(settings.DB_URL, echo=True)
+    engine = create_engine(uno_settings.DB_URL, echo=True)
     session_factory = sessionmaker(
         bind=engine,
         expire_on_commit=True,
@@ -272,10 +262,10 @@ def session(engine, superuser_id, create_test_functions):
 @pytest.fixture(scope="class")
 def create_test_functions() -> None:
     eng = create_engine(
-        f"{settings.DB_SYNC_DRIVER}://{settings.DB_NAME}_login:{settings.DB_USER_PW}@{settings.DB_HOST}/{settings.DB_NAME}"
+        f"{uno_settings.DB_SYNC_DRIVER}://{uno_settings.DB_NAME}_login:{uno_settings.DB_USER_PW}@{uno_settings.DB_HOST}/{uno_settings.DB_NAME}"
     )
     with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        conn.execute(text(f"SET ROLE {settings.DB_NAME}_admin"))
+        conn.execute(text(f"SET ROLE {uno_settings.DB_NAME}_admin"))
         conn.execute(text(create_mock_role_function()))
         conn.execute(text(CREATE_TEST_RAISE_CURRENT_ROLE_FUNCTION))
         conn.execute(text(CREATE_TEST_LIST_USER_VARS_FUNCTION))

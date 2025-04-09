@@ -18,7 +18,7 @@ from uno.enums import (
     Include,
     Match,
 )
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class QueryPath(UnoObj, ObjectMixin):
@@ -53,6 +53,110 @@ class QueryPath(UnoObj, ObjectMixin):
 
     def __str__(self) -> str:
         return self.cypher_path
+
+    async def create_query_paths(self) -> None:
+        """
+        Asynchronously processes UnoObj filters to create query paths.
+
+        Analyzes object relationships to create unique query paths and
+        persists them to the database. This enables efficient querying
+        across object relationships.
+
+        Raises:
+            Exception: If query path creation fails
+        """
+        try:
+            query_paths = self._collect_query_paths()
+            await self._persist_query_paths(query_paths)
+        except Exception as e:
+            self.logger.error(f"Error creating query paths: {e}")
+            raise
+
+    def _collect_query_paths(self) -> Dict[str, "QueryPath"]:
+        """
+        Collects unique query paths from UnoObj filters.
+
+        Returns:
+            Dictionary of unique query paths keyed by cypher path
+
+        Raises:
+            ValueError: If filter configuration is invalid
+        """
+        query_paths: Dict[str, QueryPath] = {}
+
+        def add_query_path(fltr: UnoFilter, parent: Optional[UnoFilter] = None) -> None:
+            """Add a query path from the given filter and parent."""
+            source_meta_type = (
+                parent.source_meta_type_id if parent else fltr.source_meta_type_id
+            )
+
+            if not source_meta_type or not fltr.target_meta_type_id:
+                raise ValueError(f"Invalid filter configuration: {fltr}")
+
+            query_path = QueryPath(
+                source_meta_type_id=source_meta_type,
+                target_meta_type_id=fltr.target_meta_type_id,
+                cypher_path=fltr.cypher_path(parent=parent),
+                data_type=fltr.data_type,
+            )
+
+            if query_path.cypher_path not in query_paths:
+                query_paths[query_path.cypher_path] = query_path
+
+        def process_filters(fltr: UnoFilter) -> None:
+            """Process a filter and its children recursively."""
+            stack: List[Tuple[UnoFilter, Optional[UnoFilter]]] = [(fltr, None)]
+            visited = set()
+
+            while stack:
+                current_fltr, parent = stack.pop()
+                path = current_fltr.cypher_path(parent=parent)
+
+                if path in visited:
+                    continue
+
+                visited.add(path)
+                add_query_path(current_fltr, parent)
+
+                if current_fltr.source_meta_type_id != current_fltr.target_meta_type_id:
+                    # Get the target object and process its children
+                    if current_fltr.target_meta_type_id not in UnoObj.registry:
+                        self.logger.warning(
+                            f"Target meta type not found: {current_fltr.target_meta_type_id}"
+                        )
+                        continue
+
+                    child_obj = UnoObj.registry[current_fltr.target_meta_type_id]
+                    for child_fltr in current_fltr.children(obj=child_obj):
+                        stack.append((child_fltr, current_fltr))
+
+        # Process all registered objects
+        for obj in UnoObj.registry.values():
+            obj.set_filters()
+            for fltr in obj.filters.values():
+                process_filters(fltr)
+
+        return query_paths
+
+    async def _persist_query_paths(self, query_paths: Dict[str, QueryPath]) -> None:
+        """
+        Persists collected query paths to the database.
+
+        Args:
+            query_paths: Dictionary of QueryPath objects to persist
+
+        Raises:
+            Exception: If persistence fails
+        """
+        for qp in query_paths.values():
+            try:
+                # The merge method is assumed to be async and returns query_path and an action identifier
+                qp_obj, action = await qp.merge()
+                self.logger.info(f"QueryPath: {qp_obj.cypher_path}, action: {action}")
+            except Exception as e:
+                self.logger.error(f"Failed to persist query path {qp.cypher_path}: {e}")
+                # Continue processing other paths even if one fails
+                continue
 
 
 class QueryValue(UnoObj, DefaultObjectMixin):

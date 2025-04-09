@@ -9,18 +9,18 @@ from tests.conftest import db_column
 
 from uno.tables import MetaType
 from uno.tablesqlemitters import AlterGrants
-from uno.config import settings
+from uno.settingsimport uno_settings
 
 
 class TestMetaType:
-    schema = settings.DB_SCHEMA
+    schema = uno_settings.DB_SCHEMA
 
     def test_meta_type_structure(self):
         assert MetaType.display_name == "MetaRecord Type"
         assert MetaType.display_name_plural == "MetaRecord Types"
         assert AlterGrants in MetaType.sql_emitters
         assert MetaType.__name__ == "MetaType"
-        assert MetaType.__module__ == f"{settings.DB_SCHEMA}.db.tables"
+        assert MetaType.__module__ == f"{uno_settings.DB_SCHEMA}.db.tables"
         assert MetaType.__table_args__.get("schema") == "uno"
         assert MetaType.#__tablename__ == "meta_type"
         # print(list(MetaRecordBase.table.columns.keys()))

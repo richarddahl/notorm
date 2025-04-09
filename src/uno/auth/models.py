@@ -26,7 +26,7 @@ from uno.model import UnoModel, str_26, str_255, str_63
 from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditModelMixin
 from uno.enums import SQLOperation, TenantType
-from uno.config import settings
+from uno.settings import uno_settings
 
 user__group = Table(
     "user__group",
@@ -339,7 +339,7 @@ class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             TenantType,
             name="tenanttype",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         server_default=TenantType.INDIVIDUAL.name,
         nullable=False,

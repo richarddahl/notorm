@@ -34,7 +34,7 @@ from uno.enums import (
     State,
     Flag,
 )
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class Workflow(GroupModelMixin, ModelMixin, UnoModel):
@@ -101,7 +101,7 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
             WorkflowTrigger,
             name="workflowtrigger",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         default=WorkflowTrigger.DB_EVENT,
         doc="The type of event that triggers execution of the workflow",
@@ -114,7 +114,7 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
             Flag,
             name="workflowflag",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         default=Flag.MEDIUM,
         doc="Flag indicating the importance of the workflow",
@@ -124,7 +124,7 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
             WorkflowDBEvent,
             name="workflowdbevent",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         default=WorkflowDBEvent.INSERT,
         doc="The database event that triggers the workflow, if applicable",

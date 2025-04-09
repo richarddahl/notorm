@@ -10,19 +10,19 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 
-from uno.sqlclasses import (
+from uno.db.sql.classes import (
     SQLEmitter,
     DB_SCHEMA,
     DB_NAME,
-    ADMIN_ROLE,
-    WRITER_ROLE,
-    READER_ROLE,
-    LOGIN_ROLE,
-    BASE_ROLE,
-    LIT_BASE_ROLE,
-    LIT_READER_ROLE,
-    LIT_WRITER_ROLE,
-    LIT_ADMIN_ROLE,
-    LIT_LOGIN_ROLE,
+    admin_role,
+    writer_role,
+    reader_role,
+    login_role,
+    base_role,
+    base_role,
+    reader_role,
+    writer_role,
+    admin_role,
+    login_role,
 )
-from uno.config import settings
+from uno.settings import uno_settings

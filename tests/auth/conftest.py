@@ -8,7 +8,6 @@ import pytest
 import factory
 
 from sqlalchemy.orm import sessionmaker
-from tests.conftest import sync_engine as engine
 from uno.auth.models import UserModel
 
 '''

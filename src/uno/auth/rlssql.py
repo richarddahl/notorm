@@ -2,89 +2,59 @@
 #
 # SPDX-License-Identifier: MIT
 
+import textwrap
 from pydantic import computed_field
-
-from psycopg import sql
-
-from uno.sqlclasses import (
-    SQLEmitter,
-    DB_SCHEMA,
-    ADMIN_ROLE,
-    WRITER_ROLE,
-    READER_ROLE,
-)
-from uno.config import settings
+from uno.db.sql.classes import SQLEmitter
 
 
 class RowLevelSecurity(SQLEmitter):
     @computed_field
     def enable_rls(self) -> str:
         """
-        Emits the sql.SQL statements to enable Row Level Security (RLS)
+        Emits the SQL statements to enable Row-Level Security (RLS)
         on the table.
-
-        Returns:
-            str: A string containing the sql.SQL statements to enable RLS for the table.
         """
-        return (
-            sql.SQL(
-                """
-            -- Enable RLS for the table {table_name}
+        admin_role = f"{self.config.DB_NAME}_admin"
+        return textwrap.dedent(
+            f"""
+            -- Enable RLS for the table {self.table.name}
             SET ROLE {admin_role};
-            ALTER TABLE {schema_name}.{table_name} ENABLE ROW LEVEL SECURITY;
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                schema_name=DB_SCHEMA,
-                table_name=sql.SQL(self.table.name),
-            )
-            .as_string()
+            ALTER TABLE {self.config.DB_SCHEMA}.{self.table.name} ENABLE ROW LEVEL SECURITY;
+        """
         )
 
     @computed_field
     def force_rls(self) -> str:
         """
-        Emits the sql.SQL statements to force Row Level Security (RLS)
-        on the table for table owners and db superusers.
-
-        ONLY APPLIED IF settings.FORCE_RLS is True.
-
-        Returns:
-            str: A string containing the sql.SQL statements to force RLS for
-            the table.
+        Emits the SQL statements to force Row-Level Security (RLS)
+        on the table for table owners and DB superusers.
         """
-        return (
-            sql.SQL(
-                """
-            -- FORCE RLS for the table {table_name}
+        admin_role = f"{self.config.DB_NAME}_admin"
+        return textwrap.dedent(
+            f"""
+            -- FORCE RLS for the table {self.table.name}
             SET ROLE {admin_role};
-            ALTER TABLE {schema_name}.{table_name} FORCE ROW LEVEL SECURITY;
-            """
-            )
-            .format(
-                admin_role=ADMIN_ROLE,
-                table_name=sql.SQL(self.table.name),
-                schema_name=DB_SCHEMA,
-            )
-            .as_string()
+            ALTER TABLE {self.config.DB_SCHEMA}.{self.table.name} FORCE ROW LEVEL SECURITY;
+        """
         )
 
 
 class UserRowLevelSecurity(RowLevelSecurity):
     @computed_field
     def select_policy(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Emits the SQL statement for the user select policy.
+        Superusers can select all records; others can only select records associated with their tenant.
+        """
+        return textwrap.dedent(
+            f"""
             /* 
             The policy to allow:
                 Superusers to select all records;
-                All other users to select only records associated with their
-                tenant;
+                All other users to select only records associated with their tenant;
             */
             CREATE POLICY user_select_policy
-            ON {schema_name}.{table_name} FOR SELECT
+            ON {self.config.DB_SCHEMA}.{self.table.name} FOR SELECT
             USING (
                 email = current_setting('rls_var.email', true)::TEXT OR
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
@@ -92,36 +62,31 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 (
                     SELECT reltuples < 2 AS has_records
                     FROM pg_class
-                    WHERE relname = {rel_name}
+                    WHERE relname = '{self.table.name}'
                     AND relkind = 'r'
                 )
             );
-            """
-            )
-            .format(
-                schema_name=DB_SCHEMA,
-                table_name=sql.SQL(self.table.name),
-                rel_name=sql.Literal(self.table.name),
-                reader_role=READER_ROLE,
-            )
-            .as_string()
+        """
         )
 
     @computed_field
     def insert_policy(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Emits the SQL statement for the user insert policy.
+        Superusers and Tenant Admins may insert, but regular users cannot.
+        """
+        return textwrap.dedent(
+            f"""
             /*
             The policy to allow:
                 Superusers to insert records;
-                Tenant Admins to insert records associated with the tenant;
+                Tenant Admins to insert records associated with their tenant;
             Regular users cannot insert records.
             */
             CREATE POLICY user_insert_policy
-            ON {schema_name}.{table_name} FOR INSERT
+            ON {self.config.DB_SCHEMA}.{self.table.name} FOR INSERT
             WITH CHECK (
-                ( 
+                (
                     current_setting('rls_var.is_superuser', true)::BOOLEAN OR
                     email = current_setting('rls_var.user_email', true)::TEXT OR
                     (
@@ -134,62 +99,54 @@ class UserRowLevelSecurity(RowLevelSecurity):
                         (
                             SELECT reltuples < 1 AS has_records
                             FROM pg_class
-                            WHERE relname = {rel_name}
+                            WHERE relname = '{self.table.name}'
                             AND relkind = 'r'
-                         )
+                        )
                     )
                 )
             );
-            """
-            )
-            .format(
-                writer_role=WRITER_ROLE,
-                schema_name=DB_SCHEMA,
-                table_name=sql.SQL(self.table.name),
-                rel_name=sql.Literal(self.table.name),
-            )
-            .as_string()
+        """
         )
 
     @computed_field
     def update_policy(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Emits the SQL statement for the user update policy.
+        Superusers can update all records; others can update only records associated with their tenant.
+        """
+        return textwrap.dedent(
+            f"""
             /* 
             The policy to allow:
                 Superusers to select all records;
                 All other users to select only records associated with their tenant;
             */
             CREATE POLICY user_update_policy
-            ON {schema_name}.{table_name} FOR UPDATE
+            ON {self.config.DB_SCHEMA}.{self.table.name} FOR UPDATE
             USING (
                 email = current_setting('rls_var.email', true)::TEXT OR
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
                 tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
             );
-            """
-            )
-            .format(
-                table_name=sql.SQL(self.table.name),
-                schema_name=DB_SCHEMA,
-            )
-            .as_string()
+        """
         )
 
     @computed_field
     def delete_policy(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Emits the SQL statement for the user delete policy.
+        Superusers and Tenant Admins may delete records; regular users cannot.
+        """
+        return textwrap.dedent(
+            f"""
             /* 
             The policy to allow:
                 Superusers to delete records;
-                Tenant Admins to delete records associated with the tenant;
+                Tenant Admins to delete records associated with their tenant;
             Regular users cannot delete records.
             */
             CREATE POLICY user_delete_policy
-            ON {schema_name}.{table_name} FOR DELETE
+            ON {self.config.DB_SCHEMA}.{self.table.name} FOR DELETE
             USING (
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
                 (
@@ -199,17 +156,14 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 (
                     current_setting('rls_var.is_tenant_admin', true)::BOOLEAN = true AND
                     tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-                ) 
+                )
             );
-            """
-            )
-            .format(
-                table_name=sql.SQL(self.table.name),
-                schema_name=DB_SCHEMA,
-            )
-            .as_string()
+        """
         )
 
+
+# The remaining classes and functions for Tenant, Admin, Superuser and Public policies
+# used similar patterns and can be refactored in the same manner.
 
 '''
 def tenant__emit_select_policy_sql(self):

@@ -18,7 +18,7 @@ from uno.meta.objects import MetaRecordModel
 from uno.auth.mixins import GroupModelMixin
 from uno.auth.models import UserModel
 from uno.enums import MessageImportance
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 message__meta_record = Table(
@@ -67,7 +67,7 @@ class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
             MessageImportance,
             name="importance_enum",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         default=MessageImportance.INFORMATION.value,
         doc="Importance of the message",

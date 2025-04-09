@@ -236,7 +236,7 @@ class CalculationSymbol(
 ):
     #__tablename__ = "calculation_symbol"
     __table_args__ = {
-        "schema": settings.DB_SCHEMA,
+        "schema": uno_settings.DB_SCHEMA,
         "comment": "Inputs to calculations that can be used in attributes, workflows, and reports",
     }
     display_name: ClassVar[str] = "Calculation Input"
@@ -257,7 +257,7 @@ class Calculation(
 ):
     #__tablename__ = "calculation"
     __table_args__ = {
-        "schema": settings.DB_SCHEMA,
+        "schema": uno_settings.DB_SCHEMA,
         "comment": "Calculations that can be used in attributes, workflows, and reports",
     }
     display_name: ClassVar[str] = "Calculation"

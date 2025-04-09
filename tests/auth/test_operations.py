@@ -20,12 +20,12 @@ from sqlalchemy.dialects.postgresql import BOOLEAN
 
 # from fastapi.testclient import TestClient
 
-from uno.config import settings
+from uno.settings import uno_settings
 from uno.auth.objects import User
 
 # from uno.rltd.models import TableType, RelatedObject
 # from tests.pgjwt.test_pgjwt import encode_test_token
-from uno.dbmanager import DBManager
+from uno.db.manager import DBManager
 from uno.auth.objects import User
 
 # from tests.conftest import mock_rls_vars
@@ -37,13 +37,14 @@ from uno.auth.objects import User
 @pytest.mark.asyncio
 async def test_create_user(session, test_db):
     # Creates the superuser and returns it's id.
-    db_manager = DBManager()
-    new_superuser_id = await db_manager.create_superuser(
-        email="new_admin@notorm.tech",
-        handle="new_admin",
-        full_name="New Admin",
+    user = User(
+        email="admin@notorm.tech",
+        handle="admin",
+        full_name="Admin",
+        is_superuser=True,
     )
-    assert new_superuser_id is not None
+    await user.save()
+    assert user.id is not None
 
 
 @pytest.mark.asyncio
@@ -159,12 +160,12 @@ class TestUser(IsolatedAsyncioTestCase):
         with session.begin():
             session.execute(func.uno.mock_authorize_user(*mock_rls_vars(superuser_id)))
             admin_user = session.scalar(
-                select(User.table).where(User.table.email == settings.SUPERUSER_EMAIL)
+                select(User.table).where(User.table.email == uno_settings.SUPERUSER_EMAIL)
             )
             assert admin_user is not None
-            assert admin_user.email == settings.SUPERUSER_EMAIL
-            assert admin_user.handle == settings.SUPERUSER_HANDLE
-            assert admin_user.full_name == settings.SUPERUSER_FULL_NAME
+            assert admin_user.email == uno_settings.SUPERUSER_EMAIL
+            assert admin_user.handle == uno_settings.SUPERUSER_HANDLE
+            assert admin_user.full_name == uno_settings.SUPERUSER_FULL_NAME
             assert admin_user.is_superuser is True
             assert admin_user.is_tenant_admin is False
             assert admin_user.is_active is True
@@ -744,7 +745,7 @@ class TestUser(IsolatedAsyncioTestCase):
         """Tests that the admin user, created in create_db.create_db was created correctly."""
         session.execute(func.uno.mock_authorize_user(*mock_rls_vars(superuser_id)))
         admin_user = session.scalar(
-            select(User).where(User.email == settings.SUPERUSER_EMAIL)
+            select(User).where(User.email == uno_settings.SUPERUSER_EMAIL)
         ).__dict__
         user_obj = UserObj(app=app)
         assert user_obj is not None

@@ -81,3 +81,4 @@ pyvenv.cfg
 greenlet.h
 docker/pg_pwd.txt
 site
+.qodo

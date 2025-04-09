@@ -20,7 +20,7 @@ from uno.mixins import ModelMixin
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import Include, Match
 from uno.meta.objects import MetaRecordModel
-from uno.config import settings
+from uno.settings import uno_settings
 
 query_value__values = Table(
     "query_value__values",
@@ -175,7 +175,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
             Include,
             name="include",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Include.INCLUDE,
     )
@@ -184,7 +184,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
             Match,
             name="match",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Match.AND,
     )
@@ -235,7 +235,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
             Include,
             name="include",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Include.INCLUDE,
         doc="Indicate if the query should return records including or excluding the queries results.",
@@ -245,7 +245,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
             Match,
             name="match",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the filter values.",
@@ -255,7 +255,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
             Include,
             name="include",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Include.INCLUDE,
         doc="Indicate if the query should return records including or excluding the subqueries results.",
@@ -265,7 +265,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
             Match,
             name="match",
             create_type=True,
-            schema=settings.DB_SCHEMA,
+            schema=uno_settings.DB_SCHEMA,
         ),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the subquery values.",

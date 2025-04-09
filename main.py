@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from uno.obj import UnoObj
 from uno.apidef import app
-from uno.config import settings
+from uno.settings import uno_settings
 
 from uno.attr import objects as attr_models
 from uno.auth import objects as auth_models
@@ -41,14 +41,14 @@ app.mount(
 
 @app.get("/app", response_class=HTMLResponse, tags=["0KUI"])
 async def app_base(
-    request: Request,  # , settings: Annotated[settings, Depends(get_settings)]
+    request: Request,  # , uno_settings: Annotated[uno_settings, Depends(get_settings)]
 ):
     return templates.TemplateResponse(
         "app.html",
         {
             "request": request,
             "authentication_url": "/api/auth/login",
-            "site_name": settings.SITE_NAME,
+            "site_name": config.SITE_NAME,
         },
     )
 

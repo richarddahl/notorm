@@ -9,7 +9,7 @@ import pytest_asyncio
 from unittest import IsolatedAsyncioTestCase
 
 from uno.meta.models import MetaRecordModel
-from uno.config import settings
+from uno.settings import uno_settings
 
 
 class TestMetaBaseModel(IsolatedAsyncioTestCase):

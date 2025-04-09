@@ -87,7 +87,7 @@ class TenantType(enum.StrEnum):
     Each tenant type corresponds to a specific customer group.
     Tenants are a key concept in the UnoModel library.
     They represent an individual or a group of users that may share permissions and access to data.
-    Tenant Types can be configured via the settings to restrict the number of database
+    Tenant Types can be configured via the uno_settings to restrict the number of database
     objects, users, and or user groups allowed.
 
     Attributes:

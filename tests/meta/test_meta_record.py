@@ -10,19 +10,19 @@ from sqlalchemy.dialects.postgresql import VARCHAR
 from tests.conftest import db_column
 
 from uno.meta.models import MetaRecordModel
-from uno.sqlclasses import AlterGrants, InsertMetaType
-from uno.config import settings
+from uno.db.sql.tablesql import AlterGrants, InsertMetaType
+from uno.settings import uno_settings
 
 
 '''
-for module in settings.LOAD_PACKAGES:
+for module in uno_settings.LOAD_PACKAGES:
     globals()[f"{module.split('.')[1]}_objs"] = importlib.import_module(
         f"{module}.objs"
     )
 
 
 class TestMetaBase:
-    schema = settings.DB_SCHEMA
+    schema = uno_settings.DB_SCHEMA
 
 
     def test_meta_structure(self):

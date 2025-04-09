@@ -2,20 +2,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.sqlclasses import (
+from uno.db.sql.classes import SQLConfig
+
+from uno.db.sql.tablesql import (
     AlterGrants,
     InsertMetaType,
+    InsertMetaRecordTrigger,
     RecordUserAuditFunction,
+    RecordStatusFunction,
     ValidateGroupInsert,
     DefaultGroupTenant,
     InsertGroupForTenant,
     UserRecordUserAuditFunction,
-    InsertMetaRecordTrigger,
-    RecordStatusFunction,
-    SQLConfig,
 )
 from uno.auth.rlssql import UserRowLevelSecurity
-from uno.sqlgraph import GraphSQLEmitter
+from uno.db.sql.graphsql import GraphSQLEmitter
 from uno.auth.models import (
     user__group,
     user__role,

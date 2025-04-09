@@ -78,6 +78,7 @@ dependencies = [
   "httpx",
   "requests",
   "factory_boy",
+  "pytest-mock",
 ]
 
 [tool.coverage.run]
