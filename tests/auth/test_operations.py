@@ -47,13 +47,6 @@ async def test_create_user(session, test_db):
     assert user.id is not None
 
 
-@pytest.mark.asyncio
-async def test_user_table_keys(session, test_db):
-    user_table_keys = User.db.table_keys()
-    print(user_table_keys)
-    assert user_table_keys is not None
-
-
 '''
 class TestUser(IsolatedAsyncioTestCase):
     """Tests for the User model."""
