@@ -42,7 +42,11 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def connection():
-    return sync_connection
+    """
+    Fixture that provides a database connection for tests.
+    """
+    with sync_connection() as conn:
+        yield conn
 
 
 @pytest.fixture(scope="function")

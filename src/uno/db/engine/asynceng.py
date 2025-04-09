@@ -74,12 +74,13 @@ class AsyncEngineFactory(EngineFactory[AsyncEngine, AsyncConnection]):
 
 @contextlib.asynccontextmanager
 async def async_connection(
-    role: str,
-    database: Optional[str] = None,
-    host: Optional[str] = None,
-    password: Optional[str] = None,
-    driver: Optional[str] = None,
-    port: Optional[int] = None,
+    db_role: str,
+    db_name: Optional[str] = None,
+    db_host: Optional[str] = None,
+    db_user_pw: Optional[str] = None,
+    db_driver: Optional[str] = None,
+    db_port: Optional[int] = None,
+    config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",
     factory: Optional[AsyncEngineFactory] = None,
     max_retries: int = 3,
@@ -88,16 +89,18 @@ async def async_connection(
     **kwargs,
 ) -> AsyncIterator[AsyncConnection]:
     """Context manager for asynchronous database connections."""
-    # Create config object from parameters
-    config = ConnectionConfig(
-        role=role,
-        database=database,
-        host=host,
-        password=password,
-        driver=driver,
-        port=port,
-        **kwargs,
-    )
+    # Use provided ConnectionConfig or create one from parameters
+    connection_config = config
+    if connection_config is None:
+        connection_config = ConnectionConfig(
+            db_role=db_role,
+            db_name=db_name,
+            db_host=db_host,
+            db_user_pw=db_user_pw,
+            db_driver=db_driver,
+            db_port=db_port,
+            **kwargs,
+        )
 
     # Use provided factory or create a new one
     engine_factory = factory or AsyncEngineFactory(logger=logger)
@@ -110,12 +113,12 @@ async def async_connection(
     while attempt < max_retries:
         try:
             # Create engine with the configuration
-            engine = engine_factory.create_engine(config)
+            engine = engine_factory.create_engine(connection_config)
 
             # Create async connection with specified isolation level
-            async with engine.connect() as conn:
-                await conn.execution_options(isolation_level=isolation_level)
-
+            async with engine.connect().execution_options(
+                isolation_level=isolation_level
+            ) as conn:
                 # Execute callbacks
                 engine_factory.execute_callbacks(conn)
 

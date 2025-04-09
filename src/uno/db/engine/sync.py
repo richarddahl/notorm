@@ -77,7 +77,7 @@ class SyncEngineFactory(EngineFactory[Engine, Connection]):
 
 @contextlib.contextmanager
 def sync_connection(
-    db_driver: str = uno_settings.DB_ASYNC_DRIVER,
+    db_driver: str = uno_settings.DB_SYNC_DRIVER,
     db_name: str = uno_settings.DB_NAME,
     db_user_pw: str = uno_settings.DB_USER_PW,
     db_role: str = f"{uno_settings.DB_NAME}_login",
@@ -93,6 +93,10 @@ def sync_connection(
     Context manager for synchronous database connections.
 
     Args:
+        db_driver: Database driver to use
+        db_name: Database name
+        db_user_pw: Database user password
+        db_role: Database role
         config: ConnectionConfig object (takes precedence over individual params)
         isolation_level: Transaction isolation level
         factory: Optional engine factory
@@ -111,12 +115,12 @@ def sync_connection(
     connection_config = config
     if connection_config is None:
         connection_config = ConnectionConfig(
-            role=db_role,
-            database=db_name,
-            host=uno_settings.DB_HOST,
-            password=db_user_pw,
-            driver=db_driver,
-            port=uno_settings.DB_PORT,
+            db_role=db_role,
+            db_name=db_name,
+            db_host=uno_settings.DB_HOST,
+            db_user_pw=db_user_pw,
+            db_driver=db_driver,
+            db_port=uno_settings.DB_PORT,
             **kwargs,
         )
 
@@ -131,7 +135,7 @@ def sync_connection(
     while attempt < max_retries:
         try:
             # Create engine with the configuration
-            engine = engine_factory.create_engine(config)
+            engine = engine_factory.create_engine(connection_config)
 
             # Create connection with specified isolation level
             with engine.connect().execution_options(
