@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.model import UnoModel, str_26, str_255, str_63
+from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.auth.mixins import RecordAuditModelMixin
 from uno.enums import SQLOperation, TenantType
@@ -124,22 +124,22 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
     # Columns
-    email: Mapped[str_255] = mapped_column(
+    email: Mapped[PostgresTypes.String255] = mapped_column(
         unique=True,
         index=True,
         nullable=False,
         doc="Email address, used as login ID",
     )
-    handle: Mapped[str_255] = mapped_column(
+    handle: Mapped[PostgresTypes.String255] = mapped_column(
         index=True,
         nullable=False,
         doc="User's displayed name and alternate login ID",
     )
-    full_name: Mapped[str_255] = mapped_column(
+    full_name: Mapped[PostgresTypes.String255] = mapped_column(
         nullable=False,
         doc="User's full name",
     )
-    tenant_id: Mapped[str_26] = mapped_column(
+    tenant_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
         nullable=True,
@@ -149,7 +149,7 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             "reverse_edge": "USERS",
         },
     )
-    default_group_id: Mapped[str_26] = mapped_column(
+    default_group_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("group.id", ondelete="SET NULL"),
         index=True,
         nullable=True,
@@ -203,7 +203,7 @@ class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
     # Columns
-    tenant_id: Mapped[str_26] = mapped_column(
+    tenant_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -213,7 +213,7 @@ class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             "reverse_edge": "GROUPS",
         },
     )
-    name: Mapped[str_255] = mapped_column(doc="Group name")
+    name: Mapped[PostgresTypes.String255] = mapped_column(doc="Group name")
 
     # Relationships
     tenant: Mapped[list["TenantModel"]] = relationship(
@@ -237,14 +237,14 @@ class ResponsibilityRoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     __table_args__ = {"comment": "Application process responsibility"}
 
     # Columns
-    name: Mapped[str_255] = mapped_column(
+    name: Mapped[PostgresTypes.String255] = mapped_column(
         index=True,
         nullable=False,
     )
-    description: Mapped[str_255] = mapped_column(
+    description: Mapped[PostgresTypes.String255] = mapped_column(
         nullable=False,
     )
-    tenant_id: Mapped[str_26] = mapped_column(
+    tenant_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -270,7 +270,7 @@ class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
     # Columns
-    tenant_id: Mapped[str_26] = mapped_column(
+    tenant_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("tenant.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -280,16 +280,16 @@ class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             "reverse_edge": "ROLES",
         },
     )
-    name: Mapped[str_255] = mapped_column(
+    name: Mapped[PostgresTypes.String255] = mapped_column(
         index=True,
         nullable=False,
         doc="Role name",
     )
-    description: Mapped[str_255] = mapped_column(
+    description: Mapped[PostgresTypes.String255] = mapped_column(
         nullable=False,
         doc="Role description",
     )
-    responsibility_role_id: Mapped[str_26] = mapped_column(
+    responsibility_role_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -329,7 +329,7 @@ class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
     # Columns
-    name: Mapped[str_255] = mapped_column(
+    name: Mapped[PostgresTypes.String255] = mapped_column(
         index=True,
         nullable=False,
         doc="Role name",
@@ -380,7 +380,7 @@ class PermissionModel(UnoModel):
         nullable=False,
         doc="Primary Key",
     )
-    meta_type_id: Mapped[str_63] = mapped_column(
+    meta_type_id: Mapped[PostgresTypes.String63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,

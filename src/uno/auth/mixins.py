@@ -13,7 +13,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import text
 
-from uno.model import str_26
+from uno.model import PostgresTypes
 from uno.mixins import ObjectMixin, ModelMixin
 
 
@@ -28,7 +28,7 @@ class RecordAuditObjectMixin(BaseModel):
 
 class RecordAuditModelMixin:
 
-    created_by_id: Mapped[str_26] = mapped_column(
+    created_by_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("user.id", ondelete="RESTRICT"),
         index=True,
         nullable=False,
@@ -40,7 +40,7 @@ class RecordAuditModelMixin:
             "reverse_edge": "CREATED_OBJECTS",
         },
     )
-    modified_by_id: Mapped[str_26] = mapped_column(
+    modified_by_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("user.id", ondelete="RESTRICT"),
         index=True,
         nullable=False,
@@ -52,7 +52,7 @@ class RecordAuditModelMixin:
             "reverse_edge": "MODIFIED_OBJECTS",
         },
     )
-    deleted_by_id: Mapped[Optional[str_26]] = mapped_column(
+    deleted_by_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("user.id", ondelete="SET NULL"),
         index=True,
         nullable=True,
@@ -94,7 +94,7 @@ class GroupObjectMixin(BaseModel):
 
 
 class GroupModelMixin:
-    group_id: Mapped[str_26] = mapped_column(
+    group_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("group.id", ondelete="RESTRICT"),
         index=True,
         nullable=True,
@@ -121,7 +121,7 @@ class TenantObjectMixin(BaseModel):
 
 
 class TenantModelMixin:
-    tenant_id: Mapped[str_26] = mapped_column(
+    tenant_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("tenant.id", ondelete="RESTRICT"),
         index=True,
         nullable=True,

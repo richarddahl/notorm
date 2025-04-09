@@ -33,7 +33,7 @@ from uno.db.sql.dbsql import (
 from uno.db.sql.tablesql import (
     InsertMetaRecordFunction,
 )
-from uno.model import meta_data
+from uno.model import UnoModel
 from uno.meta.sqlconfigs import MetaTypeSQLConfig
 
 import uno.attr.sqlconfigs
@@ -313,7 +313,7 @@ class DBManager:
             # Create tables and setup privileges
             try:
                 # Create all database tables
-                meta_data.create_all(bind=conn)
+                UnoModel.metadata.create_all(bind=conn)
                 self.logger.info("Created the database tables")
 
                 # Set table privileges

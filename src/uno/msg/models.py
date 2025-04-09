@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.model import UnoModel, str_255, str_26, datetime_tz
+from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.meta.objects import MetaRecordModel
 from uno.auth.mixins import GroupModelMixin
@@ -56,7 +56,7 @@ class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
         doc="Primary Key",
         info={"graph_excludes": True},
     )
-    parent_id: Mapped[Optional[str_26]] = mapped_column(
+    parent_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("message.id", ondelete="CASCADE"),
         nullable=True,
         doc="Parent message",
@@ -72,17 +72,17 @@ class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
         default=MessageImportance.INFORMATION.value,
         doc="Importance of the message",
     )
-    subject: Mapped[str_255] = mapped_column(
+    subject: Mapped[PostgresTypes.String255] = mapped_column(
         doc="Subject of the message",
     )
-    body: Mapped[str_255] = mapped_column(
+    body: Mapped[PostgresTypes.String255] = mapped_column(
         doc="Body of the message",
     )
     is_draft: Mapped[bool] = mapped_column(
         server_default=text("TRUE"),
         doc="Whether the message is a draft",
     )
-    sent_at: Mapped[datetime_tz] = mapped_column(
+    sent_at: Mapped[PostgresTypes.Timestamp] = mapped_column(
         server_default=func.current_timestamp(),
         doc="Time the message was sent",
     )
@@ -114,20 +114,20 @@ class MessageUserModel(UnoModel):
 
     # Columns
     # ID  necessary on this base as it does not inherit from ModelMixin
-    id: Mapped[str_26] = mapped_column(
+    id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         doc="The unique identifier for the attribute type",
         info={"graph_excludes": True},
     )
-    message_id: Mapped[str_26] = mapped_column(
+    message_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("message.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         info={"edge": "MESSAGE", "reverse_edge": "MESSAGE_USERS"},
     )
-    user_id: Mapped[str_26] = mapped_column(
+    user_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
@@ -161,7 +161,7 @@ class MessageUserModel(UnoModel):
         server_default=text("FALSE"),
         doc="Whether the message was read",
     )
-    read_at: Mapped[Optional[datetime_tz]] = mapped_column(
+    read_at: Mapped[Optional[PostgresTypes.Timestamp]] = mapped_column(
         nullable=True,
         doc="Time the message was read",
     )

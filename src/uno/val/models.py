@@ -13,14 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
 
-from uno.model import (
-    UnoModel,
-    str_255,
-    date_,
-    time_,
-    datetime_tz,
-    dec,
-)
+from uno.model import UnoModel, PostgresTypes
 from uno.auth.mixins import DefaultModelMixin
 from uno.filter import boolean_lookups, numeric_lookups, text_lookups, datetime_lookups
 
@@ -67,7 +60,7 @@ class AttachmentModel(DefaultModelMixin, UnoModel):
         default=text_lookups,
         doc="The lookups for the value.",
     )
-    name: Mapped[str_255] = mapped_column(doc="Name of the file")
+    name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the file")
     file_path: Mapped[str] = mapped_column(doc="Path to the file")
 
     # Relationships
@@ -108,7 +101,7 @@ class DateTimeValueModel(DefaultModelMixin, UnoModel):
         default=datetime_lookups,
         doc="The lookups for the value.",
     )
-    value: Mapped[datetime_tz] = mapped_column(doc="The datetime value.")
+    value: Mapped[PostgresTypes.Timestamp] = mapped_column(doc="The datetime value.")
 
 
 class DateValueModel(DefaultModelMixin, UnoModel):
@@ -125,7 +118,7 @@ class DateValueModel(DefaultModelMixin, UnoModel):
         default=datetime_lookups,
         doc="The lookups for the value.",
     )
-    value: Mapped[date_] = mapped_column(doc="The date value.")
+    value: Mapped[PostgresTypes.Date] = mapped_column(doc="The date value.")
 
 
 class DecimalValueModel(DefaultModelMixin, UnoModel):
@@ -142,7 +135,7 @@ class DecimalValueModel(DefaultModelMixin, UnoModel):
         default=numeric_lookups,
         doc="The lookups for the value.",
     )
-    value: Mapped[dec] = mapped_column(doc="The decimal value.")
+    value: Mapped[PostgresTypes.Decimal] = mapped_column(doc="The decimal value.")
 
 
 class IntegerValueModel(DefaultModelMixin, UnoModel):
@@ -193,7 +186,7 @@ class TimeValueModel(DefaultModelMixin, UnoModel):
         default=datetime_lookups,
         doc="The lookups for the value.",
     )
-    value: Mapped[time_] = mapped_column()
+    value: Mapped[PostgresTypes.Time] = mapped_column()
 
 
 """
@@ -205,12 +198,12 @@ class Method(
     }
 
     # Columns
-    id: Mapped[str_26] = mapped_column(
+    id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id"),
         primary_key=True,
     )
 
-    method_meta_type: Mapped[str_26] = mapped_column(
+    method_meta_type: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
     )
@@ -268,7 +261,7 @@ class Calculation(
     # Columns
     id: Mapped[int] = mapped_column(Identity(), primary_key=True)
 
-    meta_type_id: Mapped[str_63] = mapped_column(
+    meta_type_id: Mapped[PostgresTypes.String63] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
     )

@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.model import UnoModel, str_255, str_26
+from uno.model import UnoModel, PostgresTypes
 from uno.meta.objects import MetaTypeModel, MetaRecordModel
 from uno.auth.mixins import DefaultModelMixin
 from uno.qry.models import QueryModel
@@ -125,20 +125,20 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
     # ID  necessary on this base as the relationships apparently need it,
     # but it is simply superceding the ID column (it is identical to)
     # of the ModelMixin
-    id: Mapped[str_26] = mapped_column(
+    id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         index=True,
         doc="The unique identifier for the attribute type",
         info={"graph_excludes": True},
     )
-    name: Mapped[str_255] = mapped_column(
+    name: Mapped[PostgresTypes.String255] = mapped_column(
         doc="The name of the attribute type",
     )
     text: Mapped[str] = mapped_column(
         doc="The text of the attribute type, usually a question or statement about the meta type it describes",
     )
-    parent_id: Mapped[Optional[str_26]] = mapped_column(
+    parent_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey(
             "attribute_type.id",
             ondelete="SET NULL",
@@ -151,25 +151,29 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
             "reverse_edge": "CHILDREN",
         },
     )
-    description_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey("query.id", ondelete="CASCADE"),
-        index=True,
-        doc="Query that determines which object types are described by Attributes.",
-        info={
-            "edge": "DESCRIPTION_LIMITING_QUERY",
-            "reverse_edge": "DESCRIPTION_LIMITED_ATTRIBUTE_TYPES",
-        },
+    description_limiting_query_id: Mapped[Optional[PostgresTypes.String26]] = (
+        mapped_column(
+            ForeignKey("query.id", ondelete="CASCADE"),
+            index=True,
+            doc="Query that determines which object types are described by Attributes.",
+            info={
+                "edge": "DESCRIPTION_LIMITING_QUERY",
+                "reverse_edge": "DESCRIPTION_LIMITED_ATTRIBUTE_TYPES",
+            },
+        )
     )
-    value_type_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(
-            "query.id",
-            ondelete="CASCADE",
-        ),
-        doc="Query that determines which object types are values for Attributes.",
-        info={
-            "edge": "VALUE_TYPE_LIMITING_QUERY",
-            "reverse_edge": "VALUE_TYPE_LIMITED_ATTRIBUTE_TYPES",
-        },
+    value_type_limiting_query_id: Mapped[Optional[PostgresTypes.String26]] = (
+        mapped_column(
+            ForeignKey(
+                "query.id",
+                ondelete="CASCADE",
+            ),
+            doc="Query that determines which object types are values for Attributes.",
+            info={
+                "edge": "VALUE_TYPE_LIMITING_QUERY",
+                "reverse_edge": "VALUE_TYPE_LIMITED_ATTRIBUTE_TYPES",
+            },
+        )
     )
     required: Mapped[bool] = mapped_column(
         default=False,
@@ -231,7 +235,7 @@ class AttributeModel(DefaultModelMixin, UnoModel):
     __table_args__ = {"comment": "Attributes define characteristics of objects"}
 
     # Columns
-    attribute_type_id: Mapped[str_26] = mapped_column(
+    attribute_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey(
             "attribute_type.id",
             ondelete="CASCADE",

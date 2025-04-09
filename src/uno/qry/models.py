@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
-from uno.model import UnoModel, str_26, str_255, str_12
+from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import Include, Match
@@ -95,11 +95,11 @@ class QueryPathModel(ModelMixin, UnoModel):
         {"comment": "Enables user-defined filtering via the graph DB."},
     )
     # Columns
-    # name: Mapped[str_255] = mapped_column(
+    # name: Mapped[PostgresTypes.String255] = mapped_column(
     #    nullable=False,
     #    doc="The name of the query path.",
     # )
-    source_meta_type_id: Mapped[str_26] = mapped_column(
+    source_meta_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -109,7 +109,7 @@ class QueryPathModel(ModelMixin, UnoModel):
             "reverse_edge": "SOURCE_FILTER_PATHS",
         },
     )
-    target_meta_type_id: Mapped[str_26] = mapped_column(
+    target_meta_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -160,7 +160,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
     )
 
     # Columns
-    query_path_id: Mapped[str_26] = mapped_column(
+    query_path_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("query_path.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
@@ -188,7 +188,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
         ),
         insert_default=Match.AND,
     )
-    lookup: Mapped[str_12] = mapped_column(
+    lookup: Mapped[PostgresTypes.String12] = mapped_column(
         insert_default="equal",
     )
 
@@ -212,7 +212,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
     __table_args__ = ({"comment": "User definable queries"},)
 
     # Columns
-    name: Mapped[str_255] = mapped_column(
+    name: Mapped[PostgresTypes.String255] = mapped_column(
         index=True,
         nullable=False,
         doc="The name of the query.",
@@ -220,7 +220,7 @@ class QueryModel(DefaultModelMixin, UnoModel):
     description: Mapped[Optional[str]] = mapped_column(
         doc="The description of the query."
     )
-    query_meta_type_id: Mapped[str_26] = mapped_column(
+    query_meta_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,
         nullable=False,

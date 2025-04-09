@@ -24,7 +24,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.model import UnoModel, str_26, str_255, str_63
+from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.enums import (
     SQLOperation,
@@ -42,7 +42,7 @@ class Workflow(GroupModelMixin, ModelMixin, UnoModel):
     __table_args__ = {"comment": "User-defined workflows"}
 
     # Columns
-    name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
+    name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the workflow")
     description: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
     )
@@ -55,15 +55,15 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
     # Columns
-    name: Mapped[str_255] = mapped_column(doc="Name of the workflow")
+    name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the workflow")
     description: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating the purpose and the expected outcome"
     )
-    workflow_id: Mapped[str_26] = mapped_column(
+    workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("workflow.id", ondelete="CASCADE"),
         index=True,
     )
-    responsibility_id: Mapped[str_26] = mapped_column(
+    responsibility_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("responsibility.id", ondelete="CASCADE"),
         index=True,
     )
@@ -76,23 +76,25 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
         server_default=text("false"),
         doc="Indicats if a Task Record is required",
     )
-    applicable_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
+    applicable_meta_type_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey(
             "meta_type.id",
             ondelete="CASCADE",
         ),
     )
-    applicablity_limiting_query_id: Mapped[Optional[str_26]] = mapped_column(
-        ForeignKey(
-            "query.id",
-            ondelete="SET NULL",
-        ),
-        nullable=True,
+    applicablity_limiting_query_id: Mapped[Optional[PostgresTypes.String26]] = (
+        mapped_column(
+            ForeignKey(
+                "query.id",
+                ondelete="SET NULL",
+            ),
+            nullable=True,
+        )
     )
-    record_meta_type_id: Mapped[Optional[str_26]] = mapped_column(
+    record_meta_type_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
     )
-    parent_id: Mapped[str_26] = mapped_column(
+    parent_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("step.id", ondelete="CASCADE"),
         index=True,
     )
@@ -129,25 +131,25 @@ class TaskType(GroupModelMixin, ModelMixin, UnoModel):
         default=WorkflowDBEvent.INSERT,
         doc="The database event that triggers the workflow, if applicable",
     )
-    responsible_role_id: Mapped[Optional[str_26]] = mapped_column(
+    responsible_role_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role responsible for completing the task",
         info={"edge": "RESPONSIBLE", "reverse_edge": "RESPONSIBLE_TASKS"},
     )
-    accountable_role_id: Mapped[Optional[str_26]] = mapped_column(
+    accountable_role_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role accountable for the task",
         info={"edge": "ACCOUNTABLE", "reverse_edge": "ACCOUNTABLE_TASKS"},
     )
-    consulted_role_id: Mapped[Optional[str_26]] = mapped_column(
+    consulted_role_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role consulted for the task",
         info={"edge": "CONSULTED", "reverse_edge": "CONSULTED_TASKS"},
     )
-    informed_role_id: Mapped[Optional[str_26]] = mapped_column(
+    informed_role_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("responsibility_role.id", ondelete="CASCADE"),
         nullable=True,
         doc="The role informed for the task",
@@ -160,11 +162,11 @@ class Task(GroupModelMixin, ModelMixin, UnoModel):
     __table_args__ = {"comment": "Manually created or trigger created tasks"}
 
     # Columns
-    task_type_id: Mapped[str_26] = mapped_column(
+    task_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("task_type.id", ondelete="CASCADE"),
         index=True,
     )
-    task_object_id: Mapped[str_26] = mapped_column(
+    task_object_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         index=True,
     )
@@ -176,7 +178,7 @@ class Task(GroupModelMixin, ModelMixin, UnoModel):
         nullable=True,
         doc="Date the task was completed",
     )
-    record_id: Mapped[Optional[str_26]] = mapped_column(
+    record_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
         ForeignKey("task_record.id", ondelete="CASCADE"),
         nullable=True,
         doc="Record of the task completion",
@@ -189,17 +191,17 @@ class TaskRecord(GroupModelMixin, ModelMixin, UnoModel):
     __table_args__ = {"comment": "Records of task completions"}
 
     # Columns
-    task_id: Mapped[str_26] = mapped_column(
+    task_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("task.id", ondelete="CASCADE"),
         index=True,
     )
-    completion_date: Mapped[date_] = mapped_column(
+    completion_date: Mapped[PostgresTypes.Date] = mapped_column(
         doc="Date the task was completed",
     )
     notes: Mapped[str] = mapped_column(
         doc="Notes about the completion of the task",
     )
-    record_id: Mapped[str_26] = mapped_column(
+    record_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         nullable=True,
     )

@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
 )
 from pydantic import BaseModel
 
-from uno.model import str_26, datetime_tz
+from uno.model import PostgresTypes
 
 
 class ObjectMixin(BaseModel):
@@ -26,7 +26,7 @@ class ObjectMixin(BaseModel):
 
 class ModelMixin:
 
-    id: Mapped[str_26] = mapped_column(
+    id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_record.id", ondelete="CASCADE"),
         primary_key=True,
         unique=True,
@@ -44,17 +44,17 @@ class ModelMixin:
         server_default=text("FALSE"),
         doc="Indicates that the record has been soft deleted",
     )
-    created_at: Mapped[datetime_tz] = mapped_column(
+    created_at: Mapped[PostgresTypes.Timestamp] = mapped_column(
         nullable=False,
         server_default=FetchedValue(),
         doc="Timestamp when the record was created",
     )
-    modified_at: Mapped[datetime_tz] = mapped_column(
+    modified_at: Mapped[PostgresTypes.Timestamp] = mapped_column(
         nullable=False,
         server_default=FetchedValue(),
         doc="Timestamp when the record was last modified",
     )
-    deleted_at: Mapped[Optional[datetime_tz]] = mapped_column(
+    deleted_at: Mapped[Optional[PostgresTypes.Timestamp]] = mapped_column(
         nullable=True,
         server_default=FetchedValue(),
         doc="Timestamp when the record was soft deleted",

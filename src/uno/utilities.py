@@ -61,8 +61,8 @@ def datetime_to_string(datetime: datetime | None) -> str | None:
     )
 
 
-def decimal_to_string(dec: decimal.Decimal | None) -> str | None:
-    return numbers.format_decimal(dec, locale="en_US") if dec else None
+def decimal_to_string(decimal: decimal.Decimal | None) -> str | None:
+    return numbers.format_decimal(decimal, locale="en_US") if decimal else None
 
 
 def obj_to_string(model: Any) -> str | None:
@@ -96,8 +96,10 @@ def datetime_to_okui(datetime: datetime | None) -> str | None:
     )
 
 
-def decimal_to_okui(dec: decimal.Decimal | None) -> dict[str, Any] | None:
-    return {"value": dec, "type": "decimal", "element": "imput"} if dec else None
+def decimal_to_okui(decimal: decimal.Decimal | None) -> dict[str, Any] | None:
+    return (
+        {"value": decimal, "type": "decimal", "element": "imput"} if decimal else None
+    )
 
 
 def obj_to_okui(model: Any) -> str | None:

@@ -2,11 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+"""
+Database model definitions for the Uno framework.
+
+This module provides base classes and type definitions for SQLAlchemy models
+used within the Uno framework. It defines standardized column types and
+a common base class with appropriate type annotations.
+"""
+
 import datetime
 import decimal
 import enum
-
-from typing import Annotated
+from typing import Annotated, Any, Optional, Type, TypeVar
 
 from sqlalchemy import MetaData
 from sqlalchemy.orm import registry, DeclarativeBase
@@ -20,7 +27,6 @@ from sqlalchemy.dialects.postgresql import (
     VARCHAR,
     ENUM,
     BOOLEAN,
-    ARRAY,
     NUMERIC,
     INTERVAL,
     UUID,
@@ -31,59 +37,134 @@ from sqlalchemy.dialects.postgresql import (
 
 from uno.settings import uno_settings
 
-# configures the naming convention for the database implicit constraints and indexes
-POSTGRES_INDEXES_NAMING_CONVENTION = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s",
-    "pk": "pk_%(table_name)s",
-}
+
+# Custom type definitions for common column types
+# These make the type annotations more readable and maintainable
+class PostgresTypes:
+    """Common PostgreSQL column type definitions for use in models."""
+
+    # String types with specific lengths
+    String12 = Annotated[str, VARCHAR(12)]
+    String26 = Annotated[str, VARCHAR(26)]
+    String63 = Annotated[str, VARCHAR(63)]
+    String64 = Annotated[str, VARCHAR(64)]
+    String128 = Annotated[str, VARCHAR(128)]
+    String255 = Annotated[str, VARCHAR(255)]
+    Text = Annotated[str, TEXT]
+    UUID = Annotated[str, UUID]
+
+    # Numeric types
+    BigInt = Annotated[int, BIGINT]
+    Decimal = Annotated[decimal.Decimal, NUMERIC]
+
+    # Boolean type
+    Boolean = Annotated[bool, BOOLEAN]
+
+    # Date and time types
+    Timestamp = Annotated[datetime.datetime, TIMESTAMP(timezone=True)]
+    Date = Annotated[datetime.date, DATE]
+    Time = Annotated[datetime.time, TIME]
+    Interval = Annotated[datetime.timedelta, INTERVAL]
+
+    # Binary data
+    ByteA = Annotated[bytes, BYTEA]
+
+    # JSON data
+    JSONB = Annotated[dict, JSONB]
+
+    # Array type
+    Array = Annotated[list, ARRAY]
+
+    # Enum type
+    StrEnum = Annotated[enum.StrEnum, ENUM]
 
 
-meta_data = MetaData(
-    naming_convention=POSTGRES_INDEXES_NAMING_CONVENTION,
-    schema=uno_settings.DB_SCHEMA,
-)
+class MetadataFactory:
+    """Factory for creating SQLAlchemy metadata with consistent configuration."""
 
-str_12 = Annotated[VARCHAR, 12]
-str_26 = Annotated[VARCHAR, 26]
-str_63 = Annotated[VARCHAR, 63]
-str_64 = Annotated[VARCHAR, 64]
-str_128 = Annotated[VARCHAR, 128]
-str_255 = Annotated[VARCHAR, 255]
-str_uuid = Annotated[str, 36]
-dec = Annotated[decimal.Decimal, 19]
-datetime_tz = Annotated[TIMESTAMP, ()]
-date_ = Annotated[datetime.date, ()]
-time_ = Annotated[datetime.time, ()]
-interval = Annotated[datetime.timedelta, ()]
-json_ = Annotated[dict, ()]
-bytea = Annotated[bytes, ()]
+    @staticmethod
+    def create_metadata(
+        schema: Optional[str] = None, naming_convention: Optional[dict] = None
+    ) -> MetaData:
+        """
+        Create a new SQLAlchemy metadata instance with the specified schema and naming convention.
+
+        Args:
+            schema: The database schema to use (defaults to the value from uno_settings)
+            naming_convention: Naming convention for constraints and indexes
+
+        Returns:
+            A configured SQLAlchemy MetaData instance
+        """
+        # Default naming convention for PostgreSQL
+        default_naming_convention = {
+            "ix": "ix_%(column_0_label)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+            "fk": "fk_%(table_name)s_%(column_0_name)s",
+            "pk": "pk_%(table_name)s",
+        }
+
+        return MetaData(
+            naming_convention=naming_convention or default_naming_convention,
+            schema=schema or uno_settings.DB_SCHEMA,
+        )
+
+
+# Create the default metadata instance
+default_metadata = MetadataFactory.create_metadata()
+
+# Type variable for generic model classes
+T = TypeVar("T", bound="UnoModel")
 
 
 class UnoModel(AsyncAttrs, DeclarativeBase):
+    """
+    Base class for all database models in the Uno framework.
+
+    This class provides common functionality and type mapping for SQLAlchemy models.
+    All models should inherit from this class to ensure consistent behavior.
+    """
+
+    # Registry with type annotations mapping Python types to SQL types
     registry = registry(
         type_annotation_map={
             int: BIGINT,
             str: TEXT,
             enum.StrEnum: ENUM,
             bool: BOOLEAN,
-            bytea: BYTEA,
+            bytes: BYTEA,
             list: ARRAY,
-            datetime_tz: TIMESTAMP(timezone=True),
-            date_: DATE,
-            time_: TIME,
-            interval: INTERVAL,
-            dec: NUMERIC,
-            str_12: VARCHAR(12),
-            str_26: VARCHAR(26),
-            str_63: VARCHAR(63),
-            str_64: VARCHAR(64),
-            str_128: VARCHAR(128),
-            str_255: VARCHAR(255),
-            str_uuid: UUID,
-            json_: JSONB,
+            PostgresTypes.Timestamp: TIMESTAMP(timezone=True),
+            PostgresTypes.Date: DATE,
+            PostgresTypes.Time: TIME,
+            PostgresTypes.Interval: INTERVAL,
+            PostgresTypes.Decimal: NUMERIC,
+            PostgresTypes.String12: VARCHAR(12),
+            PostgresTypes.String26: VARCHAR(26),
+            PostgresTypes.String63: VARCHAR(63),
+            PostgresTypes.String64: VARCHAR(64),
+            PostgresTypes.String128: VARCHAR(128),
+            PostgresTypes.String255: VARCHAR(255),
+            PostgresTypes.UUID: UUID,
+            PostgresTypes.JSONB: JSONB,
         }
     )
-    metadata = meta_data
+
+    # Use the default metadata
+    metadata = default_metadata
+
+    @classmethod
+    def with_custom_metadata(cls, metadata: MetaData) -> Type[T]:
+        """
+        Create a subclass of UnoModel with custom metadata.
+
+        This is useful when models need to be mapped to different schemas.
+
+        Args:
+            metadata: The custom metadata to use
+
+        Returns:
+            A new UnoModel subclass with the specified metadata
+        """
+        return type(f"{cls.__name__}WithCustomMetadata", (cls,), {"metadata": metadata})
