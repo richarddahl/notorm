@@ -2,58 +2,51 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Models are the Business Logic Layer Objects
+"""
+Business logic layer objects for the Uno framework.
 
-import decimal
+This module provides the UnoObj class, which serves as the business logic layer
+for models in the Uno framework. It handles object lifecycle, data validation,
+and business logic operations.
+"""
+
 import datetime
+from typing import Dict, Type, List, Optional, Any, ClassVar, TypeVar, Generic
 
-from collections import namedtuple, OrderedDict
-from typing import ClassVar, Literal, List, Annotated
-from pydantic import BaseModel, ConfigDict, create_model
-
-from fastapi import FastAPI, HTTPException, Query
-from sqlalchemy import Column
+from pydantic import BaseModel, ConfigDict, Field
 
 from uno.db.db import UnoDBFactory, FilterParam
 from uno.model import UnoModel
 from uno.schema import UnoSchemaConfig
-from uno.endpoint import (
-    CreateEndpoint,
-    ViewEndpoint,
-    ListEndpoint,
-    UpdateEndpoint,
-    DeleteEndpoint,
-    ImportEndpoint,
-)
-from uno.errors import UnoRegistryError
-from uno.utilities import (
-    snake_to_title,
-    snake_to_camel,
-    snake_to_caps_snake,
-)
-from uno.filter import (
-    UnoFilter,
-    boolean_lookups,
-    numeric_lookups,
-    datetime_lookups,
-    text_lookups,
-)
-from uno.settings import uno_settings
+from uno.errors import UnoError
+from uno.utilities import snake_to_title
+from uno.registry import UnoRegistry
+from uno.schema_manager import UnoSchemaManager
+from uno.filter_manager import UnoFilterManager
+from uno.endpoint_factory import UnoEndpointFactory
 
 
-class UnoObj(BaseModel):
+T = TypeVar("T", bound=UnoModel)
 
-    model_config = ConfigDict(populate_by_name=True)
 
-    registry: ClassVar[dict[str, "UnoObj"]] = {}
-    db: ClassVar["UnoDB"]
-    model: ClassVar[type[UnoModel]]
+class UnoObj(BaseModel, Generic[T]):
+    """
+    Business logic layer object for the Uno framework.
+
+    This class provides business logic operations for models, including data validation,
+    object lifecycle management, and integration with the web application.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
+    # Class variables
+    model: ClassVar[Type[T]]
     exclude_from_filters: ClassVar[bool] = False
     terminate_filters: ClassVar[bool] = False
     display_name: ClassVar[str] = None
     display_name_plural: ClassVar[str] = None
-    schema_configs: ClassVar[dict[str, "UnoSchemaConfig"]] = {}
-    endpoints: ClassVar[list[str]] = [
+    schema_configs: ClassVar[Dict[str, UnoSchemaConfig]] = {}
+    endpoints: ClassVar[List[str]] = [
         "Create",
         "View",
         "List",
@@ -61,540 +54,322 @@ class UnoObj(BaseModel):
         "Delete",
         "Import",
     ]
-    endpoint_tags: ClassVar[list[str]] = []
-    filters: ClassVar[dict[str, UnoFilter]] = {}
-    terminate_field_filters: ClassVar[list[str]] = []
+    endpoint_tags: ClassVar[List[str]] = []
+    terminate_field_filters: ClassVar[List[str]] = []
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    # Instance variables - these will be populated with values from the model
+    id: Optional[str] = Field(None, description="Unique identifier for the object")
 
-        super().__init_subclass__(**kwargs)
-        # Don't add the UnoObj class itself to the registry
-        if cls is UnoObj:
-            return
-        # Add the subclass to the registry if it is not already there
-        if cls.model.__tablename__ not in cls.registry:
-            cls.registry.update({cls.model.__tablename__: cls})
-        else:
-            raise UnoRegistryError(
-                f"A Model class with the table name {cls.model.__tablename__} already exists in the registry.",
-                "DUPLICATE_MODEL",
-            )
-        cls.set_display_names()
-        cls.db = UnoDBFactory(obj=cls)
+    # Runtime components - initialized in __init__
+    db: Any = Field(None, exclude=True)
+    registry: UnoRegistry = Field(None, exclude=True)
+    schema_manager: UnoSchemaManager = Field(None, exclude=True)
+    filter_manager: UnoFilterManager = Field(None, exclude=True)
 
-    # End of __init_subclass__
-
-    # Active Record style methods
-
-    def to_model(self, schema_name: str) -> dict:
-        self.set_schemas()
-        if not hasattr(self, schema_name):
-            raise UnoRegistryError(
-                f"Schema {schema_name} not found in {self.__class__.__name__}",
-                "SCHEMA_NOT_FOUND",
-            )
-        schema_ = getattr(self, schema_name)
-        schema = schema_(**self.model_dump())
-        return self.model(**schema.model_dump())
-
-    # End of to_model
-
-    async def merge(
-        self,
-        **kwargs,
-    ) -> tuple["UnoObj", str]:
+    def __init__(self, **data: Any):
         """
-        Asynchronously merges the current record with an existing one in the database.
-        This method attempts to find a record in the database that matches the provided
-        keyword arguments. If no such record exists, it creates a new one using the
-        specified schema.
-        Returns:
-            UnoObj: The merged or newly created model instance.
-        Raises:
-            Exception: If there is an issue with the database operation.
-        Keyword Args:
-            **kwargs: Arbitrary keyword arguments used to filter or create the record,
-            the combination of which must form a unique key in the database.
-        """
-        self.set_schemas()
-        obj = await self.db.merge(self.edit_schema(**self.model_dump()).model_dump())
-        _action = obj[0].pop("_action")
-        return self.model(**obj[0]), _action
-
-    async def get_or_create(
-        self,
-        **kwargs,
-    ) -> "UnoObj":
-        """
-        Asynchronously retrieves an existing record or creates a new one in the database.
-
-        This method attempts to find a record in the database that matches the provided
-        keyword arguments. If no such record exists, it creates a new one using the
-        specified schema.
-
-        Returns:
-            UnoObj: The retrieved or newly created model instance.
-
-        Raises:
-            Exception: If there is an issue with the database operation.
-
-        Keyword Args:
-            **kwargs: Arbitrary keyword arguments used to filter or create the record,
-            the combination of which must form a unique key in the database.
-        """
-        return await self.db.get_or_create(self.to_model(schema_name="edit_schema"))
-
-    # End of get_or_create
-
-    async def save(self, importing: bool = False) -> "UnoObj":
-        """
-        Save the current UnoObj instance to the database.
-
-        This method handles both creating and updating the model in the database,
-        depending on the state of the instance and the `importing` flag.
+        Initialize a UnoObj instance.
 
         Args:
-            importing (bool): If True, the model is being imported and will be
-                              created in the database using the "view_schema".
-                              Defaults to False.
-
-        Returns:
-            UnoObj: The saved UnoObj instance.
-
-        Behavior:
-            - If `importing` is True, the model is created using the "view_schema".
-            - If the instance has an `id`, it is created using the "edit_schema".
-            - Otherwise, the model is updated using the "edit_schema".
+            **data: The data to initialize the object with
         """
-        if importing:
-            return await self.db.create(self.to_model(schema_name="view_schema"))
-        if self.id:
-            return self.db.update(self.to_model(schema_name="edit_schema"))
-        saved_data = await self.db.create(
-            schema=self.to_model(schema_name="edit_schema")
-        )
-        print(self.model.__dict__)
-        # return self.model(**saved_data[0].__dict__)
+        super().__init__(**data)
 
-    # End of save
+        # Initialize the db factory
+        self.db = UnoDBFactory(obj=self.__class__)
 
-    async def delete(self) -> None:
+        # Get the registry instance
+        self.registry = UnoRegistry.get_instance()
+
+        # Initialize the schema manager
+        self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
+
+        # Initialize the filter manager
+        self.filter_manager = UnoFilterManager()
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
-        Delete the current UnoObj instance from the database.
+        Initialize a UnoObj subclass.
 
-        This method removes the instance from the database using the "edit_schema".
+        This method is called when a subclass of UnoObj is created. It registers
+        the subclass in the registry and sets up display names.
 
-        Returns:
-            None: The method does not return anything.
-
-        Raises:
-            Exception: If there is an issue with the database operation.
+        Args:
+            **kwargs: Additional keyword arguments
         """
-        await self.db.delete(self.to_model(schema_name="edit_schema"))
+        super().__init_subclass__(**kwargs)
 
-    # End of delete
+        # Don't register the UnoObj class itself
+        if cls.__name__ == "UnoObj":
+            return
 
-    @classmethod
-    async def get(cls, **kwargs) -> "UnoObj":
-        return await cls.db.get(**kwargs)
+        # Set display names if not already set
+        cls._set_display_names()
 
-    # End of get
-
-    @classmethod
-    async def filter(cls, filters: FilterParam | None = None) -> list["UnoObj"]:
-        return await cls.db.filter(filters=filters)
-
-    # End of filter
-
-    @classmethod
-    def configure(cls, app: FastAPI) -> None:
-        """Configure the UnoObj class"""
-        cls.set_filters()
-        cls.set_schemas()
-        cls.set_endpoints(app)
-
-    # End of configure
+        # Register the class in the registry
+        registry = UnoRegistry.get_instance()
+        try:
+            registry.register(cls, cls.model.__tablename__)
+        except AttributeError:
+            # Handle case where model or __tablename__ might not be available
+            registry.register(cls, cls.__name__)
 
     @classmethod
-    def set_display_names(cls) -> None:
+    def _set_display_names(cls) -> None:
+        """
+        Set display names for the class if not already set.
+
+        This method sets the display_name and display_name_plural class variables
+        based on the model's table name if they are not already set.
+        """
+        try:
+            table_name = cls.model.__table__.name
+        except (AttributeError, TypeError):
+            table_name = cls.__name__
+
         cls.display_name = (
-            snake_to_title(cls.model.__table__.name)
-            if cls.display_name is None
-            else cls.display_name
+            snake_to_title(table_name) if cls.display_name is None else cls.display_name
         )
+
         cls.display_name_plural = (
-            f"{snake_to_title(cls.model.__table__.name)}s"
+            f"{snake_to_title(table_name)}s"
             if cls.display_name_plural is None
             else cls.display_name_plural
         )
 
-    # End of set_display_names
-
-    @classmethod
-    def set_schemas(cls) -> None:
-        for schema_name, schema_config in cls.schema_configs.items():
-            setattr(
-                cls,
-                schema_name,
-                schema_config.create_schema(
-                    schema_name=schema_name,
-                    model=cls,
-                ),
-            )
-
-    # End of set_schemas
-
-    @classmethod
-    def set_endpoints(cls, app: FastAPI) -> None:
-        for endpoint in cls.endpoints:
-            if endpoint == "Create":
-                CreateEndpoint(model=cls, app=app)
-            elif endpoint == "View":
-                ViewEndpoint(model=cls, app=app)
-            elif endpoint == "List":
-                ListEndpoint(model=cls, app=app)
-            elif endpoint == "Update":
-                UpdateEndpoint(model=cls, app=app)
-            elif endpoint == "Delete":
-                DeleteEndpoint(model=cls, app=app)
-            elif endpoint == "Import":
-                ImportEndpoint(model=cls, app=app)
-
-    # End of set_endpoints
-
-    @classmethod
-    def set_filters(cls) -> None:
+    def to_model(self, schema_name: str) -> T:
         """
-        Sets up filters for the class based on its database table columns.
-
-        This method iterates through the columns of the class's associated database table
-        and generates `UnoFilter` objects for each column. These filters are stored in the
-        `filters` attribute of the class, allowing for dynamic filtering based on the table's
-        schema and relationships.
-
-        The filters are constructed using the `create_filter` function, which determines
-        the appropriate metadata, comparison operators, and relationships for each column.
-
-            - Models with `exclude_from_filters` set to `True` will not have filters created.
-            - Columns with foreign keys are treated as relationships, and the source and
-              target node labels are derived from the foreign key relationships.
-            - The `edge` label is derived from the column's `info` metadata or defaults to
-              the column name.
-            - The `source_path_fragment`, `middle_path_fragment`, and `target_path_fragment`
-              are constructed based on the source and target node labels, allowing for
-              flexible query generation.
-            - The `lookups` are determined based on the column's data type, allowing for
-              appropriate filtering options (e.g., boolean, numeric, datetime, text).
-            - The `documentation` for each filter is derived from the column's docstring
-              or the label, providing context for API documentation.
-            - Filters are created for each column in the table, excluding those marked
-              with `exclude_from_filters` or `graph_excludes`.
-            - The `filters` attribute is a dictionary where keys are filter labels and
-              values are `UnoFilter` objects.
-            - The `create_filter` function is responsible for generating the filter
-              objects based on the column properties.
-            - Columns marked with `graph_excludes` in their `info` metadata are skipped.
-            - Filters are keyed by their label, ensuring uniqueness.
-
-        Attributes:
-            filters (dict): A dictionary where keys are filter labels and values are
-            `UnoFilter` objects representing the filtering configuration for each column.
-        """
-
-        def create_filter(column: Column) -> UnoFilter:
-            """
-            Creates a filter object for a given database column.
-
-            This function generates a `UnoFilter` object based on the properties of the
-            provided SQLAlchemy `Column`. It determines the appropriate comparison operators
-            and constructs metadata for source and target nodes, as well as the relationship
-            label between them.
-
-            Args:
-                column (Column): The SQLAlchemy `Column` object for which the filter is created.
-
-            Returns:
-                UnoFilter: An object containing metadata and configuration for filtering
-                based on the provided column.
-
-            Notes:
-                - If the column has foreign keys, the source and target node labels and
-                  metadata are derived from the foreign key relationships.
-                - If the column does not have foreign keys, the source and target node
-                  labels and metadata are derived from the column and table names.
-                - The function determines the data type of the column and assigns the
-                  appropriate comparison operators (boolean, numeric, or text).
-            """
-
-            # Determine the lookups based on the column type
-            if column.type.python_type == bool:
-                lookups = boolean_lookups
-            elif column.type.python_type in [
-                int,
-                decimal.Decimal,
-                float,
-            ]:
-                lookups = numeric_lookups
-            elif column.type.python_type in [
-                datetime.date,
-                datetime.datetime,
-                datetime.time,
-            ]:
-                lookups = datetime_lookups
-            else:
-                lookups = text_lookups
-
-            # Get the edge label from the column info or use the column name
-            edge = column.info.get("edge", column.name)
-
-            # Determine the source and target node labels and meta_types
-            if column.foreign_keys:
-                # If the column has foreign keys, use the foreign key to determine the
-                # source and target node labels and meta_types
-                source_node_label = snake_to_camel(column.table.name)
-                source_meta_type_id = column.table.name
-                target_node_label = snake_to_camel(
-                    list(column.foreign_keys)[0].column.table.name
-                )
-                target_meta_type_id = list(column.foreign_keys)[0].column.table.name
-                label = snake_to_caps_snake(
-                    column.info.get(edge, column.name.replace("_id", ""))
-                )
-            else:
-                # If the column does not have foreign keys, use the column name to determine
-                # the source and target node labels and meta_types
-                source_node_label = snake_to_camel(table.name)
-                source_meta_type_id = table.name
-                target_node_label = snake_to_camel(column.name)
-                target_meta_type_id = source_meta_type_id
-                label = snake_to_caps_snake(
-                    column.info.get(edge, column.name.replace("_id", ""))
-                )
-
-            return UnoFilter(
-                source_node_label=source_node_label,
-                source_meta_type_id=source_meta_type_id,
-                label=label,
-                target_node_label=target_node_label,
-                target_meta_type_id=target_meta_type_id,
-                data_type=column.type.python_type.__name__,
-                raw_data_type=column.type.python_type,
-                lookups=lookups,
-                source_path_fragment=f"(s:{source_node_label})-[:{label}]",
-                middle_path_fragment=f"(:{source_node_label})-[:{label}]",
-                target_path_fragment=f"(t:{target_node_label})",
-                documentation=column.doc or label,
-            )
-
-        if cls.exclude_from_filters:
-            return
-        filters = {}
-        table = cls.model.__table__
-        for column in table.columns.values():
-            if column.info.get("graph_excludes", False):
-                continue
-            if fltr := create_filter(column):
-                filter_key = fltr.label
-                if filter_key not in filters.keys():
-                    filters[filter_key] = fltr
-        cls.filters = filters
-
-    # End of set_filters
-
-    @classmethod
-    def create_filter_params(cls) -> "FilterParam":
-        """
-        Generate a Pydantic model for filter parameters based on the class's filters and model fields.
-
-        This method dynamically creates a dictionary of filter parameters, including:
-        - Pagination parameters (`limit` and `offset`).
-        - Sorting parameters (`order_by`, `order_by.asc`, and `order_by.desc`).
-        - Filters for each field in the model, including lookup-specific filters.
-
-        The generated model is used to validate and document query parameters for filtering
-        and sorting in API endpoints.
-
-        Returns:
-            FilterParam: A dynamically created Pydantic model subclassed from `FilterParam`.
-
-        Notes:
-            - The `order_by.asc` and `order_by.desc` fields are excluded from the schema
-              for API documentation purposes.
-            - Lookup-specific filters (e.g., `field.in`, `field.notin`) are also excluded
-              from the schema for API documentation.
-        """
-
-        filter_names = list(cls.filters.keys())
-        filter_names.sort()
-        order_by_choices = [name for name in cls.model_fields.keys()]
-
-        # Create a dictionary of filter parameters
-        # Start with the filter parameters for limit, offset, and order_by
-        # and then add the filters for each field in the model
-        model_filter_dict = OrderedDict(
-            {
-                "limit": (Annotated[int | None, Query()], None),
-                "offset": (Annotated[int | None, Query()], None),
-                "order_by": (
-                    Annotated[
-                        Literal[*order_by_choices] | None,
-                        Query(
-                            description="Order by field",
-                        ),
-                    ],
-                    None,
-                ),
-            }
-        )
-        # Add the order_by.asc and order_by.desc "lookup" fields, which are
-        # excluded from the schema for the app documentation
-        for direction in ["asc", "desc"]:
-            model_filter_dict.update(
-                {
-                    f"order_by.{direction}": (
-                        Annotated[
-                            Literal[*order_by_choices] | None,
-                            Query(
-                                description="Order by field",
-                                include_in_schema=False,
-                            ),
-                        ],
-                        None,
-                    )
-                }
-            )
-        for name in filter_names:
-            fltr = cls.filters[name]
-            label = fltr.label.lower()
-            # Add the base filter for the field, included in the schema for the app documentation
-            model_filter_dict.update(
-                {label: (Annotated[fltr.raw_data_type | None, Query()], None)}
-            )
-            # Add the filters for each lookup, excluded from the schema for the app documentation
-            for lookup in fltr.lookups:
-                if lookup in ["IN", "NOTIN"]:
-                    data_type = List[fltr.raw_data_type] | None
-                else:
-                    data_type = fltr.raw_data_type | None
-                label_ = f"{label}.{lookup.lower()}"
-                model_filter_dict.update(
-                    {
-                        label_: (
-                            Annotated[
-                                data_type | None,
-                                Query(include_in_schema=False),
-                            ],
-                            None,
-                        )
-                    }
-                )
-        return create_model(
-            f"{cls.__name__}FilterParam",
-            **model_filter_dict,
-            __base__=FilterParam,
-        )
-
-    # End of create_filter_params
-
-    @classmethod
-    def validate_filter_params(cls, filter_params: FilterParam) -> dict:
-        """
-        Validates and processes filter parameters for a query.
-
-        This method checks the provided filter parameters against the expected
-        parameters defined in the class. It ensures that all parameters are valid,
-        and raises an HTTPException if any unexpected or invalid parameters are found.
-        Additionally, it constructs a list of filters to be applied to the query.
+        Convert the UnoObj instance to a model instance using a schema.
 
         Args:
-            filter_params (FilterParam): An object containing the filter parameters
-                to validate and process.
+            schema_name: The name of the schema to use for conversion
 
         Returns:
-            dict: A list of named tuples representing the validated filters. Each
-                tuple contains the filter's label, value, and lookup type.
+            A model instance
 
         Raises:
-            HTTPException: If any of the following conditions are met:
-                - Unexpected query parameters are provided.
-                - An invalid `order_by` value is specified.
-                - An invalid `order` value is specified.
-                - A non-positive integer is provided for `limit` or `offset`.
-                - An invalid filter key or lookup is specified.
+            UnoError: If the schema is not found
         """
-        filter_tuple = namedtuple("UnoFilterTuple", ["label", "val", "lookup"])
-        filters: list = []
-        # Check for unexpected parameters
-        # Get the expected parameters from the filters
-        # and add the limit and offset keys
-        # to the expected parameters
-        expected_params = set([key.lower() for key in cls.filters.keys()])
-        expected_params.update(["limit", "offset", "order_by"])
-        unexpected_params = (
-            set([key.split(".")[0] for key in filter_params.model_fields])
-            - expected_params
-        )
-        if unexpected_params:
-            unexpected_param_list = ", ".join(unexpected_params)
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unexpected query parameter(s): {unexpected_param_list}. Check spelling and case.",
-            )
-        for key, val in filter_params.model_dump().items():
-            # Check if the filter is valid
-            if val is None:
-                continue
-            filter_component_list = key.split(".")
-            edge = filter_component_list[0]
-            if edge in ["limit", "offset", "order_by"]:
-                if edge == "order_by":
-                    order_by_choices = [
-                        name for name in cls.view_schema.model_fields.keys()
-                    ]
-                    if val not in order_by_choices:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid order_by value: {val}. Must be one of {order_by_choices}.",
-                        )
-                    if filter_component_list[1] == "asc":
-                        filters.append(filter_tuple(edge, val, "asc"))
-                    elif filter_component_list[1] == "desc":
-                        filters.append(filter_tuple(edge, val, "desc"))
-                    else:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid order_by value: {val}. Must be 'asc' or 'desc'.",
-                        )
-                if edge == "limit":
-                    if not isinstance(val, int) or val < 0:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid limit value: {val}. Must be a positive integer.",
-                        )
-                    filters.append(filter_tuple(edge, val, "limit"))
-                if edge == "offset":
-                    if not isinstance(val, int) or val < 0:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid offset value: {val}. Must be a positive integer.",
-                        )
-                    filters.append(filter_tuple(edge, val, "offset"))
-                continue
-            edge_upper = edge.upper()
-            if edge_upper not in cls.filters.keys():
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid filter key: {key}",
-                )
-            lookup = (
-                filter_component_list[1] if len(filter_component_list) > 1 else "equal"
-            )
-            if lookup not in cls.filters[edge_upper].lookups:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid filter lookup: {lookup}",
-                )
-            filters.append(filter_tuple(edge_upper, val, lookup))
-        return filters
+        # Ensure schemas are created
+        self._ensure_schemas_created()
 
-    # End of validate_filter_params
+        # Get the schema
+        schema_class = self.schema_manager.get_schema(schema_name)
+        if not schema_class:
+            raise UnoError(
+                f"Schema {schema_name} not found in {self.__class__.__name__}",
+                "SCHEMA_NOT_FOUND",
+            )
+
+        # Convert to schema
+        schema = schema_class(**self.model_dump())
+
+        # Convert to model
+        return self.__class__.model(**schema.model_dump())
+
+    def _ensure_schemas_created(self) -> None:
+        """
+        Ensure that schemas have been created.
+
+        This method creates all schemas for the class if they haven't been created yet.
+        """
+        if not self.schema_manager.schemas:
+            self.schema_manager.create_all_schemas(self.__class__)
+
+    async def merge(self, **kwargs: Any) -> tuple[T, str]:
+        """
+        Merge the current object with an existing one in the database.
+
+        This method attempts to merge the current object with an existing one in the database.
+        If no matching object is found, a new one is created.
+
+        Args:
+            **kwargs: Additional filter parameters
+
+        Returns:
+            A tuple of (model, action) where action is "insert" or "update"
+        """
+        self._ensure_schemas_created()
+
+        # Get the edit schema
+        edit_schema = self.schema_manager.get_schema("edit_schema")
+        if not edit_schema:
+            raise UnoError(
+                "Edit schema not found",
+                "SCHEMA_NOT_FOUND",
+            )
+
+        # Convert to schema
+        schema = edit_schema(**self.model_dump())
+
+        # Merge
+        result = await self.db.merge(schema.model_dump())
+
+        # Get the action
+        action = result[0].pop("_action")
+
+        # Convert to model
+        return self.__class__.model(**result[0]), action
+
+    async def save(self, importing: bool = False) -> T:
+        """
+        Save the current object to the database.
+
+        This method creates or updates the object in the database.
+
+        Args:
+            importing: Whether the object is being imported
+
+        Returns:
+            The saved model
+        """
+        self._ensure_schemas_created()
+
+        if importing:
+            schema_name = "view_schema"
+        else:
+            schema_name = "edit_schema"
+
+        model = self.to_model(schema_name=schema_name)
+
+        if self.id:
+            # Update
+            return await self.db.update(to_db_model=model)
+        else:
+            # Create
+            result = await self.db.create(schema=model)
+            return result[0]
+
+    async def delete(self) -> None:
+        """
+        Delete the current object from the database.
+
+        Returns:
+            None
+        """
+        self._ensure_schemas_created()
+
+        model = self.to_model(schema_name="edit_schema")
+        await self.db.delete(model)
+
+    @classmethod
+    async def get(cls, **kwargs: Any) -> "UnoObj":
+        """
+        Get an object from the database.
+
+        Args:
+            **kwargs: Filter parameters
+
+        Returns:
+            A UnoObj instance
+        """
+        # Create the database factory
+        db = UnoDBFactory(obj=cls)
+
+        # Get the model from the database
+        model = await db.get(**kwargs)
+
+        # Convert to UnoObj
+        return cls(**model)
+
+    @classmethod
+    async def filter(cls, filters: FilterParam = None) -> List["UnoObj"]:
+        """
+        Filter objects from the database.
+
+        Args:
+            filters: Filter parameters
+
+        Returns:
+            A list of UnoObj instances
+        """
+        # Create the database factory
+        db = UnoDBFactory(obj=cls)
+
+        # Filter models from the database
+        models = await db.filter(filters=filters)
+
+        # Convert to UnoObj instances
+        return [cls(**model) for model in models]
+
+    @classmethod
+    def configure(cls, app: Any) -> None:
+        """
+        Configure the UnoObj class for use with a web application.
+
+        This method sets up filters, schemas, and endpoints for the class.
+
+        Args:
+            app: The web application to configure (typically a FastAPI instance)
+        """
+        # Setup filter manager
+        filter_manager = UnoFilterManager()
+        filter_manager.create_filters_from_table(
+            cls.model,
+            cls.exclude_from_filters,
+            cls.terminate_field_filters,
+        )
+
+        # Setup schema manager
+        schema_manager = UnoSchemaManager(cls.schema_configs)
+        schema_manager.create_all_schemas(cls)
+
+        # Setup endpoints
+        endpoint_factory = UnoEndpointFactory()
+        endpoint_factory.create_endpoints(
+            app,
+            cls,
+            cls.endpoints,
+            cls.endpoint_tags,
+        )
+
+    @classmethod
+    def create_filter_params(cls) -> Type[FilterParam]:
+        """
+        Create a filter parameters model for the class.
+
+        Returns:
+            A Pydantic model class for filter parameters
+        """
+        # Setup filter manager
+        filter_manager = UnoFilterManager()
+        filter_manager.create_filters_from_table(
+            cls.model,
+            cls.exclude_from_filters,
+            cls.terminate_field_filters,
+        )
+
+        # Create filter parameters
+        return filter_manager.create_filter_params(cls)
+
+    @classmethod
+    def validate_filter_params(cls, filter_params: FilterParam) -> List[Any]:
+        """
+        Validate filter parameters.
+
+        Args:
+            filter_params: The filter parameters to validate
+
+        Returns:
+            A list of validated filter tuples
+
+        Raises:
+            UnoError: If validation fails
+        """
+        # Setup filter manager
+        filter_manager = UnoFilterManager()
+        filter_manager.create_filters_from_table(
+            cls.model,
+            cls.exclude_from_filters,
+            cls.terminate_field_filters,
+        )
+
+        # Validate filter parameters
+        try:
+            return filter_manager.validate_filter_params(filter_params, cls)
+        except Exception as e:
+            # Wrap any exceptions in UnoError
+            raise UnoError(
+                str(e),
+                getattr(e, "error_code", "FILTER_VALIDATION_ERROR"),
+            ) from e
