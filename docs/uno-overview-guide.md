@@ -45,7 +45,7 @@ These principles ensure that applications built with Uno are robust, maintainabl
 To get started with the Uno Framework, first install it from PyPI:
 
 ```bash
-pip install notorm
+pip install uno-framework
 ```
 
 Then create your first model and business object:
@@ -80,7 +80,7 @@ class UserModel(UnoModel, ModelMixin):
 
 # Define your business object
 class User(UnoObj[UserModel]):
-    model = UserModel
+    # Model is automatically set from the type parameter
     
     schema_configs = {
         "view_schema": UnoSchemaConfig(),  # All fields
@@ -158,7 +158,7 @@ class TodoListModel(UnoModel, ModelMixin):
 
 # Define business objects
 class Todo(UnoObj[TodoModel]):
-    model = TodoModel
+    # Model is automatically set from the type parameter
     
     schema_configs = {
         "view_schema": UnoSchemaConfig(),
@@ -172,7 +172,7 @@ class Todo(UnoObj[TodoModel]):
         return self
 
 class TodoList(UnoObj[TodoListModel]):
-    model = TodoListModel
+    # Model is automatically set from the type parameter
     
     schema_configs = {
         "view_schema": UnoSchemaConfig(),
@@ -266,7 +266,7 @@ class UserModel(UnoModel, ModelMixin):
 
 # Define user business object
 class User(UnoObj[UserModel]):
-    model = UserModel
+    # Model is automatically set from the type parameter
     
     schema_configs = {
         "view_schema": UnoSchemaConfig(exclude_fields={"password_hash"}),

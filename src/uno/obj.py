@@ -92,7 +92,8 @@ class UnoObj(BaseModel, Generic[T]):
         Initialize a UnoObj subclass.
 
         This method is called when a subclass of UnoObj is created. It registers
-        the subclass in the registry and sets up display names.
+        the subclass in the registry and sets up display names. It also extracts
+        the model from the Generic type parameter if not explicitly set.
 
         Args:
             **kwargs: Additional keyword arguments
@@ -102,6 +103,27 @@ class UnoObj(BaseModel, Generic[T]):
         # Don't register the UnoObj class itself
         if cls.__name__ == "UnoObj":
             return
+
+        # Try to get the model from the Generic type parameter if not explicitly set
+        if not hasattr(cls, "model") or cls.model is None:
+            from typing import get_origin, get_args
+
+            # Get the bases of the class
+            for base in cls.__orig_bases__:
+                # Check if this is a UnoObj with type parameters
+                origin = get_origin(base)
+                if origin is UnoObj:
+                    args = get_args(base)
+                    if args and len(args) > 0:
+                        cls.model = args[0]
+                        break
+
+            # If still no model, raise an error
+            if not hasattr(cls, "model") or cls.model is None:
+                raise TypeError(
+                    f"Class {cls.__name__} must specify a model class either "
+                    f"as a type parameter (UnoObj[ModelClass]) or as a class variable (model = ModelClass)"
+                )
 
         # Set display names if not already set
         cls._set_display_names()

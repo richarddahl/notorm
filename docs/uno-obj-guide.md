@@ -16,7 +16,7 @@ The `UnoObj` class serves as the primary business logic layer for models in the 
 
 ### Defining a UnoObj Class
 
-To define a business object, create a class that inherits from `UnoObj`:
+To define a business object, create a class that inherits from `UnoObj` with your model class as a type parameter:
 
 ```python
 from uno.obj import UnoObj
@@ -34,7 +34,9 @@ class CustomerModel(UnoModel):
     
 # Define your business object
 class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
+    # The model is automatically set from the type parameter
+    # No need to set model = CustomerModel
+    
     display_name = "Customer"
     display_name_plural = "Customers"
     
@@ -53,6 +55,8 @@ class Customer(UnoObj[CustomerModel]):
         print(f"Sending welcome email to {self.email}")
         return True
 ```
+
+The model class is automatically set from the type parameter `UnoObj[CustomerModel]`, eliminating the need to set it explicitly with `model = CustomerModel`.
 
 ### Creating a New Object
 
