@@ -1,7 +1,7 @@
-# NotORM
+# uno
 
-[![PyPI - Version](https://img.shields.io/pypi/v/notorm.svg)](https://pypi.org/project/notorm)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/notorm.svg)](https://pypi.org/project/notorm)
+[![PyPI - Version](https://img.shields.io/pypi/v/uno.svg)](https://pypi.org/project/uno)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/uno.svg)](https://pypi.org/project/uno)
 
 -----
 
@@ -18,7 +18,7 @@
 
 ## Introduction
 
-NotORM (UNO) is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI. Despite its name, UNO is NOT an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
+uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI. Despite its name, uno is NOT an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
 
@@ -38,7 +38,7 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 ## Installation
 
 ```console
-pip install notorm
+pip install uno
 ```
 
 ## Usage
@@ -77,14 +77,14 @@ class UserObj(UnoObj):
 ### Starting the Database with Docker
 
 ```console
-cd notorm/docker
+cd uno/docker
 docker build -t pg16_uno .
 docker-compose up
 ```
 
 ## Architecture
 
-NotORM is built on a modular architecture with three primary components:
+uno is built on a modular architecture with three primary components:
 
 1. **Data Layer**: Manages database connections, schema definition, and data operations
    - `UnoModel`: SQLAlchemy-based model for defining database tables
@@ -174,4 +174,4 @@ hatch run docs:serve
 
 ## License
 
-`notorm` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`uno` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

@@ -1,57 +1,61 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-site_name: uno
+site_name: NotORM (Uno)
+site_description: A comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI
 theme:
    name: material
+   palette:
+     primary: blue
+     accent: indigo
+   features:
+     - navigation.tabs
+     - navigation.sections
+     - toc.integrate
+     - search.suggest
+     - search.highlight
 plugins:
    - search
    - mkdocstrings
 nav:
    - Home: index.md
-   - About: about.md
-   - License: license.md
-   - FAQ: faq.md
    - Getting Started: getting_started.md
-   - Structure: structure.md
-   - scripts: commands.md
-   - Model: model.md
-   - UnoObj: obj.md
-   - Database:
-      - Engine: db/engine.md 
-      - Migrations: db/migrations.md
-      - Testing Database Components: db/testing_database.md
-   - UnoDB: db.md
-   - UnoFilter: filter.md
-   - Testing: testing.md
-   #- SQL Emitters: sqlemitter.md
-   #- Schema SchemaMixins: mixin.md
-   #   - DB Operation:
-   #      - UnoDB: db/unodb.md
-   #      - UnoObj: db/models.md
-   #      - UnoMask: db/masks.md
-   #- Capabilities:
-   #   - Authorization:
-   #      - Enums: auth/enums.md
-   #      - Schemas: auth/models.md
-   #      - Tables: auth/tables.md
-   #   - Filtering:
-   #      - Enums: filters/enums.md
-   #      - Schemas: filters/models.md
-   #      - Tables: filters/tables.md
-   #   - Mwssaging:
-   #      - Enums: messaging/enums.md
-   #      - Schemas: messaging/models.md
-   #      - Tables: messaging/tables.md
-   #   - Reporting:
-   #      - Enums: reporting/enums.md
-   #      - Schemas: reporting/models.md
-   #      - Tables: reporting/tables.md
-   #   - Workflow:
-   #      - Enums: workflow/enums.md
-   #      - Schemas: workflow/models.md
-   #      - Tables: workflow/tables.md
-   #   - Attributes:
-   #      - Enums: attributes/enums.md
-   #      - Schemas: attributes/models.md
-   #      - Tables: attributes/tables.md
+   - Architecture:
+      - Overview: architecture/overview.md
+   - Data Layer:
+      - Overview: database/overview.md
+      - Database Engine: database/engine.md
+      - UnoDB: database/unodb.md
+      - Testing: testing.md
+   - Models Layer:
+      - Overview: models/overview.md
+      - UnoModel: models/model.md
+   - Business Logic Layer:
+      - Overview: business_logic/overview.md
+      - UnoObj: business_logic/unoobj.md
+      - Registry: business_logic/registry.md
+      - Schema Management: business_logic/schema.md
+   - API Layer:
+      - Overview: api/overview.md
+      - Endpoint: api/endpoint.md
+      - Endpoint Factory: api/endpoint-factory.md
+      - Filter Manager: queries/filter_manager.md
+      - Schemas: api/schemas.md
+   - SQL Generation:
+      - Overview: sql_generation/overview.md
+      - Emitters: sql_generation/emitters.md
+      - Statement: sql_generation/statement.md
+      - Registry: sql_generation/registry.md
+   - Security:
+      - Authorization: authorization/overview.md
+   - Command Reference: commands.md
+   - FAQ: faq.md
+   - License: license.md
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
+  - toc:
+      permalink: true
