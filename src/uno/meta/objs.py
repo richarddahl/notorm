@@ -6,7 +6,7 @@ from typing import Optional, Dict, List
 from typing_extensions import Self
 
 from uno.obj import UnoObj
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 
 

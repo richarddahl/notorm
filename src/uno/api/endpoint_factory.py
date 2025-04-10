@@ -13,7 +13,7 @@ from typing import Dict, Type, List, Optional, Any
 from pydantic import BaseModel
 from fastapi import FastAPI
 
-from uno.endpoint import (
+from uno.api.endpoint import (
     CreateEndpoint,
     ViewEndpoint,
     ListEndpoint,

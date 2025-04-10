@@ -6,7 +6,7 @@ import datetime
 import decimal
 from typing import Optional
 
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.obj import UnoObj
 from uno.auth.mixins import DefaultObjectMixin
 from uno.val.models import (
@@ -235,5 +235,5 @@ class TimeValue(UnoObj[TimeValueModel], DefaultObjectMixin):
     # Fields
     name: str
     value: datetime.time
-    
+
     terminate_filters = True

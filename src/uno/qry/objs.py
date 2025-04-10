@@ -8,19 +8,19 @@ from typing import Optional, Dict, List, Tuple, Any
 from typing_extensions import Self
 from pydantic import model_validator
 
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.obj import UnoObj
 from uno.mixins import ObjectMixin
 from uno.auth.mixins import DefaultObjectMixin
 from uno.qry.models import QueryPathModel, QueryValueModel, QueryModel
-from uno.meta.objects import MetaRecord, MetaType
+from uno.meta.objs import MetaRecord, MetaType
 from uno.enums import (
     Include,
     Match,
 )
 from uno.settings import uno_settings
 from uno.db.db import FilterParam
-from uno.filter import UnoFilter
+from uno.qry.filter import UnoFilter
 
 
 class QueryPath(UnoObj[QueryPathModel], ObjectMixin):

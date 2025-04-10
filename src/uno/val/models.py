@@ -15,7 +15,12 @@ from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
 
 from uno.model import UnoModel, PostgresTypes
 from uno.auth.mixins import DefaultModelMixin
-from uno.filter import boolean_lookups, numeric_lookups, text_lookups, datetime_lookups
+from uno.qry.filter import (
+    boolean_lookups,
+    numeric_lookups,
+    text_lookups,
+    datetime_lookups,
+)
 
 
 attachment__meta_record = Table(

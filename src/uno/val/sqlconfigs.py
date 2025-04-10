@@ -12,7 +12,7 @@ from uno.db.sql.tablesql import (
     RecordStatusFunction,
 )
 from uno.db.sql.graphsql import GraphSQLEmitter
-from uno.val.objects import (
+from uno.val.objs import (
     AttachmentModel,
     BooleanValueModel,
     DateTimeValueModel,

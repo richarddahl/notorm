@@ -11,7 +11,7 @@ from uno.db.sql.tablesql import (
     RecordStatusFunction,
 )
 from uno.db.sql.graphsql import GraphSQLEmitter
-from uno.rprt.objects import (
+from uno.rprt.objs import (
     ReportFieldConfigModel,
     ReportFieldModel,
     ReportTypeModel,

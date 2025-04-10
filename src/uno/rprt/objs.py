@@ -6,10 +6,10 @@ from typing import Optional, List
 from typing_extensions import Self
 from pydantic import model_validator
 
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.obj import UnoObj
 from uno.auth.mixins import DefaultObjectMixin
-from uno.meta.objects import MetaType
+from uno.meta.objs import MetaType
 from uno.rprt.models import (
     ReportFieldConfigModel,
     ReportFieldModel,
@@ -54,7 +54,7 @@ class ReportFieldConfig(UnoObj[ReportFieldConfigModel], DefaultObjectMixin):
     parent_field: Optional["ReportField"] = None
     is_label_included: bool
     field_format: str
-    
+
     def __str__(self) -> str:
         return f"{self.report_field.name} config"
 
@@ -89,17 +89,17 @@ class ReportField(UnoObj[ReportFieldModel], DefaultObjectMixin):
     field_type: str
     name: str
     description: Optional[str] = None
-    
+
     def __str__(self) -> str:
         return self.name
-    
+
     @model_validator(mode="after")
     def validate_field(self) -> Self:
         # Validate field_type is one of the allowed types
         allowed_types = ["string", "number", "boolean", "date", "object", "array"]
         if self.field_type not in allowed_types:
             raise ValueError(f"Field type must be one of: {', '.join(allowed_types)}")
-        
+
         return self
 
 
@@ -135,7 +135,7 @@ class ReportType(UnoObj[ReportTypeModel], DefaultObjectMixin):
     report_field_configs: List[ReportFieldConfig] = []
     report_type_configs: List[ReportFieldConfig] = []
     report_type_field_configs: List[ReportFieldConfig] = []
-    
+
     def __str__(self) -> str:
         return self.name
 
@@ -168,6 +168,6 @@ class Report(UnoObj[ReportModel], DefaultObjectMixin):
     description: Optional[str] = None
     report_type_id: str
     report_type: Optional[ReportType] = None
-    
+
     def __str__(self) -> str:
         return self.name

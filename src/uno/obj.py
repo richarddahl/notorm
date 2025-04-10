@@ -27,13 +27,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from uno.db.db import UnoDBFactory, FilterParam
 from uno.model import UnoModel
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.errors import UnoError
 from uno.utilities import snake_to_title
 from uno.registry import UnoRegistry
-from uno.schema_manager import UnoSchemaManager
-from uno.filter_manager import UnoFilterManager
-from uno.endpoint_factory import UnoEndpointFactory
+from uno.schema.schema_manager import UnoSchemaManager
+from uno.qry.filter_manager import UnoFilterManager
+from uno.api.endpoint_factory import UnoEndpointFactory
 
 
 T = TypeVar("T", bound=UnoModel)

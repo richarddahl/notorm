@@ -11,16 +11,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from uno.obj import UnoObj
-from uno.apidef import app
+from uno.api.apidef import app
 from uno.settings import uno_settings
 
-from uno.attr import objects as attr_models
-from uno.auth import objects as auth_models
+from uno.attr import objs as attr_models
+from uno.auth import objs as auth_models
 from uno.qry import models as fltr_models
-from uno.meta import objects as meta_models
-from uno.msg import objects as msg_models
-from uno.rprt import objects as rpt_models
-from uno.val import objects as val_models
+from uno.meta import objs as meta_models
+from uno.msg import objs as msg_models
+from uno.rprt import objs as rpt_models
+from uno.val import objs as val_models
 
 # from uno.wkflw import models as wkflw_models
 

@@ -8,9 +8,8 @@ from datetime import datetime
 from pydantic import model_validator
 
 from uno.obj import UnoObj
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.auth.mixins import DefaultObjectMixin
-from uno.meta.objects import MetaTypeModel, MetaRecordModel, MetaType, MetaRecord
 from uno.wkflw.models import (
     WorkflowModel,
     WorkflowStepModel,
@@ -18,38 +17,7 @@ from uno.wkflw.models import (
     WorkflowInstanceModel,
     WorkflowTaskModel,
 )
-from uno.auth.objects import User
-
-
-class MetaType(UnoObj[MetaTypeModel]):
-    # Class variables
-    model = MetaTypeModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
-    }
-    endpoints = ["List"]
-
-    id: str
-
-    def __str__(self) -> str:
-        return f"{self.id}"
-
-
-class MetaRecord(UnoObj[MetaRecordModel]):
-    # Class variables
-    model = MetaRecordModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
-    }
-    endpoints = ["List"]
-
-    id: str
-    meta_type_id: str
-
-    def __str__(self) -> str:
-        return f"{self.meta_type_id}: {self.id}"
+from uno.auth.objs import User
 
 
 class WorkflowStep(UnoObj[WorkflowStepModel], DefaultObjectMixin):

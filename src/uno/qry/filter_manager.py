@@ -18,7 +18,7 @@ from fastapi import Query, HTTPException
 from sqlalchemy import Column
 
 from uno.errors import UnoError
-from uno.filter import (
+from uno.qry.filter import (
     UnoFilter,
     boolean_lookups,
     numeric_lookups,

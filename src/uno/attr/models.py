@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
 )
 
 from uno.model import UnoModel, PostgresTypes
-from uno.meta.objects import MetaTypeModel, MetaRecordModel
+from uno.meta.objs import MetaTypeModel, MetaRecordModel
 from uno.auth.mixins import DefaultModelMixin
 from uno.qry.models import QueryModel
 

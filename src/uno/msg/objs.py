@@ -9,10 +9,10 @@ from typing_extensions import Self
 from pydantic import model_validator
 
 from uno.obj import UnoObj
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.enums import MessageImportance
 from uno.msg.models import MessageUserModel, MessageModel
-from uno.auth.objects import User
+from uno.auth.objs import User
 from uno.auth.mixins import DefaultObjectMixin
 
 
@@ -68,14 +68,14 @@ class Message(UnoObj[MessageModel], DefaultObjectMixin):
 
     def __str__(self) -> str:
         return self.subject
-        
+
     @model_validator(mode="after")
     def validate_message(self) -> Self:
         # Validate status is one of the allowed statuses
         allowed_statuses = ["draft", "sent", "failed"]
         if self.status not in allowed_statuses:
             raise ValueError(f"Status must be one of: {', '.join(allowed_statuses)}")
-        
+
         return self
 
 

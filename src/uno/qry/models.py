@@ -19,7 +19,7 @@ from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.auth.mixins import DefaultModelMixin
 from uno.enums import Include, Match
-from uno.meta.objects import MetaRecordModel
+from uno.meta.objs import MetaRecordModel
 from uno.settings import uno_settings
 
 query_value__values = Table(

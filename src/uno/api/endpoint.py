@@ -19,7 +19,7 @@ from fastapi import (
     Query,
 )
 
-from uno.schema import UnoSchema
+from uno.schema.schema import UnoSchema
 from uno.errors import UnoRegistryError
 from uno.settings import uno_settings
 

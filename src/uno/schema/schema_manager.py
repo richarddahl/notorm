@@ -13,7 +13,7 @@ from typing import Dict, Type, Optional, Any, Set
 from pydantic import BaseModel
 
 from uno.errors import UnoError
-from uno.schema import UnoSchema, UnoSchemaConfig
+from uno.schema.schema import UnoSchema, UnoSchemaConfig
 
 
 class UnoSchemaManager:

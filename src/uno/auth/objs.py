@@ -7,7 +7,7 @@ from typing_extensions import Self
 from pydantic import EmailStr, model_validator
 
 from uno.enums import SQLOperation, TenantType
-from uno.schema import UnoSchemaConfig
+from uno.schema.schema import UnoSchemaConfig
 from uno.obj import UnoObj
 from uno.mixins import ObjectMixin
 from uno.auth.mixins import RecordAuditObjectMixin
