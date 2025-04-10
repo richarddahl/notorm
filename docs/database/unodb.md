@@ -35,7 +35,7 @@ class Customer(UnoObj[CustomerModel]):
 However, you can also create it manually:
 
 ```python
-from uno.db.db import UnoDBFactory
+from uno.database.db import UnoDBFactory
 
 # Create a UnoDB for the Customer class
 customer_db = UnoDBFactory(obj=Customer)
@@ -96,7 +96,7 @@ await customer_db.delete(customer)
 ### Filtering Records
 
 ```python
-from uno.db.db import FilterParam
+from uno.database.db import FilterParam
 
 # Create filter parameters
 filter_params = FilterParam(
@@ -190,12 +190,12 @@ async def transfer_funds(from_account_id: str, to_account_id: str, amount: float
             # or rolled back if an exception occurs
 ```
 
-### Error Handling
+## Error Handling
 
 The `UnoDB` class provides specific exceptions for different error scenarios:
 
 ```python
-from uno.db.db import IntegrityConflictException, NotFoundException
+from uno.database.db import IntegrityConflictException, NotFoundException
 
 try:
     # Try to get a record
@@ -283,128 +283,6 @@ async def count_customers():
             select(func.count()).select_from(CustomerModel)
         )
         return result.scalar_one()
-```
-
-### Soft Delete
-
-Implement soft delete functionality:
-
-```python
-async def soft_delete_customer(customer_id: str):
-    """Soft delete a customer."""
-    # Get the customer
-    customer = await customer_db.get(id=customer_id)
-    
-    # Mark as deleted
-    customer.is_deleted = True
-    customer.deleted_at = datetime.datetime.now()
-    
-    # Update in database
-    await customer_db.update(to_db_model=customer)
-    
-    return customer
-
-async def get_active_customers():
-    """Get only active customers."""
-    # Create filter parameters
-    filter_params = FilterParam(
-        is_deleted=False,
-        is_active=True
-    )
-    
-    # Get filtered customers
-    return await customer_db.filter(filters=filter_params)
-```
-
-## Testing
-
-When testing database operations, use transactions or mocking:
-
-```python
-import pytest
-from unittest.mock import AsyncMock, patch
-
-@pytest.mark.asyncio
-async def test_create_customer():
-    """Test creating a customer."""
-    # Mock the database
-    with patch("uno.db.db.async_session") as mock_session:
-        # Setup the mock
-        mock_session_instance = AsyncMock()
-        mock_session.return_value.__aenter__.return_value = mock_session_instance
-        
-        # Create a customer
-        customer_data = {
-            "name": "Test Customer",
-            "email": "test@example.com"
-        }
-        
-        # Convert to a model instance
-        customer = CustomerModel(**customer_data)
-        
-        # Call the create method
-        result, created = await customer_db.create(schema=customer)
-        
-        # Verify
-        assert created is True
-        assert mock_session_instance.add.called
-        assert mock_session_instance.commit.called
-```
-
-For integration tests with a real database, use a separate test database:
-
-```python
-import pytest
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-
-# Create a test engine and session factory
-test_engine = create_async_engine("postgresql+asyncpg://test_user:test_pass@localhost/test_db")
-TestAsyncSession = sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
-
-@pytest.fixture
-async def setup_test_db():
-    """Setup and teardown the test database."""
-    # Create tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(UnoModel.metadata.create_all)
-    
-    # Run the test
-    yield
-    
-    # Drop tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(UnoModel.metadata.drop_all)
-
-@pytest.mark.asyncio
-async def test_crud_operations(setup_test_db):
-    """Test CRUD operations with a real database."""
-    # Patch the session to use our test session
-    with patch("uno.db.db.async_session", TestAsyncSession):
-        # Create a customer
-        customer_data = {
-            "name": "Test Customer",
-            "email": "test@example.com"
-        }
-        
-        customer = CustomerModel(**customer_data)
-        result, created = await customer_db.create(schema=customer)
-        
-        # Get the customer
-        retrieved = await customer_db.get(id=result.id)
-        assert retrieved.name == customer_data["name"]
-        
-        # Update the customer
-        retrieved.name = "Updated Name"
-        updated = await customer_db.update(to_db_model=retrieved)
-        assert updated.name == "Updated Name"
-        
-        # Delete the customer
-        await customer_db.delete(updated)
-        
-        # Verify it's gone
-        with pytest.raises(NotFoundException):
-            await customer_db.get(id=result.id)
 ```
 
 ## Best Practices

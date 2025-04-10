@@ -1,10 +1,10 @@
-# Testing in NotORM
+# Testing in uno
 
-This document provides an overview of the testing approach in the NotORM framework, including philosophy, test organization, and guidelines for writing effective tests.
+This document provides an overview of the testing approach in the uno framework, including philosophy, test organization, and guidelines for writing effective tests.
 
 ## Test Philosophy
 
-NotORM follows these testing principles:
+uno follows these testing principles:
 
 1. **Test-Driven Development**: Whenever possible, write tests before implementing features to ensure clear requirements and verifiable functionality.
 
@@ -245,7 +245,7 @@ The following test modules were added in April 2025:
    - Session management and transactions
    - DatabaseFactory integration and coordination
 
-   See the detailed guide: [Testing Database Components](db/testing_database.md)
+   See the detailed guide: [Testing Database Components](database/engine.md)
 
 4. **Schema Management Tests**: Testing schema configuration and creation
    - Schema validation and field inclusion/exclusion

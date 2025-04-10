@@ -1,171 +1,200 @@
-# Uno CLI Commands
+# Command Reference
 
-Uno provides a set of command-line tools to help you manage your application. These commands are available through Hatch, the project's build system.
+uno provides a set of command-line tools to help you manage your application. These commands are available through either direct Python script execution or as part of the package's command line interface.
 
 ## Database Management
 
-### createdb
+### Create Database
 
-Creates the database with all roles, schemas, extensions, tables and initial data.
+Creates the database with all roles, schemas, extensions, tables, and initial data.
 
 ```bash
-hatch run createdb
+# Using Python script
+python src/scripts/createdb.py
+
+# Using environment variables for configuration
+DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgres python src/scripts/createdb.py
 ```
 
-### dropdb
+### Drop Database
 
 Drops the database and all associated roles.
 
 ```bash
-hatch run dropdb
+python src/scripts/dropdb.py
 ```
 
-### createsuperuser
+### Create Superuser
 
 Creates a superuser account in the database.
 
 ```bash
-hatch run createsuperuser
+python src/scripts/createsuperuser.py
 ```
 
-### createquerypaths
+### Create Query Paths
 
-Creates predefined query paths.
+Creates predefined query paths for filter management.
 
 ```bash
-hatch run createquerypaths
+python src/scripts/createquerypaths.py
 ```
 
 ## Migration Commands
 
-Uno provides a complete set of migration commands powered by Alembic. See the [Migrations](db/migrations.md) documentation for detailed usage.
+uno provides a complete set of migration commands powered by Alembic. See the Migrations documentation for detailed usage.
 
-### migrate-init
+### Run Migrations
 
-Initializes the migration environment (usually run automatically by createdb).
+Runs database migrations to update the schema.
 
 ```bash
-hatch run migrate-init
+python src/scripts/migrations.py upgrade head
 ```
 
-### migrate-generate
+### Generate Migration
 
 Generates a new migration based on model changes.
 
 ```bash
-hatch run migrate-generate "Description of changes"
+python src/scripts/migrations.py revision --autogenerate -m "Description of changes"
 ```
 
-### migrate-up
+### Migration Status
 
-Upgrades the database to the latest revision or a specific revision.
+Shows the current migration status.
 
 ```bash
-# Upgrade to latest
-hatch run migrate-up
-
-# Upgrade to specific revision
-hatch run migrate-up abc123def456
+python src/scripts/migrations.py current
 ```
 
-### migrate-down
-
-Downgrades the database to a previous revision.
-
-```bash
-hatch run migrate-down abc123def456
-```
-
-### migrate-current
-
-Shows the current migration version.
-
-```bash
-hatch run migrate-current
-```
-
-### migrate-history
+### Migration History
 
 Shows migration history.
 
 ```bash
-hatch run migrate-history
-```
-
-### migrate-revisions
-
-Lists all available revisions.
-
-```bash
-hatch run migrate-revisions
+python src/scripts/migrations.py history
 ```
 
 ## Development Commands
 
-### main
+### Run Development Server
 
 Runs the development server with auto-reload.
 
 ```bash
-hatch run main
+# Start the FastAPI development server
+uvicorn main:app --reload
+
+# With a specific host and port
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Testing Commands
 
-### test
+### Run Tests
 
-Runs tests without detailed output.
+Run tests using pytest.
 
 ```bash
-hatch run test
+# Run all tests
+ENV=test pytest
+
+# Run with verbose output
+ENV=test pytest -vv --capture=tee-sys --show-capture=all
+
+# Run a specific test file
+ENV=test pytest tests/path/to/test_file.py
+
+# Run a specific test class
+ENV=test pytest tests/path/to/test_file.py::TestClass
+
+# Run a specific test method
+ENV=test pytest tests/path/to/test_file.py::TestClass::test_method
 ```
 
-### testv
+### Type Checking
 
-Runs tests with moderate verbosity.
+Run mypy for type checking.
 
 ```bash
-hatch run testv
+mypy --install-types --non-interactive src/uno tests
 ```
 
-### testvv
+### Coverage
 
-Runs tests with high verbosity.
-
-```bash
-hatch run testvv
-```
-
-### test-cov
-
-Runs tests with coverage measurement.
+Run tests with coverage measurement.
 
 ```bash
-hatch run test-cov
-```
+# Run tests with coverage
+ENV=test pytest --cov=src
 
-### cov-report
-
-Displays coverage report.
-
-```bash
-hatch run cov-report
+# Generate a coverage report
+ENV=test pytest --cov=src --cov-report=html
 ```
 
 ## Documentation Commands
 
-### docs:build
+### Build Documentation
 
-Builds the documentation site.
-
-```bash
-hatch run docs:build
-```
-
-### docs:serve
-
-Serves the documentation site locally.
+Builds the documentation site using MkDocs.
 
 ```bash
-hatch run docs:serve
+mkdocs build
 ```
+
+### Serve Documentation
+
+Serves the documentation site locally for development.
+
+```bash
+# Default port (8000)
+mkdocs serve
+
+# Custom port
+mkdocs serve -a 127.0.0.1:8001
+```
+
+## Docker Commands
+
+### Build Docker Image
+
+Builds the PostgreSQL Docker image with uno extensions.
+
+```bash
+cd docker
+docker build -t pg16_uno .
+```
+
+### Start Docker Container
+
+Starts the PostgreSQL container using docker-compose.
+
+```bash
+cd docker
+docker-compose up
+```
+
+### Stop Docker Container
+
+Stops and removes the PostgreSQL container.
+
+```bash
+cd docker
+docker-compose down
+```
+
+## Environment Variables
+
+uno respects the following environment variables for configuration:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_HOST` | Database host | localhost |
+| `DB_PORT` | Database port | 5432 |
+| `DB_USER` | Database user | postgres |
+| `DB_PASSWORD` | Database password | postgres |
+| `DB_NAME` | Database name | uno |
+| `DB_SCHEMA` | Database schema | public |
+| `ENV` | Environment (dev, test, prod) | dev |
+| `LOG_LEVEL` | Logging level | INFO |

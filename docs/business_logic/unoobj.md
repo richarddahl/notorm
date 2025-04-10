@@ -82,13 +82,13 @@ customer = await Customer.get(id="abc123")
 customer = await Customer.get(email="john@example.com")
 
 # Filter with parameters
-from uno.db.db import FilterParam
+from uno.database.db import FilterParam
 
 # Create filter parameters
 filter_params = FilterParam(
     limit=10,
     offset=0,
-    "name.contains": "John"
+    name__contains="John"
 )
 
 # Get filtered customers
@@ -217,7 +217,7 @@ from unittest.mock import AsyncMock, patch
 @pytest.mark.asyncio
 async def test_customer_save():
     # Setup - mock the database access
-    with patch('uno.db.db.UnoDBFactory') as mock_db_factory:
+    with patch('uno.database.db.UnoDBFactory') as mock_db_factory:
         mock_db = AsyncMock()
         mock_db_factory.return_value = mock_db
         mock_db.create.return_value = (CustomerModel(id="test123", name="Test"), True)

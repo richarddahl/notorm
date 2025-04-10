@@ -287,93 +287,6 @@ class CategoryModel(UnoModel):
     )
 ```
 
-### Inheritance
-
-You can use SQLAlchemy's inheritance patterns with UnoModel:
-
-```python
-from uno.model import UnoModel, PostgresTypes
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import ForeignKey
-
-# Base class
-class ContentModel(UnoModel):
-    __tablename__ = "content"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
-    title: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-    created_at: Mapped[PostgresTypes.Timestamp] = mapped_column(nullable=False)
-    
-    # Discriminator column
-    type: Mapped[PostgresTypes.String64] = mapped_column(nullable=False)
-    
-    __mapper_args__ = {
-        "polymorphic_on": "type",
-        "polymorphic_identity": "content"
-    }
-
-# Derived class for articles
-class ArticleModel(ContentModel):
-    __tablename__ = "article"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(
-        ForeignKey("content.id"),
-        primary_key=True
-    )
-    body: Mapped[PostgresTypes.Text] = mapped_column(nullable=False)
-    
-    __mapper_args__ = {
-        "polymorphic_identity": "video"
-    }
-```
-
-## Testing
-
-When testing models, focus on validating schema definitions and constraints:
-
-```python
-import pytest
-from sqlalchemy import inspect
-
-def test_model_columns():
-    """Test the columns of a model."""
-    # Get the SQLAlchemy inspector
-    inspector = inspect(CustomerModel)
-    
-    # Get column names
-    column_names = [c.name for c in inspector.columns]
-    
-    # Check required columns
-    assert "id" in column_names
-    assert "name" in column_names
-    assert "email" in column_names
-    
-    # Check column attributes
-    id_column = inspector.columns["id"]
-    assert id_column.primary_key
-    assert id_column.type.length == 26
-    
-    email_column = inspector.columns["email"]
-    assert email_column.unique
-    assert not email_column.nullable
-
-def test_model_constraints():
-    """Test the constraints of a model."""
-    # Check primary key
-    assert CustomerModel.__table__.primary_key.columns.keys() == ["id"]
-    
-    # Check unique constraints
-    unique_constraints = [
-        c for c in CustomerModel.__table__.constraints
-        if c.name and "uq_" in c.name
-    ]
-    assert len(unique_constraints) > 0
-    
-    # Check indices
-    indices = [i for i in CustomerModel.__table__.indexes]
-    assert len(indices) > 0
-```
-
 ## Best Practices
 
 1. **Use Type Annotations**: Always use proper type annotations for columns to improve IDE support and type checking.
@@ -394,19 +307,4 @@ def test_model_constraints():
 
 9. **Use Metadata Properties**: Add metadata to columns using the `info` parameter to store additional information.
 
-10. **Follow SQLAlchemy Best Practices**: Adhere to SQLAlchemy's recommended patterns and practices.article"
-    }
-
-# Derived class for videos
-class VideoModel(ContentModel):
-    __tablename__ = "video"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(
-        ForeignKey("content.id"),
-        primary_key=True
-    )
-    url: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-    duration: Mapped[int] = mapped_column(nullable=False)
-    
-    __mapper_args__ = {
-        "polymorphic_identity": "
+10. **Follow SQLAlchemy Best Practices**: Adhere to SQLAlchemy's recommended patterns and practices.
