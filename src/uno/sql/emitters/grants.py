@@ -25,7 +25,7 @@ class AlterGrants(SQLEmitter):
         """
         statements = []
 
-        if not self.table:
+        if self.table is None:
             return statements
 
         # Get database schema and object information

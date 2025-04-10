@@ -25,7 +25,7 @@ class RecordUserAuditFunction(SQLEmitter):
         """
         statements = []
 
-        if not self.table:
+        if self.table is None:
             return statements
 
         # Get schema and table information
@@ -100,7 +100,7 @@ class InsertMetaRecordTrigger(SQLEmitter):
         """
         statements = []
 
-        if not self.table:
+        if self.table is None:
             return statements
 
         # Get schema and table information

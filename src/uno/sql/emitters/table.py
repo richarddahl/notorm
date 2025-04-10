@@ -919,7 +919,7 @@ class EnableHistoricalAudit(SQLEmitter):
 
 class TableMergeFunction(SQLEmitter):
     """Emitter for table-specific merge function.
-    
+
     This emitter generates a PL/pgSQL function for each table that accepts
     a JSONB parameter containing model_dump from a UnoObj schema. It uses
     PostgreSQL 16's MERGE command to:
@@ -928,30 +928,30 @@ class TableMergeFunction(SQLEmitter):
     3. Insert the record if not found
     4. Return the operation performed ('inserted', 'updated', 'selected')
     """
-    
+
     def generate_sql(self) -> List[SQLStatement]:
         """Generate SQL for table-specific merge function.
-        
+
         Returns:
             List of SQL statements with metadata
         """
         statements = []
-        
+
         # Require a table to be set
-        if not self.table:
+        if self.table is None:
             return statements
-            
+
         schema_name = self.connection_config.db_schema
         table_name = self.table.name
         function_name = f"merge_{table_name}_record"
-        
+
         # Get primary key columns
         pk_columns: Set[str] = set()
         for constraint in self.table.constraints:
             if isinstance(constraint, PrimaryKeyConstraint):
                 pk_columns = {col.name for col in constraint.columns}
                 break
-        
+
         # Get unique constraint columns
         unique_constraints = []
         for constraint in self.table.constraints:
@@ -959,17 +959,23 @@ class TableMergeFunction(SQLEmitter):
                 unique_constraints.append([col.name for col in constraint.columns])
 
         # Format the primary key array for SQL
-        pk_array_sql = "ARRAY[" + ", ".join([f"'{pk}'" for pk in pk_columns]) + "]" if pk_columns else "ARRAY[]::text[]"
-        
+        pk_array_sql = (
+            "ARRAY[" + ", ".join([f"'{pk}'" for pk in pk_columns]) + "]"
+            if pk_columns
+            else "ARRAY[]::text[]"
+        )
+
         # Format the unique constraints array for SQL
         uc_arrays = []
         for constraint in unique_constraints:
-            constraint_array = "ARRAY[" + ", ".join([f"'{col}'" for col in constraint]) + "]"
+            constraint_array = (
+                "ARRAY[" + ", ".join([f"'{col}'" for col in constraint]) + "]"
+            )
             uc_arrays.append(constraint_array)
-        
+
         uc_arrays_sql = ", ".join(uc_arrays)
         uc_array_sql = f"ARRAY[{uc_arrays_sql}]" if uc_arrays else "ARRAY[]::text[][]"
-        
+
         # Generate the function SQL
         function_sql = f"""
 CREATE OR REPLACE FUNCTION {schema_name}.{function_name}(
@@ -1075,7 +1081,7 @@ BEGIN
             -- Skip columns not in the data but in the result_record
             IF NOT (column_name = ANY(all_keys)) AND 
                column_value IS NOT NULL AND
-               (result_record->>column_name IS DISTINCT FROM column_value#>>'{}') THEN
+               (result_record->>column_name IS DISTINCT FROM column_value#>>'{{}}') THEN
                 needs_update := true;
                 EXIT;
             END IF;
@@ -1099,7 +1105,7 @@ BEGIN
             '%s AS %I',
             CASE 
                 WHEN jsonb_typeof(column_value) = 'null' THEN 'NULL'
-                ELSE format('%L', column_value#>>'{}')
+                ELSE format('%L', column_value#>>'{{}}')
             END,
             column_name
         );
@@ -1180,13 +1186,13 @@ BEGIN
     END IF;
     
     -- Add the action to the result
-    result_record := jsonb_set(result_record, '{_action}', to_jsonb(action_performed));
+    result_record := jsonb_set(result_record, '{{_action}}', to_jsonb(action_performed));
     
     RETURN result_record;
 END;
 $$ LANGUAGE plpgsql;
 """
-        
+
         # Create a SQL statement with metadata
         statements.append(
             SQLStatement(
@@ -1195,5 +1201,5 @@ $$ LANGUAGE plpgsql;
                 sql=function_sql,
             )
         )
-        
+
         return statements

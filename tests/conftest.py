@@ -10,6 +10,7 @@ import asyncio
 import logging
 
 import pytest
+import pytest_asyncio
 import importlib
 
 from psycopg import sql
@@ -97,7 +98,7 @@ def connection():
         yield conn
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def session(test_db):
     """
     Fixture that provides an async database session for tests.

@@ -127,7 +127,7 @@ migrate-current = "ENV=test python src/scripts/migrations.py current"
 migrate-history = "ENV=test python src/scripts/migrations.py history"
 migrate-revisions = "ENV=test python src/scripts/migrations.py revisions"
 
-[tool.pytest]
+[tool.pytest.ini_options]
 markers = ["asyncio: mark a test as an asyncio test (using pytest-asyncio)"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]

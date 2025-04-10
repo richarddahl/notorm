@@ -5,6 +5,7 @@
 import asyncio
 import sqlalchemy
 import pytest
+import pytest_asyncio
 import factory
 
 from sqlalchemy.orm import sessionmaker
