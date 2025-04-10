@@ -20,8 +20,10 @@ nav:
    - Database:
       - Engine: db/engine.md 
       - Migrations: db/migrations.md
+      - Testing Database Components: db/testing_database.md
    - UnoDB: db.md
    - UnoFilter: filter.md
+   - Testing: testing.md
    #- SQL Emitters: sqlemitter.md
    #- Schema SchemaMixins: mixin.md
    #   - DB Operation:

@@ -1,4 +1,4 @@
-# notorm
+# NotORM
 
 [![PyPI - Version](https://img.shields.io/pypi/v/notorm.svg)](https://pypi.org/project/notorm)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/notorm.svg)](https://pypi.org/project/notorm)
@@ -7,9 +7,33 @@
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [License](#license)
 - [Introduction](#introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [License](#license)
+
+## Introduction
+
+NotORM (UNO) is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI. Despite its name, UNO is NOT an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
+
+The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
+
+## Features
+
+- **Unified Database Management**: Centralized approach to database connection management with support for both synchronous and asynchronous operations
+- **SQL Generation**: Powerful SQL emitters for creating and managing database objects
+- **API Integration**: FastAPI endpoint factory for quickly building REST APIs
+- **Schema Management**: Advanced schema generation and validation
+- **Business Logic Layer**: Clean separation of business logic from database operations
+- **Authorization System**: Built-in user and permission management
+- **Advanced Filtering**: Dynamic query building with support for complex filters
+- **Workflow Management**: Support for complex business workflows and state transitions
+- **Metadata Management**: Track relationships between entities
+- **PostgreSQL Integration**: Leverages PostgreSQL-specific features like JSONB, ULID, and row-level security
 
 ## Installation
 
@@ -17,81 +41,137 @@
 pip install notorm
 ```
 
-## License
+## Usage
 
-`notorm` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+### Quick Start
 
-## Introduction
+```python
+from uno.database.engine import DatabaseFactory
+from uno.model import UnoModel
+from uno.obj import UnoObj
 
-Why `notorm`
+# Initialize the database factory
+db_factory = DatabaseFactory()
 
-"uno" is already a project at pypi, the actual name of this library is Uno, and Uno is NOT an ORM.
+# Define a model
+class User(UnoModel):
+    __tablename__ = "user"
+    
+    id: str
+    email: str
+    handle: str
+    full_name: str
+    
+# Define business logic
+class UserObj(UnoObj):
+    id: str
+    email: str
+    handle: str
+    full_name: str
+    
+    def validate_email(self):
+        if "@" not in self.email:
+            raise ValueError("Invalid email format")
+```
 
-It's meant as an homage to GNU of course.
+### Starting the Database with Docker
 
-It also represents the limited nature of the project at its genesis.
+```console
+cd notorm/docker
+docker build -t pg16_uno .
+docker-compose up
+```
 
-It really is more of an app framework at this point, going well beyond its original intent, but the name stuck.
+## Architecture
+
+NotORM is built on a modular architecture with three primary components:
+
+1. **Data Layer**: Manages database connections, schema definition, and data operations
+   - `UnoModel`: SQLAlchemy-based model for defining database tables
+   - `DatabaseFactory`: Centralized factory for creating database connections
+   - `SQL Emitters`: Components that generate SQL for various database objects
+
+2. **Business Logic Layer**: Handles validation, processing, and business rules
+   - `UnoObj`: Pydantic-based models that encapsulate business logic
+   - `Registry`: Central registry for managing object relationships
+   - `Schema Manager`: Manages schema definitions and transformations
+
+3. **API Layer**: Exposes functionality through REST endpoints
+   - `UnoEndpoint`: FastAPI-based endpoints for CRUD operations
+   - `EndpointFactory`: Automatically generates endpoints from objects
+   - `Filter Manager`: Handles query parameters and filtering
 
 ## Project Structure
 
-Within Uno, the term "Entity" refers to a type of information that exists within an application.  
+```
+src/uno/
+├── __init__.py
+├── api/                  # API components
+│   ├── endpoint.py       # Base endpoint definition
+│   └── endpoint_factory.py  # Factory for creating API endpoints
+├── attributes/           # User-defined attributes 
+├── authorization/        # Authentication and authorization
+├── database/             # Database components
+│   ├── config.py         # Connection configuration
+│   ├── db.py             # Database operations
+│   └── engine/           # Database engine management
+│       ├── async.py      # Async engine
+│       ├── base.py       # Base engine factory
+│       └── sync.py       # Synchronous engine
+├── messaging/            # Inter-user messaging
+├── meta/                 # Entity relationships
+├── mixins.py             # Shared functionality
+├── model.py              # SQL Alchemy model base
+├── obj.py                # Business logic base
+├── queries/              # Query components
+│   ├── filter.py         # Filter definitions
+│   └── filter_manager.py # Query filtering
+├── registry.py           # Object registry
+├── reports/              # Reporting functionality
+├── schema/               # Schema components
+│   ├── schema.py         # Schema definitions
+│   └── schema_manager.py # Schema management
+├── sql/                  # SQL generation
+│   ├── emitter.py        # Base SQL emitter
+│   └── emitters/         # Specialized emitters
+│       ├── database.py   # Database-level SQL
+│       ├── grants.py     # Permission SQL
+│       ├── security.py   # Security SQL
+│       └── table.py      # Table SQL
+└── workflows/            # Business workflows
+```
 
-Entities are defined by the following:
+## Development
 
-- UnoObj (the business logic)
-- Model (SQL alchemy ORM declarative base model)
+### Requirements
 
-A deliberate attempt has been made to couple as little as possible within Uno.  
+- Python 3.12+
+- PostgreSQL 16+
+- Docker (for local development)
 
-Each of the Entity definition classes isolate the functionality required within and have defined interfaces for interaction with the other functionality.  This was not intentional at the beginning of the project, but this level of isolation soon became necessary for my little brain to keep track of what was being done where.  
+### Testing
 
-`UnoObj` is a subclass of pydantic BaseModel with a number of class variables in addition to the fields associated with the Entities. This is where all of your business logic is processed and the data to be presented to a user or persisted is validated.
+```console
+# Run all tests
+ENV=test pytest
 
-`UnoModel` is a subclass of sqlalchemy ORM DeclarativeBase that defines the data structure of the Entities.  This handles all querying and editing of the data.
+# Run with details
+ENV=test pytest -vv --capture=tee-sys --show-capture=all
 
-`UnoEndpoint` is a subclass of pydantic BaseModel that defines FastAPI CRUD routers.  This obviously facilitates user IO.
+# Type checking
+mypy --install-types --non-interactive src/uno tests
+```
 
+### Documentation
 
-| uno  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | attr - Entities to associate user-defined information to Uno entities  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | auth - Entities to manage users and access  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | meta - Entities to manage relationships between entities  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | msg - Entities to communicate between users  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | qry - Entities support the end-user defined stored queries for the database  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | rprt - Entities to produce reports on entities  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | val - Entities to associate attributes, filters, messages, and reports to thier respective Entities  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | wkflw - Entities to track actions that must be executed by based on state changes and real-world events  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | db.py - Defines the UnoModel (declarative base) and the UnoDB class used for db communication.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | dbmanager.py - Defines DBManager class used to create and update the database.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | endpoint.py - Defines the CRUD endpoints for each obj.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | filter.py - Defines the basic filters for use in the automatic queries.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | graphsql.py - Defines SQLEmitter used to create the graph nodes and edges.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | mixins.py - Defines Base and Model mixins.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | obj.py - Defines UnoObj, the business logic executor.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | schema.py - Defines schemas used by the endpoints.  
-&nbsp;&nbsp;&nbsp;&nbsp;
-    | sqlemitter.py - Defines SQLEmitter class used to emit raw sql to the database.  
+```console
+# Build documentation
+hatch run docs:build
 
+# Serve documentation locally
+hatch run docs:serve
+```
 
-## Starting the db with Docker
+## License
 
-`cd to notorm/docker`  
-`docker build -t pg16_uno .`  
-`docker-compose up`  
+`notorm` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
