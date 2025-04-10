@@ -81,6 +81,7 @@ class UnoSchemaConfig(BaseModel):
                 model.model_fields[field_name],
             )
             for field_name in field_names
+            if model.model_fields[field_name].exclude is not True
         }
         return create_model(
             schema_title,

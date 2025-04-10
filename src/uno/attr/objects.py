@@ -11,7 +11,7 @@ from uno.qry.objects import Query
 from uno.meta.objects import MetaType
 
 
-class Attribute(UnoObj, DefaultObjectMixin):
+class Attribute(UnoObj[AttributeModel], DefaultObjectMixin):
     # Class variables
     model = AttributeModel
     schema_configs = {
@@ -46,7 +46,7 @@ class Attribute(UnoObj, DefaultObjectMixin):
         return self.attribute_type.name
 
 
-class AttributeType(UnoObj, DefaultObjectMixin):
+class AttributeType(UnoObj[AttributeTypeModel], DefaultObjectMixin):
     # Class variables
     model = AttributeTypeModel
     schema_configs = {

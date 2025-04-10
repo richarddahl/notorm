@@ -2,39 +2,42 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Optional, Dict, List
+from typing_extensions import Self
+
 from uno.obj import UnoObj
 from uno.schema import UnoSchemaConfig
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 
 
-class MetaType(UnoObj):
+class MetaType(UnoObj[MetaTypeModel]):
     # Class variables
     model = MetaTypeModel
     schema_configs = {
         "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
     }
-    endpoints = ["List"]
-    exclude_from_filters = True
+    terminate_filters = True
 
+    # Fields
     id: str
 
     def __str__(self) -> str:
-        return f"{self.id}"
+        return self.name
 
 
-class MetaRecord(UnoObj):
+class MetaRecord(UnoObj[MetaRecordModel]):
     # Class variables
     model = MetaRecordModel
     schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(),
+        "view_schema": UnoSchemaConfig(
+            exclude_fields=["meta_type"],
+        ),
     }
-    endpoints = ["List"]
-    exclude_from_filters = True
+    terminate_filters = True
 
+    # Fields
     id: str
     meta_type_id: str
 
     def __str__(self) -> str:
-        return f"{self.meta_type_id}: {self.id}"
+        return f"{self.meta_type.id if self.meta_type else 'Unknown'}: {self.id}"

@@ -4,6 +4,7 @@
 
 import datetime
 import decimal
+from typing import Optional
 
 from uno.schema import UnoSchemaConfig
 from uno.obj import UnoObj
@@ -20,7 +21,7 @@ from uno.val.models import (
 )
 
 
-class Attachment(UnoObj, DefaultObjectMixin):
+class Attachment(UnoObj[AttachmentModel], DefaultObjectMixin):
     # Class variables
     model = AttachmentModel
     schema_configs = {
@@ -47,7 +48,7 @@ class Attachment(UnoObj, DefaultObjectMixin):
     file_path: str
 
 
-class BooleanValue(UnoObj, DefaultObjectMixin):
+class BooleanValue(UnoObj[BooleanValueModel], DefaultObjectMixin):
     # Class variables
     model = BooleanValueModel
     schema_configs = {
@@ -74,7 +75,7 @@ class BooleanValue(UnoObj, DefaultObjectMixin):
     value: bool
 
 
-class DateTimeValue(UnoObj, DefaultObjectMixin):
+class DateTimeValue(UnoObj[DateTimeValueModel], DefaultObjectMixin):
     # Class variables
     model = DateTimeValueModel
     schema_configs = {
@@ -101,7 +102,7 @@ class DateTimeValue(UnoObj, DefaultObjectMixin):
     value: datetime.datetime
 
 
-class DateValue(UnoObj, DefaultObjectMixin):
+class DateValue(UnoObj[DateValueModel], DefaultObjectMixin):
     # Class variables
     model = DateValueModel
     schema_configs = {
@@ -128,7 +129,7 @@ class DateValue(UnoObj, DefaultObjectMixin):
     value: datetime.date
 
 
-class DecimalValue(UnoObj, DefaultObjectMixin):
+class DecimalValue(UnoObj[DecimalValueModel], DefaultObjectMixin):
     # Class variables
     model = DecimalValueModel
     schema_configs = {
@@ -155,7 +156,7 @@ class DecimalValue(UnoObj, DefaultObjectMixin):
     value: decimal.Decimal
 
 
-class IntegerValue(UnoObj, DefaultObjectMixin):
+class IntegerValue(UnoObj[IntegerValueModel], DefaultObjectMixin):
     # Class variables
     model = IntegerValueModel
     schema_configs = {
@@ -182,7 +183,7 @@ class IntegerValue(UnoObj, DefaultObjectMixin):
     value: int
 
 
-class TextValue(UnoObj, DefaultObjectMixin):
+class TextValue(UnoObj[TextValueModel], DefaultObjectMixin):
     # Class variables
     model = TextValueModel
     schema_configs = {
@@ -209,7 +210,7 @@ class TextValue(UnoObj, DefaultObjectMixin):
     value: str
 
 
-class TimeValue(UnoObj, DefaultObjectMixin):
+class TimeValue(UnoObj[TimeValueModel], DefaultObjectMixin):
     # Class variables
     model = TimeValueModel
     schema_configs = {
@@ -234,3 +235,5 @@ class TimeValue(UnoObj, DefaultObjectMixin):
     # Fields
     name: str
     value: datetime.time
+    
+    terminate_filters = True

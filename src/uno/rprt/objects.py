@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
+from typing import Optional, List
+from typing_extensions import Self
+from pydantic import model_validator
 
 from uno.schema import UnoSchemaConfig
 from uno.obj import UnoObj
@@ -16,7 +18,7 @@ from uno.rprt.models import (
 )
 
 
-class ReportFieldConfig(UnoObj, DefaultObjectMixin):
+class ReportFieldConfig(UnoObj[ReportFieldConfigModel], DefaultObjectMixin):
     # Class variables
     model = ReportFieldConfigModel
     schema_configs = {
@@ -48,13 +50,16 @@ class ReportFieldConfig(UnoObj, DefaultObjectMixin):
     report_field: "ReportField"
     report_type_id: str
     report_type: "ReportType"
-    parent_field_id: Optional[str]
-    parent_field: Optional["ReportField"]
+    parent_field_id: Optional[str] = None
+    parent_field: Optional["ReportField"] = None
     is_label_included: bool
     field_format: str
+    
+    def __str__(self) -> str:
+        return f"{self.report_field.name} config"
 
 
-class ReportField(UnoObj, DefaultObjectMixin):
+class ReportField(UnoObj[ReportFieldModel], DefaultObjectMixin):
     # Class variables
     model = ReportFieldModel
     schema_configs = {
@@ -80,13 +85,25 @@ class ReportField(UnoObj, DefaultObjectMixin):
 
     # Fields
     field_meta_type_id: str
-    field_meta_type: Optional[MetaType]
+    field_meta_type: Optional[MetaType] = None
     field_type: str
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
+    
+    def __str__(self) -> str:
+        return self.name
+    
+    @model_validator(mode="after")
+    def validate_field(self) -> Self:
+        # Validate field_type is one of the allowed types
+        allowed_types = ["string", "number", "boolean", "date", "object", "array"]
+        if self.field_type not in allowed_types:
+            raise ValueError(f"Field type must be one of: {', '.join(allowed_types)}")
+        
+        return self
 
 
-class ReportType(UnoObj, DefaultObjectMixin):
+class ReportType(UnoObj[ReportTypeModel], DefaultObjectMixin):
     # Class variables
     model = ReportTypeModel
     schema_configs = {
@@ -113,14 +130,17 @@ class ReportType(UnoObj, DefaultObjectMixin):
 
     # Fields
     name: str
-    description: Optional[str]
-    report_fields: list[ReportField]
-    report_field_configs: list[ReportFieldConfig]
-    report_type_configs: list[ReportFieldConfig]
-    report_type_field_configs: list[ReportFieldConfig]
+    description: Optional[str] = None
+    report_fields: List[ReportField] = []
+    report_field_configs: List[ReportFieldConfig] = []
+    report_type_configs: List[ReportFieldConfig] = []
+    report_type_field_configs: List[ReportFieldConfig] = []
+    
+    def __str__(self) -> str:
+        return self.name
 
 
-class Report(UnoObj, DefaultObjectMixin):
+class Report(UnoObj[ReportModel], DefaultObjectMixin):
     # Class variables
     model = ReportModel
     schema_configs = {
@@ -145,6 +165,9 @@ class Report(UnoObj, DefaultObjectMixin):
 
     # Fields
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     report_type_id: str
-    report_type: Optional[ReportType]
+    report_type: Optional[ReportType] = None
+    
+    def __str__(self) -> str:
+        return self.name

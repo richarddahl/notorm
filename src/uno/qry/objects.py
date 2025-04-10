@@ -4,7 +4,7 @@
 
 # Models are the Business Logic Layer Objects
 
-from typing import Optional
+from typing import Optional, Dict, List, Tuple, Any
 from typing_extensions import Self
 from pydantic import model_validator
 
@@ -19,9 +19,11 @@ from uno.enums import (
     Match,
 )
 from uno.settings import uno_settings
+from uno.db.db import FilterParam
+from uno.filter import UnoFilter
 
 
-class QueryPath(UnoObj, ObjectMixin):
+class QueryPath(UnoObj[QueryPathModel], ObjectMixin):
     # Class variables
     model = QueryPathModel
     schema_configs = {
@@ -120,25 +122,29 @@ class QueryPath(UnoObj, ObjectMixin):
 
                 if current_fltr.source_meta_type_id != current_fltr.target_meta_type_id:
                     # Get the target object and process its children
-                    if current_fltr.target_meta_type_id not in UnoObj.registry:
+                    if current_fltr.target_meta_type_id not in self.registry:
                         self.logger.warning(
                             f"Target meta type not found: {current_fltr.target_meta_type_id}"
                         )
                         continue
 
-                    child_obj = UnoObj.registry[current_fltr.target_meta_type_id]
+                    child_obj = self.registry[current_fltr.target_meta_type_id]
                     for child_fltr in current_fltr.children(obj=child_obj):
                         stack.append((child_fltr, current_fltr))
 
         # Process all registered objects
-        for obj in UnoObj.registry.values():
-            obj.set_filters()
-            for fltr in obj.filters.values():
+        for obj in self.registry.values():
+            obj.filter_manager.create_filters_from_table(
+                obj.model,
+                obj.exclude_from_filters,
+                obj.terminate_field_filters,
+            )
+            for fltr in obj.filter_manager.filters.values():
                 process_filters(fltr)
 
         return query_paths
 
-    async def _persist_query_paths(self, query_paths: Dict[str, QueryPath]) -> None:
+    async def _persist_query_paths(self, query_paths: Dict[str, "QueryPath"]) -> None:
         """
         Persists collected query paths to the database.
 
@@ -159,7 +165,7 @@ class QueryPath(UnoObj, ObjectMixin):
                 continue
 
 
-class QueryValue(UnoObj, DefaultObjectMixin):
+class QueryValue(UnoObj[QueryValueModel], DefaultObjectMixin):
     # Class variables
     model = QueryValueModel
     schema_configs = {
@@ -203,7 +209,7 @@ class QueryValue(UnoObj, DefaultObjectMixin):
         return self
 
 
-class Query(UnoObj, DefaultObjectMixin):
+class Query(UnoObj[QueryModel], DefaultObjectMixin):
     # Class variables
     model = QueryModel
     display_name_plural = "Queries"
@@ -239,3 +245,23 @@ class Query(UnoObj, DefaultObjectMixin):
 
     def __str__(self) -> str:
         return self.name
+
+    @classmethod
+    async def filter(cls, filters: FilterParam = None) -> List["Query"]:
+        """
+        Filter Query objects from the database.
+
+        Args:
+            filters: Filter parameters
+
+        Returns:
+            A list of Query instances
+        """
+        # Create the database factory
+        db = cls().db
+
+        # Filter models from the database
+        models = await db.filter(filters=filters)
+
+        # Convert to Query instances
+        return [cls(**model) for model in models]

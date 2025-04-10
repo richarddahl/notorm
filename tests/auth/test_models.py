@@ -80,7 +80,7 @@ class TestUserTable:
             },
             {
                 "name": "ix_uno_user_handle",
-                "unique": True,
+                "unique": False,
                 "column_names": ["handle"],
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
@@ -103,6 +103,14 @@ class TestUserTable:
                 "name": "ix_uno_user_tenant_id",
                 "unique": False,
                 "column_names": ["tenant_id"],
+                "include_columns": [],
+                "dialect_options": {"postgresql_include": []},
+            },
+            {
+                "name": "uq_user_handle_tenant_id",
+                "unique": True,
+                "column_names": ["handle", "tenant_id"],
+                "duplicates_constraint": "uq_user_handle_tenant_id",
                 "include_columns": [],
                 "dialect_options": {"postgresql_include": []},
             },
@@ -175,11 +183,18 @@ class TestUserTable:
             },
         ]
 
-        # print(db_inspector.get_unique_constraints("user", schema=uno_settings.DB_SCHEMA))
-        assert (
-            db_inspector.get_unique_constraints("user", schema=uno_settings.DB_SCHEMA)
-            == []
-        )
+        # print(
+        #    db_inspector.get_unique_constraints("user", schema=uno_settings.DB_SCHEMA)
+        # )
+        assert db_inspector.get_unique_constraints(
+            "user", schema=uno_settings.DB_SCHEMA
+        ) == [
+            {
+                "column_names": ["handle", "tenant_id"],
+                "name": "uq_user_handle_tenant_id",
+                "comment": None,
+            }
+        ]
 
         # print(db_inspector.get_check_constraints("user", schema=uno_settings.DB_SCHEMA))
         assert db_inspector.get_check_constraints(

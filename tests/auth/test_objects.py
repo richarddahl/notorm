@@ -168,7 +168,6 @@ class TestUser(IsolatedAsyncioTestCase):
             'group', 'is_superuser', 'is_active', 'is_deleted', 'created_at', 'created_by',
             'modified_at', 'modified_by', 'deleted_at', and 'deleted_by') is present in the model_fields.
         """
-        User.set_schemas()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -186,23 +185,27 @@ class TestUser(IsolatedAsyncioTestCase):
             deleted_at=None,
             deleted_by=None,
         )
-        assert user.view_schema is not None
-        assert len(user.view_schema.model_fields) == 15
-        assert "id" in user.view_schema.model_fields.keys()
-        assert "email" in user.view_schema.model_fields.keys()
-        assert "handle" in user.view_schema.model_fields.keys()
-        assert "full_name" in user.view_schema.model_fields.keys()
-        assert "tenant_id" in user.view_schema.model_fields.keys()
-        assert "default_group_id" in user.view_schema.model_fields.keys()
-        assert "is_superuser" in user.view_schema.model_fields.keys()
-        assert "is_active" in user.view_schema.model_fields.keys()
-        assert "is_deleted" in user.view_schema.model_fields.keys()
-        assert "created_at" in user.view_schema.model_fields.keys()
-        assert "created_by_id" in user.view_schema.model_fields.keys()
-        assert "modified_at" in user.view_schema.model_fields.keys()
-        assert "modified_by_id" in user.view_schema.model_fields.keys()
-        assert "deleted_at" in user.view_schema.model_fields.keys()
-        assert "deleted_by_id" in user.view_schema.model_fields.keys()
+        # Ensure schemas are created before accessing them
+        user._ensure_schemas_created()
+
+        view_schema = user.schema_manager.get_schema("view_schema")
+        assert view_schema is not None
+        assert len(view_schema.model_fields) == 15
+        assert "id" in view_schema.model_fields.keys()
+        assert "email" in view_schema.model_fields.keys()
+        assert "handle" in view_schema.model_fields.keys()
+        assert "full_name" in view_schema.model_fields.keys()
+        assert "tenant_id" in view_schema.model_fields.keys()
+        assert "default_group_id" in view_schema.model_fields.keys()
+        assert "is_superuser" in view_schema.model_fields.keys()
+        assert "is_active" in view_schema.model_fields.keys()
+        assert "is_deleted" in view_schema.model_fields.keys()
+        assert "created_at" in view_schema.model_fields.keys()
+        assert "created_by_id" in view_schema.model_fields.keys()
+        assert "modified_at" in view_schema.model_fields.keys()
+        assert "modified_by_id" in view_schema.model_fields.keys()
+        assert "deleted_at" in view_schema.model_fields.keys()
+        assert "deleted_by_id" in view_schema.model_fields.keys()
 
     async def test_user_edit_schema(self):
         """
@@ -213,7 +216,6 @@ class TestUser(IsolatedAsyncioTestCase):
         - The edit_schema contains exactly eight fields.
         - The expected fields are present: 'id', 'email', 'handle', 'full_name', 'tenant', 'default_group', 'group', and 'is_superuser'.
         """
-        User.set_schemas()
         user = User(
             id="01JNH7SBRV60R5RC1G61E30C1G",
             email="admin@notorm.tech",
@@ -231,11 +233,15 @@ class TestUser(IsolatedAsyncioTestCase):
             deleted_at=None,
             deleted_by=None,
         )
-        assert user.edit_schema is not None
-        assert len(user.edit_schema.model_fields) == 6
-        assert "email" in user.edit_schema.model_fields.keys()
-        assert "handle" in user.edit_schema.model_fields.keys()
-        assert "full_name" in user.edit_schema.model_fields.keys()
-        assert "tenant_id" in user.edit_schema.model_fields.keys()
-        assert "default_group_id" in user.edit_schema.model_fields.keys()
-        assert "is_superuser" in user.edit_schema.model_fields.keys()
+        # Ensure schemas are created before accessing them
+        user._ensure_schemas_created()
+
+        edit_schema = user.schema_manager.get_schema("edit_schema")
+        assert edit_schema is not None
+        assert len(edit_schema.model_fields) == 6
+        assert "email" in edit_schema.model_fields.keys()
+        assert "handle" in edit_schema.model_fields.keys()
+        assert "full_name" in edit_schema.model_fields.keys()
+        assert "tenant_id" in edit_schema.model_fields.keys()
+        assert "default_group_id" in edit_schema.model_fields.keys()
+        assert "is_superuser" in edit_schema.model_fields.keys()

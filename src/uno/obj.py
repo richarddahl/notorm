@@ -10,8 +10,18 @@ for models in the Uno framework. It handles object lifecycle, data validation,
 and business logic operations.
 """
 
-import datetime
-from typing import Dict, Type, List, Optional, Any, ClassVar, TypeVar, Generic
+import inspect
+from typing import (
+    Dict,
+    Type,
+    List,
+    Optional,
+    ClassVar,
+    TypeVar,
+    Generic,
+    Any,
+    get_origin,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,12 +45,19 @@ class UnoObj(BaseModel, Generic[T]):
 
     This class provides business logic operations for models, including data validation,
     object lifecycle management, and integration with the web application.
+
+    When subclassing UnoObj, you must explicitly set the 'model' class variable to your model class.
+    For example:
+
+        class MyObj(UnoObj[MyModel]):
+            model = MyModel
+            # ... rest of class definition
     """
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     # Class variables
-    model: ClassVar[Type[T]]
+    model: ClassVar[Type[T]]  # Must be explicitly set in subclasses
     exclude_from_filters: ClassVar[bool] = False
     terminate_filters: ClassVar[bool] = False
     display_name: ClassVar[str] = None
@@ -92,38 +109,29 @@ class UnoObj(BaseModel, Generic[T]):
         Initialize a UnoObj subclass.
 
         This method is called when a subclass of UnoObj is created. It registers
-        the subclass in the registry and sets up display names. It also extracts
-        the model from the Generic type parameter if not explicitly set.
+        the subclass in the registry and sets up display names. It also validates
+        that the model class variable is explicitly set.
 
         Args:
             **kwargs: Additional keyword arguments
         """
         super().__init_subclass__(**kwargs)
 
-        # Don't register the UnoObj class itself
-        if cls.__name__ == "UnoObj":
+        # Skip initialization for UnoObj itself
+        if cls is UnoObj:
             return
 
-        # Try to get the model from the Generic type parameter if not explicitly set
+        # Check if the class name contains brackets, which suggests it's a generic class
+        # created by Pydantic's machinery rather than a user-defined class
+        if "[" in cls.__name__:
+            return
+
+        # Check if model is explicitly set
         if not hasattr(cls, "model") or cls.model is None:
-            from typing import get_origin, get_args
-
-            # Get the bases of the class
-            for base in cls.__orig_bases__:
-                # Check if this is a UnoObj with type parameters
-                origin = get_origin(base)
-                if origin is UnoObj:
-                    args = get_args(base)
-                    if args and len(args) > 0:
-                        cls.model = args[0]
-                        break
-
-            # If still no model, raise an error
-            if not hasattr(cls, "model") or cls.model is None:
-                raise TypeError(
-                    f"Class {cls.__name__} must specify a model class either "
-                    f"as a type parameter (UnoObj[ModelClass]) or as a class variable (model = ModelClass)"
-                )
+            raise TypeError(
+                f"Class {cls.__name__} must specify a model class "
+                f"as a class variable (model = ModelClass)"
+            )
 
         # Set display names if not already set
         cls._set_display_names()

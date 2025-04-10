@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
-from pydantic import EmailStr
+from typing import Optional, List
+from typing_extensions import Self
+from pydantic import EmailStr, model_validator
 
 from uno.enums import SQLOperation, TenantType
 from uno.schema import UnoSchemaConfig
@@ -20,7 +21,7 @@ from uno.auth.models import (
 )
 
 
-class User(UnoObj, ObjectMixin, RecordAuditObjectMixin):
+class User(UnoObj[UserModel], ObjectMixin, RecordAuditObjectMixin):
     # Class variables
     model = UserModel
     schema_configs = {
@@ -56,16 +57,21 @@ class User(UnoObj, ObjectMixin, RecordAuditObjectMixin):
     default_group_id: Optional[str] = None
     is_superuser: bool = False
 
-    # roles: Optional[list["Role"]] = None
-    # created_objects: Optional[list[MetaRecordModel]] = None
-    # modified_objects: Optional[list[MetaRecordModel]] = None
-    # deleted_objects: Optional[list[MetaRecordModel]] = None
+    # roles: Optional[List["Role"]] = None
+    # created_objects: Optional[List[MetaRecordModel]] = None
+    # modified_objects: Optional[List[MetaRecordModel]] = None
+    # deleted_objects: Optional[List[MetaRecordModel]] = None
 
     def __str__(self) -> str:
         return self.handle
 
+    @model_validator(mode="after")
+    def validate_user(self) -> Self:
+        # Add any custom validation logic here
+        return self
 
-class Group(UnoObj, ObjectMixin, RecordAuditObjectMixin):
+
+class Group(UnoObj[GroupModel], RecordAuditObjectMixin):
     # Class variables
     model = GroupModel
 
@@ -93,15 +99,15 @@ class Group(UnoObj, ObjectMixin, RecordAuditObjectMixin):
     tenant_id: Optional[str]
     tenant: Optional["Tenant"]
 
-    # roles: list["Role"] = []
-    # default_users: list[User] = []
-    # members: list[User] = []
+    # roles: List["Role"] = []
+    # default_users: List[User] = []
+    # members: List[User] = []
 
     def __str__(self) -> str:
         return self.name
 
 
-class ResponsibilityRole(UnoObj, ObjectMixin, RecordAuditObjectMixin):
+class ResponsibilityRole(UnoObj[ResponsibilityRoleModel], RecordAuditObjectMixin):
     # Class variables
     model = ResponsibilityRoleModel
 
@@ -133,7 +139,7 @@ class ResponsibilityRole(UnoObj, ObjectMixin, RecordAuditObjectMixin):
         return self.name
 
 
-class Role(UnoObj, ObjectMixin, RecordAuditObjectMixin):
+class Role(UnoObj[RoleModel], RecordAuditObjectMixin):
     # Class variables
     model = RoleModel
 
@@ -165,7 +171,7 @@ class Role(UnoObj, ObjectMixin, RecordAuditObjectMixin):
         return self.name
 
 
-class Tenant(UnoObj, ObjectMixin, RecordAuditObjectMixin):
+class Tenant(UnoObj[TenantModel], RecordAuditObjectMixin):
     # Class variables
     model = TenantModel
 
@@ -191,15 +197,15 @@ class Tenant(UnoObj, ObjectMixin, RecordAuditObjectMixin):
     name: str
     tenant_type: TenantType
 
-    # users: list["User"] = []
-    # groups: list["Group"] = []
-    # roles: list["Role"] = []
+    # users: List["User"] = []
+    # groups: List["Group"] = []
+    # roles: List["Role"] = []
 
     def __str__(self) -> str:
         return self.name
 
 
-class Permission(UnoObj):
+class Permission(UnoObj[PermissionModel]):
     # Class variables
     model = PermissionModel
     endpoints = ["List", "View"]
