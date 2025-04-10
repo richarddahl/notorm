@@ -22,10 +22,6 @@ from sqlalchemy.exc import IntegrityError
 from uno.database.engine import (
     sync_connection,
     async_connection,
-    async_session,
-    SyncEngineFactory,
-    AsyncEngineFactory,
-    AsyncSessionFactory,
 )
 from uno.model import UnoModel
 from uno.errors import UnoError
@@ -47,6 +43,9 @@ class FilterParam(BaseModel):
 
 
 def UnoDBFactory(obj: BaseModel):
+    # Dynamically import async_session to avoid circular imports
+    from uno.database.session import async_session
+    
     class UnoDB:
 
         @classmethod
@@ -210,6 +209,32 @@ def UnoDBFactory(obj: BaseModel):
             except Exception as e:
                 raise UnoError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
+                ) from e
+
+        @classmethod
+        async def delete(cls, **kwargs) -> bool:
+            """Delete a record using kwargs as filters."""
+            column_names = obj.model.__table__.columns.keys()
+            stmt = delete(obj.model.__table__)
+
+            if kwargs:
+                for key, val in kwargs.items():
+                    if key in column_names:
+                        stmt = stmt.where(getattr(obj.model, key) == val)
+                    else:
+                        raise ValueError(
+                            f"Invalid field provided in kwargs for delete: {key}"
+                        )
+
+            try:
+                async with async_session() as session:
+                    await session.execute(func.set_role("writer"))
+                    result = await session.execute(stmt)
+                    await session.commit()
+                    return True
+            except Exception as e:
+                raise UnoError(
+                    f"Unhandled error occurred during delete: {e}", error_code="DELETE_ERROR"
                 ) from e
 
         @classmethod

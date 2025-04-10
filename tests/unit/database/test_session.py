@@ -67,7 +67,9 @@ class TestAsyncSessionFactory:
         mock_engine = MagicMock()
         self.engine_factory.create_engine.return_value = mock_engine
         
+        # Use a regular MagicMock, not AsyncMock, as the function is not awaited
         mock_sessionmaker = MagicMock(spec=async_sessionmaker)
+        mock_sessionmaker._is_asyncio_mock = False  # This prevents AsyncMock behavior
         mock_async_sessionmaker.return_value = mock_sessionmaker
         
         # Call create_sessionmaker
@@ -205,7 +207,10 @@ class TestAsyncSession:
         mock_factory = MagicMock()
         MockFactory.return_value = mock_factory
         
-        mock_session = AsyncMock(spec=AsyncSession)
+        # Instead of AsyncMock with spec, use MagicMock with methods explicitly defined 
+        mock_session = MagicMock()
+        # Make sure close is awaitable
+        mock_session.close = AsyncMock()
         mock_factory.create_session.return_value = mock_session
         
         # Use async_session

@@ -80,18 +80,17 @@ class TestUnoSchemaManager:
         config = UnoSchemaConfig()
         manager.add_schema_config("test", config)
 
-        # Create a schema
-        with patch.object(config, "create_schema") as mock_create:
-            mock_schema = MagicMock()
-            mock_create.return_value = mock_schema
+        # Create a schema directly without mocking
+        schema = manager.create_schema("test", TestModel)
 
-            schema = manager.create_schema("test", TestModel)
-
-            # Verify the schema was created and stored
-            mock_create.assert_called_once_with(schema_name="test", model=TestModel)
-            assert schema == mock_schema
-            assert "test" in manager.schemas
-            assert manager.schemas["test"] == mock_schema
+        # Verify the schema was created and stored
+        assert schema is not None
+        assert "test" in manager.schemas
+        assert manager.schemas["test"] == schema
+        assert "id" in schema.model_fields
+        assert "name" in schema.model_fields
+        assert "email" in schema.model_fields
+        assert "age" in schema.model_fields
 
     def test_create_schema_with_real_schema(self):
         """Test creating a real schema (not mocked)."""
@@ -108,16 +107,16 @@ class TestUnoSchemaManager:
         exclude_schema = manager.create_schema("exclude_some", TestModel)
 
         # Check include_schema has only specified fields
-        assert hasattr(include_schema, "id")
-        assert hasattr(include_schema, "name")
-        assert not hasattr(include_schema, "email")
-        assert not hasattr(include_schema, "age")
+        assert "id" in include_schema.model_fields
+        assert "name" in include_schema.model_fields
+        assert "email" not in include_schema.model_fields
+        assert "age" not in include_schema.model_fields
 
         # Check exclude_schema has all except excluded fields
-        assert hasattr(exclude_schema, "id")
-        assert hasattr(exclude_schema, "name")
-        assert not hasattr(exclude_schema, "email")
-        assert not hasattr(exclude_schema, "age")
+        assert "id" in exclude_schema.model_fields
+        assert "name" in exclude_schema.model_fields
+        assert "email" not in exclude_schema.model_fields
+        assert "age" not in exclude_schema.model_fields
 
         # Verify schema names follow expected format
         assert include_schema.__name__ == "TestModelInclude"
@@ -138,29 +137,29 @@ class TestUnoSchemaManager:
     def test_create_all_schemas(self):
         """Test creating all schemas for a model."""
         manager = UnoSchemaManager()
-        config1 = UnoSchemaConfig()
-        config2 = UnoSchemaConfig()
+        
+        # Add different configs
+        config1 = UnoSchemaConfig(include_fields={"id", "name"})
+        config2 = UnoSchemaConfig(exclude_fields={"email"})
         manager.add_schema_config("config1", config1)
         manager.add_schema_config("config2", config2)
-
-        # Mock the create_schema method
-        with patch.object(manager, "create_schema") as mock_create:
-            mock_schema1 = MagicMock()
-            mock_schema2 = MagicMock()
-            mock_create.side_effect = [mock_schema1, mock_schema2]
-
-            # Create all schemas
-            schemas = manager.create_all_schemas(TestModel)
-
-            # Verify create_schema was called for each config
-            assert mock_create.call_count == 2
-            mock_create.assert_any_call("config1", TestModel)
-            mock_create.assert_any_call("config2", TestModel)
-
-            # Verify schemas dictionary was populated
-            assert len(schemas) == 2
-            assert schemas["config1"] == mock_schema1
-            assert schemas["config2"] == mock_schema2
+        
+        # Create all schemas directly
+        schemas = manager.create_all_schemas(TestModel)
+        
+        # Verify results
+        assert len(schemas) == 2
+        assert "config1" in schemas
+        assert "config2" in schemas
+        assert "id" in schemas["config1"].model_fields
+        assert "name" in schemas["config1"].model_fields
+        assert "email" not in schemas["config1"].model_fields
+        assert "age" not in schemas["config1"].model_fields
+        
+        assert "id" in schemas["config2"].model_fields
+        assert "name" in schemas["config2"].model_fields
+        assert "email" not in schemas["config2"].model_fields
+        assert "age" in schemas["config2"].model_fields
 
     def test_create_all_schemas_real(self):
         """Test creating all schemas without mocking."""
@@ -184,15 +183,15 @@ class TestUnoSchemaManager:
         view_schema = schemas["view"]
         edit_schema = schemas["edit"]
 
-        assert hasattr(view_schema, "id")
-        assert hasattr(view_schema, "name")
-        assert hasattr(view_schema, "age")
-        assert not hasattr(view_schema, "email")
+        assert "id" in view_schema.model_fields
+        assert "name" in view_schema.model_fields
+        assert "age" in view_schema.model_fields
+        assert "email" not in view_schema.model_fields
 
-        assert hasattr(edit_schema, "id")
-        assert hasattr(edit_schema, "name")
-        assert hasattr(edit_schema, "email")
-        assert hasattr(edit_schema, "age")
+        assert "id" in edit_schema.model_fields
+        assert "name" in edit_schema.model_fields
+        assert "email" in edit_schema.model_fields
+        assert "age" in edit_schema.model_fields
 
     def test_get_schema(self):
         """Test getting a schema by name."""

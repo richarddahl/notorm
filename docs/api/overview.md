@@ -2,6 +2,36 @@
 
 The API Layer in uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
 
+## Architecture
+
+The API layer integrates with the other components of the Uno framework to provide a complete solution:
+
+```
+┌───────────────┐      ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
+│  API Client   │      │  UnoEndpoint  │      │    UnoObj     │      │    UnoDB      │
+│  (HTTP/JSON)  │◄────►│  (FastAPI)    │◄────►│ (Business Logic) ◄────►│  (Database)   │
+└───────────────┘      └───────────────┘      └───────────────┘      └───────────────┘
+```
+
+## Data Flow
+
+### Request Flow (Inbound)
+
+1. **HTTP Request**: Client sends HTTP request to endpoint
+2. **Validation**: Request data is validated using Pydantic schema
+3. **Deserialization**: JSON data is converted to Pydantic model
+4. **Business Logic**: UnoObj processes the request
+5. **Database Operation**: UnoDB performs the database operation
+6. **Response**: Results are serialized and returned to client
+
+### Response Flow (Outbound)
+
+1. **Database Query**: Data is retrieved from database
+2. **Model Mapping**: Data is mapped to UnoModel
+3. **Schema Conversion**: Model is converted to schema using SchemaManager
+4. **Serialization**: Schema is serialized to JSON
+5. **HTTP Response**: JSON is returned to client
+
 ## Key Components
 
 ### UnoEndpoint
@@ -22,22 +52,27 @@ endpoint = UnoEndpoint(app, Customer)
 endpoint.register_endpoints()
 ```
 
-### EndpointFactory
+### UnoEndpointFactory
 
-The `EndpointFactory` class automatically generates endpoints for business objects based on their configuration.
+The `UnoEndpointFactory` class automatically generates endpoints for business objects based on their configuration.
 
 ```python
-from uno.api.endpoint_factory import EndpointFactory
+from uno.api.endpoint_factory import UnoEndpointFactory
 from fastapi import FastAPI
+from uno.authorization.objs import User
 
-# Create a FastAPI app
+# Create FastAPI app
 app = FastAPI()
 
-# Create an endpoint factory
-factory = EndpointFactory(app)
+# Create endpoint factory
+factory = UnoEndpointFactory()
 
-# Register endpoints for all registered business objects
-factory.register_endpoints()
+# Create endpoints for User model
+factory.create_endpoints(
+    app=app,
+    model_obj=User,
+    endpoints=["List", "View", "Create", "Update", "Delete"]
+)
 ```
 
 ### FilterManager
@@ -63,16 +98,30 @@ filter_params = FilterParam(
 filtered_query = filter_manager.apply_filters(query, filter_params)
 ```
 
+## Integration with UnoObj and UnoDB
+
+The API layer is tightly integrated with the UnoObj and UnoDB layers:
+
+1. **UnoObj Integration**:
+   - Endpoints use UnoObj methods for business logic
+   - Uses schemas from UnoObj's SchemaManager
+   - Converts between HTTP/JSON and UnoObj representations
+
+2. **UnoDB Integration**:
+   - Database operations are delegated to UnoObj methods
+   - Uses UnoObj to convert between UnoModel and API schemas
+   - Handles transaction management
+
 ## Default Endpoints
 
 When you register endpoints for a business object, the following endpoints are created by default:
 
-- `POST /api/v1/{model_name}` - Create a new object
-- `GET /api/v1/{model_name}/{id}` - Get an object by ID
-- `GET /api/v1/{model_name}` - List objects (with filtering and pagination)
-- `PATCH /api/v1/{model_name}/{id}` - Update an object
-- `DELETE /api/v1/{model_name}/{id}` - Delete an object
-- `PUT /api/v1/{model_name}` - Import objects (batch create or update)
+- `POST /api/v1/{model_name}` - Create a new object (CreateEndpoint)
+- `GET /api/v1/{model_name}/{id}` - Get an object by ID (ViewEndpoint)
+- `GET /api/v1/{model_name}` - List objects with filtering and pagination (ListEndpoint)
+- `PATCH /api/v1/{model_name}/{id}` - Update an object (UpdateEndpoint)
+- `DELETE /api/v1/{model_name}/{id}` - Delete an object (DeleteEndpoint)
+- `PUT /api/v1/{model_name}` - Import objects (batch create or update) (ImportEndpoint)
 
 You can customize which endpoints are created by setting the `endpoints` class variable in your `UnoObj` subclass:
 
@@ -160,6 +209,72 @@ The API layer provides standardized error responses:
 }
 ```
 
+## Custom Endpoints
+
+You can create custom endpoints by extending the UnoEndpoint class:
+
+```python
+from uno.api.endpoint import UnoEndpoint
+from fastapi import FastAPI
+
+class CustomUserEndpoint(UnoEndpoint):
+    """Custom endpoint for user statistics."""
+    
+    def __init__(self, model, app, **kwargs):
+        super().__init__(model, app, **kwargs)
+        
+        @app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
+        async def stats():
+            """Get user statistics."""
+            result = await self.model.get_statistics()
+            return result
+```
+
+## Complete Integration Example
+
+This example demonstrates the complete integration of UnoObj, UnoModel, UnoDB, and UnoEndpoint:
+
+```python
+from fastapi import FastAPI
+from uno.api.endpoint_factory import UnoEndpointFactory
+from uno.authorization.objs import User
+
+# Create a FastAPI app
+app = FastAPI()
+
+# Create a User object
+user = User(
+    email="john@example.com",
+    handle="john_doe",
+    full_name="John Doe",
+    is_superuser=False
+)
+
+# 1. Convert UnoObj to UnoModel via schema
+user._ensure_schemas_created()
+user_model = user.to_model(schema_name="edit_schema")
+
+# 2. Save to database using UnoDB
+db = UnoDBFactory(user)
+saved_model, success = await db.create(user_model)
+
+# 3. Create API endpoints for User
+factory = UnoEndpointFactory()
+factory.create_endpoints(
+    app=app,
+    model_obj=User,
+    endpoints=["List", "View"]
+)
+
+# 4. Client accesses the API
+# GET /api/v1/user - Lists all users
+# GET /api/v1/user/{id} - Gets a specific user
+
+# 5. Endpoint returns data via schema
+# Response data is converted to a Pydantic schema
+# Schema can be used to recreate UnoObj instance
+```
+
 ## Best Practices
 
 1. **Use Consistent Endpoints**: Stick to RESTful endpoint patterns for consistency.
@@ -173,6 +288,8 @@ The API layer provides standardized error responses:
 5. **Implement Pagination**: Always paginate large result sets.
 
 6. **Secure Endpoints**: Use proper authentication and authorization.
+
+7. **Test Integration**: Create integration tests that verify the complete flow from UnoObj to API endpoints and back.
 
 ## Next Steps
 

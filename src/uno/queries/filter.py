@@ -33,11 +33,10 @@ from pydantic import BaseModel
 from uno.database.engine import (
     sync_connection,
     async_connection,
-    async_session,
-    SyncEngineFactory,
-    AsyncEngineFactory,
-    AsyncSessionFactory,
 )
+
+# Import UnoDBFactory here to avoid circular imports
+from uno.database.db import UnoDBFactory
 
 # This dictionary contains predefined SQL templates for various lookup operations.
 # Each key represents a lookup name, and the corresponding value is the SQL template.

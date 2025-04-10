@@ -21,15 +21,15 @@ class UnoSchema(BaseModel):
 class UnoSchemaConfig(BaseModel):
     """Model class for all model schema configs"""
 
-    schema_base: BaseModel = UnoSchema
+    schema_base: type[BaseModel] = UnoSchema
     exclude_fields: Set[str] = set()
     include_fields: Set[str] = set()
 
     @model_validator(mode="after")
-    def validate_exclude_include_fields(self) -> "Self":
+    def validate_exclude_include_fields(self) -> "UnoSchemaConfig":
         if self.exclude_fields and self.include_fields:
             raise UnoError(
-                f"The schema configuration: {self.__name__} cannot have both exclude_fields or include_fields.",
+                "The schema configuration cannot have both exclude_fields or include_fields.",
                 "BOTH_EXCLUDE_INCLUDE_FIELDS",
             )
         return self

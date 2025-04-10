@@ -88,7 +88,7 @@ migrate-revisions = "ENV=dev python src/scripts/migrations.py revisions"
 dependencies = [
   "coverage[toml]",
   "pytest",
-  "pytest-asyncio",
+  "pytest-asyncio>=0.21.1",
   "asyncio",
   "httpx",
   "requests",
@@ -127,9 +127,14 @@ migrate-current = "ENV=test python src/scripts/migrations.py current"
 migrate-history = "ENV=test python src/scripts/migrations.py history"
 migrate-revisions = "ENV=test python src/scripts/migrations.py revisions"
 
-[tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "session"
+[tool.pytest]
+markers = ["asyncio: mark a test as an asyncio test (using pytest-asyncio)"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
 
 
 # Documentation Environement

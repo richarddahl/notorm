@@ -136,6 +136,69 @@ customer = await Customer.get(id="abc123")
 await customer.delete()
 ```
 
+## Integration Architecture
+
+The complete integration between UnoObj, UnoModel, and UnoDB follows a structured flow that ensures data integrity and proper transformation at each step.
+
+### UnoObj -> UnoModel -> UnoDB -> UnoModel -> UnoObj Roundtrip
+
+1. **UnoObj Creation (Starting Point)**
+   - Create an instance of UnoObj with data
+   - Data is validated through Pydantic validation
+   - Example: `user = User(email="example@domain.com", handle="username")`
+
+2. **UnoObj -> UnoModel Conversion**
+   - UnoObj uses the schema system to convert to a model instance
+   - Conversion happens via the `to_model(schema_name)` method
+   - Example: `model = user.to_model(schema_name="edit_schema")`
+
+3. **UnoDB Database Operations**
+   - The model is passed to the appropriate UnoDB operation
+   - Operations include create, update, delete, get, filter, and merge
+   - Example: `result = await user.db.create(schema=model)`
+
+4. **UnoModel -> UnoObj Conversion**
+   - Results from the database are converted back to UnoObj instances
+   - This happens automatically in methods like `get()` and `filter()`
+   - Example: `retrieved_user = await User.get(id="123")`
+
+This roundtrip flow ensures that:
+- Data is properly validated before reaching the database
+- Business logic is consistently applied at the object level
+- Database operations are abstracted away from business logic
+- Data retrieval automatically populates business objects
+
+### Sequence Diagram
+
+```
+┌─────────┐         ┌─────────┐         ┌─────────┐
+│  UnoObj  │         │ UnoModel │         │  UnoDB  │
+└────┬────┘         └────┬────┘         └────┬────┘
+     │                    │                   │
+     │ create             │                   │
+     ├───────────────────►│                   │
+     │                    │                   │
+     │ to_model()         │                   │
+     ├───────────────────►│                   │
+     │                    │                   │
+     │                    │ save()            │
+     │                    ├──────────────────►│
+     │                    │                   │
+     │                    │                   │ DB operation
+     │                    │                   │◄─────────┐
+     │                    │                   │          │
+     │                    │ DB result         │          │
+     │                    │◄──────────────────┤          │
+     │                    │                   │          │
+     │ convert to UnoObj  │                   │          │
+     │◄───────────────────┤                   │          │
+     │                    │                   │          │
+     │ business logic     │                   │          │
+     │◄─────────┐         │                   │          │
+     │          │         │                   │          │
+     │          │         │                   │          │
+```
+
 ## Web Application Integration
 
 `UnoObj` integrates with FastAPI to automatically create endpoints:
@@ -208,7 +271,37 @@ class Customer(UnoObj[CustomerModel]):
 
 ## Testing
 
-When testing `UnoObj` classes, you should mock the database access:
+When testing `UnoObj` classes, it's recommended to create unit tests that verify both:
+
+1. **Data Transformation**: Test the conversion between UnoObj and UnoModel
+2. **Database Operations**: Test the interaction with UnoDB
+
+### Example Test for UnoObj -> UnoModel Conversion:
+
+```python
+class TestUserIntegration(IsolatedAsyncioTestCase):
+    async def test_create_superuser_obj_model_conversion(self):
+        # Create a superuser UnoObj instance
+        superuser = User(
+            email="test_integration@notorm.tech",
+            handle="test_integration",
+            full_name="Test Integration User",
+            is_superuser=True
+        )
+        
+        # Convert to UnoModel using the schema
+        superuser._ensure_schemas_created()
+        model = superuser.to_model(schema_name="edit_schema")
+        
+        # Verify model instance
+        assert isinstance(model, UserModel)
+        assert model.email == "test_integration@notorm.tech"
+        assert model.handle == "test_integration"
+        assert model.full_name == "Test Integration User"
+        assert model.is_superuser is True
+```
+
+### Mocking Database Access:
 
 ```python
 import pytest
@@ -245,3 +338,7 @@ async def test_customer_save():
 5. **Use Schemas Appropriately**: Create different schemas for different use cases (viewing, editing, etc.).
 
 6. **Document Your Code**: Add docstrings to your classes and methods to explain their purpose and usage.
+
+7. **Test the Roundtrip Flow**: Ensure that objects can be correctly converted to models, saved to the database, and retrieved as objects again.
+
+8. **Consider Authorization**: When designing the integration, consider how authorization will affect database operations and object access.
