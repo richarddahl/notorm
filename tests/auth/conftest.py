@@ -8,7 +8,7 @@ import pytest
 import factory
 
 from sqlalchemy.orm import sessionmaker
-from uno.auth.models import UserModel
+from uno.authorization.models import UserModel
 
 '''
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

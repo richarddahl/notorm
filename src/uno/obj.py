@@ -25,14 +25,14 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from uno.db.db import UnoDBFactory, FilterParam
+from uno.database.db import UnoDBFactory, FilterParam
 from uno.model import UnoModel
 from uno.schema.schema import UnoSchemaConfig
 from uno.errors import UnoError
 from uno.utilities import snake_to_title
 from uno.registry import UnoRegistry
 from uno.schema.schema_manager import UnoSchemaManager
-from uno.qry.filter_manager import UnoFilterManager
+from uno.queries.filter_manager import UnoFilterManager
 from uno.api.endpoint_factory import UnoEndpointFactory
 
 
@@ -340,9 +340,10 @@ class UnoObj(BaseModel, Generic[T]):
             cls.terminate_field_filters,
         )
 
-        # Setup schema manager
+        # Create and attach schema_manager to the model class
         schema_manager = UnoSchemaManager(cls.schema_configs)
         schema_manager.create_all_schemas(cls)
+        cls.schema_manager = schema_manager  # attach schema manager to the class
 
         # Setup endpoints
         endpoint_factory = UnoEndpointFactory()

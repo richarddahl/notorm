@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from uno.obj import UnoObj
+from uno.registry import UnoRegistry
 
 tags_metadata = [
     {
@@ -24,6 +25,9 @@ tags_metadata = [
         },
     },
 ]
+# Get registry instance
+registry = UnoRegistry.get_instance()
+
 tags_metadata.extend(
     [
         {
@@ -34,7 +38,7 @@ tags_metadata.extend(
                 "url": f"http://localhost:8001/{uno_object.display_name}",
             },
         }
-        for uno_object in UnoObj.registry.values()
+        for uno_object in registry.get_all().values()
         if getattr(uno_object, "include_in_schema_docs", True)
     ]
 )
@@ -43,3 +47,17 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     title="Uno is not an ORM",
 )
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configure all registered UnoObj classes
+for uno_object in registry.get_all().values():
+    if hasattr(uno_object, "configure"):
+        uno_object.configure(app)

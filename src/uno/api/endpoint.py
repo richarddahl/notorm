@@ -254,19 +254,31 @@ class UnoEndpoint(BaseModel):
 
     def __init__(self, *args, app: FastAPI, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # Retrieve schemas from the model's schema_manager
         if self.body_model is not None:
-            body_model = getattr(self.model, self.body_model)
+            # Ensure that the schemas have been created
+            body_schema = self.model.schema_manager.get_schema(self.body_model)
+            if body_schema is None:
+                raise Exception(
+                    f"Body schema '{self.body_model}' not found in schema manager for {self.model.__name__}"
+                )
         else:
-            body_model = None
+            body_schema = None
+
         if self.response_model is not None:
-            response_model = getattr(self.model, self.response_model)
+            response_schema = self.model.schema_manager.get_schema(self.response_model)
+            if response_schema is None:
+                raise Exception(
+                    f"Response schema '{self.response_model}' not found in schema manager"
+                )
         else:
-            response_model = None
+            response_schema = None
+
         self.router(
             app=app,
             model=self.model,
-            body_model=body_model,
-            response_model=response_model,
+            body_model=body_schema,
+            response_model=response_schema,
             include_in_schema=self.include_in_schema,
             status_code=self.status_code,
         )

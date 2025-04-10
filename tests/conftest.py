@@ -15,10 +15,10 @@ from psycopg import sql
 
 from sqlalchemy import func, Column
 
-from uno.db.manager import DBManager
+from uno.database.manager import DBManager
 from uno.settings import uno_settings
 
-from uno.db.engine import async_session, sync_connection
+from uno.database.engine import async_session, sync_connection
 
 import pytest
 

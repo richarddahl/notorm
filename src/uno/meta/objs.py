@@ -2,20 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, Dict, List
-from typing_extensions import Self
-
 from uno.obj import UnoObj
-from uno.schema.schema import UnoSchemaConfig
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 
 
 class MetaType(UnoObj[MetaTypeModel]):
     # Class variables
     model = MetaTypeModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-    }
+    schema_configs = {}
+    endpoints = []
     terminate_filters = True
 
     # Fields
@@ -28,11 +23,8 @@ class MetaType(UnoObj[MetaTypeModel]):
 class MetaRecord(UnoObj[MetaRecordModel]):
     # Class variables
     model = MetaRecordModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            exclude_fields=["meta_type"],
-        ),
-    }
+    schema_configs = {}
+    endpoints = []
     terminate_filters = True
 
     # Fields

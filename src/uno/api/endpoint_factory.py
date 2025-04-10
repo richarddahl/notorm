@@ -59,6 +59,8 @@ class UnoEndpointFactory:
             endpoints: The types of endpoints to create (defaults to all)
             endpoint_tags: The tags to apply to the endpoints
         """
+        if not endpoints:
+            return
         endpoints = endpoints or [
             "Create",
             "View",
@@ -84,3 +86,4 @@ class UnoEndpointFactory:
                 print(
                     f"Error creating {endpoint_type} endpoint for {model_obj.__class__.__name__}: {e}"
                 )
+                raise e
