@@ -17,6 +17,9 @@ nav:
    - scripts: commands.md
    - Model: model.md
    - UnoObj: obj.md
+   - Database:
+      - Engine: db/engine.md 
+      - Migrations: db/migrations.md
    - UnoDB: db.md
    - UnoFilter: filter.md
    #- SQL Emitters: sqlemitter.md

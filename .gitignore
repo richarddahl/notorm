@@ -37,9 +37,6 @@ venv/
 *.plist
 *.lock
 
-# Database and migrations
-migrations/
-alembic.ini
 *.sqlite3
 
 # Logs and caches

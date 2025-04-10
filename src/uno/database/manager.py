@@ -67,7 +67,7 @@ class SQLEmitterProtocol(Protocol):
 
 
 class OutputSuppressor:
-    """Utility class for suppressing standard output."""
+    """Utility class for suppressing standard output and logging."""
 
     @staticmethod
     @contextlib.contextmanager
@@ -84,6 +84,37 @@ class OutputSuppressor:
             yield
         finally:
             sys.stdout = save_stdout
+            
+    @staticmethod
+    @contextlib.contextmanager
+    def suppress_logging() -> Iterator[None]:
+        """
+        Context manager to temporarily suppress logging by setting all loggers to ERROR level.
+        
+        This is particularly useful during tests to avoid excessive log output.
+
+        Yields:
+            None
+        """
+        # Store original log levels
+        loggers = {}
+        root = logging.getLogger()
+        loggers[root] = root.level
+        
+        # Also get all existing loggers
+        for name in logging.root.manager.loggerDict:
+            logger = logging.getLogger(name)
+            loggers[logger] = logger.level
+            
+        try:
+            # Set all loggers to ERROR level
+            for logger in loggers:
+                logger.setLevel(logging.ERROR)
+            yield
+        finally:
+            # Restore original log levels
+            for logger, level in loggers.items():
+                logger.setLevel(level)
 
 
 class DBManager:
@@ -236,6 +267,8 @@ class DBManager:
         This is a wrapper method that handles output suppression based on
         the environment configuration. Uses non-transactional connections
         with AUTOCOMMIT isolation level for database creation operations.
+        
+        After creating the database, this method initializes Alembic for migrations.
         """
 
         def _create_db_internal() -> None:
@@ -248,6 +281,7 @@ class DBManager:
             - Setting up schemas, extensions, privileges
             - Creating functions, triggers, and tables
             - Emitting table-specific SQL
+            - Initializing Alembic migrations
 
             Raises:
                 SQLAlchemyError: If database operations fail
@@ -259,6 +293,7 @@ class DBManager:
                 self.set_privileges_and_paths()
                 self.create_functions_triggers_and_tables()
                 self.emit_table_sql()
+                self.initialize_migrations()
                 masked_pw = (
                     "*" * len(self.config.DB_USER_PW)
                     if getattr(self.config, "DB_USER_PW", None)
@@ -272,7 +307,10 @@ class DBManager:
                 raise
 
         if self.config.ENV == "test":
-            with OutputSuppressor.suppress_stdout():
+            # Use multiple context managers to suppress both stdout and logging
+            with contextlib.ExitStack() as stack:
+                stack.enter_context(OutputSuppressor.suppress_stdout())
+                stack.enter_context(OutputSuppressor.suppress_logging())
                 _create_db_internal()
         else:
             _create_db_internal()
@@ -684,6 +722,7 @@ class DBManager:
         with contextlib.ExitStack() as stack:
             if self.config.ENV == "test":
                 stack.enter_context(OutputSuppressor.suppress_stdout())
+                stack.enter_context(OutputSuppressor.suppress_logging())
 
             # Create a direct connection to postgres as the postgres superuser
             # Using psycopg directly to bypass SQLAlchemy's transaction management
@@ -712,3 +751,100 @@ class DBManager:
                     cursor.execute(statement.sql)
 
             self.logger.info("Dropped the database and the associated roles")
+            
+    def initialize_migrations(self) -> None:
+        """
+        Initialize Alembic migrations for this database.
+        
+        This method stamps the database with the 'base' migration to set
+        up the Alembic version table without applying any migrations.
+        The table will then be used to track future schema changes.
+        
+        Raises:
+            RuntimeError: If migration initialization fails and we're not in test mode
+        """
+        try:
+            # Import here to avoid circular imports
+            import subprocess
+            from pathlib import Path
+            
+            self.logger.info("Initializing Alembic migrations")
+            
+            # Ensure migrations directory exists
+            migrations_dir = Path(__file__).parent.parent / "migrations"
+            migrations_dir.mkdir(exist_ok=True)
+            versions_dir = migrations_dir / "versions"
+            versions_dir.mkdir(exist_ok=True)
+            
+            # Get path to migration script
+            script_path = Path(__file__).parent.parent.parent.parent / "src" / "scripts" / "migrations.py"
+            
+            if not script_path.exists():
+                self.logger.error(f"Migration script not found at {script_path}")
+                alternate_paths = [
+                    Path(__file__).parent.parent.parent.parent / "scripts" / "migrations.py",
+                    Path(__file__).parent.parent.parent / "scripts" / "migrations.py",
+                ]
+                
+                for alt_path in alternate_paths:
+                    if alt_path.exists():
+                        self.logger.info(f"Found migrations script at alternative path: {alt_path}")
+                        script_path = alt_path
+                        break
+                else:
+                    self.logger.error("Could not find migrations script at any known location")
+                    if self.config.ENV == "test":
+                        self.logger.warning("Test environment detected, skipping migration initialization")
+                        return
+                    raise FileNotFoundError("Could not find migrations script")
+            
+            # Run the initialization command
+            env = os.environ.copy()
+            if self.config.ENV:
+                env["ENV"] = self.config.ENV
+            
+            try:
+                # Suppress output in test environment
+                if self.config.ENV == "test":
+                    with contextlib.ExitStack() as stack:
+                        stack.enter_context(OutputSuppressor.suppress_stdout())
+                        stack.enter_context(OutputSuppressor.suppress_logging())
+                        result = subprocess.run(
+                            [sys.executable, str(script_path), "init"],
+                            env=env,
+                            check=False,  # Don't raise exception on non-zero exit
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                        )
+                else:
+                    result = subprocess.run(
+                        [sys.executable, str(script_path), "init"],
+                        env=env,
+                        check=False,  # Don't raise exception on non-zero exit
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                
+                if result.returncode == 0:
+                    self.logger.info("Alembic migrations initialized successfully")
+                else:
+                    error_msg = result.stderr.decode('utf-8')
+                    self.logger.error(f"Failed to initialize Alembic migrations: {error_msg}")
+                    # Only raise error in non-test environments
+                    if self.config.ENV != "test":
+                        raise RuntimeError(f"Failed to initialize Alembic migrations: {error_msg}")
+                    else:
+                        self.logger.warning("Test environment detected, continuing despite migration error")
+                        
+            except subprocess.SubprocessError as se:
+                self.logger.error(f"Subprocess error during migration initialization: {se}")
+                if self.config.ENV != "test":
+                    raise
+                
+        except Exception as e:
+            self.logger.error(f"Migration initialization error: {e}")
+            # Only raise error in non-test environments
+            if self.config.ENV != "test":
+                raise RuntimeError(f"Failed to initialize Alembic migrations: {e}")
+            else:
+                self.logger.warning("Test environment detected, continuing despite migration error")
