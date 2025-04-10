@@ -220,6 +220,49 @@ complete_sql = f"""
 print(complete_sql)
 ```
 
+## Table Merge Function Emitter
+
+The `TableMergeFunction` emitter generates a PostgreSQL function for merging records using the MERGE command introduced in PostgreSQL 16. It's designed for upsert operations that intelligently handle both inserts and updates based on primary keys or unique constraints.
+
+```python
+from uno.sql.emitters import TableMergeFunction
+from sqlalchemy import Table, MetaData
+
+# Get a SQLAlchemy table object
+metadata = MetaData()
+table = Table('my_table', metadata, autoload_with=engine)
+
+# Create the merge function emitter
+emitter = TableMergeFunction(table=table)
+
+# Generate the SQL for the merge function
+statements = emitter.generate_sql()
+
+# Execute the SQL to create the function
+with engine.connect() as conn:
+    emitter.execute_sql(conn, statements)
+```
+
+The generated merge function accepts a JSONB object and performs the following operations:
+
+1. Examines the JSONB data to identify which keys to use for record matching (primary keys or unique constraints)
+2. Looks up the record in the database if matching key fields are present
+3. If found, updates non-key columns that have changed (ignoring null values for required columns)
+4. If not found, inserts a new record
+5. Returns the final record with an `_action` field indicating 'inserted', 'updated', or 'selected'
+
+Usage example:
+
+```sql
+-- Call the generated merge function
+SELECT my_schema.merge_my_table_record('{"id": "123", "name": "John Doe", "email": "john@example.com"}'::jsonb);
+
+-- Result includes the action performed
+-- {"id": "123", "name": "John Doe", "email": "john@example.com", "_action": "inserted"}
+```
+
+The function is particularly useful for integrating with UnoObj's model_dump() data and provides a complete record lifecycle management solution.
+
 ## Best Practices
 
 1. **Use Emitters Instead of Raw SQL**: Prefer using emitters over writing raw SQL to ensure consistency and maintainability.
@@ -232,7 +275,7 @@ print(complete_sql)
 
 5. **Document Generated SQL**: Add comments to explain the purpose and behavior of generated SQL.
 
-6. **Leverage PostgreSQL Features**: Use PostgreSQL-specific features when appropriate.
+6. **Leverage PostgreSQL Features**: Use PostgreSQL-specific features when appropriate, such as the MERGE command in PostgreSQL 16+.
 
 7. **Test Edge Cases**: Test SQL generation with special characters, long names, and other edge cases.
 

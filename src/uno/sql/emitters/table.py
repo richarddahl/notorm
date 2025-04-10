@@ -5,7 +5,9 @@
 """SQL emitters for table-level operations."""
 
 import logging
-from typing import List
+from typing import List, Set
+from sqlalchemy import Table, Column, UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy.schema import ForeignKeyConstraint
 
 from uno.sql.emitter import SQLEmitter
 from uno.sql.statement import SQLStatement, SQLStatementType
@@ -912,4 +914,286 @@ class EnableHistoricalAudit(SQLEmitter):
             )
         )
 
+        return statements
+
+
+class TableMergeFunction(SQLEmitter):
+    """Emitter for table-specific merge function.
+    
+    This emitter generates a PL/pgSQL function for each table that accepts
+    a JSONB parameter containing model_dump from a UnoObj schema. It uses
+    PostgreSQL 16's MERGE command to:
+    1. Look up the record using PK or unique constraints
+    2. Update only non-PK, non-unique constraint columns if found
+    3. Insert the record if not found
+    4. Return the operation performed ('inserted', 'updated', 'selected')
+    """
+    
+    def generate_sql(self) -> List[SQLStatement]:
+        """Generate SQL for table-specific merge function.
+        
+        Returns:
+            List of SQL statements with metadata
+        """
+        statements = []
+        
+        # Require a table to be set
+        if not self.table:
+            return statements
+            
+        schema_name = self.connection_config.db_schema
+        table_name = self.table.name
+        function_name = f"merge_{table_name}_record"
+        
+        # Get primary key columns
+        pk_columns: Set[str] = set()
+        for constraint in self.table.constraints:
+            if isinstance(constraint, PrimaryKeyConstraint):
+                pk_columns = {col.name for col in constraint.columns}
+                break
+        
+        # Get unique constraint columns
+        unique_constraints = []
+        for constraint in self.table.constraints:
+            if isinstance(constraint, UniqueConstraint):
+                unique_constraints.append([col.name for col in constraint.columns])
+
+        # Format the primary key array for SQL
+        pk_array_sql = "ARRAY[" + ", ".join([f"'{pk}'" for pk in pk_columns]) + "]" if pk_columns else "ARRAY[]::text[]"
+        
+        # Format the unique constraints array for SQL
+        uc_arrays = []
+        for constraint in unique_constraints:
+            constraint_array = "ARRAY[" + ", ".join([f"'{col}'" for col in constraint]) + "]"
+            uc_arrays.append(constraint_array)
+        
+        uc_arrays_sql = ", ".join(uc_arrays)
+        uc_array_sql = f"ARRAY[{uc_arrays_sql}]" if uc_arrays else "ARRAY[]::text[][]"
+        
+        # Generate the function SQL
+        function_sql = f"""
+CREATE OR REPLACE FUNCTION {schema_name}.{function_name}(
+    data jsonb
+) RETURNS jsonb AS $$$
+DECLARE
+    match_condition text := '';
+    update_set_clause text := '';
+    insert_columns text := '';
+    insert_values text := '';
+    merge_query text;
+    result_record jsonb;
+    action_performed text;
+    column_name text;
+    column_value jsonb;
+    debug_info jsonb;
+    source_clause text := '';
+    record_exists boolean := false;
+    needs_update boolean := false;
+    
+    -- Primary key columns for this table
+    primary_keys text[] := {pk_array_sql};
+    
+    -- Unique constraint columns for this table
+    unique_constraints text[][] := {uc_array_sql};
+    
+    -- All keys to check
+    all_keys text[];
+    
+    -- Keys from the data
+    data_keys text[];
+BEGIN
+    -- Validate inputs
+    IF data IS NULL THEN
+        RAISE EXCEPTION 'Invalid parameter: data must be provided';
+    END IF;
+    
+    -- Get all keys from the data
+    SELECT array_agg(key) INTO data_keys FROM jsonb_object_keys(data) AS key;
+    
+    -- APPROACH 1: Try to use primary key if all columns are in the data
+    IF primary_keys IS NOT NULL AND array_length(primary_keys, 1) > 0 THEN
+        IF (SELECT bool_and(data ? key) FROM unnest(primary_keys) AS key) THEN
+            all_keys := primary_keys;
+        END IF;
+    END IF;
+    
+    -- APPROACH 2: If primary key not usable, try each unique constraint
+    IF all_keys IS NULL AND array_length(unique_constraints, 1) > 0 THEN
+        FOR i IN 1..array_length(unique_constraints, 1) LOOP
+            IF (SELECT bool_and(data ? key) FROM unnest(unique_constraints[i]) AS key) THEN
+                all_keys := unique_constraints[i];
+                EXIT;
+            END IF;
+        END LOOP;
+    END IF;
+    
+    -- Create debug info
+    debug_info := jsonb_build_object(
+        'table', '{table_name}',
+        'schema', '{schema_name}',
+        'data_keys', to_jsonb(data_keys),
+        'primary_keys', to_jsonb(primary_keys),
+        'unique_constraints', to_jsonb(unique_constraints),
+        'selected_keys', to_jsonb(all_keys)
+    );
+    
+    -- Raise exception if no usable keys found
+    IF all_keys IS NULL OR array_length(all_keys, 1) = 0 THEN
+        RAISE EXCEPTION 'No primary keys or unique constraints found in the data. Ensure that the data includes either all PK columns or all columns of at least one unique constraint. Debug: %', debug_info;
+    END IF;
+    
+    -- First check if the record exists and get its current values
+    EXECUTE format('
+        SELECT EXISTS(
+            SELECT 1 FROM {schema_name}.{table_name}
+            WHERE %s
+        ),
+        (SELECT to_jsonb(t.*) FROM {schema_name}.{table_name} t WHERE %s)
+    ',
+    array_to_string(
+        array(
+            SELECT format('%I = %L', key, data->>key)
+            FROM unnest(all_keys) AS key
+        ),
+        ' AND '
+    ),
+    array_to_string(
+        array(
+            SELECT format('%I = %L', key, data->>key)
+            FROM unnest(all_keys) AS key
+        ),
+        ' AND '
+    )
+    ) INTO record_exists, result_record;
+    
+    -- Check if any non-key columns need to be updated
+    IF record_exists THEN
+        needs_update := false;
+        FOR column_name, column_value IN SELECT * FROM jsonb_each(data) LOOP
+            -- Skip null values in updates when column is required
+            -- Skip key columns
+            -- Skip columns not in the data but in the result_record
+            IF NOT (column_name = ANY(all_keys)) AND 
+               column_value IS NOT NULL AND
+               (result_record->>column_name IS DISTINCT FROM column_value#>>'{}') THEN
+                needs_update := true;
+                EXIT;
+            END IF;
+        END LOOP;
+    END IF;
+    
+    -- Build match condition for the MERGE statement
+    FOREACH column_name IN ARRAY all_keys LOOP
+        IF match_condition != '' THEN
+            match_condition := match_condition || ' AND ';
+        END IF;
+        match_condition := match_condition || format('target.%I = source.%I', column_name, column_name);
+    END LOOP;
+    
+    -- Build source CTE clause
+    FOR column_name, column_value IN SELECT * FROM jsonb_each(data) LOOP
+        IF source_clause != '' THEN
+            source_clause := source_clause || ', ';
+        END IF;
+        source_clause := source_clause || format(
+            '%s AS %I',
+            CASE 
+                WHEN jsonb_typeof(column_value) = 'null' THEN 'NULL'
+                ELSE format('%L', column_value#>>'{}')
+            END,
+            column_name
+        );
+        
+        -- Add to insert columns and values
+        IF insert_columns != '' THEN
+            insert_columns := insert_columns || ', ';
+            insert_values := insert_values || ', ';
+        END IF;
+        insert_columns := insert_columns || quote_ident(column_name);
+        insert_values := insert_values || format('source.%I', column_name);
+        
+        -- Add to update clause if not a key column
+        IF NOT (column_name = ANY(all_keys)) AND column_value IS NOT NULL THEN
+            IF update_set_clause != '' THEN
+                update_set_clause := update_set_clause || ', ';
+            END IF;
+            update_set_clause := update_set_clause || format('%I = source.%I', column_name, column_name);
+        END IF;
+    END LOOP;
+    
+    -- Handle case when update_set_clause is empty
+    IF update_set_clause = '' THEN
+        -- Use a dummy update that doesn't change anything
+        update_set_clause := format('%I = target.%I', primary_keys[1], primary_keys[1]);
+    END IF;
+    
+    -- Only perform the operation if we need to create or update
+    IF NOT record_exists OR needs_update THEN
+        -- Construct the MERGE statement without RETURNING (not supported in PG16)
+        merge_query := format('
+            WITH source AS (
+                SELECT %s
+            )
+            MERGE INTO {schema_name}.{table_name} AS target
+            USING source
+            ON %s
+            WHEN MATCHED %s THEN
+                UPDATE SET %s
+            WHEN NOT MATCHED THEN
+                INSERT (%s)
+                VALUES (%s);
+        ',
+        source_clause,
+        match_condition,
+        CASE WHEN needs_update THEN '' ELSE 'AND false' END,
+        update_set_clause,
+        insert_columns,
+        insert_values
+        );
+        
+        -- Execute the MERGE statement
+        EXECUTE merge_query;
+    END IF;
+    
+    -- Now get the final record state
+    EXECUTE format('
+        SELECT to_jsonb(t.*)
+        FROM {schema_name}.{table_name} t
+        WHERE %s
+    ',
+    array_to_string(
+        array(
+            SELECT format('t.%I = %L', key, data->>key)
+            FROM unnest(all_keys) AS key
+        ),
+        ' AND '
+    )
+    ) INTO result_record;
+    
+    -- Determine action performed
+    IF NOT record_exists THEN
+        action_performed := 'inserted';
+    ELSIF needs_update THEN
+        action_performed := 'updated';
+    ELSE
+        action_performed := 'selected';
+    END IF;
+    
+    -- Add the action to the result
+    result_record := jsonb_set(result_record, '{_action}', to_jsonb(action_performed));
+    
+    RETURN result_record;
+END;
+$$ LANGUAGE plpgsql;
+"""
+        
+        # Create a SQL statement with metadata
+        statements.append(
+            SQLStatement(
+                name=f"{table_name}_merge_function",
+                type=SQLStatementType.FUNCTION,
+                sql=function_sql,
+            )
+        )
+        
         return statements
