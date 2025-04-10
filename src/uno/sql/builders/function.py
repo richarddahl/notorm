@@ -33,6 +33,8 @@ class SQLFunctionBuilder:
         self.language = "plpgsql"
         self.volatility = "VOLATILE"
         self.security_definer = False
+        self.db_name = None
+        self.auto_set_admin_role = True
         
     def with_schema(self, schema: str) -> "SQLFunctionBuilder":
         """Set the schema for the function.
@@ -133,6 +135,30 @@ class SQLFunctionBuilder:
         """
         self.security_definer = True
         return self
+        
+    def with_db_name(self, db_name: str) -> "SQLFunctionBuilder":
+        """Set the database name for automatic role handling.
+        
+        Args:
+            db_name: Database name
+            
+        Returns:
+            Self for method chaining
+        """
+        self.db_name = db_name
+        return self
+        
+    def with_auto_role(self, enabled: bool = True) -> "SQLFunctionBuilder":
+        """Set whether to automatically add admin role setter to function body.
+        
+        Args:
+            enabled: Whether to automatically add role setter
+            
+        Returns:
+            Self for method chaining
+        """
+        self.auto_set_admin_role = enabled
+        return self
     
     def build(self) -> str:
         """Build the SQL function statement.
@@ -145,6 +171,19 @@ class SQLFunctionBuilder:
         """
         if not self.schema or not self.name or not self.body:
             raise ValueError("Schema, name, and body are required for a function")
+        
+        # Process the function body to add admin role if requested
+        body = self.body
+        if self.auto_set_admin_role and self.db_name:
+            admin_role = f"{self.db_name}_admin"
+            
+            # Check if the body already contains a SET ROLE statement
+            if not any(line.strip().startswith('SET ROLE') for line in body.splitlines()):
+                # Add the SET ROLE statement after BEGIN if present, otherwise at the start
+                if 'BEGIN' in body:
+                    body = body.replace('BEGIN', f'BEGIN\n    SET ROLE {admin_role};', 1)
+                else:
+                    body = f"SET ROLE {admin_role};\n{body}"
             
         security = "SECURITY DEFINER" if self.security_definer else ""
         
@@ -155,6 +194,6 @@ class SQLFunctionBuilder:
             {self.volatility}
             {security}
             AS $fnct$
-            {self.body}
+            {body}
             $fnct$;
         """

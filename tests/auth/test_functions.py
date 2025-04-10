@@ -57,22 +57,12 @@ class TestUserFunctions:
         ).scalar()
         assert connection.execute(
             text(
-                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_record_status_columns')"
+                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'insert_record_status')"
             )
         ).scalar()
         assert connection.execute(
             text(
-                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_record_status_columns_trigger')"
-            )
-        ).scalar()
-        assert connection.execute(
-            text(
-                "SELECT EXISTS (SELECT FROM pg_proc WHERE proname = 'user_manage_audit_columns')"
-            )
-        ).scalar()
-        assert connection.execute(
-            text(
-                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_manage_audit_columns_trigger')"
+                "SELECT EXISTS (SELECT FROM pg_trigger WHERE tgname = 'user_insert_record_status_trigger')"
             )
         ).scalar()
         assert connection.execute(

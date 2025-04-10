@@ -44,7 +44,7 @@ class InsertMetaRecordFunction(SQLEmitter):
         """
 
         insert_meta_record_sql = (
-            SQLFunctionBuilder()
+            self.get_function_builder()
             .with_schema(self.config.DB_SCHEMA)
             .with_name("insert_meta_record")
             .with_return_type("TRIGGER")
@@ -144,9 +144,9 @@ class RecordStatusFunction(SQLEmitter):
         """
 
         record_status_function_sql = (
-            SQLFunctionBuilder()
+            self.get_function_builder()
             .with_schema(self.config.DB_SCHEMA)
-            .with_name("insert_record_status_columns")
+            .with_name("insert_record_status")
             .with_return_type("TRIGGER")
             .with_body(function_body)
             .build()
@@ -166,8 +166,8 @@ class RecordStatusFunction(SQLEmitter):
             SQLTriggerBuilder()
             .with_schema(self.config.DB_SCHEMA)
             .with_table(self.table.name)
-            .with_name(f"{self.table.name}_record_status_trigger")
-            .with_function("insert_record_status_columns")
+            .with_name(f"{self.table.name}_insert_record_status_trigger")
+            .with_function("insert_record_status")
             .with_timing("BEFORE")
             .with_operation("INSERT OR UPDATE OR DELETE")
             .with_for_each("ROW")
@@ -297,13 +297,14 @@ class InsertPermission(SQLEmitter):
                 SELECT, INSERT, UPDATE, DELETE
             Deleted automatically by the DB via the FKDefinition Constraints ondelete when a meta_type is deleted.
             */
-            INSERT INTO permission(meta_type_id, operation)
+            SET ROLE {self.config.DB_NAME}_admin;
+            INSERT INTO {self.config.DB_SCHEMA}.permission(meta_type_id, operation)
                 VALUES (NEW.id, 'SELECT'::{self.config.DB_SCHEMA}.sqloperation);
-            INSERT INTO permission(meta_type_id, operation)
+            INSERT INTO {self.config.DB_SCHEMA}.permission(meta_type_id, operation)
                 VALUES (NEW.id, 'INSERT'::{self.config.DB_SCHEMA}.sqloperation);
-            INSERT INTO permission(meta_type_id, operation)
+            INSERT INTO {self.config.DB_SCHEMA}.permission(meta_type_id, operation)
                 VALUES (NEW.id, 'UPDATE'::{self.config.DB_SCHEMA}.sqloperation);
-            INSERT INTO permission(meta_type_id, operation)
+            INSERT INTO {self.config.DB_SCHEMA}.permission(meta_type_id, operation)
                 VALUES (NEW.id, 'DELETE'::{self.config.DB_SCHEMA}.sqloperation);
             RETURN NEW;
         END;
@@ -370,9 +371,9 @@ class ValidateGroupInsert(SQLEmitter):
         function_body = f"""
         DECLARE
             group_count INT4;
-            tenanttype tenanttype;
+            tenanttype {self.config.DB_SCHEMA}.tenanttype;
         BEGIN
-            SELECT tenant_type INTO tenanttype
+            SELECT {self.config.DB_SCHEMA}.tenant_type INTO tenanttype
             FROM {self.config.DB_SCHEMA}.tenant
             WHERE id = NEW.tenant_id;
 

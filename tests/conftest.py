@@ -7,6 +7,7 @@ This module contains the global fixtures for the tests in all test modules.
 Each test module has its own conftest.py file that containts the fixtures for that module.
 """
 import asyncio
+import logging
 
 import pytest
 import importlib
@@ -19,8 +20,21 @@ from uno.database.manager import DBManager
 from uno.settings import uno_settings
 
 from uno.database.engine import async_session, sync_connection
-
-import pytest
+from uno.settings import uno_settings
+from uno.database.engine import SyncEngineFactory
+from uno.database.manager import DBManager
+from uno.sql.emitters.database import (
+    DropDatabaseAndRoles,
+    CreateRolesAndDatabase,
+    CreateSchemasAndExtensions,
+    RevokeAndGrantPrivilegesAndSetSearchPaths,
+    CreatePGULID,
+    CreateTokenSecret,
+    GrantPrivileges,
+    SetRole,
+)
+from uno.sql.emitters.table import InsertMetaRecordFunction
+from uno.meta.sqlconfigs import MetaTypeSQLConfig
 
 
 def db_column(
@@ -34,10 +48,42 @@ def db_column(
 
 @pytest.fixture(scope="module")
 def test_db():
-    db = DBManager()
-    db.drop_db()
-    db.create_db()
-    return db
+    # Initialize a logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    # Initialize the engine factory with the logger
+    engine_factory = SyncEngineFactory(logger=logger)
+
+    # Define all needed SQL emitters
+    sql_emitters = {
+        "drop_database_and_roles": DropDatabaseAndRoles,
+        "create_roles_and_database": CreateRolesAndDatabase,
+        "create_schemas_and_extensions": CreateSchemasAndExtensions,
+        "revoke_and_grant_privileges": RevokeAndGrantPrivilegesAndSetSearchPaths,
+        "set_role": SetRole,
+        "create_token_secret": CreateTokenSecret,
+        "create_pgulid": CreatePGULID,
+        "grant_privileges": GrantPrivileges,
+        "insert_meta_record": InsertMetaRecordFunction,
+        "meta_type": MetaTypeSQLConfig,
+    }
+
+    # Instantiate DBManager with all required parameters
+    db_manager = DBManager(
+        config=uno_settings,
+        logger=logger,
+        engine_factory=engine_factory,
+        sql_emitters=sql_emitters,
+    )
+
+    db_manager.drop_db()
+    db_manager.create_db()
+    return True
 
 
 @pytest.fixture(scope="function")

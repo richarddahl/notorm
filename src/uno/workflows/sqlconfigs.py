@@ -4,9 +4,9 @@
 
 
 from uno.sql.classes import SQLConfig
-from uno.sql.tablesql import (
+from uno.sql.emitters.table import (
     AlterGrants,
     InsertMetaType,
 )
-from uno.sql.graphsql import GraphSQLEmitter
+from uno.sql.emitters.graph import GraphSQLEmitter
 from uno.meta.models import MetaTypeModel, MetaRecordModel

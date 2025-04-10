@@ -474,19 +474,38 @@ class DropDatabaseAndRoles(SQLEmitter):
         """
         statements = []
 
-        # Generate drop database SQL
+        # Generate drop database SQL - separate each statement to avoid transaction issues
         db_name = self.config.DB_NAME
 
-        drop_database_sql = f"""
-        -- Drop the database if it exists
-        DROP DATABASE IF EXISTS {db_name} WITH (FORCE);
+        # First statement: Terminate existing connections
+        terminate_connections_sql = f"""
+        -- Terminate all existing connections to the database
+        SELECT pg_terminate_backend(pid)
+        FROM pg_stat_activity
+        WHERE datname = '{db_name}'
+        AND pid <> pg_backend_pid();
         """
 
-        # Add the statement to the list
+        # Add terminate connections statement to the list
+        statements.append(
+            SQLStatement(
+                name="terminate_connections",
+                type=SQLStatementType.FUNCTION,
+                sql=terminate_connections_sql,
+            )
+        )
+
+        # Second statement: Drop the database
+        drop_database_sql = f"""
+        -- Drop the database if it exists (without force)
+        DROP DATABASE IF EXISTS {db_name};
+        """
+
+        # Add drop database statement to the list
         statements.append(
             SQLStatement(
                 name="drop_database",
-                type=SQLStatementType.FUNCTION,
+                type=SQLStatementType.DATABASE,
                 sql=drop_database_sql,
             )
         )

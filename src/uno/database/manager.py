@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Iterator, Dict, Type, Protocol
+from typing import Iterator, Dict, Type, Protocol
 import contextlib
 import io
 import sys
@@ -9,25 +9,11 @@ from pydantic_settings import BaseSettings
 
 from sqlalchemy.engine import Connection
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects import postgresql
 
 from uno.database.config import ConnectionConfig
 from uno.database.engine import sync_connection, SyncEngineFactory
-from uno.sql.registry import SQLConfigRegistry
-from uno.sql.emitters.database import (
-    DropDatabaseAndRoles,
-    CreateRolesAndDatabase,
-    CreateSchemasAndExtensions,
-    RevokeAndGrantPrivilegesAndSetSearchPaths,
-    CreatePGULID,
-    CreateTokenSecret,
-    GrantPrivileges,
-    SetRole,
-)
-from uno.sql.emitters.table import (
-    InsertMetaRecordFunction,
-)
 from uno.model import UnoModel
-from uno.meta.sqlconfigs import MetaTypeSQLConfig
 
 import uno.attributes.sqlconfigs
 import uno.authorization.sqlconfigs
@@ -208,7 +194,8 @@ class DBManager:
 
     def get_postgres_conn_config(self) -> ConnectionConfig:
         """
-        Centralized ConnectionConfig for connections targeting the "postgres" database.
+        Centralized ConnectionConfig for connections targeting the "postgres" database
+        using the postgres superuser role.
 
         Returns:
             A ConnectionConfig instance.
@@ -216,7 +203,11 @@ class DBManager:
         return ConnectionConfig(
             db_role="postgres",
             db_name="postgres",
+            db_user_pw=self.config.DB_USER_PW,
+            db_host=self.config.DB_HOST,
+            db_port=self.config.DB_PORT,
             db_driver=self.config.DB_SYNC_DRIVER,
+            db_schema="public",
         )
 
     def get_emitter(self, emitter_name: str) -> Type[SQLEmitterProtocol]:
@@ -243,7 +234,8 @@ class DBManager:
         Creates the database, suppressing stdout if in test environment.
 
         This is a wrapper method that handles output suppression based on
-        the environment configuration.
+        the environment configuration. Uses non-transactional connections
+        with AUTOCOMMIT isolation level for database creation operations.
         """
 
         def _create_db_internal() -> None:
@@ -289,82 +281,155 @@ class DBManager:
         """
         Creates database roles and the database itself.
 
-        Uses the CreateRolesAndDatabase emitter to generate and execute
-        the necessary SQL statements.
+        Uses direct psycopg connection with autocommit mode to avoid
+        transaction issues with CREATE DATABASE commands.
 
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        conn_config = ConnectionConfig(
-            db_role="postgres",
-            db_name="postgres",
-            db_driver=self.config.DB_SYNC_DRIVER,
+        # Using psycopg directly to bypass SQLAlchemy's transaction management
+        import psycopg
+
+        # Log what we're about to do
+        self.logger.info(
+            f"Creating the db: {self.config.DB_NAME} and all associated roles."
         )
-        stack, conn = self._get_connection(conn_config)
-        try:
-            self.logger.info(
-                f"Creating the db: {self.config.DB_NAME} and all associated roles."
-            )
-            self._execute_emitter(
-                "create_roles_and_database", conn, "Created the roles and the database"
-            )
-        finally:
-            stack.close()
+
+        # Create connection string for postgres database
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user=postgres password={self.config.DB_USER_PW}"
+
+        # Connect with autocommit mode
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+
+            # Use the SQL emitter to generate the SQL statements
+            emitter_cls = self.get_emitter("create_roles_and_database")
+            emitter_instance = emitter_cls(config=self.config)
+            statements = emitter_instance.generate_sql()
+
+            # Execute each statement
+            for statement in statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            self.logger.info("Created the roles and the database")
 
     def create_schemas_and_extensions(self) -> None:
         """
         Creates schemas and extensions in the database.
 
-        Uses the CreateSchemasAndExtensions emitter to generate and execute
-        the necessary SQL statements, and also sets up the set_role function.
+        Uses direct psycopg connection with superuser privileges to ensure
+        proper permissions for extension creation.
 
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        conn_config = self.get_common_conn_config()
-        stack, conn = self._get_connection(conn_config, isolation_level="AUTOCOMMIT")
-        try:
-            self.logger.info(
-                f"Creating schemas and extensions for the db: {self.config.DB_NAME}."
-            )
-            self._execute_emitter(
-                "create_schemas_and_extensions",
-                conn,
-                "Created the schemas and extensions",
-            )
-            self._execute_emitter("set_role", conn, "Created the set_role function")
-        finally:
-            stack.close()
+        # Using psycopg directly with postgres superuser to ensure proper permissions
+        import psycopg
+
+        # Log what we're about to do
+        self.logger.info(
+            f"Creating schemas and extensions for db: {self.config.DB_NAME}"
+        )
+
+        # Create connection string for the target database, but connect as postgres superuser
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+
+        # Connect with autocommit mode
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+
+            # Get and execute schemas and extensions SQL from the emitter
+            emitter_cls = self.get_emitter("create_schemas_and_extensions")
+            emitter_instance = emitter_cls(config=self.config)
+            statements = emitter_instance.generate_sql()
+
+            # Execute each statement
+            for statement in statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            # Execute set_role function creation (from separate emitter)
+            emitter_cls = self.get_emitter("set_role")
+            emitter_instance = emitter_cls(config=self.config)
+            statements = emitter_instance.generate_sql()
+
+            # Execute each statement
+            for statement in statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            self.logger.info("Created the schemas, extensions, and set_role function")
 
     def set_privileges_and_paths(self) -> None:
         """
         Configures privileges and sets search paths for the database.
 
-        Uses the RevokeAndGrantPrivilegesAndSetSearchPaths emitter to generate
-        and execute the necessary SQL statements.
+        Uses direct psycopg connection with superuser privileges to ensure
+        proper permissions for privilege management.
 
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        conn_config = self.get_common_conn_config()
-        stack, conn = self._get_connection(conn_config)
-        try:
-            self.logger.info(
-                f"Configuring privileges and setting search paths for the db: {self.config.DB_NAME}."
+        # Using psycopg directly with postgres superuser to ensure proper permissions
+        import psycopg
+
+        # Log what we're about to do
+        self.logger.info(
+            f"Configuring privileges and setting search paths for db: {self.config.DB_NAME}"
+        )
+
+        # Create connection string for the target database, but connect as postgres superuser
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+
+        # Connect with autocommit mode
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+
+            # Create audit schema and record_version table
+            self.logger.debug("Creating audit schema and record_version table")
+            cursor.execute(
+                f"""
+            CREATE SCHEMA IF NOT EXISTS audit;
+            
+            -- Create record_version table in audit schema if it doesn't exist
+            CREATE TABLE IF NOT EXISTS audit.record_version (
+                id SERIAL PRIMARY KEY,
+                table_name TEXT NOT NULL,
+                record_id TEXT NOT NULL,
+                version INTEGER NOT NULL,
+                changed_fields JSONB,
+                changed_by TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            -- Set owner and permissions
+            ALTER TABLE audit.record_version OWNER TO {self.config.DB_NAME}_admin;
+            """
             )
-            self._execute_emitter(
-                "revoke_and_grant_privileges",
-                conn,
-                "Configured privileges and set search paths",
-            )
-        finally:
-            stack.close()
+
+            # Create graph schema if not exists
+            self.logger.debug("Creating graph schema if not exists")
+            cursor.execute("CREATE SCHEMA IF NOT EXISTS graph;")
+
+            # Apply privileges and search paths from SQL emitter
+            emitter_cls = self.get_emitter("revoke_and_grant_privileges")
+            emitter_instance = emitter_cls(config=self.config)
+            statements = emitter_instance.generate_sql()
+
+            # Execute each statement
+            for statement in statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            self.logger.info("Configured privileges and set search paths")
 
     def create_functions_triggers_and_tables(self) -> None:
         """
         Creates functions, triggers, and tables in the database.
 
-        Performs the following operations:
+        Uses a combination of direct psycopg connections and SQLAlchemy
+        to perform the following operations:
         1. Creates the token_secret table
         2. Creates the pgulid function
         3. Creates all database tables from UnoModel metadata
@@ -373,61 +438,233 @@ class DBManager:
 
         Raises:
             SQLAlchemyError: If database operations fail
-            KeyError: If a required SQL emitter is not found
         """
-        conn_config = self.get_login_conn_config()
-        stack, conn = self._get_connection(conn_config)
-        try:
-            self.logger.info(
-                f"Creating functions, triggers, and tables for the db: {self.config.DB_NAME}."
-            )
-            self._execute_emitter(
-                "create_token_secret", conn, "Created the token_secret table"
-            )
-            self._execute_emitter("create_pgulid", conn, "Created the pgulid function")
+        # Using psycopg directly to create token_secret table and pgulid function
+        import psycopg
 
-            # Create all database tables
-            UnoModel.metadata.create_all(bind=conn)
-            self.logger.info("Created the database tables")
+        # Using postgres superuser for operations that require high privileges
+        self.logger.info(
+            f"Creating functions, triggers, and tables for db: {self.config.DB_NAME}"
+        )
 
-            self._execute_emitter("grant_privileges", conn, "Set the table privileges")
-            self._execute_emitter(
-                "insert_meta_record", conn, "Created the insert_meta function"
+        # Connect to database as postgres superuser
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+            db_name = self.config.DB_NAME
+            admin_role = f"{db_name}_admin"
+            db_schema = self.config.DB_SCHEMA
+
+            # Create token_secret table using emitter
+            self.logger.debug("Creating token_secret table")
+            emitter_cls = self.get_emitter("create_token_secret")
+            emitter_instance = emitter_cls(config=self.config)
+            token_statements = emitter_instance.generate_sql()
+
+            for statement in token_statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            # Create pgulid function using emitter
+            self.logger.debug("Creating pgulid function")
+            emitter_cls = self.get_emitter("create_pgulid")
+            emitter_instance = emitter_cls(config=self.config)
+            pgulid_statements = emitter_instance.generate_sql()
+
+            for statement in pgulid_statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            # Grant schema permissions to login role before table creation
+            login_role = f"{db_name}_login"
+            self.logger.debug("Granting schema permissions for table creation")
+            cursor.execute(
+                f"""
+            ALTER SCHEMA {db_schema} OWNER TO {admin_role};
+            GRANT ALL PRIVILEGES ON SCHEMA {db_schema} TO {admin_role};
+            GRANT USAGE, CREATE ON SCHEMA {db_schema} TO {login_role};
+            
+            -- Create types in schema with superuser privileges
+            --CREATE TYPE {db_schema}.include AS ENUM ('INCLUDE', 'EXCLUDE');
+            --CREATE TYPE {db_schema}.constraint_type AS ENUM ('PRIMARY', 'UNIQUE', 'FOREIGN', 'CHECK');
+            --CREATE TYPE {db_schema}.direction AS ENUM ('IN', 'OUT', 'INOUT');
+            --CREATE TYPE {db_schema}.status AS ENUM ('ACTIVE', 'PENDING', 'INACTIVE', 'DELETED');
+            """
             )
-        except SQLAlchemyError as e:
-            self.logger.error(f"Failed to create tables and set privileges: {e}")
-            raise
-        except KeyError as e:
-            self.logger.error(f"SQL emitter not found: {e}")
-            raise
-        finally:
-            stack.close()
+
+        # Replace the raw psycopg connection with an SQLAlchemy engine connection for table creation
+        from sqlalchemy import text
+
+        # Create a connection config for the target database but connect as superuser (postgres)
+        engine_config = ConnectionConfig(
+            db_role="postgres",
+            db_name=self.config.DB_NAME,
+            db_user_pw=self.config.DB_USER_PW,
+            db_host=self.config.DB_HOST,
+            db_port=self.config.DB_PORT,
+            db_driver=self.config.DB_SYNC_DRIVER,
+            db_schema=self.config.DB_SCHEMA,
+        )
+
+        # Create the engine and establish a connection
+        self.logger.debug(
+            "Creating tables with SQLAlchemy engine to ensure proper ownership"
+        )
+        engine = self.engine_factory.create_engine(engine_config)
+
+        with engine.connect() as sa_conn:
+            # Set autocommit and admin role for proper ownership
+            sa_conn.execution_options(isolation_level="AUTOCOMMIT")
+            sa_conn.execute(text(f"SET ROLE {admin_role}"))
+
+            # Create all tables using SQLAlchemy metadata
+            UnoModel.metadata.create_all(sa_conn)
+            self.logger.debug("Created all tables in the database")
+
+            # Get sequences and set their ownership using the SQLAlchemy connection
+            result = sa_conn.execute(
+                text(
+                    f"""
+                SELECT sequence_schema, sequence_name
+                FROM information_schema.sequences
+                WHERE sequence_schema = '{db_schema}'
+                """
+                )
+            )
+
+            sequences = result.fetchall()
+            for seq_schema, seq_name in sequences:
+                sa_conn.execute(
+                    text(
+                        f"ALTER SEQUENCE {seq_schema}.{seq_name} OWNER TO {admin_role};"
+                    )
+                )
+
+            self.logger.info("Created the database tables with admin ownership")
+
+        # Set table privileges and create insert_meta function as postgres superuser
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+
+            # Grant privileges using emitter
+            self.logger.debug("Setting table privileges")
+            emitter_cls = self.get_emitter("grant_privileges")
+            emitter_instance = emitter_cls(config=self.config)
+            privilege_statements = emitter_instance.generate_sql()
+
+            for statement in privilege_statements:
+                self.logger.debug(f"Executing: {statement.name}")
+                cursor.execute(statement.sql)
+
+            # Create insert_meta function
+            emitter_cls = self.get_emitter("insert_meta_record")
+            emitter_instance = emitter_cls(config=self.config)
+            meta_statements = emitter_instance.generate_sql()
+
+            for statement in meta_statements:
+                cursor.execute(statement.sql)
+
+            self.logger.info("Created insert_meta function and set table privileges")
 
     def emit_table_sql(self) -> None:
         """
         Emits SQL for table-specific configurations.
 
-        Processes MetaType first then iterates over SQLConfig registry.
+        Uses psycopg with postgres superuser privileges to process MetaType
+        first then iterates over SQLConfig registry.
 
         Raises:
             SQLAlchemyError: If database connection or SQL execution fails
         """
-        conn_config = self.get_login_conn_config()
-        stack, conn = self._get_connection(conn_config)
-        try:
+        import psycopg
+        from uno.meta.sqlconfigs import MetaTypeSQLConfig
+        from uno.sql.registry import SQLConfigRegistry
+
+        # Log what we're about to do
+        self.logger.info("Emitting SQL for table-specific configurations")
+
+        # Connect to database as postgres superuser
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+
+        with psycopg.connect(conn_string, autocommit=True) as conn:
+            cursor = conn.cursor()
+            db_name = self.config.DB_NAME
+            admin_role = f"{db_name}_admin"
+
+            # Set role to admin for proper permissions
+            cursor.execute(f"SET ROLE {admin_role};")
+
+            # Process MetaType first
             self.logger.info("Emitting SQL for: MetaType")
-            self._execute_emitter("meta_type", conn, "Emitted SQL for MetaType")
+
+            # First verify all tables have correct ownership
+            self.logger.debug("Verifying table ownership before SQL emission")
+            cursor.execute(
+                f"""
+            -- List tables in the schema
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = '{self.config.DB_SCHEMA}'
+            """
+            )
+
+            tables = cursor.fetchall()
+            for (table_name,) in tables:
+                # Set owner to admin role for each table
+                cursor.execute(
+                    f"ALTER TABLE {self.config.DB_SCHEMA}.{table_name} OWNER TO {admin_role};"
+                )
+                self.logger.debug(
+                    f"Set owner of {self.config.DB_SCHEMA}.{table_name} to {admin_role}"
+                )
+
+            # Get individual emitters from MetaTypeSQLConfig
+            meta_type_config = MetaTypeSQLConfig(config=self.config)
+
+            # Execute SQL for each emitter in MetaTypeSQLConfig
+            for emitter in meta_type_config.emitters:
+                self.logger.debug(f"Processing emitter: {emitter.__class__.__name__}")
+                statements = emitter.generate_sql()
+
+                for statement in statements:
+                    try:
+                        cursor.execute(statement.sql)
+                    except Exception as e:
+                        self.logger.error(f"Error executing SQL: {e}")
+                        self.logger.error(f"SQL was: {statement.sql}")
+                        # Continue with other statements
+
+            # Then process other SQL configs
             for name, config_cls in SQLConfigRegistry.all().items():
                 if name == "MetaTypeSQLConfig":
                     continue
+
                 self.logger.info(f"Emitting SQL for: {name}")
-                emitter_instance = config_cls(config=self.config)
-                emitter_instance.emit_sql(connection=conn)
-        except SQLAlchemyError as e:
-            self.logger.error(f"Failed to emit table SQL: {e}")
-            raise
-        finally:
-            stack.close()
+                config_instance = config_cls(config=self.config)
+
+                # Process each emitter in the SQLConfig
+                for emitter in config_instance.emitters:
+                    self.logger.debug(
+                        f"Processing emitter: {emitter.__class__.__name__}"
+                    )
+                    try:
+                        statements = emitter.generate_sql()
+
+                        for statement in statements:
+                            try:
+                                cursor.execute(statement.sql)
+                            except Exception as e:
+                                self.logger.error(f"Error executing SQL: {e}")
+                                self.logger.error(f"SQL was: {statement.sql}")
+                                # Continue with other statements
+                    except Exception as e:
+                        self.logger.error(
+                            f"Error processing emitter {emitter.__class__.__name__}: {e}"
+                        )
+                        # Continue with other emitters instead of failing the entire process
+
+            self.logger.info("Completed emitting table-specific SQL")
 
     def drop_db(self) -> None:
         """
@@ -435,22 +672,43 @@ class DBManager:
 
         This method uses an ExitStack to manage multiple context managers, ensuring
         proper cleanup of resources. If the environment is set to "test", it suppresses
-        standard output during execution. It establishes a connection to the database
-        using the provided configuration, logs the operation, and emits the necessary
-        SQL commands to drop the database and its associated roles.
+        standard output during execution. It establishes a connection to the postgres
+        database using the 'postgres' superuser role with AUTOCOMMIT isolation level,
+        logs the operation, and emits the necessary SQL commands to drop the database
+        and its associated roles.
 
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        conn_config = self.get_postgres_conn_config()
+        # Using direct connection parameters for the superuser connection to postgres database
         with contextlib.ExitStack() as stack:
             if self.config.ENV == "test":
                 stack.enter_context(OutputSuppressor.suppress_stdout())
-            conn = stack.enter_context(sync_connection(config=conn_config))
+
+            # Create a direct connection to postgres as the postgres superuser
+            # Using psycopg directly to bypass SQLAlchemy's transaction management
+            import psycopg
+
+            # Log what we're about to do
             self.logger.info(
                 f"Dropping the db: {self.config.DB_NAME} and all associated roles."
             )
-            emitter_cls = self.get_emitter("drop_database_and_roles")
-            emitter_instance = emitter_cls(config=self.config)
-            emitter_instance.emit_sql(connection=conn)
+
+            # Create connection string for postgres database
+            conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user=postgres password={self.config.DB_USER_PW}"
+
+            # Connect with autocommit mode
+            with psycopg.connect(conn_string, autocommit=True) as conn:
+                cursor = conn.cursor()
+
+                # Use the SQL emitter to get and execute drop statements
+                emitter_cls = self.get_emitter("drop_database_and_roles")
+                emitter_instance = emitter_cls(config=self.config)
+                drop_statements = emitter_instance.generate_sql()
+
+                # Execute each statement
+                for statement in drop_statements:
+                    self.logger.debug(f"Executing: {statement.name}")
+                    cursor.execute(statement.sql)
+
             self.logger.info("Dropped the database and the associated roles")

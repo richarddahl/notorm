@@ -22,6 +22,8 @@ from uno.errors import UnoError
 from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.observers import SQLObserver, BaseObserver
 
+# No additional imports needed
+
 
 class SQLGenerator(Protocol):
     """Protocol for objects that can generate SQL statements."""
@@ -162,6 +164,25 @@ class SQLEmitter(BaseModel):
             connection: Database connection
             statements: List of SQL statements to execute
         """
+        # First set the role to admin to ensure we have proper permissions
+        # IMPORTANT: Always use the config's DB_NAME for role setting, not the connection's database
+        db_name = None
+        if self.config:
+            db_name = self.config.DB_NAME
+            
+        if db_name:
+            # We need to handle the special case where we're dropping a database
+            # In that case, we're connected to 'postgres' database but want to affect the target database
+            if self.__class__.__name__ == 'DropDatabaseAndRoles':
+                # No need to set role when connected as postgres user to postgres db
+                self.logger.debug("Connected as postgres, no need to set role for dropping database")
+            else:
+                # For regular operations, set to the admin role for the target database
+                admin_role = f"{db_name}_admin"
+                connection.execute(text(f"SET ROLE {admin_role};"))
+                self.logger.debug(f"Set role to {admin_role}")
+            
+        # Execute the statements
         for statement in statements:
             self.logger.debug(f"Executing SQL statement: {statement.name}")
             connection.execute(text(statement.sql))
@@ -269,6 +290,22 @@ class SQLEmitter(BaseModel):
         if isinstance(observer, BaseObserver) and observer not in cls.observers:
             cls.observers.append(observer)
 
+    def get_function_builder(self) -> "SQLFunctionBuilder":
+        """Get a pre-configured SQL function builder with database name set.
+        
+        Returns:
+            SQLFunctionBuilder: A function builder with database name set
+        """
+        from uno.sql.builders.function import SQLFunctionBuilder
+        builder = SQLFunctionBuilder()
+        
+        if self.connection_config:
+            builder.with_db_name(self.connection_config.db_name)
+        elif self.config:
+            builder.with_db_name(self.config.DB_NAME)
+            
+        return builder
+        
     def format_sql_template(self, template: str, **kwargs) -> str:
         """Format an SQL template with variables.
 

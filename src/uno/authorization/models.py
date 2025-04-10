@@ -395,6 +395,7 @@ class PermissionModel(UnoModel):
             SQLOperation,
             name="sqloperation",
             create_type=True,
+            schema=uno_settings.DB_SCHEMA,
         ),
         doc="sql.SQL Operation",
     )

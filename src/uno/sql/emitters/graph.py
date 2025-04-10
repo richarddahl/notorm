@@ -463,9 +463,9 @@ class Node(BaseModel):
             SQL statement for creating label
         """
         # Pass a dummy config to avoid None issues if self.config is None
-        dummy_config = type('obj', (object,), {'DB_NAME': 'app'})
+        dummy_config = type("obj", (object,), {"DB_NAME": "app"})
         config_to_use = self.config if self.config is not None else dummy_config
-        
+
         edges_sql = "\n".join(edge.label_sql(config_to_use) for edge in self.edges)
         db_name = config_to_use.DB_NAME
         reader_role = f"{db_name}_reader"
@@ -512,6 +512,7 @@ class Node(BaseModel):
                     'MERGE (v:{self.label} {{id: %s}}) SET v.val = %s',
                     quote_nullable(NEW.id), quote_nullable(column_text)
                 );
+                SET LOCAL search_path TO ag_catalog;
                 EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                 {create_statements}
             END IF;
@@ -533,6 +534,7 @@ class Node(BaseModel):
             IF NEW.{self.column.name} IS NOT NULL AND NEW.{self.column.name} != OLD.{self.column.name} THEN
                 IF OLD.{self.column.name} IS NULL THEN 
                     cypher_query := FORMAT('CREATE (v:{self.label} {{val: %s}})', quote_nullable(NEW.{self.column.name}));
+                    SET LOCAL search_path TO ag_catalog;
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                     {create_statements}
                 ELSE
@@ -540,6 +542,7 @@ class Node(BaseModel):
                         'MATCH (v:{self.label} {{val: %s}}) SET v.val = %s',
                         quote_nullable(OLD.{self.column.name}), quote_nullable(NEW.{self.column.name})
                     );
+                    SET LOCAL search_path TO ag_catalog;
                     EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $$%s$$) AS (result agtype)', cypher_query);
                     {delete_statements}
                     {create_statements}
@@ -567,6 +570,7 @@ class Node(BaseModel):
             /*
             Match and detach delete node using its id.
             */
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                 MATCH (v: {{id: %s}})
                 DETACH DELETE v
@@ -583,6 +587,7 @@ class Node(BaseModel):
         """
         sql_str = textwrap.dedent(
             f"""
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('SELECT * FROM cypher(''graph'', $graph$
                 MATCH (v:{self.label})
                 DETACH DELETE v
@@ -623,8 +628,12 @@ class Edge(BaseModel):
             SQL statement for creating edge label
         """
         # Create a dummy config object if neither config nor self.config is available
-        dummy_config = type('obj', (object,), {'DB_NAME': 'app'})
-        conf = config if config is not None else (self.config if self.config is not None else dummy_config)
+        dummy_config = type("obj", (object,), {"DB_NAME": "app"})
+        conf = (
+            config
+            if config is not None
+            else (self.config if self.config is not None else dummy_config)
+        )
         db_name = conf.DB_NAME
         reader_role = f"{db_name}_reader"
         writer_role = f"{db_name}_writer"
@@ -649,6 +658,7 @@ class Edge(BaseModel):
         """
         sql_str = textwrap.dedent(
             f"""
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('
                 SELECT * FROM cypher(''graph'', $$
                     MATCH (l:{self.source_node_label} {{id: %s}})
@@ -685,6 +695,7 @@ class Edge(BaseModel):
         """
         sql_str = textwrap.dedent(
             f"""
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('
                 SELECT * FROM cypher(''graph'', $$
                     MATCH (l:{self.source_node_label} {{id: %s}})
@@ -730,6 +741,7 @@ class Edge(BaseModel):
         """
         sql_str = textwrap.dedent(
             f"""
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('
                 SELECT * FROM cypher(''graph'', $$
                     MATCH (l:{self.source_node_label} {{id: %s}})
@@ -752,6 +764,7 @@ class Edge(BaseModel):
         """
         sql_str = textwrap.dedent(
             f"""
+            SET LOCAL search_path TO ag_catalog;
             EXECUTE FORMAT('
                 SELECT * FROM cypher(''graph'', $$
                     MATCH [e:{self.label}]
