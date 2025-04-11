@@ -1,8 +1,8 @@
-# Uno Framework Modernization Roadmap
+# Uno Framework Modernization Roadmap (April 2025 Update)
 
-This roadmap outlines the key improvements planned for the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices.
+This roadmap outlines the key improvements planned for the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices. Items marked with [x] have been completed.
 
-## Phase 1: Core Architecture Improvements
+## Phase 1: Core Architecture Improvements (✅ Completed)
 
 ### 1. Complete Protocol-Based Design
 - [x] Implement core dependency injection system with protocols
@@ -22,79 +22,85 @@ This roadmap outlines the key improvements planned for the Uno framework to make
 - [x] Support both sync and async event handlers
 - [x] Add event persistence for reliable processing
 
-## Phase 2: Performance and Scalability
+## Phase 2: Performance and Scalability (Partially Completed)
 
 ### 4. CQRS Pattern Implementation
-- [ ] Separate command (write) and query (read) models
-- [ ] Create specialized command handlers
-- [ ] Implement optimized query handlers
-- [ ] Add command/query validation
+- [x] Separate command (write) and query (read) models
+- [x] Create specialized command handlers
+- [x] Implement optimized query handlers
+- [x] Add command/query validation
 
-### 5. Async-First Architecture
+### 5. Read Model Projections
+- [x] Create specialized read models for efficient querying
+- [x] Implement projection system for maintaining read models
+- [x] Add event handlers to update projections
+- [x] Optimize read models for specific query patterns
+
+### 6. Async-First Architecture
 - [ ] Convert remaining synchronous code to async
 - [ ] Use async context managers throughout
 - [ ] Implement proper cancellation handling
 - [ ] Add task management utilities
 
-### 6. Resource Management
+### 7. Resource Management
 - [ ] Implement connection pooling with configurable limits
 - [ ] Add proper resource cleanup through context managers
 - [ ] Use structured concurrency patterns
 - [ ] Implement circuit breaker pattern for external services
 
-### 7. Performance Optimization
+### 8. Performance Optimization
 - [ ] Add query result caching layer
 - [ ] Implement dataloader pattern for efficient batch loading
 - [ ] Use connection streaming for large results
 - [ ] Add query optimization hints
 
-## Phase 3: Developer Experience and Quality
+## Phase 3: Developer Experience and Quality (Not Started)
 
-### 8. Error Handling Framework
+### 9. Error Handling Framework
 - [ ] Create a comprehensive error hierarchy
 - [ ] Implement result objects (Either pattern)
 - [ ] Add structured logging with contextual information
 - [ ] Create error catalog for consistent error codes
 
-### 9. Testing Framework
+### 10. Testing Framework
 - [ ] Implement property-based testing for complex operations
 - [ ] Add integration test harness with containerized dependencies
 - [ ] Create snapshot testing for complex objects
 - [ ] Add performance regression tests
 
-### 10. Configuration Management
+### 11. Configuration Management
 - [ ] Implement environment-specific configuration profiles
 - [ ] Add validation for configuration values
 - [ ] Support hot reloading of configuration
 - [ ] Create configuration schema documentation
 
-## Phase 4: Extensibility and Maintenance
+## Phase 4: Extensibility and Maintenance (Partially Completed)
 
-### 11. Plugin Architecture
+### 12. Plugin Architecture
 - [ ] Create plugin system for extending functionality
 - [ ] Enable hot-swapping of implementations
 - [ ] Support dynamic service registration
 - [ ] Add plugin discovery mechanism
 
-### 12. API Versioning and Evolution
-- [ ] Add proper API versioning strategy
-- [ ] Implement backwards-compatible interfaces
-- [ ] Create deprecation paths for evolving APIs
-- [ ] Add API documentation generation
+### 13. API Versioning and Evolution
+- [x] Add proper API versioning strategy
+- [x] Implement backwards-compatible interfaces
+- [x] Create deprecation paths for evolving APIs
+- [x] Add API documentation generation
 
-### 13. Monitoring and Observability
+### 14. Monitoring and Observability
 - [ ] Add comprehensive metrics collection
 - [ ] Implement distributed tracing
 - [ ] Create health check endpoints
 - [ ] Add performance dashboard
 
-### 14. Modern Packaging
+### 15. Modern Packaging
 - [ ] Move to pyproject.toml-only configuration
 - [ ] Add proper optional dependency groups
 - [ ] Implement semantic versioning
 - [ ] Create CI/CD pipeline for releases
 
-### 15. Documentation Generation
+### 16. Documentation Generation
 - [ ] Auto-generate API documentation from code
 - [ ] Create interactive examples
 - [ ] Document architectural decisions
