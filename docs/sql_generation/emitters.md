@@ -1,22 +1,98 @@
 # SQL Emitters
 
-SQL emitters in uno are components that generate SQL statements for various database objects. They provide a clean and consistent way to create complex SQL without writing raw SQL strings.
+SQL emitters in Uno are components that generate SQL statements for various database objects. They provide a clean and consistent way to create complex SQL without writing raw SQL strings.
+
+## Using Emitters with Dependency Injection
+
+Uno provides a dependency injection system for working with SQL emitters. This approach offers better testability, consistent configuration, and simplified usage patterns:
+
+```python
+from uno.dependencies import get_sql_emitter_factory, get_sql_execution_service
+from uno.sql.emitters.function import FunctionEmitter
+
+# Get services via dependency injection
+factory = get_sql_emitter_factory()
+executor = get_sql_execution_service()
+
+# Create an emitter using the factory
+function_emitter = factory.create_emitter_instance(
+    FunctionEmitter,
+    name="update_timestamp",
+    params=[],
+    return_type="TRIGGER",
+    body="""
+    BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+    END;
+    """,
+    language="plpgsql"
+)
+
+# Execute it with the execution service
+executor.execute_emitter(function_emitter)
+```
+
+### Using Registered Emitters
+
+Standard emitters are registered with the factory:
+
+```python
+from uno.dependencies import get_sql_emitter_factory, get_db_manager
+
+# Get the SQL emitter factory
+emitter_factory = get_sql_emitter_factory()
+
+# Create an emitter by name
+emitter = emitter_factory.get_emitter(
+    "create_pgulid"  # Pre-registered emitter
+)
+
+# Execute the emitter
+db_manager = get_db_manager()
+db_manager.execute_from_emitter(emitter)
+```
+
+### Direct SQL Execution
+
+For simpler cases, you can execute SQL directly:
+
+```python
+from uno.dependencies import get_sql_execution_service
+
+# Get the execution service
+sql_execution = get_sql_execution_service()
+
+# Execute DDL directly
+sql_execution.execute_ddl("""
+CREATE TABLE test (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+""")
+```
 
 ## Base Emitter
 
-The `BaseEmitter` class is the foundation for all SQL emitters. It provides common functionality for SQL generation:
+The SQLEmitter class is the foundation for all SQL emitters. It provides common functionality for SQL generation:
 
 ```python
-from uno.sql.emitter import BaseEmitter
+from uno.sql.emitter import SQLEmitter
+from uno.sql.statement import SQLStatement, SQLStatementType
 
-class CustomEmitter(BaseEmitter):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
+class CustomEmitter(SQLEmitter):
+    """Custom SQL emitter for a specific purpose."""
     
-    def emit(self):
-        """Generate SQL for the model."""
-        return f"-- SQL for {self.model.__tablename__}"
+    def generate_sql(self):
+        """Generate SQL statements."""
+        return [
+            SQLStatement(
+                name="custom_statement",
+                type=SQLStatementType.TABLE,
+                sql="CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT)"
+            )
+        ]
 ```
 
 ## Table Emitter
@@ -40,8 +116,9 @@ class CustomerModel(UnoModel):
 emitter = TableEmitter(model=CustomerModel)
 
 # Generate SQL for the table
-sql = emitter.emit()
-print(sql)
+statements = emitter.generate_sql()
+for statement in statements:
+    print(f"{statement.name}: {statement.sql}")
 ```
 
 The generated SQL will include:
@@ -83,8 +160,9 @@ emitter = FunctionEmitter(
 )
 
 # Generate SQL for the function
-sql = emitter.emit()
-print(sql)
+statements = emitter.generate_sql()
+for statement in statements:
+    print(f"{statement.name}: {statement.sql}")
 ```
 
 ## Trigger Emitter
@@ -105,8 +183,9 @@ emitter = TriggerEmitter(
 )
 
 # Generate SQL for the trigger
-sql = emitter.emit()
-print(sql)
+statements = emitter.generate_sql()
+for statement in statements:
+    print(f"{statement.name}: {statement.sql}")
 ```
 
 ## Security Emitter
@@ -125,8 +204,9 @@ emitter = SecurityEmitter(
 )
 
 # Generate SQL for the security policy
-sql = emitter.emit()
-print(sql)
+statements = emitter.generate_sql()
+for statement in statements:
+    print(f"{statement.name}: {statement.sql}")
 ```
 
 ## Grants Emitter
@@ -144,8 +224,9 @@ emitter = GrantsEmitter(
 )
 
 # Generate SQL for granting permissions
-sql = emitter.emit()
-print(sql)
+statements = emitter.generate_sql()
+for statement in statements:
+    print(f"{statement.name}: {statement.sql}")
 ```
 
 ## Using Emitters Together
@@ -159,11 +240,18 @@ from uno.sql.builders.trigger import TriggerEmitter
 from uno.sql.emitters.security import SecurityEmitter
 from uno.sql.emitters.grants import GrantsEmitter
 
-# Generate table SQL
-table_sql = TableEmitter(model=CustomerModel).emit()
+# Using dependency injection to work with multiple emitters
+from uno.dependencies import get_sql_emitter_factory, get_sql_execution_service
 
-# Generate function SQL
-function_sql = FunctionEmitter(
+# Get services
+factory = get_sql_emitter_factory()
+executor = get_sql_execution_service()
+
+# Create emitters using the factory
+table_emitter = factory.create_emitter_instance(TableEmitter, model=CustomerModel)
+
+function_emitter = factory.create_emitter_instance(
+    FunctionEmitter,
     name="update_customer_status",
     params=[
         {"name": "customer_id", "type": "TEXT"},
@@ -172,52 +260,38 @@ function_sql = FunctionEmitter(
     return_type="INTEGER",
     body="UPDATE customer SET status = new_status WHERE id = customer_id; RETURN 1;",
     language="plpgsql"
-).emit()
+)
 
-# Generate trigger SQL
-trigger_sql = TriggerEmitter(
+trigger_emitter = factory.create_emitter_instance(
+    TriggerEmitter,
     name="customer_update_trigger",
     table="customer",
     events=["INSERT", "UPDATE"],
     timing="AFTER",
     function="log_customer_changes",
     for_each="ROW"
-).emit()
+)
 
-# Generate security SQL
-security_sql = SecurityEmitter(
-    table="customer",
-    policy_name="customer_access_policy",
-    using_expr="(user_id = current_user_id())",
-    check_expr="(user_id = current_user_id())"
-).emit()
+# Execute them in sequence
+executor.execute_emitter(table_emitter)
+executor.execute_emitter(function_emitter)
+executor.execute_emitter(trigger_emitter)
 
-# Generate grants SQL
-grants_sql = GrantsEmitter(
-    table="customer",
-    privileges=["SELECT", "INSERT", "UPDATE"],
-    roles=["app_user", "app_admin"]
-).emit()
+# Or for more complex orchestration, you can register them with standard names
+factory.register_emitter("customer_table", lambda: TableEmitter(model=CustomerModel))
+factory.register_emitter("customer_function", lambda: FunctionEmitter(...))
+factory.register_emitter("customer_trigger", lambda: TriggerEmitter(...))
 
-# Combine all SQL
-complete_sql = f"""
--- Create table
-{table_sql}
+# And then create and execute them by name
+emitters = [
+    factory.get_emitter("customer_table"),
+    factory.get_emitter("customer_function"),
+    factory.get_emitter("customer_trigger")
+]
 
--- Create function
-{function_sql}
-
--- Create trigger
-{trigger_sql}
-
--- Create security policy
-{security_sql}
-
--- Grant permissions
-{grants_sql}
-"""
-
-print(complete_sql)
+# Execute all emitters in a batch
+for emitter in emitters:
+    executor.execute_emitter(emitter)
 ```
 
 ## Table Merge Function Emitter
@@ -225,22 +299,23 @@ print(complete_sql)
 The `TableMergeFunction` emitter generates a PostgreSQL function for merging records using the MERGE command introduced in PostgreSQL 16. It's designed for upsert operations that intelligently handle both inserts and updates based on primary keys or unique constraints.
 
 ```python
+from uno.dependencies import get_sql_emitter_factory, get_sql_execution_service
 from uno.sql.emitters import TableMergeFunction
 from sqlalchemy import Table, MetaData
+
+# Get services
+factory = get_sql_emitter_factory()
+executor = get_sql_execution_service()
 
 # Get a SQLAlchemy table object
 metadata = MetaData()
 table = Table('my_table', metadata, autoload_with=engine)
 
-# Create the merge function emitter
-emitter = TableMergeFunction(table=table)
+# Create the merge function emitter using the factory
+emitter = factory.create_emitter_instance(TableMergeFunction, table=table)
 
-# Generate the SQL for the merge function
-statements = emitter.generate_sql()
-
-# Execute the SQL to create the function
-with engine.connect() as conn:
-    emitter.execute_sql(conn, statements)
+# Execute it with the execution service
+executor.execute_emitter(emitter)
 ```
 
 The generated merge function accepts a JSONB object and performs the following operations:
@@ -265,22 +340,26 @@ The function is particularly useful for integrating with UnoObj's model_dump() d
 
 ## Best Practices
 
-1. **Use Emitters Instead of Raw SQL**: Prefer using emitters over writing raw SQL to ensure consistency and maintainability.
+1. **Use Dependency Injection**: Prefer using the SQL emitter factory and execution service through dependency injection for better testability and consistency.
 
-2. **Separate Concerns**: Use different emitters for different types of database objects.
+2. **Leverage Factory Services**: Use the `get_sql_emitter_factory()` to create emitters with consistent configuration.
 
-3. **Validate SQL**: Test the generated SQL to ensure it's correct and follows your database's requirements.
+3. **Centralize Execution**: Use the `get_sql_execution_service()` for standardized SQL execution.
 
-4. **Use Migrations**: Combine emitters with a migration system to manage database schema changes.
+4. **Separate Concerns**: Use different emitters for different types of database objects.
 
-5. **Document Generated SQL**: Add comments to explain the purpose and behavior of generated SQL.
+5. **Validate SQL**: Test the generated SQL to ensure it's correct and follows your database's requirements.
 
-6. **Leverage PostgreSQL Features**: Use PostgreSQL-specific features when appropriate, such as the MERGE command in PostgreSQL 16+.
+6. **Use Migrations**: Combine emitters with a migration system to manage database schema changes.
 
-7. **Test Edge Cases**: Test SQL generation with special characters, long names, and other edge cases.
+7. **Document Generated SQL**: Add comments to explain the purpose and behavior of generated SQL.
 
-8. **Reuse Common Patterns**: Create helper functions for common SQL generation patterns.
+8. **Leverage PostgreSQL Features**: Use PostgreSQL-specific features when appropriate, such as the MERGE command in PostgreSQL 16+.
 
-9. **Handle Errors**: Implement error handling for SQL execution errors.
+9. **Test Edge Cases**: Test SQL generation with special characters, long names, and other edge cases.
 
-10. **Version Control**: Store generated SQL in version control to track changes.
+10. **Register Common Emitters**: Register frequently used emitters with the factory for easy reuse.
+
+11. **Handle Errors**: Properly handle SQL execution errors by checking validation results.
+
+12. **Maintain Abstraction Layers**: Keep the SQL generation and execution concerns separate from business logic.
