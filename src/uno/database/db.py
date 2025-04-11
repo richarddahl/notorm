@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from typing import Any, Callable, Optional, Type, TypeVar, List, Dict, Tuple, cast
 
 from psycopg import sql
 from asyncpg.exceptions import UniqueViolationError  # type: ignore
@@ -26,6 +27,11 @@ from uno.database.engine import (
 from uno.model import UnoModel
 from uno.errors import UnoError
 from uno.settings import uno_settings
+from uno.core.protocols import (
+    DatabaseSessionProtocol,
+    DatabaseSessionContextProtocol,
+    DatabaseRepository,
+)
 
 
 class IntegrityConflictException(Exception):
@@ -42,11 +48,30 @@ class FilterParam(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-def UnoDBFactory(obj: BaseModel):
-    # Dynamically import async_session to avoid circular imports
-    from uno.database.session import async_session
+T = TypeVar('T', bound=BaseModel)
+K = TypeVar('K')
+
+def UnoDBFactory(
+    obj: BaseModel,
+    session_context_factory: Optional[Type[DatabaseSessionContextProtocol]] = None
+) -> Type[DatabaseRepository[T, K]]:
+    """
+    Factory function that creates a UnoDB class implementing the DatabaseRepository protocol.
     
-    class UnoDB:
+    Args:
+        obj: A BaseModel containing model and filter information
+        session_context_factory: Optional session context class
+        
+    Returns:
+        A UnoDB class that implements the DatabaseRepository protocol
+    """
+    # Dynamically import async_session to avoid circular imports
+    from uno.database.session import AsyncSessionContext
+    
+    # Use provided session factory or default
+    SessionContextClass = session_context_factory or AsyncSessionContext
+    
+    class UnoDB(DatabaseRepository[T, K]):
 
         @classmethod
         def table_keys(cls) -> tuple[list[str], list[list[str]]]:
@@ -83,7 +108,7 @@ def UnoDBFactory(obj: BaseModel):
             return pk_fields, uq_fields
 
         @classmethod
-        async def merge(cls, data):
+        async def merge(cls, data: Dict[str, Any]) -> Any:
             """
             Call the PostgreSQL merge_record function with escaped colons in the data values.
             """
@@ -115,7 +140,9 @@ def UnoDBFactory(obj: BaseModel):
                 .as_string()
             )
             try:
-                async with async_session() as session:
+                # Create a session context that implements the protocol
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("writer"))
 
                     # Execute raw SQL
@@ -130,10 +157,11 @@ def UnoDBFactory(obj: BaseModel):
         @classmethod
         async def create(
             cls,
-            schema: BaseModel,
-        ) -> tuple[BaseModel, bool]:
+            schema: T,
+        ) -> Tuple[T, bool]:
             try:
-                async with async_session() as session:
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("writer"))
                     session.add(schema)
                     await session.commit()
@@ -152,12 +180,13 @@ def UnoDBFactory(obj: BaseModel):
         @classmethod
         async def update(
             cls,
-            to_db_model: BaseModel,
-            **kwargs,
-        ) -> UnoModel:
+            to_db_model: T,
+            **kwargs: Any,
+        ) -> T:
             try:
                 obj = await cls.get(to_db_model=to_db_model, **kwargs)
-                async with async_session() as session:
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("writer"))
                     session.add(to_db_model)
                     await session.commit()
@@ -174,7 +203,7 @@ def UnoDBFactory(obj: BaseModel):
                 raise UnoError(f"Unknown error occurred: {e}") from e
 
         @classmethod
-        async def get(cls, **kwargs) -> UnoModel:
+        async def get(cls, **kwargs: Any) -> Optional[T]:
             column_names = obj.model.__table__.columns.keys()
             stmt = select(obj.model.__table__.c[*column_names])
 
@@ -190,7 +219,8 @@ def UnoDBFactory(obj: BaseModel):
                         )
 
             try:
-                async with async_session() as session:
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
                     rows = result.fetchall()
@@ -212,7 +242,7 @@ def UnoDBFactory(obj: BaseModel):
                 ) from e
 
         @classmethod
-        async def delete(cls, **kwargs) -> bool:
+        async def delete(cls, **kwargs: Any) -> bool:
             """Delete a record using kwargs as filters."""
             column_names = obj.model.__table__.columns.keys()
             stmt = delete(obj.model.__table__)
@@ -227,7 +257,8 @@ def UnoDBFactory(obj: BaseModel):
                         )
 
             try:
-                async with async_session() as session:
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("writer"))
                     result = await session.execute(stmt)
                     await session.commit()
@@ -238,7 +269,7 @@ def UnoDBFactory(obj: BaseModel):
                 ) from e
 
         @classmethod
-        async def filter(cls, filters: FilterParam = None) -> UnoModel:
+        async def filter(cls, filters: Optional[FilterParam] = None) -> List[T]:
             limit = 25
             offset = 0
             order_by = None
@@ -274,7 +305,8 @@ def UnoDBFactory(obj: BaseModel):
                     stmt = stmt.order_by(getattr(obj.model, order_by).asc())
 
             try:
-                async with async_session() as session:
+                session_context = SessionContextClass()
+                async with session_context as session:
                     await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
                 return result.mappings().all()

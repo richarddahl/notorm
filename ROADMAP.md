@@ -6,7 +6,7 @@ This roadmap outlines the key improvements planned for the Uno framework to make
 
 ### 1. Complete Protocol-Based Design
 - [x] Implement core dependency injection system with protocols
-- [ ] Replace concrete class dependencies with protocol interfaces throughout
+- [x] Replace concrete class dependencies with protocol interfaces throughout
 - [ ] Add proper generic type constraints to all protocols
 - [x] Create a protocol validation system
 

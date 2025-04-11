@@ -183,6 +183,41 @@ class Repository(Protocol[EntityT, KeyT]):
 
 
 @runtime_checkable
+class DatabaseRepository(Protocol[EntityT, KeyT]):
+    """Protocol for database repositories."""
+    
+    @classmethod
+    async def get(cls, **kwargs: Any) -> Optional[EntityT]:
+        """Get an entity by keyword arguments."""
+        ...
+    
+    @classmethod
+    async def create(cls, entity: EntityT) -> tuple[EntityT, bool]:
+        """Create a new entity."""
+        ...
+    
+    @classmethod
+    async def update(cls, entity: EntityT, **kwargs: Any) -> EntityT:
+        """Update an existing entity."""
+        ...
+    
+    @classmethod
+    async def delete(cls, **kwargs: Any) -> bool:
+        """Delete an entity by keyword arguments."""
+        ...
+    
+    @classmethod
+    async def filter(cls, filters: Any = None) -> list[EntityT]:
+        """Filter entities by criteria."""
+        ...
+    
+    @classmethod
+    async def merge(cls, data: dict) -> Any:
+        """Merge data into an entity."""
+        ...
+
+
+@runtime_checkable
 class UnitOfWork(Protocol):
     """Protocol for the unit of work pattern."""
     
@@ -274,6 +309,62 @@ class ConfigProvider(Protocol):
     
     def reload(self) -> None:
         """Reload the configuration."""
+        ...
+
+
+# Database protocols
+@runtime_checkable
+class DatabaseSessionProtocol(Protocol):
+    """Protocol for database sessions."""
+    
+    async def execute(self, statement: Any, *args: Any, **kwargs: Any) -> Any:
+        """Execute a statement."""
+        ...
+    
+    async def commit(self) -> None:
+        """Commit the current transaction."""
+        ...
+    
+    async def rollback(self) -> None:
+        """Rollback the current transaction."""
+        ...
+    
+    async def close(self) -> None:
+        """Close the session."""
+        ...
+    
+    def add(self, instance: Any) -> None:
+        """Add an instance to the session."""
+        ...
+
+
+@runtime_checkable
+class DatabaseSessionFactoryProtocol(Protocol):
+    """Protocol for session factories."""
+    
+    def create_session(self, config: Any) -> DatabaseSessionProtocol:
+        """Create a database session."""
+        ...
+    
+    def get_scoped_session(self, config: Any) -> Any:
+        """Get a scoped session."""
+        ...
+    
+    async def remove_all_scoped_sessions(self) -> None:
+        """Remove all scoped sessions."""
+        ...
+
+
+@runtime_checkable
+class DatabaseSessionContextProtocol(Protocol):
+    """Protocol for database session context managers."""
+    
+    async def __aenter__(self) -> DatabaseSessionProtocol:
+        """Enter the context manager."""
+        ...
+    
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Exit the context manager."""
         ...
 
 

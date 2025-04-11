@@ -1,4 +1,4 @@
-from typing import Optional, AsyncIterator, Dict
+from typing import Optional, AsyncIterator, Dict, Any, AsyncContextManager
 import contextlib
 import logging
 
@@ -12,14 +12,17 @@ from asyncio import current_task
 from uno.database.config import ConnectionConfig
 from uno.database.engine.asynceng import AsyncEngineFactory
 from uno.settings import uno_settings
+from uno.core.protocols import DatabaseSessionProtocol, DatabaseSessionFactoryProtocol, DatabaseSessionContextProtocol
 
 
-class AsyncSessionFactory:
+class AsyncSessionFactory(DatabaseSessionFactoryProtocol):
     """
     Factory for creating asynchronous SQLAlchemy ORM sessions.
 
     Supports scoped sessions that can be tied to web request lifecycles
     using SQLAlchemy's async_scoped_session.
+    
+    Implements the DatabaseSessionFactoryProtocol.
     """
 
     def __init__(
@@ -101,6 +104,65 @@ class AsyncSessionFactory:
             await scoped_session.remove()
 
 
+class AsyncSessionContext(DatabaseSessionContextProtocol):
+    """Context manager for async database sessions, implementing DatabaseSessionContextProtocol."""
+    
+    def __init__(
+        self,
+        db_driver: str = uno_settings.DB_ASYNC_DRIVER,
+        db_name: str = uno_settings.DB_NAME,
+        db_user_pw: str = uno_settings.DB_USER_PW, 
+        db_role: str = f"{uno_settings.DB_NAME}_login",
+        db_host: Optional[str] = uno_settings.DB_HOST,
+        db_port: Optional[int] = uno_settings.DB_PORT,
+        factory: Optional[DatabaseSessionFactoryProtocol] = None,
+        logger: Optional[logging.Logger] = None,
+        scoped: bool = False,
+        **kwargs: Any
+    ):
+        """Initialize the async session context."""
+        self.db_driver = db_driver
+        self.db_name = db_name
+        self.db_user_pw = db_user_pw
+        self.db_role = db_role
+        self.db_host = db_host
+        self.db_port = db_port
+        self.factory = factory or AsyncSessionFactory(logger=logger)
+        self.logger = logger or logging.getLogger(__name__)
+        self.scoped = scoped
+        self.kwargs = kwargs
+        self.session: Optional[DatabaseSessionProtocol] = None
+        
+    async def __aenter__(self) -> DatabaseSessionProtocol:
+        """Enter the async context, returning a database session."""
+        # Create config object from parameters
+        config = ConnectionConfig(
+            db_role=self.db_role,
+            db_name=self.db_name,
+            db_host=self.db_host,
+            db_user_pw=self.db_user_pw,
+            db_driver=self.db_driver,
+            db_port=self.db_port,
+            **self.kwargs,
+        )
+        
+        if self.scoped:
+            # Get a scoped session
+            scoped_session = self.factory.get_scoped_session(config)
+            self.session = scoped_session()
+        else:
+            # Create a regular session
+            self.session = self.factory.create_session(config)
+            
+        return self.session
+    
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Exit the async context, closing the session if needed."""
+        if not self.scoped and self.session:
+            await self.session.close()
+            self.session = None
+
+
 @contextlib.asynccontextmanager
 async def async_session(
     db_driver: str = uno_settings.DB_ASYNC_DRIVER,
@@ -109,11 +171,11 @@ async def async_session(
     db_role: str = f"{uno_settings.DB_NAME}_login",
     db_host: Optional[str] = uno_settings.DB_HOST,
     db_port: Optional[int] = uno_settings.DB_PORT,
-    factory: Optional[AsyncSessionFactory] = None,
+    factory: Optional[DatabaseSessionFactoryProtocol] = None,
     logger: Optional[logging.Logger] = None,
     scoped: bool = False,
     **kwargs,
-) -> AsyncIterator[AsyncSession]:
+) -> AsyncIterator[DatabaseSessionProtocol]:
     """
     Context manager for asynchronous database sessions.
 
@@ -132,34 +194,19 @@ async def async_session(
     Yields:
         AsyncSession: The database session
     """
-    # Create config object from parameters
-    config = ConnectionConfig(
-        db_role=db_role,
-        db_name=db_name,
-        db_host=db_host,
-        db_user_pw=db_user_pw,
+    # Use the new AsyncSessionContext class
+    context = AsyncSessionContext(
         db_driver=db_driver,
+        db_name=db_name,
+        db_user_pw=db_user_pw,
+        db_role=db_role,
+        db_host=db_host,
         db_port=db_port,
-        **kwargs,
+        factory=factory,
+        logger=logger,
+        scoped=scoped,
+        **kwargs
     )
-
-    # Use provided factory or create a new one
-    session_factory = factory or AsyncSessionFactory(logger=logger)
-    log = logger or logging.getLogger(__name__)
-
-    if scoped:
-        # Get a scoped session
-        scoped_session = session_factory.get_scoped_session(config)
-        session = scoped_session()
-        try:
-            yield session
-        finally:
-            # The scoped session is managed separately, so we don't close it here
-            pass
-    else:
-        # Create a regular session
-        session = session_factory.create_session(config)
-        try:
-            yield session
-        finally:
-            await session.close()
+    
+    async with context as session:
+        yield session

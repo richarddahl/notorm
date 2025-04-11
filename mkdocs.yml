@@ -66,6 +66,7 @@ nav:
    - Protocol System:
       - Overview: protocols/overview.md
       - Protocol Validation: protocol_validation.md
+      - Database Protocols: protocols/database_protocols.md
    - Modernization:
       - Overview: modernization/overview.md
       - Key Features: modernization/key_features.md
