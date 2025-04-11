@@ -221,3 +221,112 @@ class TestUnoSchemaManager:
 
         # Verify the schemas are the same
         assert retrieved_schema == created_schema
+        
+    def test_get_list_schema(self):
+        """Test getting a list schema for a model."""
+        manager = UnoSchemaManager()
+        
+        # Test case 1: When no existing schema configuration is available
+        list_schema = manager.get_list_schema(TestModel)
+        
+        # Verify that a schema was created
+        assert list_schema is not None
+        assert f"{TestModel.__name__}_list" in manager.schemas
+        
+        # Verify schema structure
+        assert "items" in list_schema.model_fields
+        assert "total" in list_schema.model_fields
+        assert "page" in list_schema.model_fields
+        assert "page_size" in list_schema.model_fields
+        assert "pages" in list_schema.model_fields
+        
+        # Verify correct field types
+        from typing import get_origin, get_args
+        items_field = list_schema.model_fields["items"]
+        assert get_origin(items_field.annotation) == list
+        
+        # Test case 2: When a specific list schema configuration exists
+        detail_config = UnoSchemaConfig()
+        manager.add_schema_config(f"{TestModel.__name__}_detail", detail_config)
+        
+        # Get a new list schema (should use the detail schema as base)
+        new_list_schema = manager.get_list_schema(TestModel)
+        
+        # Verify it's the same instance (since it was cached)
+        assert new_list_schema == list_schema
+        
+    def test_get_list_schema_with_sqlalchemy_model(self):
+        """Test getting a list schema for a SQLAlchemy model."""
+        # Create a mock SQLAlchemy model class
+        class MockSQLAlchemyModel:
+            __tablename__ = "mock_table"
+            
+            # Mock the inspect functionality 
+            @classmethod
+            def __table__(cls):
+                class MockColumn:
+                    def __init__(self, name, type, nullable):
+                        self.name = name
+                        self.type = type
+                        self.nullable = nullable
+                
+                class MockType:
+                    def __init__(self, python_type):
+                        self.python_type = python_type
+                
+                return type(
+                    "MockTable", 
+                    (), 
+                    {
+                        "columns": [
+                            MockColumn("id", MockType(str), False),
+                            MockColumn("name", MockType(str), False),
+                            MockColumn("active", MockType(bool), True),
+                            MockColumn("age", MockType(int), True),
+                        ]
+                    }
+                )()
+        
+        # Use a different approach to handle SQLAlchemy models
+        # Instead of patching sqlalchemy.inspect, patch the internal method that uses it
+        with patch.object(UnoSchemaManager, "_create_schema_from_sqlalchemy_model") as mock_create:
+            # Create a mock schema
+            from pydantic import create_model
+            mock_schema = create_model(
+                "MockSQLAlchemyModelSchema",
+                __base__=UnoSchema,
+                id=(str, ...),
+                name=(str, ...),
+                active=(bool, None),
+                age=(int, None)
+            )
+            mock_create.return_value = mock_schema
+            
+            # Create schema manager and get list schema
+            manager = UnoSchemaManager()
+            list_schema = manager.get_list_schema(MockSQLAlchemyModel)
+            
+            # Verify that a schema was created
+            assert list_schema is not None
+            assert f"{MockSQLAlchemyModel.__name__}_list" in manager.schemas
+            
+            # Verify schema structure
+            assert "items" in list_schema.model_fields
+            assert "total" in list_schema.model_fields
+            assert "page" in list_schema.model_fields
+            assert "page_size" in list_schema.model_fields
+            assert "pages" in list_schema.model_fields
+            
+            # Verify the list field contains a schema with the expected fields
+            from typing import get_origin, get_args
+            items_field = list_schema.model_fields["items"]
+            assert get_origin(items_field.annotation) == list
+            
+            # Get the item schema from the list annotation
+            item_schema = get_args(items_field.annotation)[0]
+            
+            # Verify the item schema has fields from our mock SQLAlchemy model
+            assert "id" in item_schema.model_fields
+            assert "name" in item_schema.model_fields
+            assert "active" in item_schema.model_fields
+            assert "age" in item_schema.model_fields

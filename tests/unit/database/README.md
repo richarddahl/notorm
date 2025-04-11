@@ -13,6 +13,15 @@ Tests for the `UnoDBFactory` class and related database operations:
 - Error handling and recovery
 - Connection pooling
 
+### `test_db_manager.py`
+
+Tests for the `DBManager` class that handles DDL operations:
+- SQL execution (DDL statements and scripts)
+- SQL Emitter integration
+- Database object verification (tables, functions, triggers, etc.)
+- Schema and extension management
+- User, role, and privilege management
+
 Note that some tests in this module require an actual PostgreSQL database for integration testing. These tests are skipped when running in environments without database access.
 
 ## Testing Approach
