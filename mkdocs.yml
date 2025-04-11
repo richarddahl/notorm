@@ -67,6 +67,7 @@ nav:
       - Overview: protocols/overview.md
       - Protocol Validation: protocol_validation.md
       - Database Protocols: protocols/database_protocols.md
+      - Generic Type Constraints: protocols/generic_type_constraints.md
    - Modernization:
       - Overview: modernization/overview.md
       - Key Features: modernization/key_features.md

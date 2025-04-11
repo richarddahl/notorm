@@ -7,7 +7,8 @@ providing a foundation for dependency injection and loose coupling.
 
 from typing import (
     Protocol, TypeVar, Generic, Any, Dict, List, Optional, 
-    Callable, Awaitable, AsyncContextManager, Union, runtime_checkable
+    Callable, Awaitable, AsyncContextManager, Union, runtime_checkable,
+    Type, Tuple, get_origin, get_args
 )
 from datetime import datetime
 from uuid import UUID
@@ -182,44 +183,117 @@ class Repository(Protocol[EntityT, KeyT]):
         ...
 
 
+# Type variables for repository pattern
+FilterT = TypeVar('FilterT')
+DataT = TypeVar('DataT', bound=Dict[str, Any])
+MergeResultT = TypeVar('MergeResultT')
+
 @runtime_checkable
-class DatabaseRepository(Protocol[EntityT, KeyT]):
-    """Protocol for database repositories."""
+class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):
+    """
+    Protocol for database repositories.
+    
+    Type Parameters:
+        EntityT: Type of entity managed by this repository
+        KeyT: Type of entity key/identifier
+        FilterT: Type of filter criteria
+        DataT: Type of data for merge operations (typically Dict[str, Any])
+        MergeResultT: Type of result from merge operations
+    """
     
     @classmethod
     async def get(cls, **kwargs: Any) -> Optional[EntityT]:
-        """Get an entity by keyword arguments."""
+        """
+        Get an entity by keyword arguments.
+        
+        Args:
+            **kwargs: Key-value pairs for lookup conditions
+            
+        Returns:
+            The entity if found, None otherwise
+        """
         ...
     
     @classmethod
-    async def create(cls, entity: EntityT) -> tuple[EntityT, bool]:
-        """Create a new entity."""
+    async def create(cls, entity: EntityT) -> Tuple[EntityT, bool]:
+        """
+        Create a new entity.
+        
+        Args:
+            entity: The entity to create
+            
+        Returns:
+            Tuple of (created entity, success flag)
+        """
         ...
     
     @classmethod
     async def update(cls, entity: EntityT, **kwargs: Any) -> EntityT:
-        """Update an existing entity."""
+        """
+        Update an existing entity.
+        
+        Args:
+            entity: The entity with updated values
+            **kwargs: Key-value pairs for lookup conditions
+            
+        Returns:
+            The updated entity
+        """
         ...
     
     @classmethod
     async def delete(cls, **kwargs: Any) -> bool:
-        """Delete an entity by keyword arguments."""
+        """
+        Delete an entity by keyword arguments.
+        
+        Args:
+            **kwargs: Key-value pairs for lookup conditions
+            
+        Returns:
+            True if deletion was successful, False otherwise
+        """
         ...
     
     @classmethod
-    async def filter(cls, filters: Any = None) -> list[EntityT]:
-        """Filter entities by criteria."""
+    async def filter(cls, filters: Optional[FilterT] = None) -> List[EntityT]:
+        """
+        Filter entities by criteria.
+        
+        Args:
+            filters: Filter criteria
+            
+        Returns:
+            List of entities matching the criteria
+        """
         ...
     
     @classmethod
-    async def merge(cls, data: dict) -> Any:
-        """Merge data into an entity."""
+    async def merge(cls, data: DataT) -> MergeResultT:
+        """
+        Merge data into an entity.
+        
+        Args:
+            data: Data to merge
+            
+        Returns:
+            Result of the merge operation
+        """
         ...
 
+
+# Type variables for unit of work pattern
+RepoT = TypeVar('RepoT')
+RepoKeyT = TypeVar('RepoKeyT', bound=Type[Any])
 
 @runtime_checkable
-class UnitOfWork(Protocol):
-    """Protocol for the unit of work pattern."""
+class UnitOfWork(Protocol[RepoT, RepoKeyT]):
+    """
+    Protocol for the unit of work pattern.
+    
+    Type Parameters:
+        RepoT: Type of repositories managed by this unit of work
+        RepoKeyT: Type of repository keys/identifiers (typically Type[Repository])
+    """
     
     async def begin(self) -> None:
         """Begin a new transaction."""
@@ -233,15 +307,26 @@ class UnitOfWork(Protocol):
         """Rollback the current transaction."""
         ...
     
-    def get_repository(self, repository_type: type) -> Any:
-        """Get a repository."""
+    def get_repository(self, repository_type: RepoKeyT) -> RepoT:
+        """
+        Get a repository of the specified type.
+        
+        Args:
+            repository_type: Type of repository to get
+            
+        Returns:
+            Repository instance
+        """
         ...
     
-    async def __aenter__(self) -> 'UnitOfWork':
+    async def __aenter__(self) -> 'UnitOfWork[RepoT, RepoKeyT]':
         """Enter the unit of work context."""
         ...
     
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, 
+                      exc_type: Optional[Type[BaseException]], 
+                      exc_val: Optional[BaseException], 
+                      exc_tb: Optional[Any]) -> None:
         """Exit the unit of work context."""
         ...
 
@@ -273,51 +358,217 @@ class Result(Protocol[T_co]):
 
 
 # Caching
+TTLT = TypeVar('TTLT', int, float)
+PrefixT = TypeVar('PrefixT', bound=str)
+
 @runtime_checkable
-class Cache(Protocol[KeyT, ValueT]):
-    """Protocol for cache implementations."""
+class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):
+    """
+    Protocol for cache implementations.
+    
+    Type Parameters:
+        KeyT: Type of cache keys
+        ValueT: Type of cache values
+        TTLT: Type of time-to-live value (int or float)
+        PrefixT: Type of cache key prefix (string)
+    """
     
     async def get(self, key: KeyT) -> Optional[ValueT]:
-        """Get a value from the cache."""
+        """
+        Get a value from the cache.
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            The cached value if found, None otherwise
+        """
         ...
     
-    async def set(self, key: KeyT, value: ValueT, ttl: Optional[int] = None) -> None:
-        """Set a value in the cache."""
+    async def set(self, key: KeyT, value: ValueT, ttl: Optional[TTLT] = None) -> None:
+        """
+        Set a value in the cache.
+        
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Optional time-to-live in seconds
+        """
         ...
     
     async def delete(self, key: KeyT) -> None:
-        """Delete a value from the cache."""
+        """
+        Delete a value from the cache.
+        
+        Args:
+            key: Cache key to delete
+        """
         ...
     
     async def clear(self) -> None:
-        """Clear the cache."""
+        """Clear the entire cache."""
+        ...
+    
+    async def get_many(self, keys: List[KeyT]) -> Dict[KeyT, ValueT]:
+        """
+        Get multiple values from the cache.
+        
+        Args:
+            keys: List of cache keys
+            
+        Returns:
+            Dictionary mapping keys to cached values (missing keys are omitted)
+        """
+        ...
+    
+    async def set_many(self, items: Dict[KeyT, ValueT], ttl: Optional[TTLT] = None) -> None:
+        """
+        Set multiple values in the cache.
+        
+        Args:
+            items: Dictionary of key-value pairs to cache
+            ttl: Optional time-to-live in seconds
+        """
+        ...
+    
+    async def delete_many(self, keys: List[KeyT]) -> None:
+        """
+        Delete multiple values from the cache.
+        
+        Args:
+            keys: List of cache keys to delete
+        """
+        ...
+    
+    async def delete_by_prefix(self, prefix: PrefixT) -> None:
+        """
+        Delete all keys with the given prefix.
+        
+        Args:
+            prefix: Key prefix to match
+        """
         ...
 
 
 # Configuration
+KeyT_contra = TypeVar('KeyT_contra', bound=str, contravariant=True)
+ValueT_co = TypeVar('ValueT_co', covariant=True)
+SectionT = TypeVar('SectionT', bound=str)
+DefaultT = TypeVar('DefaultT')
+
 @runtime_checkable
-class ConfigProvider(Protocol):
-    """Protocol for configuration providers."""
+class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
+    """
+    Protocol for configuration providers.
     
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
-        """Get a configuration value."""
+    Type Parameters:
+        KeyT_contra: Type of configuration keys (contravariant)
+        ValueT_co: Type of configuration values (covariant)
+        SectionT: Type of section identifiers
+        DefaultT: Type of default values
+    """
+    
+    def get(self, key: KeyT_contra, default: Optional[DefaultT] = None) -> Union[ValueT_co, DefaultT]:
+        """
+        Get a configuration value.
+        
+        Args:
+            key: Configuration key
+            default: Default value to return if key is not found
+            
+        Returns:
+            The configuration value or the default
+        """
         ...
     
-    def get_section(self, section: str) -> Dict[str, Any]:
-        """Get a configuration section."""
+    def get_section(self, section: SectionT) -> Dict[str, ValueT_co]:
+        """
+        Get a configuration section.
+        
+        Args:
+            section: Section identifier
+            
+        Returns:
+            Dictionary containing all configuration values in the section
+        """
         ...
     
     def reload(self) -> None:
-        """Reload the configuration."""
+        """Reload the configuration from its source."""
+        ...
+    
+    def get_bool(self, key: KeyT_contra, default: Optional[bool] = None) -> bool:
+        """
+        Get a boolean configuration value.
+        
+        Args:
+            key: Configuration key
+            default: Default boolean value
+            
+        Returns:
+            The boolean configuration value or the default
+        """
+        ...
+    
+    def get_int(self, key: KeyT_contra, default: Optional[int] = None) -> int:
+        """
+        Get an integer configuration value.
+        
+        Args:
+            key: Configuration key
+            default: Default integer value
+            
+        Returns:
+            The integer configuration value or the default
+        """
+        ...
+    
+    def get_float(self, key: KeyT_contra, default: Optional[float] = None) -> float:
+        """
+        Get a float configuration value.
+        
+        Args:
+            key: Configuration key
+            default: Default float value
+            
+        Returns:
+            The float configuration value or the default
+        """
+        ...
+    
+    def get_list(self, key: KeyT_contra, default: Optional[List[Any]] = None) -> List[Any]:
+        """
+        Get a list configuration value.
+        
+        Args:
+            key: Configuration key
+            default: Default list value
+            
+        Returns:
+            The list configuration value or the default
+        """
         ...
 
 
+# Type variables for database protocols
+ConfigT = TypeVar('ConfigT')
+StatementT = TypeVar('StatementT')
+ResultT_co = TypeVar('ResultT_co', covariant=True)
+ModelT = TypeVar('ModelT')
+
 # Database protocols
 @runtime_checkable
-class DatabaseSessionProtocol(Protocol):
-    """Protocol for database sessions."""
+class DatabaseSessionProtocol(Protocol[StatementT, ResultT_co, ModelT]):
+    """
+    Protocol for database sessions.
     
-    async def execute(self, statement: Any, *args: Any, **kwargs: Any) -> Any:
+    Type Parameters:
+        StatementT: Type of statement (e.g., SQLAlchemy statement)
+        ResultT_co: Type of result from statement execution (covariant)
+        ModelT: Type of model/entity instances
+    """
+    
+    async def execute(self, statement: StatementT, *args: Any, **kwargs: Any) -> ResultT_co:
         """Execute a statement."""
         ...
     
@@ -333,20 +584,28 @@ class DatabaseSessionProtocol(Protocol):
         """Close the session."""
         ...
     
-    def add(self, instance: Any) -> None:
+    def add(self, instance: ModelT) -> None:
         """Add an instance to the session."""
         ...
 
 
 @runtime_checkable
-class DatabaseSessionFactoryProtocol(Protocol):
-    """Protocol for session factories."""
+class DatabaseSessionFactoryProtocol(Protocol[ConfigT, StatementT, ResultT_co, ModelT]):
+    """
+    Protocol for session factories.
     
-    def create_session(self, config: Any) -> DatabaseSessionProtocol:
+    Type Parameters:
+        ConfigT: Type of configuration object
+        StatementT: Type of statement (e.g., SQLAlchemy statement)
+        ResultT_co: Type of result from statement execution (covariant)
+        ModelT: Type of model/entity instances
+    """
+    
+    def create_session(self, config: ConfigT) -> DatabaseSessionProtocol[StatementT, ResultT_co, ModelT]:
         """Create a database session."""
         ...
     
-    def get_scoped_session(self, config: Any) -> Any:
+    def get_scoped_session(self, config: ConfigT) -> Any:
         """Get a scoped session."""
         ...
     
@@ -356,14 +615,23 @@ class DatabaseSessionFactoryProtocol(Protocol):
 
 
 @runtime_checkable
-class DatabaseSessionContextProtocol(Protocol):
-    """Protocol for database session context managers."""
+class DatabaseSessionContextProtocol(Protocol[StatementT, ResultT_co, ModelT]):
+    """
+    Protocol for database session context managers.
     
-    async def __aenter__(self) -> DatabaseSessionProtocol:
+    Type Parameters:
+        StatementT: Type of statement (e.g., SQLAlchemy statement)
+        ResultT_co: Type of result from statement execution (covariant)
+        ModelT: Type of model/entity instances
+    """
+    
+    async def __aenter__(self) -> DatabaseSessionProtocol[StatementT, ResultT_co, ModelT]:
         """Enter the context manager."""
         ...
     
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(self, exc_type: Optional[Type[BaseException]], 
+                       exc_val: Optional[BaseException], 
+                       exc_tb: Optional[Any]) -> None:
         """Exit the context manager."""
         ...
 
@@ -422,81 +690,233 @@ class MessageConsumer(Protocol[T]):
 
 
 # Plugin architecture
+PluginContextT = TypeVar('PluginContextT')
+PluginConfigT = TypeVar('PluginConfigT')
+PluginEventT = TypeVar('PluginEventT')
+PluginNameT = TypeVar('PluginNameT', bound=str)
+PluginVersionT = TypeVar('PluginVersionT', bound=str)
+
 @runtime_checkable
-class Plugin(Protocol):
-    """Protocol for plugins."""
+class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, PluginVersionT]):
+    """
+    Protocol for plugins.
+    
+    Type Parameters:
+        PluginContextT: Type of plugin context
+        PluginConfigT: Type of plugin configuration
+        PluginEventT: Type of events the plugin handles
+        PluginNameT: Type of plugin name (bound to str)
+        PluginVersionT: Type of plugin version (bound to str)
+    """
     
     @property
-    def name(self) -> str:
+    def name(self) -> PluginNameT:
         """Get the name of the plugin."""
         ...
     
     @property
-    def version(self) -> str:
+    def version(self) -> PluginVersionT:
         """Get the version of the plugin."""
         ...
     
-    async def initialize(self) -> None:
-        """Initialize the plugin."""
+    @property
+    def description(self) -> str:
+        """Get the description of the plugin."""
+        ...
+    
+    @property
+    def dependencies(self) -> List[PluginNameT]:
+        """Get the dependencies of the plugin."""
+        ...
+    
+    async def initialize(self, context: PluginContextT) -> None:
+        """
+        Initialize the plugin.
+        
+        Args:
+            context: The plugin context
+        """
         ...
     
     async def shutdown(self) -> None:
         """Shut down the plugin."""
         ...
+    
+    async def configure(self, config: PluginConfigT) -> None:
+        """
+        Configure the plugin.
+        
+        Args:
+            config: The plugin configuration
+        """
+        ...
+    
+    async def on_event(self, event: PluginEventT) -> None:
+        """
+        Handle an event.
+        
+        Args:
+            event: The event to handle
+        """
+        ...
 
 
 @runtime_checkable
-class PluginManager(Protocol):
-    """Protocol for plugin managers."""
+class PluginManager(Protocol[PluginContextT, PluginNameT]):
+    """
+    Protocol for plugin managers.
     
-    def register_plugin(self, plugin: Plugin) -> None:
-        """Register a plugin."""
+    Type Parameters:
+        PluginContextT: Type of plugin context
+        PluginNameT: Type of plugin name (bound to str)
+    """
+    
+    def register_plugin(self, plugin: Plugin[PluginContextT, Any, Any, PluginNameT, Any]) -> None:
+        """
+        Register a plugin.
+        
+        Args:
+            plugin: The plugin to register
+        """
         ...
     
-    def unregister_plugin(self, plugin_name: str) -> None:
-        """Unregister a plugin."""
+    def unregister_plugin(self, plugin_name: PluginNameT) -> None:
+        """
+        Unregister a plugin.
+        
+        Args:
+            plugin_name: The name of the plugin to unregister
+        """
         ...
     
-    def get_plugin(self, plugin_name: str) -> Optional[Plugin]:
-        """Get a plugin by name."""
+    def get_plugin(self, plugin_name: PluginNameT) -> Optional[Plugin[PluginContextT, Any, Any, PluginNameT, Any]]:
+        """
+        Get a plugin by name.
+        
+        Args:
+            plugin_name: The name of the plugin to get
+            
+        Returns:
+            The plugin if found, None otherwise
+        """
         ...
     
-    async def initialize_all(self) -> None:
-        """Initialize all registered plugins."""
+    def list_plugins(self) -> List[Plugin[PluginContextT, Any, Any, PluginNameT, Any]]:
+        """
+        List all registered plugins.
+        
+        Returns:
+            List of registered plugins
+        """
+        ...
+    
+    async def initialize_all(self, context: PluginContextT) -> None:
+        """
+        Initialize all registered plugins.
+        
+        Args:
+            context: The plugin context
+        """
         ...
     
     async def shutdown_all(self) -> None:
         """Shut down all registered plugins."""
         ...
+    
+    async def send_event(self, event: Any) -> None:
+        """
+        Send an event to all plugins.
+        
+        Args:
+            event: The event to send
+        """
+        ...
 
 
 # Health checks
+HealthStatusT = TypeVar('HealthStatusT')
+HealthDetailsT = TypeVar('HealthDetailsT')
+HealthComponentT = TypeVar('HealthComponentT', bound=str)
+
 @runtime_checkable
-class HealthCheck(Protocol):
-    """Protocol for health checks."""
+class HealthCheck(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):
+    """
+    Protocol for health checks.
+    
+    Type Parameters:
+        HealthStatusT: Type of health status (typically bool or enum)
+        HealthDetailsT: Type of health check details
+        HealthComponentT: Type of component name (bound to str)
+    """
     
     @property
-    def name(self) -> str:
+    def name(self) -> HealthComponentT:
         """Get the name of the health check."""
         ...
     
-    async def check(self) -> bool:
-        """Perform the health check."""
+    @property
+    def description(self) -> str:
+        """Get the description of the health check."""
+        ...
+    
+    @property
+    def is_critical(self) -> bool:
+        """Determine if this health check is critical for system operation."""
+        ...
+    
+    async def check(self) -> Tuple[HealthStatusT, Optional[HealthDetailsT]]:
+        """
+        Perform the health check.
+        
+        Returns:
+            Tuple of (status, details) where details may be None
+        """
         ...
 
 
 @runtime_checkable
-class HealthCheckRegistry(Protocol):
-    """Protocol for health check registries."""
+class HealthCheckRegistry(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):
+    """
+    Protocol for health check registries.
     
-    def register(self, health_check: HealthCheck) -> None:
-        """Register a health check."""
+    Type Parameters:
+        HealthStatusT: Type of health status (typically bool or enum)
+        HealthDetailsT: Type of health check details
+        HealthComponentT: Type of component name (bound to str)
+    """
+    
+    def register(self, health_check: HealthCheck[HealthStatusT, HealthDetailsT, HealthComponentT]) -> None:
+        """
+        Register a health check.
+        
+        Args:
+            health_check: The health check to register
+        """
         ...
     
-    def unregister(self, name: str) -> None:
-        """Unregister a health check."""
+    def unregister(self, name: HealthComponentT) -> None:
+        """
+        Unregister a health check.
+        
+        Args:
+            name: The name of the health check to unregister
+        """
         ...
     
-    async def check_all(self) -> Dict[str, bool]:
-        """Check all registered health checks."""
+    async def check_all(self) -> Dict[HealthComponentT, Tuple[HealthStatusT, Optional[HealthDetailsT]]]:
+        """
+        Check all registered health checks.
+        
+        Returns:
+            Dictionary mapping component names to (status, details) tuples
+        """
+        ...
+    
+    async def check_critical(self) -> Dict[HealthComponentT, Tuple[HealthStatusT, Optional[HealthDetailsT]]]:
+        """
+        Check only critical health checks.
+        
+        Returns:
+            Dictionary mapping critical component names to (status, details) tuples
+        """
         ...
