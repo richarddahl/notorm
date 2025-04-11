@@ -41,11 +41,35 @@ nav:
       - Endpoint Factory: api/endpoint-factory.md
       - Filter Manager: queries/filter_manager.md
       - Schemas: api/schemas.md
+   - Vector Search:
+      - Overview: vector_search/overview.md
+      - pgvector Integration: vector_search/pgvector_integration.md
+      - Docker Setup: vector_search/docker_setup.md
+      - API Usage: vector_search/api_usage.md
+      - Dependency Injection: vector_search/dependency_injection.md
+      - Hybrid Search: vector_search/hybrid_search.md
+      - RAG Implementation: vector_search/rag.md
+      - Event-Driven Architecture: vector_search/events.md
    - SQL Generation:
       - Overview: sql_generation/overview.md
       - Emitters: sql_generation/emitters.md
       - Statement: sql_generation/statement.md
       - Registry: sql_generation/registry.md
+   - Type Safety:
+      - Overview: type_safety/overview.md
+      - Implementation: type_safety/implementation.md
+      - Migration: type_safety/migration.md
+   - Dependency Injection:
+      - Overview: dependency_injection/overview.md
+      - Migration: dependency_injection/migration.md
+      - Examples: dependency_injection/examples.md
+   - Protocol System:
+      - Overview: protocols/overview.md
+      - Protocol Validation: protocol_validation.md
+   - Modernization:
+      - Overview: modernization/overview.md
+      - Key Features: modernization/key_features.md
+      - Migration Guide: modernization/migration.md
    - Security:
       - Authorization: authorization/overview.md
    - Command Reference: commands.md
