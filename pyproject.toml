@@ -29,6 +29,7 @@ dependencies = [
   "alembic",
   "babel",
   "fastapi[standard]",
+  "inject",
   "jinja2",
   "PyJWT",
   "psycopg",
@@ -58,6 +59,7 @@ createdb = "python src/scripts/createdb.py"
 dropdb = "python src/scripts/dropdb.py"
 createsuperuser = "python src/scripts/createsuperuser.py"
 createquerypaths = "python src/scripts/createquerypaths.py"
+vector-demo = "python src/scripts/vector_demo.py {args}"
 migrate-init = "python src/scripts/migrations.py init"
 migrate-generate = "python src/scripts/migrations.py generate {args}"
 migrate-up = "python src/scripts/migrations.py upgrade {args:head}"
@@ -74,6 +76,7 @@ createdb = "ENV=dev python src/scripts/createdb.py"
 dropdb = "ENV=dev python src/scripts/dropdb.py"
 createsuperuser = "ENV=dev python src/scripts/createsuperuser.py"
 createquerypaths = "ENV=dev python src/scripts/createquerypaths.py"
+vector-demo = "ENV=dev python src/scripts/vector_demo.py {args}"
 migrate-init = "ENV=dev python src/scripts/migrations.py init"
 migrate-generate = "ENV=dev python src/scripts/migrations.py generate {args}"
 migrate-up = "ENV=dev python src/scripts/migrations.py upgrade {args:head}"
@@ -81,6 +84,9 @@ migrate-down = "ENV=dev python src/scripts/migrations.py downgrade {args}"
 migrate-current = "ENV=dev python src/scripts/migrations.py current"
 migrate-history = "ENV=dev python src/scripts/migrations.py history"
 migrate-revisions = "ENV=dev python src/scripts/migrations.py revisions"
+docker-setup = "./setup_with_docker.sh"
+app = ["ENV=dev", "docker-setup", "main"]
+vector-demo-setup = ["ENV=dev", "docker-setup", "vector-demo setup"]
 
 
 # Testing Environment
@@ -126,6 +132,8 @@ migrate-down = "ENV=test python src/scripts/migrations.py downgrade {args}"
 migrate-current = "ENV=test python src/scripts/migrations.py current"
 migrate-history = "ENV=test python src/scripts/migrations.py history"
 migrate-revisions = "ENV=test python src/scripts/migrations.py revisions"
+docker-setup = "./setup_test_docker.sh"
+all = ["ENV=test", "docker-setup", "test"]
 
 [tool.pytest.ini_options]
 markers = ["asyncio: mark a test as an asyncio test (using pytest-asyncio)"]

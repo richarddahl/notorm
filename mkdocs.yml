@@ -22,6 +22,7 @@ nav:
    - Getting Started: getting_started.md
    - Architecture:
       - Overview: architecture/overview.md
+      - Domain-Driven Design: architecture/domain_driven_design.md
    - Data Layer:
       - Overview: database/overview.md
       - Database Engine: database/engine.md
