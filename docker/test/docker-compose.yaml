@@ -1,19 +1,19 @@
 services:
-  db:
-    container_name: "pg16_uno"
+  db_test:
+    container_name: "pg16_uno_test"
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     restart: always
     environment:
       POSTGRES_PASSWORD: "postgreSQLR0ck%"
       # No PGDATA environment variable here - let PostgreSQL use default
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_test_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Use a different port for testing
     user: postgres  # Explicitly set the user to postgres
 
 volumes:
-  pg_data:
+  pg_test_data:
     driver: local
