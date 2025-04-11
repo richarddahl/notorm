@@ -21,21 +21,30 @@ from typing import (
     Generic,
     Any,
     get_origin,
+    Union,
+    cast,
+    Tuple,
 )
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from uno.database.db import UnoDBFactory, FilterParam
 from uno.model import UnoModel
 from uno.schema.schema import UnoSchemaConfig
-from uno.errors import UnoError
+from uno.errors import UnoError, ValidationContext, ValidationError
 from uno.utilities import snake_to_title
 from uno.registry import UnoRegistry
 from uno.schema.schema_manager import UnoSchemaManager
 from uno.queries.filter_manager import UnoFilterManager
 from uno.api.endpoint_factory import UnoEndpointFactory
+from uno.protocols import (
+    SchemaManagerProtocol,
+    FilterManagerProtocol,
+    DBClientProtocol,
+)
 
 
+# Type variable for the UnoModel
 T = TypeVar("T", bound=UnoModel)
 
 
@@ -78,10 +87,10 @@ class UnoObj(BaseModel, Generic[T]):
     id: Optional[str] = Field(None, description="Unique identifier for the object")
 
     # Runtime components - initialized in __init__
-    db: Any = Field(None, exclude=True)
+    db: DBClientProtocol = Field(None, exclude=True)
     registry: UnoRegistry = Field(None, exclude=True)
-    schema_manager: UnoSchemaManager = Field(None, exclude=True)
-    filter_manager: UnoFilterManager = Field(None, exclude=True)
+    schema_manager: SchemaManagerProtocol = Field(None, exclude=True)
+    filter_manager: FilterManagerProtocol = Field(None, exclude=True)
 
     def __init__(self, **data: Any):
         """
@@ -167,6 +176,55 @@ class UnoObj(BaseModel, Generic[T]):
             else cls.display_name_plural
         )
 
+    def validate(self, schema_name: str) -> ValidationContext:
+        """
+        Validate the UnoObj instance against a schema.
+        
+        Args:
+            schema_name: The name of the schema to validate against
+            
+        Returns:
+            A validation context with any validation errors
+            
+        Raises:
+            UnoError: If the schema is not found
+        """
+        # Ensure schemas are created
+        self._ensure_schemas_created()
+        
+        # Get the schema
+        schema_class = self.schema_manager.get_schema(schema_name)
+        if not schema_class:
+            raise UnoError(
+                f"Schema {schema_name} not found in {self.__class__.__name__}",
+                "SCHEMA_NOT_FOUND",
+            )
+        
+        # Create a validation context
+        context = ValidationContext(self.__class__.__name__)
+        
+        try:
+            # Convert to schema to validate
+            schema_class(**self.model_dump())
+        except ValidationError as e:
+            # Add any validation errors to the context
+            for error in getattr(e, "validation_errors", []):
+                context.add_error(
+                    error.get("field", ""),
+                    error.get("message", "Validation error"),
+                    error.get("error_code", "VALIDATION_ERROR"),
+                    error.get("value")
+                )
+        except Exception as e:
+            # Add any other exceptions as validation errors
+            context.add_error(
+                "",
+                str(e),
+                getattr(e, "error_code", "VALIDATION_ERROR")
+            )
+        
+        return context
+
     def to_model(self, schema_name: str) -> T:
         """
         Convert the UnoObj instance to a model instance using a schema.
@@ -179,6 +237,7 @@ class UnoObj(BaseModel, Generic[T]):
 
         Raises:
             UnoError: If the schema is not found
+            ValidationError: If validation fails
         """
         # Ensure schemas are created
         self._ensure_schemas_created()
@@ -190,6 +249,10 @@ class UnoObj(BaseModel, Generic[T]):
                 f"Schema {schema_name} not found in {self.__class__.__name__}",
                 "SCHEMA_NOT_FOUND",
             )
+
+        # Validate first
+        validation_context = self.validate(schema_name)
+        validation_context.raise_if_errors()
 
         # Convert to schema
         schema = schema_class(**self.model_dump())
@@ -203,10 +266,10 @@ class UnoObj(BaseModel, Generic[T]):
 
         This method creates all schemas for the class if they haven't been created yet.
         """
-        if not self.schema_manager.schemas:
+        if not self.schema_manager.get_schema("edit_schema"):
             self.schema_manager.create_all_schemas(self.__class__)
 
-    async def merge(self, **kwargs: Any) -> tuple[T, str]:
+    async def merge(self, **kwargs: Any) -> Tuple[T, str]:
         """
         Merge the current object with an existing one in the database.
 
@@ -218,6 +281,9 @@ class UnoObj(BaseModel, Generic[T]):
 
         Returns:
             A tuple of (model, action) where action is "insert" or "update"
+            
+        Raises:
+            ValidationError: If validation fails
         """
         self._ensure_schemas_created()
 
@@ -228,6 +294,10 @@ class UnoObj(BaseModel, Generic[T]):
                 "Edit schema not found",
                 "SCHEMA_NOT_FOUND",
             )
+
+        # Validate first
+        validation_context = self.validate("edit_schema")
+        validation_context.raise_if_errors()
 
         # Convert to schema
         schema = edit_schema(**self.model_dump())
@@ -252,6 +322,9 @@ class UnoObj(BaseModel, Generic[T]):
 
         Returns:
             The saved model
+            
+        Raises:
+            ValidationError: If validation fails
         """
         self._ensure_schemas_created()
 
@@ -259,6 +332,10 @@ class UnoObj(BaseModel, Generic[T]):
             schema_name = "view_schema"
         else:
             schema_name = "edit_schema"
+
+        # Validate first
+        validation_context = self.validate(schema_name)
+        validation_context.raise_if_errors()
 
         model = self.to_model(schema_name=schema_name)
 
@@ -303,7 +380,10 @@ class UnoObj(BaseModel, Generic[T]):
         return cls(**model)
 
     @classmethod
-    async def filter(cls, filters: FilterParam = None) -> List["UnoObj"]:
+    async def filter(
+        cls, 
+        filters: Optional[FilterParam] = None
+    ) -> List["UnoObj"]:
         """
         Filter objects from the database.
 
@@ -371,7 +451,8 @@ class UnoObj(BaseModel, Generic[T]):
         )
 
         # Create filter parameters
-        return filter_manager.create_filter_params(cls)
+        filter_params = filter_manager.create_filter_params(cls)
+        return cast(Type[FilterParam], filter_params)
 
     @classmethod
     def validate_filter_params(cls, filter_params: FilterParam) -> List[Any]:
@@ -385,7 +466,7 @@ class UnoObj(BaseModel, Generic[T]):
             A list of validated filter tuples
 
         Raises:
-            UnoError: If validation fails
+            ValidationError: If validation fails
         """
         # Setup filter manager
         filter_manager = UnoFilterManager()
@@ -395,12 +476,22 @@ class UnoObj(BaseModel, Generic[T]):
             cls.terminate_field_filters,
         )
 
+        # Create validation context
+        context = ValidationContext(f"{cls.__name__}FilterParams")
+        
         # Validate filter parameters
         try:
             return filter_manager.validate_filter_params(filter_params, cls)
+        except ValidationError as e:
+            # Re-raise ValidationError
+            raise e
         except Exception as e:
-            # Wrap any exceptions in UnoError
-            raise UnoError(
+            # Wrap any other exceptions in ValidationError
+            context.add_error(
+                "", 
                 str(e),
-                getattr(e, "error_code", "FILTER_VALIDATION_ERROR"),
-            ) from e
+                getattr(e, "error_code", "FILTER_VALIDATION_ERROR")
+            )
+            context.raise_if_errors()
+            # This line should never be reached due to raise_if_errors() above
+            return []

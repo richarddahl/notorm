@@ -334,7 +334,7 @@ class DBManager:
         )
 
         # Create connection string for postgres database
-        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user=postgres password={self.config.DB_USER_PW}"
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
         # Connect with autocommit mode
         with psycopg.connect(conn_string, autocommit=True) as conn:
@@ -362,7 +362,7 @@ class DBManager:
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        # Using psycopg directly with postgres superuser to ensure proper permissions
+        # Using psycopg directly with the configured user to ensure proper permissions
         import psycopg
 
         # Log what we're about to do
@@ -370,8 +370,8 @@ class DBManager:
             f"Creating schemas and extensions for db: {self.config.DB_NAME}"
         )
 
-        # Create connection string for the target database, but connect as postgres superuser
-        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+        # Create connection string for the target database, connecting as configured user
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
         # Connect with autocommit mode
         with psycopg.connect(conn_string, autocommit=True) as conn:
@@ -409,7 +409,7 @@ class DBManager:
         Raises:
             SQLAlchemyError: If database operations fail
         """
-        # Using psycopg directly with postgres superuser to ensure proper permissions
+        # Using psycopg directly with the configured user to ensure proper permissions
         import psycopg
 
         # Log what we're about to do
@@ -417,8 +417,8 @@ class DBManager:
             f"Configuring privileges and setting search paths for db: {self.config.DB_NAME}"
         )
 
-        # Create connection string for the target database, but connect as postgres superuser
-        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+        # Create connection string for the target database, connecting as configured user
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
         # Connect with autocommit mode
         with psycopg.connect(conn_string, autocommit=True) as conn:
@@ -486,7 +486,7 @@ class DBManager:
         )
 
         # Connect to database as postgres superuser
-        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
         with psycopg.connect(conn_string, autocommit=True) as conn:
             cursor = conn.cursor()
@@ -623,7 +623,7 @@ class DBManager:
         self.logger.info("Emitting SQL for table-specific configurations")
 
         # Connect to database as postgres superuser
-        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user=postgres password={self.config.DB_USER_PW}"
+        conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname={self.config.DB_NAME} user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
         with psycopg.connect(conn_string, autocommit=True) as conn:
             cursor = conn.cursor()
@@ -734,7 +734,7 @@ class DBManager:
             )
 
             # Create connection string for postgres database
-            conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user=postgres password={self.config.DB_USER_PW}"
+            conn_string = f"host={self.config.DB_HOST} port={self.config.DB_PORT} dbname=postgres user={self.config.DB_USER} password={self.config.DB_USER_PW}"
 
             # Connect with autocommit mode
             with psycopg.connect(conn_string, autocommit=True) as conn:

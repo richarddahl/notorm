@@ -19,7 +19,8 @@ class General(BaseSettings):
     API_VERSION: str = "v1.0"
 
     # DATABASE SETTINGS
-    DB_USER_PW: str
+    DB_USER: str = "postgres"  # Default to postgres, override in env files
+    DB_USER_PW: str = ""
     DB_HOST: str
     DB_PORT: int
     DB_SCHEMA: str
@@ -58,6 +59,14 @@ class General(BaseSettings):
     SUPERUSER_EMAIL: str
     SUPERUSER_HANDLE: str
     SUPERUSER_FULL_NAME: str
+
+    # VECTOR SEARCH SETTINGS
+    VECTOR_DIMENSIONS: int = 1536
+    VECTOR_INDEX_TYPE: str = "hnsw"
+    VECTOR_BATCH_SIZE: int = 10
+    VECTOR_UPDATE_INTERVAL: float = 1.0
+    VECTOR_AUTO_START: bool = True
+    VECTOR_ENTITIES: dict = {}
 
     # Modules to load
     LOAD_PACKAGES: list[str] = []

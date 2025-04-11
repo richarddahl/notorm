@@ -1,342 +1,255 @@
-# Domain-Driven Design Architecture
+# Domain-Driven Design in the Uno Framework
 
-This document outlines the Domain-Driven Design (DDD) architecture for the Uno framework, explaining the key concepts, structure, and implementation patterns.
+Domain-Driven Design (DDD) is a software development approach that focuses on creating a rich, expressive domain model that closely mirrors real-world business concepts. The Uno framework embraces DDD principles to create maintainable, flexible software that aligns with business needs.
 
-## Introduction to DDD
+## Core Concepts
 
-Domain-Driven Design is an approach to software development that focuses on:
+### Domain Model
 
-1. Building a shared understanding of the domain between developers and domain experts
-2. Focusing on the core domain and domain logic
-3. Basing complex designs on a model of the domain
-4. Collaborating with domain experts to improve the model and resolve domain-related issues
+The domain model is a conceptual model of the business domain that incorporates both behavior and data. In the Uno framework, we've implemented core domain model components:
 
-## Core DDD Concepts
+- **Entities**: Objects defined by their identity, with continuity through time
+- **Value Objects**: Immutable objects defined by their attributes, without identity
+- **Aggregates**: Clusters of related objects treated as a single unit
+- **Domain Events**: Records of significant occurrences within the domain
+- **Repositories**: Collection-like interfaces for accessing domain objects
+- **Domain Services**: Stateless operations that don't naturally belong to entities
 
-### Bounded Contexts
+### Strategic Design
 
-Bounded Contexts are explicit boundaries within which a domain model applies. They help to:
+Strategic design is about dealing with complexity by dividing the domain into manageable contexts:
 
-- Clarify what belongs together and what doesn't
-- Allow different models to evolve in different parts of the system
-- Avoid conflicts between models in different contexts
+- **Bounded Contexts**: Explicit boundaries within which a particular model applies
+- **Context Maps**: Documentation of relationships between bounded contexts
+- **Ubiquitous Language**: A consistent language shared by all team members within a context
 
-### Ubiquitous Language
+### Tactical Design Patterns
 
-A common language shared between developers and domain experts within a bounded context, ensuring that:
+Tactical design patterns are implementation patterns for expressing the domain model:
 
-- Terms have consistent meanings
-- The code reflects the domain language
-- Communication is clearer between all stakeholders
+- **Factories**: Encapsulate object creation logic
+- **Repositories**: Provide collection-like access to domain objects
+- **Services**: Implement domain operations that don't belong to entities
+- **Specifications**: Encapsulate business rules and query criteria
+- **Layered Architecture**: Separate domain logic from infrastructure concerns
 
-### Entities
+## Implementation in Uno Framework
 
-Objects that have distinct identities that persist throughout the system's lifecycle, where:
+### Domain Model Layer
 
-- They are distinguished by their identity, not their attributes
-- They may change over time but maintain the same identity
-- Equality is determined by identity, not by attribute values
+The domain model in Uno is implemented in the `uno.domain` package:
 
-### Value Objects
+```python
+from dataclasses import dataclass, field
+from typing import List, Optional
+from uuid import UUID
 
-Immutable objects that describe aspects of the domain with no conceptual identity, where:
+from uno.domain.core import Entity, AggregateRoot, ValueObject, DomainEvent
 
-- They are defined by their attributes
-- They are immutable
-- They can be shared freely
-- Equality is determined by comparing all attributes
+@dataclass(frozen=True)
+class Address(ValueObject):
+    street: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+    
+    def validate(self) -> None:
+        if not self.zip_code:
+            raise ValueError("Zip code is required")
 
-### Aggregates
+@dataclass
+class User(AggregateRoot):
+    username: str
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    addresses: List[Address] = field(default_factory=list)
+    
+    def add_address(self, address: Address) -> None:
+        address.validate()
+        self.addresses.append(address)
+        self.register_event(UserAddressAddedEvent(self.id, address))
+    
+    def check_invariants(self) -> None:
+        if not self.username:
+            raise ValueError("Username is required")
+        if not self.email:
+            raise ValueError("Email is required")
 
-Clusters of domain objects (entities and value objects) treated as a single unit, where:
-
-- One entity serves as the aggregate root
-- External references are only allowed to the aggregate root
-- Changes to the aggregate must maintain internal consistency
-- Aggregates are the basic unit of data storage and retrieval
-
-### Domain Events
-
-Notifications of significant occurrences in the domain, where:
-
-- They represent something that has happened in the domain
-- They are immutable and represent past actions
-- They can trigger reactions from other parts of the system
-- They are named in the past tense
+class UserAddressAddedEvent(DomainEvent):
+    user_id: UUID
+    address: Address
+```
 
 ### Repositories
 
-Mechanisms for encapsulating storage, retrieval, and search of aggregates, where:
+Repositories abstract the persistence mechanism for domain objects:
 
-- They provide a collection-like interface for accessing domain objects
-- They hide the details of the persistence infrastructure
-- They work with entire aggregates, not parts of an aggregate
+```python
+from typing import Optional, List, Dict, Any
+from uuid import UUID
+
+from uno.domain.model import User
+from uno.domain.repository import Repository, AggregateRepository
+
+class UserRepository(AggregateRepository[User, UUID]):
+    async def get(self, id: UUID) -> Optional[User]:
+        # Implementation details...
+        pass
+    
+    async def save(self, user: User) -> None:
+        # Implementation details...
+        pass
+    
+    async def find_by_username(self, username: str) -> Optional[User]:
+        # Implementation details...
+        pass
+```
 
 ### Domain Services
 
-Operations that don't conceptually belong to any entity or value object, where:
+Domain services encapsulate domain operations that don't naturally fit within entities:
 
-- They represent domain concepts that are processes or transformations
-- They are stateless operations
-- They often coordinate between multiple entities or aggregates
+```python
+from uno.domain.service import DomainService
+from uno.domain.repository import UserRepository
+from uno.domain.model import User, Address
 
-## Uno Framework DDD Architecture
+class UserService(DomainService):
+    def __init__(self, user_repository: UserRepository):
+        self.user_repository = user_repository
+    
+    async def change_user_primary_address(self, user_id: UUID, address: Address) -> User:
+        user = await self.user_repository.get(user_id)
+        if not user:
+            raise EntityNotFoundError("User", user_id)
+        
+        # Domain logic...
+        user.addresses.insert(0, address)
+        user.register_event(UserPrimaryAddressChangedEvent(user_id, address))
+        
+        await self.user_repository.save(user)
+        return user
+```
 
-The Uno framework implements DDD principles through a clear separation of layers and components.
+### Unit of Work
 
-### Layered Architecture
+The Unit of Work pattern coordinates operations and transaction management:
+
+```python
+from uno.domain.unit_of_work import UnitOfWork
+from uno.domain.repository import UserRepository
+
+async with UnitOfWork() as uow:
+    user_repo = uow.get_repository(UserRepository)
+    user = await user_repo.get(user_id)
+    user.update_email(new_email)
+    await user_repo.save(user)
+    # Transaction is committed on successful exit
+```
+
+### Bounded Contexts
+
+Uno organizes code into bounded contexts, each with its own model and responsibility:
 
 ```
-┌───────────────────────────────────────────────┐
-│ User Interface / API Layer                    │
-│ (Endpoints, Controllers, DTOs)                │
-└─────────────────────┬─────────────────────────┘
-                      │
-┌─────────────────────▼─────────────────────────┐
-│ Application Layer                             │
-│ (Application Services, Use Cases, Commands)   │
-└─────────────────────┬─────────────────────────┘
-                      │
-┌─────────────────────▼─────────────────────────┐
-│ Domain Layer                                  │
-│ (Entities, Value Objects, Domain Events,      │
-│  Domain Services, Aggregates)                 │
-└─────────────────────┬─────────────────────────┘
-                      │
-┌─────────────────────▼─────────────────────────┐
-│ Infrastructure Layer                          │
-│ (Repositories, DB Access, External Services)  │
-└───────────────────────────────────────────────┘
+uno/
+├── api/               # API Context
+├── authorization/     # Authorization Context
+├── database/          # Database Context
+├── domain/            # Domain Model Context
+├── meta/              # Meta Context
+├── queries/           # Query Context
+├── schema/            # Schema Context
+└── sql/               # SQL Generation Context
 ```
+
+Each context has a clear responsibility and maintains its own ubiquitous language.
+
+## Layered Architecture
+
+The Uno framework implements a layered architecture to separate concerns:
 
 ### Domain Layer
 
-The domain layer contains:
-
-- **Entities**: Objects with identity and lifecycle
-- **Value Objects**: Immutable objects defined by their attributes
-- **Aggregates**: Clusters of related objects with a root entity
-- **Domain Events**: Notifications of important domain occurrences
-- **Domain Services**: Stateless operations on multiple entities
+Contains the business logic and domain objects:
+- Entities, value objects, aggregates
+- Domain events and domain services
+- Domain exceptions and business rules
+- Repository interfaces (but not implementations)
 
 ### Application Layer
 
-The application layer contains:
-
-- **Application Services**: Orchestrators for use cases
-- **Commands and Queries**: Request objects for operations
-- **DTO Mapping**: Conversion between domain objects and DTOs
+Coordinates domain objects to perform application tasks:
+- Application services
+- Command and query handlers
+- Transaction management
+- External API integration
 
 ### Infrastructure Layer
 
-The infrastructure layer contains:
+Provides technical capabilities needed by higher layers:
+- Repository implementations
+- Database access
+- API endpoints
+- Event handling infrastructure
+- Messaging
 
-- **Repositories**: Persistence mechanisms for aggregates
-- **Database Access**: Low-level database operations
-- **External Service Adapters**: Integration with external systems
+### Presentation Layer
 
-### User Interface / API Layer
+Handles user interaction:
+- Web controllers
+- API endpoints
+- User interfaces
 
-The API layer contains:
+## Benefiting from DDD in Uno
 
-- **Endpoints**: API entry points
-- **DTOs**: Data Transfer Objects for API communication
-- **Validation**: Request validation logic
+### Advantages
 
-## Bounded Contexts in Uno Framework
+1. **Alignment with Business**: The model closely mirrors business concepts
+2. **Handling Complexity**: Complex domains are made manageable through contexts
+3. **Team Communication**: Ubiquitous language improves communication
+4. **Maintainability**: Clear boundaries and responsibilities make the system more maintainable
+5. **Flexibility**: Domain-focused design enables easy adaptation to business changes
 
-The Uno framework is organized into the following bounded contexts:
+### Best Practices
 
-### 1. Core Domain Context
+1. **Focus on the Core Domain**: Invest most in the most complex, valuable parts
+2. **Engage with Domain Experts**: Continuous dialogue with subject matter experts
+3. **Refine the Ubiquitous Language**: Documentation of key terms in each context
+4. **Evolve the Model**: Continuous refinement based on growing understanding
+5. **Respect Bounded Contexts**: Honor the boundaries between contexts
 
-Central domain concepts shared across the application:
+## Transition Strategy
 
-- Base entity and value object classes
-- Domain event infrastructure
-- Repository interfaces
-- Domain exceptions
+For existing systems transitioning to DDD, Uno recommends:
 
-### 2. Identity and Access Context
+1. **Identify Implicit Contexts**: Recognize existing implicit boundaries
+2. **Make Boundaries Explicit**: Define clear context boundaries
+3. **Create Anti-Corruption Layers**: Protect new models from legacy systems
+4. **Refactor Incrementally**: Gradually move toward the target architecture
+5. **Start with Core Domain**: Focus first on the most valuable parts
 
-User identity and authorization concerns:
+## Common Challenges and Solutions
 
-- Users, roles, and permissions
-- Authentication mechanisms
-- Access control policies
+### Challenge: Complex Domain
+**Solution**: Break down into bounded contexts, focus on core domain first
 
-### 3. Metadata Context
+### Challenge: Legacy Integration
+**Solution**: Use anti-corruption layers, adapt-in/adapt-out pattern
 
-Metadata and type system management:
+### Challenge: Team Alignment
+**Solution**: Develop and document ubiquitous language, use context mapping
 
-- Type definitions and relationships
-- Metadata attributes
-- Tagging and categorization
+### Challenge: Performance Concerns
+**Solution**: Use CQRS pattern, optimize read models separately from write models
 
-### 4. Workflow Context
-
-Business process and workflow management:
-
-- Process definitions
-- State machines
-- Workflow execution
-
-### 5. Messaging Context
-
-Communication and notification systems:
-
-- Message definitions
-- Notification channels
-- Subscription management
-
-### 6. Reporting Context
-
-Data analysis and reporting capabilities:
-
-- Report definitions
-- Data aggregation
-- Export formats
-
-## DDD Implementation Details
-
-### Entity Implementation
-
-```python
-@dataclass
-class Entity(Generic[KeyT]):
-    """Base class for all domain entities."""
-    
-    id: KeyT
-    _events: List[DomainEvent] = field(default_factory=list, init=False, repr=False)
-    
-    def __eq__(self, other):
-        if not isinstance(other, Entity):
-            return False
-        return self.id == other.id
-    
-    def __hash__(self):
-        return hash(self.id)
-    
-    def register_event(self, event: DomainEvent) -> None:
-        """Register a domain event to be published after the entity is saved."""
-        self._events.append(event)
-    
-    def clear_events(self) -> List[DomainEvent]:
-        """Clear and return all registered events."""
-        events = self._events.copy()
-        self._events.clear()
-        return events
-```
-
-### Aggregate Implementation
-
-```python
-@dataclass
-class AggregateRoot(Entity[KeyT], Generic[KeyT]):
-    """Base class for aggregate roots."""
-    
-    # Aggregate-specific behavior
-    def check_invariants(self) -> None:
-        """Check that all aggregate invariants are satisfied."""
-        # Implement in derived classes
-        pass
-    
-    def apply_changes(self) -> None:
-        """Apply any pending changes and ensure consistency."""
-        self.check_invariants()
-```
-
-### Value Object Implementation
-
-```python
-@dataclass(frozen=True)
-class ValueObject:
-    """Base class for value objects."""
-    
-    def equals(self, other: Any) -> bool:
-        """Check if this value object equals another."""
-        if not isinstance(other, self.__class__):
-            return False
-        return self.__dict__ == other.__dict__
-```
-
-### Repository Implementation
-
-```python
-class Repository(Generic[EntityT, KeyT]):
-    """Base repository interface."""
-    
-    async def get(self, id: KeyT) -> Optional[EntityT]:
-        """Get an entity by its ID."""
-        ...
-    
-    async def save(self, entity: EntityT) -> None:
-        """Save an entity."""
-        # Publish any domain events
-        events = entity.clear_events()
-        for event in events:
-            await self.publish_event(event)
-        ...
-    
-    async def delete(self, id: KeyT) -> bool:
-        """Delete an entity by its ID."""
-        ...
-    
-    async def publish_event(self, event: DomainEvent) -> None:
-        """Publish a domain event."""
-        ...
-```
-
-### Domain Service Implementation
-
-```python
-class DomainService:
-    """Base class for domain services."""
-    
-    def __init__(self, uow: UnitOfWork):
-        self.uow = uow
-    
-    async def execute(self, *args, **kwargs) -> Any:
-        """Execute the domain service operation."""
-        async with self.uow:
-            result = await self._execute_internal(*args, **kwargs)
-            await self.uow.commit()
-            return result
-    
-    async def _execute_internal(self, *args, **kwargs) -> Any:
-        """Internal implementation of the operation."""
-        raise NotImplementedError()
-```
-
-## Migration Strategy
-
-### Phase 1: Domain Model Extraction
-
-1. Create core domain entity and value object base classes
-2. Extract domain models from existing UnoObj classes
-3. Organize models into appropriate bounded contexts
-4. Introduce domain events for important state changes
-
-### Phase 2: Repository Refactoring
-
-1. Define repository interfaces for each aggregate type
-2. Implement repositories with domain event publishing
-3. Integrate with Unit of Work pattern
-4. Update existing code to use repositories
-
-### Phase 3: Service Extraction
-
-1. Identify domain service operations
-2. Extract service implementations from existing code
-3. Apply proper dependency injection
-4. Update client code to use the services
-
-### Phase 4: Infrastructure Separation
-
-1. Further separate domain logic from infrastructure
-2. Refactor database access to work with aggregates
-3. Implement proper transaction boundaries
-4. Ensure domain invariants are enforced
+### Challenge: Technical Complexity
+**Solution**: Separate technical concerns from domain concerns, use infrastructure layer
 
 ## Conclusion
 
-This Domain-Driven Design architecture provides a clear structure for organizing the Uno framework, focusing on the domain model and business logic while separating infrastructure concerns. By implementing these patterns, the framework will become more maintainable, expressive, and aligned with the problem domain.
+Domain-Driven Design provides a powerful approach for building complex software systems. The Uno framework embraces DDD principles to create a maintainable, flexible, and business-aligned architecture.
+
+By separating the domain model from infrastructure concerns, using bounded contexts to manage complexity, and implementing tactical patterns like entities, value objects, and repositories, Uno enables developers to build systems that can evolve with changing business needs.

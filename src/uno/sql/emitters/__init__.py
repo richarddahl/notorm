@@ -11,10 +11,13 @@ common database operations.
 from uno.sql.emitters.grants import AlterGrants
 from uno.sql.emitters.triggers import InsertMetaRecordTrigger, RecordUserAuditFunction
 from uno.sql.emitters.table import TableMergeFunction
+from uno.sql.emitters.vector import VectorSQLEmitter, VectorIntegrationEmitter
 
 __all__ = [
     "AlterGrants",
     "InsertMetaRecordTrigger",
     "RecordUserAuditFunction",
     "TableMergeFunction",
+    "VectorSQLEmitter",
+    "VectorIntegrationEmitter",
 ]

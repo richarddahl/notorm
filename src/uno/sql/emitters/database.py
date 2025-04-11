@@ -146,6 +146,10 @@ class CreateSchemasAndExtensions(SQLEmitter):
 
         CREATE EXTENSION IF NOT EXISTS age;
 
+        -- Add pgvector extension for vector similarity search
+        CREATE EXTENSION IF NOT EXISTS vector;
+
+        -- Configure schemas and permissions
         ALTER SCHEMA ag_catalog OWNER TO {admin_role};
         GRANT USAGE ON SCHEMA ag_catalog TO {admin_role}, {reader_role}, {writer_role};
         SELECT * FROM ag_catalog.create_graph('graph');

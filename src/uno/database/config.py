@@ -7,7 +7,7 @@ from uno.settings import uno_settings
 class ConnectionConfig(BaseModel):
     """Configuration for database connections."""
 
-    db_role: str = f"{uno_settings.DB_NAME}_login"
+    db_role: str = uno_settings.DB_USER  # Use DB_USER by default
     db_name: Optional[str] = uno_settings.DB_NAME
     db_user_pw: Optional[str] = uno_settings.DB_USER_PW
     db_host: Optional[str] = uno_settings.DB_HOST

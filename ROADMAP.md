@@ -11,16 +11,16 @@ This roadmap outlines the key improvements planned for the Uno framework to make
 - [x] Create a protocol validation system
 
 ### 2. Domain-Driven Design Architecture
-- [ ] Reorganize code into bounded contexts/domains
-- [ ] Define aggregate roots, entities, value objects, and domain services
-- [ ] Separate domain logic from infrastructure concerns
-- [ ] Implement repository pattern consistently
+- [x] Reorganize code into bounded contexts/domains
+- [x] Define aggregate roots, entities, value objects, and domain services
+- [x] Separate domain logic from infrastructure concerns
+- [x] Implement repository pattern consistently
 
 ### 3. Event-Driven Architecture
-- [ ] Implement robust event bus system with topic-based routing
-- [ ] Create domain event base classes and interfaces
-- [ ] Support both sync and async event handlers
-- [ ] Add event persistence for reliable processing
+- [x] Implement robust event bus system with topic-based routing
+- [x] Create domain event base classes and interfaces
+- [x] Support both sync and async event handlers
+- [x] Add event persistence for reliable processing
 
 ## Phase 2: Performance and Scalability
 
