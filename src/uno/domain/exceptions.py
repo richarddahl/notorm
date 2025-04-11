@@ -43,6 +43,24 @@ class DomainError(Exception):
         }
 
 
+class ValidationError(DomainError):
+    """
+    Exception raised when validation fails.
+    
+    This exception is raised when command validation or input validation fails.
+    """
+    
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        """
+        Initialize validation error.
+        
+        Args:
+            message: Human-readable error message
+            details: Validation error details
+        """
+        super().__init__(message, "VALIDATION_ERROR", details)
+
+
 class DomainValidationError(DomainError):
     """
     Exception raised when domain validation fails.
@@ -155,3 +173,105 @@ class AggregateInvariantViolationError(DomainError):
             "invariant_name": invariant_name,
         }
         super().__init__(message, "AGGREGATE_INVARIANT_VIOLATION", details)
+
+
+class CommandHandlerNotFoundError(DomainError):
+    """
+    Exception raised when a command handler cannot be found.
+    
+    This exception is raised when attempting to dispatch a command for which
+    there is no registered handler.
+    """
+    
+    def __init__(self, command_type: str):
+        """
+        Initialize command handler not found error.
+        
+        Args:
+            command_type: Type of command that has no handler
+        """
+        message = f"No handler registered for command {command_type}"
+        details = {"command_type": command_type}
+        super().__init__(message, "COMMAND_HANDLER_NOT_FOUND", details)
+
+
+class QueryHandlerNotFoundError(DomainError):
+    """
+    Exception raised when a query handler cannot be found.
+    
+    This exception is raised when attempting to dispatch a query for which
+    there is no registered handler.
+    """
+    
+    def __init__(self, query_type: str):
+        """
+        Initialize query handler not found error.
+        
+        Args:
+            query_type: Type of query that has no handler
+        """
+        message = f"No handler registered for query {query_type}"
+        details = {"query_type": query_type}
+        super().__init__(message, "QUERY_HANDLER_NOT_FOUND", details)
+
+
+class CommandExecutionError(DomainError):
+    """
+    Exception raised when a command execution fails.
+    
+    This exception is raised when a command fails to execute due to an error
+    in the command handler.
+    """
+    
+    def __init__(self, command_type: str, message: str, details: Optional[Dict[str, Any]] = None):
+        """
+        Initialize command execution error.
+        
+        Args:
+            command_type: Type of command that failed to execute
+            message: Human-readable error message
+            details: Additional error details
+        """
+        error_details = details or {}
+        error_details["command_type"] = command_type
+        super().__init__(message, "COMMAND_EXECUTION_ERROR", error_details)
+
+
+class QueryExecutionError(DomainError):
+    """
+    Exception raised when a query execution fails.
+    
+    This exception is raised when a query fails to execute due to an error
+    in the query handler.
+    """
+    
+    def __init__(self, query_type: str, message: str, details: Optional[Dict[str, Any]] = None):
+        """
+        Initialize query execution error.
+        
+        Args:
+            query_type: Type of query that failed to execute
+            message: Human-readable error message
+            details: Additional error details
+        """
+        error_details = details or {}
+        error_details["query_type"] = query_type
+        super().__init__(message, "QUERY_EXECUTION_ERROR", error_details)
+
+
+class AuthorizationError(DomainError):
+    """
+    Exception raised when authorization fails.
+    
+    This exception is raised when a user is not authorized to perform an operation.
+    """
+    
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        """
+        Initialize authorization error.
+        
+        Args:
+            message: Human-readable error message
+            details: Additional error details
+        """
+        super().__init__(message, "AUTHORIZATION_ERROR", details)
