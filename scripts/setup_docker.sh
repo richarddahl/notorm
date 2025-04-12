@@ -1,5 +1,12 @@
 #!/bin/bash
-# Main script to set up Docker environment for Uno development
+# -----------------------------------------------------------------------------
+# This script is deprecated and will be removed in a future version.
+# Please use the new standardized script instead:
+#   scripts/docker/start.sh
+# -----------------------------------------------------------------------------
 
-# Just proxy to the actual implementation
-./docker/scripts/setup_with_docker.sh "$@"
+echo "[DEPRECATED] This script is deprecated. Please use scripts/docker/start.sh instead."
+echo "Redirecting to the new script location..."
+
+# Forward to the new script
+"$(dirname "$0")/docker/start.sh" "$@"

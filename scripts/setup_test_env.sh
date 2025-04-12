@@ -1,5 +1,12 @@
 #!/bin/bash
-# Main script to set up test environment for Uno
+# -----------------------------------------------------------------------------
+# This script is deprecated and will be removed in a future version.
+# Please use the new standardized script instead:
+#   scripts/docker/test/setup.sh
+# -----------------------------------------------------------------------------
 
-# Just proxy to the actual implementation
-./docker/scripts/setup_test_docker.sh "$@"
+echo "[DEPRECATED] This script is deprecated. Please use scripts/docker/test/setup.sh instead."
+echo "Redirecting to the new script location..."
+
+# Forward to the new script
+"$(dirname "$0")/docker/test/setup.sh" "$@"

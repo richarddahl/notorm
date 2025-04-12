@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 
 from uno.domain.event_store import PostgresEventStore
+from uno.domain.event_store_manager import EventStoreManager
 from uno.settings import uno_settings
 
 

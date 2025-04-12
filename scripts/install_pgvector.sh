@@ -1,5 +1,12 @@
 #!/bin/bash
-# Main script to install pgvector for local development
+# -----------------------------------------------------------------------------
+# This script is deprecated and will be removed in a future version.
+# Please use the new standardized script instead:
+#   scripts/db/extensions/pgvector.sh
+# -----------------------------------------------------------------------------
 
-# Just proxy to the actual implementation
-./docker/scripts/install_pgvector.sh "$@"
+echo "[DEPRECATED] This script is deprecated. Please use scripts/db/extensions/pgvector.sh instead."
+echo "Redirecting to the new script location..."
+
+# Forward to the new script
+"$(dirname "$0")/db/extensions/pgvector.sh" "$@"
