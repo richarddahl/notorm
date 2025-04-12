@@ -22,6 +22,8 @@ uno is a comprehensive application framework for building data-driven applicatio
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
 
+The name "uno" is also, of course, a cheeky homage to gnu.
+
 ## Features
 
 - **Domain-Driven Design**: Support for building applications using DDD principles with entities, value objects, aggregates, and repositories
