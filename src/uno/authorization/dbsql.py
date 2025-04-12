@@ -3,34 +3,24 @@
 # SPDX-License-Identifier: MIT
 
 from pydantic import computed_field
+import textwrap
 
-from psycopg import sql
-from sqlalchemy.sql import text
-
-from uno.sql.classes import (
-    SQLEmitter,
-    DB_SCHEMA,
-    DB_NAME,
-    admin_role,
-    writer_role,
-    reader_role,
-    login_role,
-    base_role,
-    base_role,
-    reader_role,
-    writer_role,
-    admin_role,
-    login_role,
-)
+from uno.sql.emitter import SQLEmitter
 from uno.settings import uno_settings
 
 
 class CreateRLSFunctions(SQLEmitter):
     @computed_field
     def emit_create_authorize_user_function_sql(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Creates a PostgreSQL function to authorize users and set RLS session variables.
+        
+        This function verifies JWT tokens and sets the appropriate session variables
+        for implementing row-level security based on the authenticated user.
+        """
+        admin_role = f"{self.config.DB_NAME}_admin"
+        
+        return self.format_sql_template(textwrap.dedent("""
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader');
             CREATE OR REPLACE FUNCTION {schema_name}.authorize_user(token TEXT, role_name TEXT DEFAULT 'reader')
@@ -148,21 +138,19 @@ class CreateRLSFunctions(SQLEmitter):
                 RETURN token_valid;
             END;
             $$;
-            """
-            )
-            .format(
-                admin_role=admin_role,
-                db_name=sql.SQL(config.DB_NAME),
-                schema_name=DB_SCHEMA,
-            )
-            .as_string()
-        )
+        """), admin_role=admin_role)
 
     @computed_field
     def emit_permissible_groups_sql(self) -> str:
-        return (
-            sql.SQL(
-                """
+        """
+        Creates a PostgreSQL function to retrieve permissible groups for a user.
+        
+        This function returns the groups a user has access to based on their
+        roles and permissions.
+        """
+        admin_role = f"{self.config.DB_NAME}_admin"
+        
+        return self.format_sql_template(textwrap.dedent("""
             SET ROLE {admin_role};
             DROP FUNCTION IF EXISTS {schema_name}.permissible_groups(table_name TEXT, operation TEXT);
             CREATE OR REPLACE FUNCTION {schema_name}.permissible_groups(table_name TEXT, operation TEXT)
@@ -184,23 +172,19 @@ class CreateRLSFunctions(SQLEmitter):
                 JOIN {schema_name}.permission tp ON ugr.role_id = tp.id
                 WHERE u.id = session_user_id AND tp.is_active = TRUE;
             END $$;
-            """
-            )
-            .format(
-                admin_role=admin_role,
-                schema_name=DB_SCHEMA,
-            )
-            .as_string()
-        )
+        """), admin_role=admin_role)
 
 
 class GetPermissibleGroupsFunction(SQLEmitter):
-
     @computed_field
     def select_permissible_groups(self) -> str:
-        function_string = sql.SQL(
-            text(
-                """
+        """
+        Creates a function to select permissible groups for a user.
+        
+        This function returns an array of group IDs that the user has
+        permission to access for a specific meta_type.
+        """
+        function_body = textwrap.dedent("""
             DECLARE
                 user_id TEXT := current_setting('rls_var.user_id', true)::TEXT;
                 permissible_groups VARCHAR(26)[];
@@ -216,22 +200,25 @@ class GetPermissibleGroupsFunction(SQLEmitter):
                 INTO permissible_groups;
                 RETURN permissible_groups;
             END;
-            """
-            )
-            .format(schema_name=DB_SCHEMA)
-            .as_string()
-        )
+        """)
+        
+        # Use the function builder provided by SQLEmitter
+        function_builder = self.get_function_builder()
+        return function_builder\
+            .with_name("select_permissible_groups")\
+            .with_args("meta_type TEXT")\
+            .with_returns("VARCHAR[]")\
+            .with_body(function_body)\
+            .build()
 
-        return self.create_sql_function(
-            "select_permissible_groups",
-            function_string,
-            return_type="VARCHAR[]",
-            function_args="meta_type TEXT",
-        )
-
-
-# class InsertGroupConstraint(SQLEmitter):
-#    def   emit_sql(self, conn: Connection:Engine)-> str:
-#        return """ALTER TABLE group ADD CONSTRAINT ck_can_insert_group
-#            CHECK (validate_group_insert(tenant_id) = true);
-#            """
+# Example of a properly implemented constraint emitter
+class InsertGroupConstraint(SQLEmitter):
+    @computed_field
+    def create_group_constraint(self) -> str:
+        """
+        Creates a constraint to validate group insertion.
+        """
+        return self.format_sql_template("""
+            ALTER TABLE {schema_name}.group ADD CONSTRAINT ck_can_insert_group
+            CHECK (validate_group_insert(tenant_id) = true);
+        """)

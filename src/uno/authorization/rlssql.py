@@ -3,25 +3,49 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from typing import Any, Callable
 from pydantic import computed_field
-from uno.sql.classes import SQLEmitter
+from uno.sql.emitter import SQLEmitter
 
 
 class RowLevelSecurity(SQLEmitter):
+    def get_admin_role(self) -> str:
+        """
+        Safely gets the admin role name.
+        
+        Returns:
+            Admin role name for the database
+        """
+        return f"{self.config.DB_NAME}_admin" if hasattr(self.config, "DB_NAME") else "admin"
+    
+    def get_table_name(self) -> str:
+        """
+        Safely gets the table name from the SQLEmitter.
+        
+        Returns:
+            Table name as a string
+            
+        Raises:
+            ValueError: If table is not set 
+        """
+        if self.table is None:
+            raise ValueError("Table not set for Row-Level Security")
+        return self.table.name
+    
     @computed_field
     def enable_rls(self) -> str:
         """
         Emits the SQL statements to enable Row-Level Security (RLS)
         on the table.
         """
-        admin_role = f"{self.config.DB_NAME}_admin"
-        return textwrap.dedent(
-            f"""
-            -- Enable RLS for the table {self.table.name}
+        admin_role = self.get_admin_role()
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            -- Enable RLS for the table {table_name}
             SET ROLE {admin_role};
-            ALTER TABLE {self.config.DB_SCHEMA}.{self.table.name} ENABLE ROW LEVEL SECURITY;
-        """
-        )
+            ALTER TABLE {schema_name}.{table_name} ENABLE ROW LEVEL SECURITY;
+        """), admin_role=admin_role, table_name=table_name)
 
     @computed_field
     def force_rls(self) -> str:
@@ -29,14 +53,14 @@ class RowLevelSecurity(SQLEmitter):
         Emits the SQL statements to force Row-Level Security (RLS)
         on the table for table owners and DB superusers.
         """
-        admin_role = f"{self.config.DB_NAME}_admin"
-        return textwrap.dedent(
-            f"""
-            -- FORCE RLS for the table {self.table.name}
+        admin_role = self.get_admin_role()
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            -- FORCE RLS for the table {table_name}
             SET ROLE {admin_role};
-            ALTER TABLE {self.config.DB_SCHEMA}.{self.table.name} FORCE ROW LEVEL SECURITY;
-        """
-        )
+            ALTER TABLE {schema_name}.{table_name} FORCE ROW LEVEL SECURITY;
+        """), admin_role=admin_role, table_name=table_name)
 
 
 class UserRowLevelSecurity(RowLevelSecurity):
@@ -46,15 +70,16 @@ class UserRowLevelSecurity(RowLevelSecurity):
         Emits the SQL statement for the user select policy.
         Superusers can select all records; others can only select records associated with their tenant.
         """
-        return textwrap.dedent(
-            f"""
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
             /* 
             The policy to allow:
                 Superusers to select all records;
                 All other users to select only records associated with their tenant;
             */
             CREATE POLICY user_select_policy
-            ON {self.config.DB_SCHEMA}.{self.table.name} FOR SELECT
+            ON {schema_name}.{table_name} FOR SELECT
             USING (
                 email = current_setting('rls_var.email', true)::TEXT OR
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
@@ -62,12 +87,11 @@ class UserRowLevelSecurity(RowLevelSecurity):
                 (
                     SELECT reltuples < 2 AS has_records
                     FROM pg_class
-                    WHERE relname = '{self.table.name}'
+                    WHERE relname = '{table_name}'
                     AND relkind = 'r'
                 )
             );
-        """
-        )
+        """), table_name=table_name)
 
     @computed_field
     def insert_policy(self) -> str:
@@ -75,8 +99,9 @@ class UserRowLevelSecurity(RowLevelSecurity):
         Emits the SQL statement for the user insert policy.
         Superusers and Tenant Admins may insert, but regular users cannot.
         """
-        return textwrap.dedent(
-            f"""
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
             /*
             The policy to allow:
                 Superusers to insert records;
@@ -84,7 +109,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             Regular users cannot insert records.
             */
             CREATE POLICY user_insert_policy
-            ON {self.config.DB_SCHEMA}.{self.table.name} FOR INSERT
+            ON {schema_name}.{table_name} FOR INSERT
             WITH CHECK (
                 (
                     current_setting('rls_var.is_superuser', true)::BOOLEAN OR
@@ -99,14 +124,13 @@ class UserRowLevelSecurity(RowLevelSecurity):
                         (
                             SELECT reltuples < 1 AS has_records
                             FROM pg_class
-                            WHERE relname = '{self.table.name}'
+                            WHERE relname = '{table_name}'
                             AND relkind = 'r'
                         )
                     )
                 )
             );
-        """
-        )
+        """), table_name=table_name)
 
     @computed_field
     def update_policy(self) -> str:
@@ -114,22 +138,22 @@ class UserRowLevelSecurity(RowLevelSecurity):
         Emits the SQL statement for the user update policy.
         Superusers can update all records; others can update only records associated with their tenant.
         """
-        return textwrap.dedent(
-            f"""
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
             /* 
             The policy to allow:
                 Superusers to select all records;
                 All other users to select only records associated with their tenant;
             */
             CREATE POLICY user_update_policy
-            ON {self.config.DB_SCHEMA}.{self.table.name} FOR UPDATE
+            ON {schema_name}.{table_name} FOR UPDATE
             USING (
                 email = current_setting('rls_var.email', true)::TEXT OR
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
                 tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
             );
-        """
-        )
+        """), table_name=table_name)
 
     @computed_field
     def delete_policy(self) -> str:
@@ -137,8 +161,9 @@ class UserRowLevelSecurity(RowLevelSecurity):
         Emits the SQL statement for the user delete policy.
         Superusers and Tenant Admins may delete records; regular users cannot.
         """
-        return textwrap.dedent(
-            f"""
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
             /* 
             The policy to allow:
                 Superusers to delete records;
@@ -146,7 +171,7 @@ class UserRowLevelSecurity(RowLevelSecurity):
             Regular users cannot delete records.
             */
             CREATE POLICY user_delete_policy
-            ON {self.config.DB_SCHEMA}.{self.table.name} FOR DELETE
+            ON {schema_name}.{table_name} FOR DELETE
             USING (
                 current_setting('rls_var.is_superuser', true)::BOOLEAN OR
                 (
@@ -158,475 +183,467 @@ class UserRowLevelSecurity(RowLevelSecurity):
                     tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
                 )
             );
-        """
-        )
+        """), table_name=table_name)
 
 
 # The remaining classes and functions for Tenant, Admin, Superuser and Public policies
-# used similar patterns and can be refactored in the same manner.
-
-'''
-def tenant__emit_select_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            All other users to select only their tenant;
-        */
-        CREATE POLICY tenant__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            id = current_setting('rls_var.tenant_id', true)::TEXT
-        );
-        """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def tenant__emit_insert_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /*
-        The policy to allow:
-            Superusers to insert records;
-            Tenant Admins to insert user records associated with the tenant;
-        Regular users cannot insert user records.
-        */
-        CREATE POLICY tenant__emit_insert_policy
-        ON {schema_name}.{table_name} FOR INSERT
-        WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
-        """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def tenant_update_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            All other users to select only user records associated with their tenant;
-        */
-        CREATE POLICY tenant_update_policy
-        ON {schema_name}.{table_name} FOR UPDATE
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                id = current_setting('rls_var.tenant_id', true)::TEXT
-            )
-        );
-        """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def tenant_delete_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to delete tenant records;
-        */
-        CREATE POLICY tenant_delete_policy
-        ON {schema_name}.{table_name} FOR DELETE
-        USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
-        """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
+# have been refactored below to use the proper SQLEmitter pattern.
 
 class TenantRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = tenant__emit_select_policy_sql
-    _emit_insert_policy: Callable = tenant__emit_insert_policy_sql
-    _emit_update_policy: Callable = tenant_update_policy_sql
-    _emit_delete_policy: Callable = tenant_delete_policy_sql
-
-
-def admin__emit_select_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            Tenant Admin users to select all records associated with their tenant;
-        */
-        CREATE POLICY admin__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            )
-        );
+    @computed_field
+    def select_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def admin__emit_insert_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to insert a record;
-            Tenant Admin users to insert a record associated with their tenant;
-        */
-        CREATE POLICY admin__emit_insert_policy
-        ON {schema_name}.{table_name} FOR INSERT
-        WITH CHECK (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            )
-        );
+        Emits the SQL statement for the tenant select policy.
+        Superusers can select all records; all other users can select only their tenant.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to select all records;
+                All other users to select only their tenant;
+            */
+            CREATE POLICY tenant_select_policy
+            ON {schema_name}.{table_name} FOR SELECT
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                id = current_setting('rls_var.tenant_id', true)::TEXT
+            );
+        """), table_name=table_name)
 
-
-def admin_update_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to update all records;
-            Tenant Admin users to update all records associated with their tenant;
-        */
-        CREATE POLICY admin_update_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            )
-        );
+    @computed_field
+    def insert_policy(self) -> str:
         """
-            )
-            .format(table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def admin_delete_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to delete all records;
-            Tenant Admin users to delete all records associated with their tenant;
-        */
-        CREATE POLICY user__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            )
-        );
+        Emits the SQL statement for the tenant insert policy.
+        Only superusers can insert tenant records.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /*
+            The policy to allow:
+                Superusers to insert records;
+                Tenant Admins to insert user records associated with the tenant;
+            Regular users cannot insert user records.
+            */
+            CREATE POLICY tenant_insert_policy
+            ON {schema_name}.{table_name} FOR INSERT
+            WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
+
+    @computed_field
+    def update_policy(self) -> str:
+        """
+        Emits the SQL statement for the tenant update policy.
+        Superusers can update all records; tenant admins can update their own tenant records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to select all records;
+                All other users to select only user records associated with their tenant;
+            */
+            CREATE POLICY tenant_update_policy
+            ON {schema_name}.{table_name} FOR UPDATE
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    id = current_setting('rls_var.tenant_id', true)::TEXT
+                )
+            );
+        """), table_name=table_name)
+
+    @computed_field
+    def delete_policy(self) -> str:
+        """
+        Emits the SQL statement for the tenant delete policy.
+        Only superusers can delete tenant records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to delete tenant records;
+            */
+            CREATE POLICY tenant_delete_policy
+            ON {schema_name}.{table_name} FOR DELETE
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
 
 
 class AdminRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = admin__emit_select_policy_sql
-    _emit_insert_policy: Callable = admin__emit_insert_policy_sql
-    _emit_update_policy: Callable = admin_update_policy_sql
-    _emit_delete_policy: Callable = admin_delete_policy_sql
-
-
-def def ault__emit_select_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            Tenant Admin users to select all records associated with their tenant;
-            Regular users to select only records associated with their Groups or that they own.;
-        */
-        CREATE POLICY user__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            ) OR
-            (
-                owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN ({schema_name}.permissible_groups('{table_name}', 'SELECT')::TEXT[])
-            )
-        );
+    @computed_field
+    def select_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def def ault__emit_insert_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            Tenant Admin users to select all records associated with their tenant;
-            Regular users to select only records associated with their Groups or that they own.;
-        */
-        CREATE POLICY user__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            ) OR
-            (
-                owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN ({schema_name}.permissible_groups('{table_name}', 'INSERT')::TEXT[])
-            )
-        );
+        Emits the SQL statement for the admin select policy.
+        Superusers can select all records; tenant admins can select records associated with their tenant.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to select all records;
+                Tenant Admin users to select all records associated with their tenant;
+            */
+            CREATE POLICY admin_select_policy
+            ON {schema_name}.{table_name} FOR SELECT
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                )
+            );
+        """), table_name=table_name)
 
-
-def def ault_update_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            Tenant Admin users to select all records associated with their tenant;
-            Regular users to select only records associated with their Groups or that they own.;
-        */
-        CREATE POLICY user__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            ) OR
-            (
-                owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN ({schema_name}.permissible_groups('{table_name}', 'UPDATE')::TEXT[])
-            )
-        );
+    @computed_field
+    def insert_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def def ault_delete_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-            Tenant Admin users to select all records associated with their tenant;
-            Regular users to select only records associated with their Groups or that they own.;
-        */
-        CREATE POLICY user__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (
-            current_setting('rls_var.is_superuser', true)::BOOLEAN OR
-            (
-                current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
-                tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
-            ) OR
-            (
-                owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
-                group_id IN ({schema_name}.permissible_groups('{table_name}', 'DELETE')::TEXT[])
-            )
-        );
+        Emits the SQL statement for the admin insert policy.
+        Superusers can insert records; tenant admins can insert records for their tenant.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to insert a record;
+                Tenant Admin users to insert a record associated with their tenant;
+            */
+            CREATE POLICY admin_insert_policy
+            ON {schema_name}.{table_name} FOR INSERT
+            WITH CHECK (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                )
+            );
+        """), table_name=table_name)
+
+    @computed_field
+    def update_policy(self) -> str:
+        """
+        Emits the SQL statement for the admin update policy.
+        Superusers can update all records; tenant admins can update records for their tenant.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to update all records;
+                Tenant Admin users to update all records associated with their tenant;
+            */
+            CREATE POLICY admin_update_policy
+            ON {schema_name}.{table_name} FOR UPDATE
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                )
+            );
+        """), table_name=table_name)
+
+    @computed_field
+    def delete_policy(self) -> str:
+        """
+        Emits the SQL statement for the admin delete policy.
+        Superusers can delete all records; tenant admins can delete records for their tenant.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to delete all records;
+                Tenant Admin users to delete all records associated with their tenant;
+            */
+            CREATE POLICY admin_delete_policy
+            ON {schema_name}.{table_name} FOR DELETE
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                )
+            );
+        """), table_name=table_name)
 
 
 class DefaultRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = def ault__emit_select_policy_sql
-    _emit_insert_policy: Callable = def ault__emit_insert_policy_sql
-    _emit_update_policy: Callable = def ault_update_policy_sql
-    _emit_delete_policy: Callable = def ault_delete_policy_sql
-
-
-def superuser__emit_select_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to select all records;
-        */
-        CREATE POLICY tenant__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+    @computed_field
+    def select_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def superuser__emit_insert_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /*
-        The policy to allow:
-            Superusers to insert records;
-        */
-        CREATE POLICY tenant__emit_insert_policy
-        ON {schema_name}.{table_name} FOR INSERT
-        WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        Emits the SQL statement for the default select policy.
+        Superusers can select all records; tenant admins can select records for their tenant;
+        regular users can select records they own or have group access to.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to select all records;
+                Tenant Admin users to select all records associated with their tenant;
+                Regular users to select only records associated with their Groups or that they own.;
+            */
+            CREATE POLICY default_select_policy
+            ON {schema_name}.{table_name} FOR SELECT
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                ) OR
+                (
+                    owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
+                    group_id IN ({schema_name}.permissible_groups('{table_name}', 'SELECT')::TEXT[])
+                )
+            );
+        """), table_name=table_name)
 
-
-def superuser_update_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to update records;
-        */
-        CREATE POLICY tenant_update_policy
-        ON {schema_name}.{table_name} FOR UPDATE
-        USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+    @computed_field
+    def insert_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
-
-
-def superuser_delete_policy_sql(self) -> str:
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            Superusers to delete records;
-        */
-        CREATE POLICY tenant_delete_policy
-        ON {schema_name}.{table_name} FOR DELETE
-        USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        Emits the SQL statement for the default insert policy.
+        Superusers and tenant admins can insert records; regular users can insert if they have group access.
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to insert records;
+                Tenant Admin users to insert records associated with their tenant;
+                Regular users to insert only records associated with their Groups or that they own.;
+            */
+            CREATE POLICY default_insert_policy
+            ON {schema_name}.{table_name} FOR INSERT
+            WITH CHECK (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                ) OR
+                (
+                    owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
+                    group_id IN ({schema_name}.permissible_groups('{table_name}', 'INSERT')::TEXT[])
+                )
+            );
+        """), table_name=table_name)
+
+    @computed_field
+    def update_policy(self) -> str:
+        """
+        Emits the SQL statement for the default update policy.
+        Superusers and tenant admins can update records; regular users can update if they have group access.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to update all records;
+                Tenant Admin users to update all records associated with their tenant;
+                Regular users to update only records associated with their Groups or that they own.;
+            */
+            CREATE POLICY default_update_policy
+            ON {schema_name}.{table_name} FOR UPDATE
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                ) OR
+                (
+                    owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
+                    group_id IN ({schema_name}.permissible_groups('{table_name}', 'UPDATE')::TEXT[])
+                )
+            );
+        """), table_name=table_name)
+
+    @computed_field
+    def delete_policy(self) -> str:
+        """
+        Emits the SQL statement for the default delete policy.
+        Superusers and tenant admins can delete records; regular users can delete if they have group access.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to delete all records;
+                Tenant Admin users to delete all records associated with their tenant;
+                Regular users to delete only records associated with their Groups or that they own.;
+            */
+            CREATE POLICY default_delete_policy
+            ON {schema_name}.{table_name} FOR DELETE
+            USING (
+                current_setting('rls_var.is_superuser', true)::BOOLEAN OR
+                (
+                    current_setting('rls_var.is_tenant_admin', true)::BOOLEAN AND
+                    tenant_id = current_setting('rls_var.tenant_id', true)::TEXT
+                ) OR
+                (
+                    owned_by_id = current_setting('rls_var.user_id', true)::TEXT OR
+                    group_id IN ({schema_name}.permissible_groups('{table_name}', 'DELETE')::TEXT[])
+                )
+            );
+        """), table_name=table_name)
 
 
 class SuperuserRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = superuser__emit_select_policy_sql
-    _emit_insert_policy: Callable = superuser__emit_insert_policy_sql
-    _emit_update_policy: Callable = superuser_update_policy_sql
-    _emit_delete_policy: Callable = superuser_delete_policy_sql
-
-
-def public__emit_select_policy_sql(self):
-    return (
-        text(
-            sql.SQL(
-                """
-        /* 
-        The policy to allow:
-            All users to select all records;
-        */
-        CREATE POLICY tenant__emit_select_policy
-        ON {schema_name}.{table_name} FOR SELECT
-        USING (true);
+    @computed_field
+    def select_policy(self) -> str:
         """
-            )
-            .format(schema_name=DB_SCHEMA, table_name=sql.SQL(self.table.name))
-            .as_string()
-        )
-    )
+        Emits the SQL statement for the superuser select policy.
+        Only superusers can select records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to select all records;
+            */
+            CREATE POLICY superuser_select_policy
+            ON {schema_name}.{table_name} FOR SELECT
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
+
+    @computed_field
+    def insert_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser insert policy.
+        Only superusers can insert records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /*
+            The policy to allow:
+                Superusers to insert records;
+            */
+            CREATE POLICY superuser_insert_policy
+            ON {schema_name}.{table_name} FOR INSERT
+            WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
+
+    @computed_field
+    def update_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser update policy.
+        Only superusers can update records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to update records;
+            */
+            CREATE POLICY superuser_update_policy
+            ON {schema_name}.{table_name} FOR UPDATE
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
+
+    @computed_field
+    def delete_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser delete policy.
+        Only superusers can delete records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to delete records;
+            */
+            CREATE POLICY superuser_delete_policy
+            ON {schema_name}.{table_name} FOR DELETE
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
 
 
 class PublicReadSuperuserWriteRowLevelSecurity(RowLevelSecurity):
-    _emit_select_policy: Callable = public__emit_select_policy_sql
-    _emit_insert_policy: Callable = superuser__emit_insert_policy_sql
-    _emit_update_policy: Callable = superuser_update_policy_sql
-    _emit_delete_policy: Callable = superuser_delete_policy_sql
+    @computed_field
+    def select_policy(self) -> str:
+        """
+        Emits the SQL statement for the public select policy.
+        All users can select all records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                All users to select all records;
+            */
+            CREATE POLICY public_read_policy
+            ON {schema_name}.{table_name} FOR SELECT
+            USING (true);
+        """), table_name=table_name)
+    
+    @computed_field
+    def insert_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser insert policy.
+        Only superusers can insert records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /*
+            The policy to allow:
+                Superusers to insert records;
+            */
+            CREATE POLICY superuser_insert_policy
+            ON {schema_name}.{table_name} FOR INSERT
+            WITH CHECK (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
 
-'''
+    @computed_field
+    def update_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser update policy.
+        Only superusers can update records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to update records;
+            */
+            CREATE POLICY superuser_update_policy
+            ON {schema_name}.{table_name} FOR UPDATE
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
+
+    @computed_field
+    def delete_policy(self) -> str:
+        """
+        Emits the SQL statement for the superuser delete policy.
+        Only superusers can delete records.
+        """
+        table_name = self.get_table_name()
+        
+        return self.format_sql_template(textwrap.dedent("""
+            /* 
+            The policy to allow:
+                Superusers to delete records;
+            */
+            CREATE POLICY superuser_delete_policy
+            ON {schema_name}.{table_name} FOR DELETE
+            USING (current_setting('rls_var.is_superuser', true)::BOOLEAN);
+        """), table_name=table_name)
