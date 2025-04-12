@@ -114,6 +114,9 @@ nav:
       - Isolation: multitenancy/isolation.md
       - Middleware & Utilities: multitenancy/middleware.md
       - Management Interfaces: multitenancy/management.md
+   - Setup and Deployment:
+      - Docker Setup: DOCKER_FIRST.md
+      - pgvector Installation: INSTALL_PGVECTOR.md
    - Developer Tools: developer_tools.md
    - Command Reference: commands.md
    - FAQ: faq.md
