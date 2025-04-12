@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
-from uno.core.async import (
+from uno.core.async_utils import (
     AsyncLock, 
     TaskGroup,
     timeout,

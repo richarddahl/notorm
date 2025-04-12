@@ -54,7 +54,7 @@ K = TypeVar('K')
 def UnoDBFactory(
     obj: BaseModel,
     session_context_factory: Optional[Type[DatabaseSessionContextProtocol]] = None
-) -> Type[DatabaseRepository[T, K]]:
+) -> Type[DatabaseRepository[T, K, Any, Dict[str, Any], Any]]:
     """
     Factory function that creates a UnoDB class implementing the DatabaseRepository protocol.
     
@@ -71,7 +71,7 @@ def UnoDBFactory(
     # Use provided session factory or default
     SessionContextClass = session_context_factory or AsyncSessionContext
     
-    class UnoDB(DatabaseRepository[T, K]):
+    class UnoDB(DatabaseRepository[T, K, Any, Dict[str, Any], Any]):
 
         @classmethod
         def table_keys(cls) -> tuple[list[str], list[list[str]]]:

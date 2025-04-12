@@ -8,7 +8,7 @@ This module provides utilities for asynchronous programming, including:
 - Async context managers
 """
 
-from uno.core.async.task_manager import (
+from .task_manager import (
     TaskManager,
     TaskGroup,
     task_context,
@@ -16,7 +16,7 @@ from uno.core.async.task_manager import (
     run_tasks,
     cancel_on_exit,
 )
-from uno.core.async.concurrency import (
+from .concurrency import (
     AsyncLock,
     AsyncSemaphore,
     AsyncEvent,
@@ -24,7 +24,7 @@ from uno.core.async.concurrency import (
     RateLimiter,
     timeout,
 )
-from uno.core.async.context import (
+from .context import (
     AsyncContextGroup,
     async_contextmanager,
     AsyncExitStack,

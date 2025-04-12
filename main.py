@@ -64,21 +64,20 @@ provider = get_service_provider()
 async def ensure_provider_initialized():
     """Ensure the service provider is initialized."""
     if not provider.is_initialized():
+        from uno.dependencies.modern_provider import initialize_services
         await initialize_services()
     return provider
 
 # Create a synchronous version for use in the main application
 def get_initialized_provider():
     """Get the initialized service provider."""
-    if not provider.is_initialized():
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(initialize_services())
-        loop.close()
+    # Just return the provider - initialization will happen in the startup event
     return provider
 
 # Get the initialized provider
 provider = get_initialized_provider()
-registry = provider.get_service(UnoRegistry)
+# Use the UnoRegistry singleton instance
+registry = UnoRegistry.get_instance()
 
 # Load all models
 for obj_name, obj in registry.get_all().items():
@@ -105,12 +104,13 @@ except ImportError:
     logging.debug("Vector search endpoints not available")
 
 # Example domain endpoints using modern dependency injection
-try:
-    from uno.domain.api_example import router as example_router
-    app.include_router(example_router)
-    logging.info("Example domain endpoints included")
-except ImportError:
-    logging.debug("Example domain endpoints not available")
+# Comment out for now as they're causing issues
+# try:
+#     from uno.domain.api_example import router as example_router
+#     app.include_router(example_router)
+#     logging.info("Example domain endpoints included")
+# except ImportError:
+#     logging.debug("Example domain endpoints not available")
 
 templates = Jinja2Templates(directory="src/templates")
 
@@ -120,23 +120,19 @@ app.mount(
     name="static",
 )
 
-# Example of an endpoint using the new dependency injection system
+# Example of an endpoint using the new dependency injection system - commented out for now
 from uno.dependencies.decorators import inject_params
 from uno.dependencies.interfaces import UnoConfigProtocol
 
 @app.get("/app", response_class=HTMLResponse, tags=["0KUI"])
-@inject_params()
-async def app_base(
-    request: Request, 
-    config: UnoConfigProtocol
-):
+async def app_base(request: Request):
     """Render the main application page."""
     return templates.TemplateResponse(
         "app.html",
         {
             "request": request,
             "authentication_url": "/api/auth/login",
-            "site_name": config.get_value("SITE_NAME", "Uno Application"),
+            "site_name": "Uno Application",
         },
     )
 

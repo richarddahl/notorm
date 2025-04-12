@@ -263,7 +263,7 @@ from uno.core.migrations.migration import Migration, MigrationBase, create_migra
 
 # Function-based migration
 async def up(context: Any) -> None:
-    """Apply the migration."""
+    # Apply the migration
     # Write your UP migration code here
     # Example:
     # await context.execute_sql('''
@@ -276,7 +276,7 @@ async def up(context: Any) -> None:
 
 
 async def down(context: Any) -> None:
-    """Revert the migration."""
+    # Revert the migration
     # Write your DOWN migration code here
     # Example:
     # await context.execute_sql('DROP TABLE example')

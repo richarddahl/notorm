@@ -14,11 +14,12 @@ from uno.core.async_manager import (
     run_application,
     as_task,
 )
-from uno.core.async import (
+from uno.core.async_utils import (
     TaskGroup,
     timeout,
     AsyncLock,
     Limiter,
+    RateLimiter,
 )
 from uno.core.async_integration import (
     cancellable,
@@ -46,8 +47,8 @@ logger = logging.getLogger(__name__)
 
 # Rate limiter for API calls
 api_limiter = RateLimiter(
-    operations_per_second=10,
-    burst_limit=20,
+    rate=10,
+    burst=20,
     name="api_limiter",
 )
 

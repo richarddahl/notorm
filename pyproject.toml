@@ -84,7 +84,9 @@ migrate-down = "ENV=dev python src/scripts/migrations.py downgrade {args}"
 migrate-current = "ENV=dev python src/scripts/migrations.py current"
 migrate-history = "ENV=dev python src/scripts/migrations.py history"
 migrate-revisions = "ENV=dev python src/scripts/migrations.py revisions"
-docker-setup = "./setup_with_docker.sh"
+pg-extensions = "python -m src.scripts.postgres_extensions {args}"
+docker-setup = "python -m src.scripts.setup_environment --env dev"
+docker-rebuild = "python -m src.scripts.docker_rebuild --env dev"
 app = ["ENV=dev", "docker-setup", "main"]
 vector-demo-setup = ["ENV=dev", "docker-setup", "vector-demo setup"]
 
@@ -95,6 +97,7 @@ dependencies = [
   "coverage[toml]",
   "pytest",
   "pytest-asyncio>=0.21.1",
+  "pytest-benchmark>=4.0.0",
   "asyncio",
   "httpx",
   "requests",
@@ -123,6 +126,8 @@ testV = "ENV=test pytest --capture=tee-sys --show-capture=all"
 test-cov = "ENV=test coverage run -m pytest"
 cov-report = ["ENV=test", "- coverage combine", "coverage report"]
 cov = ["ENV=test", "test-cov", "cov-report"]
+benchmark = "ENV=test pytest tests/benchmarks/ {args}"
+pg-extensions = "python -m src.scripts.postgres_extensions {args}"
 createdb = "ENV=test python src/scripts/createdb.py"
 dropdb = "ENV=test python src/scripts/dropdb.py"
 migrate-init = "ENV=test python src/scripts/migrations.py init"
@@ -132,11 +137,16 @@ migrate-down = "ENV=test python src/scripts/migrations.py downgrade {args}"
 migrate-current = "ENV=test python src/scripts/migrations.py current"
 migrate-history = "ENV=test python src/scripts/migrations.py history"
 migrate-revisions = "ENV=test python src/scripts/migrations.py revisions"
-docker-setup = "./setup_test_docker.sh"
+docker-setup = "python -m src.scripts.setup_environment --env test"
+docker-rebuild = "python -m src.scripts.docker_rebuild --env test"
 all = ["ENV=test", "docker-setup", "test"]
 
 [tool.pytest.ini_options]
-markers = ["asyncio: mark a test as an asyncio test (using pytest-asyncio)"]
+markers = [
+  "asyncio: mark a test as an asyncio test (using pytest-asyncio)",
+  "benchmark: mark test as a performance benchmark",
+  "pgvector: mark test as requiring pgvector extension"
+]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

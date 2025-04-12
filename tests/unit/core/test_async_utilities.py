@@ -7,7 +7,7 @@ import asyncio
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from uno.core.async import (
+from uno.core.async_utils import (
     TaskManager,
     TaskGroup,
     AsyncLock,

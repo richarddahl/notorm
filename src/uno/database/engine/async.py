@@ -1,3 +1,15 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+from typing import Optional, AsyncIterator, Any
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncConnection
+
+from uno.database.engine.factory import AsyncEngineFactory
+from uno.database.config import ConnectionConfig
+from uno.settings import uno_settings
+
 @asynccontextmanager
 async def async_connection(
     db_driver: str = uno_settings.DB_ASYNC_DRIVER,
@@ -9,8 +21,8 @@ async def async_connection(
     factory: Optional[AsyncEngineFactory] = None,
     max_retries: int = 3,
     retry_delay: int = 2,
-    logger: Optional[Logger] = None,
-    **kwargs,
+    logger: Optional[logging.Logger] = None,
+    **kwargs: Any,
 ) -> AsyncIterator[AsyncConnection]:
     """
     Async context manager for database connections.
@@ -61,14 +73,23 @@ async def async_connection(
             engine = engine_factory.create_engine(connection_config)
 
             # Create connection with specified isolation level
-            async with engine.connect().execution_options(
-                isolation_level=isolation_level
-            ) as conn:
-                # Execute callbacks
-                await engine_factory.execute_callbacks(conn)
+            # First await the connect call to get a connection
+            connection = await engine.connect()
+            # Apply execution options
+            # This line needs a type ignore because SQLAlchemy's typing is complex
+            # and mypy can't determine if it returns a coroutine or not
+            connection = connection.execution_options(isolation_level=isolation_level)  # type: ignore
+            
+            try:
+                # If execute_callbacks is implemented, call it
+                if hasattr(engine_factory, 'execute_callbacks'):
+                    await engine_factory.execute_callbacks(connection)
 
                 # Yield the connection
-                yield conn
+                yield connection
+            finally:
+                # Close the connection when done
+                await connection.close()
 
             # Break out of the retry loop on success
             break

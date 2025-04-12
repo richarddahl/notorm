@@ -14,7 +14,7 @@ import functools
 from datetime import datetime, timedelta
 from enum import Enum
 
-from uno.core.async import (
+from uno.core.async_utils import (
     AsyncLock,
     AsyncEvent,
     AsyncSemaphore,

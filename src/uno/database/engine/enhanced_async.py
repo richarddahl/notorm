@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection, AsyncSession
 
 from uno.database.config import ConnectionConfig
 from uno.database.engine.asynceng import AsyncEngineFactory, async_connection
-from uno.core.async import (
+from uno.core.async_utils import (
     TaskGroup,
     AsyncLock,
     Limiter,

@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timedelta
 
-from uno.core.async import (
+from uno.core.async_utils import (
     AsyncLock, 
     AsyncEvent,
     AsyncSemaphore,

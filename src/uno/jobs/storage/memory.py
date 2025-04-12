@@ -20,7 +20,7 @@ from uno.jobs.storage.base import Storage
 from uno.jobs.queue.job import Job
 from uno.jobs.queue.status import JobStatus
 from uno.jobs.queue.priority import Priority
-from uno.core.async import AsyncLock
+from uno.core.async_utils import AsyncLock
 
 
 class LockAcquisitionError(Exception):

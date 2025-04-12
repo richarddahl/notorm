@@ -14,14 +14,13 @@ from uno.domain.service_example import UserServiceProtocol
 # Create a router with automatic dependency injection
 router = DIAPIRouter(
     prefix="/api/users",
-    tags=["users"],
-    description="API for managing users"
+    tags=["users"]
 )
 
 
 @router.get("/")
 async def get_users(
-    user_service: UserServiceProtocol,
+    user_service: UserServiceProtocol = None,  # This will be injected automatically
     limit: int = Query(10, description="Maximum number of users to return")
 ) -> List[Dict[str, Any]]:
     """

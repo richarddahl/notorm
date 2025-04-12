@@ -19,7 +19,7 @@ from uno.database.enhanced_session import (
     enhanced_async_session,
     SessionOperationGroup,
 )
-from uno.core.async import TaskGroup, AsyncLock, AsyncContextGroup, AsyncExitStack
+from uno.core.async_utils import TaskGroup, AsyncLock, AsyncContextGroup, AsyncExitStack
 
 
 @pytest.mark.asyncio

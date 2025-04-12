@@ -18,27 +18,45 @@ T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
 T_contra = TypeVar('T_contra', contravariant=True)
 EntityT = TypeVar('EntityT')
+EntityT_co = TypeVar('EntityT_co', covariant=True)
+EntityT_contra = TypeVar('EntityT_contra', contravariant=True)
 QueryT = TypeVar('QueryT')
+QueryT_contra = TypeVar('QueryT_contra', contravariant=True)
 ResultT = TypeVar('ResultT')
+ResultT_co = TypeVar('ResultT_co', covariant=True)
 KeyT = TypeVar('KeyT')
+KeyT_co = TypeVar('KeyT_co', covariant=True)
+KeyT_contra = TypeVar('KeyT_contra', contravariant=True)
 ValueT = TypeVar('ValueT')
-EventT = TypeVar('EventT')
-CommandT = TypeVar('CommandT')
+ValueT_co = TypeVar('ValueT_co', covariant=True)
+ValueT_contra = TypeVar('ValueT_contra', contravariant=True)
+EventT_co = TypeVar('EventT_co', covariant=True)
+EventT_contra = TypeVar('EventT_contra', contravariant=True)
+CommandT_co = TypeVar('CommandT_co', covariant=True)
+CommandT_contra = TypeVar('CommandT_contra', contravariant=True)
+
+# Type variables for repository pattern
+FilterT = TypeVar('FilterT')
+FilterT_contra = TypeVar('FilterT_contra', contravariant=True)
+DataT = TypeVar('DataT', bound=Dict[str, Any])
+DataT_contra = TypeVar('DataT_contra', bound=Dict[str, Any], contravariant=True)
+MergeResultT = TypeVar('MergeResultT')
+MergeResultT_co = TypeVar('MergeResultT_co', covariant=True)
 
 
 # Core domain protocols
 @runtime_checkable
-class Entity(Protocol, Generic[KeyT]):
+class Entity(Protocol, Generic[KeyT_co]):
     """Protocol for domain entities with identity."""
     
     @property
-    def id(self) -> KeyT:
+    def id(self) -> KeyT_co:
         """Get the entity's unique identifier."""
         ...
 
 
 @runtime_checkable
-class AggregateRoot(Entity[KeyT], Protocol[KeyT]):
+class AggregateRoot(Entity[KeyT_co], Protocol[KeyT_co]):
     """Protocol for aggregate roots in the domain."""
     
     def register_event(self, event: 'DomainEvent') -> None:
@@ -91,10 +109,10 @@ class DomainEvent(Protocol):
 
 
 @runtime_checkable
-class EventHandler(Protocol[EventT]):
+class EventHandler(Protocol[EventT_contra]):
     """Protocol for event handlers."""
     
-    async def handle(self, event: EventT) -> None:
+    async def handle(self, event: EventT_contra) -> None:
         """Handle an event."""
         ...
 
@@ -107,11 +125,11 @@ class EventBus(Protocol):
         """Publish an event to the event bus."""
         ...
     
-    def subscribe(self, event_type: str, handler: EventHandler[Any]) -> None:
+    def subscribe(self, event_type: Type[Any], handler: EventHandler[Any]) -> None:
         """Subscribe a handler to an event type."""
         ...
     
-    def unsubscribe(self, event_type: str, handler: EventHandler[Any]) -> None:
+    def unsubscribe(self, event_type: Type[Any], handler: EventHandler[Any]) -> None:
         """Unsubscribe a handler from an event type."""
         ...
 
@@ -133,10 +151,10 @@ class Command(Protocol):
 
 
 @runtime_checkable
-class CommandHandler(Protocol[CommandT, ResultT]):
+class CommandHandler(Protocol[CommandT_contra, ResultT_co]):
     """Protocol for command handlers in the CQRS pattern."""
     
-    async def handle(self, command: CommandT) -> ResultT:
+    async def handle(self, command: CommandT_contra) -> ResultT_co:
         """Handle a command."""
         ...
 
@@ -157,10 +175,10 @@ class Query(Protocol):
 
 
 @runtime_checkable
-class QueryHandler(Protocol[QueryT, ResultT]):
+class QueryHandler(Protocol[QueryT_contra, ResultT_co]):
     """Protocol for query handlers in the CQRS pattern."""
     
-    async def handle(self, query: QueryT) -> ResultT:
+    async def handle(self, query: QueryT_contra) -> ResultT_co:
         """Handle a query."""
         ...
 
@@ -183,10 +201,8 @@ class Repository(Protocol[EntityT, KeyT]):
         ...
 
 
-# Type variables for repository pattern
-FilterT = TypeVar('FilterT')
-DataT = TypeVar('DataT', bound=Dict[str, Any])
-MergeResultT = TypeVar('MergeResultT')
+# Remove these duplicated type variables as they're now defined at the top
+# (The actual type variables are now defined at the top of the file)
 
 @runtime_checkable
 class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):
@@ -197,7 +213,7 @@ class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):
         EntityT: Type of entity managed by this repository
         KeyT: Type of entity key/identifier
         FilterT: Type of filter criteria
-        DataT: Type of data for merge operations (typically Dict[str, Any])
+        DataT: Type of data for merge operations
         MergeResultT: Type of result from merge operations
     """
     
@@ -359,7 +375,9 @@ class Result(Protocol[T_co]):
 
 # Caching
 TTLT = TypeVar('TTLT', int, float)
+TTLT_contra = TypeVar('TTLT_contra', int, float, contravariant=True)
 PrefixT = TypeVar('PrefixT', bound=str)
+PrefixT_contra = TypeVar('PrefixT_contra', bound=str, contravariant=True)
 
 @runtime_checkable
 class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):
@@ -451,24 +469,26 @@ class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):
 
 
 # Configuration
-KeyT_contra = TypeVar('KeyT_contra', bound=str, contravariant=True)
-ValueT_co = TypeVar('ValueT_co', covariant=True)
+# Using the already defined KeyT_contra and ValueT_co from above
+ConfigKeyT = TypeVar('ConfigKeyT', bound=str, contravariant=True)
 SectionT = TypeVar('SectionT', bound=str)
+SectionT_contra = TypeVar('SectionT_contra', bound=str, contravariant=True)
 DefaultT = TypeVar('DefaultT')
+DefaultT_contra = TypeVar('DefaultT_contra', contravariant=True)
 
 @runtime_checkable
-class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
+class ConfigProvider(Protocol[ConfigKeyT, ValueT, SectionT, DefaultT]):
     """
     Protocol for configuration providers.
     
     Type Parameters:
-        KeyT_contra: Type of configuration keys (contravariant)
-        ValueT_co: Type of configuration values (covariant)
+        ConfigKeyT: Type of configuration keys
+        ValueT: Type of configuration values
         SectionT: Type of section identifiers
         DefaultT: Type of default values
     """
     
-    def get(self, key: KeyT_contra, default: Optional[DefaultT] = None) -> Union[ValueT_co, DefaultT]:
+    def get(self, key: ConfigKeyT, default: Optional[DefaultT] = None) -> Union[ValueT, DefaultT]:
         """
         Get a configuration value.
         
@@ -481,7 +501,7 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
         """
         ...
     
-    def get_section(self, section: SectionT) -> Dict[str, ValueT_co]:
+    def get_section(self, section: SectionT) -> Dict[str, ValueT]:
         """
         Get a configuration section.
         
@@ -497,7 +517,7 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
         """Reload the configuration from its source."""
         ...
     
-    def get_bool(self, key: KeyT_contra, default: Optional[bool] = None) -> bool:
+    def get_bool(self, key: ConfigKeyT, default: Optional[bool] = None) -> bool:
         """
         Get a boolean configuration value.
         
@@ -510,7 +530,7 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
         """
         ...
     
-    def get_int(self, key: KeyT_contra, default: Optional[int] = None) -> int:
+    def get_int(self, key: ConfigKeyT, default: Optional[int] = None) -> int:
         """
         Get an integer configuration value.
         
@@ -523,7 +543,7 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
         """
         ...
     
-    def get_float(self, key: KeyT_contra, default: Optional[float] = None) -> float:
+    def get_float(self, key: ConfigKeyT, default: Optional[float] = None) -> float:
         """
         Get a float configuration value.
         
@@ -536,7 +556,7 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
         """
         ...
     
-    def get_list(self, key: KeyT_contra, default: Optional[List[Any]] = None) -> List[Any]:
+    def get_list(self, key: ConfigKeyT, default: Optional[List[Any]] = None) -> List[Any]:
         """
         Get a list configuration value.
         
@@ -552,23 +572,26 @@ class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
 
 # Type variables for database protocols
 ConfigT = TypeVar('ConfigT')
+ConfigT_contra = TypeVar('ConfigT_contra', contravariant=True)
 StatementT = TypeVar('StatementT')
-ResultT_co = TypeVar('ResultT_co', covariant=True)
+StatementT_contra = TypeVar('StatementT_contra', contravariant=True)
+DbResultT_co = TypeVar('DbResultT_co', covariant=True)
 ModelT = TypeVar('ModelT')
+ModelT_contra = TypeVar('ModelT_contra', contravariant=True)
 
 # Database protocols
 @runtime_checkable
-class DatabaseSessionProtocol(Protocol[StatementT, ResultT_co, ModelT]):
+class DatabaseSessionProtocol(Protocol[StatementT_contra, DbResultT_co, ModelT_contra]):
     """
     Protocol for database sessions.
     
     Type Parameters:
-        StatementT: Type of statement (e.g., SQLAlchemy statement)
-        ResultT_co: Type of result from statement execution (covariant)
-        ModelT: Type of model/entity instances
+        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
+        DbResultT_co: Type of result from statement execution (covariant)
+        ModelT_contra: Type of model/entity instances (contravariant)
     """
     
-    async def execute(self, statement: StatementT, *args: Any, **kwargs: Any) -> ResultT_co:
+    async def execute(self, statement: StatementT_contra, *args: Any, **kwargs: Any) -> DbResultT_co:
         """Execute a statement."""
         ...
     
@@ -584,28 +607,28 @@ class DatabaseSessionProtocol(Protocol[StatementT, ResultT_co, ModelT]):
         """Close the session."""
         ...
     
-    def add(self, instance: ModelT) -> None:
+    def add(self, instance: ModelT_contra) -> None:
         """Add an instance to the session."""
         ...
 
 
 @runtime_checkable
-class DatabaseSessionFactoryProtocol(Protocol[ConfigT, StatementT, ResultT_co, ModelT]):
+class DatabaseSessionFactoryProtocol(Protocol[ConfigT_contra, StatementT_contra, DbResultT_co, ModelT_contra]):
     """
     Protocol for session factories.
     
     Type Parameters:
-        ConfigT: Type of configuration object
-        StatementT: Type of statement (e.g., SQLAlchemy statement)
-        ResultT_co: Type of result from statement execution (covariant)
-        ModelT: Type of model/entity instances
+        ConfigT_contra: Type of configuration object (contravariant)
+        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
+        DbResultT_co: Type of result from statement execution (covariant)
+        ModelT_contra: Type of model/entity instances (contravariant)
     """
     
-    def create_session(self, config: ConfigT) -> DatabaseSessionProtocol[StatementT, ResultT_co, ModelT]:
+    def create_session(self, config: ConfigT_contra) -> DatabaseSessionProtocol[StatementT_contra, DbResultT_co, ModelT_contra]:
         """Create a database session."""
         ...
     
-    def get_scoped_session(self, config: ConfigT) -> Any:
+    def get_scoped_session(self, config: ConfigT_contra) -> Any:
         """Get a scoped session."""
         ...
     
@@ -615,17 +638,17 @@ class DatabaseSessionFactoryProtocol(Protocol[ConfigT, StatementT, ResultT_co, M
 
 
 @runtime_checkable
-class DatabaseSessionContextProtocol(Protocol[StatementT, ResultT_co, ModelT]):
+class DatabaseSessionContextProtocol(Protocol[StatementT_contra, DbResultT_co, ModelT_contra]):
     """
     Protocol for database session context managers.
     
     Type Parameters:
-        StatementT: Type of statement (e.g., SQLAlchemy statement)
-        ResultT_co: Type of result from statement execution (covariant)
-        ModelT: Type of model/entity instances
+        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
+        DbResultT_co: Type of result from statement execution (covariant)
+        ModelT_contra: Type of model/entity instances (contravariant)
     """
     
-    async def __aenter__(self) -> DatabaseSessionProtocol[StatementT, ResultT_co, ModelT]:
+    async def __aenter__(self) -> DatabaseSessionProtocol[StatementT_contra, DbResultT_co, ModelT_contra]:
         """Enter the context manager."""
         ...
     
@@ -659,24 +682,28 @@ class ResourceManager(Protocol[T]):
 
 
 # Messaging
+MessageT = TypeVar('MessageT')
+MessageT_contra = TypeVar('MessageT_contra', contravariant=True)
+MessageT_co = TypeVar('MessageT_co', covariant=True)
+
 @runtime_checkable
-class MessagePublisher(Protocol[T]):
+class MessagePublisher(Protocol[MessageT_contra]):
     """Protocol for message publishers."""
     
-    async def publish(self, topic: str, message: T) -> None:
+    async def publish(self, topic: str, message: MessageT_contra) -> None:
         """Publish a message to a topic."""
         ...
 
 
 @runtime_checkable
-class MessageConsumer(Protocol[T]):
+class MessageConsumer(Protocol[MessageT_co]):
     """Protocol for message consumers."""
     
-    async def subscribe(self, topic: str, handler: Callable[[T], Awaitable[None]]) -> None:
+    async def subscribe(self, topic: str, handler: Callable[[MessageT_co], Awaitable[None]]) -> None:
         """Subscribe to a topic."""
         ...
     
-    async def unsubscribe(self, topic: str, handler: Callable[[T], Awaitable[None]]) -> None:
+    async def unsubscribe(self, topic: str, handler: Callable[[MessageT_co], Awaitable[None]]) -> None:
         """Unsubscribe from a topic."""
         ...
     
@@ -691,10 +718,16 @@ class MessageConsumer(Protocol[T]):
 
 # Plugin architecture
 PluginContextT = TypeVar('PluginContextT')
+PluginContextT_contra = TypeVar('PluginContextT_contra', contravariant=True)
 PluginConfigT = TypeVar('PluginConfigT')
+PluginConfigT_contra = TypeVar('PluginConfigT_contra', contravariant=True)
 PluginEventT = TypeVar('PluginEventT')
+PluginEventT_contra = TypeVar('PluginEventT_contra', contravariant=True)
 PluginNameT = TypeVar('PluginNameT', bound=str)
+PluginNameT_co = TypeVar('PluginNameT_co', bound=str, covariant=True)
+PluginNameT_contra = TypeVar('PluginNameT_contra', bound=str, contravariant=True)
 PluginVersionT = TypeVar('PluginVersionT', bound=str)
+PluginVersionT_co = TypeVar('PluginVersionT_co', bound=str, covariant=True)
 
 @runtime_checkable
 class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, PluginVersionT]):
@@ -835,8 +868,11 @@ class PluginManager(Protocol[PluginContextT, PluginNameT]):
 
 # Health checks
 HealthStatusT = TypeVar('HealthStatusT')
+HealthStatusT_co = TypeVar('HealthStatusT_co', covariant=True)
 HealthDetailsT = TypeVar('HealthDetailsT')
+HealthDetailsT_co = TypeVar('HealthDetailsT_co', covariant=True)
 HealthComponentT = TypeVar('HealthComponentT', bound=str)
+HealthComponentT_co = TypeVar('HealthComponentT_co', bound=str, covariant=True)
 
 @runtime_checkable
 class HealthCheck(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):

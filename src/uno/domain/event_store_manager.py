@@ -11,7 +11,7 @@ from typing import List, Optional
 from uno.settings import uno_settings
 from uno.sql.statement import SQLStatement
 from uno.sql.emitters.event_store import CreateDomainEventsTable, CreateEventProcessorsTable
-from uno.database.engine.factory import create_engine
+from uno.database.engine.factory import AsyncEngineFactory
 
 
 class EventStoreManager:
@@ -44,25 +44,45 @@ class EventStoreManager:
         # Collect all SQL statements
         statements = self._generate_event_store_sql()
         
-        # Create an engine for executing the statements
-        engine = create_engine(self.config)
-        connection = engine.connect()
+        # Use a synchronous connection instead of async
+        import psycopg
+        from uno.database.config import ConnectionConfig
+        
+        # Create connection configuration
+        conn_config = ConnectionConfig(
+            db_role=f"{self.config.DB_NAME}_admin",  # Use admin role
+            db_name=self.config.DB_NAME,
+            db_host=self.config.DB_HOST,
+            db_port=self.config.DB_PORT,
+            db_user_pw=self.config.DB_USER_PW,
+            db_driver=self.config.DB_SYNC_DRIVER,
+            db_schema=self.config.DB_SCHEMA,
+        )
+        
+        # Create direct connection string
+        conn_string = (
+            f"host={conn_config.db_host} "
+            f"port={conn_config.db_port} "
+            f"dbname={conn_config.db_name} "
+            f"user={conn_config.db_role} "
+            f"password={conn_config.db_user_pw}"
+        )
         
         try:
-            # Execute each statement in a transaction
-            with connection.begin():
+            # Connect with autocommit for DDL statements
+            with psycopg.connect(conn_string, autocommit=True) as conn:
+                cursor = conn.cursor()
+                
+                # Execute each statement
                 for statement in statements:
                     self.logger.debug(f"Executing SQL: {statement.name}")
-                    connection.execute(statement.sql)
-            
+                    cursor.execute(statement.sql)
+                    
             self.logger.info("Event store schema created successfully")
         
         except Exception as e:
             self.logger.error(f"Error creating event store schema: {e}")
             raise
-        
-        finally:
-            connection.close()
     
     def _generate_event_store_sql(self) -> List[SQLStatement]:
         """

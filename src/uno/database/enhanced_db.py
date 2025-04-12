@@ -28,7 +28,7 @@ from uno.core.async_integration import (
     AsyncBatcher,
     AsyncCache,
 )
-from uno.core.async import TaskGroup, timeout
+from uno.core.async_utils import TaskGroup, timeout
 from uno.model import Model
 from uno.database.db import UnoDb
 
