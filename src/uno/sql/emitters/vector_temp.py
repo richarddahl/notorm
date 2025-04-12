@@ -10,11 +10,10 @@ import logging
 from typing import List, Optional, Dict, Any, Tuple, TypeVar, Generic, Protocol, Union
 
 from sqlalchemy.engine import Connection
-from sqlalchemy import text as sql_text
+from sqlalchemy import text
 
 from uno.sql.emitter import SQLEmitter
 from uno.database.session import DatabaseSessionProtocol
-from uno.settings import uno_settings
 
 T = TypeVar('T')
 
@@ -741,6 +740,11 @@ class VectorSearchEmitter(SQLEmitter):
         else:
             from uno.settings import uno_settings
             self._schema = uno_settings.DB_SCHEMA
+            
+    @property
+    def schema(self) -> str:
+        """Get the database schema."""
+        return self._schema
     
     def search_sql(
         self,
@@ -763,9 +767,6 @@ class VectorSearchEmitter(SQLEmitter):
         Returns:
             SQL query for the search operation
         """
-        # Get schema
-        schema = self._schema
-        
         # Determine operator based on metric
         op = "<->" if metric == "l2" else "<#>" if metric == "dot" else "<=>"
         
@@ -774,11 +775,11 @@ class VectorSearchEmitter(SQLEmitter):
         if threshold > 0:
             # Convert threshold to distance based on metric
             if metric == "cosine":
-                where_conditions.append(f"(1 - ({self.column_name} {op} {schema}.generate_embedding(:query_text))) >= :threshold")
+                where_conditions.append(f"(1 - ({self.column_name} {op} {self.schema}.generate_embedding(:query_text))) >= :threshold")
             elif metric == "l2":
-                where_conditions.append(f"({self.column_name} {op} {schema}.generate_embedding(:query_text)) <= :threshold")
+                where_conditions.append(f"({self.column_name} {op} {self.schema}.generate_embedding(:query_text)) <= :threshold")
             elif metric == "dot":
-                where_conditions.append(f"({self.column_name} {op} {schema}.generate_embedding(:query_text)) >= :threshold")
+                where_conditions.append(f"({self.column_name} {op} {self.schema}.generate_embedding(:query_text)) >= :threshold")
         
         # Add custom where clause if provided
         if where_clause:
@@ -789,26 +790,26 @@ class VectorSearchEmitter(SQLEmitter):
         
         # Build similarity expression based on metric
         if metric == "cosine":
-            similarity_expr = f"(1 - ({self.column_name} {op} {schema}.generate_embedding(:query_text))) AS similarity"
+            similarity_expr = f"(1 - ({self.column_name} {op} {self.schema}.generate_embedding(:query_text))) AS similarity"
         elif metric == "l2":
-            similarity_expr = f"1.0 / (1.0 + ({self.column_name} {op} {schema}.generate_embedding(:query_text))) AS similarity"
+            similarity_expr = f"1.0 / (1.0 + ({self.column_name} {op} {self.schema}.generate_embedding(:query_text))) AS similarity"
         elif metric == "dot":
-            similarity_expr = f"({self.column_name} {op} {schema}.generate_embedding(:query_text)) AS similarity"
+            similarity_expr = f"({self.column_name} {op} {self.schema}.generate_embedding(:query_text)) AS similarity"
         else:
-            similarity_expr = f"(1 - ({self.column_name} {op} {schema}.generate_embedding(:query_text))) AS similarity"
+            similarity_expr = f"(1 - ({self.column_name} {op} {self.schema}.generate_embedding(:query_text))) AS similarity"
         
         # Build the order by clause
         if metric == "cosine" or metric == "dot":
-            order_by = f"ORDER BY {self.column_name} {op} {schema}.generate_embedding(:query_text) DESC"
+            order_by = f"ORDER BY {self.column_name} {op} {self.schema}.generate_embedding(:query_text) DESC"
         else:
-            order_by = f"ORDER BY {self.column_name} {op} {schema}.generate_embedding(:query_text) ASC"
+            order_by = f"ORDER BY {self.column_name} {op} {self.schema}.generate_embedding(:query_text) ASC"
         
         sql = f"""
         SELECT 
             id::TEXT, 
             {similarity_expr},
-            row_to_json({schema}.{self.table_name}.*)::JSONB AS row_data
-        FROM {schema}.{self.table_name}
+            row_to_json({self.schema}.{self.table_name}.*)::JSONB AS row_data
+        FROM {self.schema}.{self.table_name}
         {where_part}
         {order_by}
         LIMIT :limit
@@ -835,9 +836,6 @@ class VectorSearchEmitter(SQLEmitter):
         Returns:
             SQL query for the hybrid search operation
         """
-        # Get schema
-        schema = self._schema
-        
         # Determine if we have a graph query
         has_graph = graph_query is not None and graph_query.strip() != ""
         
@@ -846,10 +844,10 @@ class VectorSearchEmitter(SQLEmitter):
         vector_results AS (
             SELECT 
                 id::TEXT, 
-                (1 - ({self.column_name} <=> {schema}.generate_embedding(:query_text))) AS similarity,
-                row_to_json({schema}.{self.table_name}.*)::JSONB AS row_data
-            FROM {schema}.{self.table_name}
-            WHERE (1 - ({self.column_name} <=> {schema}.generate_embedding(:query_text))) >= :threshold
+                (1 - ({self.column_name} <=> {self.schema}.generate_embedding(:query_text))) AS similarity,
+                row_to_json({self.schema}.{self.table_name}.*)::JSONB AS row_data
+            FROM {self.schema}.{self.table_name}
+            WHERE (1 - ({self.column_name} <=> {self.schema}.generate_embedding(:query_text))) >= :threshold
         )
         """
         
@@ -906,8 +904,7 @@ class VectorSearchEmitter(SQLEmitter):
         Returns:
             SQL query for generating an embedding
         """
-        schema = self._schema
-        return f"SELECT {schema}.generate_embedding(:text) AS embedding"
+        return f"SELECT {self.schema}.generate_embedding(:text) AS embedding"
     
     async def execute_search(
         self,
@@ -946,7 +943,7 @@ class VectorSearchEmitter(SQLEmitter):
             "threshold": threshold
         }
         
-        result = await connection.execute(sql_text(sql), params)
+        result = await connection.execute(text(sql), params)
         rows = result.fetchall()
         
         # Convert rows to result dictionaries
@@ -998,7 +995,7 @@ class VectorSearchEmitter(SQLEmitter):
             "threshold": threshold
         }
         
-        result = await connection.execute(sql_text(sql), params)
+        result = await connection.execute(text(sql), params)
         rows = result.fetchall()
         
         # Convert rows to result dictionaries
@@ -1034,7 +1031,7 @@ class VectorSearchEmitter(SQLEmitter):
         """
         sql = self.generate_embedding_sql(text)
         
-        result = await connection.execute(sql_text(sql), {"text": text})
+        result = await connection.execute(text(sql), {"text": text})
         row = result.fetchone()
         
         if row and row.embedding:
@@ -1082,6 +1079,11 @@ class VectorBatchEmitter(SQLEmitter):
         else:
             from uno.settings import uno_settings
             self._schema = uno_settings.DB_SCHEMA
+            
+    @property
+    def schema(self) -> str:
+        """Get the database schema."""
+        return self._schema
     
     def get_entity_count_sql(self) -> str:
         """
@@ -1090,8 +1092,7 @@ class VectorBatchEmitter(SQLEmitter):
         Returns:
             SQL query to count entities
         """
-        schema = self._schema
-        return f"SELECT COUNT(*) FROM {schema}.{self.table_name}"
+        return f"SELECT COUNT(*) FROM {self.schema}.{self.table_name}"
     
     def get_batch_sql(self, limit: int, offset: int) -> str:
         """
@@ -1104,13 +1105,12 @@ class VectorBatchEmitter(SQLEmitter):
         Returns:
             SQL query to get a batch of entities
         """
-        schema = self._schema
         select_fields = ["id"] + self.content_fields
         fields_str = ", ".join(select_fields)
         
         return f"""
         SELECT {fields_str}
-        FROM {schema}.{self.table_name}
+        FROM {self.schema}.{self.table_name}
         ORDER BY id
         LIMIT :limit OFFSET :offset
         """
@@ -1125,13 +1125,12 @@ class VectorBatchEmitter(SQLEmitter):
         Returns:
             SQL query to get entities by IDs
         """
-        schema = self._schema
         select_fields = ["id"] + self.content_fields
         fields_str = ", ".join(select_fields)
         
         return f"""
         SELECT {fields_str}
-        FROM {schema}.{self.table_name}
+        FROM {self.schema}.{self.table_name}
         WHERE id IN :ids
         """
     
@@ -1146,7 +1145,7 @@ class VectorBatchEmitter(SQLEmitter):
             Entity count
         """
         sql = self.get_entity_count_sql()
-        result = await connection.execute(sql_text(sql))
+        result = await connection.execute(text(sql))
         return result.scalar() or 0
     
     async def execute_get_batch(
@@ -1168,7 +1167,7 @@ class VectorBatchEmitter(SQLEmitter):
         """
         sql = self.get_batch_sql(limit, offset)
         result = await connection.execute(
-            sql_text(sql),
+            text(sql),
             {"limit": limit, "offset": offset}
         )
         
@@ -1208,7 +1207,7 @@ class VectorBatchEmitter(SQLEmitter):
             
         sql = self.get_entities_by_ids_sql(entity_ids)
         result = await connection.execute(
-            sql_text(sql),
+            text(sql),
             {"ids": tuple(entity_ids)}
         )
         

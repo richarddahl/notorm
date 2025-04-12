@@ -10,12 +10,13 @@ import logging
 import json
 from typing import Dict, List, Any, Optional, TypeVar, Type, Generic, Union, Tuple
 
-from sqlalchemy import text
 from pydantic import BaseModel
 
 from uno.database.session import async_session
+from uno.settings import uno_settings
 from uno.domain.core import Entity
 from uno.domain.repository import Repository
+from uno.sql.emitters.vector import VectorSearchEmitter
 
 T = TypeVar('T', bound=Entity)
 
@@ -108,6 +109,13 @@ class VectorSearchService(Generic[T]):
         self.repository = repository
         self.schema = schema or uno_settings.DB_SCHEMA
         self.logger = logger or logging.getLogger(__name__)
+        
+        # Create a VectorSearchEmitter for this service
+        self.emitter = VectorSearchEmitter(
+            table_name=self.table_name,
+            column_name="embedding",  # Default column name
+            schema=self.schema
+        )
     
     async def search(self, query: VectorQuery) -> List[VectorSearchResult]:
         """
@@ -120,61 +128,27 @@ class VectorSearchService(Generic[T]):
             List of search results
         """
         try:
-            func_name = f"search_{self.table_name}_{query.metric}"
-            
             async with async_session() as session:
-                result = await session.execute(
-                    text(f"""
-                    SELECT * FROM {self.schema}.{func_name}(
-                        :query_text,
-                        :limit,
-                        :threshold
-                    )
-                    """),
-                    {
-                        "query_text": query.query_text,
-                        "limit": query.limit,
-                        "threshold": query.threshold
-                    }
+                # Use the emitter to execute the search
+                results = await self.emitter.execute_search(
+                    connection=session,
+                    query_text=query.query_text,
+                    limit=query.limit,
+                    threshold=query.threshold,
+                    metric=query.metric
                 )
-                
-                # Process results
-                rows = result.fetchall()
                 
                 # Create result objects
                 search_results = []
                 
-                for row in rows:
-                    # For cosine similarity
-                    if query.metric == "cosine":
-                        id_val, similarity = row
-                        search_results.append(
-                            VectorSearchResult(
-                                id=id_val,
-                                similarity=similarity
-                            )
-                        )
-                    # For L2 distance (convert to similarity score)
-                    elif query.metric == "l2":
-                        id_val, distance = row
-                        # Convert distance to similarity (closer to 1 is better)
-                        similarity = max(0, 1 - distance)
-                        search_results.append(
-                            VectorSearchResult(
-                                id=id_val,
-                                similarity=similarity,
-                                metadata={"distance": distance}
-                            )
-                        )
-                    # For dot product
-                    elif query.metric == "dot":
-                        id_val, score = row
-                        search_results.append(
-                            VectorSearchResult(
-                                id=id_val,
-                                similarity=score
-                            )
-                        )
+                for result in results:
+                    # Create VectorSearchResult instance
+                    search_result = VectorSearchResult(
+                        id=result["id"],
+                        similarity=result["similarity"],
+                        metadata={"row_data": result.get("row_data", {})}
+                    )
+                    search_results.append(search_result)
                 
                 # Load entities if repository is available
                 if self.repository and search_results:
@@ -200,46 +174,46 @@ class VectorSearchService(Generic[T]):
             List of search results
         """
         try:
-            # Convert start_filters to JSON
+            # Convert start_filters to JSON for use in the graph query
             filters_json = json.dumps(query.start_filters)
             
-            async with async_session() as session:
-                result = await session.execute(
-                    text(f"""
-                    SELECT * FROM {self.schema}.hybrid_search(
-                        :start_node_type,
-                        :start_filters,
-                        :path_pattern,
-                        :query_text,
-                        :limit,
-                        :threshold
-                    )
-                    """),
-                    {
-                        "start_node_type": query.start_node_type,
-                        "start_filters": filters_json,
-                        "path_pattern": query.path_pattern,
-                        "query_text": query.query_text,
-                        "limit": query.limit,
-                        "threshold": query.threshold
-                    }
+            # Construct the graph traversal query
+            graph_query = f"""
+            SELECT 
+                id::TEXT,
+                distance
+            FROM
+                {self.schema}.graph_traverse(
+                    '{query.start_node_type}',
+                    '{filters_json}',
+                    '{query.path_pattern}'
                 )
-                
-                # Process results
-                rows = result.fetchall()
+            """
+            
+            async with async_session() as session:
+                # Use the emitter to execute the hybrid search
+                results = await self.emitter.execute_hybrid_search(
+                    connection=session,
+                    query_text=query.query_text,
+                    graph_query=graph_query,
+                    limit=query.limit,
+                    threshold=query.threshold
+                )
                 
                 # Create result objects
                 search_results = []
                 
-                for row in rows:
-                    id_val, similarity, path_data = row
-                    search_results.append(
-                        VectorSearchResult(
-                            id=id_val,
-                            similarity=similarity,
-                            metadata=path_data
-                        )
+                for result in results:
+                    # Create VectorSearchResult instance with graph distance metadata
+                    search_result = VectorSearchResult(
+                        id=result["id"],
+                        similarity=result["similarity"],
+                        metadata={
+                            "row_data": result.get("row_data", {}),
+                            "graph_distance": result.get("graph_distance", 999999)
+                        }
                     )
+                    search_results.append(search_result)
                 
                 # Load entities if repository is available
                 if self.repository and search_results:
@@ -268,20 +242,11 @@ class VectorSearchService(Generic[T]):
         """
         try:
             async with async_session() as session:
-                result = await session.execute(
-                    text(f"""
-                    SELECT {self.schema}.generate_embedding(:text) AS embedding
-                    """),
-                    {"text": text}
+                # Use the emitter to execute the embedding generation
+                return await self.emitter.execute_generate_embedding(
+                    connection=session,
+                    text=text
                 )
-                
-                row = result.fetchone()
-                if row and row.embedding:
-                    # Convert from postgres vector type to list of floats
-                    embedding_str = row.embedding.replace('[', '').replace(']', '')
-                    return [float(val) for val in embedding_str.split(',')]
-                
-                return []
                 
         except Exception as e:
             self.logger.error(f"Embedding generation error: {e}")

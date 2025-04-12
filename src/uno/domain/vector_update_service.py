@@ -11,6 +11,7 @@ import time
 from typing import Dict, List, Any, Optional, Set, Union
 from datetime import datetime
 import uuid
+from queue import PriorityQueue
 from dataclasses import dataclass, field
 
 from uno.domain.core import DomainEvent
@@ -20,6 +21,7 @@ from uno.domain.vector_events import (
     VectorEmbeddingUpdateRequested,
     VectorEmbeddingUpdated
 )
+from uno.sql.emitters.vector import VectorBatchEmitter
 
 
 @dataclass(order=True)
@@ -73,14 +75,13 @@ class VectorUpdateService:
         self.logger = logger or logging.getLogger(__name__)
         
         # Task queue for updates
-        from queue import PriorityQueue
-        self.task_queue = PriorityQueue()
+        self.task_queue: PriorityQueue = PriorityQueue()
         
         # Set of entity IDs currently being processed to avoid duplicates
         self.processing: Set[str] = set()
         
         # Statistics
-        self.stats = {
+        self.stats: Dict[str, Any] = {
             "queued": 0,
             "processed": 0,
             "failed": 0,
@@ -90,7 +91,7 @@ class VectorUpdateService:
         
         # Processing state
         self._running = False
-        self._task = None
+        self._task: Optional[asyncio.Task] = None
     
     async def start(self) -> None:
         """Start the update service."""
@@ -320,13 +321,14 @@ class BatchVectorUpdateService:
         Returns:
             Dictionary with operation statistics
         """
-        # Convert entity_type to table name
-        table_name = entity_type.lower()
+        # Create a VectorBatchEmitter for this operation
+        emitter = VectorBatchEmitter(
+            entity_type=entity_type,
+            content_fields=content_fields
+        )
         
         # Import needed modules
-        from sqlalchemy import text
         from uno.database.session import async_session
-        from uno.settings import uno_settings
         
         # Statistics
         stats = {
@@ -339,29 +341,18 @@ class BatchVectorUpdateService:
         try:
             # Get total count
             async with async_session() as session:
-                result = await session.execute(
-                    text(f"SELECT COUNT(*) FROM {uno_settings.DB_SCHEMA}.{table_name}")
-                )
-                stats["total"] = result.scalar() or 0
+                stats["total"] = await emitter.execute_get_count(session)
             
             # Process in batches
             offset = 0
             while True:
                 # Get a batch of entities
                 async with async_session() as session:
-                    query = f"""
-                    SELECT id, {', '.join(content_fields)}
-                    FROM {uno_settings.DB_SCHEMA}.{table_name}
-                    ORDER BY id
-                    LIMIT :limit OFFSET :offset
-                    """
-                    
-                    result = await session.execute(
-                        text(query),
-                        {"limit": self.batch_size, "offset": offset}
+                    entities = await emitter.execute_get_batch(
+                        connection=session,
+                        limit=self.batch_size,
+                        offset=offset
                     )
-                    
-                    entities = result.fetchall()
                     
                     if not entities:
                         break
@@ -378,8 +369,8 @@ class BatchVectorUpdateService:
                             # Extract content
                             content_data = {}
                             for field in content_fields:
-                                if hasattr(entity, field) and getattr(entity, field):
-                                    content_data[field] = str(getattr(entity, field))
+                                if field in entity and entity[field]:
+                                    content_data[field] = str(entity[field])
                             
                             # Skip if no content
                             if not content_data:
@@ -389,7 +380,7 @@ class BatchVectorUpdateService:
                             event = VectorContentEvent(
                                 event_id=str(uuid.uuid4()),
                                 event_type=f"{entity_type}.vector_update",
-                                entity_id=entity.id,
+                                entity_id=entity["id"],
                                 entity_type=entity_type,
                                 content_fields=content_data,
                                 operation="update",
@@ -403,16 +394,17 @@ class BatchVectorUpdateService:
                             
                         except Exception as e:
                             self.logger.error(
-                                f"Error processing {entity_type} {entity.id}: {e}"
+                                f"Error processing {entity_type} {entity.get('id')}: {e}"
                             )
                             stats["processed"] += 1
                             stats["failed"] += 1
                     
                     batch_duration = time.time() - batch_start
-                    self.logger.info(
-                        f"Processed batch in {batch_duration:.2f}s "
-                        f"({len(entities) / batch_duration:.2f} entities/s)"
-                    )
+                    if batch_duration > 0:
+                        self.logger.info(
+                            f"Processed batch in {batch_duration:.2f}s "
+                            f"({len(entities) / batch_duration:.2f} entities/s)"
+                        )
                     
                     # Move to next batch
                     offset += len(entities)
@@ -440,13 +432,14 @@ class BatchVectorUpdateService:
         Returns:
             Dictionary with operation statistics
         """
-        # Convert entity_type to table name
-        table_name = entity_type.lower()
+        # Create a VectorBatchEmitter for this operation
+        emitter = VectorBatchEmitter(
+            entity_type=entity_type,
+            content_fields=content_fields
+        )
         
         # Import needed modules
-        from sqlalchemy import text
         from uno.database.session import async_session
-        from uno.settings import uno_settings
         
         # Statistics
         stats = {
@@ -463,18 +456,10 @@ class BatchVectorUpdateService:
                 
                 # Get this batch of entities
                 async with async_session() as session:
-                    query = f"""
-                    SELECT id, {', '.join(content_fields)}
-                    FROM {uno_settings.DB_SCHEMA}.{table_name}
-                    WHERE id IN :ids
-                    """
-                    
-                    result = await session.execute(
-                        text(query),
-                        {"ids": tuple(batch_ids)}
+                    entities = await emitter.execute_get_entities_by_ids(
+                        connection=session,
+                        entity_ids=batch_ids
                     )
-                    
-                    entities = result.fetchall()
                     
                     # Process this batch
                     self.logger.info(
@@ -488,8 +473,8 @@ class BatchVectorUpdateService:
                             # Extract content
                             content_data = {}
                             for field in content_fields:
-                                if hasattr(entity, field) and getattr(entity, field):
-                                    content_data[field] = str(getattr(entity, field))
+                                if field in entity and entity[field]:
+                                    content_data[field] = str(entity[field])
                             
                             # Skip if no content
                             if not content_data:
@@ -499,7 +484,7 @@ class BatchVectorUpdateService:
                             event = VectorContentEvent(
                                 event_id=str(uuid.uuid4()),
                                 event_type=f"{entity_type}.vector_update",
-                                entity_id=entity.id,
+                                entity_id=entity["id"],
                                 entity_type=entity_type,
                                 content_fields=content_data,
                                 operation="update",
@@ -513,7 +498,7 @@ class BatchVectorUpdateService:
                             
                         except Exception as e:
                             self.logger.error(
-                                f"Error processing {entity_type} {entity.id}: {e}"
+                                f"Error processing {entity_type} {entity.get('id')}: {e}"
                             )
                             stats["processed"] += 1
                             stats["failed"] += 1
