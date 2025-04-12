@@ -22,25 +22,27 @@ This roadmap outlines the key improvements planned for the Uno framework to make
 - [x] Support both sync and async event handlers
 - [x] Add event persistence for reliable processing
 
-## Phase 2: Performance and Scalability (Partially Completed)
+## Phase 2: Performance and Scalability (In Progress)
 
-### 4. CQRS Pattern Implementation
+### 4. CQRS Pattern Implementation (✅ Completed)
 - [x] Separate command (write) and query (read) models
 - [x] Create specialized command handlers
 - [x] Implement optimized query handlers
 - [x] Add command/query validation
 
-### 5. Read Model Projections
+### 5. Read Model Projections (✅ Completed)
 - [x] Create specialized read models for efficient querying
 - [x] Implement projection system for maintaining read models
 - [x] Add event handlers to update projections
 - [x] Optimize read models for specific query patterns
 
-### 6. Async-First Architecture
-- [ ] Convert remaining synchronous code to async
-- [ ] Use async context managers throughout
-- [ ] Implement proper cancellation handling
-- [ ] Add task management utilities
+### 6. Async-First Architecture (✅ Completed)
+- [x] Convert remaining synchronous code to async
+- [x] Implement proper cancellation handling
+- [x] Add enhanced concurrency primitives
+- [x] Create task management utilities
+- [x] Implement structured concurrency patterns
+- [x] Add async resource management
 
 ### 7. Resource Management
 - [ ] Implement connection pooling with configurable limits
@@ -82,7 +84,7 @@ This roadmap outlines the key improvements planned for the Uno framework to make
 - [ ] Support dynamic service registration
 - [ ] Add plugin discovery mechanism
 
-### 13. API Versioning and Evolution
+### 13. API Versioning and Evolution (✅ Completed)
 - [x] Add proper API versioning strategy
 - [x] Implement backwards-compatible interfaces
 - [x] Create deprecation paths for evolving APIs

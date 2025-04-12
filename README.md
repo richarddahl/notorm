@@ -28,6 +28,7 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Event-Driven Architecture**: Built-in event system for loosely coupled components that communicate through domain events
 - **Modern Dependency Injection**: Protocol-based DI system with proper scoping and lifecycle management
 - **CQRS Pattern**: Separation of command (write) and query (read) operations for better performance and scalability
+- **Async-First Architecture**: Enhanced async utilities for robust concurrent operations with proper cancellation handling
 - **Unified Database Management**: Centralized approach to database connection management with support for both synchronous and asynchronous operations
 - **SQL Generation**: Powerful SQL emitters for creating and managing database objects
 - **API Integration**: FastAPI endpoint factory with automatic dependency injection
@@ -153,6 +154,71 @@ async def create_user(
         return {"error": str(result.error)}, 400
 ```
 
+### Using the Async-First Architecture
+
+```python
+# Import the new async utilities
+from uno.core.async import TaskGroup, timeout, AsyncLock
+from uno.core.async_integration import cancellable, retry, timeout_handler
+from uno.core.async_manager import get_async_manager, as_task
+from uno.database.enhanced_session import enhanced_async_session, SessionOperationGroup
+
+# Properly handled async task with cancellation, retries, and timeouts
+@cancellable
+@retry(max_attempts=3)
+@timeout_handler(timeout_seconds=5.0)
+async def fetch_data(data_id: str):
+    # The operation is automatically:
+    # - Cancellable (with cleanup)
+    # - Retryable (up to 3 times)
+    # - Time-limited (5 second timeout)
+    
+    # Use enhanced async session
+    async with enhanced_async_session() as session:
+        # Perform database query with proper cancellation handling
+        result = await session.execute(f"SELECT * FROM data WHERE id = '{data_id}'")
+        return result.fetchone()
+
+# Run concurrent tasks with proper structured concurrency
+async def process_multiple_items(items):
+    results = []
+    
+    # Use a task group for structured concurrency
+    async with TaskGroup(name="process_items") as group:
+        # Create tasks for each item
+        tasks = [
+            group.create_task(fetch_data(item["id"]), name=f"fetch_{i}")
+            for i, item in enumerate(items)
+        ]
+        
+        # Process results as they complete
+        for task in tasks:
+            try:
+                result = await task
+                results.append(result)
+            except Exception as e:
+                logger.error(f"Error processing item: {e}")
+    
+    # All tasks are guaranteed to be completed or cancelled here
+    return results
+
+# Register with the application lifecycle
+async def startup():
+    # Register application startup
+    manager = get_async_manager()
+    
+    # Start background tasks
+    manager.create_task(background_monitoring(), name="monitoring")
+
+# Use the async manager to run the application
+if __name__ == "__main__":
+    import asyncio
+    from uno.core.async_manager import run_application
+    
+    # Run the application with proper lifecycle management
+    asyncio.run(run_application(startup_func=startup))
+```
+
 ### Using Vector Search with the New Architecture
 
 ```python
@@ -249,20 +315,29 @@ uno is built on a modular architecture with several core components:
    - `QueryBus`: Dispatches queries to their handlers
    - `UnitOfWork`: Manages transaction boundaries
 
-3. **Data Layer**: Manages database connections, schema definition, and data operations
+3. **Async Layer**: Implements robust async patterns
+   - `TaskManager`: Manages async tasks with proper cancellation
+   - `AsyncLock/Semaphore/Event`: Enhanced concurrency primitives
+   - `TaskGroup`: Structured concurrency for related tasks
+   - `AsyncBatcher`: Batches async operations for efficiency
+   - `AsyncCache`: Provides async-aware caching with TTL
+
+4. **Data Layer**: Manages database connections, schema definition, and data operations
    - `UnoModel`: SQLAlchemy-based model for defining database tables
    - `DatabaseFactory`: Centralized factory for creating database connections
    - `SQL Emitters`: Components that generate SQL for various database objects
+   - `EnhancedAsyncSession`: Improved async session with robust error handling
 
-4. **API Layer**: Exposes functionality through REST endpoints
+5. **API Layer**: Exposes functionality through REST endpoints
    - `DIAPIRouter`: FastAPI-based router with dependency injection
    - `EndpointFactory`: Automatically generates endpoints from objects
    - `Filter Manager`: Handles query parameters and filtering
 
-5. **Infrastructure Layer**: Provides cross-cutting concerns
+6. **Infrastructure Layer**: Provides cross-cutting concerns
    - `Dependency Injection`: Protocol-based DI with proper scoping
    - `Event Bus`: Publishes and subscribes to domain events
    - `Configuration`: Environment-aware configuration system
+   - `AsyncManager`: Coordinates async resources throughout the application
 
 ## Project Structure
 
@@ -276,6 +351,12 @@ src/uno/
 │   ├── cqrs.py           # CQRS pattern
 │   ├── uow.py            # Unit of Work pattern
 │   ├── result.py         # Result pattern for error handling
+│   ├── async/            # Async utilities
+│   │   ├── task_manager.py  # Task management
+│   │   ├── concurrency.py   # Enhanced concurrency primitives
+│   │   └── context.py       # Context management
+│   ├── async_integration.py  # Async integration utilities
+│   ├── async_manager.py  # Central async resource manager
 │   └── config.py         # Configuration management
 ├── api/                  # API components
 │   ├── endpoint.py       # Base endpoint definition
@@ -288,8 +369,11 @@ src/uno/
 ├── database/             # Database components
 │   ├── config.py         # Connection configuration
 │   ├── db.py             # Database operations
+│   ├── enhanced_db.py    # Enhanced database operations
+│   ├── enhanced_session.py  # Enhanced session management
 │   └── engine/           # Database engine management
 │       ├── async.py      # Async engine
+│       ├── enhanced_async.py  # Enhanced async engine
 │       ├── base.py       # Base engine factory
 │       └── sync.py       # Synchronous engine
 ├── model.py              # SQL Alchemy model base
