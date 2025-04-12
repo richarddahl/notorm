@@ -54,6 +54,7 @@ For testing with dependencies:
 ## Key Dependencies
 
 python 3.13.0+
+postgresql 16
 
 ## Docker-First Approach
 This project uses a Docker-first approach for all database interactions. We never use local PostgreSQL installations for development, testing, or deployment. See DOCKER_FIRST.md for details.
