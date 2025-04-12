@@ -1,6 +1,17 @@
-# API Layer Overview
+# API Layer
 
-The API Layer in uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
+The API Layer in Uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
+
+## In This Section
+
+- [Endpoint](endpoint.md) - Core UnoEndpoint class for API interfaces
+- [Endpoint Factory](endpoint-factory.md) - Automatic endpoint generation
+- [Schemas](schemas.md) - Data validation and serialization
+- [Schema Manager](schema-manager.md) - Schema creation and management
+
+## Overview
+
+The API Layer sits between client applications and the business logic layer, providing a standardized interface for accessing and manipulating data through HTTP/JSON. It's designed to automate common API patterns while allowing for customization and extension.
 
 ## Architecture
 
@@ -12,8 +23,6 @@ The API layer integrates with the other components of the Uno framework to provi
 │  (HTTP/JSON)  │◄────►│  (FastAPI)    │◄────►│ (Business Logic) ◄────►│  (Database)   │
 └───────────────┘      └───────────────┘      └───────────────┘      └───────────────┘
 ```
-
-## Data Flow
 
 ### Request Flow (Inbound)
 
@@ -57,22 +66,23 @@ endpoint.register_endpoints()
 The `UnoEndpointFactory` class automatically generates endpoints for business objects based on their configuration.
 
 ```python
-from uno.api.endpoint_factory import UnoEndpointFactory
+from uno.api.endpoint_factory import EndpointFactory
 from fastapi import FastAPI
-from uno.authorization.objs import User
+from uno.dependencies.fastapi import get_db_session
 
 # Create FastAPI app
 app = FastAPI()
 
-# Create endpoint factory
-factory = UnoEndpointFactory()
-
-# Create endpoints for User model
-factory.create_endpoints(
-    app=app,
-    model_obj=User,
-    endpoints=["List", "View", "Create", "Update", "Delete"]
+# Create endpoints for Customer model
+customer_router = EndpointFactory.create_endpoints(
+    obj_class=Customer,
+    prefix="/customers",
+    tag="Customers",
+    session_dependency=get_db_session
 )
+
+# Register the router with the app
+app.include_router(customer_router)
 ```
 
 ### FilterManager
@@ -98,30 +108,18 @@ filter_params = FilterParam(
 filtered_query = filter_manager.apply_filters(query, filter_params)
 ```
 
-## Integration with UnoObj and UnoDB
-
-The API layer is tightly integrated with the UnoObj and UnoDB layers:
-
-1. **UnoObj Integration**:
-   - Endpoints use UnoObj methods for business logic
-   - Uses schemas from UnoObj's SchemaManager
-   - Converts between HTTP/JSON and UnoObj representations
-
-2. **UnoDB Integration**:
-   - Database operations are delegated to UnoObj methods
-   - Uses UnoObj to convert between UnoModel and API schemas
-   - Handles transaction management
-
-## Default Endpoints
+## Standard Endpoints
 
 When you register endpoints for a business object, the following endpoints are created by default:
 
-- `POST /api/v1/{model_name}` - Create a new object (CreateEndpoint)
-- `GET /api/v1/{model_name}/{id}` - Get an object by ID (ViewEndpoint)
-- `GET /api/v1/{model_name}` - List objects with filtering and pagination (ListEndpoint)
-- `PATCH /api/v1/{model_name}/{id}` - Update an object (UpdateEndpoint)
-- `DELETE /api/v1/{model_name}/{id}` - Delete an object (DeleteEndpoint)
-- `PUT /api/v1/{model_name}` - Import objects (batch create or update) (ImportEndpoint)
+| Method | Path                         | Description                                   | Endpoint Type   |
+|--------|------------------------------|-----------------------------------------------|----------------|
+| POST   | /api/v1/{model_name}         | Create a new object                           | CreateEndpoint |
+| GET    | /api/v1/{model_name}/{id}    | Get an object by ID                           | ViewEndpoint   |
+| GET    | /api/v1/{model_name}         | List objects with filtering and pagination    | ListEndpoint   |
+| PATCH  | /api/v1/{model_name}/{id}    | Update an object                              | UpdateEndpoint |
+| DELETE | /api/v1/{model_name}/{id}    | Delete an object                              | DeleteEndpoint |
+| PUT    | /api/v1/{model_name}         | Import objects (batch create or update)       | ImportEndpoint |
 
 You can customize which endpoints are created by setting the `endpoints` class variable in your `UnoObj` subclass:
 
@@ -131,7 +129,9 @@ class Customer(UnoObj[CustomerModel]):
     endpoints = ["Create", "View", "List"]  # Only these endpoints will be created
 ```
 
-## Filtering
+## Advanced Features
+
+### Filtering
 
 The API layer supports advanced filtering through query parameters:
 
@@ -154,7 +154,7 @@ Filter operators include:
 - `__in`: In a list of values
 - `__range`: Between two values
 
-## Pagination
+### Pagination
 
 Pagination is supported through `limit` and `offset` query parameters:
 
@@ -175,27 +175,17 @@ The response includes pagination metadata:
 }
 ```
 
-## Sorting
+### Sorting
 
 Sorting is supported through the `order_by` query parameter:
 
 ```
-GET /api/v1/customer?order_by=name
+GET /api/v1/customer?order_by=name      # Ascending order
+GET /api/v1/customer?order_by=-name     # Descending order
+GET /api/v1/customer?order_by=name,-created_at  # Multiple fields
 ```
 
-For descending order, use a minus sign:
-
-```
-GET /api/v1/customer?order_by=-name
-```
-
-For multiple sort fields, separate them with commas:
-
-```
-GET /api/v1/customer?order_by=name,-created_at
-```
-
-## Error Handling
+### Error Handling
 
 The API layer provides standardized error responses:
 
@@ -209,91 +199,169 @@ The API layer provides standardized error responses:
 }
 ```
 
-## Custom Endpoints
+## Creating Custom Endpoints
 
 You can create custom endpoints by extending the UnoEndpoint class:
 
 ```python
 from uno.api.endpoint import UnoEndpoint
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from uno.dependencies.fastapi import get_db_session
 
 class CustomUserEndpoint(UnoEndpoint):
     """Custom endpoint for user statistics."""
     
-    def __init__(self, model, app, **kwargs):
-        super().__init__(model, app, **kwargs)
+    def register_endpoints(self):
+        """Register custom endpoints."""
+        super().register_endpoints()  # Register standard endpoints
         
-        @app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
-        async def stats():
+        @self.app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
+        async def stats(session = Depends(get_db_session)):
             """Get user statistics."""
-            result = await self.model.get_statistics()
+            result = await self.db.get_statistics(session)
             return result
 ```
 
-## Complete Integration Example
-
-This example demonstrates the complete integration of UnoObj, UnoModel, UnoDB, and UnoEndpoint:
+Alternatively, you can use FastAPI's router directly:
 
 ```python
-from fastapi import FastAPI
-from uno.api.endpoint_factory import UnoEndpointFactory
-from uno.authorization.objs import User
+from fastapi import APIRouter, Depends
+from uno.dependencies.fastapi import get_db_session
+from uno.database.repository import UnoBaseRepository
 
-# Create a FastAPI app
-app = FastAPI()
+# Create a router
+router = APIRouter(prefix="/customers", tags=["Customers"])
 
-# Create a User object
-user = User(
-    email="john@example.com",
-    handle="john_doe",
-    full_name="John Doe",
-    is_superuser=False
-)
+# Define a custom endpoint
+@router.get("/stats")
+async def customer_stats(session = Depends(get_db_session)):
+    # Create a repository
+    repo = UnoBaseRepository(session, CustomerModel)
+    
+    # Get statistics
+    total = await repo.count()
+    active = await repo.count(CustomerModel.is_active == True)
+    
+    return {
+        "total": total,
+        "active": active,
+        "inactive": total - active
+    }
 
-# 1. Convert UnoObj to UnoModel via schema
-user._ensure_schemas_created()
-user_model = user.to_model(schema_name="edit_schema")
+# Add the router to your app
+app.include_router(router)
+```
 
-# 2. Save to database using UnoDB
-db = UnoDBFactory(user)
-saved_model, success = await db.create(user_model)
+## Integration with Dependency Injection
 
-# 3. Create API endpoints for User
-factory = UnoEndpointFactory()
-factory.create_endpoints(
-    app=app,
-    model_obj=User,
-    endpoints=["List", "View"]
-)
+The modern Uno architecture integrates the API layer with dependency injection:
 
-# 4. Client accesses the API
-# GET /api/v1/user - Lists all users
-# GET /api/v1/user/{id} - Gets a specific user
+```python
+from fastapi import APIRouter, Depends
+from uno.dependencies.fastapi import get_db_session, get_repository
 
-# 5. Endpoint returns data via schema
-# Response data is converted to a Pydantic schema
-# Schema can be used to recreate UnoObj instance
+# Create a router
+router = APIRouter(prefix="/customers", tags=["Customers"])
+
+# Create endpoints with dependency injection
+@router.get("/{customer_id}")
+async def get_customer(
+    customer_id: str,
+    customer_repo = Depends(get_repository(CustomerRepository))
+):
+    customer = await customer_repo.get_by_id(customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return customer
+
+@router.post("/")
+async def create_customer(
+    customer_data: CustomerCreateSchema,
+    customer_service = Depends(get_service(CustomerService))
+):
+    try:
+        customer = await customer_service.create_customer(customer_data)
+        return customer
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 ```
 
 ## Best Practices
 
 1. **Use Consistent Endpoints**: Stick to RESTful endpoint patterns for consistency.
+   ```python
+   # Good
+   @router.get("/{id}")       # Get by ID
+   @router.get("/")           # List with filters
+   @router.post("/")          # Create
+   
+   # Avoid
+   @router.get("/fetch/{id}") # Non-standard naming
+   @router.get("/list")       # Redundant action in URL
+   ```
 
 2. **Implement Filtering**: Use the FilterManager to handle query parameters.
+   ```python
+   @router.get("/")
+   async def list_customers(
+       filter_params: FilterParams = Depends(),
+       repo = Depends(get_repository(CustomerRepository))
+   ):
+       filter_manager = FilterManager()
+       return await repo.filter(filter_manager.build_filters(filter_params))
+   ```
 
 3. **Document Endpoints**: Use FastAPI's documentation features to document your endpoints.
+   ```python
+   @router.get(
+       "/{id}", 
+       response_model=CustomerSchema,
+       summary="Get customer by ID",
+       description="Retrieves a customer by their unique identifier"
+   )
+   async def get_customer(id: str):
+       """
+       Get a customer by ID.
+       
+       - **id**: The customer ID
+       
+       Returns the customer details if found, or 404 if not found.
+       """
+       # Implementation
+   ```
 
-4. **Handle Errors**: Provide meaningful error messages and use appropriate HTTP status codes.
+4. **Use Appropriate Status Codes**: Return appropriate HTTP status codes for different scenarios.
+   ```python
+   @router.post("/", status_code=201)  # Created
+   async def create_customer(customer: CustomerCreateSchema):
+       # Implementation
+       
+   @router.delete("/{id}", status_code=204)  # No Content
+   async def delete_customer(id: str):
+       # Implementation
+   ```
 
 5. **Implement Pagination**: Always paginate large result sets.
+   ```python
+   @router.get("/")
+   async def list_customers(
+       limit: int = 10,
+       offset: int = 0,
+       repo = Depends(get_repository(CustomerRepository))
+   ):
+       results = await repo.get_all(limit=limit, offset=offset)
+       count = await repo.count()
+       return {
+           "data": results,
+           "total_count": count,
+           "limit": limit,
+           "offset": offset
+       }
+   ```
 
-6. **Secure Endpoints**: Use proper authentication and authorization.
+## Related Sections
 
-7. **Test Integration**: Create integration tests that verify the complete flow from UnoObj to API endpoints and back.
-
-## Next Steps
-
-- [Endpoint](endpoint.md): Learn more about the UnoEndpoint class
-- [Endpoint Factory](endpoint-factory.md): Understand the endpoint factory
-- [Filter Manager](../queries/filter_manager.md): Learn about the filter manager
-- [Authorization](../authorization/overview.md): Learn about authentication and authorization
+- [Business Logic](../business_logic/overview.md) - UnoObj implementation for business logic
+- [Filter Manager](../queries/filter_manager.md) - Advanced filtering and query building
+- [Authorization](../authorization/overview.md) - Authentication and authorization
+- [Dependency Injection](../dependency_injection/overview.md) - Modern DI architecture

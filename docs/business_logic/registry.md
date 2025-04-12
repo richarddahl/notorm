@@ -1,180 +1,194 @@
-# UnoRegistry
+# Object Registry
 
-The `UnoRegistry` class manages the registration and retrieval of business objects in the Uno framework. It provides a central repository for all business objects used in the application.
+The UnoRegistry is a centralized registry system that manages the registration and lookup of business objects in the Uno framework, providing a type-safe way to discover and instantiate business objects at runtime.
 
 ## Overview
 
-The registry serves as a service locator that:
+The UnoRegistry serves as a global registry that:
 
-- Registers business objects by model type or table name
-- Resolves models to business objects
-- Manages object relationships
-- Enables dependency injection
+- Maintains a single point of registration for all business objects
+- Provides type-safe lookup methods for business objects by table name
+- Automatically registers UnoObj subclasses during class definition
+- Implements the singleton pattern for consistent global access
 
-## Basic Usage
+## Key Features
 
-### Getting the Registry Instance
+### Singleton Pattern
 
-The registry is implemented as a singleton to ensure a single instance throughout the application:
+The registry implements the singleton pattern to ensure a single, consistent instance throughout the application:
 
 ```python
 from uno.registry import UnoRegistry
 
-# Get the registry instance
+# Get the registry instance - same instance everywhere
 registry = UnoRegistry.get_instance()
 ```
 
-### Registering a Class
+### Automatic Registration
+
+When you define a UnoObj subclass, it automatically registers with the registry:
 
 ```python
 from uno.obj import UnoObj
 from uno.model import UnoModel
 
-# Define your model and business object
 class CustomerModel(UnoModel):
     __tablename__ = "customer"
     # Fields...
 
 class Customer(UnoObj[CustomerModel]):
     model = CustomerModel
-    # Methods...
+    # No explicit registration needed!
+```
 
-# Register the class
+The registration happens in the `__init_subclass__` method of UnoObj, which is called when a subclass is defined.
+
+### Type-Safe Object Lookup
+
+The registry provides methods to look up business object classes:
+
+```python
+# Get the registry instance
 registry = UnoRegistry.get_instance()
-registry.register(Customer, "customer")
-```
 
-Note that registering typically happens automatically during class definition through the `UnoObj.__init_subclass__` method.
-
-### Finding Classes
-
-```python
 # Get a class by table name
-customer_class = registry.get_class_by_table_name("customer")
-
-# Get a class by class name
-customer_class = registry.get_class_by_name("Customer")
-
-# Get a class by model
-customer_class = registry.get_class_by_model(CustomerModel)
-```
-
-## Advanced Usage
-
-### Managing Dependencies
-
-The registry can be used to manage dependencies between business objects:
-
-```python
-# Get a class by its relationship to another class
-order_class = registry.get_class_by_relationship("Order", "Customer")
-
-# Create a related object
-order = order_class(customer_id=customer.id)
-```
-
-### Class Lookup with Defaults
-
-You can provide defaults when looking up classes:
-
-```python
-# Get a class with a default
-customer_class = registry.get_class_by_table_name("customer", default=Customer)
+customer_class = registry.get("customer")
 
 # Check if a class is registered
-is_registered = registry.has_class("Customer")
+if customer_class:
+    # Create an instance
+    customer = customer_class(name="John Doe")
 ```
 
-### Registration Events
+## API Reference
 
-You can add event listeners for registration events:
+### Core Methods
+
+| Method | Description |
+|--------|-------------|
+| `get_instance()` | Get the singleton registry instance |
+| `register(model_class, table_name)` | Register a model class with the registry |
+| `get(table_name)` | Get a model class by its table name |
+| `get_all()` | Get all registered model classes |
+| `clear()` | Clear all registered models (primarily for testing) |
+
+### Implementation Details
+
+The registry is implemented as a Python class with a class variable to store the singleton instance:
 
 ```python
-def on_class_registered(cls, table_name):
-    print(f"Class {cls.__name__} registered for table {table_name}")
+class UnoRegistry:
+    _instance: Optional["UnoRegistry"] = None
+    _models: Dict[str, Type[BaseModel]] = {}
 
-# Add registration listener
-registry.add_registration_listener(on_class_registered)
+    @classmethod
+    def get_instance(cls) -> "UnoRegistry":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+        
+    # Other methods...
+```
 
-# Register a class (will trigger the listener)
+## Usage Examples
+
+### Basic Usage
+
+```python
+from uno.registry import UnoRegistry
+
+# Get the registry instance
+registry = UnoRegistry.get_instance()
+
+# Get a class by table name
+customer_class = registry.get("customer")
+if customer_class:
+    # Create an instance
+    customer = customer_class(name="John Doe")
+    
+    # Use the instance
+    await customer.save()
+```
+
+### Manual Registration
+
+While automatic registration is usually sufficient, you can register classes manually:
+
+```python
+from uno.registry import UnoRegistry
+
+# Get the registry instance
+registry = UnoRegistry.get_instance()
+
+# Register a class manually
 registry.register(Customer, "customer")
 ```
 
-## Common Patterns
+### Dynamic Object Creation
 
-### Service Location
-
-The registry can be used as a service locator:
+The registry enables dynamic object creation based on table names:
 
 ```python
-from uno.registry import UnoRegistry
-
-def get_class(table_name):
-    """Get a business object class by table name."""
-    registry = UnoRegistry.get_instance()
-    return registry.get_class_by_table_name(table_name)
-
-# Get a class dynamically
-dynamic_class = get_class("customer")
-instance = dynamic_class(name="John Doe")
-```
-
-### Factory Methods
-
-The registry can be used to create factory methods:
-
-```python
-from uno.registry import UnoRegistry
-
-def create_object(table_name, **kwargs):
+def create_object(table_name: str, **kwargs: Any) -> Optional[UnoObj]:
     """Create a business object by table name."""
     registry = UnoRegistry.get_instance()
-    cls = registry.get_class_by_table_name(table_name)
-    return cls(**kwargs)
+    cls = registry.get(table_name)
+    if cls:
+        return cls(**kwargs)
+    return None
 
-# Create an object dynamically
-customer = create_object("customer", name="John Doe", email="john@example.com")
+# Create objects dynamically
+customer = create_object("customer", name="John Doe")
+product = create_object("product", name="Widget")
 ```
 
-### Dynamic API Creation
+### Batch Registration
 
-The registry can be used to dynamically create API endpoints:
+You can register multiple classes at once using a dictionary:
 
 ```python
-from fastapi import FastAPI
-from uno.registry import UnoRegistry
-from uno.api.endpoint_factory import UnoEndpointFactory
+def register_all_models(models_dict: Dict[str, Type[UnoObj]]) -> None:
+    """Register multiple models at once."""
+    registry = UnoRegistry.get_instance()
+    for table_name, model_class in models_dict.items():
+        try:
+            registry.register(model_class, table_name)
+        except UnoRegistryError as e:
+            print(f"Registration error: {e}")
 
-app = FastAPI()
-registry = UnoRegistry.get_instance()
-factory = UnoEndpointFactory()
-
-# Get all registered classes
-registered_classes = registry.get_all_classes()
-
-# Create endpoints for all registered classes
-for cls in registered_classes:
-    factory.create_endpoints(app, cls)
+# Register multiple models
+register_all_models({
+    "customer": Customer,
+    "product": Product,
+    "order": Order
+})
 ```
 
 ## Best Practices
 
-1. **Use Singleton Instance**: Always use the singleton instance provided by `UnoRegistry.get_instance()`.
+1. **Use the Singleton**: Always access the registry through `UnoRegistry.get_instance()`.
 
-2. **Explicit Registration**: Register classes explicitly when automatic registration is insufficient.
+2. **Let Automatic Registration Work**: In most cases, let the automatic registration handle things rather than manually registering classes.
 
-3. **Error Handling**: Handle missing classes gracefully with default values or clear error messages.
+3. **Handle Missing Classes**: Always check if a class was found before using it:
+   ```python
+   cls = registry.get("customer")
+   if cls:
+       # Use the class
+   else:
+       # Handle the case where the class wasn't found
+   ```
 
-4. **Avoid Circular Dependencies**: Be careful not to create circular dependencies between business objects.
+4. **Clear the Registry in Tests**: When testing, clear the registry between tests to ensure isolation:
+   ```python
+   def setUp(self):
+       UnoRegistry.get_instance().clear()
+   ```
 
-5. **Document Relationships**: Document the relationships between business objects to make the code easier to understand.
+5. **Avoid Circular Dependencies**: Be careful when creating classes that depend on each other through the registry.
 
-6. **Keep It Simple**: Avoid overusing the registry for service location; prefer explicit dependencies when possible.
+## Related Topics
 
-7. **Test Thoroughly**: Test registry lookups with various inputs, including edge cases.
-
-8. **Ensure Thread Safety**: Be aware that the registry is shared across threads.
-
-9. **Use Type Annotations**: Provide proper type annotations for better IDE support and type checking.
-
-10. **Follow Naming Conventions**: Use consistent naming conventions for business objects.
+- [UnoObj](unoobj.md) - Learn how business objects automatically register with the registry
+- [API Integration](../api/overview.md) - See how the registry enables automatic API endpoint creation
+- [Dependency Injection](../dependency_injection/overview.md) - Learn how the registry works with the dependency injection system

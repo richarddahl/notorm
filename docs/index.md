@@ -1,6 +1,13 @@
-# Welcome to uno
+# Uno Framework Documentation
 
-uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI. Despite its name, uno is NOT an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
+Welcome to the Uno Framework documentation. Uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI.
+
+!!! note "Documentation Reorganization"
+    We are currently reorganizing our documentation to make it more accessible and consistent. Some sections may be in the process of being updated.
+
+## What is Uno?
+
+Despite its name ("uno is not an ORM"), Uno is not just an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
 
@@ -9,31 +16,35 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Unified Database Management**: Centralized approach to database connection management with support for both synchronous and asynchronous operations
 - **Domain-Driven Design**: Comprehensive DDD implementation with entities, aggregates, value objects, repositories, and domain services
 - **Event-Driven Architecture**: Robust event system with topic-based routing, event persistence, and both sync and async handlers
+- **Vector Search**: Integrated pgvector support for semantic search and embedding storage
 - **SQL Generation**: Powerful SQL emitters for creating and managing database objects
 - **API Integration**: FastAPI endpoint factory for quickly building REST APIs
 - **Schema Management**: Advanced schema generation and validation
 - **Business Logic Layer**: Clean separation of business logic from database operations with both UnoObj and Dependency Injection patterns
-- **Bounded Contexts**: Strategic design with explicit bounded contexts and context mapping
 - **Authorization System**: Built-in user and permission management
 - **Advanced Filtering**: Dynamic query building with support for complex filters
-- **Workflow Management**: Support for complex business workflows and state transitions
-- **Metadata Management**: Track relationships between entities
+- **Type Safety**: Comprehensive type hinting and protocol validation
 - **PostgreSQL Integration**: Leverages PostgreSQL-specific features like JSONB, ULID, and row-level security
 - **Comprehensive Error Handling**: Structured error handling with error codes, contextual information, and Result pattern
 - **Resource Management**: Connection pooling, circuit breakers, and resource lifecycle management
-- **Performance Optimization**: Query caching, dataloader pattern, and streaming for large results
 
-## Getting Started
+## Documentation Sections
 
-To get started with uno, check out the [Getting Started](getting_started.md) guide. For a deeper understanding of the framework's architecture, see the [Architecture Overview](architecture/overview.md).
-
-For information about the new dependency injection system, see the [Dependencies Overview](dependencies/overview.md) and [Hybrid Architecture](dependencies/hybrid_approach.md) guides. For details about the Domain-Driven Design implementation, see the [Domain-Driven Design](architecture/domain_driven_design.md) and [Bounded Contexts](architecture/bounded_contexts.md) documentation. To learn about the Event-Driven Architecture, see the [Event-Driven Architecture](architecture/event_driven_architecture.md) guide.
-
-For information about the error handling framework, see the [Error Handling Overview](error_handling/overview.md).
+- [**Getting Started**](getting_started.md): Installation and first steps
+- [**Architecture**](architecture/overview.md): High-level architecture and design principles
+- [**Data Layer**](database/overview.md): Database integration and management
+- [**Business Logic**](business_logic/overview.md): Business logic implementation
+- [**API Layer**](api/overview.md): API definition and integration
+- [**Vector Search**](vector_search/overview.md): Semantic search capabilities
+- [**Error Handling**](error_handling/overview.md): Error management and reporting
+- [**Type Safety**](type_safety/overview.md): Type hinting and protocol validation
+- [**Dependency Injection**](dependency_injection/overview.md): Service location and dependency management
+- [**Async Utilities**](async/overview.md): Asynchronous programming utilities
+- [**Developer Tools**](developer_tools.md): Tools for development and debugging
 
 ## Layered Architecture
 
-uno is built on a layered architecture aligned with Domain-Driven Design principles:
+Uno is built on a layered architecture aligned with Domain-Driven Design principles:
 
 1. **Domain Layer**: Contains the business logic and domain model
    - `Entity`, `AggregateRoot`, `ValueObject`: Core domain model components
@@ -62,3 +73,20 @@ uno is built on a layered architecture aligned with Domain-Driven Design princip
    - `EndpointFactory`: Automatically generates endpoints
    - `FilterManager`: Handles query parameters and filtering
    - `ErrorHandler`: Maps domain errors to HTTP responses
+
+## Quick Start
+
+To get started with Uno, follow these steps:
+
+```bash
+# Install with Docker (recommended)
+./scripts/docker/start.sh
+
+# Create a new database
+python src/scripts/createdb.py
+
+# Run the example application
+python examples/ecommerce/app.py
+```
+
+For more detailed instructions, see the [Getting Started](getting_started.md) guide.

@@ -1,8 +1,22 @@
-# Database Layer Overview
+# Database Layer
 
-> **New Architecture Available**: Uno now offers a unified database architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. This modern architecture provides better separation of concerns, improved testability, and support for dependency injection. See the [New Database Architecture](#new-database-architecture) section for details.
+The Database Layer in Uno provides a comprehensive approach to database operations with specialized components for connection management, model definition, and SQL generation.
 
-The Database Layer in uno provides a comprehensive approach to database operations, with specialized components for connection management, model definition, and SQL generation.
+!!! note "Architectural Evolution"
+    Uno now offers both the original database architecture and a new unified architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. The new architecture provides better separation of concerns, improved testability, and support for dependency injection.
+
+## In This Section
+
+- [Database Engine](engine.md) - Connection management and factory patterns
+- [Database Manager](db_manager.md) - DDL execution and database management
+- [Database Repository](repository.md) - Repository pattern implementation
+- [Database Provider](provider.md) - Modern database connection provider
+- [UnoDB](unodb.md) - Database operations interface for models
+- [Schema Manager](schema_manager.md) - Schema creation and validation
+
+## Overview
+
+The Database Layer forms the foundation of the Uno framework, providing robust database connectivity, object-relational mapping, and type-safe database operations. It's designed to leverage PostgreSQL-specific features while maintaining a clean, consistent API that works well in both synchronous and asynchronous contexts.
 
 ## Key Components
 
@@ -20,26 +34,6 @@ db_factory = DatabaseFactory()
 sync_factory = db_factory.get_sync_engine_factory()
 async_factory = db_factory.get_async_engine_factory()
 session_factory = db_factory.get_async_session_factory()
-```
-
-### Connection Context Managers
-
-Context managers for safely obtaining and disposing of database connections:
-
-```python
-# Synchronous operations
-from uno.database.engine import sync_connection
-
-with sync_connection(db_role="my_role", db_name="my_database") as conn:
-    # Use the connection
-    result = conn.execute(query)
-
-# Asynchronous operations
-from uno.database.engine import async_connection
-
-async with async_connection(db_role="my_role", db_name="my_database") as conn:
-    # Use the connection asynchronously
-    result = await conn.execute(query)
 ```
 
 ### UnoModel
@@ -96,44 +90,13 @@ emitter = TableEmitter(model=CustomerModel)
 sql = emitter.emit()
 ```
 
-## Features
-
-### Connection Management
-
-- Centralized approach to database connection management
-- Support for both synchronous and asynchronous operations
-- Connection pooling and retry logic
-- Resource management and cleanup
-
-### Model Definition
-
-- Type-annotated models with standardized column types
-- Support for PostgreSQL-specific features
-- Integration with SQLAlchemy ORM
-- Support for model inheritance, relationships, and constraints
-
-### SQL Generation
-
-- Automatic generation of SQL for creating database objects
-- Support for complex SQL features like functions and triggers
-- Row-level security integration
-- Migration support
-
-## Best Practices
-
-1. **Use Context Managers**: Always use the provided context managers for database connections
-2. **Leverage Type Annotations**: Use proper type annotations for better IDE support and type checking
-3. **Follow SQLAlchemy Patterns**: Adhere to SQLAlchemy's recommended patterns and practices
-4. **Use PostgreSQL Features**: Leverage PostgreSQL-specific features when appropriate
-5. **Manage Resources**: Properly dispose of connections and sessions
-
-## New Database Architecture
+## Modern Database Architecture
 
 The new database architecture introduces a more modern approach to database operations, with improved separation of concerns, better testability, and support for dependency injection.
 
 ### DatabaseProvider
 
-The `DatabaseProvider` is a centralized service that manages database connections, session factories, and connection pools. It provides a unified interface for both synchronous and asynchronous database operations.
+The `DatabaseProvider` is a centralized service that manages database connections, session factories, and connection pools.
 
 ```python
 from uno.database.provider import DatabaseProvider
@@ -153,11 +116,6 @@ db_provider = DatabaseProvider(config)
 async with db_provider.async_session() as session:
     # Use the session
     result = await session.execute(query)
-
-# Get a sync connection
-with db_provider.sync_connection() as conn:
-    # Use the connection
-    result = conn.execute(query)
 ```
 
 ### UnoBaseRepository
@@ -177,30 +135,15 @@ class CustomerRepository(UnoBaseRepository[CustomerModel]):
         stmt = select(self.model_class).where(self.model_class.email == email)
         result = await self.session.execute(stmt)
         return result.scalars().first()
-    
-    async def get_active_customers(self) -> List[CustomerModel]:
-        stmt = select(self.model_class).where(self.model_class.is_active == True)
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
 ```
 
 ### DBManager
 
-The `DBManager` provides utilities for database operations, including executing DDL statements, managing schemas, functions, triggers, and other database objects.
+The `DBManager` provides utilities for database operations, including executing DDL statements and managing database objects.
 
 ```python
 from uno.database.db_manager import DBManager
 from uno.sql.emitters.function import FunctionEmitter
-from contextlib import contextmanager
-import psycopg
-
-# Create a connection provider
-def get_connection():
-    @contextmanager
-    def _get_connection():
-        with psycopg.connect("postgresql://postgres:password@localhost/mydb") as conn:
-            yield conn
-    return _get_connection()
 
 # Create a database manager
 db_manager = DBManager(get_connection)
@@ -218,71 +161,45 @@ function_emitter = FunctionEmitter(
 db_manager.execute_from_emitter(function_emitter)
 ```
 
-### Integration with Dependency Injection
+## Best Practices
 
-The new architecture seamlessly integrates with dependency injection frameworks:
+1. **Use Context Managers**: Always use the provided context managers for database connections to ensure proper resource cleanup.
+   ```python
+   async with async_session() as session:
+       # Use session here
+   ```
 
-```python
-from uno.dependencies.database import get_db_session, get_db_manager
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+2. **Leverage Type Annotations**: Use proper type annotations for better IDE support and type checking.
+   ```python
+   async def get_user(user_id: str) -> Optional[UserModel]:
+       # Implementation
+   ```
 
-# In FastAPI endpoints
-@app.get("/customers")
-async def get_customers(session: AsyncSession = Depends(get_db_session)):
-    repository = CustomerRepository(session)
-    customers = await repository.get_all()
-    return customers
+3. **Follow SQLAlchemy Patterns**: Adhere to SQLAlchemy's recommended patterns and practices for query building and execution.
 
-# Using DBManager for DDL operations
-@app.post("/initialize")
-async def initialize_app(db_manager = Depends(get_db_manager)):
-    # Create function using emitter
-    from uno.sql.emitters.function import FunctionEmitter
-    
-    function_emitter = FunctionEmitter(
-        name="audit_log",
-        params=[
-            {"name": "table_name", "type": "TEXT"},
-            {"name": "action", "type": "TEXT"},
-            {"name": "record_id", "type": "TEXT"}
-        ],
-        return_type="VOID",
-        body="""
-        INSERT INTO audit_log (table_name, action, record_id, created_at)
-        VALUES ($1, $2, $3, NOW());
-        """,
-        language="plpgsql"
-    )
-    
-    # Execute the emitter
-    db_manager.execute_from_emitter(function_emitter)
-    
-    return {"status": "ok", "message": "Database initialized"}
-```
+4. **Use PostgreSQL Features**: Leverage PostgreSQL-specific features when appropriate, such as JSONB, GIN indexes, and row-level security.
 
-### Benefits of the New Architecture
+5. **Manage Resources**: Properly dispose of connections and sessions to prevent resource leaks.
 
-1. **Separation of Concerns**: Each component has a single responsibility
-2. **Improved Testability**: Easy to mock and test components in isolation
-3. **Dependency Injection**: Support for modern dependency injection patterns
-4. **Type Safety**: Full type annotation and protocol-based interfaces
-5. **Resource Management**: Consistent handling of database resources
-6. **Compatibility**: Works alongside the existing database layer
+6. **Prefer Repositories**: For complex domain logic, use the repository pattern to encapsulate database access.
 
-### When to Use the New Architecture
+## Choosing an Approach
+
+### When to Use the Original Architecture
+
+- For simpler applications with straightforward database needs
+- When working with existing Uno code that uses the original patterns
+- For quick prototyping
+
+### When to Use the Modern Architecture
 
 - For new features and modules
 - When testability is a primary concern
 - When dependency injection is preferred over the factory pattern
 - For services that require fine-grained control over database operations
 
-## Next Steps
+## Related Sections
 
-- [Database Engine](engine.md): Learn about the database engine factory pattern
-- [UnoModel](../models/overview.md): Understand how to define database models
-- [UnoDB](unodb.md): Learn about database operations
-- [SQL Emitters](../sql_generation/overview.md): Understand how to generate SQL statements
-- [Database Provider](provider.md): Learn about the new database provider
-- [Repository Pattern](repository.md): Understand the repository pattern
-- [DB Manager](db_manager.md): Learn about database operations and SQL execution
+- [Models Layer](../models/overview.md) - Model definition and mapping
+- [SQL Generation](../sql_generation/overview.md) - SQL emitters and statement building
+- [Dependency Injection](../dependency_injection/overview.md) - Integration with the dependency injection system

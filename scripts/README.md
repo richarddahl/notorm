@@ -1,8 +1,24 @@
 # Uno Scripts
 
-This directory contains utility scripts for the Uno framework.
+This directory contains scripts used for development, deployment, and maintenance of the Uno application.
 
-## Docker Scripts
+> **Note:** We are currently reorganizing these scripts. If you're looking for the original scripts, they're still available but will be migrated to the new structure soon.
+
+## Directory Structure
+
+- `docker/`: Scripts for Docker container management
+  - `postgres/`: PostgreSQL specific Docker scripts
+  - `test/`: Docker test environment scripts
+- `db/`: Database management scripts
+  - `extensions/`: Database extension installation scripts
+  - `migrations/`: Database migration scripts
+- `dev/`: Development utility scripts
+- `ci/`: Continuous Integration scripts
+- `common/`: Common functions and utilities used by other scripts
+
+## Legacy Scripts
+
+These scripts are being migrated to the new structure:
 
 - `setup_docker.sh` - Sets up Docker environment for development
 - `setup_test_env.sh` - Sets up Docker environment for testing
@@ -11,26 +27,19 @@ This directory contains utility scripts for the Uno framework.
 
 ## Usage
 
-All scripts are executable from the project root:
+All scripts should include help information. Run any script with `-h` or `--help` to see usage instructions:
 
-```bash
-# Set up development environment
-./scripts/setup_docker.sh
-
-# Set up test environment
-./scripts/setup_test_env.sh
-
-# Rebuild Docker containers
-./scripts/rebuild_docker.sh
-
-# Install pgvector locally
-./scripts/install_pgvector.sh
+```
+./scripts/script-name.sh --help
 ```
 
-## Implementation Details
+## Naming Convention
 
-The scripts in this directory are thin wrappers around the actual implementation scripts located in the `docker/scripts/` directory. This approach allows for:
+Scripts follow these naming conventions:
+- Use lowercase with hyphens for script names
+- Use descriptive names that indicate purpose
+- Group related scripts with common prefixes
 
-1. A consistent user interface from the project root
-2. Proper organization of implementation details
-3. Clear separation between user-facing scripts and internal Docker scripts
+## Common Functions
+
+Scripts can import common functions from `scripts/common/functions.sh`.
