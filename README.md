@@ -29,6 +29,7 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Modern Dependency Injection**: Protocol-based DI system with proper scoping and lifecycle management
 - **CQRS Pattern**: Separation of command (write) and query (read) operations for better performance and scalability
 - **Async-First Architecture**: Enhanced async utilities for robust concurrent operations with proper cancellation handling
+- **Resource Management**: Comprehensive resource lifecycle management with connection pooling and health monitoring
 - **Unified Database Management**: Centralized approach to database connection management with support for both synchronous and asynchronous operations
 - **SQL Generation**: Powerful SQL emitters for creating and managing database objects
 - **API Integration**: FastAPI endpoint factory with automatic dependency injection
@@ -43,6 +44,10 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Graph Database**: Integrated graph database capabilities with the AGE extension
 - **Hybrid Search**: Combine vector similarity with graph relationships for powerful contextual search
 - **Functional Error Handling**: Result pattern for handling errors without exceptions
+- **Advanced Security**: Comprehensive security framework with encryption, MFA, audit logging, and security testing
+- **Field-Level Encryption**: Automatic encryption of sensitive data fields with key management
+- **Multi-Factor Authentication**: Built-in TOTP-based MFA and password policy enforcement
+- **Audit Logging**: Immutable, tamper-evident logging of all security-relevant events
 
 ## Installation
 
@@ -219,6 +224,115 @@ if __name__ == "__main__":
     asyncio.run(run_application(startup_func=startup))
 ```
 
+### Using Resource Management
+
+```python
+# Import the resource management utilities
+from uno.core.resources import CircuitBreaker, get_resource_registry
+from uno.core.resource_management import (
+    get_resource_manager, 
+    managed_connection_pool,
+    managed_background_task,
+)
+from uno.core.resource_monitor import get_resource_monitor
+from uno.database.pooled_session import pooled_async_session
+from uno.core.fastapi_integration import (
+    setup_resource_management,
+    create_health_endpoint,
+)
+
+# Create a FastAPI application with resource management
+from fastapi import FastAPI, Depends
+
+# Create the app
+app = FastAPI()
+
+# Set up resource management
+setup_resource_management(app)
+
+# Add health check endpoint
+create_health_endpoint(app)
+
+# Use pooled sessions for database access
+@app.get("/example")
+async def example_endpoint():
+    async with pooled_async_session() as session:
+        # Connection is from pool and managed with circuit breaker
+        result = await session.execute("SELECT 1")
+        return {"result": result.scalar()}
+
+# Use a circuit breaker for external services
+async def call_external_api():
+    # Create a circuit breaker
+    circuit = CircuitBreaker(
+        name="api_circuit",
+        failure_threshold=5,
+        recovery_timeout=30.0,
+    )
+    
+    # Register with resource registry
+    registry = get_resource_registry()
+    await registry.register("api_circuit", circuit)
+    
+    # Use the circuit breaker
+    async def api_call():
+        # Make the actual API call
+        return {"status": "success"}
+    
+    # Call through the circuit breaker
+    return await circuit(api_call)
+
+# Create a managed background task
+async def setup_background_tasks():
+    async def monitoring_task():
+        while True:
+            # Monitor system health
+            await asyncio.sleep(60)
+    
+    # Create and register the task
+    async with managed_background_task(
+        "monitoring",
+        monitoring_task,
+        restart_on_failure=True,
+    ) as task:
+        # Task is running and will be properly managed
+        pass
+
+# Use the resource manager to create pooled database connections
+async def initialize_database():
+    # Get the resource manager
+    manager = get_resource_manager()
+    
+    # Create database connection pools
+    pools = await manager.create_database_pools()
+    
+    # Create pooled session factory
+    session_factory = await manager.create_session_factory()
+    
+    return session_factory
+
+# Register startup and shutdown with FastAPI
+@app.on_event("startup")
+async def startup():
+    # Initialize resources
+    await get_resource_manager().initialize()
+    
+    # Set up background tasks
+    await setup_background_tasks()
+    
+    # Initialize database
+    await initialize_database()
+
+# Monitor resource health
+@app.get("/health")
+async def health_check():
+    # Get the resource monitor
+    monitor = get_resource_monitor()
+    
+    # Get health summary
+    return await monitor.get_health_summary()
+```
+
 ### Using Vector Search with the New Architecture
 
 ```python
@@ -284,6 +398,130 @@ async def search_documents(
         return {"error": str(result.error)}, 400
 ```
 
+### Using the Security Framework
+
+```python
+# Import the security components
+from uno.security import SecurityManager
+from uno.security.config import SecurityConfig
+from uno.security.audit import SecurityEvent
+from uno.security.encryption import FieldEncryption
+
+# Create security configuration
+config = SecurityConfig(
+    encryption={
+        "algorithm": "AES_GCM",
+        "key_management": "LOCAL",  # For development
+        "field_level_encryption": True,
+        "encrypted_fields": ["password", "credit_card", "ssn"]
+    },
+    authentication={
+        "enable_mfa": True,
+        "mfa_type": "TOTP",
+        "session_timeout_minutes": 60,
+        "password_policy": {
+            "level": "STRICT",
+            "min_length": 16
+        }
+    },
+    audit={
+        "enabled": True,
+        "storage": {
+            "type": "database",
+            "connection": "postgresql://user:pass@localhost/db",
+        },
+        "retention_days": 365
+    }
+)
+
+# Create security manager
+security = SecurityManager(config)
+
+# Field-level encryption in model
+class User(AggregateEntity[str]):
+    def __init__(self, id: str, email: str, ssn: str):
+        super().__init__(id=id)
+        self.email = email
+        self._ssn = security.encrypt_field("ssn", ssn)  # Encrypted field
+    
+    @property
+    def ssn(self) -> str:
+        # Decrypt when accessed
+        return security.decrypt_field("ssn", self._ssn)
+
+# MFA implementation in API
+@router.post("/mfa/setup")
+@inject_params()
+async def setup_mfa(
+    user_id: str,
+    security_manager: SecurityManager
+):
+    # Set up MFA for user
+    setup_info = await security_manager.setup_mfa(user_id)
+    
+    # Return setup information including QR code
+    return {
+        "secret": setup_info.secret,
+        "qr_code": setup_info.qr_code_uri,
+        "instructions": setup_info.instructions
+    }
+
+@router.post("/mfa/verify")
+@inject_params()
+async def verify_mfa(
+    user_id: str,
+    code: str,
+    security_manager: SecurityManager
+):
+    # Verify MFA code
+    is_valid = await security_manager.verify_mfa(user_id, code)
+    
+    if is_valid:
+        # Log successful verification
+        security_manager.audit.log(
+            event_type=SecurityEvent.MFA_VERIFICATION,
+            user_id=user_id,
+            metadata={"success": True}
+        )
+        return {"verified": True}
+    else:
+        # Log failed verification
+        security_manager.audit.log(
+            event_type=SecurityEvent.MFA_VERIFICATION,
+            user_id=user_id,
+            metadata={"success": False}
+        )
+        return {"verified": False}
+
+# Security testing in CI/CD pipeline
+@task(name="security-scan")
+async def run_security_scan():
+    from uno.security.testing import SecurityScanner
+    
+    # Create scanner
+    scanner = SecurityScanner()
+    
+    # Run dependency scan
+    vulnerabilities = await scanner.scan_dependencies()
+    
+    # Run static analysis
+    security_issues = await scanner.run_static_analysis()
+    
+    # Generate report
+    report = scanner.generate_report(
+        vulnerabilities=vulnerabilities,
+        security_issues=security_issues
+    )
+    
+    # Check if any critical issues
+    if report.has_critical_issues():
+        print("Critical security issues found!")
+        print(report.critical_issues_summary())
+        return False
+    
+    return True
+```
+
 ### Starting with Docker (Recommended)
 
 We follow a Docker-first approach for all environments. The easiest way to get started is:
@@ -322,18 +560,26 @@ uno is built on a modular architecture with several core components:
    - `AsyncBatcher`: Batches async operations for efficiency
    - `AsyncCache`: Provides async-aware caching with TTL
 
-4. **Data Layer**: Manages database connections, schema definition, and data operations
+4. **Resource Management Layer**: Manages application resources
+   - `ResourceRegistry`: Centralized registry for tracked resources
+   - `ConnectionPool`: Pooled connections with health checking
+   - `CircuitBreaker`: Circuit breaker for external service reliability
+   - `ResourceMonitor`: Monitoring and health checking for resources
+   - `ResourceManager`: Application lifecycle integration
+
+5. **Data Layer**: Manages database connections, schema definition, and data operations
    - `UnoModel`: SQLAlchemy-based model for defining database tables
    - `DatabaseFactory`: Centralized factory for creating database connections
    - `SQL Emitters`: Components that generate SQL for various database objects
    - `EnhancedAsyncSession`: Improved async session with robust error handling
+   - `PooledAsyncSession`: Connection pooling with circuit breakers
 
-5. **API Layer**: Exposes functionality through REST endpoints
+6. **API Layer**: Exposes functionality through REST endpoints
    - `DIAPIRouter`: FastAPI-based router with dependency injection
    - `EndpointFactory`: Automatically generates endpoints from objects
    - `Filter Manager`: Handles query parameters and filtering
 
-6. **Infrastructure Layer**: Provides cross-cutting concerns
+7. **Infrastructure Layer**: Provides cross-cutting concerns
    - `Dependency Injection`: Protocol-based DI with proper scoping
    - `Event Bus`: Publishes and subscribes to domain events
    - `Configuration`: Environment-aware configuration system
@@ -357,6 +603,10 @@ src/uno/
 │   │   └── context.py       # Context management
 │   ├── async_integration.py  # Async integration utilities
 │   ├── async_manager.py  # Central async resource manager
+│   ├── resources.py      # Resource management components
+│   ├── resource_monitor.py  # Resource monitoring
+│   ├── resource_management.py  # Resource lifecycle management
+│   ├── fastapi_integration.py  # FastAPI integration for resources
 │   └── config.py         # Configuration management
 ├── api/                  # API components
 │   ├── endpoint.py       # Base endpoint definition
@@ -371,9 +621,11 @@ src/uno/
 │   ├── db.py             # Database operations
 │   ├── enhanced_db.py    # Enhanced database operations
 │   ├── enhanced_session.py  # Enhanced session management
+│   ├── pooled_session.py  # Pooled session management
 │   └── engine/           # Database engine management
 │       ├── async.py      # Async engine
 │       ├── enhanced_async.py  # Enhanced async engine
+│       ├── pooled_async.py  # Pooled async engine
 │       ├── base.py       # Base engine factory
 │       └── sync.py       # Synchronous engine
 ├── model.py              # SQL Alchemy model base
@@ -389,6 +641,24 @@ src/uno/
 ├── domain/               # Domain-specific components
 │   ├── service_example.py  # Example domain service
 │   └── api_example.py    # Example API endpoints
+├── security/             # Security framework
+│   ├── config.py         # Security configuration
+│   ├── manager.py        # Security manager
+│   ├── encryption/       # Encryption components
+│   │   ├── aes.py        # AES encryption
+│   │   ├── rsa.py        # RSA encryption
+│   │   └── field.py      # Field-level encryption
+│   ├── auth/             # Authentication components
+│   │   ├── totp.py       # TOTP-based MFA
+│   │   ├── password.py   # Password management
+│   │   └── sso.py        # Single sign-on
+│   ├── audit/            # Audit logging
+│   │   ├── event.py      # Security event definitions
+│   │   └── logger.py     # Audit logger
+│   └── testing/          # Security testing tools
+│       ├── scanner.py    # Vulnerability scanner
+│       ├── dependency.py # Dependency security 
+│       └── static.py     # Static analysis
 └── vector_search/        # Vector search components
     ├── services.py       # Vector search services
     ├── events.py         # Event handlers for vector updates

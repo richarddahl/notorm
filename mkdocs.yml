@@ -25,6 +25,7 @@ nav:
       - Domain-Driven Design: architecture/domain_driven_design.md
       - Async-First Architecture: architecture/async_architecture.md
       - Async Implementation: architecture/async_implementation.md
+      - Resource Management: architecture/resource_management.md
    - Data Layer:
       - Overview: database/overview.md
       - Database Engine: database/engine.md
@@ -44,6 +45,12 @@ nav:
       - Endpoint Factory: api/endpoint-factory.md
       - Filter Manager: queries/filter_manager.md
       - Schemas: api/schemas.md
+   - Error Handling:
+      - Overview: error_handling/overview.md
+      - Error Catalog: error_handling/catalog.md
+      - Result Pattern: error_handling/result.md
+      - Validation: error_handling/validation.md
+      - Structured Logging: error_handling/logging.md
    - Vector Search:
       - Overview: vector_search/overview.md
       - pgvector Integration: vector_search/pgvector_integration.md
@@ -78,12 +85,35 @@ nav:
       - Context Management: async/context.md
       - Integration: async/integration.md
       - Application Lifecycle: async/lifecycle.md
+   - Resource Management:
+      - Overview: resource_management/overview.md
+      - Connection Pooling: resource_management/connection_pooling.md
+      - Circuit Breakers: resource_management/circuit_breakers.md
+      - Resource Monitoring: resource_management/monitoring.md
+   - Performance Optimization:
+      - Overview: performance/overview.md
+      - Query Caching: performance/caching.md
+      - DataLoader Pattern: performance/dataloader.md
+      - Connection Streaming: performance/streaming.md
+      - Query Optimization: performance/optimization.md
    - Modernization:
       - Overview: modernization/overview.md
       - Key Features: modernization/key_features.md
       - Migration Guide: modernization/migration.md
    - Security:
+      - Overview: security/overview.md
+      - Encryption: security/encryption.md
+      - Authentication: security/authentication.md
+      - Audit Logging: security/audit.md
+      - Security Testing: security/testing.md
       - Authorization: authorization/overview.md
+   - Multi-Tenancy:
+      - Overview: multitenancy/overview.md
+      - Models: multitenancy/models.md 
+      - Repositories: multitenancy/repositories.md
+      - Isolation: multitenancy/isolation.md
+      - Middleware & Utilities: multitenancy/middleware.md
+      - Management Interfaces: multitenancy/management.md
    - Command Reference: commands.md
    - FAQ: faq.md
    - License: license.md

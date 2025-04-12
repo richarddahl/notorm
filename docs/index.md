@@ -19,12 +19,17 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Workflow Management**: Support for complex business workflows and state transitions
 - **Metadata Management**: Track relationships between entities
 - **PostgreSQL Integration**: Leverages PostgreSQL-specific features like JSONB, ULID, and row-level security
+- **Comprehensive Error Handling**: Structured error handling with error codes, contextual information, and Result pattern
+- **Resource Management**: Connection pooling, circuit breakers, and resource lifecycle management
+- **Performance Optimization**: Query caching, dataloader pattern, and streaming for large results
 
 ## Getting Started
 
 To get started with uno, check out the [Getting Started](getting_started.md) guide. For a deeper understanding of the framework's architecture, see the [Architecture Overview](architecture/overview.md).
 
 For information about the new dependency injection system, see the [Dependencies Overview](dependencies/overview.md) and [Hybrid Architecture](dependencies/hybrid_approach.md) guides. For details about the Domain-Driven Design implementation, see the [Domain-Driven Design](architecture/domain_driven_design.md) and [Bounded Contexts](architecture/bounded_contexts.md) documentation. To learn about the Event-Driven Architecture, see the [Event-Driven Architecture](architecture/event_driven_architecture.md) guide.
+
+For information about the error handling framework, see the [Error Handling Overview](error_handling/overview.md).
 
 ## Layered Architecture
 
@@ -41,14 +46,19 @@ uno is built on a layered architecture aligned with Domain-Driven Design princip
    - `AggregateService`: Manages complex domain operations with transaction support
    - `UnitOfWork`: Transaction management across multiple repositories
    - `EventBus`: Facilitates communication between bounded contexts
+   - `ErrorCatalog`: Centralized registry of error codes
+   - `Result`: Functional error handling with Success/Failure pattern
 
 3. **Infrastructure Layer**: Provides technical capabilities
    - `UnoModel`: SQLAlchemy-based model for database mapping
    - `DatabaseFactory`: Centralized factory for database connections
    - `UnoDBRepository`: Implementation of repositories with database access
    - `SQL Emitters`: Components that generate SQL for database objects
+   - `ResourceManager`: Manages resource lifecycle and circuit breakers
+   - `ConnectionPool`: Manages database connection pooling
 
 4. **Presentation Layer**: Handles user interaction
    - `UnoEndpoint`: FastAPI-based endpoints for operations
    - `EndpointFactory`: Automatically generates endpoints
    - `FilterManager`: Handles query parameters and filtering
+   - `ErrorHandler`: Maps domain errors to HTTP responses

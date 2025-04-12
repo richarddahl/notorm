@@ -10,6 +10,7 @@ This module provides core functionality for the Uno framework, including:
 - Unit of Work pattern
 - Result pattern for error handling
 - Configuration management
+- Error handling framework
 """
 
 # Protocols
@@ -74,10 +75,20 @@ from uno.core.uow import (
     ContextUnitOfWork, transaction
 )
 
-# Result pattern
+# Result pattern (for backwards compatibility)
 from uno.core.result import (
     Success, Failure, of, failure, from_exception,
     from_awaitable, combine, combine_dict
+)
+
+# Error handling framework (new)
+from uno.core.errors import (
+    UnoError, ErrorCode, ErrorContext, ErrorInfo,
+    ValidationError, ValidationContext, FieldValidationError,
+    configure_logging, get_logger, LogConfig,
+    with_error_context, add_error_context, get_error_context,
+    with_logging_context, add_logging_context, get_logging_context,
+    ErrorCatalog
 )
 
 # Configuration management
@@ -119,6 +130,14 @@ __all__ = [
     # Result pattern
     'Result', 'Success', 'Failure', 'of', 'failure',
     'from_exception', 'from_awaitable', 'combine', 'combine_dict',
+    
+    # Error handling framework
+    'UnoError', 'ErrorCode', 'ErrorContext', 'ErrorInfo',
+    'ValidationError', 'ValidationContext', 'FieldValidationError', 
+    'configure_logging', 'get_logger', 'LogConfig',
+    'with_error_context', 'add_error_context', 'get_error_context',
+    'with_logging_context', 'add_logging_context', 'get_logging_context',
+    'ErrorCatalog',
     
     # Configuration management
     'ConfigProvider', 'ConfigurationError', 'ConfigSource',
