@@ -1,0 +1,340 @@
+# Developer Tools
+
+This document provides an overview of the Developer Tools available in the Uno framework. These tools are designed to improve the developer experience by providing debugging utilities, profiling tools, code generation capabilities, and interactive documentation.
+
+## Overview
+
+The Developer Tools module is organized into several key components:
+
+1. **Debugging Tools**: Utilities for debugging application code, including middleware for request/response inspection, function tracing, and SQL query analysis.
+2. **Profiling Tools**: Performance and memory profiling utilities to identify bottlenecks and optimization opportunities.
+3. **Code Generation**: Tools for generating code templates for models, repositories, and API endpoints.
+4. **Documentation Tools**: Utilities for automatically generating documentation from code.
+5. **CLI Tools**: Command-line interface for accessing all developer tools.
+
+## Installation
+
+The Developer Tools are included in the main Uno package. To ensure you have all optional dependencies for the best experience, install with:
+
+```bash
+pip install uno[devtools]
+```
+
+## Debugging Tools
+
+### Debug Middleware
+
+The Debug Middleware integrates with FastAPI to provide detailed information about requests, responses, SQL queries, and errors.
+
+```python
+from fastapi import FastAPI
+from uno.devtools.debugging.middleware import DebugMiddleware
+
+app = FastAPI()
+app.add_middleware(
+    DebugMiddleware,
+    enabled=True,
+    log_requests=True,
+    log_responses=True,
+    log_sql=True,
+    log_errors=True,
+    log_level="DEBUG"
+)
+```
+
+### Function Tracer
+
+The Function Tracer provides detailed logging of function execution, including arguments, return values, and execution time.
+
+```python
+from uno.devtools.debugging.tracer import trace_function, trace_class
+
+@trace_function
+def my_function(arg1, arg2):
+    # Function code here
+    return result
+
+# Or trace an entire class
+@trace_class
+class MyClass:
+    def __init__(self):
+        pass
+    
+    def my_method(self, arg):
+        return arg
+```
+
+### SQL Query Debugger
+
+The SQL Query Debugger tracks SQL queries, analyzes patterns, and detects issues like N+1 query problems.
+
+```python
+from uno.devtools.debugging.sql_debug import capture_sql_queries, analyze_query_patterns
+
+# Capture and analyze SQL queries
+with capture_sql_queries() as queries:
+    # Database operations here
+    results = repository.get_all_users()
+
+# Analyze the queries for patterns and issues
+analysis = analyze_query_patterns(queries)
+print(f"Slow queries: {len(analysis['slow_queries'])}")
+print(f"Similar queries: {len(analysis['similar_queries'])}")
+```
+
+### Error Enhancer
+
+The Error Enhancer provides additional context for exceptions, including source code information and variable values.
+
+```python
+from uno.devtools.debugging.error_enhancer import enhance_errors
+
+@enhance_errors
+def function_that_might_fail():
+    # Function code here
+    raise ValueError("Something went wrong")
+```
+
+## Profiling Tools
+
+### Performance Profiler
+
+The Performance Profiler measures function execution time and identifies performance bottlenecks.
+
+```python
+from uno.devtools.profiling.profiler import profile, Profiler
+
+# As a decorator
+@profile
+def function_to_profile():
+    # Function code here
+    return result
+
+# Or as a context manager
+with Profiler("operation_name") as profiler:
+    # Code to profile
+    result = perform_operation()
+```
+
+### Memory Profiler
+
+The Memory Profiler tracks memory usage and helps identify memory leaks.
+
+```python
+from uno.devtools.profiling.memory import track_memory, MemoryTracker, MemoryLeakDetector
+
+# As a decorator
+@track_memory
+def memory_intensive_function():
+    # Function code here
+    return result
+
+# Or as a context manager
+with MemoryTracker("operation_name") as snapshot:
+    # Code to track
+    result = perform_operation()
+
+# Or to detect memory leaks
+detector = MemoryLeakDetector()
+detector.snapshot()  # Take initial snapshot
+# Perform operations that might leak memory
+leaks = detector.check_leaks()
+```
+
+## Code Generation
+
+### Model Generator
+
+The Model Generator creates UnoModel and UnoSchema classes from field definitions.
+
+```python
+from uno.devtools.codegen.model import ModelGenerator, ModelDefinition, FieldDefinition
+
+# Define a model
+model_def = ModelDefinition(
+    name="User",
+    table_name="users",
+    fields=[
+        FieldDefinition(name="id", field_type="int", primary_key=True),
+        FieldDefinition(name="name", field_type="str", nullable=False),
+        FieldDefinition(name="email", field_type="str", unique=True)
+    ]
+)
+
+# Generate the model code
+generator = ModelGenerator()
+model_code = generator.generate_model(model_def)
+schema_code = generator.generate_schema(model_def)
+
+# Or generate from database schema
+models = generator.generate_from_database(tables=["users", "orders"])
+```
+
+### Repository Generator
+
+The Repository Generator creates repository classes for Uno models.
+
+```python
+from uno.devtools.codegen.repository import RepositoryGenerator, RepositoryDefinition
+
+# Define a repository
+repo_def = RepositoryDefinition(
+    name="UserRepository",
+    model_name="User",
+    table_name="users"
+)
+
+# Generate the repository code
+generator = RepositoryGenerator()
+repo_code = generator.generate_repository(repo_def)
+
+# Or generate from a model class
+from myapp.models import User
+repo_code = generator.generate_from_model(User)
+```
+
+### API Generator
+
+The API Generator creates FastAPI endpoints for Uno models.
+
+```python
+from uno.devtools.codegen.api import ApiGenerator, ApiDefinition, EndpointDefinition, EndpointType
+
+# Define an API
+api_def = ApiDefinition(
+    name="UserApi",
+    model_name="User",
+    schema_name="UserSchema",
+    repository_name="UserRepository",
+    route_prefix="/users",
+    endpoints=[
+        EndpointDefinition(type=EndpointType.GET_ALL, include_pagination=True),
+        EndpointDefinition(type=EndpointType.GET_BY_ID),
+        EndpointDefinition(type=EndpointType.CREATE, include_validation=True),
+        EndpointDefinition(type=EndpointType.UPDATE, include_validation=True),
+        EndpointDefinition(type=EndpointType.DELETE)
+    ]
+)
+
+# Generate the API code
+generator = ApiGenerator()
+api_code = generator.generate_api(api_def)
+```
+
+## Documentation Tools
+
+### Documentation Generator
+
+The Documentation Generator extracts documentation from Python modules, classes, and functions, and generates markdown or HTML documentation.
+
+```python
+from uno.devtools.docs.generator import DocGenerator
+
+# Generate documentation for a package
+generator = DocGenerator()
+generator.generate_docs_for_package("myapp", output_dir="docs")
+
+# Or for a specific module
+from myapp import users
+module_doc = generator.extract_module_doc(users)
+markdown = generator.generate_markdown(module_doc)
+```
+
+## Command-Line Interface
+
+The Developer Tools can be accessed through a command-line interface:
+
+```bash
+# Debug middleware for a FastAPI application
+uno-dev debug middleware example.py --log-requests --log-responses
+
+# Trace a function execution
+uno-dev debug trace module.py --function=my_function
+
+# Profile a function's performance
+uno-dev profile function module.py --function=my_function
+
+# Generate a model
+uno-dev codegen model User --table=users --fields=id:int:pk,name:str,email:str:unique --output=user.py
+
+# Generate documentation
+uno-dev docs generate myapp --output=docs --format=markdown
+```
+
+## Integration with FastAPI
+
+The Developer Tools integrate seamlessly with FastAPI:
+
+```python
+from fastapi import FastAPI, Depends
+from uno.devtools.debugging.middleware import DebugMiddleware
+from uno.devtools.profiling.middleware import ProfilerMiddleware
+
+app = FastAPI()
+
+# Add debugging middleware
+app.add_middleware(DebugMiddleware, enabled=True)
+
+# Add profiling middleware
+app.add_middleware(ProfilerMiddleware, enabled=True)
+
+# Route-specific debugging
+@app.get("/debug_example")
+def debug_example(debug=Depends(DebugMiddleware.debug_dependency)):
+    # This route will have detailed debugging
+    return {"message": "Debug example"}
+```
+
+## Configuration
+
+The Developer Tools can be configured through environment variables or a configuration file:
+
+```python
+from uno.devtools.config import DevToolsConfig
+
+config = DevToolsConfig(
+    debug=True,
+    profiling=True,
+    log_level="DEBUG",
+    output_dir="./devtools_output"
+)
+```
+
+Or use environment variables:
+
+```bash
+export UNO_DEVTOOLS_DEBUG=True
+export UNO_DEVTOOLS_PROFILING=True
+export UNO_DEVTOOLS_LOG_LEVEL=DEBUG
+export UNO_DEVTOOLS_OUTPUT_DIR=./devtools_output
+```
+
+## Best Practices
+
+1. **Debugging in Development**: Enable debugging only in development environments, not in production.
+2. **Selective Profiling**: Focus profiling on specific operations rather than the entire application.
+3. **Code Generation as Starting Points**: Use generated code as a starting point, then customize as needed.
+4. **Documentation Updates**: Regenerate documentation when making significant code changes.
+5. **CLI for Automation**: Use the CLI tools in automation scripts and CI/CD pipelines.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **High Memory Usage**: When using memory profiling, be aware that it can increase memory usage significantly. Use selectively.
+2. **Performance Impact**: Debugging and profiling tools add overhead. Use selectively in performance-sensitive code.
+3. **Generated Code Conflicts**: Generated code might conflict with existing files. Use the `--force` flag to overwrite, or specify a different output path.
+
+### Getting Help
+
+For more help with the Developer Tools, use the built-in help command:
+
+```bash
+uno-dev --help
+uno-dev <command> --help
+```
+
+## Conclusion
+
+The Developer Tools provide a comprehensive suite of utilities to enhance your development experience with the Uno framework. From debugging and profiling to code generation and documentation, these tools are designed to make your development workflow more efficient and productive.
+EOF < /dev/null
