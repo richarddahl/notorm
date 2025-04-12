@@ -1,4 +1,6 @@
-# Docker Setup for Uno
+# Docker Configuration
+
+This directory contains Docker configuration for the Uno framework.
 
 This project uses a Docker-first approach for all PostgreSQL database operations. Never use a local PostgreSQL installation for development, testing, or deployment.
 
@@ -23,17 +25,22 @@ This project uses a Docker-first approach for all PostgreSQL database operations
 
 - `Dockerfile`: Builds a PostgreSQL 16 image with all required extensions
 - `docker-compose.yaml`: Defines the PostgreSQL service and volume mapping
-- `init-db.sh`: Initializes the database with required extensions
-- `rebuild.sh`: Helper script to rebuild containers
+- `scripts/init-db.sh`: Initializes the database with required extensions
+- `scripts/rebuild.sh`: Helper script to rebuild containers
+- `scripts/setup_with_docker.sh`: Sets up the Docker environment for development
+- `scripts/setup_test_docker.sh`: Sets up the Docker environment for testing
+- `scripts/download_pgvector.sh`: Downloads pgvector extension
+- `scripts/init-extensions.sh`: Installs PostgreSQL extensions in the container
+- `pg_ext_files/`: Directory for PostgreSQL extension files
 
 ## Quick Setup
 
 ```bash
 # Development environment
-./setup_with_docker.sh
+../scripts/setup_docker.sh
 
 # Test environment
-./setup_test_docker.sh
+../scripts/setup_test_env.sh
 ```
 
 Or using Hatch:
@@ -102,7 +109,7 @@ docker-compose -f docker/docker-compose.yaml down -v
 docker-compose -f docker/test/docker-compose.yaml down -v
 
 # Rebuild from scratch
-./setup_with_docker.sh  # or ./setup_test_docker.sh
+../scripts/setup_docker.sh  # or ../scripts/setup_test_env.sh
 ```
 
 ### Container Logs
@@ -115,4 +122,4 @@ docker logs pg16_uno
 docker logs pg16_uno_test
 ```
 
-For more detailed information, see [DOCKER_FIRST.md](../DOCKER_FIRST.md).
+For more detailed information, see [Docker Setup](../docs/docker_setup.md).

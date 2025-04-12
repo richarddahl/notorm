@@ -162,12 +162,12 @@ if [ $? -eq 0 ]; then
     echo "You can run tests with:"
     echo "  hatch run test:test"
     echo ""
-    echo "For more information about the Docker setup, see DOCKER_FIRST.md"
+    echo "For more information about the Docker setup, see docs/docker_setup.md"
 else
     echo ""
     echo "===== Test Environment Setup Failed ====="
     echo "Check the error messages above for details."
     echo ""
-    echo "For troubleshooting, see DOCKER_FIRST.md"
+    echo "For troubleshooting, see docs/docker_setup.md"
     echo ""
 fi

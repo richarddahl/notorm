@@ -1,1 +1,0 @@
-docker/scripts/setup_test_docker.sh

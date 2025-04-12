@@ -60,7 +60,9 @@ postgresql 16
 This project uses a Docker-first approach for all database interactions. We never use local PostgreSQL installations for development, testing, or deployment. See DOCKER_FIRST.md for details.
 
 ## Commands
-- Docker setup: `hatch run dev:docker-setup` 
+- Docker setup: `./scripts/setup_docker.sh` or `hatch run dev:docker-setup` 
+- Test environment: `./scripts/setup_test_env.sh`
+- Rebuild Docker: `./scripts/rebuild_docker.sh`
 - Run app: `hatch run dev:app` (sets up Docker and runs the app)
 - Test with Docker: `hatch run test:all` (sets up Docker and runs tests)
 - Individual tests: `hatch run test:test tests/path/to/test_file.py::TestClass::test_method`

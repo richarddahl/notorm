@@ -1,1 +1,0 @@
-docker/scripts/install_pgvector.sh

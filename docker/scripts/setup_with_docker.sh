@@ -99,12 +99,12 @@ if [ $? -eq 0 ]; then
     echo "To run the application:"
     echo "  hatch run dev:main"
     echo ""
-    echo "For more information about the Docker setup, see DOCKER_FIRST.md"
+    echo "For more information about the Docker setup, see docs/docker_setup.md"
 else
     echo ""
     echo "===== Setup Failed ====="
     echo "Check the error messages above for details."
     echo ""
-    echo "For troubleshooting, see DOCKER_FIRST.md"
+    echo "For troubleshooting, see docs/docker_setup.md"
     echo ""
 fi
