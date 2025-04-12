@@ -1,0 +1,132 @@
+# Docker Compose template for Uno applications
+# This template provides a complete Docker Compose environment for Uno applications
+
+version: '3.8'
+
+services:
+  # Application service
+  app:
+    build:
+      context: ${APP_CONTEXT:-.}
+      dockerfile: ${DOCKERFILE:-./docker/Dockerfile}
+      args:
+        - ENV=${ENV:-dev}
+    image: ${APP_IMAGE:-uno-app:latest}
+    container_name: ${APP_CONTAINER_NAME:-uno-app}
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      - ENV=${ENV:-dev}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-uno_db}
+      - DB_USER=${DB_USER:-uno_user}
+      - DB_PASSWORD=${DB_PASSWORD:-uno_password}
+      - SECRET_KEY=${SECRET_KEY:-changeme}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - ${APP_CONFIG_PATH:-./config}:/app/config
+    networks:
+      - uno-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PostgreSQL service
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-16}
+    container_name: ${POSTGRES_CONTAINER_NAME:-uno-postgres}
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${DB_USER:-uno_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-uno_password}
+      - POSTGRES_DB=${DB_NAME:-uno_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ${POSTGRES_INIT_SCRIPTS:-./docker/pg_init_scripts}:/docker-entrypoint-initdb.d
+    networks:
+      - uno-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-uno_user} -d ${DB_NAME:-uno_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis service (for caching)
+  redis:
+    image: redis:${REDIS_VERSION:-latest}
+    container_name: ${REDIS_CONTAINER_NAME:-uno-redis}
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - uno-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx service (for production)
+  nginx:
+    image: nginx:${NGINX_VERSION:-latest}
+    container_name: ${NGINX_CONTAINER_NAME:-uno-nginx}
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ${NGINX_CONF:-./docker/nginx/nginx.conf}:/etc/nginx/nginx.conf
+      - ${NGINX_CONF_D:-./docker/nginx/conf.d}:/etc/nginx/conf.d
+      - ${NGINX_SSL:-./docker/nginx/ssl}:/etc/nginx/ssl
+      - ${NGINX_WWW:-./docker/nginx/www}:/var/www/html
+    networks:
+      - uno-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Networks
+networks:
+  uno-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  postgres-data:
+  redis-data:

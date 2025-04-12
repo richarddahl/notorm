@@ -1,0 +1,79 @@
+# Development environment deployment configuration
+app_name: uno-app
+app_version: 0.1.0
+environment: dev
+platform: kubernetes
+
+database:
+  host: postgres
+  port: 5432
+  name: uno_dev_db
+  user: uno_dev_user
+  password_env_var: DB_PASSWORD
+  ssl_mode: disable
+  connection_pool_min: 1
+  connection_pool_max: 5
+  apply_migrations: true
+  backup_before_deploy: false
+
+resources:
+  cpu_min: 100m
+  cpu_max: 200m
+  memory_min: 128Mi
+  memory_max: 256Mi
+  replicas_min: 1
+  replicas_max: 1
+  auto_scaling: false
+  auto_scaling_cpu_threshold: 80
+
+network:
+  domain: dev.unoapp.local
+  use_https: false
+  use_hsts: false
+  ingress_annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  cors_allowed_origins:
+    - http://localhost:3000
+  rate_limiting: false
+
+security:
+  enable_network_policy: false
+  pod_security_policy: baseline
+  scan_images: false
+  scan_dependencies: true
+  enable_secrets_encryption: false
+  secrets_provider: kubernetes
+
+monitoring:
+  enable_logging: true
+  enable_metrics: true
+  enable_tracing: false
+  log_level: DEBUG
+  retention_days: 7
+  alerting: false
+
+strategy: recreate
+
+testing:
+  run_unit_tests: true
+  run_integration_tests: false
+  run_performance_tests: false
+  run_security_tests: false
+  fail_on_test_failure: true
+  test_coverage_threshold: 70
+
+environment_variables:
+  NODE_ENV: development
+  LOG_FORMAT: pretty
+  DEBUG: true
+  FEATURE_FLAG_NEW_UI: "true"
+
+secrets:
+  - DB_PASSWORD
+  - SECRET_KEY
+
+custom_settings:
+  kubernetes:
+    namespace: uno-dev
+    node_selector:
+      environment: development

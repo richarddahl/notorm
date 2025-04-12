@@ -1,0 +1,118 @@
+# Production environment deployment configuration
+app_name: uno-app
+app_version: 1.0.0
+environment: production
+platform: kubernetes
+
+database:
+  host: postgres.database.svc.cluster.local
+  port: 5432
+  name: uno_prod_db
+  user: uno_prod_user
+  password_env_var: DB_PASSWORD
+  ssl_mode: require
+  connection_pool_min: 5
+  connection_pool_max: 20
+  apply_migrations: true
+  backup_before_deploy: true
+
+resources:
+  cpu_min: 250m
+  cpu_max: 1000m
+  memory_min: 512Mi
+  memory_max: 1Gi
+  replicas_min: 3
+  replicas_max: 10
+  auto_scaling: true
+  auto_scaling_cpu_threshold: 70
+
+network:
+  domain: uno.example.com
+  use_https: true
+  use_hsts: true
+  ingress_annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  cors_allowed_origins:
+    - https://example.com
+    - https://api.example.com
+  rate_limiting: true
+  rate_limit_requests: 100
+
+security:
+  enable_network_policy: true
+  pod_security_policy: restricted
+  scan_images: true
+  scan_dependencies: true
+  enable_secrets_encryption: true
+  secrets_provider: vault
+
+monitoring:
+  enable_logging: true
+  enable_metrics: true
+  enable_tracing: true
+  log_level: INFO
+  retention_days: 90
+  alerting: true
+  alert_channels:
+    - email
+    - slack
+    - pagerduty
+
+strategy: blue-green
+
+testing:
+  run_unit_tests: true
+  run_integration_tests: true
+  run_performance_tests: true
+  run_security_tests: true
+  fail_on_test_failure: true
+  test_coverage_threshold: 85
+
+environment_variables:
+  NODE_ENV: production
+  LOG_FORMAT: json
+  DEBUG: false
+  FEATURE_FLAG_NEW_UI: "true"
+
+secrets:
+  - DB_PASSWORD
+  - API_KEY
+  - JWT_SECRET
+  - SECRET_KEY
+  - OAUTH_CLIENT_SECRET
+
+custom_settings:
+  kubernetes:
+    namespace: uno-prod
+    service_account: uno-app-sa
+    node_selector:
+      disk-type: ssd
+    tolerations:
+      - key: dedicated
+        operator: Equal
+        value: uno
+        effect: NoSchedule
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - uno-app
+            topologyKey: "kubernetes.io/hostname"
+  monitoring:
+    prometheus:
+      scrape: true
+      path: /metrics
+      port: 8000
+    grafana:
+      dashboard_id: uno-app
+    datadog:
+      enabled: true
+      tags:
+        - app:uno
+        - env:prod
