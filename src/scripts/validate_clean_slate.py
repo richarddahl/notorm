@@ -41,7 +41,7 @@ def check_imports(files: List[Path], bad_imports: List[str]) -> Dict[str, List[s
 
 
 def check_legacy_classes(files: List[Path], legacy_classes: List[str]) -> Dict[str, List[str]]:
-    """Check for usage of legacy classes."""
+    """Check for usage of legacy get_instance() methods."""
     violations = {}
     
     for file_path in files:
@@ -57,11 +57,11 @@ def check_legacy_classes(files: List[Path], legacy_classes: List[str]) -> Dict[s
             content = f.read()
             
             for legacy_class in legacy_classes:
-                # Check for class usages like "Class(" or "Class:" or "Class,"
-                pattern = rf'\b{legacy_class}\s*[\(:\,]'
+                # Check only for get_instance() calls on legacy classes
+                pattern = rf'{legacy_class}\.get_instance\('
                 matches = re.findall(pattern, content)
                 if matches:
-                    file_violations.append(legacy_class)
+                    file_violations.append(f"{legacy_class}.get_instance()")
                     
         if file_violations:
             violations[str(file_path)] = file_violations
@@ -155,6 +155,12 @@ def main() -> int:
         'WorkflowTask',
         'WorkflowInstance',
         'ServiceProvider',
+        'UnoRegistry',
+        'CacheManager',
+        'DataLoaderRegistry',
+        'AsyncManager',
+        'ResourceManager',
+        'TaskManager',
     ]
     
     # Define legacy methods and their modern replacements

@@ -532,8 +532,9 @@ async def configure_base_services() -> None:
     services.add_singleton(logging.Logger, lambda: logging.getLogger('uno'))
     
     # Register registry
-    from uno.registry import UnoRegistry
-    services.add_instance(UnoRegistry, UnoRegistry.get_instance())
+    from uno.registry import get_registry, UnoRegistry
+    # Use the modern singleton pattern
+    services.add_instance(UnoRegistry, get_registry())
     
     # Register database provider
     from uno.database.config import ConnectionConfig
