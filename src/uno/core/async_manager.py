@@ -28,6 +28,32 @@ from uno.core.async_utils import (
 T = TypeVar('T')
 
 
+# Module-level singleton
+_async_manager_instance: Optional['AsyncManager'] = None
+
+
+def get_async_manager(
+    logger: Optional[logging.Logger] = None,
+    shutdown_timeout: float = 30.0,
+) -> 'AsyncManager':
+    """
+    Get the singleton instance of the AsyncManager.
+    
+    Args:
+        logger: Optional logger instance
+        shutdown_timeout: Maximum time to wait for shutdown in seconds
+        
+    Returns:
+        The AsyncManager instance
+    """
+    global _async_manager_instance
+    
+    if _async_manager_instance is None:
+        _async_manager_instance = AsyncManager(logger, shutdown_timeout)
+    
+    return _async_manager_instance
+
+
 class AsyncManager:
     """
     Central manager for async resources and tasks.
@@ -38,21 +64,6 @@ class AsyncManager:
     - Signal handling integration
     - Resource cleanup coordination
     """
-    
-    # Class instance for global access
-    _instance: Optional['AsyncManager'] = None
-    
-    @classmethod
-    def get_instance(cls) -> 'AsyncManager':
-        """
-        Get the singleton instance of the AsyncManager.
-        
-        Returns:
-            The AsyncManager instance
-        """
-        if cls._instance is None:
-            cls._instance = AsyncManager()
-        return cls._instance
     
     def __init__(
         self,
@@ -66,11 +77,6 @@ class AsyncManager:
             logger: Optional logger instance
             shutdown_timeout: Maximum time to wait for shutdown in seconds
         """
-        # Only allow one instance
-        if AsyncManager._instance is not None:
-            raise RuntimeError("AsyncManager is a singleton. Use get_instance() instead.")
-        
-        AsyncManager._instance = self
         
         self.logger = logger or logging.getLogger(__name__)
         self.shutdown_timeout = shutdown_timeout
@@ -364,15 +370,7 @@ class AsyncManager:
         return datetime.fromtimestamp(self._start_time)
 
 
-# Create a function to get the global instance
-def get_async_manager() -> AsyncManager:
-    """
-    Get the global AsyncManager instance.
-    
-    Returns:
-        The AsyncManager instance
-    """
-    return AsyncManager.get_instance()
+# Function already defined at the top of the file
 
 
 # Create a decorator to run a function as a managed task

@@ -10,6 +10,8 @@ registration and providing lookup capabilities.
 """
 
 from typing import Dict, Type, Optional, ClassVar, TypeVar
+from contextlib import nullcontext
+from functools import lru_cache
 
 from pydantic import BaseModel
 
@@ -18,28 +20,26 @@ from uno.errors import UnoRegistryError
 T = TypeVar("T", bound="BaseModel")
 
 
+# Modern singleton implementation
+@lru_cache(maxsize=1)
+def get_registry() -> "UnoRegistry":
+    """
+    Get the singleton instance of the UnoRegistry.
+    
+    Returns:
+        UnoRegistry: The singleton registry instance
+    """
+    return UnoRegistry()
+
+
 class UnoRegistry:
     """
     Registry for UnoObj model classes.
 
-    This class implements a singleton pattern to provide a global registry
-    for UnoObj model classes.
+    This class stores model classes by table name.
     """
 
-    _instance: Optional["UnoRegistry"] = None
     _models: Dict[str, Type[BaseModel]] = {}
-
-    @classmethod
-    def get_instance(cls) -> "UnoRegistry":
-        """
-        Get the singleton instance of the registry.
-
-        Returns:
-            UnoRegistry: The singleton registry instance
-        """
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
 
     def register(self, model_class: Type[T], table_name: str) -> None:
         """

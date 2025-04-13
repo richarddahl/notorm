@@ -497,6 +497,27 @@ class BatchLoader(Generic[K, V]):
         await self.shutdown()
 
 
+# Global instance
+_dataloader_registry_instance: Optional['DataLoaderRegistry'] = None
+
+
+def get_dataloader_registry(logger: Optional[logging.Logger] = None) -> 'DataLoaderRegistry':
+    """
+    Get the singleton instance of the registry.
+    
+    Args:
+        logger: Optional logger instance
+        
+    Returns:
+        The registry instance
+    """
+    global _dataloader_registry_instance
+    
+    if _dataloader_registry_instance is None:
+        _dataloader_registry_instance = DataLoaderRegistry(logger)
+    return _dataloader_registry_instance
+
+
 class DataLoaderRegistry:
     """
     Registry for DataLoader instances.
@@ -504,21 +525,6 @@ class DataLoaderRegistry:
     This provides centralized management of DataLoaders,
     enabling reuse and lifecycle management.
     """
-    
-    # Singleton instance
-    _instance: Optional['DataLoaderRegistry'] = None
-    
-    @classmethod
-    def get_instance(cls) -> 'DataLoaderRegistry':
-        """
-        Get the singleton instance of the registry.
-        
-        Returns:
-            The registry instance
-        """
-        if cls._instance is None:
-            cls._instance = DataLoaderRegistry()
-        return cls._instance
     
     def __init__(
         self,
@@ -530,14 +536,6 @@ class DataLoaderRegistry:
         Args:
             logger: Optional logger instance
         """
-        # Validate singleton
-        if DataLoaderRegistry._instance is not None:
-            raise RuntimeError(
-                "DataLoaderRegistry is a singleton. Use get_instance() instead."
-            )
-        
-        DataLoaderRegistry._instance = self
-        
         self.logger = logger or logging.getLogger(__name__)
         self._loaders: Dict[str, DataLoader] = {}
         self._batch_loaders: Dict[str, BatchLoader] = {}
@@ -727,14 +725,8 @@ class DataLoaderRegistry:
         return stats
 
 
-def get_dataloader_registry() -> DataLoaderRegistry:
-    """
-    Get the global DataLoader registry.
-    
-    Returns:
-        The registry instance
-    """
-    return DataLoaderRegistry.get_instance()
+# Function already defined above
+# def get_dataloader_registry(logger: Optional[logging.Logger] = None) -> 'DataLoaderRegistry':
 
 
 def with_dataloader(

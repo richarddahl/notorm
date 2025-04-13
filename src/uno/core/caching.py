@@ -920,6 +920,32 @@ def get_cache_tags_for_model(model_class: Any) -> List[str]:
     return tags
 
 
+# Module-level singleton instance
+_cache_manager_instance: Optional['CacheManager'] = None
+
+
+def get_cache_manager(
+    registry: Optional[ResourceRegistry] = None,
+    logger: Optional[logging.Logger] = None,
+) -> 'CacheManager':
+    """
+    Get the global cache manager.
+    
+    Args:
+        registry: Optional resource registry
+        logger: Optional logger instance
+        
+    Returns:
+        The cache manager instance
+    """
+    global _cache_manager_instance
+    
+    if _cache_manager_instance is None:
+        _cache_manager_instance = CacheManager(registry, logger)
+    
+    return _cache_manager_instance
+
+
 class CacheManager:
     """
     Manager for caches in the application.
@@ -930,21 +956,6 @@ class CacheManager:
     - Statistics and monitoring
     - Cleanup and maintenance
     """
-    
-    # Singleton instance
-    _instance: Optional['CacheManager'] = None
-    
-    @classmethod
-    def get_instance(cls) -> 'CacheManager':
-        """
-        Get the singleton instance of the cache manager.
-        
-        Returns:
-            The cache manager instance
-        """
-        if cls._instance is None:
-            cls._instance = CacheManager()
-        return cls._instance
     
     def __init__(
         self,
@@ -958,13 +969,6 @@ class CacheManager:
             registry: Optional resource registry
             logger: Optional logger instance
         """
-        # Validate singleton
-        if CacheManager._instance is not None:
-            raise RuntimeError(
-                "CacheManager is a singleton. Use get_instance() instead."
-            )
-        
-        CacheManager._instance = self
         
         self.registry = registry or get_resource_registry()
         self.logger = logger or logging.getLogger(__name__)
@@ -1245,14 +1249,7 @@ class CacheManager:
         return stats
 
 
-def get_cache_manager() -> CacheManager:
-    """
-    Get the global cache manager.
-    
-    Returns:
-        The cache manager instance
-    """
-    return CacheManager.get_instance()
+# Function already defined above
 
 
 def cached(

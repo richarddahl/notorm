@@ -29,15 +29,35 @@ T = TypeVar('T')
 logger = logging.getLogger("uno.caching")
 
 
+_cache_manager_lock = threading.RLock()
+_cache_manager_instance: Optional["CacheManager"] = None
+
+
+def get_cache_manager(config: Optional[CacheConfig] = None) -> "CacheManager":
+    """Get or create the singleton instance of the cache manager.
+    
+    Args:
+        config: Optional cache configuration. Used only if creating a new instance.
+        
+    Returns:
+        The singleton cache manager instance.
+    """
+    global _cache_manager_instance
+    
+    if _cache_manager_instance is None:
+        with _cache_manager_lock:
+            if _cache_manager_instance is None:
+                _cache_manager_instance = CacheManager(config)
+                _cache_manager_instance.initialize()
+    return _cache_manager_instance
+
+
 class CacheManager:
     """Main entry point for the Uno caching framework.
     
     This class manages the cache hierarchy, including local and distributed caches,
     invalidation strategies, and monitoring.
     """
-    
-    _instance: Optional["CacheManager"] = None
-    _lock = threading.RLock()
     
     def __init__(self, config: Optional[CacheConfig] = None):
         """Initialize the cache manager.
@@ -52,23 +72,6 @@ class CacheManager:
         self.monitor: Optional[CacheMonitor] = None
         self.initialized = False
         self._executor = ThreadPoolExecutor(max_workers=4)
-        
-    @classmethod
-    def get_instance(cls, config: Optional[CacheConfig] = None) -> "CacheManager":
-        """Get or create the singleton instance of the cache manager.
-        
-        Args:
-            config: Optional cache configuration. Used only if creating a new instance.
-            
-        Returns:
-            The singleton cache manager instance.
-        """
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = cls(config)
-                    cls._instance.initialize()
-        return cls._instance
     
     def initialize(self) -> None:
         """Initialize the caching system.

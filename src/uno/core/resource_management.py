@@ -43,6 +43,28 @@ from uno.settings import uno_settings
 T = TypeVar('T')
 
 
+# Module-level singleton instance
+_resource_manager_instance: Optional['ResourceManager'] = None
+
+
+def get_resource_manager(logger: Optional[logging.Logger] = None) -> 'ResourceManager':
+    """
+    Get the global resource manager.
+    
+    Args:
+        logger: Optional logger instance
+        
+    Returns:
+        The resource manager instance
+    """
+    global _resource_manager_instance
+    
+    if _resource_manager_instance is None:
+        _resource_manager_instance = ResourceManager(logger)
+    
+    return _resource_manager_instance
+
+
 class ResourceManager:
     """
     Resource manager for the Uno framework.
@@ -54,21 +76,6 @@ class ResourceManager:
     - Graceful shutdown handling
     """
     
-    # Singleton instance
-    _instance: Optional['ResourceManager'] = None
-    
-    @classmethod
-    def get_instance(cls) -> 'ResourceManager':
-        """
-        Get the singleton instance of the resource manager.
-        
-        Returns:
-            The resource manager instance
-        """
-        if cls._instance is None:
-            cls._instance = ResourceManager()
-        return cls._instance
-    
     def __init__(
         self,
         logger: Optional[logging.Logger] = None,
@@ -79,13 +86,6 @@ class ResourceManager:
         Args:
             logger: Optional logger instance
         """
-        # Validate singleton
-        if ResourceManager._instance is not None:
-            raise RuntimeError(
-                "ResourceManager is a singleton. Use get_instance() instead."
-            )
-        
-        ResourceManager._instance = self
         
         # Initialize components
         self.logger = logger or logging.getLogger(__name__)
@@ -288,14 +288,7 @@ class ResourceManager:
         )
 
 
-def get_resource_manager() -> ResourceManager:
-    """
-    Get the global resource manager.
-    
-    Returns:
-        The resource manager instance
-    """
-    return ResourceManager.get_instance()
+# Function already defined above
 
 
 async def initialize_resources() -> None:

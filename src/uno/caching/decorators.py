@@ -8,7 +8,7 @@ import inspect
 import asyncio
 from typing import Any, Dict, List, Optional, Tuple, Union, Callable, TypeVar, cast
 
-from uno.caching.manager import CacheManager
+from uno.caching.manager import get_cache_manager
 from uno.caching.key import get_function_cache_key
 
 T = TypeVar('T')
@@ -35,7 +35,7 @@ def cached(ttl: Optional[int] = None, key_prefix: Optional[str] = None,
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get the cache manager
-            cache_manager = CacheManager.get_instance()
+            cache_manager = get_cache_manager()
             
             # Check if caching is enabled
             if not cache_manager.initialized or not cache_manager.config.enabled:
@@ -118,7 +118,7 @@ def async_cached(ttl: Optional[int] = None, key_prefix: Optional[str] = None,
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get the cache manager
-            cache_manager = CacheManager.get_instance()
+            cache_manager = get_cache_manager()
             
             # Check if caching is enabled
             if not cache_manager.initialized or not cache_manager.config.enabled:
@@ -196,7 +196,7 @@ def invalidate_cache(key_pattern: str, region: Optional[str] = None):
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get the cache manager
-            cache_manager = CacheManager.get_instance()
+            cache_manager = get_cache_manager()
             
             # Check if caching is enabled
             if not cache_manager.initialized or not cache_manager.config.enabled:
@@ -228,7 +228,7 @@ def async_invalidate_cache(key_pattern: str, region: Optional[str] = None):
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get the cache manager
-            cache_manager = CacheManager.get_instance()
+            cache_manager = get_cache_manager()
             
             # Check if caching is enabled
             if not cache_manager.initialized or not cache_manager.config.enabled:
