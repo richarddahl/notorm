@@ -2,8 +2,7 @@
 Database integration for the modern dependency injection system.
 
 This module provides utilities for integrating the database provider
-with the modern DI system. These functions will be replaced with the
-decorator-based approach in a future version.
+with the modern DI system.
 """
 
 from typing import TypeVar, Type, Callable, Any, Optional, Dict, List, cast, AsyncIterator
@@ -11,19 +10,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends
 
-import inject
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncpg
 import psycopg
 
-# TODO: Replace with modern DI system when all references are updated
-try:
-    from uno.dependencies.scoped_container import get_service
-except ImportError:
-    # For backward compatibility during transition
-    def get_service(service_type):
-        import inject
-        return inject.instance(service_type)
+# Use the modern DI system exclusively
+from uno.dependencies.scoped_container import get_service
 
 from uno.dependencies.interfaces import (
     UnoDatabaseProviderProtocol, 

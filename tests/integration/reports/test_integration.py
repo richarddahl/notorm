@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.core.errors.result import Success
 from uno.database.session import UnoAsyncSessionMaker
-from uno.dependencies.container import UnoContainer
 from uno.reports.objs import (
     ReportTemplate,
     ReportFieldDefinition,
@@ -54,8 +53,17 @@ from tests.integration.reports.fixtures import (
 @pytest.fixture
 async def session_maker():
     """Get async session maker."""
-    # Get the session maker from the DI container
-    return UnoContainer.get_instance().get(UnoAsyncSessionMaker)
+    # Get the session maker from the modern DI system
+    from uno.dependencies.modern_provider import get_service_provider
+    from uno.database.session import UnoAsyncSessionMaker
+    
+    # Import database provider
+    from uno.dependencies.interfaces import UnoDatabaseProviderProtocol
+    
+    # Get the provider and access session maker
+    provider = get_service_provider()
+    db_provider = provider.get_service(UnoDatabaseProviderProtocol)
+    return db_provider.async_session_maker
 
 
 @pytest.fixture

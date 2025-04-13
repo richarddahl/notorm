@@ -8,11 +8,12 @@ that require actual infrastructure components.
 import os
 import pytest
 import asyncio
+import logging
 from typing import Any, Dict, Generator
 
 from uno.database.session import async_session
-from uno.dependencies.container import configure_container
-from uno.dependencies.provider import ServiceProvider
+from uno.dependencies.scoped_container import ServiceCollection, initialize_container
+from uno.dependencies.modern_provider import get_service_provider, initialize_services
 
 
 def pytest_addoption(parser):
@@ -82,9 +83,14 @@ async def check_pgvector():
 
 
 @pytest.fixture(scope="session")
-def service_provider():
-    """Create a service provider for testing."""
-    # Configure the container
-    configure_container()
-    provider = ServiceProvider.get_instance()
+async def service_provider():
+    """Initialize the modern service provider for testing."""
+    # Create a logger for testing
+    logger = logging.getLogger("test")
+    
+    # Initialize the modern DI system
+    await initialize_services()
+    
+    # Get the service provider
+    provider = get_service_provider()
     return provider
