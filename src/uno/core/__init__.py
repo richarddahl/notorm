@@ -51,26 +51,20 @@ from uno.core.protocols import (
 )
 
 # Error handling
+from uno.core.errors.base import ErrorCategory, UnoError
+from uno.core.errors.result import Success, Failure, Result
 from uno.core.errors import (
-    # Error categories
-    ErrorCategory,
-    
-    # Error classes
-    DomainError, ValidationError, NotFoundError,
-    BusinessRuleError, ConflictError, AuthorizationError,
-    
-    # Type guards
-    is_validation_error, is_not_found_error, is_business_rule_error,
-    is_conflict_error, is_authorization_error, is_domain_error,
-    
-    # Result pattern
-    Success, Failure, Result, success, failure,
-    
     # Error context
-    error_context_manager, with_error_context, with_async_error_context,
+    with_error_context, add_error_context, get_error_context,
     
-    # Helper functions
-    from_awaitable, from_callable, from_async_callable
+    # Error catalog
+    register_error, get_error_code_info, get_all_error_codes,
+    
+    # Validation
+    ValidationError, ValidationContext, validate_fields,
+    
+    # Result pattern helpers
+    of, failure, from_exception, from_awaitable, combine, combine_dict
 )
 
 # Dependency Injection
@@ -120,8 +114,20 @@ __all__ = [
     # Lifecycle
     'Initializable', 'Disposable', 'AsyncDisposable',
     
-    # Error handling protocols
-    'Result',
+    # Error handling
+    'UnoError', 'ErrorCategory', 'Result', 'Success', 'Failure',
+    
+    # Error context
+    'with_error_context', 'add_error_context', 'get_error_context',
+    
+    # Error catalog
+    'register_error', 'get_error_code_info', 'get_all_error_codes',
+    
+    # Validation
+    'ValidationError', 'ValidationContext', 'validate_fields',
+    
+    # Result pattern helpers
+    'of', 'failure', 'from_exception', 'from_awaitable', 'combine', 'combine_dict',
     
     # Logging and monitoring
     'Logger', 'Metric', 'MetricsProvider',
@@ -132,25 +138,9 @@ __all__ = [
     # Type guards
     'is_entity', 'is_value_object', 'is_aggregate_root',
     
-    # Error categories
-    'ErrorCategory',
-    
-    # Error classes
-    'DomainError', 'ValidationError', 'NotFoundError',
-    'BusinessRuleError', 'ConflictError', 'AuthorizationError',
-    
-    # Error type guards
-    'is_validation_error', 'is_not_found_error', 'is_business_rule_error',
-    'is_conflict_error', 'is_authorization_error', 'is_domain_error',
-    
-    # Result pattern
-    'Success', 'Failure', 'Result', 'success', 'failure',
-    
-    # Error context
-    'error_context_manager', 'with_error_context', 'with_async_error_context',
-    
-    # Helper functions
-    'from_awaitable', 'from_callable', 'from_async_callable',
+    # Database protocols
+    'DatabaseSessionProtocol', 'DatabaseSessionContextProtocol', 'DatabaseSessionFactoryProtocol',
+    'DatabaseRepository',
     
     # DI Container
     'DIContainer', 'ServiceLifetime', 'ServiceRegistration',
