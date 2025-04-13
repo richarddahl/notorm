@@ -68,6 +68,42 @@ from uno.database.query_cache import (
     clear_all_caches,
 )
 
+# Import query optimizer components
+from uno.database.query_optimizer import (
+    QueryComplexity,
+    OptimizationLevel,
+    IndexType,
+    QueryPlan,
+    IndexRecommendation,
+    QueryRewrite,
+    QueryStatistics,
+    OptimizationConfig,
+    QueryOptimizer,
+    optimize_query,
+    optimized_query,
+)
+
+# Import PostgreSQL-specific optimizer components
+from uno.database.pg_optimizer_strategies import (
+    PgIndexRecommendation,
+    PgOptimizationStrategies,
+    PgQueryOptimizer,
+    add_pg_strategies,
+    create_pg_optimizer,
+)
+
+# Import optimizer metrics components
+from uno.database.optimizer_metrics import (
+    OptimizerMetricsSnapshot,
+    OptimizerMetricsCollector,
+    OptimizerMetricsMiddleware,
+    track_query_performance,
+    with_query_metrics,
+    get_metrics_collector,
+    set_metrics_collector,
+    collect_optimizer_metrics,
+)
+
 # Import database configuration
 from uno.database.config import ConnectionConfig
 
@@ -122,6 +158,36 @@ __all__ = [
     'get_named_cache',
     'set_default_cache',
     'clear_all_caches',
+    
+    # Query optimizer
+    'QueryComplexity',
+    'OptimizationLevel',
+    'IndexType',
+    'QueryPlan',
+    'IndexRecommendation',
+    'QueryRewrite',
+    'QueryStatistics',
+    'OptimizationConfig',
+    'QueryOptimizer',
+    'optimize_query',
+    'optimized_query',
+    
+    # PostgreSQL specific optimizer
+    'PgIndexRecommendation',
+    'PgOptimizationStrategies',
+    'PgQueryOptimizer',
+    'add_pg_strategies',
+    'create_pg_optimizer',
+    
+    # Optimizer metrics
+    'OptimizerMetricsSnapshot',
+    'OptimizerMetricsCollector',
+    'OptimizerMetricsMiddleware',
+    'track_query_performance',
+    'with_query_metrics',
+    'get_metrics_collector',
+    'set_metrics_collector',
+    'collect_optimizer_metrics',
     
     # Configuration
     'ConnectionConfig',
