@@ -119,21 +119,25 @@ The modernization effort is being implemented in phases:
 - ⌛ Repositories
 - ⌛ Factories
 
-### Phase 3: CQRS and Advanced Features (Planned)
+### Phase 3: CQRS and Advanced Features (In Progress)
 
-- ⌛ Command and query separation
-- ⌛ Command handlers
-- ⌛ Query handlers
+- ✅ Command and query separation
+- ✅ Command handlers
+- ✅ Query handlers
+- ✅ Command and query buses
+- ✅ Mediator pattern implementation
 - ⌛ Validation
 - ⌛ Caching
 - ⌛ Metrics and monitoring
 
-### Phase 4: Documentation and Examples (Planned)
+### Phase 4: Documentation and Examples (In Progress)
 
 - ⌛ Comprehensive documentation
 - ⌛ Migration guides
-- ⌛ Example applications
-- ⌛ Best practices
+- ✅ Example applications for CQRS
+- ✅ Example applications for Event-Driven Architecture
+- ✅ Example applications for DI with FastAPI
+- ⌛ Best practices documentation
 
 ## Migration Strategy
 

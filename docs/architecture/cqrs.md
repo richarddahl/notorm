@@ -1,6 +1,6 @@
 # Command Query Responsibility Segregation (CQRS)
 
-The Uno framework implements the Command Query Responsibility Segregation (CQRS) pattern to separate the read and write operations, allowing each to be optimized independently.
+The Uno framework implements the Command Query Responsibility Segregation (CQRS) pattern to separate the read and write operations, allowing each to be optimized independently. Our implementation has been fully modernized with Python 3.12+ features, including PEP 695 type parameter syntax and comprehensive type safety.
 
 ## Overview
 
@@ -13,18 +13,20 @@ This separation allows each side to be optimized independently, which is particu
 
 ## Implementation
 
-The Uno framework implements CQRS with the following components:
+The Uno framework implements CQRS with the following components, now fully leveraging Python 3.12+ features and protocol-based design:
 
 ### Command Side
 
-The command side handles state changes in the system through commands.
+The command side handles state changes in the system through commands and is implemented with modern type generics.
 
 #### Command
 
 A command represents an intent to change the system state. It is immutable and named with an imperative verb.
 
 ```python
-class CreateUserCommand(Command):
+class CreateUserCommand(BaseCommand[User]):
+    """Command to create a new user in the system."""
+    
     username: str
     email: str
     password: str
@@ -36,15 +38,28 @@ Command handlers process commands and execute the business logic that changes th
 
 ```python
 class CreateUserCommandHandler(CommandHandler[CreateUserCommand, User]):
-    async def _handle(self, command: CreateUserCommand, uow: UnitOfWork) -> User:
+    """Handler for the CreateUserCommand."""
+    
+    def __init__(self, user_repository: UserRepository, password_service: PasswordService):
+        self.user_repository = user_repository
+        self.password_service = password_service
+    
+    async def handle(self, command: CreateUserCommand) -> User:
+        """Handle the command to create a user."""
         # Business logic to create a user
-        repository = uow.get_repository(UserRepository)
+        hashed_password = await self.password_service.hash_password(command.password)
+        
         user = User(
             username=command.username,
             email=command.email,
-            password=hash_password(command.password)
+            password=hashed_password
         )
-        return await repository.add(user)
+        
+        # Persist the user
+        created_user = await self.user_repository.add(user)
+        
+        # Return the created user
+        return created_user
 ```
 
 #### Command Result
@@ -52,17 +67,21 @@ class CreateUserCommandHandler(CommandHandler[CreateUserCommand, User]):
 Commands return standardized results that indicate success or failure and contain any relevant output data.
 
 ```python
-# Example of a command execution
-result = await dispatcher.dispatch_command(CreateUserCommand(
+# Example of a command execution using the mediator
+from uno.core.cqrs import get_mediator
+
+mediator = get_mediator()
+
+result = await mediator.send(CreateUserCommand(
     username="johndoe",
     email="john@example.com",
     password="secure_password"
 ))
 
 if result.is_success:
-    print(f"User created with ID: {result.output.id}")
+    print(f"User created with ID: {result.value.id}")
 else:
-    print(f"Error: {result.error}")
+    print(f"Error: {result.error.message}")
 ```
 
 ### Query Side
