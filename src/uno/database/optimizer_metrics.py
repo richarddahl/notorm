@@ -26,7 +26,7 @@ from uno.database.query_optimizer import (
     OptimizationConfig,
     QueryOptimizer,
 )
-from uno.core.monitoring.metrics import MetricsManager, MetricType
+from uno.core.monitoring.metrics import MetricsRegistry as MetricsManager, MetricType
 
 
 class MetricSource(Enum):

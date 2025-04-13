@@ -107,9 +107,18 @@ def get_benchmark_data(module, benchmark_type, start_date, end_date):
     """
     # Convert date strings to datetime objects if needed
     if isinstance(start_date, str):
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        # Handle ISO format dates that may include time
+        if 'T' in start_date:
+            start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        else:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            
     if isinstance(end_date, str):
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        # Handle ISO format dates that may include time
+        if 'T' in end_date:
+            end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        else:
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
     
     # Generate a date range
     date_range = pd.date_range(start=start_date, end=end_date, freq="W")
@@ -220,8 +229,21 @@ def get_benchmark_data(module, benchmark_type, start_date, end_date):
     ]
 )
 def update_dashboard(n_clicks, module, benchmark_type, start_date, end_date):
+    # Default date range if none provided
+    if not start_date:
+        start_date = "2024-01-01"
+    if not end_date:
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        
     # Generate benchmark data based on selections
-    df = get_benchmark_data(module, benchmark_type, start_date, end_date)
+    try:
+        df = get_benchmark_data(module, benchmark_type, start_date, end_date)
+    except Exception as e:
+        print(f"Error generating benchmark data: {e}")
+        # Fallback to a simple date range if there's an error
+        start = datetime(2024, 1, 1)
+        end = datetime.now()
+        df = get_benchmark_data(module, benchmark_type, start, end)
     
     # 1. Summary Metrics
     avg_time = df["execution_time"].mean()
@@ -568,4 +590,5 @@ create_readme_file()
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8050)
+    # Use app.run() for newer versions of Dash
+    app.run(debug=True, port=8050)

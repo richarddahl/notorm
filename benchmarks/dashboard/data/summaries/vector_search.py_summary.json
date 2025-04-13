@@ -1,0 +1,25 @@
+{
+  "operation_count": 2,
+  "total_benchmarks": 2,
+  "mean_execution_time": 4.3,
+  "median_execution_time": 4.3,
+  "min_execution_time": 2.8,
+  "max_execution_time": 5.8,
+  "latest_date": "2024-04-12",
+  "operations": {
+    "test_hybrid_search": {
+      "mean_execution_time": 5.8,
+      "median_execution_time": 5.8,
+      "min_execution_time": 5.8,
+      "max_execution_time": 5.8,
+      "benchmark_count": 1
+    },
+    "test_vector_search": {
+      "mean_execution_time": 2.8,
+      "median_execution_time": 2.8,
+      "min_execution_time": 2.8,
+      "max_execution_time": 2.8,
+      "benchmark_count": 1
+    }
+  }
+}

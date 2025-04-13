@@ -19,10 +19,25 @@ from uno.enums import (
     Match,
 )
 from uno.settings import uno_settings
-from uno.database.db import FilterParam
+from uno.core.types import FilterParam
 from uno.queries.filter import UnoFilter
 from uno.errors import UnoError
-from uno.core.errors.result import Result, Success, Failure
+# Temporarily use direct imports for Result types
+from typing import Union, TypeVar, Generic
+from dataclasses import dataclass
+
+T_Success = TypeVar('T_Success')
+T_Failure = TypeVar('T_Failure')
+
+@dataclass
+class Success(Generic[T_Success]):
+    value: T_Success
+
+@dataclass
+class Failure(Generic[T_Failure]):
+    error: T_Failure
+
+Result = Union[Success[T_Success], Failure[T_Failure]]
 
 
 class QueryPath(UnoObj[QueryPathModel], ObjectMixin):
@@ -274,7 +289,7 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
         # Convert to Query instances
         return [cls(**model) for model in models]
         
-    async def execute(self) -> Result[List[str]]:
+    async def execute(self) -> Union[Success[List[str]], Failure[Any]]:
         """
         Execute the query and return matching record IDs.
         
@@ -286,7 +301,7 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
         executor = get_query_executor()
         return await executor.execute_query(self)
     
-    async def check_record_match(self, record_id: str) -> Result[bool]:
+    async def check_record_match(self, record_id: str) -> Union[Success[bool], Failure[Any]]:
         """
         Check if a specific record matches this query.
         
@@ -301,7 +316,7 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
         executor = get_query_executor()
         return await executor.check_record_matches_query(self, record_id)
     
-    async def count_matches(self) -> Result[int]:
+    async def count_matches(self) -> Union[Success[int], Failure[Any]]:
         """
         Count the number of records that match this query.
         

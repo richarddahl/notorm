@@ -15,152 +15,110 @@ This module provides core functionality for the Uno framework, including:
 
 # Protocols
 from uno.core.protocols import (
-    # DDD building blocks
-    Entity, AggregateRoot, ValueObject,
-    
-    # Event-driven architecture
-    DomainEvent, EventHandler, EventBus,
-    
-    # CQRS patterns
-    Command, CommandHandler, Query, QueryHandler,
-    
-    # Repository pattern
-    Repository, UnitOfWork,
-    
-    # Error handling
-    Result,
-    
-    # Caching
-    Cache,
-    
-    # Configuration
-    ConfigProvider,
-    
-    # Resource management
-    ResourceManager,
-    
-    # Messaging
-    MessagePublisher, MessageConsumer,
-    
-    # Plugin architecture
-    Plugin, PluginManager,
-    
-    # Health checks
-    HealthCheck, HealthCheckRegistry
+    # Import what we have implemented so far
+    FilterManagerProtocol,
+    SchemaManagerProtocol,
+    DBClientProtocol,
+    DatabaseSessionProtocol,
+    DatabaseSessionContextProtocol,
+    DatabaseRepository
 )
 
-# Domain-driven design
-from uno.core.domain import (
-    BaseEntity, AggregateEntity, BaseValueObject,
-    DomainService, Repository, DomainValidator
-)
+# The following imports will be implemented in future updates
+# # DDD building blocks
+# Entity, AggregateRoot, ValueObject,
+# 
+# # Event-driven architecture
+# DomainEvent, EventHandler, EventBus,
+# 
+# # CQRS patterns
+# Command, CommandHandler, Query, QueryHandler,
+# 
+# # Repository pattern
+# Repository, UnitOfWork,
+# 
+# # Error handling
+# Result,
+# 
+# # Caching
+# Cache,
+# 
+# # Configuration
+# ConfigProvider,
+# 
+# # Resource management
+# ResourceManager,
+# 
+# # Messaging
+# MessagePublisher, MessageConsumer,
+# 
+# # Plugin architecture
+# Plugin, PluginManager,
+# 
+# # Health checks
+# HealthCheck, HealthCheckRegistry
 
-# Event-driven architecture
-from uno.core.events import (
-    BaseDomainEvent, BaseEventHandler, SimpleEventBus,
-    TypedEventBus, AsyncEventBus, DomainEventPublisher,
-    event_handler, DomainEventProcessor
-)
+# We'll import domain modules later after fixing circular imports
+# # Domain-driven design
+# from uno.core.domain import (
+#     BaseEntity, AggregateEntity, BaseValueObject,
+#     DomainService, Repository, DomainValidator
+# )
 
-# CQRS pattern
-from uno.core.cqrs import (
-    BaseCommand, BaseQuery, BaseCommandHandler, BaseQueryHandler,
-    CommandBus, QueryBus, HandlerRegistry,
-    command_handler, query_handler
-)
-
-# Unit of Work pattern
-from uno.core.uow import (
-    AbstractUnitOfWork, DatabaseUnitOfWork,
-    ContextUnitOfWork, transaction
-)
-
-# Result pattern (for backwards compatibility)
-from uno.core.result import (
-    Success, Failure, of, failure, from_exception,
-    from_awaitable, combine, combine_dict
-)
-
-# Error handling framework (new)
-from uno.core.errors import (
-    UnoError, ErrorCode, ErrorContext, ErrorInfo,
-    ValidationError, ValidationContext, FieldValidationError,
-    configure_logging, get_logger, LogConfig,
-    with_error_context, add_error_context, get_error_context,
-    with_logging_context, add_logging_context, get_logging_context,
-    ErrorCatalog
-)
-
-# Configuration management
-from uno.core.config import (
-    ConfigurationError, ConfigSource, DictConfigSource,
-    EnvironmentConfigSource, FileConfigSource,
-    ConfigurationService, ConfigurationOptions
-)
-
-# Protocol validation
-from uno.core.protocol_validator import (
-    validate_protocol, validate_implementation, 
-    find_protocol_implementations, implements,
-    verify_all_implementations, ProtocolValidationError
-)
+# Comment out all these imports for now until we've fixed the circular dependencies
+# # Event-driven architecture
+# from uno.core.events import (
+#     BaseDomainEvent, BaseEventHandler, SimpleEventBus,
+#     TypedEventBus, AsyncEventBus, DomainEventPublisher,
+#     event_handler, DomainEventProcessor
+# )
+# 
+# # CQRS pattern
+# from uno.core.cqrs import (
+#     BaseCommand, BaseQuery, BaseCommandHandler, BaseQueryHandler,
+#     CommandBus, QueryBus, HandlerRegistry,
+#     command_handler, query_handler
+# )
+# 
+# # Unit of Work pattern
+# from uno.core.uow import (
+#     AbstractUnitOfWork, DatabaseUnitOfWork,
+#     ContextUnitOfWork, transaction
+# )
+# 
+# # Result pattern (for backwards compatibility)
+# from uno.core.result import (
+#     Success, Failure, of, failure, from_exception,
+#     from_awaitable, combine, combine_dict
+# )
+# 
+# # Error handling framework (new)
+# from uno.core.errors import (
+#     UnoError, ErrorCode, ErrorContext, ErrorInfo,
+#     ValidationError, ValidationContext, FieldValidationError,
+#     configure_logging, get_logger, LogConfig,
+#     with_error_context, add_error_context, get_error_context,
+#     with_logging_context, add_logging_context, get_logging_context,
+#     ErrorCatalog
+# )
+# 
+# # Configuration management
+# from uno.core.config import (
+#     ConfigurationError, ConfigSource, DictConfigSource,
+#     EnvironmentConfigSource, FileConfigSource,
+#     ConfigurationService, ConfigurationOptions
+# )
+# 
+# # Protocol validation
+# from uno.core.protocol_validator import (
+#     validate_protocol, validate_implementation, 
+#     find_protocol_implementations, implements,
+#     verify_all_implementations, ProtocolValidationError
+# )
 
 __all__ = [
-    # DDD building blocks
-    'Entity', 'AggregateRoot', 'ValueObject',
-    'BaseEntity', 'AggregateEntity', 'BaseValueObject',
-    'DomainService', 'Repository', 'DomainValidator',
-    
-    # Event-driven architecture
-    'DomainEvent', 'EventHandler', 'EventBus',
-    'BaseDomainEvent', 'BaseEventHandler', 'SimpleEventBus',
-    'TypedEventBus', 'AsyncEventBus', 'DomainEventPublisher',
-    'event_handler', 'DomainEventProcessor',
-    
-    # CQRS patterns
-    'Command', 'CommandHandler', 'Query', 'QueryHandler',
-    'BaseCommand', 'BaseQuery', 'BaseCommandHandler', 'BaseQueryHandler',
-    'CommandBus', 'QueryBus', 'HandlerRegistry',
-    'command_handler', 'query_handler',
-    
-    # Unit of Work pattern
-    'UnitOfWork', 'AbstractUnitOfWork', 'DatabaseUnitOfWork',
-    'ContextUnitOfWork', 'transaction',
-    
-    # Result pattern
-    'Result', 'Success', 'Failure', 'of', 'failure',
-    'from_exception', 'from_awaitable', 'combine', 'combine_dict',
-    
-    # Error handling framework
-    'UnoError', 'ErrorCode', 'ErrorContext', 'ErrorInfo',
-    'ValidationError', 'ValidationContext', 'FieldValidationError', 
-    'configure_logging', 'get_logger', 'LogConfig',
-    'with_error_context', 'add_error_context', 'get_error_context',
-    'with_logging_context', 'add_logging_context', 'get_logging_context',
-    'ErrorCatalog',
-    
-    # Configuration management
-    'ConfigProvider', 'ConfigurationError', 'ConfigSource',
-    'DictConfigSource', 'EnvironmentConfigSource', 'FileConfigSource',
-    'ConfigurationService', 'ConfigurationOptions',
-    
-    # Resource management
-    'ResourceManager',
-    
-    # Caching
-    'Cache',
-    
-    # Messaging
-    'MessagePublisher', 'MessageConsumer',
-    
-    # Plugin architecture
-    'Plugin', 'PluginManager',
-    
-    # Health checks
-    'HealthCheck', 'HealthCheckRegistry',
-    
-    # Protocol validation
-    'validate_protocol', 'validate_implementation',
-    'find_protocol_implementations', 'implements',
-    'verify_all_implementations', 'ProtocolValidationError'
+    # Core protocols we have implemented
+    'FilterManagerProtocol', 'SchemaManagerProtocol', 'DBClientProtocol',
+    'DatabaseSessionProtocol', 'DatabaseSessionContextProtocol', 'DatabaseSessionFactoryProtocol',
+    'DatabaseRepository'
 ]

@@ -37,6 +37,7 @@ dependencies = [
   "pydantic[email]",
   "pydantic-settings",
   "python-multipart",
+  "psutil",
   "pytz",
   "uvicorn",
   "sqlalchemy[asyncio]",

@@ -16,18 +16,21 @@ from sqlalchemy import (
     Table, Column, and_, or_, not_, exists, case,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select, Insert, Update, Delete, Join, Exists, Alias
+# Fix for sqlalchemy.sql imports
+from sqlalchemy.sql import Select, Insert, Update, Delete, Join, Alias
+from sqlalchemy.sql.expression import Exists
 from sqlalchemy.sql.expression import ColumnElement, BinaryExpression, TextClause
 
-from uno.core.caching import (
-    generate_cache_key,
-    get_cache_manager,
-    query_cached,
-)
+# Temporarily comment out caching imports while we fix circular dependencies
+# from uno.core.caching import (
+#     generate_cache_key,
+#     get_cache_manager,
+#     query_cached,
+# )
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
 from uno.database.streaming import stream_query, StreamingMode
-from uno.model import Model
+from uno.model import UnoModel as Model
 
 
 T = TypeVar('T', bound=Model)
@@ -162,8 +165,8 @@ class OptimizedQuery:
         Returns:
             Query results
         """
-        # Use provided cache setting or class default
-        should_cache = use_cache if use_cache is not None else self.use_cache
+        # Temporarily disable caching while we fix circular dependencies
+        should_cache = False
         
         # Handle streaming
         if stream or chunks:
@@ -181,11 +184,7 @@ class OptimizedQuery:
                 logger=self.logger,
             )
         
-        # Handle caching
-        if should_cache:
-            return await self._execute_cached(query, params)
-        
-        # Regular execution
+        # Regular execution (caching disabled temporarily)
         return await self._execute_query(query, params)
     
     async def _execute_query(
@@ -244,36 +243,9 @@ class OptimizedQuery:
         Returns:
             Query results
         """
-        # Get cache manager
-        cache_manager = get_cache_manager()
-        
-        # Get query cache
-        cache = await cache_manager.get_query_cache(
-            name="query_cache",
-            ttl=self.cache_ttl,
-        )
-        
-        # Generate cache key
-        key = generate_cache_key(str(query), params)
-        
-        # Define refresh function
-        async def refresh_func():
-            # Execute query
-            result = await self._execute_query(query, params)
-            
-            # Convert to cacheable format
-            rows = result.fetchall()
-            return rows
-        
-        # Get from cache or execute
-        rows = await cache.get_or_set(
-            key=key,
-            getter=refresh_func,
-            ttl=self.cache_ttl,
-            refresh_func=refresh_func,
-        )
-        
-        return rows
+        # Temporarily disabled caching while we fix circular dependencies
+        # Just use regular execution instead
+        return await self._execute_query(query, params)
 
 
 class OptimizedModelQuery(OptimizedQuery, Generic[T]):

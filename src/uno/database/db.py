@@ -42,10 +42,7 @@ class NotFoundException(Exception):
     pass
 
 
-class FilterParam(BaseModel):
-    """FilterParam is used to validate the filter parameters for the ListRouter."""
-
-    model_config = ConfigDict(extra="forbid")
+# FilterParam has been moved to uno.core.types to avoid circular imports
 
 
 T = TypeVar('T', bound=BaseModel)

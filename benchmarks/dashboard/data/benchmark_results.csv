@@ -1,0 +1,7 @@
+date,module,operation,execution_time,min_time,max_time,stddev,median,dataset_size,success_rate,iterations,commit_id,commit_branch
+2024-04-12 15:30:00,db_get.py,test_db_get,1.5,1.2,1.8,0.2,1.5,small,100,30,5518f35,cleanup/remove-legacy-code
+2024-04-12 15:30:00,db_filter.py,test_db_filter,3.5,2.5,4.2,0.5,3.4,medium,100,25,5518f35,cleanup/remove-legacy-code
+2024-04-12 15:30:00,filter_manager.py,test_filter_manager,2.2,1.8,2.8,0.3,2.2,small,100,30,5518f35,cleanup/remove-legacy-code
+2024-04-12 15:30:00,executor.py,test_query_execution,4.5,3.8,5.6,0.6,4.4,medium,100,25,5518f35,cleanup/remove-legacy-code
+2024-04-12 15:30:00,vector_search.py,test_vector_search,2.8,2.2,3.5,0.4,2.7,small,100,30,5518f35,cleanup/remove-legacy-code
+2024-04-12 15:30:00,vector_search.py,test_hybrid_search,5.8,4.5,7.2,0.8,5.6,medium,100,20,5518f35,cleanup/remove-legacy-code

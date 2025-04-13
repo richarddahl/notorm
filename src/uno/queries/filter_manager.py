@@ -10,7 +10,7 @@ This module provides functionality for creating and managing filters for UnoObj 
 
 import datetime
 import decimal
-from typing import Dict, Type, Any, List, NamedTuple, Optional, cast, Set, Tuple, Union
+from typing import Dict, Type, Any, List, NamedTuple, Optional, cast, Set, Tuple, Union, TYPE_CHECKING
 from collections import OrderedDict, namedtuple
 
 from pydantic import BaseModel, create_model, Field
@@ -30,12 +30,21 @@ from uno.utilities import (
     snake_to_camel,
     snake_to_caps_snake,
 )
-from uno.protocols import FilterManagerProtocol
+from uno.core.protocols.filter_protocols import UnoFilterProtocol
+from uno.core.types import FilterParam
+
+# Use TYPE_CHECKING for imports that are only needed for type annotations
+if TYPE_CHECKING:
+    from uno.core.protocols import FilterManagerProtocol
+else:
+    # Runtime import from the core protocols
+    from uno.core.protocols import FilterManagerProtocol
 
 
 class FilterValidationError(ValidationError):
     """Error raised when a filter validation fails."""
     pass
+
 
 
 class UnoFilterManager(FilterManagerProtocol):
@@ -47,14 +56,14 @@ class UnoFilterManager(FilterManagerProtocol):
 
     def __init__(self):
         """Initialize the filter manager."""
-        self.filters: Dict[str, UnoFilter] = {}
+        self.filters: Dict[str, UnoFilterProtocol] = {}
 
     def create_filters_from_table(
         self,
         model_class: Type[BaseModel],
         exclude_from_filters: bool = False,
         exclude_fields: Optional[List[str]] = None,
-    ) -> Dict[str, UnoFilter]:
+    ) -> Dict[str, UnoFilterProtocol]:
         """
         Create filters from a model's table.
 
@@ -70,7 +79,7 @@ class UnoFilterManager(FilterManagerProtocol):
             return {}
 
         exclude_fields = exclude_fields or []
-        filters: Dict[str, UnoFilter] = {}
+        filters: Dict[str, UnoFilterProtocol] = {}
         
         # Handle case where model_class might not have __table__ attribute
         if not hasattr(model_class, "__table__"):
@@ -97,7 +106,7 @@ class UnoFilterManager(FilterManagerProtocol):
         self,
         column: Column,
         table: Table,
-    ) -> Optional[UnoFilter]:
+    ) -> Optional[UnoFilterProtocol]:
         """
         Create a filter from a column.
 
@@ -189,7 +198,7 @@ class UnoFilterManager(FilterManagerProtocol):
         Returns:
             A Pydantic model class for filter parameters
         """
-        from uno.database.db import FilterParam  # Import here to avoid circular imports
+        # FilterParam is now imported from uno.core.types to avoid circular imports
 
         filter_names = list(self.filters.keys())
         filter_names.sort()
@@ -445,3 +454,11 @@ class UnoFilterManager(FilterManagerProtocol):
                 return
 
             filters.append(tuple_class(param_name, value, param_name))
+
+
+# Alias UnoFilterManager as FilterManager for backward compatibility
+FilterManager = UnoFilterManager
+
+class FilterConnection:
+    """Simple connection class for filters"""
+    pass

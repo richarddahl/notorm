@@ -12,7 +12,7 @@ Features:
 - Support for both raw SQL and ORM queries
 """
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, Type, TypeVar, Generic, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, Type, TypeVar, Generic, cast, Callable
 import asyncio
 import hashlib
 import inspect
@@ -482,7 +482,7 @@ class QueryCache:
             self._redis_client = redis.from_url(self.config.redis_url)
         return self._redis_client
     
-    async def get(self, key: str) -> OpResult[Any, str]:
+    async def get(self, key: str) -> OpResult[Any]:
         """
         Get a value from the cache.
         

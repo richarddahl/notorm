@@ -1,0 +1,104 @@
+{
+  "module_count": 5,
+  "total_operations": 6,
+  "total_benchmarks": 6,
+  "module_summaries": {
+    "db_filter.py": {
+      "operation_count": 1,
+      "total_benchmarks": 1,
+      "mean_execution_time": 3.5,
+      "median_execution_time": 3.5,
+      "min_execution_time": 3.5,
+      "max_execution_time": 3.5,
+      "latest_date": "2024-04-12",
+      "operations": {
+        "test_db_filter": {
+          "mean_execution_time": 3.5,
+          "median_execution_time": 3.5,
+          "min_execution_time": 3.5,
+          "max_execution_time": 3.5,
+          "benchmark_count": 1
+        }
+      }
+    },
+    "db_get.py": {
+      "operation_count": 1,
+      "total_benchmarks": 1,
+      "mean_execution_time": 1.5,
+      "median_execution_time": 1.5,
+      "min_execution_time": 1.5,
+      "max_execution_time": 1.5,
+      "latest_date": "2024-04-12",
+      "operations": {
+        "test_db_get": {
+          "mean_execution_time": 1.5,
+          "median_execution_time": 1.5,
+          "min_execution_time": 1.5,
+          "max_execution_time": 1.5,
+          "benchmark_count": 1
+        }
+      }
+    },
+    "executor.py": {
+      "operation_count": 1,
+      "total_benchmarks": 1,
+      "mean_execution_time": 4.5,
+      "median_execution_time": 4.5,
+      "min_execution_time": 4.5,
+      "max_execution_time": 4.5,
+      "latest_date": "2024-04-12",
+      "operations": {
+        "test_query_execution": {
+          "mean_execution_time": 4.5,
+          "median_execution_time": 4.5,
+          "min_execution_time": 4.5,
+          "max_execution_time": 4.5,
+          "benchmark_count": 1
+        }
+      }
+    },
+    "filter_manager.py": {
+      "operation_count": 1,
+      "total_benchmarks": 1,
+      "mean_execution_time": 2.2,
+      "median_execution_time": 2.2,
+      "min_execution_time": 2.2,
+      "max_execution_time": 2.2,
+      "latest_date": "2024-04-12",
+      "operations": {
+        "test_filter_manager": {
+          "mean_execution_time": 2.2,
+          "median_execution_time": 2.2,
+          "min_execution_time": 2.2,
+          "max_execution_time": 2.2,
+          "benchmark_count": 1
+        }
+      }
+    },
+    "vector_search.py": {
+      "operation_count": 2,
+      "total_benchmarks": 2,
+      "mean_execution_time": 4.3,
+      "median_execution_time": 4.3,
+      "min_execution_time": 2.8,
+      "max_execution_time": 5.8,
+      "latest_date": "2024-04-12",
+      "operations": {
+        "test_hybrid_search": {
+          "mean_execution_time": 5.8,
+          "median_execution_time": 5.8,
+          "min_execution_time": 5.8,
+          "max_execution_time": 5.8,
+          "benchmark_count": 1
+        },
+        "test_vector_search": {
+          "mean_execution_time": 2.8,
+          "median_execution_time": 2.8,
+          "min_execution_time": 2.8,
+          "max_execution_time": 2.8,
+          "benchmark_count": 1
+        }
+      }
+    }
+  }
+}

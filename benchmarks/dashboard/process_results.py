@@ -173,14 +173,30 @@ def main():
                         help="Output CSV file for processed benchmark data")
     parser.add_argument("--summaries", dest="summaries_dir", default="./data/summaries",
                         help="Directory to store module summary files")
+    parser.add_argument("--sample", dest="use_sample", action="store_true",
+                        help="Use sample benchmark data for demonstration")
     
     args = parser.parse_args()
     
     # Create output directory if it doesn't exist
     os.makedirs(os.path.dirname(args.output_file), exist_ok=True)
     
-    # Process all benchmark files
+    # First try normal benchmark files
     df = process_all_benchmarks(args.results_dir, args.output_file)
+    
+    # If no benchmarks found or --sample flag is used, try sample file
+    if df is None or df.empty or args.use_sample:
+        print("Using sample benchmark data...")
+        sample_file = "./data/sample_benchmark.json"
+        if os.path.exists(sample_file):
+            try:
+                results = parse_benchmark_file(sample_file)
+                if results:
+                    df = pd.DataFrame(results)
+                    df.to_csv(args.output_file, index=False)
+                    print(f"Saved {len(results)} sample benchmark results to {args.output_file}")
+            except Exception as e:
+                print(f"Error processing sample file: {e}")
     
     # Create module summaries
     create_module_summaries(df, args.summaries_dir)

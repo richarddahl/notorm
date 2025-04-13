@@ -18,17 +18,20 @@ from sqlalchemy import (
     Table, Column, and_, or_, not_, exists, case,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import Select, Insert, Update, Delete, Join, Exists, Alias
+# Fix for sqlalchemy.sql imports
+from sqlalchemy.sql import Select, Insert, Update, Delete, Join, Alias
+from sqlalchemy.sql.expression import Exists
 from sqlalchemy.sql.expression import ColumnElement, BinaryExpression, TextClause
 
-from uno.core.caching import (
-    generate_cache_key,
-    get_cache_manager,
-    query_cached,
-)
+# Temporarily comment out core caching imports while we fix circular dependencies
+# from uno.core.caching import (
+#     generate_cache_key,
+#     get_cache_manager,
+#     query_cached,
+# )
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
-from uno.model import Model
+from uno.model import UnoModel as Model
 from uno.queries.optimized_queries import OptimizedModelQuery, QueryHints
 
 

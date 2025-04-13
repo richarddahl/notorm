@@ -13,7 +13,8 @@ from typing import Dict, List, Any, Optional, Set, Union
 import logging
 from dataclasses import dataclass, field
 
-from uno.core.monitoring.metrics import MetricUnit, EventLevel
+from uno.core.monitoring.metrics import MetricUnit
+from uno.core.monitoring.events import EventLevel
 from uno.core.monitoring.tracing import SpanKind
 
 

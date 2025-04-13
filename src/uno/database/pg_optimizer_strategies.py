@@ -112,7 +112,7 @@ class PgOptimizationStrategies:
         self.optimizer = optimizer
         self.logger = optimizer.logger
     
-    async def analyze_table(self, table_name: str) -> OpResult[Dict[str, Any], str]:
+    async def analyze_table(self, table_name: str) -> OpResult[Dict[str, Any]]:
         """
         Run ANALYZE on a table to update statistics.
         
@@ -143,7 +143,7 @@ class PgOptimizationStrategies:
             self.logger.error(error_msg)
             return Err(error_msg)
     
-    async def get_table_statistics(self, table_name: str) -> OpResult[Dict[str, Any], str]:
+    async def get_table_statistics(self, table_name: str) -> OpResult[Dict[str, Any]]:
         """
         Get statistics for a table.
         
@@ -256,7 +256,7 @@ class PgOptimizationStrategies:
     
     async def recommend_table_maintenance(
         self, table_name: str
-    ) -> OpResult[Dict[str, Any], str]:
+    ) -> OpResult[Dict[str, Any]]:
         """
         Recommend maintenance operations for a table.
         
@@ -635,7 +635,7 @@ class PgOptimizationStrategies:
     
     async def rewrite_for_pg_features(
         self, query: str
-    ) -> OpResult[QueryRewrite, str]:
+    ) -> OpResult[QueryRewrite]:
         """
         Rewrite a query to leverage PostgreSQL-specific features.
         
@@ -668,7 +668,7 @@ class PgOptimizationStrategies:
         # No applicable rewrites
         return Err("No PostgreSQL-specific rewrites applicable")
     
-    def _rewrite_cte(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_cte(self, query: str) -> OpResult[QueryRewrite]:
         """
         Rewrite subqueries to use Common Table Expressions (CTEs).
         
@@ -710,7 +710,7 @@ class PgOptimizationStrategies:
             reason="Converted subqueries to Common Table Expressions (CTEs) for better readability and potential performance improvement"
         ))
     
-    def _rewrite_to_lateral(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_to_lateral(self, query: str) -> OpResult[QueryRewrite]:
         """
         Rewrite certain JOIN patterns to use LATERAL JOIN.
         
@@ -768,7 +768,7 @@ class PgOptimizationStrategies:
             reason="Converted to LATERAL JOIN for better performance with correlated subqueries"
         ))
     
-    def _rewrite_json_functions(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_json_functions(self, query: str) -> OpResult[QueryRewrite]:
         """
         Optimize JSON operations using PostgreSQL-specific functions.
         
@@ -810,7 +810,7 @@ class PgOptimizationStrategies:
             reason="Replaced generic JSON functions with PostgreSQL-specific operators for better performance"
         ))
     
-    def _rewrite_to_distinct_on(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_to_distinct_on(self, query: str) -> OpResult[QueryRewrite]:
         """
         Rewrite GROUP BY queries with first-value logic to use DISTINCT ON.
         

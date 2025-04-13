@@ -757,7 +757,7 @@ class QueryOptimizer:
         self,
         query: Union[str, Executable],
         params: Optional[Dict[str, Any]] = None,
-    ) -> OpResult[QueryRewrite, str]:
+    ) -> OpResult[QueryRewrite]:
         """
         Rewrite a query for better performance.
         
@@ -807,7 +807,7 @@ class QueryOptimizer:
         # No rewrites applied
         return Err("No applicable rewrites found")
     
-    def _rewrite_unnecessary_distinct(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_unnecessary_distinct(self, query: str) -> OpResult[QueryRewrite]:
         """
         Remove unnecessary DISTINCT clauses.
         
@@ -846,7 +846,7 @@ class QueryOptimizer:
         
         return Err("DISTINCT may be necessary")
     
-    def _rewrite_count_star(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_count_star(self, query: str) -> OpResult[QueryRewrite]:
         """
         Optimize COUNT(*) queries.
         
@@ -882,7 +882,7 @@ class QueryOptimizer:
         
         return Err("Query already has WHERE clause, COUNT(*) optimization not applicable")
     
-    def _rewrite_or_to_union(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_or_to_union(self, query: str) -> OpResult[QueryRewrite]:
         """
         Rewrite OR conditions to UNION for better index usage.
         
@@ -935,7 +935,7 @@ class QueryOptimizer:
         
         return Err("OR conditions not suitable for UNION rewrite")
     
-    def _rewrite_in_clause(self, query: str) -> OpResult[QueryRewrite, str]:
+    def _rewrite_in_clause(self, query: str) -> OpResult[QueryRewrite]:
         """
         Optimize large IN clauses.
         

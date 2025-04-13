@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
-
 #
 # SPDX-License-Identifier: MIT
 
@@ -26,17 +25,17 @@ Attributes:
     text_lookups (list): A list of lookup names applicable to text data types.
 """
 
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict, List, Optional, TYPE_CHECKING, Type
 from psycopg import sql
 from pydantic import BaseModel
 
-from uno.database.engine import (
-    sync_connection,
-    async_connection,
-)
+from uno.core.protocols.filter_protocols import UnoFilterProtocol
+from uno.core.types import FilterItem
 
-# Import UnoDBFactory here to avoid circular imports
-from uno.database.db import UnoDBFactory
+# Define UnoDB and UnoObj for type annotations without creating circular imports
+if TYPE_CHECKING:
+    from uno.database.db_manager import UnoDB
+    from uno.obj import UnoObj
 
 # This dictionary contains predefined SQL templates for various lookup operations.
 # Each key represents a lookup name, and the corresponding value is the SQL template.
@@ -164,7 +163,7 @@ class UnoFilter(BaseModel):
             Handles different data types and formats the query accordingly.
     """
 
-    db: ClassVar["UnoDB"]
+    db: ClassVar[Any]  # Use Any for ClassVar to avoid import issues
 
     source_node_label: str
     source_meta_type_id: str
@@ -194,6 +193,8 @@ class UnoFilter(BaseModel):
             **kwargs: Arbitrary keyword arguments passed to the parent class's initializer.
         """
         super().__subclass_init__(*args, **kwargs)
+        # Import here to avoid circular imports
+        from uno.database.db_manager import UnoDBFactory
         cls.db = UnoDBFactory(obj=cls)
 
     def __str__(self) -> str:
@@ -272,7 +273,9 @@ class UnoFilter(BaseModel):
         Returns:
             list[UnoFilter]: A list of child filters extracted from the obj's filters.
         """
-        """Return a list of child filters."""
+        # Import here to avoid circular imports
+        from uno.obj import UnoObj
+        # Return a list of child filters
         return [child for child in obj.filters.values()]
 
     def cypher_query(self, value: Any, lookup: str) -> str:
@@ -337,3 +340,9 @@ class UnoFilter(BaseModel):
             )
             .as_string()
         )
+
+
+# Alias UnoFilter as Filter for backward compatibility
+Filter = UnoFilter
+
+# Remove this class as it's now properly defined in uno.core.types

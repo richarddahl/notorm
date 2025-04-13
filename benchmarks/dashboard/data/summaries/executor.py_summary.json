@@ -1,0 +1,18 @@
+{
+  "operation_count": 1,
+  "total_benchmarks": 1,
+  "mean_execution_time": 4.5,
+  "median_execution_time": 4.5,
+  "min_execution_time": 4.5,
+  "max_execution_time": 4.5,
+  "latest_date": "2024-04-12",
+  "operations": {
+    "test_query_execution": {
+      "mean_execution_time": 4.5,
+      "median_execution_time": 4.5,
+      "min_execution_time": 4.5,
+      "max_execution_time": 4.5,
+      "benchmark_count": 1
+    }
+  }
+}

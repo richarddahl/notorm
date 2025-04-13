@@ -28,20 +28,36 @@ from typing import (
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from uno.database.db import UnoDBFactory, FilterParam
+from uno.core.types import FilterParam  # Use the core types to avoid circular import
 from uno.model import UnoModel
 from uno.schema.schema import UnoSchemaConfig
 from uno.errors import UnoError, ValidationContext, ValidationError
 from uno.utilities import snake_to_title
 from uno.registry import get_registry
-from uno.schema.schema_manager import UnoSchemaManager
-from uno.queries.filter_manager import UnoFilterManager
 from uno.api.endpoint_factory import UnoEndpointFactory
-from uno.protocols import (
+
+# Import necessary protocols from core protocols
+from uno.core.protocols import (
     SchemaManagerProtocol,
     FilterManagerProtocol,
     DBClientProtocol,
 )
+
+# Use deferred imports for implementations to avoid circular dependencies
+def get_schema_manager() -> SchemaManagerProtocol:
+    """Get the schema manager instance."""
+    from uno.schema.schema_manager import UnoSchemaManager
+    return UnoSchemaManager()
+
+def get_filter_manager() -> FilterManagerProtocol:
+    """Get the filter manager instance."""
+    from uno.queries.filter_manager import UnoFilterManager
+    return UnoFilterManager()
+
+def get_db_factory(obj: Type[Any]) -> Any:
+    """Get the database factory instance."""
+    from uno.database.db_manager import UnoDBFactory
+    return UnoDBFactory(obj=obj)
 
 
 # Type variable for the UnoModel
@@ -100,14 +116,18 @@ class UnoObj(BaseModel, Generic[T]):
         """
         super().__init__(**data)
 
-        # Initialize the db factory
-        self.db = UnoDBFactory(obj=self.__class__)
+        # Initialize the db factory using the deferred import
+        self.db = get_db_factory(obj=self.__class__)
 
-        # Initialize the schema manager
-        self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
+        # Initialize the schema manager using the deferred import
+        schema_manager = get_schema_manager()
+        # Add schema configs if available
+        if hasattr(self.__class__, "schema_configs"):
+            schema_manager.schema_configs = self.__class__.schema_configs
+        self.schema_manager = schema_manager
 
-        # Initialize the filter manager
-        self.filter_manager = UnoFilterManager()
+        # Initialize the filter manager using the deferred import
+        self.filter_manager = get_filter_manager()
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """
@@ -366,8 +386,8 @@ class UnoObj(BaseModel, Generic[T]):
         Returns:
             A UnoObj instance
         """
-        # Create the database factory
-        db = UnoDBFactory(obj=cls)
+        # Create the database factory using the deferred import
+        db = get_db_factory(obj=cls)
 
         # Get the model from the database
         model = await db.get(**kwargs)
@@ -389,8 +409,8 @@ class UnoObj(BaseModel, Generic[T]):
         Returns:
             A list of UnoObj instances
         """
-        # Create the database factory
-        db = UnoDBFactory(obj=cls)
+        # Create the database factory using the deferred import
+        db = get_db_factory(obj=cls)
 
         # Filter models from the database
         models = await db.filter(filters=filters)
@@ -408,16 +428,16 @@ class UnoObj(BaseModel, Generic[T]):
         Args:
             app: The web application to configure (typically a FastAPI instance)
         """
-        # Setup filter manager
-        filter_manager = UnoFilterManager()
+        # Setup filter manager using the deferred import
+        filter_manager = get_filter_manager()
         filter_manager.create_filters_from_table(
             cls.model,
             cls.exclude_from_filters,
             cls.terminate_field_filters,
         )
 
-        # Create and attach schema_manager to the model class
-        schema_manager = UnoSchemaManager(cls.schema_configs)
+        # Create and attach schema_manager to the model class using the deferred import
+        schema_manager = get_schema_manager()
         schema_manager.create_all_schemas(cls)
         cls.schema_manager = schema_manager  # attach schema manager to the class
 
@@ -438,8 +458,8 @@ class UnoObj(BaseModel, Generic[T]):
         Returns:
             A Pydantic model class for filter parameters
         """
-        # Setup filter manager
-        filter_manager = UnoFilterManager()
+        # Setup filter manager using the deferred import
+        filter_manager = get_filter_manager()
         filter_manager.create_filters_from_table(
             cls.model,
             cls.exclude_from_filters,
@@ -464,8 +484,8 @@ class UnoObj(BaseModel, Generic[T]):
         Raises:
             ValidationError: If validation fails
         """
-        # Setup filter manager
-        filter_manager = UnoFilterManager()
+        # Setup filter manager using the deferred import
+        filter_manager = get_filter_manager()
         filter_manager.create_filters_from_table(
             cls.model,
             cls.exclude_from_filters,
