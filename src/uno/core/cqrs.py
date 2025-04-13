@@ -18,7 +18,8 @@ from typing import (
     Self
 )
 
-from .errors import DomainError, ErrorCategory, with_error_context, with_async_error_context
+from .errors.base import ErrorCategory, UnoError
+from .errors import with_error_context, with_async_error_context
 from .events import Event, EventPublisher, get_event_publisher
 from .protocols import Command, Query, CommandHandler, QueryHandler
 
@@ -126,10 +127,10 @@ class CommandBus:
             handler: The handler for the command
             
         Raises:
-            DomainError: If the command type is already registered
+            UnoError: If the command type is already registered
         """
         if command_type in self._handlers:
-            raise DomainError(
+            raise UnoError(
                 message=f"Command handler already registered for {command_type.__name__}",
                 code="COMMAND_HANDLER_ALREADY_REGISTERED",
                 category=ErrorCategory.CONFLICT
@@ -160,7 +161,7 @@ class CommandBus:
             The result of command execution
             
         Raises:
-            DomainError: If no handler is registered for the command type
+            UnoError: If no handler is registered for the command type
         """
         command_type = type(command)
         self._logger.debug(f"Executing command {command_type.__name__} ({command.command_id})")
@@ -177,9 +178,9 @@ class CommandBus:
                 result = await handler.handle(command)
                 return cast(TResult, result)
             except Exception as e:
-                # Wrap in DomainError if not already
-                if not isinstance(e, DomainError):
-                    raise DomainError(
+                # Wrap in UnoError if not already
+                if not isinstance(e, UnoError):
+                    raise UnoError(
                         message=f"Error executing command {command_type.__name__}: {str(e)}",
                         code="COMMAND_EXECUTION_ERROR",
                         category=ErrorCategory.UNEXPECTED,
@@ -198,7 +199,7 @@ class CommandBus:
             The command handler
             
         Raises:
-            DomainError: If no handler is registered for the command type
+            UnoError: If no handler is registered for the command type
         """
         command_type = type(command)
         
@@ -212,7 +213,7 @@ class CommandBus:
                 return self._handlers[base]
         
         # No handler found
-        raise DomainError(
+        raise UnoError(
             message=f"No handler registered for command {command_type.__name__}",
             code="COMMAND_HANDLER_NOT_FOUND",
             category=ErrorCategory.NOT_FOUND
@@ -250,10 +251,10 @@ class QueryBus:
             handler: The handler for the query
             
         Raises:
-            DomainError: If the query type is already registered
+            UnoError: If the query type is already registered
         """
         if query_type in self._handlers:
-            raise DomainError(
+            raise UnoError(
                 message=f"Query handler already registered for {query_type.__name__}",
                 code="QUERY_HANDLER_ALREADY_REGISTERED",
                 category=ErrorCategory.CONFLICT
@@ -284,7 +285,7 @@ class QueryBus:
             The result of query execution
             
         Raises:
-            DomainError: If no handler is registered for the query type
+            UnoError: If no handler is registered for the query type
         """
         query_type = type(query)
         self._logger.debug(f"Executing query {query_type.__name__} ({query.query_id})")
@@ -301,9 +302,9 @@ class QueryBus:
                 result = await handler.handle(query)
                 return cast(TResult, result)
             except Exception as e:
-                # Wrap in DomainError if not already
-                if not isinstance(e, DomainError):
-                    raise DomainError(
+                # Wrap in UnoError if not already
+                if not isinstance(e, UnoError):
+                    raise UnoError(
                         message=f"Error executing query {query_type.__name__}: {str(e)}",
                         code="QUERY_EXECUTION_ERROR",
                         category=ErrorCategory.UNEXPECTED,
@@ -322,7 +323,7 @@ class QueryBus:
             The query handler
             
         Raises:
-            DomainError: If no handler is registered for the query type
+            UnoError: If no handler is registered for the query type
         """
         query_type = type(query)
         
@@ -336,7 +337,7 @@ class QueryBus:
                 return self._handlers[base]
         
         # No handler found
-        raise DomainError(
+        raise UnoError(
             message=f"No handler registered for query {query_type.__name__}",
             code="QUERY_HANDLER_NOT_FOUND",
             category=ErrorCategory.NOT_FOUND
@@ -740,11 +741,11 @@ def get_mediator() -> Mediator:
         The global mediator instance
         
     Raises:
-        DomainError: If the mediator is not initialized
+        UnoError: If the mediator is not initialized
     """
     global _mediator
     if _mediator is None:
-        raise DomainError(
+        raise UnoError(
             message="Mediator is not initialized",
             code="MEDIATOR_NOT_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
@@ -766,11 +767,11 @@ def initialize_mediator(
         logger: Optional logger for diagnostic information
         
     Raises:
-        DomainError: If the mediator is already initialized
+        UnoError: If the mediator is already initialized
     """
     global _mediator
     if _mediator is not None:
-        raise DomainError(
+        raise UnoError(
             message="Mediator is already initialized",
             code="MEDIATOR_ALREADY_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
