@@ -1,8 +1,9 @@
 """
-Database integration for dependency injection.
+Database integration for the modern dependency injection system.
 
 This module provides utilities for integrating the database provider
-with FastAPI's dependency injection system.
+with the modern DI system. These functions will be replaced with the
+decorator-based approach in a future version.
 """
 
 from typing import TypeVar, Type, Callable, Any, Optional, Dict, List, cast, AsyncIterator
@@ -15,7 +16,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import asyncpg
 import psycopg
 
-from uno.dependencies.container import get_instance
+# TODO: Replace with modern DI system when all references are updated
+try:
+    from uno.dependencies.scoped_container import get_service
+except ImportError:
+    # For backward compatibility during transition
+    def get_service(service_type):
+        import inject
+        return inject.instance(service_type)
+
 from uno.dependencies.interfaces import (
     UnoDatabaseProviderProtocol, 
     UnoDBManagerProtocol,
@@ -43,7 +52,7 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
     Yields:
         An AsyncSession instance
     """
-    db_provider = get_instance(UnoDatabaseProviderProtocol)
+    db_provider = get_service(UnoDatabaseProviderProtocol)
     async with db_provider.async_session() as session:
         yield session
 
@@ -58,7 +67,7 @@ async def get_raw_connection() -> AsyncIterator[asyncpg.Connection]:
     Yields:
         An asyncpg Connection instance
     """
-    db_provider = get_instance(UnoDatabaseProviderProtocol)
+    db_provider = get_service(UnoDatabaseProviderProtocol)
     async with db_provider.async_connection() as conn:
         yield conn
 
@@ -91,7 +100,7 @@ def get_db_manager() -> Any:
     Returns:
         A DBManager instance
     """
-    return get_instance(UnoDBManagerProtocol)
+    return get_service(UnoDBManagerProtocol)
 
 
 def get_sql_emitter_factory() -> Any:
@@ -103,7 +112,7 @@ def get_sql_emitter_factory() -> Any:
     Returns:
         The SQL emitter factory service
     """
-    return get_instance(SQLEmitterFactoryProtocol)
+    return get_service(SQLEmitterFactoryProtocol)
 
 
 def get_sql_execution_service() -> Any:
@@ -115,7 +124,7 @@ def get_sql_execution_service() -> Any:
     Returns:
         The SQL execution service
     """
-    return get_instance(SQLExecutionProtocol)
+    return get_service(SQLExecutionProtocol)
 
 
 def get_schema_manager() -> Any:
@@ -129,7 +138,7 @@ def get_schema_manager() -> Any:
     Returns:
         The schema manager service
     """
-    return get_instance(SchemaManagerProtocol)
+    return get_service(SchemaManagerProtocol)
 
 
 def get_event_bus() -> Any:
@@ -142,7 +151,7 @@ def get_event_bus() -> Any:
     Returns:
         The event bus service
     """
-    return get_instance(EventBusProtocol)
+    return get_service(EventBusProtocol)
 
 
 def get_event_publisher() -> Any:
@@ -156,7 +165,7 @@ def get_event_publisher() -> Any:
         The event publisher service
     """
     from uno.domain.events import EventPublisher
-    return get_instance(EventPublisher)
+    return get_service(EventPublisher)
 
 
 def get_domain_registry() -> Any:
@@ -170,7 +179,7 @@ def get_domain_registry() -> Any:
         The domain registry service
     """
     from uno.domain.factory import DomainRegistry
-    return get_instance(DomainRegistry)
+    return get_service(DomainRegistry)
 
 
 def get_domain_repository(entity_type: Type[T]) -> DomainRepositoryProtocol[T]:
