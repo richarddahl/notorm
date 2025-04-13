@@ -25,6 +25,7 @@ uno uses pydantic base settings when possible for configuration, variables store
 uno does not provide any authentication mechanism.  It is inteded to be used with an external authentication service.
 uno does use jwt for token validation and authorization.
 uno allows definition of postgres row level security using postgres session variables to control access to database records.
+uno is a brand new library, any "legacy" code was simply defined as protoypes to define capabilities, it does not have to be preserved. No developers are currently using the existing code base.
 
 ## Dependency Injection System
 

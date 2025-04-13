@@ -13,12 +13,11 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 
-import inject
-
 from uno.database.db_manager import DBManager
 from uno.domain.events import DomainEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.enums import WorkflowDBEvent, Include, Match
+from uno.dependencies.scoped_container import get_service
 
 from uno.queries.objs import Query, QueryPath, QueryValue
 from uno.meta.objs import MetaType
@@ -144,7 +143,7 @@ async def create_workflow_with_query_condition(query_id: str) -> str:
         The ID of the created workflow
     """
     # Get the workflow service
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     
     # Create a workflow for premium North American customer welcome
     workflow = WorkflowDef(
@@ -214,10 +213,10 @@ async def create_workflow_with_query_condition(query_id: str) -> str:
     # Create the workflow
     result = await workflow_service.create_workflow(workflow)
     
-    if result.is_err():
-        raise Exception(f"Failed to create workflow: {result.unwrap_err()}")
+    if result.is_failure:
+        raise Exception(f"Failed to create workflow: {result.error}")
     
-    workflow_id = result.unwrap()
+    workflow_id = result.value
     print(f"Created workflow with ID: {workflow_id}")
     
     return workflow_id
@@ -231,7 +230,7 @@ async def trigger_workflow_with_event() -> None:
     the QueryExecutor to evaluate complex conditions leveraging the graph database.
     """
     # Get the event dispatcher
-    event_dispatcher = inject.instance(EventDispatcher)
+    event_dispatcher = get_service(EventDispatcher)
     
     # Create a customer created event for a premium North American customer
     # This should match our complex query condition

@@ -134,9 +134,9 @@ class WorkflowEventIntegration:
         # Start the event listener via the workflow service
         result = await self.workflow_service.start_event_listener()
         
-        if result.is_err():
+        if result.is_failure:
             self.logger.error(
-                f"Failed to start PostgreSQL event listener: {result.unwrap_err()}"
+                f"Failed to start PostgreSQL event listener: {result.error}"
             )
             return
         
@@ -150,9 +150,9 @@ class WorkflowEventIntegration:
         # Stop the event listener via the workflow service
         result = await self.workflow_service.stop_event_listener()
         
-        if result.is_err():
+        if result.is_failure:
             self.logger.error(
-                f"Failed to stop PostgreSQL event listener: {result.unwrap_err()}"
+                f"Failed to stop PostgreSQL event listener: {result.error}"
             )
             return
         

@@ -14,6 +14,7 @@ import inject
 
 from uno.dependencies.interfaces import ServiceProvider
 from uno.database.db_manager import DBManager
+from uno.dependencies.scoped_container import get_service
 from uno.values.interfaces import ValueServiceProtocol
 from uno.values.repositories import (
     BooleanValueRepository,
@@ -36,7 +37,7 @@ class ValuesServiceProvider(ServiceProvider):
         logger = logging.getLogger(__name__)
         
         # Get db_manager from container
-        db_manager = inject.instance(DBManager)
+        db_manager = get_service(DBManager)
         
         # Create repositories
         boolean_repository = BooleanValueRepository(db_manager)

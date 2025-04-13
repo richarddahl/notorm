@@ -227,7 +227,7 @@ class AttributeRepository(UnoRepository, AttributeRepositoryProtocol):
             if existing_result.is_failure:
                 return existing_result
                 
-            if existing_result.unwrap() is None:
+            if existing_result.value is None:
                 return Failure(AttributeRepositoryError(f"Attribute with ID {attribute.id} not found"))
             
             # Convert to model
@@ -277,7 +277,7 @@ class AttributeRepository(UnoRepository, AttributeRepositoryProtocol):
             if existing_result.is_failure:
                 return existing_result
                 
-            if existing_result.unwrap() is None:
+            if existing_result.value is None:
                 return Failure(AttributeRepositoryError(f"Attribute with ID {attribute_id} not found"))
             
             # Delete from database
@@ -535,7 +535,7 @@ class AttributeTypeRepository(UnoRepository, AttributeTypeRepositoryProtocol):
             if existing_result.is_failure:
                 return existing_result
                 
-            if existing_result.unwrap() is None:
+            if existing_result.value is None:
                 return Failure(AttributeRepositoryError(f"Attribute type with ID {attribute_type.id} not found"))
             
             # Convert to model
@@ -586,7 +586,7 @@ class AttributeTypeRepository(UnoRepository, AttributeTypeRepositoryProtocol):
             if existing_result.is_failure:
                 return existing_result
                 
-            if existing_result.unwrap() is None:
+            if existing_result.value is None:
                 return Failure(AttributeRepositoryError(f"Attribute type with ID {attribute_type_id} not found"))
             
             # Delete from database

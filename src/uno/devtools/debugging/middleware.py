@@ -91,8 +91,8 @@ class DebugMiddleware(BaseHTTPMiddleware):
         # Setup dependency tracking
         if self.enable_dependency_tracking:
             try:
-                from uno.dependencies.container import get_container
-                self.container = get_container()
+                # Legacy dependency tracking removed as part of backward compatibility cleanup
+                self.enable_dependency_tracking = False
             except ImportError:
                 logger.warning("Dependency tracking not available - container not accessible")
                 self.enable_dependency_tracking = False

@@ -14,6 +14,7 @@ import inject
 
 from uno.dependencies.interfaces import ServiceProvider
 from uno.database.db_manager import DBManager
+from uno.dependencies.scoped_container import get_service
 from uno.attributes.interfaces import (
     AttributeRepositoryProtocol,
     AttributeTypeRepositoryProtocol,
@@ -38,7 +39,7 @@ class AttributesServiceProvider(ServiceProvider):
         logger = logging.getLogger(__name__)
         
         # Get db_manager from container
-        db_manager = inject.instance(DBManager)
+        db_manager = get_service(DBManager)
         
         # Create repositories
         attribute_repository = AttributeRepository(db_manager)

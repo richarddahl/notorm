@@ -14,6 +14,7 @@ from typing import Callable, Any
 
 import inject
 from fastapi import FastAPI, Depends
+from uno.dependencies.scoped_container import get_service
 
 from uno.workflows.integration import (
     get_workflow_integration,
@@ -74,7 +75,7 @@ def get_workflow_dependency() -> Callable[[Any], Any]:
     
     def get_workflow_service() -> WorkflowService:
         """Get the workflow service instance."""
-        return inject.instance(WorkflowService)
+        return get_service(WorkflowService)
     
     return Depends(get_workflow_service)
 

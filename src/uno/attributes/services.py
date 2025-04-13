@@ -66,7 +66,7 @@ class AttributeService(AttributeServiceProtocol):
             if result.is_failure:
                 return result
             
-            created_attribute = result.unwrap()
+            created_attribute = result.value
             
             # Add values if provided
             if values and values:
@@ -100,7 +100,7 @@ class AttributeService(AttributeServiceProtocol):
             if attribute_result.is_failure:
                 return attribute_result
                 
-            attribute = attribute_result.unwrap()
+            attribute = attribute_result.value
             
             if attribute is None:
                 return Failure(AttributeServiceError(f"Attribute with ID {attribute_id} not found"))
@@ -132,7 +132,7 @@ class AttributeService(AttributeServiceProtocol):
             if attribute_result.is_failure:
                 return attribute_result
                 
-            attribute = attribute_result.unwrap()
+            attribute = attribute_result.value
             
             if attribute is None:
                 return Failure(AttributeServiceError(f"Attribute with ID {attribute_id} not found"))
@@ -243,7 +243,7 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             if attribute_type_result.is_failure:
                 return attribute_type_result
                 
-            attribute_type = attribute_type_result.unwrap()
+            attribute_type = attribute_type_result.value
             
             if attribute_type is None:
                 return Failure(AttributeTypeServiceError(f"Attribute type with ID {attribute_type_id} not found"))
@@ -273,7 +273,7 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             if attribute_type_result.is_failure:
                 return attribute_type_result
                 
-            attribute_type = attribute_type_result.unwrap()
+            attribute_type = attribute_type_result.value
             
             if attribute_type is None:
                 return Failure(AttributeTypeServiceError(f"Attribute type with ID {attribute_type_id} not found"))

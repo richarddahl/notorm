@@ -4,7 +4,18 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from pydantic import BaseModel, Field
 
-from uno.dependencies.fastapi import get_job_manager, get_job_metrics
+# Define dependency functions to replace the old fastapi imports
+def get_job_manager():
+    from uno.dependencies.modern_provider import get_service_provider
+    provider = get_service_provider()
+    from uno.jobs.manager import JobManager
+    return provider.get_service(JobManager)
+
+def get_job_metrics():
+    from uno.dependencies.modern_provider import get_service_provider
+    provider = get_service_provider()
+    from uno.jobs.monitoring.metrics import JobMetrics
+    return provider.get_service(JobMetrics)
 from uno.jobs.queue.priority import Priority
 from uno.jobs.queue.status import JobStatus
 from uno.jobs.scheduler.schedules import ScheduleDefinition, Schedule

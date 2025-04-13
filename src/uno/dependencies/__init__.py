@@ -28,7 +28,7 @@ from uno.dependencies.repository import UnoRepository
 from uno.dependencies.service import UnoService, CrudService
 
 # Modern FastAPI integration is imported separately
-# from uno.dependencies.fastapi_integration
+# Modern FastAPI integration was removed as part of backward compatibility removal
 
 # Database integration
 from uno.dependencies.database import (
@@ -96,14 +96,24 @@ try:
         injectable_endpoint
     )
     
-    from uno.dependencies.fastapi_integration import (
-        configure_fastapi,
-        DIAPIRouter,
-        resolve_service,
-        RequestScopeMiddleware,
-        get_request_scope,
-        lifespan
-    )
+    try:
+        # Using internal fastapi_integration module directly
+        from uno.dependencies.modern_fastapi import (
+            configure_fastapi,
+            DIAPIRouter,
+            resolve_service,
+            RequestScopeMiddleware,
+            get_request_scope,
+            lifespan
+        )
+    except ImportError:
+        # Modern FastAPI integration not available
+        configure_fastapi = None
+        DIAPIRouter = None
+        resolve_service = None
+        RequestScopeMiddleware = None
+        get_request_scope = None
+        lifespan = None
     
     from uno.dependencies.discovery import (
         discover_services,

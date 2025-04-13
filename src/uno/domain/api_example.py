@@ -8,11 +8,14 @@ dependency injection system in the Uno framework.
 from typing import List, Dict, Any, Optional
 from fastapi import Path, Body, HTTPException, Query
 
-from uno.dependencies.fastapi_integration import DIAPIRouter
+from fastapi import APIRouter
+# Legacy DIAPIRouter removed as part of backward compatibility removal
+# Create regular APIRouter instead
+
 from uno.domain.service_example import UserServiceProtocol
 
-# Create a router with automatic dependency injection
-router = DIAPIRouter(
+# Create a regular router instead of DIAPIRouter
+router = APIRouter(
     prefix="/api/users",
     tags=["users"]
 )

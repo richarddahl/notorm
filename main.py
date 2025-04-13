@@ -129,6 +129,40 @@ async def lifespan(app: FastAPI):
             logger.info("Vector search router included")
         except ImportError:
             logger.debug("Vector search router not available")
+            
+        # Domain endpoints for Queries module
+        try:
+            from uno.queries.domain_endpoints import (
+                query_path_router,
+                query_value_router,
+                query_router
+            )
+            app.include_router(query_path_router.router)
+            app.include_router(query_value_router.router)
+            app.include_router(query_router)
+            logger.info("Queries module domain routers included")
+        except ImportError:
+            logger.debug("Queries module domain routers not available")
+            
+        # Domain endpoints for Reports module
+        try:
+            from uno.reports.domain_endpoints import (
+                field_definition_router,
+                template_router,
+                trigger_router,
+                output_router,
+                execution_router,
+                output_execution_router
+            )
+            app.include_router(field_definition_router.router)
+            app.include_router(template_router.router)
+            app.include_router(trigger_router.router)
+            app.include_router(output_router.router)
+            app.include_router(execution_router.router)
+            app.include_router(output_execution_router)
+            logger.info("Reports module domain routers included")
+        except ImportError:
+            logger.debug("Reports module domain routers not available")
 
         # Admin UI
         try:

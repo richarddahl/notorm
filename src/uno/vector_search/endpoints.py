@@ -16,7 +16,13 @@ from uno.dependencies import (
     RAGServiceProtocol,
     get_vector_search_service
 )
-from uno.dependencies.fastapi import inject_dependency
+# Helper function to replace inject_dependency
+def inject_dependency(interface_type):
+    def _inject(request):
+        from uno.dependencies.modern_provider import get_service_provider
+        provider = get_service_provider()
+        return provider.get_service(interface_type)
+    return _inject
 from uno.domain.vector_search import VectorQuery
 
 

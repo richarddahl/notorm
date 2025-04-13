@@ -14,6 +14,9 @@
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
 - [Development](#development)
+  - [Testing](#testing)
+  - [Performance Benchmarks](#performance-benchmarks)
+  - [Documentation](#documentation)
 - [License](#license)
 
 ## Introduction
@@ -39,6 +42,7 @@ The name "uno" is also, of course, a cheeky homage to gnu.
 - **Business Logic Layer**: Clean separation of business logic from database operations
 - **Authorization System**: Built-in user and permission management
 - **Advanced Filtering**: Dynamic query building with support for complex filters
+- **High-Performance Batch Operations**: Optimized batch processing for efficient database operations
 - **Workflow Management**: Support for complex business workflows and state transitions
 - **Metadata Management**: Track relationships between entities
 - **PostgreSQL Integration**: Leverages PostgreSQL-specific features like JSONB, ULID, and row-level security
@@ -333,6 +337,64 @@ async def health_check():
     
     # Get health summary
     return await monitor.get_health_summary()
+```
+
+### Using Batch Operations for High-Performance Database Access
+
+```python
+# Import batch operations components
+from uno.queries import BatchOperations, BatchConfig, BatchExecutionStrategy, BatchSize
+from uno.domain.repository import UnoDBRepository
+
+# Create repository with batch operations enabled
+repo = UnoDBRepository(
+    entity_type=Product,
+    use_batch_operations=True,
+    batch_size=500,
+)
+
+# Batch get products
+product_ids = ["prod-001", "prod-002", "prod-003", ..., "prod-999"]
+products = await repo.batch_get(
+    ids=product_ids,
+    load_relations=["category", "reviews"],
+    parallel=True,
+)
+
+# Update multiple products in batch
+for product in products:
+    if product.stock_level < 10:
+        product.status = "low_stock"
+        product.updated_at = datetime.utcnow()
+
+# Batch update with a single database operation
+updated_count = await repo.batch_update(
+    entities=products,
+    fields=["status", "updated_at"],
+)
+print(f"Updated {updated_count} products")
+
+# Direct use of batch operations for advanced scenarios
+batch_ops = BatchOperations(
+    model_class=Order,
+    batch_config=BatchConfig(
+        batch_size=BatchSize.LARGE.value,
+        execution_strategy=BatchExecutionStrategy.PARALLEL,
+        max_workers=4,
+        collect_metrics=True,
+    ),
+)
+
+# Import orders with validation and duplicate handling
+orders_data = load_orders_from_csv("orders.csv")
+import_result = await batch_ops.batch_import(
+    records=orders_data,
+    unique_fields=["order_number"],
+    update_on_conflict=True,
+    return_stats=True,
+)
+
+print(f"Imported {import_result['inserted']} orders, updated {import_result['updated']}")
 ```
 
 ### Using Vector Search with the New Architecture
@@ -633,7 +695,11 @@ src/uno/
 ├── model.py              # SQL Alchemy model base
 ├── queries/              # Query components
 │   ├── filter.py         # Filter definitions
-│   └── filter_manager.py # Query filtering
+│   ├── filter_manager.py # Query filtering
+│   ├── optimized_queries.py # Optimized query building and execution
+│   ├── common_patterns.py   # Common query patterns with optimizations
+│   ├── batch_operations.py  # High-performance batch operations
+│   └── executor.py      # Query execution engine
 ├── schema/               # Schema components
 │   ├── schema.py         # Schema definitions
 │   └── schema_manager.py # Schema management
@@ -694,6 +760,23 @@ hatch run test:testvv
 # Type checking
 hatch run types:check
 ```
+
+### Performance Benchmarks
+
+```console
+# Run all benchmarks
+hatch run test:benchmark
+
+# Run specific module benchmarks
+hatch run test:benchmark tests/benchmarks/test_database_performance.py
+
+# View benchmark results
+cd benchmarks/dashboard
+./run_dashboard.sh
+```
+
+The benchmark dashboard provides visualization and analysis of benchmark results across all modules.
+It includes performance comparison, trend analysis, and scaling visualization. See [docs/benchmarks/dashboard.md](docs/benchmarks/dashboard.md) for more details.
 
 ### Documentation
 
