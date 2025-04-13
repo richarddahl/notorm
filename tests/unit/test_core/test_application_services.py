@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
+from pydantic import Field
 
 import pytest
 
@@ -38,24 +39,18 @@ from uno.domain.exceptions import ValidationError, AuthorizationError
 
 # Test domain model
 
-@dataclass
-class TestEntity(Entity):
+class TestEntity(Entity[str]):
     """Test entity for application service tests."""
     
     name: str
     value: int = 0
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
 
 
-@dataclass
-class TestAggregate(AggregateRoot):
+class TestAggregate(AggregateRoot[str]):
     """Test aggregate for application service tests."""
     
     name: str
-    items: List[Dict[str, Any]] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
+    items: List[Dict[str, Any]] = Field(default_factory=list)
     
     def add_item(self, item_id: str, name: str, value: int) -> None:
         """Add an item to the aggregate."""

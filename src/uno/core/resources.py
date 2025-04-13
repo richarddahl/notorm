@@ -937,21 +937,28 @@ class ResourceRegistry:
         return metrics
 
 
-# Global resource registry
-_resource_registry: Optional[ResourceRegistry] = None
-
-
 def get_resource_registry() -> ResourceRegistry:
     """
-    Get the global resource registry.
+    Get an instance of the ResourceRegistry from the DI container.
+    
+    This function should only be used at application startup or in legacy code.
+    New code should use direct dependency injection instead.
     
     Returns:
-        The global resource registry
+        A ResourceRegistry instance
     """
-    global _resource_registry
-    if _resource_registry is None:
-        _resource_registry = ResourceRegistry()
-    return _resource_registry
+    from uno.dependencies.modern_provider import get_service, register_singleton
+    
+    try:
+        # Try to get from the DI container
+        return get_service(ResourceRegistry)
+    except Exception:
+        # If not available, create a new instance
+        instance = ResourceRegistry()
+        
+        # Register in the DI container for future use
+        register_singleton(ResourceRegistry, instance)
+        return instance
 
 
 @contextlib.asynccontextmanager

@@ -28,20 +28,15 @@ from uno.core.async_utils import (
 T = TypeVar('T')
 
 
-# Legacy module-level singleton (will be removed in future version)
-_async_manager_instance: Optional['AsyncManager'] = None
-
-
 def get_async_manager(
     logger: Optional[logging.Logger] = None,
     shutdown_timeout: float = 30.0,
 ) -> 'AsyncManager':
     """
-    Get an instance of the AsyncManager.
+    Get an instance of the AsyncManager from the DI container.
     
-    This function provides an instance of the AsyncManager, preferring
-    to get it from the DI system but falling back to a legacy singleton
-    pattern when necessary.
+    This function should only be used at application startup or in legacy code.
+    New code should use direct dependency injection instead.
     
     Args:
         logger: Optional logger instance
@@ -50,34 +45,18 @@ def get_async_manager(
     Returns:
         An AsyncManager instance
     """
-    # First try to get the manager from the DI system
+    from uno.dependencies.modern_provider import get_service, register_singleton
+    
     try:
-        from uno.dependencies.modern_provider import get_service, register_singleton
+        # Try to get from the DI container
+        return get_service(AsyncManager)
+    except Exception:
+        # If not available, create a new instance
+        instance = AsyncManager(logger, shutdown_timeout)
         
-        try:
-            # Try to get from the DI container
-            return get_service(AsyncManager)
-        except Exception:
-            # If not available, create a new instance
-            instance = AsyncManager(logger, shutdown_timeout)
-            
-            # Register in the DI container for future use
-            try:
-                register_singleton(AsyncManager, instance)
-            except Exception:
-                # Ignore registration errors if DI system not fully initialized
-                pass
-                
-            return instance
-            
-    except ImportError:
-        # Fall back to legacy singleton approach if DI not available
-        global _async_manager_instance
-        
-        if _async_manager_instance is None:
-            _async_manager_instance = AsyncManager(logger, shutdown_timeout)
-        
-        return _async_manager_instance
+        # Register in the DI container for future use
+        register_singleton(AsyncManager, instance)
+        return instance
 
 
 class AsyncManager:

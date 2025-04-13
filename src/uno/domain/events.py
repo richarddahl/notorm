@@ -320,18 +320,31 @@ class EventBus:
         # Compile topic pattern if provided
         compiled_pattern = re.compile(topic_pattern) if topic_pattern else None
         
-        # Remove matching subscriptions
-        removed = False
-        self._subscriptions = [
-            s for s in self._subscriptions
-            if not (
-                s.handler == handler and
-                (event_type is None or s.event_type == event_type) and
-                (topic_pattern is None or s.topic_pattern == compiled_pattern)
-            ) or not removed and (removed := True)
-        ]
+        # Find and remove matching subscriptions
+        initial_count = len(self._subscriptions)
         
-        if removed:
+        # Use identity check for handler objects
+        if isinstance(handler, EventHandler):
+            self._subscriptions = [
+                s for s in self._subscriptions
+                if not (
+                    (isinstance(s.handler, EventHandler) and id(s.handler) == id(handler)) and
+                    (event_type is None or s.event_type == event_type) and
+                    (topic_pattern is None or s.topic_pattern == compiled_pattern)
+                )
+            ]
+        else:
+            # For function handlers
+            self._subscriptions = [
+                s for s in self._subscriptions
+                if not (
+                    s.handler == handler and
+                    (event_type is None or s.event_type == event_type) and
+                    (topic_pattern is None or s.topic_pattern == compiled_pattern)
+                )
+            ]
+        
+        if len(self._subscriptions) < initial_count:
             self.logger.debug(
                 f"Unsubscribed handler from events: "
                 f"event_type={event_type.__name__ if event_type else 'Any'}, "

@@ -9,7 +9,9 @@ from typing import (
     Any, Dict, Generic, List, Optional, Type, TypeVar, Union, Protocol,
     cast
 )
+from uuid import uuid4
 
+from pydantic import ConfigDict
 from uno.domain.cqrs import Query, QueryHandler, QueryResult
 from uno.read_model.read_model import ReadModel, ReadModelRepository
 from uno.read_model.cache_service import ReadModelCache
@@ -20,17 +22,23 @@ QueryT = TypeVar('QueryT', bound=Query)
 ResultT = TypeVar('ResultT')
 
 
-class ReadModelQuery(Query, Generic[T]):
+class ReadModelQuery(Query[T]):
     """
     Base class for read model queries.
     
     Read model queries are used to retrieve read models in a type-safe way.
+    
+    Type Parameters:
+        T: The type of read model this query returns
     """
     pass
 
 
 class GetByIdQuery(ReadModelQuery[T]):
     """Query to get a read model by ID."""
+    
+    model_config = ConfigDict(frozen=False)
+    id: str
     
     def __init__(self, id: str):
         """
@@ -39,12 +47,14 @@ class GetByIdQuery(ReadModelQuery[T]):
         Args:
             id: The read model ID
         """
-        super().__init__()
-        self.id = id
+        super().__init__(id=id, query_id=str(uuid4()))
 
 
 class FindByQuery(ReadModelQuery[T]):
     """Query to find read models by criteria."""
+    
+    model_config = ConfigDict(frozen=False)
+    criteria: Dict[str, Any]
     
     def __init__(self, criteria: Dict[str, Any]):
         """
@@ -53,8 +63,7 @@ class FindByQuery(ReadModelQuery[T]):
         Args:
             criteria: The query criteria
         """
-        super().__init__()
-        self.criteria = criteria
+        super().__init__(criteria=criteria, query_id=str(uuid4()))
 
 
 class ReadModelQueryService(Generic[T]):

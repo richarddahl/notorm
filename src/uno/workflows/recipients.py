@@ -16,6 +16,7 @@ import asyncio
 import re
 from datetime import datetime
 from typing import Dict, Any, List, Set, Optional, Callable, Union, Type, Protocol, runtime_checkable
+from enum import Enum
 
 import inject
 

@@ -1,790 +1,511 @@
 """
 Core protocol definitions for the Uno framework.
 
-This module defines the core protocols used throughout the Uno framework,
-providing a foundation for dependency injection and loose coupling.
+This module provides the foundational protocol definitions that form the
+contracts between different parts of the system. These protocols enable
+loose coupling and dependency injection throughout the application.
+
+Using protocols instead of abstract base classes allows for structural typing,
+where compatibility is determined by API shape rather than inheritance hierarchy.
 """
 
-from typing import (
-    Protocol, TypeVar, Generic, Any, Dict, List, Optional, 
-    Callable, Awaitable, AsyncContextManager, Union, runtime_checkable,
-    Type, Tuple, get_origin, get_args
-)
+from abc import abstractmethod
 from datetime import datetime
-from uuid import UUID
-
-# Type variables for generic protocols
-T = TypeVar('T')
-T_co = TypeVar('T_co', covariant=True)
-T_contra = TypeVar('T_contra', contravariant=True)
-EntityT = TypeVar('EntityT')
-EntityT_co = TypeVar('EntityT_co', covariant=True)
-EntityT_contra = TypeVar('EntityT_contra', contravariant=True)
-QueryT = TypeVar('QueryT')
-QueryT_contra = TypeVar('QueryT_contra', contravariant=True)
-ResultT = TypeVar('ResultT')
-ResultT_co = TypeVar('ResultT_co', covariant=True)
-KeyT = TypeVar('KeyT')
-KeyT_co = TypeVar('KeyT_co', covariant=True)
-KeyT_contra = TypeVar('KeyT_contra', contravariant=True)
-ValueT = TypeVar('ValueT')
-ValueT_co = TypeVar('ValueT_co', covariant=True)
-ValueT_contra = TypeVar('ValueT_contra', contravariant=True)
-EventT_co = TypeVar('EventT_co', covariant=True)
-EventT_contra = TypeVar('EventT_contra', contravariant=True)
-CommandT_co = TypeVar('CommandT_co', covariant=True)
-CommandT_contra = TypeVar('CommandT_contra', contravariant=True)
-
-# Type variables for repository pattern
-FilterT = TypeVar('FilterT')
-FilterT_contra = TypeVar('FilterT_contra', contravariant=True)
-DataT = TypeVar('DataT', bound=Dict[str, Any])
-DataT_contra = TypeVar('DataT_contra', bound=Dict[str, Any], contravariant=True)
-MergeResultT = TypeVar('MergeResultT')
-MergeResultT_co = TypeVar('MergeResultT_co', covariant=True)
+import uuid
+import logging
+from typing import (
+    Protocol,
+    runtime_checkable,
+    Any,
+    TypeVar,
+    Self,
+    ClassVar,
+    TypedDict,
+    NotRequired,
+    TypeGuard,
+    cast,
+    Literal,
+    overload,
+    get_origin,
+    get_args,
+    get_type_hints,
+    Annotated,
+)
 
 
-# Core domain protocols
+# =============================================================================
+# Common Type Variables
+# =============================================================================
+
+T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
+T_contra = TypeVar("T_contra", contravariant=True)
+ID = TypeVar("ID")
+
+
+# =============================================================================
+# Common TypedDict definitions
+# =============================================================================
+
+class Pagination(TypedDict, total=False):
+    """Pagination options for queries."""
+    
+    limit: int
+    offset: int
+
+
+class Sorting(TypedDict, total=False):
+    """Sorting options for queries."""
+    
+    field: str
+    direction: Literal["asc", "desc"]
+
+
+class QueryOptions(TypedDict, total=False):
+    """Options for querying data."""
+    
+    pagination: Pagination
+    sorting: NotRequired[list[Sorting]]
+    include_deleted: NotRequired[bool]
+    include_relations: NotRequired[bool | list[str]]
+
+
+# =============================================================================
+# Type Guards
+# =============================================================================
+
+def is_entity(obj: Any) -> TypeGuard["Entity"]:
+    """
+    Type guard to check if an object is an Entity.
+    
+    Args:
+        obj: The object to check
+        
+    Returns:
+        True if the object is an Entity, False otherwise
+    """
+    return (
+        hasattr(obj, "id") and
+        hasattr(obj, "created_at") and
+        hasattr(obj, "__eq__") and
+        hasattr(obj, "__hash__")
+    )
+
+
+def is_aggregate_root(obj: Any) -> TypeGuard["AggregateRoot"]:
+    """
+    Type guard to check if an object is an AggregateRoot.
+    
+    Args:
+        obj: The object to check
+        
+    Returns:
+        True if the object is an AggregateRoot, False otherwise
+    """
+    return (
+        is_entity(obj) and
+        hasattr(obj, "events") and
+        hasattr(obj, "add_event") and
+        hasattr(obj, "clear_events")
+    )
+
+
+def is_value_object(obj: Any) -> TypeGuard["ValueObject"]:
+    """
+    Type guard to check if an object is a ValueObject.
+    
+    Args:
+        obj: The object to check
+        
+    Returns:
+        True if the object is a ValueObject, False otherwise
+    """
+    return (
+        hasattr(obj, "__eq__") and
+        hasattr(obj, "__hash__") and
+        hasattr(obj, "equals") and
+        not hasattr(obj, "id")  # Value objects don't have identity
+    )
+
+
+# =============================================================================
+# Core Domain Protocols
+# =============================================================================
+
 @runtime_checkable
-class Entity(Protocol, Generic[KeyT_co]):
-    """Protocol for domain entities with identity."""
+class Entity(Protocol):
+    """
+    Protocol for entities in the domain model.
     
-    @property
-    def id(self) -> KeyT_co:
-        """Get the entity's unique identifier."""
+    Entities are objects that have a distinct identity that runs through time
+    and different representations. They are defined by their identity, not by
+    their attributes.
+    """
+    
+    id: Any
+    created_at: datetime
+    updated_at: datetime | None
+    
+    def __eq__(self, other: object) -> bool:
+        """Compare entities by identity."""
         ...
-
-
-@runtime_checkable
-class AggregateRoot(Entity[KeyT_co], Protocol[KeyT_co]):
-    """Protocol for aggregate roots in the domain."""
     
-    def register_event(self, event: 'DomainEvent') -> None:
-        """Register a domain event to be published after the aggregate is saved."""
-        ...
-    
-    def clear_events(self) -> List['DomainEvent']:
-        """Clear and return all registered events."""
+    def __hash__(self) -> int:
+        """Hash entities by identity."""
         ...
 
 
 @runtime_checkable
 class ValueObject(Protocol):
-    """Protocol for value objects in the domain."""
+    """
+    Protocol for value objects in the domain model.
+    
+    Value objects are immutable objects that describe aspects of the domain.
+    They have no identity and are defined by their attributes.
+    """
     
     def equals(self, other: Any) -> bool:
-        """Check if this value object equals another."""
-        ...
-
-
-# Event-driven architecture protocols
-@runtime_checkable
-class DomainEvent(Protocol):
-    """Protocol for domain events."""
-    
-    @property
-    def event_id(self) -> UUID:
-        """Get the unique identifier for this event."""
-        ...
-    
-    @property
-    def event_type(self) -> str:
-        """Get the type of this event."""
-        ...
-    
-    @property
-    def aggregate_id(self) -> Any:
-        """Get the identifier of the aggregate that raised this event."""
-        ...
-    
-    @property
-    def timestamp(self) -> datetime:
-        """Get the timestamp when this event occurred."""
-        ...
-    
-    @property
-    def data(self) -> Dict[str, Any]:
-        """Get the event data."""
-        ...
-
-
-@runtime_checkable
-class EventHandler(Protocol[EventT_contra]):
-    """Protocol for event handlers."""
-    
-    async def handle(self, event: EventT_contra) -> None:
-        """Handle an event."""
-        ...
-
-
-@runtime_checkable
-class EventBus(Protocol):
-    """Protocol for the event bus."""
-    
-    async def publish(self, event: DomainEvent) -> None:
-        """Publish an event to the event bus."""
-        ...
-    
-    def subscribe(self, event_type: Type[Any], handler: EventHandler[Any]) -> None:
-        """Subscribe a handler to an event type."""
-        ...
-    
-    def unsubscribe(self, event_type: Type[Any], handler: EventHandler[Any]) -> None:
-        """Unsubscribe a handler from an event type."""
-        ...
-
-
-# CQRS patterns
-@runtime_checkable
-class Command(Protocol):
-    """Protocol for commands in the CQRS pattern."""
-    
-    @property
-    def command_id(self) -> UUID:
-        """Get the unique identifier for this command."""
-        ...
-    
-    @property
-    def command_type(self) -> str:
-        """Get the type of this command."""
-        ...
-
-
-@runtime_checkable
-class CommandHandler(Protocol[CommandT_contra, ResultT_co]):
-    """Protocol for command handlers in the CQRS pattern."""
-    
-    async def handle(self, command: CommandT_contra) -> ResultT_co:
-        """Handle a command."""
-        ...
-
-
-@runtime_checkable
-class Query(Protocol):
-    """Protocol for queries in the CQRS pattern."""
-    
-    @property
-    def query_id(self) -> UUID:
-        """Get the unique identifier for this query."""
-        ...
-    
-    @property
-    def query_type(self) -> str:
-        """Get the type of this query."""
-        ...
-
-
-@runtime_checkable
-class QueryHandler(Protocol[QueryT_contra, ResultT_co]):
-    """Protocol for query handlers in the CQRS pattern."""
-    
-    async def handle(self, query: QueryT_contra) -> ResultT_co:
-        """Handle a query."""
-        ...
-
-
-# Repository pattern
-@runtime_checkable
-class Repository(Protocol[EntityT, KeyT]):
-    """Protocol for repositories."""
-    
-    async def get(self, id: KeyT) -> Optional[EntityT]:
-        """Get an entity by its ID."""
-        ...
-    
-    async def save(self, entity: EntityT) -> None:
-        """Save an entity."""
-        ...
-    
-    async def delete(self, id: KeyT) -> bool:
-        """Delete an entity by its ID."""
-        ...
-
-
-# Remove these duplicated type variables as they're now defined at the top
-# (The actual type variables are now defined at the top of the file)
-
-@runtime_checkable
-class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):
-    """
-    Protocol for database repositories.
-    
-    Type Parameters:
-        EntityT: Type of entity managed by this repository
-        KeyT: Type of entity key/identifier
-        FilterT: Type of filter criteria
-        DataT: Type of data for merge operations
-        MergeResultT: Type of result from merge operations
-    """
-    
-    @classmethod
-    async def get(cls, **kwargs: Any) -> Optional[EntityT]:
         """
-        Get an entity by keyword arguments.
+        Check if this value object equals another.
         
         Args:
-            **kwargs: Key-value pairs for lookup conditions
+            other: Value object to compare with
+            
+        Returns:
+            True if equal, False otherwise
+        """
+        ...
+    
+    def __eq__(self, other: object) -> bool:
+        """Compare value objects by attributes."""
+        ...
+    
+    def __hash__(self) -> int:
+        """Hash value objects by attributes."""
+        ...
+
+
+@runtime_checkable
+class DomainEvent(Protocol):
+    """
+    Protocol for domain events.
+    
+    Domain events represent something that happened in the domain that
+    domain experts care about. They are immutable and named in the past tense.
+    """
+    
+    event_id: str
+    event_type: str
+    timestamp: datetime
+    
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert event to dictionary representation.
+        
+        Returns:
+            Dictionary representation of the event
+        """
+        ...
+    
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """
+        Create event from dictionary representation.
+        
+        Args:
+            data: Dictionary representation of the event
+            
+        Returns:
+            Event instance
+        """
+        ...
+
+
+@runtime_checkable
+class AggregateRoot(Entity, Protocol):
+    """
+    Protocol for aggregate roots in the domain model.
+    
+    Aggregate roots are the entry point to an aggregate - a cluster of domain objects
+    that can be treated as a single unit. They ensure consistency within the aggregate
+    and handle domain events.
+    """
+    
+    @property
+    def events(self) -> list[DomainEvent]:
+        """Get the domain events raised by this aggregate."""
+        ...
+    
+    def add_event(self, event: DomainEvent) -> None:
+        """
+        Add a domain event to this aggregate.
+        
+        Args:
+            event: The domain event to add
+        """
+        ...
+    
+    def clear_events(self) -> list[DomainEvent]:
+        """
+        Clear all domain events from this aggregate.
+        
+        Returns:
+            The list of events that were cleared
+        """
+        ...
+
+
+# =============================================================================
+# Repository Protocols
+# =============================================================================
+
+class Repository[T_Entity, T_ID](Protocol):
+    """
+    Protocol for repositories in the domain model.
+    
+    Repositories mediate between the domain and data mapping layers,
+    providing collection-like access to aggregates.
+    
+    Type Parameters:
+        T_Entity: The type of entity this repository manages
+        T_ID: The type of entity identifier
+    """
+    
+    @abstractmethod
+    async def get_by_id(self, id: T_ID) -> T_Entity | None:
+        """
+        Get an entity by its identifier.
+        
+        Args:
+            id: The entity identifier
             
         Returns:
             The entity if found, None otherwise
         """
         ...
     
-    @classmethod
-    async def create(cls, entity: EntityT) -> Tuple[EntityT, bool]:
+    @abstractmethod
+    async def list(
+        self, 
+        filters: dict[str, Any] | None = None, 
+        options: QueryOptions | None = None
+    ) -> list[T_Entity]:
         """
-        Create a new entity.
+        List entities based on filters and options.
         
         Args:
-            entity: The entity to create
+            filters: Optional filter criteria
+            options: Optional listing options (limit, offset, ordering)
             
         Returns:
-            Tuple of (created entity, success flag)
+            List of matching entities
         """
         ...
     
-    @classmethod
-    async def update(cls, entity: EntityT, **kwargs: Any) -> EntityT:
+    @abstractmethod
+    async def add(self, entity: T_Entity) -> T_Entity:
         """
-        Update an existing entity.
+        Add an entity to the repository.
         
         Args:
-            entity: The entity with updated values
-            **kwargs: Key-value pairs for lookup conditions
+            entity: The entity to add
+            
+        Returns:
+            The added entity (with generated ID if applicable)
+        """
+        ...
+    
+    @abstractmethod
+    async def update(self, entity: T_Entity) -> T_Entity:
+        """
+        Update an entity in the repository.
+        
+        Args:
+            entity: The entity to update
             
         Returns:
             The updated entity
         """
         ...
     
-    @classmethod
-    async def delete(cls, **kwargs: Any) -> bool:
+    @abstractmethod
+    async def delete(self, id: T_ID) -> bool:
         """
-        Delete an entity by keyword arguments.
+        Delete an entity by its identifier.
         
         Args:
-            **kwargs: Key-value pairs for lookup conditions
+            id: The entity identifier
             
         Returns:
-            True if deletion was successful, False otherwise
+            True if the entity was deleted, False otherwise
         """
         ...
     
-    @classmethod
-    async def filter(cls, filters: Optional[FilterT] = None) -> List[EntityT]:
+    @abstractmethod
+    async def exists(self, id: T_ID) -> bool:
         """
-        Filter entities by criteria.
+        Check if an entity with the given ID exists.
         
         Args:
-            filters: Filter criteria
+            id: The ID to check
             
         Returns:
-            List of entities matching the criteria
+            True if the entity exists, False otherwise
         """
         ...
     
-    @classmethod
-    async def merge(cls, data: DataT) -> MergeResultT:
+    @abstractmethod
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """
-        Merge data into an entity.
+        Count entities matching the given filters.
         
         Args:
-            data: Data to merge
+            filters: Optional filter criteria
             
         Returns:
-            Result of the merge operation
+            Number of matching entities
         """
         ...
 
 
-# Type variables for unit of work pattern
-RepoT = TypeVar('RepoT')
-RepoKeyT = TypeVar('RepoKeyT', bound=Type[Any])
+# =============================================================================
+# Unit of Work Protocol
+# =============================================================================
 
-@runtime_checkable
-class UnitOfWork(Protocol[RepoT, RepoKeyT]):
+class UnitOfWork(Protocol):
     """
-    Protocol for the unit of work pattern.
+    Protocol for the Unit of Work pattern.
     
-    Type Parameters:
-        RepoT: Type of repositories managed by this unit of work
-        RepoKeyT: Type of repository keys/identifiers (typically Type[Repository])
+    The Unit of Work maintains a list of objects affected by a business transaction
+    and coordinates the writing out of changes and the resolution of concurrency problems.
     """
     
+    @abstractmethod
     async def begin(self) -> None:
         """Begin a new transaction."""
         ...
     
+    @abstractmethod
     async def commit(self) -> None:
         """Commit the current transaction."""
         ...
     
+    @abstractmethod
     async def rollback(self) -> None:
         """Rollback the current transaction."""
         ...
     
-    def get_repository(self, repository_type: RepoKeyT) -> RepoT:
-        """
-        Get a repository of the specified type.
-        
-        Args:
-            repository_type: Type of repository to get
-            
-        Returns:
-            Repository instance
-        """
+    @abstractmethod
+    async def __aenter__(self) -> Self:
+        """Enter the Unit of Work context."""
         ...
     
-    async def __aenter__(self) -> 'UnitOfWork[RepoT, RepoKeyT]':
-        """Enter the unit of work context."""
-        ...
-    
-    async def __aexit__(self, 
-                      exc_type: Optional[Type[BaseException]], 
-                      exc_val: Optional[BaseException], 
-                      exc_tb: Optional[Any]) -> None:
-        """Exit the unit of work context."""
+    @abstractmethod
+    async def __aexit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any) -> None:
+        """Exit the Unit of Work context."""
         ...
 
 
-# Error handling
-@runtime_checkable
-class Result(Protocol[T_co]):
-    """Protocol for the Result pattern (Either pattern)."""
-    
-    @property
-    def is_success(self) -> bool:
-        """Check if the result is successful."""
-        ...
-    
-    @property
-    def is_failure(self) -> bool:
-        """Check if the result is a failure."""
-        ...
-    
-    @property
-    def error(self) -> Optional[Exception]:
-        """Get the error if the result is a failure."""
-        ...
-    
-    @property
-    def value(self) -> Optional[T_co]:
-        """Get the value if the result is successful."""
-        ...
+# =============================================================================
+# Command and Query Protocols
+# =============================================================================
 
-
-# Caching
-TTLT = TypeVar('TTLT', int, float)
-TTLT_contra = TypeVar('TTLT_contra', int, float, contravariant=True)
-PrefixT = TypeVar('PrefixT', bound=str)
-PrefixT_contra = TypeVar('PrefixT_contra', bound=str, contravariant=True)
-
-@runtime_checkable
-class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):
+class Command[T_Result](Protocol):
     """
-    Protocol for cache implementations.
+    Protocol for commands in the CQRS pattern.
+    
+    Commands represent intentions to change the state of the system.
+    They are named in the imperative and should be processed exactly once.
     
     Type Parameters:
-        KeyT: Type of cache keys
-        ValueT: Type of cache values
-        TTLT: Type of time-to-live value (int or float)
-        PrefixT: Type of cache key prefix (string)
+        T_Result: The type of result after command execution
     """
     
-    async def get(self, key: KeyT) -> Optional[ValueT]:
-        """
-        Get a value from the cache.
-        
-        Args:
-            key: Cache key
-            
-        Returns:
-            The cached value if found, None otherwise
-        """
-        ...
-    
-    async def set(self, key: KeyT, value: ValueT, ttl: Optional[TTLT] = None) -> None:
-        """
-        Set a value in the cache.
-        
-        Args:
-            key: Cache key
-            value: Value to cache
-            ttl: Optional time-to-live in seconds
-        """
-        ...
-    
-    async def delete(self, key: KeyT) -> None:
-        """
-        Delete a value from the cache.
-        
-        Args:
-            key: Cache key to delete
-        """
-        ...
-    
-    async def clear(self) -> None:
-        """Clear the entire cache."""
-        ...
-    
-    async def get_many(self, keys: List[KeyT]) -> Dict[KeyT, ValueT]:
-        """
-        Get multiple values from the cache.
-        
-        Args:
-            keys: List of cache keys
-            
-        Returns:
-            Dictionary mapping keys to cached values (missing keys are omitted)
-        """
-        ...
-    
-    async def set_many(self, items: Dict[KeyT, ValueT], ttl: Optional[TTLT] = None) -> None:
-        """
-        Set multiple values in the cache.
-        
-        Args:
-            items: Dictionary of key-value pairs to cache
-            ttl: Optional time-to-live in seconds
-        """
-        ...
-    
-    async def delete_many(self, keys: List[KeyT]) -> None:
-        """
-        Delete multiple values from the cache.
-        
-        Args:
-            keys: List of cache keys to delete
-        """
-        ...
-    
-    async def delete_by_prefix(self, prefix: PrefixT) -> None:
-        """
-        Delete all keys with the given prefix.
-        
-        Args:
-            prefix: Key prefix to match
-        """
-        ...
+    command_id: str
+    command_type: str
 
 
-# Configuration
-# Using the already defined KeyT_contra and ValueT_co from above
-ConfigKeyT = TypeVar('ConfigKeyT', bound=str, contravariant=True)
-SectionT = TypeVar('SectionT', bound=str)
-SectionT_contra = TypeVar('SectionT_contra', bound=str, contravariant=True)
-DefaultT = TypeVar('DefaultT')
-DefaultT_contra = TypeVar('DefaultT_contra', contravariant=True)
-
-@runtime_checkable
-class ConfigProvider(Protocol[ConfigKeyT, ValueT, SectionT, DefaultT]):
+class Query[T_Result](Protocol):
     """
-    Protocol for configuration providers.
+    Protocol for queries in the CQRS pattern.
+    
+    Queries represent intentions to retrieve data without changing state.
+    They are named as questions and can be processed multiple times.
     
     Type Parameters:
-        ConfigKeyT: Type of configuration keys
-        ValueT: Type of configuration values
-        SectionT: Type of section identifiers
-        DefaultT: Type of default values
+        T_Result: The type of result after query execution
     """
     
-    def get(self, key: ConfigKeyT, default: Optional[DefaultT] = None) -> Union[ValueT, DefaultT]:
-        """
-        Get a configuration value.
-        
-        Args:
-            key: Configuration key
-            default: Default value to return if key is not found
-            
-        Returns:
-            The configuration value or the default
-        """
-        ...
-    
-    def get_section(self, section: SectionT) -> Dict[str, ValueT]:
-        """
-        Get a configuration section.
-        
-        Args:
-            section: Section identifier
-            
-        Returns:
-            Dictionary containing all configuration values in the section
-        """
-        ...
-    
-    def reload(self) -> None:
-        """Reload the configuration from its source."""
-        ...
-    
-    def get_bool(self, key: ConfigKeyT, default: Optional[bool] = None) -> bool:
-        """
-        Get a boolean configuration value.
-        
-        Args:
-            key: Configuration key
-            default: Default boolean value
-            
-        Returns:
-            The boolean configuration value or the default
-        """
-        ...
-    
-    def get_int(self, key: ConfigKeyT, default: Optional[int] = None) -> int:
-        """
-        Get an integer configuration value.
-        
-        Args:
-            key: Configuration key
-            default: Default integer value
-            
-        Returns:
-            The integer configuration value or the default
-        """
-        ...
-    
-    def get_float(self, key: ConfigKeyT, default: Optional[float] = None) -> float:
-        """
-        Get a float configuration value.
-        
-        Args:
-            key: Configuration key
-            default: Default float value
-            
-        Returns:
-            The float configuration value or the default
-        """
-        ...
-    
-    def get_list(self, key: ConfigKeyT, default: Optional[List[Any]] = None) -> List[Any]:
-        """
-        Get a list configuration value.
-        
-        Args:
-            key: Configuration key
-            default: Default list value
-            
-        Returns:
-            The list configuration value or the default
-        """
-        ...
+    query_id: str
+    query_type: str
 
 
-# Type variables for database protocols
-ConfigT = TypeVar('ConfigT')
-ConfigT_contra = TypeVar('ConfigT_contra', contravariant=True)
-StatementT = TypeVar('StatementT')
-StatementT_contra = TypeVar('StatementT_contra', contravariant=True)
-DbResultT_co = TypeVar('DbResultT_co', covariant=True)
-ModelT = TypeVar('ModelT')
-ModelT_contra = TypeVar('ModelT_contra', contravariant=True)
-
-# Database protocols
-@runtime_checkable
-class DatabaseSessionProtocol(Protocol[StatementT_contra, DbResultT_co, ModelT_contra]):
+class CommandHandler[T_Command, T_Result](Protocol):
     """
-    Protocol for database sessions.
+    Protocol for command handlers in the CQRS pattern.
+    
+    Command handlers process commands and produce results.
     
     Type Parameters:
-        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
-        DbResultT_co: Type of result from statement execution (covariant)
-        ModelT_contra: Type of model/entity instances (contravariant)
+        T_Command: The type of command this handler processes
+        T_Result: The type of result after command execution
     """
     
-    async def execute(self, statement: StatementT_contra, *args: Any, **kwargs: Any) -> DbResultT_co:
-        """Execute a statement."""
-        ...
-    
-    async def commit(self) -> None:
-        """Commit the current transaction."""
-        ...
-    
-    async def rollback(self) -> None:
-        """Rollback the current transaction."""
-        ...
-    
-    async def close(self) -> None:
-        """Close the session."""
-        ...
-    
-    def add(self, instance: ModelT_contra) -> None:
-        """Add an instance to the session."""
-        ...
-
-
-@runtime_checkable
-class DatabaseSessionFactoryProtocol(Protocol[ConfigT_contra, StatementT_contra, DbResultT_co, ModelT_contra]):
-    """
-    Protocol for session factories.
-    
-    Type Parameters:
-        ConfigT_contra: Type of configuration object (contravariant)
-        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
-        DbResultT_co: Type of result from statement execution (covariant)
-        ModelT_contra: Type of model/entity instances (contravariant)
-    """
-    
-    def create_session(self, config: ConfigT_contra) -> DatabaseSessionProtocol[StatementT_contra, DbResultT_co, ModelT_contra]:
-        """Create a database session."""
-        ...
-    
-    def get_scoped_session(self, config: ConfigT_contra) -> Any:
-        """Get a scoped session."""
-        ...
-    
-    async def remove_all_scoped_sessions(self) -> None:
-        """Remove all scoped sessions."""
-        ...
-
-
-@runtime_checkable
-class DatabaseSessionContextProtocol(Protocol[StatementT_contra, DbResultT_co, ModelT_contra]):
-    """
-    Protocol for database session context managers.
-    
-    Type Parameters:
-        StatementT_contra: Type of statement (e.g., SQLAlchemy statement) (contravariant)
-        DbResultT_co: Type of result from statement execution (covariant)
-        ModelT_contra: Type of model/entity instances (contravariant)
-    """
-    
-    async def __aenter__(self) -> DatabaseSessionProtocol[StatementT_contra, DbResultT_co, ModelT_contra]:
-        """Enter the context manager."""
-        ...
-    
-    async def __aexit__(self, exc_type: Optional[Type[BaseException]], 
-                       exc_val: Optional[BaseException], 
-                       exc_tb: Optional[Any]) -> None:
-        """Exit the context manager."""
-        ...
-
-
-# Resource management
-@runtime_checkable
-class ResourceManager(Protocol[T]):
-    """Protocol for resource managers."""
-    
-    async def acquire(self) -> T:
-        """Acquire a resource."""
-        ...
-    
-    async def release(self, resource: T) -> None:
-        """Release a resource."""
-        ...
-    
-    async def close(self) -> None:
-        """Close the resource manager."""
-        ...
-    
-    def contextual(self) -> AsyncContextManager[T]:
-        """Get a context manager for this resource."""
-        ...
-
-
-# Messaging
-MessageT = TypeVar('MessageT')
-MessageT_contra = TypeVar('MessageT_contra', contravariant=True)
-MessageT_co = TypeVar('MessageT_co', covariant=True)
-
-@runtime_checkable
-class MessagePublisher(Protocol[MessageT_contra]):
-    """Protocol for message publishers."""
-    
-    async def publish(self, topic: str, message: MessageT_contra) -> None:
-        """Publish a message to a topic."""
-        ...
-
-
-@runtime_checkable
-class MessageConsumer(Protocol[MessageT_co]):
-    """Protocol for message consumers."""
-    
-    async def subscribe(self, topic: str, handler: Callable[[MessageT_co], Awaitable[None]]) -> None:
-        """Subscribe to a topic."""
-        ...
-    
-    async def unsubscribe(self, topic: str, handler: Callable[[MessageT_co], Awaitable[None]]) -> None:
-        """Unsubscribe from a topic."""
-        ...
-    
-    async def start(self) -> None:
-        """Start consuming messages."""
-        ...
-    
-    async def stop(self) -> None:
-        """Stop consuming messages."""
-        ...
-
-
-# Plugin architecture
-PluginContextT = TypeVar('PluginContextT')
-PluginContextT_contra = TypeVar('PluginContextT_contra', contravariant=True)
-PluginConfigT = TypeVar('PluginConfigT')
-PluginConfigT_contra = TypeVar('PluginConfigT_contra', contravariant=True)
-PluginEventT = TypeVar('PluginEventT')
-PluginEventT_contra = TypeVar('PluginEventT_contra', contravariant=True)
-PluginNameT = TypeVar('PluginNameT', bound=str)
-PluginNameT_co = TypeVar('PluginNameT_co', bound=str, covariant=True)
-PluginNameT_contra = TypeVar('PluginNameT_contra', bound=str, contravariant=True)
-PluginVersionT = TypeVar('PluginVersionT', bound=str)
-PluginVersionT_co = TypeVar('PluginVersionT_co', bound=str, covariant=True)
-
-@runtime_checkable
-class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, PluginVersionT]):
-    """
-    Protocol for plugins.
-    
-    Type Parameters:
-        PluginContextT: Type of plugin context
-        PluginConfigT: Type of plugin configuration
-        PluginEventT: Type of events the plugin handles
-        PluginNameT: Type of plugin name (bound to str)
-        PluginVersionT: Type of plugin version (bound to str)
-    """
-    
-    @property
-    def name(self) -> PluginNameT:
-        """Get the name of the plugin."""
-        ...
-    
-    @property
-    def version(self) -> PluginVersionT:
-        """Get the version of the plugin."""
-        ...
-    
-    @property
-    def description(self) -> str:
-        """Get the description of the plugin."""
-        ...
-    
-    @property
-    def dependencies(self) -> List[PluginNameT]:
-        """Get the dependencies of the plugin."""
-        ...
-    
-    async def initialize(self, context: PluginContextT) -> None:
+    @abstractmethod
+    async def handle(self, command: T_Command) -> T_Result:
         """
-        Initialize the plugin.
+        Handle a command.
         
         Args:
-            context: The plugin context
+            command: The command to handle
+            
+        Returns:
+            Result of command execution
         """
         ...
+
+
+class QueryHandler[T_Query, T_Result](Protocol):
+    """
+    Protocol for query handlers in the CQRS pattern.
     
-    async def shutdown(self) -> None:
-        """Shut down the plugin."""
-        ...
+    Query handlers process queries and produce results.
     
-    async def configure(self, config: PluginConfigT) -> None:
+    Type Parameters:
+        T_Query: The type of query this handler processes
+        T_Result: The type of result after query execution
+    """
+    
+    @abstractmethod
+    async def handle(self, query: T_Query) -> T_Result:
         """
-        Configure the plugin.
+        Handle a query.
         
         Args:
-            config: The plugin configuration
+            query: The query to handle
+            
+        Returns:
+            Result of query execution
         """
         ...
+
+
+# =============================================================================
+# Event System Protocols
+# =============================================================================
+
+class EventHandler[T_Event](Protocol):
+    """
+    Protocol for event handlers.
     
-    async def on_event(self, event: PluginEventT) -> None:
+    Event handlers process events and perform actions in response.
+    
+    Type Parameters:
+        T_Event: The type of event this handler processes
+    """
+    
+    @abstractmethod
+    async def handle(self, event: T_Event) -> None:
         """
         Handle an event.
         
@@ -794,165 +515,416 @@ class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, 
         ...
 
 
-@runtime_checkable
-class PluginManager(Protocol[PluginContextT, PluginNameT]):
+class EventBus(Protocol):
     """
-    Protocol for plugin managers.
+    Protocol for event buses.
     
-    Type Parameters:
-        PluginContextT: Type of plugin context
-        PluginNameT: Type of plugin name (bound to str)
+    Event buses distribute events to interested handlers.
     """
     
-    def register_plugin(self, plugin: Plugin[PluginContextT, Any, Any, PluginNameT, Any]) -> None:
+    @abstractmethod
+    def subscribe(self, event_type: type[Any], handler: EventHandler[Any]) -> None:
         """
-        Register a plugin.
+        Subscribe a handler to events of a specific type.
         
         Args:
-            plugin: The plugin to register
+            event_type: The type of event to subscribe to
+            handler: The handler to call when events occur
         """
         ...
     
-    def unregister_plugin(self, plugin_name: PluginNameT) -> None:
+    @abstractmethod
+    def unsubscribe(self, event_type: type[Any], handler: EventHandler[Any]) -> None:
         """
-        Unregister a plugin.
+        Unsubscribe a handler from events of a specific type.
         
         Args:
-            plugin_name: The name of the plugin to unregister
+            event_type: The type of event to unsubscribe from
+            handler: The handler to remove
         """
         ...
     
-    def get_plugin(self, plugin_name: PluginNameT) -> Optional[Plugin[PluginContextT, Any, Any, PluginNameT, Any]]:
+    @abstractmethod
+    async def publish(self, event: Any) -> None:
         """
-        Get a plugin by name.
+        Publish an event to all subscribed handlers.
         
         Args:
-            plugin_name: The name of the plugin to get
+            event: The event to publish
+        """
+        ...
+
+
+# =============================================================================
+# Dependency Injection Protocols
+# =============================================================================
+
+class ServiceProvider(Protocol):
+    """
+    Protocol for service providers.
+    
+    Service providers resolve and manage services in the application.
+    """
+    
+    @abstractmethod
+    def get_service(self, service_type: type[T]) -> T:
+        """
+        Get a service of the specified type.
+        
+        Args:
+            service_type: The type of service to get
             
         Returns:
-            The plugin if found, None otherwise
+            Instance of the requested service
         """
         ...
     
-    def list_plugins(self) -> List[Plugin[PluginContextT, Any, Any, PluginNameT, Any]]:
+    @abstractmethod
+    def register_singleton(self, service_type: type[T], implementation: type[T] | T | None = None) -> None:
         """
-        List all registered plugins.
+        Register a singleton service.
+        
+        Args:
+            service_type: The type of service to register
+            implementation: The implementation or instance to use
+        """
+        ...
+    
+    @abstractmethod
+    def register_scoped(self, service_type: type[T], implementation: type[T] | None = None) -> None:
+        """
+        Register a scoped service.
+        
+        Args:
+            service_type: The type of service to register
+            implementation: The implementation to use
+        """
+        ...
+    
+    @abstractmethod
+    def register_transient(self, service_type: type[T], implementation: type[T] | None = None) -> None:
+        """
+        Register a transient service.
+        
+        Args:
+            service_type: The type of service to register
+            implementation: The implementation to use
+        """
+        ...
+    
+    @abstractmethod
+    def create_scope(self) -> "ServiceScope":
+        """
+        Create a new service scope.
         
         Returns:
-            List of registered plugins
-        """
-        ...
-    
-    async def initialize_all(self, context: PluginContextT) -> None:
-        """
-        Initialize all registered plugins.
-        
-        Args:
-            context: The plugin context
-        """
-        ...
-    
-    async def shutdown_all(self) -> None:
-        """Shut down all registered plugins."""
-        ...
-    
-    async def send_event(self, event: Any) -> None:
-        """
-        Send an event to all plugins.
-        
-        Args:
-            event: The event to send
+            The new service scope
         """
         ...
 
 
-# Health checks
-HealthStatusT = TypeVar('HealthStatusT')
-HealthStatusT_co = TypeVar('HealthStatusT_co', covariant=True)
-HealthDetailsT = TypeVar('HealthDetailsT')
-HealthDetailsT_co = TypeVar('HealthDetailsT_co', covariant=True)
-HealthComponentT = TypeVar('HealthComponentT', bound=str)
-HealthComponentT_co = TypeVar('HealthComponentT_co', bound=str, covariant=True)
-
-@runtime_checkable
-class HealthCheck(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):
+class ServiceScope(Protocol):
     """
-    Protocol for health checks.
+    Protocol for service scopes.
+    
+    Service scopes provide a context for resolving scoped services.
+    """
+    
+    @abstractmethod
+    def get_service(self, service_type: type[T]) -> T:
+        """
+        Get a service of the specified type.
+        
+        Args:
+            service_type: The type of service to get
+            
+        Returns:
+            Instance of the requested service
+        """
+        ...
+    
+    @abstractmethod
+    def dispose(self) -> None:
+        """Dispose of the scope and its services."""
+        ...
+    
+    @abstractmethod
+    def __enter__(self) -> Self:
+        """Enter the scope context."""
+        ...
+    
+    @abstractmethod
+    def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: Any) -> None:
+        """Exit the scope context."""
+        ...
+
+
+# =============================================================================
+# Lifecycle Protocols
+# =============================================================================
+
+class Initializable(Protocol):
+    """
+    Protocol for services that need initialization.
+    
+    Initializable services can perform asynchronous setup operations.
+    """
+    
+    @abstractmethod
+    async def initialize(self) -> None:
+        """Initialize the service."""
+        ...
+
+
+class Disposable(Protocol):
+    """
+    Protocol for services that need cleanup.
+    
+    Disposable services can perform cleanup operations.
+    """
+    
+    @abstractmethod
+    def dispose(self) -> None:
+        """Dispose of the service's resources."""
+        ...
+
+
+class AsyncDisposable(Protocol):
+    """
+    Protocol for services that need asynchronous cleanup.
+    
+    AsyncDisposable services can perform asynchronous cleanup operations.
+    """
+    
+    @abstractmethod
+    async def dispose_async(self) -> None:
+        """Dispose of the service's resources asynchronously."""
+        ...
+
+
+# =============================================================================
+# Error Handling Protocols
+# =============================================================================
+
+class Result[T_Success, T_Error](Protocol):
+    """
+    Protocol for the Result pattern.
+    
+    Results represent the outcome of an operation that can either succeed with a value
+    or fail with an error.
     
     Type Parameters:
-        HealthStatusT: Type of health status (typically bool or enum)
-        HealthDetailsT: Type of health check details
-        HealthComponentT: Type of component name (bound to str)
+        T_Success: The type of successful result
+        T_Error: The type of error result
     """
     
     @property
-    def name(self) -> HealthComponentT:
-        """Get the name of the health check."""
+    def is_success(self) -> bool:
+        """Whether the result is successful."""
         ...
     
     @property
-    def description(self) -> str:
-        """Get the description of the health check."""
+    def is_failure(self) -> bool:
+        """Whether the result is a failure."""
         ...
     
     @property
-    def is_critical(self) -> bool:
-        """Determine if this health check is critical for system operation."""
+    def value(self) -> T_Success | None:
+        """The success value, or None if failure."""
         ...
     
-    async def check(self) -> Tuple[HealthStatusT, Optional[HealthDetailsT]]:
+    @property
+    def error(self) -> T_Error | None:
+        """The error value, or None if success."""
+        ...
+    
+    def map(self, func: Any) -> "Result":
+        """Map the success value using a function."""
+        ...
+    
+    def flat_map(self, func: Any) -> "Result":
+        """Apply a function that itself returns a Result."""
+        ...
+
+
+# =============================================================================
+# Logging and Monitoring Protocols
+# =============================================================================
+
+class Logger(Protocol):
+    """
+    Protocol for loggers.
+    
+    Loggers provide a consistent interface for logging messages.
+    """
+    
+    @abstractmethod
+    def debug(self, message: str, **kwargs: Any) -> None:
         """
-        Perform the health check.
+        Log a debug message.
         
-        Returns:
-            Tuple of (status, details) where details may be None
+        Args:
+            message: The message to log
+            **kwargs: Additional context data
+        """
+        ...
+    
+    @abstractmethod
+    def info(self, message: str, **kwargs: Any) -> None:
+        """
+        Log an info message.
+        
+        Args:
+            message: The message to log
+            **kwargs: Additional context data
+        """
+        ...
+    
+    @abstractmethod
+    def warning(self, message: str, **kwargs: Any) -> None:
+        """
+        Log a warning message.
+        
+        Args:
+            message: The message to log
+            **kwargs: Additional context data
+        """
+        ...
+    
+    @abstractmethod
+    def error(self, message: str, **kwargs: Any) -> None:
+        """
+        Log an error message.
+        
+        Args:
+            message: The message to log
+            **kwargs: Additional context data
+        """
+        ...
+    
+    @abstractmethod
+    def critical(self, message: str, **kwargs: Any) -> None:
+        """
+        Log a critical message.
+        
+        Args:
+            message: The message to log
+            **kwargs: Additional context data
         """
         ...
 
 
-@runtime_checkable
-class HealthCheckRegistry(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):
+class Metric(Protocol):
     """
-    Protocol for health check registries.
+    Protocol for metrics.
     
-    Type Parameters:
-        HealthStatusT: Type of health status (typically bool or enum)
-        HealthDetailsT: Type of health check details
-        HealthComponentT: Type of component name (bound to str)
+    Metrics provide a way to measure and track application behavior.
     """
     
-    def register(self, health_check: HealthCheck[HealthStatusT, HealthDetailsT, HealthComponentT]) -> None:
+    @abstractmethod
+    def increment(self, amount: int = 1, **tags: str) -> None:
         """
-        Register a health check.
+        Increment the metric.
         
         Args:
-            health_check: The health check to register
+            amount: The amount to increment by
+            **tags: Additional tags for the metric
         """
         ...
     
-    def unregister(self, name: HealthComponentT) -> None:
+    @abstractmethod
+    def decrement(self, amount: int = 1, **tags: str) -> None:
         """
-        Unregister a health check.
+        Decrement the metric.
         
         Args:
-            name: The name of the health check to unregister
+            amount: The amount to decrement by
+            **tags: Additional tags for the metric
         """
         ...
     
-    async def check_all(self) -> Dict[HealthComponentT, Tuple[HealthStatusT, Optional[HealthDetailsT]]]:
+    @abstractmethod
+    def set(self, value: float, **tags: str) -> None:
         """
-        Check all registered health checks.
+        Set the metric to a specific value.
         
-        Returns:
-            Dictionary mapping component names to (status, details) tuples
+        Args:
+            value: The value to set
+            **tags: Additional tags for the metric
         """
         ...
     
-    async def check_critical(self) -> Dict[HealthComponentT, Tuple[HealthStatusT, Optional[HealthDetailsT]]]:
+    @abstractmethod
+    def record(self, value: float, **tags: str) -> None:
         """
-        Check only critical health checks.
+        Record a value for the metric.
         
+        Args:
+            value: The value to record
+            **tags: Additional tags for the metric
+        """
+        ...
+
+
+class MetricsProvider(Protocol):
+    """
+    Protocol for metrics providers.
+    
+    Metrics providers create and manage metrics.
+    """
+    
+    @abstractmethod
+    def counter(self, name: str, description: str = "") -> Metric:
+        """
+        Create a counter metric.
+        
+        Args:
+            name: The metric name
+            description: Optional description
+            
         Returns:
-            Dictionary mapping critical component names to (status, details) tuples
+            The counter metric
+        """
+        ...
+    
+    @abstractmethod
+    def gauge(self, name: str, description: str = "") -> Metric:
+        """
+        Create a gauge metric.
+        
+        Args:
+            name: The metric name
+            description: Optional description
+            
+        Returns:
+            The gauge metric
+        """
+        ...
+    
+    @abstractmethod
+    def histogram(self, name: str, description: str = "") -> Metric:
+        """
+        Create a histogram metric.
+        
+        Args:
+            name: The metric name
+            description: Optional description
+            
+        Returns:
+            The histogram metric
+        """
+        ...
+    
+    @abstractmethod
+    def timer(self, name: str, description: str = "") -> Metric:
+        """
+        Create a timer metric.
+        
+        Args:
+            name: The metric name
+            description: Optional description
+            
+        Returns:
+            The timer metric
         """
         ...

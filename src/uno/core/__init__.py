@@ -15,110 +15,148 @@ This module provides core functionality for the Uno framework, including:
 
 # Protocols
 from uno.core.protocols import (
-    # Import what we have implemented so far
-    FilterManagerProtocol,
-    SchemaManagerProtocol,
-    DBClientProtocol,
-    DatabaseSessionProtocol,
-    DatabaseSessionContextProtocol,
-    DatabaseRepository
+    # Domain model protocols
+    Entity, ValueObject, DomainEvent, AggregateRoot,
+    
+    # Repository and Unit of Work
+    Repository, UnitOfWork,
+    
+    # Command and Query
+    Command, Query, CommandHandler, QueryHandler,
+    
+    # Event system
+    EventHandler, EventBus,
+    
+    # Dependency Injection
+    ServiceProvider, ServiceScope,
+    
+    # Lifecycle
+    Initializable, Disposable, AsyncDisposable,
+    
+    # Error handling
+    Result,
+    
+    # Logging and monitoring
+    Logger, Metric, MetricsProvider,
+    
+    # Common type definitions
+    Pagination, Sorting, QueryOptions,
+    
+    # Type guards
+    is_entity, is_value_object, is_aggregate_root
 )
 
-# The following imports will be implemented in future updates
-# # DDD building blocks
-# Entity, AggregateRoot, ValueObject,
-# 
-# # Event-driven architecture
-# DomainEvent, EventHandler, EventBus,
-# 
-# # CQRS patterns
-# Command, CommandHandler, Query, QueryHandler,
-# 
-# # Repository pattern
-# Repository, UnitOfWork,
-# 
-# # Error handling
-# Result,
-# 
-# # Caching
-# Cache,
-# 
-# # Configuration
-# ConfigProvider,
-# 
-# # Resource management
-# ResourceManager,
-# 
-# # Messaging
-# MessagePublisher, MessageConsumer,
-# 
-# # Plugin architecture
-# Plugin, PluginManager,
-# 
-# # Health checks
-# HealthCheck, HealthCheckRegistry
+# Error handling
+from uno.core.errors import (
+    # Error categories
+    ErrorCategory,
+    
+    # Error classes
+    DomainError, ValidationError, NotFoundError,
+    BusinessRuleError, ConflictError, AuthorizationError,
+    
+    # Type guards
+    is_validation_error, is_not_found_error, is_business_rule_error,
+    is_conflict_error, is_authorization_error, is_domain_error,
+    
+    # Result pattern
+    Success, Failure, Result, success, failure,
+    
+    # Error context
+    error_context_manager, with_error_context, with_async_error_context,
+    
+    # Helper functions
+    from_awaitable, from_callable, from_async_callable
+)
 
-# We'll import domain modules later after fixing circular imports
-# # Domain-driven design
-# from uno.core.domain import (
-#     BaseEntity, AggregateEntity, BaseValueObject,
-#     DomainService, Repository, DomainValidator
-# )
+# Dependency Injection
+from uno.core.di import (
+    # Container management
+    DIContainer, ServiceLifetime, ServiceRegistration,
+    initialize_container, get_container, reset_container,
+    
+    # Service resolution
+    get_service, create_scope, create_async_scope
+)
 
-# Comment out all these imports for now until we've fixed the circular dependencies
-# # Event-driven architecture
-# from uno.core.events import (
-#     BaseDomainEvent, BaseEventHandler, SimpleEventBus,
-#     TypedEventBus, AsyncEventBus, DomainEventPublisher,
-#     event_handler, DomainEventProcessor
-# )
-# 
-# # CQRS pattern
-# from uno.core.cqrs import (
-#     BaseCommand, BaseQuery, BaseCommandHandler, BaseQueryHandler,
-#     CommandBus, QueryBus, HandlerRegistry,
-#     command_handler, query_handler
-# )
-# 
-# # Unit of Work pattern
-# from uno.core.uow import (
-#     AbstractUnitOfWork, DatabaseUnitOfWork,
-#     ContextUnitOfWork, transaction
-# )
-# 
-# # Result pattern (for backwards compatibility)
-# from uno.core.result import (
-#     Success, Failure, of, failure, from_exception,
-#     from_awaitable, combine, combine_dict
-# )
-# 
-# # Error handling framework (new)
-# from uno.core.errors import (
-#     UnoError, ErrorCode, ErrorContext, ErrorInfo,
-#     ValidationError, ValidationContext, FieldValidationError,
-#     configure_logging, get_logger, LogConfig,
-#     with_error_context, add_error_context, get_error_context,
-#     with_logging_context, add_logging_context, get_logging_context,
-#     ErrorCatalog
-# )
-# 
-# # Configuration management
-# from uno.core.config import (
-#     ConfigurationError, ConfigSource, DictConfigSource,
-#     EnvironmentConfigSource, FileConfigSource,
-#     ConfigurationService, ConfigurationOptions
-# )
-# 
-# # Protocol validation
-# from uno.core.protocol_validator import (
-#     validate_protocol, validate_implementation, 
-#     find_protocol_implementations, implements,
-#     verify_all_implementations, ProtocolValidationError
-# )
+# FastAPI integration
+from uno.core.di_fastapi import (
+    # Dependency providers
+    FromDI, ScopedDeps, create_request_scope, get_service as fastapi_get_service,
+    
+    # Application integration
+    configure_di_middleware, register_app_shutdown
+)
+
+# Testing utilities
+from uno.core.di_testing import (
+    # Test container
+    TestContainer, test_container,
+    
+    # Mock injection
+    inject_mock, create_test_scope
+)
 
 __all__ = [
-    # Core protocols we have implemented
-    'FilterManagerProtocol', 'SchemaManagerProtocol', 'DBClientProtocol',
-    'DatabaseSessionProtocol', 'DatabaseSessionContextProtocol', 'DatabaseSessionFactoryProtocol',
-    'DatabaseRepository'
+    # Domain model protocols
+    'Entity', 'ValueObject', 'DomainEvent', 'AggregateRoot',
+    
+    # Repository and Unit of Work
+    'Repository', 'UnitOfWork',
+    
+    # Command and Query
+    'Command', 'Query', 'CommandHandler', 'QueryHandler',
+    
+    # Event system
+    'EventHandler', 'EventBus',
+    
+    # Dependency Injection protocols
+    'ServiceProvider', 'ServiceScope',
+    
+    # Lifecycle
+    'Initializable', 'Disposable', 'AsyncDisposable',
+    
+    # Error handling protocols
+    'Result',
+    
+    # Logging and monitoring
+    'Logger', 'Metric', 'MetricsProvider',
+    
+    # Common type definitions
+    'Pagination', 'Sorting', 'QueryOptions',
+    
+    # Type guards
+    'is_entity', 'is_value_object', 'is_aggregate_root',
+    
+    # Error categories
+    'ErrorCategory',
+    
+    # Error classes
+    'DomainError', 'ValidationError', 'NotFoundError',
+    'BusinessRuleError', 'ConflictError', 'AuthorizationError',
+    
+    # Error type guards
+    'is_validation_error', 'is_not_found_error', 'is_business_rule_error',
+    'is_conflict_error', 'is_authorization_error', 'is_domain_error',
+    
+    # Result pattern
+    'Success', 'Failure', 'Result', 'success', 'failure',
+    
+    # Error context
+    'error_context_manager', 'with_error_context', 'with_async_error_context',
+    
+    # Helper functions
+    'from_awaitable', 'from_callable', 'from_async_callable',
+    
+    # DI Container
+    'DIContainer', 'ServiceLifetime', 'ServiceRegistration',
+    'initialize_container', 'get_container', 'reset_container',
+    'get_service', 'create_scope', 'create_async_scope',
+    
+    # FastAPI integration
+    'FromDI', 'ScopedDeps', 'create_request_scope', 'fastapi_get_service',
+    'configure_di_middleware', 'register_app_shutdown',
+    
+    # Testing utilities
+    'TestContainer', 'test_container', 'inject_mock', 'create_test_scope'
 ]

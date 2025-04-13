@@ -31,7 +31,7 @@ The name "uno" is also, of course, a cheeky homage to gnu.
 
 - **Domain-Driven Design**: Support for building applications using DDD principles with entities, value objects, aggregates, and repositories
 - **Event-Driven Architecture**: Built-in event system for loosely coupled components that communicate through domain events
-- **Modern Dependency Injection**: Protocol-based DI system with proper scoping and lifecycle management
+- **Modern Dependency Injection**: Protocol-based DI system with proper scoping and lifecycle management, following modern Python design patterns
 - **CQRS Pattern**: Separation of command (write) and query (read) operations for better performance and scalability
 - **Async-First Architecture**: Enhanced async utilities for robust concurrent operations with proper cancellation handling
 - **Resource Management**: Comprehensive resource lifecycle management with connection pooling and health monitoring

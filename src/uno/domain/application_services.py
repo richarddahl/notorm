@@ -64,7 +64,7 @@ class ServiceContext:
         Returns:
             True if the permission is granted, False otherwise
         """
-        return permission in self.permissions
+        return "*" in self.permissions or permission in self.permissions
     
     def require_authentication(self) -> None:
         """

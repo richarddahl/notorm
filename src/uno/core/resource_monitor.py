@@ -669,21 +669,28 @@ class ResourceMonitor:
             return self._metrics[name].health
 
 
-# Global resource monitor
-_resource_monitor: Optional[ResourceMonitor] = None
-
-
 def get_resource_monitor() -> ResourceMonitor:
     """
-    Get the global resource monitor.
+    Get an instance of the ResourceMonitor from the DI container.
+    
+    This function should only be used at application startup or in legacy code.
+    New code should use direct dependency injection instead.
     
     Returns:
-        The global resource monitor
+        A ResourceMonitor instance
     """
-    global _resource_monitor
-    if _resource_monitor is None:
-        _resource_monitor = ResourceMonitor()
-    return _resource_monitor
+    from uno.dependencies.modern_provider import get_service, register_singleton
+    
+    try:
+        # Try to get from the DI container
+        return get_service(ResourceMonitor)
+    except Exception:
+        # If not available, create a new instance
+        instance = ResourceMonitor()
+        
+        # Register in the DI container for future use
+        register_singleton(ResourceMonitor, instance)
+        return instance
 
 
 async def start_resource_monitoring() -> None:
