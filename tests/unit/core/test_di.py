@@ -16,7 +16,7 @@ from uno.core.di import (
     initialize_container, get_container, reset_container,
     get_service, create_scope
 )
-from uno.core.errors import DomainError
+from uno.core.errors.base import UnoError
 from uno.core.protocols import Initializable, Disposable
 
 
@@ -116,7 +116,7 @@ def setup_teardown():
 def test_container_initialization():
     """Test that a container can be initialized."""
     # Container should not be available before initialization
-    with pytest.raises(DomainError):
+    with pytest.raises(UnoError):
         get_container()
     
     # Initialize the container
