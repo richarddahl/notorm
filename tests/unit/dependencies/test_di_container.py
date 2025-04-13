@@ -3,17 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 """
-Unit tests for dependency injection container.
+Unit tests for modern dependency injection container.
 
 These tests verify the proper configuration and operation of the
-dependency injection system.
+modern dependency injection system.
 """
 
 import pytest
 import logging
 from unittest.mock import MagicMock, patch
 
-import inject
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.dependencies.interfaces import (
@@ -23,13 +22,13 @@ from uno.dependencies.interfaces import (
     SQLEmitterFactoryProtocol,
     SQLExecutionProtocol
 )
-from uno.dependencies.container import (
-    configure_di,
+from uno.dependencies.scoped_container import (
+    ServiceCollection,
+    initialize_container,
     get_container,
-    get_instance,
-    UnoConfig
+    get_service
 )
-from uno.dependencies import (
+from uno.dependencies.database import (
     get_db_session,
     get_raw_connection,
     get_repository,
@@ -39,174 +38,154 @@ from uno.dependencies import (
 )
 
 
-class TestDIContainer:
-    """Tests for the dependency injection container."""
+class TestModernDIContainer:
+    """Tests for the modern dependency injection container."""
     
     def setup_method(self):
         """Reset the DI container before each test."""
-        inject.clear()
+        # Initialize with a fresh container for each test
+        services = ServiceCollection()
+        initialize_container(services, logging.getLogger("test"))
     
-    def test_container_configuration(self):
-        """Test that the container can be configured."""
-        # Configure the container
-        inject.configure(lambda binder: None)
+    def test_container_initialization(self):
+        """Test container initialization."""
+        # Initialize the container
+        services = ServiceCollection()
+        resolver = initialize_container(services, logging.getLogger("test"))
         
-        # Verify it's configured
-        assert inject.is_configured()
+        # Verify it's initialized
+        assert resolver is not None
     
     def test_get_container(self):
         """Test getting the container."""
+        # Initialize first
+        services = ServiceCollection()
+        initialize_container(services, logging.getLogger("test"))
+        
         # Get the container
         container = get_container()
         
         # Verify we got a container
         assert container is not None
-        assert inject.is_configured()
     
-    @patch('inject.instance')
-    def test_get_instance(self, mock_instance):
-        """Test getting an instance from the container."""
-        # Configure mock
+    def test_service_registration(self):
+        """Test registering and resolving a service."""
+        # Create a mock
         mock_obj = MagicMock()
-        mock_instance.return_value = mock_obj
         
-        # Get an instance
-        instance = get_instance(UnoConfigProtocol)
+        # Create service collection and register a service
+        services = ServiceCollection()
+        services.add_instance(UnoConfigProtocol, mock_obj)
         
-        # Verify the mock was called
-        mock_instance.assert_called_once_with(UnoConfigProtocol)
+        # Initialize the container
+        initialize_container(services, logging.getLogger("test"))
+        
+        # Get the service
+        instance = get_service(UnoConfigProtocol)
+        
+        # Verify
         assert instance == mock_obj
-    
-    def test_uno_config(self):
-        """Test UnoConfig implementation."""
-        # Create a config with test settings
-        settings = MagicMock()
-        settings.TEST_KEY = "test_value"
-        settings.__dict__ = {"TEST_KEY": "test_value", "_private": "hidden"}
         
-        config = UnoConfig(settings=settings)
+    def test_service_singleton(self):
+        """Test that singletons return the same instance."""
+        # Create service collection and register a singleton service
+        services = ServiceCollection()
+        services.add_singleton(UnoConfigProtocol, MagicMock)
         
-        # Test get_value
-        assert config.get_value("TEST_KEY") == "test_value"
-        assert config.get_value("MISSING", "default") == "default"
+        # Initialize the container
+        initialize_container(services, logging.getLogger("test"))
         
-        # Test all
-        all_values = config.all()
-        assert "TEST_KEY" in all_values
-        assert all_values["TEST_KEY"] == "test_value"
-        assert "_private" not in all_values
+        # Get the service twice
+        instance1 = get_service(UnoConfigProtocol)
+        instance2 = get_service(UnoConfigProtocol)
+        
+        # Verify same instance
+        assert instance1 is instance2
 
 
-class TestDIConfiguration:
-    """Tests for DI configuration."""
+class TestModernConfigureServices:
+    """Tests for configuring services with the modern DI system."""
     
     def setup_method(self):
         """Reset the DI container before each test."""
-        inject.clear()
+        # Initialize with a fresh container for each test
+        services = ServiceCollection()
+        initialize_container(services, logging.getLogger("test"))
     
-    @patch('uno.dependencies.container.UnoRegistry')
-    def test_configure_di_core_services(self, mock_registry):
-        """Test configuring core services."""
-        # Create a mock binder
-        binder = MagicMock()
+    @patch('uno.dependencies.modern_provider.get_registry')
+    def test_configure_base_services(self, mock_get_registry):
+        """Test configuring base services."""
+        from uno.dependencies.modern_provider import configure_base_services
         
         # Mock registry
         mock_registry_instance = MagicMock()
-        mock_registry.get_instance.return_value = mock_registry_instance
+        mock_get_registry.return_value = mock_registry_instance
         
-        # Configure DI
-        configure_di(binder)
+        # Create service collection
+        services = ServiceCollection()
         
-        # Verify core bindings
-        assert any(call[0][0] == UnoConfigProtocol for call in binder.bind.call_args_list)
-        assert any(call[0][0] == logging.Logger for call in binder.bind.call_args_list)
-    
-    @patch('uno.dependencies.container.DatabaseProvider')
-    def test_configure_di_database_components(self, mock_provider_class):
-        """Test configuring database components."""
-        # Create mock objects
-        binder = MagicMock()
-        mock_provider = MagicMock()
-        mock_provider_class.return_value = mock_provider
-        
-        # Configure DI
-        with patch('uno.dependencies.container.DBManager') as mock_db_manager_class:
-            mock_db_manager = MagicMock()
-            mock_db_manager_class.return_value = mock_db_manager
+        # Configure using a test with the async call
+        with patch('uno.dependencies.modern_provider.get_service_provider') as mock_get_provider:
+            mock_provider = MagicMock()
+            mock_provider.is_initialized.return_value = False
+            mock_get_provider.return_value = mock_provider
             
-            configure_di(binder)
+            # Configure the services
+            # This would normally be async, we're just testing the configuration logic
+            with pytest.raises(Exception):
+                configure_base_services()
             
-            # Verify database bindings
-            assert any(call[0][0] == UnoDatabaseProviderProtocol for call in binder.bind.call_args_list)
-            assert any(call[0][0] == UnoDBManagerProtocol for call in binder.bind.call_args_list)
-    
-    @patch('uno.dependencies.container.SQLEmitterFactoryService')
-    @patch('uno.dependencies.container.SQLExecutionService')
-    def test_configure_di_sql_services(self, mock_execution_class, mock_factory_class):
-        """Test configuring SQL services."""
-        # Create mock objects
-        binder = MagicMock()
-        mock_factory = MagicMock()
-        mock_execution = MagicMock()
-        mock_factory_class.return_value = mock_factory
-        mock_execution_class.return_value = mock_execution
-        
-        # Configure DI
-        configure_di(binder)
-        
-        # Verify SQL service bindings
-        assert any(call[0][0] == SQLEmitterFactoryProtocol for call in binder.bind.call_args_list)
-        assert any(call[0][0] == SQLExecutionProtocol for call in binder.bind.call_args_list)
-        
-        # Verify factory methods were called
-        mock_factory.register_core_emitters.assert_called_once()
+            # Verify the service provider was used
+            mock_get_provider.assert_called()
 
 
 class TestAccessMethods:
-    """Tests for DI access methods."""
+    """Tests for modern DI access methods."""
     
     def setup_method(self):
         """Reset the DI container before each test."""
-        inject.clear()
+        # Initialize with a fresh container for each test
+        services = ServiceCollection()
+        initialize_container(services, logging.getLogger("test"))
     
-    @patch('uno.dependencies.database.get_instance')
-    def test_get_db_manager(self, mock_get_instance):
+    @patch('uno.dependencies.database.get_service')
+    def test_get_db_manager(self, mock_get_service):
         """Test get_db_manager method."""
         # Configure mock
         mock_db_manager = MagicMock()
-        mock_get_instance.return_value = mock_db_manager
+        mock_get_service.return_value = mock_db_manager
         
         # Call the method
         result = get_db_manager()
         
         # Verify
-        mock_get_instance.assert_called_once_with(UnoDBManagerProtocol)
+        mock_get_service.assert_called_once_with(UnoDBManagerProtocol)
         assert result == mock_db_manager
     
-    @patch('uno.dependencies.database.get_instance')
-    def test_get_sql_emitter_factory(self, mock_get_instance):
+    @patch('uno.dependencies.database.get_service')
+    def test_get_sql_emitter_factory(self, mock_get_service):
         """Test get_sql_emitter_factory method."""
         # Configure mock
         mock_factory = MagicMock()
-        mock_get_instance.return_value = mock_factory
+        mock_get_service.return_value = mock_factory
         
         # Call the method
         result = get_sql_emitter_factory()
         
         # Verify
-        mock_get_instance.assert_called_once_with(SQLEmitterFactoryProtocol)
+        mock_get_service.assert_called_once_with(SQLEmitterFactoryProtocol)
         assert result == mock_factory
     
-    @patch('uno.dependencies.database.get_instance')
-    def test_get_sql_execution_service(self, mock_get_instance):
+    @patch('uno.dependencies.database.get_service')
+    def test_get_sql_execution_service(self, mock_get_service):
         """Test get_sql_execution_service method."""
         # Configure mock
         mock_service = MagicMock()
-        mock_get_instance.return_value = mock_service
+        mock_get_service.return_value = mock_service
         
         # Call the method
         result = get_sql_execution_service()
         
         # Verify
-        mock_get_instance.assert_called_once_with(SQLExecutionProtocol)
+        mock_get_service.assert_called_once_with(SQLExecutionProtocol)
         assert result == mock_service

@@ -20,7 +20,15 @@ from pydantic import BaseModel
 from io import BytesIO
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.dependencies.fastapi import get_db_session, inject_dependency
+from uno.dependencies.database import get_db_session
+
+# Helper function to replace inject_dependency
+def inject_dependency(interface_type):
+    def _inject(request):
+        from uno.dependencies.modern_provider import get_service_provider
+        provider = get_service_provider()
+        return provider.get_service(interface_type)
+    return _inject
 from uno.core.errors.result import Result, unwrap_or_raise
 from uno.reports.services import ReportTemplateService, ReportExecutionService
 from uno.reports.aggregation import ReportDataAggregator
@@ -265,7 +273,12 @@ async def get_dashboard_data(
         force_refresh=force_refresh
     )
     
-    dashboard_data = unwrap_or_raise(result)
+    if result.is_failure:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to get dashboard data: {result.error}"
+        )
+    dashboard_data = result.value
     
     return {
         "dashboard_id": dashboard_id,

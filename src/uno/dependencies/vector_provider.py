@@ -8,7 +8,10 @@ services, allowing for clean dependency injection and integration.
 import logging
 from typing import Dict, List, Any, Optional, Type
 
-from uno.dependencies.provider import ServiceProvider
+# Import service provider interface from interfaces
+from uno.dependencies.interfaces import UnoServiceProviderProtocol
+
+# Legacy ServiceProvider removed as part of backward compatibility removal
 from uno.dependencies.interfaces import UnoConfigProtocol
 from uno.dependencies.vector_interfaces import (
     VectorSearchServiceProtocol,
@@ -141,21 +144,42 @@ class VectorConfigService:
         return dict(self._entity_configs)
 
 
-class VectorSearchProvider(ServiceProvider):
+class VectorSearchProvider:
     """
+    Modern implementation of vector search provider.
+    
     Service provider for vector search services.
     
     This provider registers vector search services with the
     dependency injection container.
     """
     
+    def __init__(self, logger=None):
+        """Initialize the provider with an optional logger."""
+        self._logger = logger or logging.getLogger(self.__class__.__name__)
+    
+    def get_config(self):
+        """Get the application configuration."""
+        from uno.dependencies.scoped_container import get_service
+        from uno.dependencies.interfaces import UnoConfigProtocol
+        return get_service(UnoConfigProtocol)
+    
+    def get_service(self, service_type):
+        """Get a service by type."""
+        from uno.dependencies.scoped_container import get_service
+        return get_service(service_type)
+    
+    def register_service(self, service_type, instance):
+        """Register a service with the DI container."""
+        from uno.dependencies.scoped_container import ServiceCollection
+        ServiceCollection.register_instance(service_type, instance)
+    
     def register(self) -> None:
         """Register vector search services with the container."""
         # Register the configuration service
         self._logger.info("Registering vector search services")
         
-        # Note: in this codebase, ServiceProvider doesn't have a 'container' property.
-        # We need to use the inject.instance() directly or register with the global container
+        # Register services with modern dependency injection system
         
         # Register vector config service
         vector_config = VectorConfigService(self.get_config())
@@ -276,7 +300,8 @@ class VectorSearchProvider(ServiceProvider):
         
         # Get the update service and ensure it's started
         try:
-            update_service = self.get_service(VectorUpdateServiceProtocol)
+            from uno.dependencies.scoped_container import get_service
+            update_service = get_service(VectorUpdateServiceProtocol)
             
             # Start the service if not already running
             if not getattr(update_service, '_running', False):
@@ -289,7 +314,7 @@ class VectorSearchProvider(ServiceProvider):
                 asyncio.create_task(start_service())
                 
                 self._logger.info("Vector update service started")
-        except (ValueError, KeyError) as e:
+        except (ValueError, KeyError, ImportError) as e:
             self._logger.error(f"Failed to boot vector update service: {e}")
 
 

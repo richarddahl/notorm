@@ -532,8 +532,9 @@ async def configure_base_services() -> None:
     services.add_singleton(logging.Logger, lambda: logging.getLogger('uno'))
     
     # Register registry
-    from uno.registry import UnoRegistry
-    services.add_instance(UnoRegistry, UnoRegistry.get_instance())
+    from uno.registry import get_registry, UnoRegistry
+    # Use the modern singleton pattern
+    services.add_instance(UnoRegistry, get_registry())
     
     # Register database provider
     from uno.database.config import ConnectionConfig
@@ -620,4 +621,20 @@ async def configure_base_services() -> None:
         await configure_vector_services()
     except (ImportError, AttributeError) as e:
         logging.getLogger("uno.services").debug(f"Vector search provider not available: {e}")
+        pass
+        
+    # Register queries provider
+    try:
+        from uno.queries.domain_provider import get_queries_provider
+        provider.register_extension("queries", get_queries_provider())
+    except (ImportError, AttributeError) as e:
+        logging.getLogger("uno.services").debug(f"Queries provider not available: {e}")
+        pass
+        
+    # Register reports provider
+    try:
+        from uno.reports.domain_provider import get_reports_provider
+        provider.register_extension("reports", get_reports_provider())
+    except (ImportError, AttributeError) as e:
+        logging.getLogger("uno.services").debug(f"Reports provider not available: {e}")
         pass

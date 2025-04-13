@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Load WebAwesome components -->
+  <script type="module" src="static/components/app/wa-app-shell.js"></script>
+  <script type="module" src="static/components/workflows/index.js"></script>
+  
+  <!-- Load Shoelace CDN components for compatibility -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--sl-font-sans);
+      background-color: var(--sl-color-neutral-50);
+      color: var(--sl-color-neutral-900);
+    }
+    
+    .sl-theme-dark {
+      background-color: var(--sl-color-neutral-900);
+      color: var(--sl-color-neutral-100);
+    }
+    
+    :focus-visible {
+      outline: 2px solid var(--sl-color-primary-600);
+      outline-offset: 2px;
+    }
+    
+    .workflow-dashboard-container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .workflow-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      background-color: var(--sl-color-primary-600);
+      color: white;
+    }
+    
+    .workflow-content {
+      flex: 1;
+      overflow: auto;
+    }
+    
+    .workflow-footer {
+      padding: 1rem;
+      font-size: 0.85rem;
+      text-align: center;
+      border-top: 1px solid var(--sl-color-neutral-200);
+    }
+  </style>
+  
+  <!-- Main Workflow Administration Interface -->
+  <div class="workflow-dashboard-container" id="workflow-app-container">
+    <!-- Dynamic content will be injected here by JavaScript -->
+  </div>
+  
+  <script>
+    // Workflow admin app initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize theme
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const storedTheme = localStorage.getItem('wa-theme');
+      
+      if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add('sl-theme-dark');
+        document.documentElement.classList.remove('sl-theme-light');
+      } else {
+        document.documentElement.classList.add('sl-theme-light');
+        document.documentElement.classList.remove('sl-theme-dark');
+      }
+      
+      // Parse URL to determine workflow view mode
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode') || 'dashboard';
+      const workflowId = urlParams.get('id');
+      const executionId = urlParams.get('execution');
+      
+      const container = document.getElementById('workflow-app-container');
+      
+      // Render the appropriate component based on the URL parameters
+      if (mode === 'dashboard' || !mode) {
+        // Render the workflow dashboard
+        const dashboard = document.createElement('wa-workflow-dashboard');
+        container.appendChild(dashboard);
+      } else if (mode === 'designer') {
+        // Render the workflow designer
+        const designer = document.createElement('wa-workflow-designer');
+        
+        if (workflowId) {
+          designer.setAttribute('workflow-id', workflowId);
+          designer.setAttribute('mode', 'edit');
+        } else {
+          designer.setAttribute('mode', 'create');
+        }
+        
+        // Handle save events
+        designer.addEventListener('workflow-saved', (e) => {
+          const savedWorkflowId = e.detail.workflow.id;
+          // Redirect to dashboard with success message
+          window.location.href = `/workflows?success=true&id=${savedWorkflowId}`;
+        });
+        
+        // Handle cancel events
+        designer.addEventListener('cancel', () => {
+          // Redirect back to dashboard
+          window.location.href = '/workflows';
+        });
+        
+        container.appendChild(designer);
+      } else if (mode === 'execution' && workflowId && executionId) {
+        // Render the execution detail view
+        const executionDetail = document.createElement('wa-workflow-execution-detail');
+        executionDetail.setAttribute('workflow-id', workflowId);
+        executionDetail.setAttribute('execution-id', executionId);
+        
+        container.appendChild(executionDetail);
+      } else if (mode === 'simulator' && workflowId) {
+        // Render the workflow simulator
+        const simulator = document.createElement('wa-workflow-simulator');
+        simulator.setAttribute('workflow-id', workflowId);
+        
+        container.appendChild(simulator);
+      } else {
+        // Invalid parameters, default to dashboard
+        const dashboard = document.createElement('wa-workflow-dashboard');
+        container.appendChild(dashboard);
+      }
+      
+      // Listen for theme changes
+      document.addEventListener('wa:theme-change', (e) => {
+        localStorage.setItem('wa-theme', e.detail.theme);
+        
+        if (e.detail.theme === 'dark') {
+          document.documentElement.classList.add('sl-theme-dark');
+          document.documentElement.classList.remove('sl-theme-light');
+        } else {
+          document.documentElement.classList.add('sl-theme-light');
+          document.documentElement.classList.remove('sl-theme-dark');
+        }
+      });
+    });
+  </script>
+{% endblock %}

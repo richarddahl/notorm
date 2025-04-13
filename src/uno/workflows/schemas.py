@@ -7,6 +7,7 @@ to support API endpoints and data validation.
 
 from typing import Dict, List, Optional, Any, TypeVar, Generic, Union
 from enum import Enum
+from datetime import datetime
 
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
@@ -33,6 +34,205 @@ class WorkflowBaseSchema(UnoSchema):
     deleted_by_id: Optional[str] = None
     tenant_id: Optional[str] = None
     group_id: Optional[str] = None
+
+
+class WorkflowOperationType(str, Enum):
+    """Workflow operation type enumeration."""
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
+
+
+class WorkflowTriggerSchema(BaseModel):
+    """Workflow trigger schema."""
+    
+    entity_type: str = Field(..., description="The entity type this trigger applies to")
+    operations: List[str] = Field(..., description="The operations that will trigger the workflow")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowConditionSchema(BaseModel):
+    """Workflow condition schema."""
+    
+    id: Optional[str] = Field(None, description="The condition ID")
+    type: str = Field(..., description="The type of condition")
+    field: Optional[str] = Field(None, description="The field to evaluate for field conditions")
+    operator: Optional[str] = Field(None, description="The operator for field conditions")
+    value: Optional[str] = Field(None, description="The value for field conditions")
+    config: Optional[Dict[str, Any]] = Field(None, description="Additional configuration for the condition")
+    order: Optional[int] = Field(0, description="The order of evaluation for the condition")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowRecipientSchema(BaseModel):
+    """Workflow recipient schema."""
+    
+    id: Optional[str] = Field(None, description="The recipient ID")
+    type: str = Field(..., description="The type of recipient")
+    value: str = Field(..., description="The value for the recipient (user ID, role name, etc.)")
+    action_id: Optional[str] = Field(None, description="The action this recipient is associated with")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowActionSchema(BaseModel):
+    """Workflow action schema."""
+    
+    id: Optional[str] = Field(None, description="The action ID")
+    type: str = Field(..., description="The type of action")
+    title: Optional[str] = Field(None, description="The title for notification actions")
+    body: Optional[str] = Field(None, description="The body for notification and email actions")
+    subject: Optional[str] = Field(None, description="The subject for email actions")
+    url: Optional[str] = Field(None, description="The URL for webhook actions")
+    method: Optional[str] = Field("POST", description="The HTTP method for webhook actions")
+    priority: Optional[str] = Field("normal", description="The priority for notification actions")
+    template: Optional[str] = Field(None, description="The template for email actions")
+    operation: Optional[str] = Field(None, description="The operation for database actions")
+    target_entity: Optional[str] = Field(None, description="The target entity for database actions")
+    field_mapping: Optional[Dict[str, Any]] = Field(None, description="Field mapping for database actions")
+    config: Optional[Dict[str, Any]] = Field(None, description="Additional configuration for the action")
+    order: Optional[int] = Field(0, description="The order of execution for the action")
+    recipients: Optional[List[WorkflowRecipientSchema]] = Field([], description="Recipients for the action")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowDefinitionSchema(BaseModel):
+    """Workflow definition schema."""
+    
+    id: Optional[str] = Field(None, description="The workflow ID")
+    name: str = Field(..., description="The name of the workflow")
+    description: Optional[str] = Field(None, description="The description of the workflow")
+    status: str = Field("active", description="The status of the workflow")
+    version: int = Field(1, description="The version of the workflow")
+    trigger: WorkflowTriggerSchema = Field(..., description="The trigger for the workflow")
+    conditions: Optional[List[WorkflowConditionSchema]] = Field([], description="Conditions for the workflow")
+    actions: List[WorkflowActionSchema] = Field(..., description="Actions for the workflow")
+    created_at: Optional[datetime] = Field(None, description="When the workflow was created")
+    updated_at: Optional[datetime] = Field(None, description="When the workflow was last updated")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowExecutionStatus(str, Enum):
+    """Workflow execution status enumeration."""
+    SUCCESS = "success"
+    FAILURE = "failure"
+    PARTIAL = "partial"
+
+
+class WorkflowActionResultSchema(BaseModel):
+    """Workflow action execution result schema."""
+    
+    id: Optional[str] = Field(None, description="The action result ID")
+    action_id: str = Field(..., description="The ID of the action that was executed")
+    type: str = Field(..., description="The type of action that was executed")
+    status: str = Field(..., description="The status of the action execution")
+    started_at: Optional[datetime] = Field(None, description="When the action started")
+    completed_at: Optional[datetime] = Field(None, description="When the action completed")
+    duration_ms: Optional[int] = Field(None, description="The duration of the action execution in milliseconds")
+    recipients_count: Optional[int] = Field(None, description="The number of recipients for the action")
+    error: Optional[str] = Field(None, description="The error message if the action failed")
+    details: Optional[str] = Field(None, description="Additional details about the action execution")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowExecutionLogSchema(BaseModel):
+    """Workflow execution log schema."""
+    
+    id: str = Field(..., description="The execution log ID")
+    workflow_id: str = Field(..., description="The ID of the workflow that was executed")
+    workflow_name: str = Field(..., description="The name of the workflow that was executed")
+    status: str = Field(..., description="The status of the execution")
+    entity_type: str = Field(..., description="The entity type that triggered the workflow")
+    entity_id: str = Field(..., description="The ID of the entity that triggered the workflow")
+    operation: str = Field(..., description="The operation that triggered the workflow")
+    started_at: datetime = Field(..., description="When the execution started")
+    completed_at: datetime = Field(..., description="When the execution completed")
+    duration_ms: int = Field(..., description="The duration of the execution in milliseconds")
+    conditions_result: bool = Field(..., description="Whether all conditions passed")
+    actions_total: int = Field(..., description="The total number of actions")
+    actions_success: int = Field(..., description="The number of successful actions")
+    actions_failed: int = Field(..., description="The number of failed actions")
+    action_results: List[WorkflowActionResultSchema] = Field(..., description="The results of the action executions")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowExecutionSchema(BaseModel):
+    """Workflow execution schema."""
+    
+    workflow_id: str = Field(..., description="The ID of the workflow to execute")
+    entity_type: str = Field(..., description="The entity type that triggered the workflow")
+    entity_id: str = Field(..., description="The ID of the entity that triggered the workflow")
+    operation: str = Field(..., description="The operation that triggered the workflow")
+    data: Dict[str, Any] = Field(..., description="The entity data for the execution")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowSimulationRequestSchema(BaseModel):
+    """Workflow simulation request schema."""
+    
+    operation: str = Field(..., description="The operation to simulate")
+    entity_data: Dict[str, Any] = Field(..., description="The entity data for the simulation")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowConditionResultSchema(BaseModel):
+    """Workflow condition evaluation result schema."""
+    
+    type: str = Field(..., description="The type of condition")
+    field: Optional[str] = Field(None, description="The field that was evaluated")
+    operator: Optional[str] = Field(None, description="The operator that was used")
+    value: Optional[str] = Field(None, description="The value that was compared against")
+    result: bool = Field(..., description="Whether the condition passed")
+    description: Optional[str] = Field(None, description="A human-readable description of the condition evaluation")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowSimulationActionResultSchema(BaseModel):
+    """Workflow simulation action result schema."""
+    
+    type: str = Field(..., description="The type of action")
+    status: str = Field(..., description="The status of the action execution")
+    config: Dict[str, Any] = Field(..., description="The configuration for the action")
+    recipients: Optional[List[Dict[str, Any]]] = Field(None, description="The recipients for the action")
+    result: Dict[str, Any] = Field(..., description="The result of the action execution")
+    
+    class Config:
+        orm_mode = True
+
+
+class WorkflowSimulationResultSchema(BaseModel):
+    """Workflow simulation result schema."""
+    
+    workflow_id: str = Field(..., description="The ID of the workflow that was simulated")
+    workflow_name: str = Field(..., description="The name of the workflow that was simulated")
+    status: str = Field(..., description="The status of the simulation")
+    trigger: Dict[str, Any] = Field(..., description="The trigger for the simulation")
+    conditions: List[WorkflowConditionResultSchema] = Field(..., description="The condition evaluation results")
+    conditions_result: bool = Field(..., description="Whether all conditions passed")
+    actions: List[WorkflowSimulationActionResultSchema] = Field(..., description="The action simulation results")
+    simulation_time: datetime = Field(..., description="When the simulation was run")
+    
+    class Config:
+        orm_mode = True
 
 
 # Workflow Step Schemas

@@ -1,18 +1,12 @@
 """
 Dependencies module for Uno framework.
 
-This module provides a centralized dependency injection system
+This module provides a modern dependency injection system
 to improve testability, maintainability, and decoupling of components.
 
-The module offers two complementary approaches to dependency management:
-1. The traditional access methods that directly use inject.instance()
-2. The unified ServiceProvider pattern for centralized service access
-3. The new modern DI system with proper scoping and decorator-based registration
+The module offers a decorator-based approach to dependency management
+with proper scope handling and automatic discovery of injectable services.
 """
-
-# Legacy DI system (for backward compatibility)
-from uno.dependencies.container import configure_di, get_container, get_instance
-from uno.dependencies.provider import ServiceProvider, get_service_provider, initialize_services
 
 # Interfaces
 from uno.dependencies.interfaces import (
@@ -33,11 +27,8 @@ from uno.dependencies.interfaces import (
 from uno.dependencies.repository import UnoRepository
 from uno.dependencies.service import UnoService, CrudService
 
-# FastAPI integration (legacy)
-from uno.dependencies.fastapi import (
-    inject_dependency,
-    get_config
-)
+# Modern FastAPI integration is imported separately
+# Modern FastAPI integration was removed as part of backward compatibility removal
 
 # Database integration
 from uno.dependencies.database import (
@@ -105,14 +96,24 @@ try:
         injectable_endpoint
     )
     
-    from uno.dependencies.fastapi_integration import (
-        configure_fastapi,
-        DIAPIRouter,
-        resolve_service,
-        RequestScopeMiddleware,
-        get_request_scope,
-        lifespan
-    )
+    try:
+        # Using internal fastapi_integration module directly
+        from uno.dependencies.modern_fastapi import (
+            configure_fastapi,
+            DIAPIRouter,
+            resolve_service,
+            RequestScopeMiddleware,
+            get_request_scope,
+            lifespan
+        )
+    except ImportError:
+        # Modern FastAPI integration not available
+        configure_fastapi = None
+        DIAPIRouter = None
+        resolve_service = None
+        RequestScopeMiddleware = None
+        get_request_scope = None
+        lifespan = None
     
     from uno.dependencies.discovery import (
         discover_services,
@@ -141,10 +142,7 @@ if os.environ.get('ENV') == 'test':
 
 
 __all__ = [
-    # Container (legacy)
-    "configure_di",
-    "get_container",
-    "get_instance",
+    # Modern DI functionality uses decorator-based approach
     
     # Interfaces
     "UnoRepositoryProtocol",
@@ -171,9 +169,7 @@ __all__ = [
     "UnoService",
     "CrudService",
     
-    # FastAPI integration (legacy)
-    "inject_dependency",
-    "get_config",
+    # Modern FastAPI integration is in fastapi_integration module
     
     # Database integration
     "get_db_session",
@@ -191,10 +187,7 @@ __all__ = [
     "get_domain_repository",
     "get_domain_service",
     
-    # Service Provider (legacy)
-    "ServiceProvider",
-    "get_service_provider",
-    "initialize_services",
+    # Modern service provider functionality is in UnoServiceProvider
     
     # Vector search implementations
     "get_vector_search_service",

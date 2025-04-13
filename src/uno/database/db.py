@@ -203,7 +203,25 @@ def UnoDBFactory(
                 raise UnoError(f"Unknown error occurred: {e}") from e
 
         @classmethod
-        async def get(cls, **kwargs: Any) -> Optional[T]:
+        async def get(cls, select_related=None, **kwargs: Any) -> Optional[T]:
+            """
+            Get a record from the database with optional relationship loading.
+            
+            Args:
+                select_related: Controls which relationships to load:
+                    - None/False: Load no relationships
+                    - True: Load all relationships
+                    - List[str]: Load only specified relationships
+                **kwargs: Keyword arguments for filtering
+                
+            Returns:
+                The requested record if found, None otherwise
+                
+            Raises:
+                NotFoundException: If the record does not exist
+                IntegrityConflictException: If multiple records match the query
+                UnoError: For other errors
+            """
             column_names = obj.model.__table__.columns.keys()
             stmt = select(obj.model.__table__.c[*column_names])
 
@@ -235,7 +253,20 @@ def UnoDBFactory(
                             f"Multiple records found for the provided natural key: {kwargs}"
                         )
                     row = rows[0]
-                    return row._mapping if row is not None else None
+                    
+                    # Convert to mapping
+                    record = row._mapping if row is not None else None
+                    
+                    # Load relationships if requested
+                    if select_related and record and hasattr(obj.model, '__relationships__'):
+                        # Import the relationship loader
+                        from uno.database.relationship_loader import RelationshipLoader
+                        
+                        # Create loader and load relationships
+                        loader = RelationshipLoader(obj.model.__class__)
+                        record = await loader.load_relationships(record, select_related, session)
+                        
+                    return record
             except Exception as e:
                 raise UnoError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
@@ -269,7 +300,20 @@ def UnoDBFactory(
                 ) from e
 
         @classmethod
-        async def filter(cls, filters: Optional[FilterParam] = None) -> List[T]:
+        async def filter(cls, filters: Optional[FilterParam] = None, select_related=None) -> List[T]:
+            """
+            Filter records with optional relationship loading.
+            
+            Args:
+                filters: Filter parameters for querying
+                select_related: Controls which relationships to load:
+                    - None/False: Load no relationships
+                    - True: Load all relationships
+                    - List[str]: Load only specified relationships
+                
+            Returns:
+                List of matching records
+            """
             limit = 25
             offset = 0
             order_by = None
@@ -309,7 +353,22 @@ def UnoDBFactory(
                 async with session_context as session:
                     await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
-                return result.mappings().all()
+                    records = result.mappings().all()
+                    
+                    # Load relationships if requested
+                    if select_related and records and hasattr(obj.model, '__relationships__'):
+                        # Import the relationship loader
+                        from uno.database.relationship_loader import RelationshipLoader
+                        
+                        # Create loader and load relationships in batch
+                        loader = RelationshipLoader(obj.model.__class__)
+                        records = await loader.load_relationships_batch(
+                            records, 
+                            select_related, 
+                            session
+                        )
+                        
+                    return records
             except Exception as e:
                 raise UnoError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"

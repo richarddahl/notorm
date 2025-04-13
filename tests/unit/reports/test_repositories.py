@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Tests for the report repositories."""
+"""Tests for the report domain repositories."""
 
 import pytest
 import uuid
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
+from unittest.mock import AsyncMock, patch, MagicMock
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from uno.reports.repositories import (
+from uno.core.errors.result import Result, Success, Failure
+from uno.reports.domain_repositories import (
     ReportTemplateRepository,
     ReportFieldDefinitionRepository,
     ReportTriggerRepository,
@@ -19,7 +19,7 @@ from uno.reports.repositories import (
     ReportExecutionRepository,
     ReportOutputExecutionRepository,
 )
-from uno.reports.objs import (
+from uno.reports.entities import (
     ReportTemplate,
     ReportFieldDefinition,
     ReportTrigger,
@@ -34,889 +34,701 @@ from uno.reports.objs import (
 )
 
 
-# Test data
+# Mock fixtures for testing
 @pytest.fixture
-def template_data() -> Dict[str, Any]:
-    """Sample report template data."""
-    return {
-        "name": f"Test Template {uuid.uuid4()}",
-        "description": "Template for testing",
-        "base_object_type": "customer",
-        "format_config": {
-            "title_format": "{name} - Generated on {date}",
-            "show_footer": True
-        },
-        "parameter_definitions": {
-            "start_date": {
-                "type": "date",
-                "required": True,
-                "default": "today-30d"
+def mock_db():
+    """Create a mock database session."""
+    mock = AsyncMock()
+    mock.fetch_all = AsyncMock()
+    mock.fetch_one = AsyncMock()
+    return mock
+
+
+@pytest.fixture
+def field_definition_repo(mock_db):
+    """Create a field definition repository with a mock DB."""
+    return ReportFieldDefinitionRepository(mock_db)
+
+
+@pytest.fixture
+def template_repo(mock_db):
+    """Create a template repository with a mock DB."""
+    return ReportTemplateRepository(mock_db)
+
+
+@pytest.fixture
+def trigger_repo(mock_db):
+    """Create a trigger repository with a mock DB."""
+    return ReportTriggerRepository(mock_db)
+
+
+@pytest.fixture
+def output_repo(mock_db):
+    """Create an output repository with a mock DB."""
+    return ReportOutputRepository(mock_db)
+
+
+@pytest.fixture
+def execution_repo(mock_db):
+    """Create an execution repository with a mock DB."""
+    return ReportExecutionRepository(mock_db)
+
+
+@pytest.fixture
+def output_execution_repo(mock_db):
+    """Create an output execution repository with a mock DB."""
+    return ReportOutputExecutionRepository(mock_db)
+
+
+# Entity fixture generators
+@pytest.fixture
+def create_field_definition():
+    """Create a field definition entity for testing."""
+    def _create_field(id_=None, name=None, field_type=None, parent_field_id=None):
+        return ReportFieldDefinition(
+            id=id_ or str(uuid.uuid4()),
+            name=name or f"test_field_{uuid.uuid4().hex[:8]}",
+            display_name="Test Field",
+            field_type=field_type or ReportFieldType.DB_COLUMN,
+            field_config={"table": "customer", "column": "name"},
+            description="Field for testing",
+            order=1,
+            format_string=None,
+            conditional_formats=None,
+            is_visible=True,
+            parent_field_id=parent_field_id
+        )
+    return _create_field
+
+
+@pytest.fixture
+def create_template():
+    """Create a template entity for testing."""
+    def _create_template(id_=None, name=None, base_object_type=None):
+        return ReportTemplate(
+            id=id_ or str(uuid.uuid4()),
+            name=name or f"Test Template {uuid.uuid4()}",
+            description="Template for testing",
+            base_object_type=base_object_type or "customer",
+            format_config={
+                "title_format": "{name} - Generated on {date}",
+                "show_footer": True
             },
-            "customer_type": {
-                "type": "string",
-                "required": False,
-                "choices": ["individual", "business", "government"]
-            }
-        },
-        "cache_policy": {
-            "ttl_seconds": 3600,
-            "invalidate_on_event": "customer_updated"
-        },
-        "version": "1.0.0"
-    }
+            parameter_definitions={
+                "start_date": {
+                    "type": "date",
+                    "required": True,
+                    "default": "today-30d"
+                }
+            },
+            cache_policy={
+                "ttl_seconds": 3600,
+                "invalidate_on_event": "customer_updated"
+            },
+            version="1.0.0"
+        )
+    return _create_template
 
 
 @pytest.fixture
-def field_data() -> Dict[str, Any]:
-    """Sample report field data."""
-    return {
-        "name": f"test_field_{uuid.uuid4().hex[:8]}",
-        "display_name": "Test Field",
-        "description": "Field for testing",
-        "field_type": ReportFieldType.DB_COLUMN,
-        "field_config": {
-            "table": "customer",
-            "column": "name"
-        },
-        "order": 1,
-        "format_string": None,
-        "conditional_formats": None,
-        "is_visible": True
-    }
+def create_trigger():
+    """Create a trigger entity for testing."""
+    def _create_trigger(id_=None, template_id=None, trigger_type=None):
+        return ReportTrigger(
+            id=id_ or str(uuid.uuid4()),
+            report_template_id=template_id or str(uuid.uuid4()),
+            trigger_type=trigger_type or ReportTriggerType.SCHEDULED,
+            trigger_config={
+                "timezone": "UTC",
+                "run_on_holidays": False
+            },
+            schedule="interval:24:hours",
+            is_active=True
+        )
+    return _create_trigger
 
 
 @pytest.fixture
-def trigger_data() -> Dict[str, Any]:
-    """Sample report trigger data."""
-    return {
-        "trigger_type": ReportTriggerType.SCHEDULED,
-        "trigger_config": {
-            "timezone": "UTC",
-            "run_on_holidays": False
-        },
-        "schedule": "interval:24:hours",
-        "is_active": True
-    }
+def create_output():
+    """Create an output entity for testing."""
+    def _create_output(id_=None, template_id=None, output_type=None):
+        return ReportOutput(
+            id=id_ or str(uuid.uuid4()),
+            report_template_id=template_id or str(uuid.uuid4()),
+            output_type=output_type or ReportOutputType.EMAIL,
+            format=ReportFormat.PDF,
+            output_config={
+                "recipients": ["test@example.com"],
+                "subject": "Test Report"
+            },
+            format_config={
+                "page_size": "letter",
+                "orientation": "portrait"
+            },
+            is_active=True
+        )
+    return _create_output
 
 
 @pytest.fixture
-def output_data() -> Dict[str, Any]:
-    """Sample report output data."""
-    return {
-        "output_type": ReportOutputType.EMAIL,
-        "output_config": {
-            "recipients": ["test@example.com"],
-            "subject": "Test Report",
-            "body": "Please find the attached report."
-        },
-        "format": ReportFormat.PDF,
-        "format_config": {
-            "page_size": "letter",
-            "orientation": "portrait"
-        },
-        "is_active": True
-    }
+def create_execution():
+    """Create an execution entity for testing."""
+    def _create_execution(id_=None, template_id=None, status=None):
+        return ReportExecution(
+            id=id_ or str(uuid.uuid4()),
+            report_template_id=template_id or str(uuid.uuid4()),
+            triggered_by="test_user",
+            trigger_type=ReportTriggerType.MANUAL,
+            parameters={
+                "start_date": "2023-01-01",
+                "end_date": "2023-12-31"
+            },
+            status=status or ReportExecutionStatus.PENDING,
+            started_at=datetime.utcnow()
+        )
+    return _create_execution
 
 
 @pytest.fixture
-def execution_data() -> Dict[str, Any]:
-    """Sample report execution data."""
-    return {
-        "triggered_by": "test_user",
-        "trigger_type": ReportTriggerType.MANUAL,
-        "parameters": {
-            "start_date": "2023-01-01",
-            "end_date": "2023-12-31"
-        },
-        "status": ReportExecutionStatus.PENDING,
-        "started_at": datetime.utcnow()
-    }
-
-
-@pytest.fixture
-async def template(
-    db_session: AsyncSession,
-    template_data: Dict[str, Any]
-) -> ReportTemplate:
-    """Create a test template."""
-    repo = ReportTemplateRepository(db_session)
-    template = ReportTemplate(**template_data)
-    result = await repo.create(template, db_session)
-    assert result.is_success
-    return result.value
-
-
-@pytest.fixture
-async def field(
-    db_session: AsyncSession,
-    template: ReportTemplate,
-    field_data: Dict[str, Any]
-) -> ReportFieldDefinition:
-    """Create a test field."""
-    repo = ReportFieldDefinitionRepository(db_session)
-    field_data["report_template_id"] = template.id
-    field = ReportFieldDefinition(**field_data)
-    result = await repo.create(field, db_session)
-    assert result.is_success
-    return result.value
-
-
-@pytest.fixture
-async def trigger(
-    db_session: AsyncSession,
-    template: ReportTemplate,
-    trigger_data: Dict[str, Any]
-) -> ReportTrigger:
-    """Create a test trigger."""
-    repo = ReportTriggerRepository(db_session)
-    trigger_data["report_template_id"] = template.id
-    trigger = ReportTrigger(**trigger_data)
-    result = await repo.create(trigger, db_session)
-    assert result.is_success
-    return result.value
-
-
-@pytest.fixture
-async def output(
-    db_session: AsyncSession,
-    template: ReportTemplate,
-    output_data: Dict[str, Any]
-) -> ReportOutput:
-    """Create a test output."""
-    repo = ReportOutputRepository(db_session)
-    output_data["report_template_id"] = template.id
-    output = ReportOutput(**output_data)
-    result = await repo.create(output, db_session)
-    assert result.is_success
-    return result.value
-
-
-@pytest.fixture
-async def execution(
-    db_session: AsyncSession,
-    template: ReportTemplate,
-    execution_data: Dict[str, Any]
-) -> ReportExecution:
-    """Create a test execution."""
-    repo = ReportExecutionRepository(db_session)
-    execution_data["report_template_id"] = template.id
-    execution = ReportExecution(**execution_data)
-    result = await repo.create(execution, db_session)
-    assert result.is_success
-    return result.value
+def create_output_execution():
+    """Create an output execution entity for testing."""
+    def _create_output_execution(id_=None, execution_id=None, output_id=None, status=None):
+        return ReportOutputExecution(
+            id=id_ or str(uuid.uuid4()),
+            report_execution_id=execution_id or str(uuid.uuid4()),
+            report_output_id=output_id or str(uuid.uuid4()),
+            status=status or ReportExecutionStatus.PENDING
+        )
+    return _create_output_execution
 
 
 # Test cases
+class TestReportFieldDefinitionRepository:
+    """Tests for the ReportFieldDefinitionRepository class."""
+
+    async def test_find_by_name(self, field_definition_repo, create_field_definition):
+        """Test finding a field definition by name."""
+        # Arrange
+        field = create_field_definition(name="test_field")
+        expected_fields = [field]
+        field_definition_repo._db.list.return_value = expected_fields
+        
+        # Act
+        result = await field_definition_repo.find_by_name("test_field")
+        
+        # Assert
+        field_definition_repo._db.list.assert_called_once()
+        filters = field_definition_repo._db.list.call_args[1]["filters"]
+        assert filters["name"]["lookup"] == "eq"
+        assert filters["name"]["val"] == "test_field"
+        assert result == field
+
+    async def test_find_by_name_not_found(self, field_definition_repo):
+        """Test finding a field definition by name when it doesn't exist."""
+        # Arrange
+        field_definition_repo._db.list.return_value = []
+        
+        # Act
+        result = await field_definition_repo.find_by_name("non_existent_field")
+        
+        # Assert
+        assert result is None
+
+    async def test_find_by_field_type(self, field_definition_repo, create_field_definition):
+        """Test finding field definitions by field type."""
+        # Arrange
+        fields = [
+            create_field_definition(field_type=ReportFieldType.DB_COLUMN),
+            create_field_definition(field_type=ReportFieldType.DB_COLUMN)
+        ]
+        field_definition_repo._db.list.return_value = fields
+        
+        # Act
+        result = await field_definition_repo.find_by_field_type(ReportFieldType.DB_COLUMN)
+        
+        # Assert
+        field_definition_repo._db.list.assert_called_once()
+        filters = field_definition_repo._db.list.call_args[1]["filters"]
+        assert filters["field_type"]["lookup"] == "eq"
+        assert filters["field_type"]["val"] == ReportFieldType.DB_COLUMN
+        assert result == fields
+
+    async def test_find_by_parent_field_id(self, field_definition_repo, create_field_definition):
+        """Test finding field definitions by parent field ID."""
+        # Arrange
+        parent_id = str(uuid.uuid4())
+        fields = [
+            create_field_definition(parent_field_id=parent_id),
+            create_field_definition(parent_field_id=parent_id)
+        ]
+        field_definition_repo._db.list.return_value = fields
+        
+        # Act
+        result = await field_definition_repo.find_by_parent_field_id(parent_id)
+        
+        # Assert
+        field_definition_repo._db.list.assert_called_once()
+        filters = field_definition_repo._db.list.call_args[1]["filters"]
+        assert filters["parent_field_id"]["lookup"] == "eq"
+        assert filters["parent_field_id"]["val"] == parent_id
+        assert result == fields
+
+    async def test_find_by_template_id(self, field_definition_repo, create_field_definition):
+        """Test finding field definitions by template ID."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        fields = [
+            create_field_definition(),
+            create_field_definition()
+        ]
+        field_definition_repo._db.fetch_all.return_value = [
+            {"id": fields[0].id, "name": fields[0].name, "field_type": fields[0].field_type},
+            {"id": fields[1].id, "name": fields[1].name, "field_type": fields[1].field_type}
+        ]
+        field_definition_repo._create_entity_from_row = MagicMock(side_effect=fields)
+        
+        # Act
+        result = await field_definition_repo.find_by_template_id(template_id)
+        
+        # Assert
+        field_definition_repo._db.fetch_all.assert_called_once()
+        query_params = field_definition_repo._db.fetch_all.call_args[1]
+        assert "template_id" in query_params
+        assert query_params["template_id"] == template_id
+        assert result == fields
+
+
 class TestReportTemplateRepository:
     """Tests for the ReportTemplateRepository class."""
 
-    async def test_create_template(
-        self,
-        db_session: AsyncSession,
-        template_data: Dict[str, Any]
-    ):
-        """Test creating a report template."""
-        repo = ReportTemplateRepository(db_session)
-        template = ReportTemplate(**template_data)
-        result = await repo.create(template, db_session)
+    async def test_find_by_name(self, template_repo, create_template):
+        """Test finding a template by name."""
+        # Arrange
+        template = create_template(name="test_template")
+        expected_templates = [template]
+        template_repo._db.list.return_value = expected_templates
         
-        assert result.is_success
-        assert result.value.id is not None
-        assert result.value.name == template_data["name"]
-        assert result.value.description == template_data["description"]
-        assert result.value.base_object_type == template_data["base_object_type"]
-    
-    async def test_get_template_by_id(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test retrieving a template by ID."""
-        repo = ReportTemplateRepository(db_session)
-        result = await repo.get_by_id(template.id, db_session)
+        # Act
+        result = await template_repo.find_by_name("test_template")
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == template.id
-        assert result.value.name == template.name
-    
-    async def test_get_template_by_name(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test retrieving a template by name."""
-        repo = ReportTemplateRepository(db_session)
-        result = await repo.get_by_name(template.name, db_session)
-        
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == template.id
-        assert result.value.name == template.name
-    
-    async def test_list_templates(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test listing templates."""
-        repo = ReportTemplateRepository(db_session)
-        result = await repo.list_templates(None, db_session)
-        
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert any(t.id == template.id for t in result.value)
-    
-    async def test_update_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test updating a template."""
-        repo = ReportTemplateRepository(db_session)
-        
-        # Update template
-        new_name = f"Updated Template {uuid.uuid4()}"
-        template.name = new_name
-        result = await repo.update(template, db_session)
-        
-        assert result.is_success
-        assert result.value.name == new_name
-        
-        # Verify update
-        get_result = await repo.get_by_id(template.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.name == new_name
-    
-    async def test_delete_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test deleting a template."""
-        repo = ReportTemplateRepository(db_session)
-        
-        # Delete template
-        result = await repo.delete(template.id, db_session)
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify deletion
-        get_result = await repo.get_by_id(template.id, db_session)
-        assert get_result.is_success
-        assert get_result.value is None
+        # Assert
+        template_repo._db.list.assert_called_once()
+        filters = template_repo._db.list.call_args[1]["filters"]
+        assert filters["name"]["lookup"] == "eq"
+        assert filters["name"]["val"] == "test_template"
+        assert result == template
 
+    async def test_find_by_name_not_found(self, template_repo):
+        """Test finding a template by name when it doesn't exist."""
+        # Arrange
+        template_repo._db.list.return_value = []
+        
+        # Act
+        result = await template_repo.find_by_name("non_existent_template")
+        
+        # Assert
+        assert result is None
 
-class TestReportFieldRepository:
-    """Tests for the ReportFieldDefinitionRepository class."""
+    async def test_find_by_base_object_type(self, template_repo, create_template):
+        """Test finding templates by base object type."""
+        # Arrange
+        templates = [
+            create_template(base_object_type="customer"),
+            create_template(base_object_type="customer")
+        ]
+        template_repo._db.list.return_value = templates
+        
+        # Act
+        result = await template_repo.find_by_base_object_type("customer")
+        
+        # Assert
+        template_repo._db.list.assert_called_once()
+        filters = template_repo._db.list.call_args[1]["filters"]
+        assert filters["base_object_type"]["lookup"] == "eq"
+        assert filters["base_object_type"]["val"] == "customer"
+        assert result == templates
 
-    async def test_create_field(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        field_data: Dict[str, Any]
-    ):
-        """Test creating a field."""
-        repo = ReportFieldDefinitionRepository(db_session)
-        field_data["report_template_id"] = template.id
-        field = ReportFieldDefinition(**field_data)
-        result = await repo.create(field, db_session)
+    async def test_find_with_relationships_success(self, template_repo, create_template):
+        """Test finding a template with all relationships loaded."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        template = create_template(id_=template_id)
+        template_repo.get.return_value = template
+        template_repo.load_relationships = AsyncMock()
         
+        # Act
+        result = await template_repo.find_with_relationships(template_id)
+        
+        # Assert
+        template_repo.get.assert_called_once_with(template_id)
+        template_repo.load_relationships.assert_called_once_with(template)
         assert result.is_success
-        assert result.value.id is not None
-        assert result.value.name == field_data["name"]
-        assert result.value.field_type == field_data["field_type"]
-    
-    async def test_get_field_by_id(
-        self,
-        db_session: AsyncSession,
-        field: ReportFieldDefinition
-    ):
-        """Test retrieving a field by ID."""
-        repo = ReportFieldDefinitionRepository(db_session)
-        result = await repo.get_by_id(field.id, db_session)
+        assert result.value == template
+
+    async def test_find_with_relationships_not_found(self, template_repo):
+        """Test finding a template with relationships when it doesn't exist."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        template_repo.get.return_value = None
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == field.id
-        assert result.value.name == field.name
-    
-    async def test_list_fields_by_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        field: ReportFieldDefinition
-    ):
-        """Test listing fields for a template."""
-        repo = ReportFieldDefinitionRepository(db_session)
-        result = await repo.list_by_template(template.id, db_session)
+        # Act
+        result = await template_repo.find_with_relationships(template_id)
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(f.id == field.id for f in result.value)
-    
-    async def test_update_field(
-        self,
-        db_session: AsyncSession,
-        field: ReportFieldDefinition
-    ):
-        """Test updating a field."""
-        repo = ReportFieldDefinitionRepository(db_session)
+        # Assert
+        template_repo.get.assert_called_once_with(template_id)
+        assert result.is_failure
+        assert f"Template with ID {template_id} not found" in str(result.error)
+
+    async def test_find_with_relationships_error(self, template_repo, create_template):
+        """Test finding a template with relationships when an error occurs."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        template = create_template(id_=template_id)
+        template_repo.get.return_value = template
+        error_message = "Database error"
+        template_repo.load_relationships.side_effect = Exception(error_message)
         
-        # Update field
-        new_name = f"updated_field_{uuid.uuid4().hex[:8]}"
-        field.name = new_name
-        result = await repo.update(field, db_session)
+        # Act
+        result = await template_repo.find_with_relationships(template_id)
         
-        assert result.is_success
-        assert result.value.name == new_name
-        
-        # Verify update
-        get_result = await repo.get_by_id(field.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.name == new_name
-    
-    async def test_delete_field(
-        self,
-        db_session: AsyncSession,
-        field: ReportFieldDefinition
-    ):
-        """Test deleting a field."""
-        repo = ReportFieldDefinitionRepository(db_session)
-        
-        # Delete field
-        result = await repo.delete(field.id, db_session)
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify deletion
-        get_result = await repo.get_by_id(field.id, db_session)
-        assert get_result.is_success
-        assert get_result.value is None
-    
-    async def test_bulk_create_fields(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        field_data: Dict[str, Any]
-    ):
-        """Test bulk creating fields."""
-        repo = ReportFieldDefinitionRepository(db_session)
-        
-        # Create field data for bulk creation
-        fields = []
-        for i in range(3):
-            data = field_data.copy()
-            data["name"] = f"bulk_field_{i}_{uuid.uuid4().hex[:8]}"
-            data["report_template_id"] = template.id
-            fields.append(ReportFieldDefinition(**data))
-        
-        # Bulk create
-        result = await repo.bulk_create(fields, db_session)
-        
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) == 3
-        assert all(f.id is not None for f in result.value)
+        # Assert
+        template_repo.get.assert_called_once_with(template_id)
+        template_repo.load_relationships.assert_called_once_with(template)
+        assert result.is_failure
+        assert error_message in str(result.error)
 
 
 class TestReportTriggerRepository:
     """Tests for the ReportTriggerRepository class."""
 
-    async def test_create_trigger(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        trigger_data: Dict[str, Any]
-    ):
-        """Test creating a trigger."""
-        repo = ReportTriggerRepository(db_session)
-        trigger_data["report_template_id"] = template.id
-        trigger = ReportTrigger(**trigger_data)
-        result = await repo.create(trigger, db_session)
+    async def test_find_by_template_id(self, trigger_repo, create_trigger):
+        """Test finding triggers by template ID."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        triggers = [
+            create_trigger(template_id=template_id),
+            create_trigger(template_id=template_id)
+        ]
+        trigger_repo._db.list.return_value = triggers
         
-        assert result.is_success
-        assert result.value.id is not None
-        assert result.value.trigger_type == trigger_data["trigger_type"]
-    
-    async def test_get_trigger_by_id(
-        self,
-        db_session: AsyncSession,
-        trigger: ReportTrigger
-    ):
-        """Test retrieving a trigger by ID."""
-        repo = ReportTriggerRepository(db_session)
-        result = await repo.get_by_id(trigger.id, db_session)
+        # Act
+        result = await trigger_repo.find_by_template_id(template_id)
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == trigger.id
-        assert result.value.trigger_type == trigger.trigger_type
-    
-    async def test_list_triggers_by_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        trigger: ReportTrigger
-    ):
-        """Test listing triggers for a template."""
-        repo = ReportTriggerRepository(db_session)
-        result = await repo.list_by_template(template.id, db_session)
+        # Assert
+        trigger_repo._db.list.assert_called_once()
+        filters = trigger_repo._db.list.call_args[1]["filters"]
+        assert filters["report_template_id"]["lookup"] == "eq"
+        assert filters["report_template_id"]["val"] == template_id
+        assert result == triggers
+
+    async def test_find_by_trigger_type(self, trigger_repo, create_trigger):
+        """Test finding triggers by trigger type."""
+        # Arrange
+        trigger_type = ReportTriggerType.SCHEDULED
+        triggers = [
+            create_trigger(trigger_type=trigger_type),
+            create_trigger(trigger_type=trigger_type)
+        ]
+        trigger_repo._db.list.return_value = triggers
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(t.id == trigger.id for t in result.value)
-    
-    async def test_list_by_event_type(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate
-    ):
-        """Test listing triggers by event type."""
-        repo = ReportTriggerRepository(db_session)
+        # Act
+        result = await trigger_repo.find_by_trigger_type(trigger_type)
         
-        # Create event trigger
-        event_trigger = ReportTrigger(
-            report_template_id=template.id,
-            trigger_type=ReportTriggerType.EVENT,
-            event_type="test_event",
-            is_active=True
-        )
-        create_result = await repo.create(event_trigger, db_session)
-        assert create_result.is_success
+        # Assert
+        trigger_repo._db.list.assert_called_once()
+        filters = trigger_repo._db.list.call_args[1]["filters"]
+        assert filters["trigger_type"]["lookup"] == "eq"
+        assert filters["trigger_type"]["val"] == trigger_type
+        assert result == triggers
+
+    async def test_find_active_triggers(self, trigger_repo, create_trigger):
+        """Test finding all active triggers."""
+        # Arrange
+        triggers = [
+            create_trigger(),
+            create_trigger()
+        ]
+        trigger_repo._db.list.return_value = triggers
         
-        # List triggers by event type
-        result = await repo.list_by_event_type("test_event", db_session)
+        # Act
+        result = await trigger_repo.find_active_triggers()
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(t.id == event_trigger.id for t in result.value)
-    
-    async def test_list_active_scheduled_triggers(
-        self,
-        db_session: AsyncSession,
-        trigger: ReportTrigger
-    ):
-        """Test listing active scheduled triggers."""
-        repo = ReportTriggerRepository(db_session)
-        result = await repo.list_active_scheduled_triggers(db_session)
+        # Assert
+        trigger_repo._db.list.assert_called_once()
+        filters = trigger_repo._db.list.call_args[1]["filters"]
+        assert filters["is_active"]["lookup"] == "eq"
+        assert filters["is_active"]["val"] is True
+        assert result == triggers
+
+    async def test_find_active_scheduled_triggers(self, trigger_repo, create_trigger):
+        """Test finding active scheduled triggers."""
+        # Arrange
+        triggers = [
+            create_trigger(trigger_type=ReportTriggerType.SCHEDULED),
+            create_trigger(trigger_type=ReportTriggerType.SCHEDULED)
+        ]
+        trigger_repo._db.list.return_value = triggers
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(t.id == trigger.id for t in result.value)
-    
-    async def test_update_trigger(
-        self,
-        db_session: AsyncSession,
-        trigger: ReportTrigger
-    ):
-        """Test updating a trigger."""
-        repo = ReportTriggerRepository(db_session)
+        # Act
+        result = await trigger_repo.find_active_scheduled_triggers()
         
-        # Update trigger
-        trigger.is_active = False
-        result = await repo.update(trigger, db_session)
-        
-        assert result.is_success
-        assert result.value.is_active is False
-        
-        # Verify update
-        get_result = await repo.get_by_id(trigger.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.is_active is False
-    
-    async def test_delete_trigger(
-        self,
-        db_session: AsyncSession,
-        trigger: ReportTrigger
-    ):
-        """Test deleting a trigger."""
-        repo = ReportTriggerRepository(db_session)
-        
-        # Delete trigger
-        result = await repo.delete(trigger.id, db_session)
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify deletion
-        get_result = await repo.get_by_id(trigger.id, db_session)
-        assert get_result.is_success
-        assert get_result.value is None
-    
-    async def test_update_last_triggered(
-        self,
-        db_session: AsyncSession,
-        trigger: ReportTrigger
-    ):
-        """Test updating the last_triggered timestamp."""
-        repo = ReportTriggerRepository(db_session)
-        
-        # Update last_triggered
-        now = datetime.utcnow()
-        result = await repo.update_last_triggered(trigger.id, now, db_session)
-        
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify update
-        get_result = await repo.get_by_id(trigger.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.last_triggered is not None
-        # Check dates are close (within a second)
-        assert abs((get_result.value.last_triggered - now).total_seconds()) < 1
+        # Assert
+        trigger_repo._db.list.assert_called_once()
+        filters = trigger_repo._db.list.call_args[1]["filters"]
+        assert filters["is_active"]["lookup"] == "eq"
+        assert filters["is_active"]["val"] is True
+        assert filters["trigger_type"]["lookup"] == "eq"
+        assert filters["trigger_type"]["val"] == "scheduled"
+        assert result == triggers
 
 
 class TestReportOutputRepository:
     """Tests for the ReportOutputRepository class."""
 
-    async def test_create_output(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        output_data: Dict[str, Any]
-    ):
-        """Test creating an output."""
-        repo = ReportOutputRepository(db_session)
-        output_data["report_template_id"] = template.id
-        output = ReportOutput(**output_data)
-        result = await repo.create(output, db_session)
+    async def test_find_by_template_id(self, output_repo, create_output):
+        """Test finding outputs by template ID."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        outputs = [
+            create_output(template_id=template_id),
+            create_output(template_id=template_id)
+        ]
+        output_repo._db.list.return_value = outputs
         
-        assert result.is_success
-        assert result.value.id is not None
-        assert result.value.output_type == output_data["output_type"]
-        assert result.value.format == output_data["format"]
-    
-    async def test_get_output_by_id(
-        self,
-        db_session: AsyncSession,
-        output: ReportOutput
-    ):
-        """Test retrieving an output by ID."""
-        repo = ReportOutputRepository(db_session)
-        result = await repo.get_by_id(output.id, db_session)
+        # Act
+        result = await output_repo.find_by_template_id(template_id)
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == output.id
-        assert result.value.output_type == output.output_type
-    
-    async def test_list_outputs_by_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        output: ReportOutput
-    ):
-        """Test listing outputs for a template."""
-        repo = ReportOutputRepository(db_session)
-        result = await repo.list_by_template(template.id, db_session)
+        # Assert
+        output_repo._db.list.assert_called_once()
+        filters = output_repo._db.list.call_args[1]["filters"]
+        assert filters["report_template_id"]["lookup"] == "eq"
+        assert filters["report_template_id"]["val"] == template_id
+        assert result == outputs
+
+    async def test_find_by_output_type(self, output_repo, create_output):
+        """Test finding outputs by output type."""
+        # Arrange
+        output_type = ReportOutputType.EMAIL
+        outputs = [
+            create_output(output_type=output_type),
+            create_output(output_type=output_type)
+        ]
+        output_repo._db.list.return_value = outputs
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(o.id == output.id for o in result.value)
-    
-    async def test_update_output(
-        self,
-        db_session: AsyncSession,
-        output: ReportOutput
-    ):
-        """Test updating an output."""
-        repo = ReportOutputRepository(db_session)
+        # Act
+        result = await output_repo.find_by_output_type(output_type)
         
-        # Update output
-        new_format = ReportFormat.JSON
-        output.format = new_format
-        result = await repo.update(output, db_session)
+        # Assert
+        output_repo._db.list.assert_called_once()
+        filters = output_repo._db.list.call_args[1]["filters"]
+        assert filters["output_type"]["lookup"] == "eq"
+        assert filters["output_type"]["val"] == output_type
+        assert result == outputs
+
+    async def test_find_active_outputs(self, output_repo, create_output):
+        """Test finding all active outputs."""
+        # Arrange
+        outputs = [
+            create_output(),
+            create_output()
+        ]
+        output_repo._db.list.return_value = outputs
         
-        assert result.is_success
-        assert result.value.format == new_format
+        # Act
+        result = await output_repo.find_active_outputs()
         
-        # Verify update
-        get_result = await repo.get_by_id(output.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.format == new_format
-    
-    async def test_delete_output(
-        self,
-        db_session: AsyncSession,
-        output: ReportOutput
-    ):
-        """Test deleting an output."""
-        repo = ReportOutputRepository(db_session)
-        
-        # Delete output
-        result = await repo.delete(output.id, db_session)
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify deletion
-        get_result = await repo.get_by_id(output.id, db_session)
-        assert get_result.is_success
-        assert get_result.value is None
+        # Assert
+        output_repo._db.list.assert_called_once()
+        filters = output_repo._db.list.call_args[1]["filters"]
+        assert filters["is_active"]["lookup"] == "eq"
+        assert filters["is_active"]["val"] is True
+        assert result == outputs
 
 
 class TestReportExecutionRepository:
     """Tests for the ReportExecutionRepository class."""
 
-    async def test_create_execution(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        execution_data: Dict[str, Any]
-    ):
-        """Test creating an execution."""
-        repo = ReportExecutionRepository(db_session)
-        execution_data["report_template_id"] = template.id
-        execution = ReportExecution(**execution_data)
-        result = await repo.create(execution, db_session)
+    async def test_find_by_template_id(self, execution_repo, create_execution):
+        """Test finding executions by template ID."""
+        # Arrange
+        template_id = str(uuid.uuid4())
+        executions = [
+            create_execution(template_id=template_id),
+            create_execution(template_id=template_id)
+        ]
+        execution_repo._db.list.return_value = executions
         
+        # Act
+        result = await execution_repo.find_by_template_id(template_id)
+        
+        # Assert
+        execution_repo._db.list.assert_called_once()
+        filters = execution_repo._db.list.call_args[1]["filters"]
+        assert filters["report_template_id"]["lookup"] == "eq"
+        assert filters["report_template_id"]["val"] == template_id
+        assert result == executions
+
+    async def test_find_by_status(self, execution_repo, create_execution):
+        """Test finding executions by status."""
+        # Arrange
+        status = ReportExecutionStatus.PENDING
+        executions = [
+            create_execution(status=status),
+            create_execution(status=status)
+        ]
+        execution_repo._db.list.return_value = executions
+        
+        # Act
+        result = await execution_repo.find_by_status(status)
+        
+        # Assert
+        execution_repo._db.list.assert_called_once()
+        filters = execution_repo._db.list.call_args[1]["filters"]
+        assert filters["status"]["lookup"] == "eq"
+        assert filters["status"]["val"] == status
+        assert result == executions
+
+    async def test_find_by_triggered_by(self, execution_repo, create_execution):
+        """Test finding executions by triggered by."""
+        # Arrange
+        executions = [create_execution(), create_execution()]
+        execution_repo._db.list.return_value = executions
+        
+        # Act
+        result = await execution_repo.find_by_triggered_by("test_user")
+        
+        # Assert
+        execution_repo._db.list.assert_called_once()
+        filters = execution_repo._db.list.call_args[1]["filters"]
+        assert filters["triggered_by"]["lookup"] == "eq"
+        assert filters["triggered_by"]["val"] == "test_user"
+        assert result == executions
+
+    async def test_find_with_output_executions_success(self, execution_repo, create_execution):
+        """Test finding an execution with output executions loaded."""
+        # Arrange
+        execution_id = str(uuid.uuid4())
+        execution = create_execution(id_=execution_id)
+        execution_repo.get.return_value = execution
+        execution_repo.load_relationships = AsyncMock()
+        
+        # Act
+        result = await execution_repo.find_with_output_executions(execution_id)
+        
+        # Assert
+        execution_repo.get.assert_called_once_with(execution_id)
+        execution_repo.load_relationships.assert_called_once_with(execution, ["output_executions"])
         assert result.is_success
-        assert result.value.id is not None
-        assert result.value.status == execution_data["status"]
-        assert result.value.trigger_type == execution_data["trigger_type"]
-    
-    async def test_get_execution_by_id(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution
-    ):
-        """Test retrieving an execution by ID."""
-        repo = ReportExecutionRepository(db_session)
-        result = await repo.get_by_id(execution.id, db_session)
+        assert result.value == execution
+
+    async def test_find_with_output_executions_not_found(self, execution_repo):
+        """Test finding an execution with output executions when it doesn't exist."""
+        # Arrange
+        execution_id = str(uuid.uuid4())
+        execution_repo.get.return_value = None
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == execution.id
-        assert result.value.status == execution.status
-    
-    async def test_list_executions_by_template(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        execution: ReportExecution
-    ):
-        """Test listing executions for a template."""
-        repo = ReportExecutionRepository(db_session)
-        result = await repo.list_by_template(template.id, db_session)
+        # Act
+        result = await execution_repo.find_with_output_executions(execution_id)
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(e.id == execution.id for e in result.value)
-    
-    async def test_list_executions_by_status(
-        self,
-        db_session: AsyncSession,
-        template: ReportTemplate,
-        execution: ReportExecution
-    ):
-        """Test listing executions by status."""
-        repo = ReportExecutionRepository(db_session)
-        result = await repo.list_by_template(template.id, status=execution.status, db_session=db_session)
+        # Assert
+        execution_repo.get.assert_called_once_with(execution_id)
+        assert result.is_failure
+        assert f"Execution with ID {execution_id} not found" in str(result.error)
+
+    async def test_find_with_output_executions_error(self, execution_repo, create_execution):
+        """Test finding an execution with output executions when an error occurs."""
+        # Arrange
+        execution_id = str(uuid.uuid4())
+        execution = create_execution(id_=execution_id)
+        execution_repo.get.return_value = execution
+        error_message = "Database error"
+        execution_repo.load_relationships.side_effect = Exception(error_message)
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert all(e.status == execution.status for e in result.value)
-    
-    async def test_update_execution(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution
-    ):
-        """Test updating an execution."""
-        repo = ReportExecutionRepository(db_session)
+        # Act
+        result = await execution_repo.find_with_output_executions(execution_id)
         
-        # Update execution
-        execution.parameters = {"updated": True}
-        result = await repo.update(execution, db_session)
+        # Assert
+        execution_repo.get.assert_called_once_with(execution_id)
+        execution_repo.load_relationships.assert_called_once_with(execution, ["output_executions"])
+        assert result.is_failure
+        assert error_message in str(result.error)
+
+    async def test_find_recent_executions(self, execution_repo, create_execution):
+        """Test finding recent executions."""
+        # Arrange
+        executions = [create_execution(), create_execution()]
+        execution_repo._db.list.return_value = executions
         
-        assert result.is_success
-        assert result.value.parameters["updated"] is True
+        # Act
+        result = await execution_repo.find_recent_executions(limit=10)
         
-        # Verify update
-        get_result = await repo.get_by_id(execution.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.parameters["updated"] is True
-    
-    async def test_update_execution_status(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution
-    ):
-        """Test updating execution status."""
-        repo = ReportExecutionRepository(db_session)
-        
-        # Update status
-        new_status = ReportExecutionStatus.IN_PROGRESS
-        result = await repo.update_status(execution.id, new_status, db_session=db_session)
-        
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify update
-        get_result = await repo.get_by_id(execution.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.status == new_status
-    
-    async def test_complete_execution(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution
-    ):
-        """Test completing an execution."""
-        repo = ReportExecutionRepository(db_session)
-        
-        # Complete execution
-        row_count = 100
-        execution_time_ms = 1500
-        result_hash = "test_hash"
-        result = await repo.complete_execution(
-            execution.id, 
-            row_count, 
-            execution_time_ms, 
-            result_hash, 
-            db_session
-        )
-        
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify update
-        get_result = await repo.get_by_id(execution.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.status == ReportExecutionStatus.COMPLETED
-        assert get_result.value.row_count == row_count
-        assert get_result.value.execution_time_ms == execution_time_ms
-        assert get_result.value.result_hash == result_hash
-        assert get_result.value.completed_at is not None
+        # Assert
+        execution_repo._db.list.assert_called_once()
+        assert execution_repo._db.list.call_args[1]["order_by"] == "started_at"
+        assert execution_repo._db.list.call_args[1]["order_dir"] == "desc"
+        assert execution_repo._db.list.call_args[1]["limit"] == 10
+        assert result == executions
 
 
 class TestReportOutputExecutionRepository:
     """Tests for the ReportOutputExecutionRepository class."""
 
-    @pytest.fixture
-    async def output_execution_data(
-        self,
-        execution: ReportExecution,
-        output: ReportOutput
-    ) -> Dict[str, Any]:
-        """Sample report output execution data."""
-        return {
-            "report_execution_id": execution.id,
-            "report_output_id": output.id,
-            "status": ReportExecutionStatus.PENDING
-        }
-    
-    @pytest.fixture
-    async def output_execution(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution,
-        output: ReportOutput,
-        output_execution_data: Dict[str, Any]
-    ) -> ReportOutputExecution:
-        """Create a test output execution."""
-        repo = ReportOutputExecutionRepository(db_session)
-        output_execution = ReportOutputExecution(**output_execution_data)
-        result = await repo.create(output_execution, db_session)
-        assert result.is_success
-        return result.value
-    
-    async def test_create_output_execution(
-        self,
-        db_session: AsyncSession,
-        output_execution_data: Dict[str, Any]
-    ):
-        """Test creating an output execution."""
-        repo = ReportOutputExecutionRepository(db_session)
-        output_execution = ReportOutputExecution(**output_execution_data)
-        result = await repo.create(output_execution, db_session)
+    async def test_find_by_execution_id(self, output_execution_repo, create_output_execution):
+        """Test finding output executions by execution ID."""
+        # Arrange
+        execution_id = str(uuid.uuid4())
+        output_executions = [
+            create_output_execution(execution_id=execution_id),
+            create_output_execution(execution_id=execution_id)
+        ]
+        output_execution_repo._db.list.return_value = output_executions
         
-        assert result.is_success
-        assert result.value.id is not None
-        assert result.value.report_execution_id == output_execution_data["report_execution_id"]
-        assert result.value.report_output_id == output_execution_data["report_output_id"]
-    
-    async def test_get_output_execution_by_id(
-        self,
-        db_session: AsyncSession,
-        output_execution: ReportOutputExecution
-    ):
-        """Test retrieving an output execution by ID."""
-        repo = ReportOutputExecutionRepository(db_session)
-        result = await repo.get_by_id(output_execution.id, db_session)
+        # Act
+        result = await output_execution_repo.find_by_execution_id(execution_id)
         
-        assert result.is_success
-        assert result.value is not None
-        assert result.value.id == output_execution.id
-        assert result.value.status == output_execution.status
-    
-    async def test_list_output_executions_by_execution(
-        self,
-        db_session: AsyncSession,
-        execution: ReportExecution,
-        output_execution: ReportOutputExecution
-    ):
-        """Test listing output executions for an execution."""
-        repo = ReportOutputExecutionRepository(db_session)
-        result = await repo.list_by_execution(execution.id, db_session)
+        # Assert
+        output_execution_repo._db.list.assert_called_once()
+        filters = output_execution_repo._db.list.call_args[1]["filters"]
+        assert filters["report_execution_id"]["lookup"] == "eq"
+        assert filters["report_execution_id"]["val"] == execution_id
+        assert result == output_executions
+
+    async def test_find_by_output_id(self, output_execution_repo, create_output_execution):
+        """Test finding output executions by output ID."""
+        # Arrange
+        output_id = str(uuid.uuid4())
+        output_executions = [
+            create_output_execution(output_id=output_id),
+            create_output_execution(output_id=output_id)
+        ]
+        output_execution_repo._db.list.return_value = output_executions
         
-        assert result.is_success
-        assert isinstance(result.value, list)
-        assert len(result.value) > 0
-        assert any(oe.id == output_execution.id for oe in result.value)
-    
-    async def test_update_output_execution(
-        self,
-        db_session: AsyncSession,
-        output_execution: ReportOutputExecution
-    ):
-        """Test updating an output execution."""
-        repo = ReportOutputExecutionRepository(db_session)
+        # Act
+        result = await output_execution_repo.find_by_output_id(output_id)
         
-        # Update output execution
-        new_status = ReportExecutionStatus.IN_PROGRESS
-        output_execution.status = new_status
-        result = await repo.update(output_execution, db_session)
+        # Assert
+        output_execution_repo._db.list.assert_called_once()
+        filters = output_execution_repo._db.list.call_args[1]["filters"]
+        assert filters["report_output_id"]["lookup"] == "eq"
+        assert filters["report_output_id"]["val"] == output_id
+        assert result == output_executions
+
+    async def test_find_by_status(self, output_execution_repo, create_output_execution):
+        """Test finding output executions by status."""
+        # Arrange
+        status = ReportExecutionStatus.PENDING
+        output_executions = [
+            create_output_execution(status=status),
+            create_output_execution(status=status)
+        ]
+        output_execution_repo._db.list.return_value = output_executions
         
-        assert result.is_success
-        assert result.value.status == new_status
+        # Act
+        result = await output_execution_repo.find_by_status(status)
         
-        # Verify update
-        get_result = await repo.get_by_id(output_execution.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.status == new_status
-    
-    async def test_complete_output_execution(
-        self,
-        db_session: AsyncSession,
-        output_execution: ReportOutputExecution
-    ):
-        """Test completing an output execution."""
-        repo = ReportOutputExecutionRepository(db_session)
-        
-        # Complete output execution
-        output_location = "file:///tmp/report.pdf"
-        output_size_bytes = 12345
-        result = await repo.complete_output_execution(
-            output_execution.id,
-            output_location,
-            output_size_bytes,
-            db_session
-        )
-        
-        assert result.is_success
-        assert result.value is True
-        
-        # Verify update
-        get_result = await repo.get_by_id(output_execution.id, db_session)
-        assert get_result.is_success
-        assert get_result.value.status == ReportExecutionStatus.COMPLETED
-        assert get_result.value.output_location == output_location
-        assert get_result.value.output_size_bytes == output_size_bytes
-        assert get_result.value.completed_at is not None
+        # Assert
+        output_execution_repo._db.list.assert_called_once()
+        filters = output_execution_repo._db.list.call_args[1]["filters"]
+        assert filters["status"]["lookup"] == "eq"
+        assert filters["status"]["val"] == status
+        assert result == output_executions

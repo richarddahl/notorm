@@ -198,15 +198,15 @@ def create_attribute_endpoints(
         # Create attribute
         result = await attribute_service.create_attribute(attribute, values)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
         # Format response
-        created_attribute = result.unwrap()
+        created_attribute = result.value
         response = AttributeResponseDTO(
             id=created_attribute.id,
             attribute_type_id=created_attribute.attribute_type_id,
@@ -238,14 +238,14 @@ def create_attribute_endpoints(
         async with attribute_service.db_manager.get_enhanced_session() as session:
             result = await attribute_service.attribute_repository.get_by_id(attribute_id, session)
             
-            if result.is_err():
-                error = result.unwrap_err()
+            if result.is_failure:
+                error = result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            attribute = result.unwrap()
+            attribute = result.value
             
             if not attribute:
                 raise HTTPException(
@@ -286,14 +286,14 @@ def create_attribute_endpoints(
         async with attribute_service.db_manager.get_enhanced_session() as session:
             get_result = await attribute_service.attribute_repository.get_by_id(attribute_id, session)
             
-            if get_result.is_err():
-                error = get_result.unwrap_err()
+            if get_result.is_failure:
+                error = get_result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            attribute = get_result.unwrap()
+            attribute = get_result.value
             
             if not attribute:
                 raise HTTPException(
@@ -324,14 +324,14 @@ def create_attribute_endpoints(
             # Update attribute
             update_result = await attribute_service.attribute_repository.update(attribute, session)
             
-            if update_result.is_err():
-                error = update_result.unwrap_err()
+            if update_result.is_failure:
+                error = update_result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            updated_attribute = update_result.unwrap()
+            updated_attribute = update_result.value
             
             # Format response
             response = AttributeResponseDTO(
@@ -373,14 +373,14 @@ def create_attribute_endpoints(
         # Add values
         result = await attribute_service.add_values(attribute_id, values)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        updated_attribute = result.unwrap()
+        updated_attribute = result.value
         
         # Format response
         response = AttributeResponseDTO(
@@ -414,14 +414,14 @@ def create_attribute_endpoints(
         # Remove values
         result = await attribute_service.remove_values(attribute_id, value_ids)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        updated_attribute = result.unwrap()
+        updated_attribute = result.value
         
         # Format response
         response = AttributeResponseDTO(
@@ -455,14 +455,14 @@ def create_attribute_endpoints(
         async with attribute_service.db_manager.get_enhanced_session() as session:
             result = await attribute_service.attribute_repository.delete(attribute_id, session)
             
-            if result.is_err():
-                error = result.unwrap_err()
+            if result.is_failure:
+                error = result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            success = result.unwrap()
+            success = result.value
             
             if not success:
                 raise HTTPException(
@@ -487,14 +487,14 @@ def create_attribute_endpoints(
         # Get attributes
         result = await attribute_service.get_attributes_for_record(record_id, include_values)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        attributes = result.unwrap()
+        attributes = result.value
         
         # Format response
         response = [
@@ -585,15 +585,15 @@ def create_attribute_type_endpoints(
             value_meta_types
         )
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
         # Format response
-        created_type = result.unwrap()
+        created_type = result.value
         response = AttributeTypeResponseDTO(
             id=created_type.id,
             name=created_type.name,
@@ -635,14 +635,14 @@ def create_attribute_type_endpoints(
         async with attribute_type_service.db_manager.get_enhanced_session() as session:
             result = await attribute_type_service.attribute_type_repository.get_by_id(attribute_type_id, session)
             
-            if result.is_err():
-                error = result.unwrap_err()
+            if result.is_failure:
+                error = result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            attribute_type = result.unwrap()
+            attribute_type = result.value
             
             if not attribute_type:
                 raise HTTPException(
@@ -693,14 +693,14 @@ def create_attribute_type_endpoints(
         async with attribute_type_service.db_manager.get_enhanced_session() as session:
             get_result = await attribute_type_service.attribute_type_repository.get_by_id(attribute_type_id, session)
             
-            if get_result.is_err():
-                error = get_result.unwrap_err()
+            if get_result.is_failure:
+                error = get_result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            attribute_type = get_result.unwrap()
+            attribute_type = get_result.value
             
             if not attribute_type:
                 raise HTTPException(
@@ -736,14 +736,14 @@ def create_attribute_type_endpoints(
             # Update attribute type
             update_result = await attribute_type_service.attribute_type_repository.update(attribute_type, session)
             
-            if update_result.is_err():
-                error = update_result.unwrap_err()
+            if update_result.is_failure:
+                error = update_result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            updated_type = update_result.unwrap()
+            updated_type = update_result.value
             
             # Update meta types if provided
             if data.meta_type_ids is not None:
@@ -752,14 +752,14 @@ def create_attribute_type_endpoints(
                     data.meta_type_ids
                 )
                 
-                if meta_type_result.is_err():
-                    error = meta_type_result.unwrap_err()
+                if meta_type_result.is_failure:
+                    error = meta_type_result.error
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Failed to update applicable meta types: {str(error)}"
                     )
                 
-                updated_type = meta_type_result.unwrap()
+                updated_type = meta_type_result.value
             
             # Update value types if provided
             if data.value_type_ids is not None:
@@ -768,14 +768,14 @@ def create_attribute_type_endpoints(
                     data.value_type_ids
                 )
                 
-                if value_type_result.is_err():
-                    error = value_type_result.unwrap_err()
+                if value_type_result.is_failure:
+                    error = value_type_result.error
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Failed to update value meta types: {str(error)}"
                     )
                 
-                updated_type = value_type_result.unwrap()
+                updated_type = value_type_result.value
             
             # Format response
             response = AttributeTypeResponseDTO(
@@ -819,14 +819,14 @@ def create_attribute_type_endpoints(
         # Update applicable meta types
         result = await attribute_type_service.update_applicable_meta_types(attribute_type_id, meta_type_ids)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        updated_type = result.unwrap()
+        updated_type = result.value
         
         # Format response
         response = AttributeTypeResponseDTO(
@@ -870,14 +870,14 @@ def create_attribute_type_endpoints(
         # Update value meta types
         result = await attribute_type_service.update_value_meta_types(attribute_type_id, meta_type_ids)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        updated_type = result.unwrap()
+        updated_type = result.value
         
         # Format response
         response = AttributeTypeResponseDTO(
@@ -920,14 +920,14 @@ def create_attribute_type_endpoints(
         # Get applicable attribute types
         result = await attribute_type_service.get_applicable_attribute_types(meta_type_id)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        attribute_types = result.unwrap()
+        attribute_types = result.value
         
         # Format response
         response = [
@@ -974,14 +974,14 @@ def create_attribute_type_endpoints(
         async with attribute_type_service.db_manager.get_enhanced_session() as session:
             result = await attribute_type_service.attribute_type_repository.delete(attribute_type_id, session)
             
-            if result.is_err():
-                error = result.unwrap_err()
+            if result.is_failure:
+                error = result.error
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(error)
                 )
             
-            success = result.unwrap()
+            success = result.value
             
             if not success:
                 raise HTTPException(

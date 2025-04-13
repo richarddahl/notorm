@@ -5,6 +5,7 @@
 import logging
 from typing import Optional, Callable, List, Dict, Any, Type
 import inject
+from uno.dependencies.scoped_container import get_service
 
 from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtocol
 from uno.database.db_manager import DBManager
@@ -429,8 +430,8 @@ class WorkflowService(UnoServiceProtocol):
 def configure_workflow_module(binder):
     """Configure dependency injection for the workflow module."""
     # Create and bind workflow engine
-    db_manager = inject.instance(DBManager)
-    logger = inject.instance(logging.Logger)
+    db_manager = get_service(DBManager)
+    logger = get_service(logging.Logger)
     
     workflow_engine = WorkflowEngine(db_manager, logger)
     binder.bind(WorkflowEngine, workflow_engine)
@@ -442,7 +443,7 @@ def configure_workflow_module(binder):
     binder.bind(
         WorkflowService,
         WorkflowService(
-            inject.instance(WorkflowRepository),
+            get_service(WorkflowRepository),
             workflow_engine,
             db_manager,
             logger
@@ -456,3 +457,12 @@ def configure_workflow_module(binder):
         logger
     )
     binder.bind(WorkflowEventHandler, event_handler)
+    
+    # Initialize action executors, condition evaluators, and recipient resolvers
+    from uno.workflows.executor import init_executors
+    from uno.workflows.conditions import init_evaluators
+    from uno.workflows.recipients import init_resolvers
+    
+    init_executors()
+    init_evaluators()
+    init_resolvers()

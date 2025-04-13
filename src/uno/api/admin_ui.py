@@ -9,9 +9,9 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from uno.settings import uno_settings
-from uno.dependencies import inject
 from uno.dependencies.interfaces import UnoRepositoryProtocol
 from uno.authorization.services import UserAuthorizationService
+from uno.dependencies.database import get_service
 
 class AdminUIRouter:
     """Router for the admin UI pages."""
@@ -36,7 +36,7 @@ class AdminUIRouter:
         @self.router.get("/admin", response_class=HTMLResponse)
         async def admin_page(
             request: Request, 
-            user_auth_service: UserAuthorizationService = Depends(inject.get_instance(UserAuthorizationService))
+            user_auth_service: UserAuthorizationService = Depends(lambda: get_service(UserAuthorizationService))
         ):
             """Render the admin UI page."""
             try:

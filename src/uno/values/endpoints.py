@@ -231,14 +231,14 @@ def create_value_endpoints(
             data.name
         )
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        value_obj = result.unwrap()
+        value_obj = result.value
         
         # Prepare response based on value type
         if data.value_type.lower() == "boolean":
@@ -385,14 +385,14 @@ def create_value_endpoints(
             data.name
         )
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        value_obj = result.unwrap()
+        value_obj = result.value
         
         # Prepare response based on value type
         if data.value_type.lower() == "boolean":
@@ -496,14 +496,14 @@ def create_value_endpoints(
         # Get value
         result = await value_service.get_value_by_id(value_type_class, value_id)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        value_obj = result.unwrap()
+        value_obj = result.value
         
         if not value_obj:
             raise HTTPException(
@@ -612,8 +612,8 @@ def create_value_endpoints(
         # Create attachment
         result = await value_service.create_attachment(file_path, name)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             # Clean up file if attachment creation fails
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -623,7 +623,7 @@ def create_value_endpoints(
                 detail=str(error)
             )
         
-        attachment = result.unwrap()
+        attachment = result.value
         
         # Format response
         return AttachmentDTO(
@@ -647,14 +647,14 @@ def create_value_endpoints(
         # Get attachment
         result = await value_service.get_value_by_id(Attachment, attachment_id)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        attachment = result.unwrap()
+        attachment = result.value
         
         if not attachment:
             raise HTTPException(
@@ -722,21 +722,21 @@ def create_value_endpoints(
         if value_type_class == Attachment:
             get_result = await value_service.get_value_by_id(Attachment, value_id)
             
-            if get_result.is_ok() and get_result.unwrap():
-                attachment = get_result.unwrap()
+            if get_result.is_success and get_result.value:
+                attachment = get_result.value
                 file_path = attachment.file_path
         
         # Delete value
         result = await repository.delete(value_id)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        success = result.unwrap()
+        success = result.value
         
         if not success:
             raise HTTPException(
@@ -808,14 +808,14 @@ def create_value_endpoints(
         # Search values
         result = await repository.search(term, limit)
         
-        if result.is_err():
-            error = result.unwrap_err()
+        if result.is_failure:
+            error = result.error
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(error)
             )
         
-        values = result.unwrap()
+        values = result.value
         
         # Format response based on value type
         response = []

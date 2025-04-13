@@ -316,6 +316,28 @@ async def task_context(
         await group.close()
 
 
+# Module-level singleton instance
+_task_manager_instance: Optional["TaskManager"] = None
+
+
+def get_task_manager(logger: Optional[logging.Logger] = None) -> "TaskManager":
+    """
+    Get the singleton instance of the TaskManager.
+    
+    Args:
+        logger: Optional logger instance
+        
+    Returns:
+        The TaskManager instance
+    """
+    global _task_manager_instance
+    
+    if _task_manager_instance is None:
+        _task_manager_instance = TaskManager(logger)
+    
+    return _task_manager_instance
+
+
 class TaskManager:
     """
     Manager for handling multiple task groups and providing global task management.
@@ -323,15 +345,6 @@ class TaskManager:
     The TaskManager provides a centralized way to manage multiple task groups,
     handle signals for graceful shutdown, and provide utilities for task handling.
     """
-    
-    _instance: Optional["TaskManager"] = None
-    
-    @classmethod
-    def get_instance(cls) -> "TaskManager":
-        """Get the singleton instance of the TaskManager."""
-        if cls._instance is None:
-            cls._instance = TaskManager()
-        return cls._instance
     
     def __init__(self, logger: Optional[logging.Logger] = None):
         """
@@ -507,7 +520,7 @@ async def run_task(
     Raises:
         Exception: If the task fails and handle_errors is False
     """
-    manager = TaskManager.get_instance()
+    manager = get_task_manager()
     
     if group is not None:
         # Run in the specified group
@@ -552,7 +565,7 @@ async def run_tasks(
     Raises:
         TaskError: If any task fails and handle_errors is True
     """
-    manager = TaskManager.get_instance()
+    manager = get_task_manager()
     
     # Create tasks
     if group_name:

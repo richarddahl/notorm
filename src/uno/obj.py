@@ -33,7 +33,7 @@ from uno.model import UnoModel
 from uno.schema.schema import UnoSchemaConfig
 from uno.errors import UnoError, ValidationContext, ValidationError
 from uno.utilities import snake_to_title
-from uno.registry import UnoRegistry
+from uno.registry import get_registry
 from uno.schema.schema_manager import UnoSchemaManager
 from uno.queries.filter_manager import UnoFilterManager
 from uno.api.endpoint_factory import UnoEndpointFactory
@@ -88,7 +88,6 @@ class UnoObj(BaseModel, Generic[T]):
 
     # Runtime components - initialized in __init__
     db: DBClientProtocol = Field(None, exclude=True)
-    registry: UnoRegistry = Field(None, exclude=True)
     schema_manager: SchemaManagerProtocol = Field(None, exclude=True)
     filter_manager: FilterManagerProtocol = Field(None, exclude=True)
 
@@ -103,9 +102,6 @@ class UnoObj(BaseModel, Generic[T]):
 
         # Initialize the db factory
         self.db = UnoDBFactory(obj=self.__class__)
-
-        # Get the registry instance
-        self.registry = UnoRegistry.get_instance()
 
         # Initialize the schema manager
         self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
@@ -146,7 +142,7 @@ class UnoObj(BaseModel, Generic[T]):
         cls._set_display_names()
 
         # Register the class in the registry
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         try:
             registry.register(cls, cls.model.__tablename__)
         except AttributeError:

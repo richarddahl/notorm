@@ -9,17 +9,17 @@ for database operations including creating tables, functions, triggers,
 and other database objects.
 """
 
-# Re-export primary classes for backward compatibility
+# Core SQL generation and execution components
 from uno.sql.registry import SQLConfigRegistry
 from uno.sql.config import SQLConfig
 from uno.sql.emitter import SQLEmitter, SQLGenerator, SQLExecutor
 from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.observers import SQLObserver, LoggingSQLObserver
 
-# Re-export builders
+# SQL builders for functions and triggers
 from uno.sql.builders import SQLFunctionBuilder, SQLTriggerBuilder
 
-# Re-export common emitters
+# Common SQL emitters
 from uno.sql.emitters import (
     AlterGrants,
     RecordUserAuditFunction,

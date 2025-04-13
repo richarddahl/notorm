@@ -177,7 +177,7 @@ def _generate_api_imports(
         imports.append(f"from uno.repository import {repository_name}")
     
     # Import session dependency
-    imports.append("from uno.dependencies.fastapi import get_db_session")
+    imports.append("from uno.dependencies.database import get_db_session")
     imports.append("from sqlalchemy.ext.asyncio import AsyncSession")
     
     # Additional imports for pagination

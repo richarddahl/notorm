@@ -5,7 +5,7 @@
 """Fixtures for report integration tests."""
 
 import uuid
-from uno.reports.objs import (
+from uno.reports.entities import (
     ReportFieldType,
     ReportTriggerType,
     ReportOutputType,

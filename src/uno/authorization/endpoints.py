@@ -16,7 +16,7 @@ import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.dependencies.fastapi import get_db_session, get_repository
+from uno.dependencies.database import get_db_session, get_repository
 from uno.authorization.models import UserModel, GroupModel
 from uno.authorization.repositories import UserRepository, GroupRepository
 from uno.authorization.services import UserService, GroupService

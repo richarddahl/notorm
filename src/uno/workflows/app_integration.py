@@ -14,6 +14,7 @@ from typing import Callable, Any
 
 import inject
 from fastapi import FastAPI, Depends
+from uno.dependencies.scoped_container import get_service
 
 from uno.workflows.integration import (
     get_workflow_integration,
@@ -58,6 +59,18 @@ def setup_workflow_module(app: FastAPI) -> None:
         logger.info("Shutting down workflow module")
         integration = get_workflow_integration()
         await integration.stop_postgres_listener()
+    
+    # Include workflow API endpoints
+    try:
+        from uno.workflows.endpoints import router as api_router
+        from uno.workflows.routes import router as ui_router
+        
+        app.include_router(api_router)
+        app.include_router(ui_router)
+        
+        logger.info("Workflow API endpoints registered")
+    except Exception as e:
+        logger.error(f"Failed to register workflow API endpoints: {e}")
 
 
 def get_workflow_dependency() -> Callable[[Any], Any]:
@@ -74,7 +87,7 @@ def get_workflow_dependency() -> Callable[[Any], Any]:
     
     def get_workflow_service() -> WorkflowService:
         """Get the workflow service instance."""
-        return inject.instance(WorkflowService)
+        return get_service(WorkflowService)
     
     return Depends(get_workflow_service)
 

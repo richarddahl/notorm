@@ -12,7 +12,10 @@ against the database to determine if records match the query criteria.
 import logging
 import json
 import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, TypeVar, Type, cast
+import functools
+import hashlib
+import asyncio
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, TypeVar, Type, cast, Awaitable, Callable
 
 from sqlalchemy import (
     select,
@@ -30,6 +33,7 @@ from uno.queries.models import QueryModel
 from uno.queries.objs import Query, QueryValue, QueryPath
 from uno.errors import UnoError
 from uno.core.errors.result import Result, Success, Failure
+from uno.core.caching import QueryCache, get_cache_manager
 
 
 class QueryExecutionError(UnoError):
@@ -61,8 +65,15 @@ class QueryExecutor:
         self.logger = logger or logging.getLogger(__name__)
         self.cache_enabled = cache_enabled
         self.cache_ttl = cache_ttl
-        self._result_cache = {}  # {query_id: {'result': [...], 'expires': timestamp}}
-        self._record_match_cache = {}  # {(query_id, record_id): {'result': bool, 'expires': timestamp}}
+        
+        # Use the advanced caching system
+        self._query_cache_name = "query_results"
+        self._record_cache_name = "query_record_matches"
+        
+        # Legacy cache for backward compatibility
+        self._legacy_result_cache = {}  # {query_id: {'result': [...], 'expires': timestamp}}
+        self._legacy_record_match_cache = {}  # {(query_id, record_id): {'result': bool, 'expires': timestamp}}
+        
     def _is_cache_valid(self, cache_entry):
         """Check if a cache entry is still valid."""
         if not cache_entry or 'expires' not in cache_entry:
@@ -76,7 +87,7 @@ class QueryExecutor:
         
         cache_entry = cache_dict.get(key)
         if self._is_cache_valid(cache_entry):
-            self.logger.debug(f"Cache hit for key {key}")
+            self.logger.debug(f"Cache hit for legacy key {key}")
             return cache_entry['result']
         
         # Clean up expired entry
@@ -113,6 +124,90 @@ class QueryExecutor:
                 for k in sorted_keys[:200]:  # Remove oldest 20%
                     del cache_dict[k]
     
+    async def get_query_cache(self) -> QueryCache:
+        """
+        Get or create the query results cache.
+        
+        Returns:
+            The query cache instance
+        """
+        cache_manager = get_cache_manager()
+        return await cache_manager.get_query_cache(
+            name=self._query_cache_name,
+            ttl=self.cache_ttl
+        )
+        
+    async def get_record_cache(self) -> QueryCache:
+        """
+        Get or create the record matches cache.
+        
+        Returns:
+            The record cache instance
+        """
+        cache_manager = get_cache_manager()
+        return await cache_manager.get_query_cache(
+            name=self._record_cache_name,
+            ttl=self.cache_ttl
+        )
+        
+    def _generate_query_cache_key(self, query: Query) -> str:
+        """
+        Generate a cache key for a query.
+        
+        Args:
+            query: The query to generate a key for
+            
+        Returns:
+            The cache key
+        """
+        if query.id:
+            return f"query:{query.id}"
+            
+        # For queries without ID, generate a deterministic key
+        # based on query content for reliable caching
+        query_dict = {
+            "meta_type": query.query_meta_type_id,
+            "values": [
+                {
+                    "path_id": qv.query_path_id,
+                    "include": qv.include,
+                    "lookup": qv.lookup,
+                    "values": [v.id for v in (qv.values or [])]
+                }
+                for qv in (query.query_values or [])
+            ],
+            "sub_queries": [
+                self._generate_query_cache_key(sq) if sq.id else str(id(sq))
+                for sq in (query.sub_queries or [])
+            ],
+            "include_values": query.include_values,
+            "match_values": query.match_values,
+            "include_queries": query.include_queries,
+            "match_queries": query.match_queries
+        }
+        
+        # Serialize and hash
+        try:
+            query_json = json.dumps(query_dict, sort_keys=True)
+            return f"query:{hashlib.md5(query_json.encode('utf-8')).hexdigest()}"
+        except (TypeError, ValueError):
+            # Fallback for non-serializable components
+            return f"query:{id(query)}"
+    
+    def _generate_record_cache_key(self, query: Query, record_id: str) -> str:
+        """
+        Generate a cache key for a record match check.
+        
+        Args:
+            query: The query to check against
+            record_id: The record ID to check
+            
+        Returns:
+            The cache key
+        """
+        query_key = self._generate_query_cache_key(query)
+        return f"{query_key}:record:{record_id}"
+    
     async def execute_query(
         self,
         query: Query,
@@ -130,24 +225,99 @@ class QueryExecutor:
         Returns:
             Result containing a list of matching record IDs or an error
         """
-        # Check cache first
-        if not force_refresh and query.id:
-            cached_result = self._get_from_cache(self._result_cache, query.id)
-            if cached_result is not None:
-                return Success(cached_result)
+        if not self.cache_enabled or force_refresh:
+            # Skip cache if disabled or forcing refresh
+            return await self._execute_query_fresh(query, session)
+            
+        # Generate cache key
+        cache_key = self._generate_query_cache_key(query)
         
+        # Try to get from modern cache first
+        try:
+            query_cache = await self.get_query_cache()
+            cached_result = await query_cache.get(cache_key)
+            
+            if cached_result is not None:
+                self.logger.debug(f"Modern cache hit for query: {cache_key}")
+                return Success(cached_result)
+                
+        except Exception as e:
+            self.logger.warning(f"Error accessing modern cache: {e}")
+            
+            # Try legacy cache as fallback
+            if query.id:
+                cached_result = self._get_from_cache(self._legacy_result_cache, query.id)
+                if cached_result is not None:
+                    return Success(cached_result)
+        
+        # Cache miss or error, execute the query
+        result = await self._execute_query_fresh(query, session)
+        
+        # Cache successful results
+        if result.is_success:
+            try:
+                # Cache in modern cache
+                query_cache = await self.get_query_cache()
+                tags = [f"meta_type:{query.query_meta_type_id}"]
+                
+                # Add tags for dependent meta types from query paths
+                query_paths = set()
+                for qv in (query.query_values or []):
+                    if qv.query_path_id:
+                        query_paths.add(qv.query_path_id)
+                
+                if query_paths:
+                    # Get path information for tagging
+                    if session is None:
+                        async with enhanced_async_session() as tmp_session:
+                            for path_id in query_paths:
+                                path = await tmp_session.get(QueryPath, path_id)
+                                if path and path.target_meta_type_id:
+                                    tags.append(f"meta_type:{path.target_meta_type_id}")
+                    else:
+                        for path_id in query_paths:
+                            path = await session.get(QueryPath, path_id)
+                            if path and path.target_meta_type_id:
+                                tags.append(f"meta_type:{path.target_meta_type_id}")
+                
+                # Store in cache with tags for efficient invalidation
+                await query_cache.set(
+                    key=cache_key,
+                    result=result.value,
+                    tags=tags,
+                    ttl=self.cache_ttl
+                )
+                
+            except Exception as e:
+                self.logger.warning(f"Error storing in modern cache: {e}")
+                
+                # Use legacy cache as fallback
+                if query.id:
+                    self._add_to_cache(self._legacy_result_cache, query.id, result.value)
+        
+        return result
+    
+    async def _execute_query_fresh(
+        self,
+        query: Query,
+        session: Optional[AsyncSession] = None,
+    ) -> Result[List[str]]:
+        """
+        Execute a query without using the cache.
+        
+        Args:
+            query: The query to execute
+            session: Optional database session
+            
+        Returns:
+            Result containing a list of matching record IDs or an error
+        """
         # Create a session if not provided
         if session is None:
             async with enhanced_async_session() as session:
-                result = await self._execute_query(query, session)
+                return await self._execute_query(query, session)
         else:
-            result = await self._execute_query(query, session)
-            
-        # Cache successful results
-        if result.is_success and query.id:
-            self._add_to_cache(self._result_cache, query.id, result.unwrap())
-            
-        return result
+            return await self._execute_query(query, session)
     
     async def _execute_query(
         self,
@@ -411,7 +581,7 @@ class QueryExecutor:
                 continue
             
             # Get result IDs as a set
-            result_ids = set(result.unwrap())
+            result_ids = set(result.value)
             subquery_results.append(result_ids)
         
         # Combine results based on match type
@@ -491,40 +661,97 @@ class QueryExecutor:
         Returns:
             Result containing True if the record matches, False otherwise
         """
-        # Check cache first
-        if not force_refresh and query.id:
-            cache_key = (query.id, record_id)
-            cached_result = self._get_from_cache(self._record_match_cache, cache_key)
-            if cached_result is not None:
-                return Success(cached_result)
+        if not self.cache_enabled or force_refresh:
+            # Skip cache if disabled or forcing refresh
+            return await self._check_record_matches_fresh(query, record_id, session)
+            
+        # Generate cache key
+        cache_key = self._generate_record_cache_key(query, record_id)
         
+        # Try to get from modern cache first
+        try:
+            record_cache = await self.get_record_cache()
+            cached_result = await record_cache.get(cache_key)
+            
+            if cached_result is not None:
+                self.logger.debug(f"Modern cache hit for record match: {cache_key}")
+                return Success(cached_result)
+                
+        except Exception as e:
+            self.logger.warning(f"Error accessing modern cache for record match: {e}")
+            
+            # Try legacy cache as fallback
+            if query.id:
+                legacy_key = (query.id, record_id)
+                cached_result = self._get_from_cache(self._legacy_record_match_cache, legacy_key)
+                if cached_result is not None:
+                    return Success(cached_result)
+        
+        # Cache miss or error, do the check
+        result = await self._check_record_matches_fresh(query, record_id, session)
+        
+        # Cache successful results
+        if result.is_success:
+            try:
+                # Cache in modern cache
+                record_cache = await self.get_record_cache()
+                tags = [
+                    f"meta_type:{query.query_meta_type_id}",
+                    f"record:{record_id}"
+                ]
+                
+                # Store in cache with tags for efficient invalidation
+                await record_cache.set(
+                    key=cache_key,
+                    result=result.value,
+                    tags=tags,
+                    ttl=self.cache_ttl
+                )
+                
+            except Exception as e:
+                self.logger.warning(f"Error storing record match in modern cache: {e}")
+                
+                # Use legacy cache as fallback
+                if query.id:
+                    legacy_key = (query.id, record_id)
+                    self._add_to_cache(self._legacy_record_match_cache, legacy_key, result.value)
+        
+        return result
+        
+    async def _check_record_matches_fresh(
+        self,
+        query: Query,
+        record_id: str,
+        session: Optional[AsyncSession] = None,
+    ) -> Result[bool]:
+        """
+        Check if a record matches a query without using the cache.
+        
+        Args:
+            query: The query to check against
+            record_id: The record ID to check
+            session: Optional database session
+            
+        Returns:
+            Result containing True if the record matches, False otherwise
+        """
         # Optimization for simple queries - use a direct check with EXISTS
         # to avoid fetching all matching records when possible
         if self._can_use_optimized_check(query):
             try:
-                result = await self._check_record_direct(query, record_id, session)
-                
-                # Cache the result
-                if query.id:
-                    cache_key = (query.id, record_id)
-                    self._add_to_cache(self._record_match_cache, cache_key, result.unwrap())
-                
-                return result
+                return await self._check_record_direct(query, record_id, session)
             except Exception as e:
                 self.logger.warning(f"Optimized check failed, falling back to full query: {e}")
                 # Fall back to full query execution
         
         # Execute the full query and check if the record is in the results
-        result = await self.execute_query(query, session, force_refresh)
+        result = await self.execute_query(query, session, force_refresh=True)
         
         if result.is_failure:
             return result
         
-        # Cache the match result
-        is_match = record_id in result.unwrap()
-        if query.id:
-            cache_key = (query.id, record_id)
-            self._add_to_cache(self._record_match_cache, cache_key, is_match)
+        # Check if the record is in the results
+        is_match = record_id in result.value
         
         return Success(is_match)
         
@@ -693,12 +920,47 @@ class QueryExecutor:
         Returns:
             Result containing the count of matching records
         """
+        # Generate cache key with count prefix
+        cache_key = f"count:{self._generate_query_cache_key(query)}"
+        
+        # Try the cache first if enabled and not forcing refresh
+        if self.cache_enabled and not force_refresh:
+            try:
+                query_cache = await self.get_query_cache()
+                cached_result = await query_cache.get(cache_key)
+                
+                if cached_result is not None:
+                    self.logger.debug(f"Cache hit for count: {cache_key}")
+                    return Success(cached_result)
+            except Exception as e:
+                self.logger.warning(f"Error accessing cache for count: {e}")
+        
         # For simple counting, we can use an optimized approach that
         # avoids fetching all records
         if self._can_use_optimized_count(query):
             try:
                 # Try the optimized count method first
                 result = await self._count_direct(query, session)
+                
+                # Cache the result if successful
+                if result.is_success and self.cache_enabled:
+                    try:
+                        query_cache = await self.get_query_cache()
+                        tags = [f"meta_type:{query.query_meta_type_id}", "count"]
+                        
+                        # Add same query result tags
+                        query_result_key = self._generate_query_cache_key(query)
+                        tags.append(f"query:{query_result_key}")
+                        
+                        await query_cache.set(
+                            key=cache_key,
+                            result=result.value,
+                            tags=tags,
+                            ttl=self.cache_ttl
+                        )
+                    except Exception as e:
+                        self.logger.warning(f"Error caching count result: {e}")
+                
                 return result
             except Exception as e:
                 self.logger.warning(f"Optimized count failed, falling back to full query: {e}")
@@ -710,8 +972,30 @@ class QueryExecutor:
         if result.is_failure:
             return result
         
-        # Return the count of matching records
-        return Success(len(result.unwrap()))
+        # Count the results
+        count = len(result.value)
+        
+        # Cache the count result
+        if self.cache_enabled:
+            try:
+                query_cache = await self.get_query_cache()
+                tags = [f"meta_type:{query.query_meta_type_id}", "count"]
+                
+                # Add same query result tags
+                query_result_key = self._generate_query_cache_key(query)
+                tags.append(f"query:{query_result_key}")
+                
+                await query_cache.set(
+                    key=cache_key,
+                    result=count,
+                    tags=tags,
+                    ttl=self.cache_ttl
+                )
+            except Exception as e:
+                self.logger.warning(f"Error caching count result: {e}")
+        
+        # Return the count
+        return Success(count)
     
     def _can_use_optimized_count(self, query: Query) -> bool:
         """
@@ -762,7 +1046,7 @@ class QueryExecutor:
             count_query = self._build_count_query(query)
             
             # Execute the query
-            result = await session.execute(text(count_query.query), count_query.params)
+            result = await session.execute(text(count_query["query"]), count_query["params"])
             count = result.scalar() or 0
             
             return Success(count)
@@ -797,6 +1081,186 @@ class QueryExecutor:
             "query": count_query,
             "params": {}
         }
+    
+    async def invalidate_cache_for_meta_type(self, meta_type_id: str) -> int:
+        """
+        Invalidate all cached query results for a specific meta type.
+        
+        This is useful when records of a certain type are modified,
+        to ensure that query results remain consistent.
+        
+        Args:
+            meta_type_id: The meta type ID to invalidate
+            
+        Returns:
+            Number of cache entries invalidated
+        """
+        try:
+            # Get cache manager
+            cache_manager = get_cache_manager()
+            
+            # Invalidate by tag
+            tag = f"meta_type:{meta_type_id}"
+            count = await cache_manager.invalidate_by_tags(tag)
+            
+            self.logger.debug(f"Invalidated {count} query cache entries for meta type: {meta_type_id}")
+            return count
+            
+        except Exception as e:
+            self.logger.warning(f"Error invalidating query cache for meta type {meta_type_id}: {e}")
+            return 0
+    
+    async def invalidate_cache_for_record(self, record_id: str) -> int:
+        """
+        Invalidate all cached record match checks for a specific record.
+        
+        This is useful when a record is modified, to ensure that
+        record match checks remain consistent.
+        
+        Args:
+            record_id: The record ID to invalidate
+            
+        Returns:
+            Number of cache entries invalidated
+        """
+        try:
+            # Get cache manager
+            cache_manager = get_cache_manager()
+            
+            # Invalidate by tag
+            tag = f"record:{record_id}"
+            count = await cache_manager.invalidate_by_tags(tag)
+            
+            self.logger.debug(f"Invalidated {count} record match cache entries for record: {record_id}")
+            return count
+            
+        except Exception as e:
+            self.logger.warning(f"Error invalidating record match cache for record {record_id}: {e}")
+            return 0
+    
+    async def invalidate_cache_for_query(self, query_id: str) -> int:
+        """
+        Invalidate all cached results for a specific query.
+        
+        This is useful when a query is modified, to ensure that
+        query results remain consistent.
+        
+        Args:
+            query_id: The query ID to invalidate
+            
+        Returns:
+            Number of cache entries invalidated
+        """
+        try:
+            # Get cache manager
+            cache_manager = get_cache_manager()
+            
+            # Invalidate query results cache
+            query_cache = await self.get_query_cache()
+            count = await query_cache.invalidate(key=f"query:{query_id}")
+            
+            # Invalidate record match cache
+            record_cache = await self.get_record_cache()
+            count += await record_cache.invalidate(tag=f"query:{query_id}")
+            
+            # Invalidate count cache
+            count += await query_cache.invalidate(key=f"count:query:{query_id}")
+            
+            # Clean up legacy cache
+            if query_id in self._legacy_result_cache:
+                del self._legacy_result_cache[query_id]
+                count += 1
+                
+            # Clean up legacy record match cache
+            legacy_record_keys = [k for k in self._legacy_record_match_cache.keys() if k[0] == query_id]
+            for k in legacy_record_keys:
+                del self._legacy_record_match_cache[k]
+                count += 1
+            
+            self.logger.debug(f"Invalidated {count} cache entries for query: {query_id}")
+            return count
+            
+        except Exception as e:
+            self.logger.warning(f"Error invalidating cache for query {query_id}: {e}")
+            
+            # Try to clean up legacy cache as fallback
+            count = 0
+            if query_id in self._legacy_result_cache:
+                del self._legacy_result_cache[query_id]
+                count += 1
+                
+            legacy_record_keys = [k for k in self._legacy_record_match_cache.keys() if k[0] == query_id]
+            for k in legacy_record_keys:
+                del self._legacy_record_match_cache[k]
+                count += 1
+                
+            return count
+    
+    async def clear_cache(self) -> int:
+        """
+        Clear all query caches.
+        
+        Returns:
+            Number of cache entries cleared
+        """
+        try:
+            # Get the caches
+            query_cache = await self.get_query_cache()
+            record_cache = await self.get_record_cache()
+            
+            # Clear the caches
+            count1 = await query_cache.cache.clear()
+            count2 = await record_cache.cache.clear()
+            
+            # Clear legacy caches
+            count3 = len(self._legacy_result_cache)
+            count4 = len(self._legacy_record_match_cache)
+            self._legacy_result_cache.clear()
+            self._legacy_record_match_cache.clear()
+            
+            total = count1 + count2 + count3 + count4
+            self.logger.debug(f"Cleared {total} cache entries")
+            return total
+            
+        except Exception as e:
+            self.logger.warning(f"Error clearing query caches: {e}")
+            
+            # Try to clear legacy caches as fallback
+            count = len(self._legacy_result_cache) + len(self._legacy_record_match_cache)
+            self._legacy_result_cache.clear()
+            self._legacy_record_match_cache.clear()
+            
+            return count
+    
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics for the query caches.
+        
+        Returns:
+            Dictionary of cache statistics
+        """
+        stats = {
+            "query_cache": {},
+            "record_cache": {},
+            "legacy_cache": {
+                "result_size": len(self._legacy_result_cache),
+                "record_match_size": len(self._legacy_record_match_cache)
+            }
+        }
+        
+        try:
+            # Get stats for modern caches
+            query_cache = await self.get_query_cache()
+            record_cache = await self.get_record_cache()
+            
+            stats["query_cache"] = await query_cache.get_stats()
+            stats["record_cache"] = await record_cache.get_stats()
+            
+        except Exception as e:
+            self.logger.warning(f"Error getting cache stats: {e}")
+            stats["error"] = str(e)
+            
+        return stats
 
 
 # Create singleton instance
@@ -811,3 +1275,95 @@ def get_query_executor() -> QueryExecutor:
         The query executor instance
     """
     return query_executor
+
+
+# Decorator for query result caching
+def cache_query_result(
+    ttl: Optional[int] = 300,
+    key_prefix: Optional[str] = None,
+    tags: Optional[List[str]] = None,
+) -> Callable:
+    """
+    Decorator for caching query execution results.
+    
+    This decorator can be used on methods that execute database queries,
+    to cache their results for performance. It integrates with the
+    QueryExecutor's caching system.
+    
+    Args:
+        ttl: Time-to-live for cache entries in seconds (default: 300)
+        key_prefix: Optional prefix for cache keys
+        tags: Optional list of tags for cache invalidation
+        
+    Returns:
+        Decorator function
+    """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Get query executor
+            executor = get_query_executor()
+            
+            if not executor.cache_enabled:
+                # Caching disabled, just call the function
+                return await func(*args, **kwargs)
+            
+            # Generate cache key
+            prefix = key_prefix or func.__qualname__
+            
+            # Hash the arguments to create a deterministic key
+            try:
+                # Convert args and kwargs to JSON for consistent hashing
+                args_str = json.dumps([str(arg) for arg in args], sort_keys=True)
+                kwargs_str = json.dumps({k: str(v) for k, v in kwargs.items()}, sort_keys=True)
+                key_str = f"{prefix}:{args_str}:{kwargs_str}"
+                key = f"func:{hashlib.md5(key_str.encode('utf-8')).hexdigest()}"
+            except (TypeError, ValueError):
+                # Fall back to simple key if args are not JSON serializable
+                key = f"func:{prefix}:{id(args)}:{id(kwargs)}"
+            
+            # Try to get from cache
+            try:
+                query_cache = await executor.get_query_cache()
+                
+                cached_result = await query_cache.get(key)
+                if cached_result is not None:
+                    # Cache hit
+                    return cached_result
+            except Exception as e:
+                # Log error but continue with function execution
+                logging.getLogger(__name__).warning(f"Error accessing cache: {e}")
+            
+            # Cache miss or error, call the function
+            result = await func(*args, **kwargs)
+            
+            # Store in cache if successful
+            try:
+                query_cache = await executor.get_query_cache()
+                
+                # Merge provided tags with default tags
+                all_tags = list(tags or [])
+                if hasattr(args[0], '__class__'):
+                    # Add class name as tag if first arg is self
+                    all_tags.append(f"class:{args[0].__class__.__name__}")
+                all_tags.append(f"func:{func.__name__}")
+                
+                await query_cache.set(
+                    key=key,
+                    result=result,
+                    tags=all_tags,
+                    ttl=ttl
+                )
+            except Exception as e:
+                # Log error but return the result anyway
+                logging.getLogger(__name__).warning(f"Error storing in cache: {e}")
+            
+            return result
+        
+        # Only works with async functions
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError("cache_query_result can only be used with async functions")
+        
+        return async_wrapper
+    
+    return decorator

@@ -8,7 +8,8 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from uno.queries.executor import QueryExecutor, QueryExecutionError
+from uno.core.caching import QueryCache
+from uno.queries.executor import QueryExecutor, QueryExecutionError, cache_query_result
 from uno.queries.objs import Query, QueryPath, QueryValue
 from uno.core.errors.result import Ok, Err
 
@@ -87,20 +88,21 @@ class TestQueryExecutor:
         assert result.is_ok()
         assert result.unwrap() == []
 
-    async def test_execute_query_cache(self, executor, mock_session, mock_query):
-        """Test query result caching."""
+    async def test_execute_query_legacy_cache(self, executor, mock_session, mock_query):
+        """Test query result caching with legacy cache."""
         # Setup
         mock_query.query_values = []
-        executor._result_cache[mock_query.id] = {
+        executor._legacy_result_cache[mock_query.id] = {
             'result': ['cached1', 'cached2'], 
             'expires': time.time() + 300
         }
         
         # Execute with cache enabled
-        result1 = await executor.execute_query(mock_query, mock_session)
-        
-        # Execute with force refresh
-        result2 = await executor.execute_query(mock_query, mock_session, force_refresh=True)
+        with patch.object(executor, 'get_query_cache', side_effect=Exception("Test error")):
+            result1 = await executor.execute_query(mock_query, mock_session)
+            
+            # Execute with force refresh
+            result2 = await executor.execute_query(mock_query, mock_session, force_refresh=True)
         
         # Assert
         assert result1.is_ok()
@@ -108,6 +110,33 @@ class TestQueryExecutor:
         
         assert result2.is_ok()
         assert result2.unwrap() == []  # Should return fresh result
+        
+    async def test_execute_query_modern_cache(self, executor, mock_session, mock_query):
+        """Test query result caching with modern cache system."""
+        # Setup
+        mock_query.query_values = []
+        mock_cache = MagicMock(spec=QueryCache)
+        mock_cache.get.return_value = ['cached1', 'cached2']
+        
+        # Mock the cache getter
+        with patch.object(executor, 'get_query_cache', return_value=mock_cache):
+            # Execute with cache enabled
+            result1 = await executor.execute_query(mock_query, mock_session)
+            
+            # Execute with force refresh
+            result2 = await executor.execute_query(mock_query, mock_session, force_refresh=True)
+        
+        # Assert
+        assert result1.is_ok()
+        assert result1.unwrap() == ['cached1', 'cached2']  # Should return cached result
+        
+        assert result2.is_ok()
+        assert result2.unwrap() == []  # Should return fresh result
+        
+        # Verify cache was accessed
+        mock_cache.get.assert_called_once()
+        # Verify cache was not accessed for force refresh
+        assert mock_cache.get.call_count == 1
 
     async def test_execute_query_values(self, executor, mock_session, mock_query, mock_query_value, mock_path):
         """Test executing query values."""
@@ -133,23 +162,43 @@ class TestQueryExecutor:
         assert result == ['record1', 'record2']
         assert mock_session.execute.call_count == 2
 
-    async def test_check_record_matches_query_cached(self, executor, mock_session, mock_query):
-        """Test checking if a record matches a query with cached result."""
+    async def test_check_record_matches_query_legacy_cached(self, executor, mock_session, mock_query):
+        """Test checking if a record matches a query with legacy cached result."""
         # Setup
         record_id = "test-record-1"
         cache_key = (mock_query.id, record_id)
-        executor._record_match_cache[cache_key] = {
+        executor._legacy_record_match_cache[cache_key] = {
             'result': True, 
             'expires': time.time() + 300
         }
         
-        # Execute
-        result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
+        # Execute with mock cache exception to fall back to legacy
+        with patch.object(executor, 'get_record_cache', side_effect=Exception("Test error")):
+            result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
         
         # Assert
         assert result.is_ok()
         assert result.unwrap() is True
         assert mock_session.execute.call_count == 0  # Should not query the database
+        
+    async def test_check_record_matches_query_modern_cached(self, executor, mock_session, mock_query):
+        """Test checking if a record matches a query with modern cached result."""
+        # Setup
+        record_id = "test-record-1"
+        mock_cache = MagicMock(spec=QueryCache)
+        mock_cache.get.return_value = True
+        
+        # Execute
+        with patch.object(executor, 'get_record_cache', return_value=mock_cache):
+            result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
+        
+        # Assert
+        assert result.is_ok()
+        assert result.unwrap() is True
+        assert mock_session.execute.call_count == 0  # Should not query the database
+        
+        # Verify cache was accessed
+        mock_cache.get.assert_called_once()
 
     async def test_check_record_matches_query_optimized(self, executor, mock_session, mock_query, mock_query_value):
         """Test optimized record matching."""
@@ -210,6 +259,65 @@ class TestQueryExecutor:
         assert result.is_err()
         assert "Error executing query" in str(result.unwrap_err())
 
+    async def test_count_query_matches_cached(self, executor, mock_session, mock_query):
+        """Test count query matches with cache."""
+        # Setup
+        mock_cache = MagicMock(spec=QueryCache)
+        mock_cache.get.return_value = 42
+        
+        # Execute with cache
+        with patch.object(executor, 'get_query_cache', return_value=mock_cache):
+            result = await executor.count_query_matches(mock_query, mock_session)
+        
+        # Assert
+        assert result.is_ok()
+        assert result.unwrap() == 42
+        # Verify cache was accessed
+        mock_cache.get.assert_called_once()
+        
+    async def test_cache_invalidation(self, executor, mock_query):
+        """Test cache invalidation methods."""
+        # Setup mock caches
+        mock_query_cache = MagicMock(spec=QueryCache)
+        mock_query_cache.invalidate.return_value = 5
+        mock_record_cache = MagicMock(spec=QueryCache)
+        mock_record_cache.invalidate.return_value = 3
+        
+        # Test query invalidation
+        with patch.object(executor, 'get_query_cache', return_value=mock_query_cache), \
+             patch.object(executor, 'get_record_cache', return_value=mock_record_cache):
+            count = await executor.invalidate_cache_for_query(mock_query.id)
+            
+        # Assert
+        assert count == 8  # 5 + 3
+        mock_query_cache.invalidate.assert_called()
+        mock_record_cache.invalidate.assert_called()
+        
+    async def test_cache_decorator(self):
+        """Test the cache_query_result decorator."""
+        mock_cache = MagicMock(spec=QueryCache)
+        mock_cache.get.side_effect = [None, "cached_result"]  # First None (miss), then hit
+        mock_cache.set.return_value = None
+        
+        executor = QueryExecutor()
+        
+        # Define a function with the decorator
+        @cache_query_result(ttl=60)
+        async def test_func(arg1, arg2=None):
+            return f"result-{arg1}-{arg2}"
+        
+        # Test cache miss
+        with patch.object(executor, 'get_query_cache', return_value=mock_cache), \
+             patch('uno.queries.executor.get_query_executor', return_value=executor):
+            result1 = await test_func("a", arg2="b")
+            result2 = await test_func("a", arg2="b")  # Should be cached now
+            
+        # Assert
+        assert result1 == "result-a-b"
+        assert result2 == "cached_result"
+        assert mock_cache.get.call_count == 2
+        mock_cache.set.assert_called_once()
+        
     async def test_complex_lookup_conditions(self, executor, mock_session, mock_query, mock_query_value, mock_path):
         """Test different lookup conditions."""
         # Setup

@@ -19,7 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.api.endpoint import UnoEndpoint, ListRouter
 from uno.api.endpoint_factory import UnoEndpointFactory
-from uno.dependencies.fastapi import get_db_session, inject_dependency
+from uno.dependencies.database import get_db_session
+
+# Helper function to replace inject_dependency
+def inject_dependency(interface_type):
+    def _inject(request):
+        from uno.dependencies.modern_provider import get_service_provider
+        provider = get_service_provider()
+        return provider.get_service(interface_type)
+    return _inject
 from uno.core.errors.result import Result
 from uno.reports.interfaces import (
     ReportTemplateServiceProtocol,

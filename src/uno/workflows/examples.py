@@ -12,15 +12,15 @@ for creating and managing user-defined notification workflows.
 import asyncio
 import logging
 import json
+import sys
 from typing import Dict, Any, List, Optional
-
-import inject
 
 from uno.database.db_manager import DBManager
 from uno.domain.events import DomainEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.enums import WorkflowDBEvent
 from uno.settings import uno_settings
+from uno.dependencies.scoped_container import get_service
 
 from uno.workflows.models import (
     WorkflowDefinition,
@@ -66,7 +66,7 @@ class OrderPlacedEvent(DomainEvent):
 async def create_example_workflow() -> str:
     """Create an example workflow for user registration notifications."""
     # Get the workflow service from the dependency injector
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     
     # Create a new workflow definition
     workflow = WorkflowDef(
@@ -125,10 +125,10 @@ async def create_example_workflow() -> str:
     # Create the workflow
     result = await workflow_service.create_workflow(workflow)
     
-    if result.is_err():
-        raise Exception(f"Failed to create workflow: {result.unwrap_err()}")
+    if result.is_failure:
+        raise Exception(f"Failed to create workflow: {result.error}")
     
-    workflow_id = result.unwrap()
+    workflow_id = result.value
     print(f"Created workflow with ID: {workflow_id}")
     
     return workflow_id
@@ -137,7 +137,7 @@ async def create_example_workflow() -> str:
 async def create_high_value_order_workflow() -> str:
     """Create an example workflow for high-value order notifications."""
     # Get the workflow service from the dependency injector
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     
     # Create a new workflow definition
     workflow = WorkflowDef(
@@ -224,10 +224,10 @@ async def create_high_value_order_workflow() -> str:
     # Create the workflow
     result = await workflow_service.create_workflow(workflow)
     
-    if result.is_err():
-        raise Exception(f"Failed to create workflow: {result.unwrap_err()}")
+    if result.is_failure:
+        raise Exception(f"Failed to create workflow: {result.error}")
     
-    workflow_id = result.unwrap()
+    workflow_id = result.value
     print(f"Created workflow with ID: {workflow_id}")
     
     return workflow_id
@@ -236,8 +236,8 @@ async def create_high_value_order_workflow() -> str:
 async def example_trigger_workflow_with_domain_event():
     """Example of triggering a workflow using a domain event."""
     # Get the event dispatcher and workflow event handler
-    event_dispatcher = inject.instance(EventDispatcher)
-    workflow_event_handler = inject.instance(WorkflowEventHandler)
+    event_dispatcher = get_service(EventDispatcher)
+    workflow_event_handler = get_service(WorkflowEventHandler)
     
     # Register the workflow event handler with the event dispatcher
     event_dispatcher.register_handler(UserCreatedEvent, workflow_event_handler)
@@ -258,13 +258,13 @@ async def example_trigger_workflow_with_domain_event():
 async def example_start_postgres_listener():
     """Example of starting the PostgreSQL event listener."""
     # Get the workflow service
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     
     # Start the PostgreSQL event listener
     result = await workflow_service.start_event_listener()
     
-    if result.is_err():
-        print(f"Failed to start event listener: {result.unwrap_err()}")
+    if result.is_failure:
+        print(f"Failed to start event listener: {result.error}")
         return
     
     print("PostgreSQL event listener started")
@@ -284,7 +284,7 @@ async def example_start_postgres_listener():
 async def example_manual_event_processing():
     """Example of manually processing a workflow event."""
     # Get the workflow service
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     
     # Create a mock event
     event = {
@@ -304,11 +304,38 @@ async def example_manual_event_processing():
     print(f"Processing event: {json.dumps(event, indent=2)}")
     result = await workflow_service.process_event(event)
     
-    if result.is_err():
-        print(f"Failed to process event: {result.unwrap_err()}")
+    if result.is_failure:
+        print(f"Failed to process event: {result.error}")
         return
     
-    print(f"Event processed: {json.dumps(result.unwrap(), indent=2)}")
+    print(f"Event processed: {json.dumps(result.value, indent=2)}")
+
+
+async def demonstrate_action_executors():
+    """Demonstrate the new action executor system."""
+    print("\n--- Action Executor Examples ---\n")
+    
+    # Import and run the action executor example
+    from uno.workflows.examples.action_executor_example import run_workflow_executor_example
+    await run_workflow_executor_example()
+
+
+async def demonstrate_query_integration():
+    """Demonstrate the query integration for workflow conditions."""
+    print("\n--- Query Integration Examples ---\n")
+    
+    # Import and run the query integration example
+    from uno.workflows.examples.query_integration import run_query_integration_example
+    await run_query_integration_example()
+
+
+async def demonstrate_advanced_targeting():
+    """Demonstrate advanced condition and recipient targeting."""
+    print("\n--- Advanced Targeting Examples ---\n")
+    
+    # Import and run the advanced targeting example
+    from uno.workflows.examples.advanced_targeting_example import run_advanced_targeting_example
+    await run_advanced_targeting_example()
 
 
 async def run_examples():
@@ -321,11 +348,11 @@ async def run_examples():
     order_workflow_id = await create_high_value_order_workflow()
     
     # List all active workflows
-    workflow_service = inject.instance(WorkflowService)
+    workflow_service = get_service(WorkflowService)
     workflows_result = await workflow_service.get_active_workflows()
     
-    if workflows_result.is_ok():
-        workflows = workflows_result.unwrap()
+    if workflows_result.is_success:
+        workflows = workflows_result.value
         print(f"Active workflows ({len(workflows)}):")
         for workflow in workflows:
             print(f"  - {workflow.name} (ID: {workflow.id})")
@@ -334,10 +361,32 @@ async def run_examples():
     await example_trigger_workflow_with_domain_event()
     await example_manual_event_processing()
     
+    # Demonstrate new features - Uncomment to run these demos
+    # await demonstrate_action_executors()
+    # await demonstrate_query_integration()
+    # await demonstrate_advanced_targeting()
+    
     # Uncomment to start the PostgreSQL event listener
     # await example_start_postgres_listener()
 
 
 if __name__ == "__main__":
-    # Run the examples
-    asyncio.run(run_examples())
+    # Parse command line arguments
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "executors":
+            asyncio.run(demonstrate_action_executors())
+        elif sys.argv[1] == "query":
+            asyncio.run(demonstrate_query_integration())
+        elif sys.argv[1] == "targeting":
+            asyncio.run(demonstrate_advanced_targeting())
+        elif sys.argv[1] == "all":
+            asyncio.run(run_examples())
+            asyncio.run(demonstrate_action_executors())
+            asyncio.run(demonstrate_query_integration())
+            asyncio.run(demonstrate_advanced_targeting())
+        else:
+            print(f"Unknown example: {sys.argv[1]}")
+            print("Available examples: executors, query, targeting, all")
+    else:
+        # Run the basic examples by default
+        asyncio.run(run_examples())
