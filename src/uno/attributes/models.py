@@ -37,6 +37,7 @@ attribute__value = Table(
         info={"edge": "ATTRIBUTES"},
     ),
     comment="The relationship between attributes and their values",
+    extend_existing=True,
 )
 
 attribute__meta = Table(
@@ -59,6 +60,7 @@ attribute__meta = Table(
         info={"edge": "ATTRIBUTES"},
     ),
     comment="The relationship between attributes and their meta_record values",
+    extend_existing=True,
 )
 
 
@@ -82,6 +84,7 @@ attribute_type___meta_type = Table(
         info={"edge": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types they describe",
+    extend_existing=True,
 )
 
 
@@ -105,6 +108,7 @@ attribute_type__value_type = Table(
         info={"edge": "ATTRIBUTE_TYPES"},
     ),
     comment="The relationship between attribute types and the meta_record types that are values for the attribute type",
+    extend_existing=True,
 )
 
 
@@ -117,7 +121,8 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
             name="uqi_attribute_type_name_group_id",
         ),
         {
-            "comment": "Defines the type of attribute that can be associated with an object"
+            "comment": "Defines the type of attribute that can be associated with an object",
+            "extend_existing": True
         },
     )
 
@@ -232,7 +237,7 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
 
 class AttributeModel(DefaultModelMixin, UnoModel):
     __tablename__ = "attribute"
-    __table_args__ = {"comment": "Attributes define characteristics of objects"}
+    __table_args__ = {"comment": "Attributes define characteristics of objects", "extend_existing": True}
 
     # Columns
     attribute_type_id: Mapped[PostgresTypes.String26] = mapped_column(

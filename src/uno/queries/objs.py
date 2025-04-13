@@ -21,6 +21,8 @@ from uno.enums import (
 from uno.settings import uno_settings
 from uno.database.db import FilterParam
 from uno.queries.filter import UnoFilter
+from uno.errors import UnoError
+from uno.core.errors.result import Result, Success, Failure
 
 
 class QueryPath(UnoObj[QueryPathModel], ObjectMixin):
@@ -227,6 +229,12 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
         "edit_schema": UnoSchemaConfig(
             include_fields=[
                 "name",
+                "description",
+                "query_meta_type_id",
+                "include_values",
+                "match_values",
+                "include_queries",
+                "match_queries",
             ],
         ),
     }
@@ -244,7 +252,7 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
     match_queries: Optional[Match] = Match.AND
 
     def __str__(self) -> str:
-        return self.name
+        return self.name if self.name else f"Query {self.id}"
 
     @classmethod
     async def filter(cls, filters: FilterParam = None) -> List["Query"]:
@@ -265,3 +273,42 @@ class Query(UnoObj[QueryModel], DefaultObjectMixin):
 
         # Convert to Query instances
         return [cls(**model) for model in models]
+        
+    async def execute(self) -> Result[List[str]]:
+        """
+        Execute the query and return matching record IDs.
+        
+        Returns:
+            Result containing a list of matching record IDs or an error
+        """
+        from uno.queries.executor import get_query_executor
+        
+        executor = get_query_executor()
+        return await executor.execute_query(self)
+    
+    async def check_record_match(self, record_id: str) -> Result[bool]:
+        """
+        Check if a specific record matches this query.
+        
+        Args:
+            record_id: The record ID to check
+            
+        Returns:
+            Result containing True if the record matches, False otherwise
+        """
+        from uno.queries.executor import get_query_executor
+        
+        executor = get_query_executor()
+        return await executor.check_record_matches_query(self, record_id)
+    
+    async def count_matches(self) -> Result[int]:
+        """
+        Count the number of records that match this query.
+        
+        Returns:
+            Result containing the count of matching records
+        """
+        from uno.queries.executor import get_query_executor
+        
+        executor = get_query_executor()
+        return await executor.count_query_matches(self)

@@ -5,7 +5,6 @@
 from sqlalchemy import (
     ForeignKey,
     Index,
-    ForeignKey,
     UniqueConstraint,
     Table,
     Column,

@@ -32,7 +32,9 @@ class SessionProvider(Protocol):
         ...
 
 
-class SqlQueryHandler(QueryHandler[Query[T], T], Generic[Query[T], T, ModelT], ABC):
+QT = TypeVar('QT', bound=Query[Any])
+
+class SqlQueryHandler(QueryHandler[QT, T], Generic[QT, T, ModelT], ABC):
     """
     Base class for SQL-based query handlers.
     
@@ -42,7 +44,7 @@ class SqlQueryHandler(QueryHandler[Query[T], T], Generic[Query[T], T, ModelT], A
     
     def __init__(
         self,
-        query_type: Type[Query[T]],
+        query_type: Type[QT],
         session_provider: SessionProvider,
         model_class: Type[ModelT],
         logger: Optional[logging.Logger] = None
@@ -61,7 +63,7 @@ class SqlQueryHandler(QueryHandler[Query[T], T], Generic[Query[T], T, ModelT], A
         self.model_class = model_class
     
     @abstractmethod
-    def build_query(self, query: Query[T]) -> Select:
+    def build_query(self, query: QT) -> Select:
         """
         Build an SQLAlchemy query for the given domain query.
         
@@ -86,7 +88,7 @@ class SqlQueryHandler(QueryHandler[Query[T], T], Generic[Query[T], T, ModelT], A
         """
         pass
     
-    async def _handle(self, query: Query[T]) -> T:
+    async def _handle(self, query: QT) -> T:
         """
         Handle a query by executing an optimized SQL query.
         

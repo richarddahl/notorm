@@ -56,6 +56,10 @@ For testing with dependencies:
 python 3.13.0+
 postgresql 16
 
+## Prefer modern open-source libraries
+
+When building uno, also review the best modern, well supported, mature python libraries over building functionality from scratch.
+
 ## Docker-First Approach
 This project uses a Docker-first approach for all database interactions. We never use local PostgreSQL installations for development, testing, or deployment. See DOCKER_FIRST.md for details.
 

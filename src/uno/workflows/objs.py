@@ -14,6 +14,7 @@ from uno.authorization.mixins import DefaultObjectMixin
 
 # Import additional types from auth objs to mirror their patterns
 from uno.authorization.objs import User, MetaType, MetaRecord
+from uno.queries.objs import Query
 from uno.workflows.models import (
     WorkflowDefinition,
     WorkflowTriggerModel,
@@ -91,6 +92,7 @@ class WorkflowCondition(UnoObj[WorkflowConditionModel], DefaultObjectMixin):
                 "workflow_id",
                 "condition_type",
                 "condition_config",
+                "query_id",
                 "name",
                 "description",
                 "order",
@@ -104,6 +106,8 @@ class WorkflowCondition(UnoObj[WorkflowConditionModel], DefaultObjectMixin):
     workflow: Optional["WorkflowDef"] = None
     condition_type: WorkflowConditionType = WorkflowConditionType.FIELD_VALUE
     condition_config: Dict[str, Any] = Field(default_factory=dict)
+    query_id: Optional[str] = None
+    query: Optional["Query"] = None  # Will be filled from relationship
     name: str = ""
     description: Optional[str] = None
     order: int = 0

@@ -231,9 +231,8 @@ class TimeValue(UnoObj[TimeValueModel], DefaultObjectMixin):
             ],
         ),
     }
+    terminate_filters = True
 
     # Fields
     name: str
     value: datetime.time
-
-    terminate_filters = True

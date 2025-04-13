@@ -31,6 +31,7 @@ from uno.settings import uno_settings
 user__group = Table(
     "user__group",
     UnoModel.metadata,
+    extend_existing=True,
     Column(
         "user_id",
         VARCHAR(26),
@@ -58,6 +59,7 @@ user__group = Table(
 user__role = Table(
     "user__role",
     UnoModel.metadata,
+    extend_existing=True,
     Column(
         "user_id",
         VARCHAR(26),
@@ -85,6 +87,7 @@ user__role = Table(
 role__permission = Table(
     "role__permission",
     UnoModel.metadata,
+    extend_existing=True,
     Column(
         "role_id",
         VARCHAR(26),
@@ -120,7 +123,7 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
             name="ck_user_is_superuser",
         ),
         UniqueConstraint("handle", "tenant_id", name="uq_user_handle_tenant_id"),
-        {"comment": "Application users"},
+        {"comment": "Application users", "extend_existing": True},
     )
 
     # Columns
@@ -199,6 +202,7 @@ class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
         UniqueConstraint("tenant_id", "name"),
         {
             "comment": "Application end-user groups",
+            "extend_existing": True
         },
     )
 
@@ -234,7 +238,7 @@ class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
 
 class ResponsibilityRoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     __tablename__ = "responsibility_role"
-    __table_args__ = {"comment": "Application process responsibility"}
+    __table_args__ = {"comment": "Application process responsibility", "extend_existing": True}
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -266,7 +270,7 @@ class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
-        {"comment": "Application roles"},
+        {"comment": "Application roles", "extend_existing": True},
     )
 
     # Columns
@@ -325,7 +329,7 @@ class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     __table_args__ = (
         Index("ix_tenant_name", "name"),
         UniqueConstraint("name"),
-        {"comment": "Application tenants"},
+        {"comment": "Application tenants", "extend_existing": True},
     )
 
     # Columns
@@ -335,12 +339,7 @@ class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
         doc="Role name",
     )
     tenant_type: Mapped[TenantType] = mapped_column(
-        ENUM(
-            TenantType,
-            name="tenanttype",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         server_default=TenantType.INDIVIDUAL.name,
         nullable=False,
         doc="Tenant type",
@@ -369,7 +368,7 @@ class PermissionModel(UnoModel):
     __table_args__ = (
         Index("ix_permission_meta_type_id_operation", "meta_type_id", "operation"),
         UniqueConstraint("meta_type_id", "operation"),
-        {"comment": "Application permissions"},
+        {"comment": "Application permissions", "extend_existing": True},
     )
 
     # Columns
@@ -391,11 +390,6 @@ class PermissionModel(UnoModel):
         },
     )
     operation: Mapped[SQLOperation] = mapped_column(
-        ENUM(
-            SQLOperation,
-            name="sqloperation",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         doc="sql.SQL Operation",
     )

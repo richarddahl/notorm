@@ -101,6 +101,10 @@ class WorkflowEngine:
             WorkflowConditionType.ROLE_BASED,
             self._handle_role_based_condition
         )
+        self.register_condition_handler(
+            WorkflowConditionType.QUERY_MATCH,
+            self._handle_query_match_condition
+        )
         
         # Register action handlers
         self.register_action_handler(
@@ -533,7 +537,12 @@ class WorkflowEngine:
                 self.logger.warning(f"No handler registered for condition type: {condition.condition_type}")
                 continue
             
-            result = handler(condition, event, context)
+            # Check if the handler is async
+            if asyncio.iscoroutinefunction(handler):
+                result = await handler(condition, event, context)
+            else:
+                result = handler(condition, event, context)
+                
             if result.is_err():
                 return result
             
@@ -722,6 +731,77 @@ class WorkflowEngine:
         # This is a placeholder implementation
         # In a real implementation, you would check user roles
         return Ok(True)
+        
+    async def _handle_query_match_condition(
+        self,
+        condition: WorkflowCondition,
+        event: WorkflowEventModel,
+        context: Dict[str, Any]
+    ) -> Result[bool, WorkflowError]:
+        """
+        Handle a query match condition by evaluating the record against a saved Query.
+        
+        This allows complex filtering using the query system to determine if a workflow
+        should execute for a given record. The query execution leverages the graph database
+        for complex queries that involve many joins, returning the IDs of matching records.
+        
+        Args:
+            condition: The workflow condition with a reference to a Query
+            event: The event that triggered the workflow
+            context: Additional context for condition evaluation
+            
+        Returns:
+            Result with True if the record matches the query, False otherwise
+        """
+        try:
+            # If no query is associated, return an error
+            if not condition.query_id:
+                return Err(WorkflowConditionError(
+                    "Query match condition requires a query_id but none was provided"
+                ))
+                
+            # Get payload data
+            payload = event.payload
+            if event.operation == WorkflowDBEvent.UPDATE:
+                # For updates, check against the new values
+                payload = payload.get("new", payload)
+                
+            # Get record ID from payload
+            record_id = payload.get("id")
+            if not record_id:
+                self.logger.warning("No record ID found in event payload")
+                return Ok(False)
+                
+            # Import Query class here to avoid circular imports
+            from uno.queries.objs import Query
+            
+            # Get the query
+            query = await Query.get(condition.query_id)
+            if not query:
+                return Err(WorkflowConditionError(
+                    f"Query with ID {condition.query_id} not found"
+                ))
+                
+            # Use the QueryExecutor to check if the record matches the query
+            # This leverages the graph database for complex queries
+            match_result = await query.check_record_match(record_id)
+            
+            if match_result.is_err():
+                return Err(WorkflowConditionError(
+                    f"Error executing query match: {match_result.unwrap_err()}"
+                ))
+                
+            # Return the match result (True if the record matches, False otherwise)
+            matched = match_result.unwrap()
+            self.logger.debug(f"Query match condition: record {record_id} {'matches' if matched else 'does not match'} query {condition.query_id}")
+            return Ok(matched)
+                
+        except Exception as e:
+            self.logger.exception(f"Error evaluating query match condition: {e}")
+            return Err(WorkflowConditionError(f"Error evaluating query match condition: {str(e)}"))
+            
+        # Fallback - assume no match
+        return Ok(False)
     
     # ===== Default action handlers =====
     

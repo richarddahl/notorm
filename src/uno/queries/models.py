@@ -40,6 +40,7 @@ query_value__values = Table(
         info={"edge": "VALUES"},
     ),
     Index("ix_query_value_id__value_id", "query_value_id", "value_id"),
+    extend_existing=True,
 )
 
 query__query_value = Table(
@@ -60,6 +61,7 @@ query__query_value = Table(
         info={"edge": "QUERIES"},
     ),
     Index("ix_query_id__query_value_id", "query_id", "query_value_id"),
+    extend_existing=True,
 )
 
 query__child_query = Table(
@@ -80,6 +82,7 @@ query__child_query = Table(
         info={"edge": "QUERIES"},
     ),
     Index("ix_query_id__child_query_id", "query_id", "childquery_id"),
+    extend_existing=True,
 )
 
 
@@ -92,7 +95,7 @@ class QueryPathModel(ModelMixin, UnoModel):
             "target_meta_type_id",
             "cypher_path",
         ),
-        {"comment": "Enables user-defined filtering via the graph DB."},
+        {"comment": "Enables user-defined filtering via the graph DB.", "extend_existing": True},
     )
     # Columns
     # name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -156,7 +159,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
             "match",
             "lookup",
         ),
-        {"comment": "User definable values for use in queries."},
+        {"comment": "User definable values for use in queries.", "extend_existing": True},
     )
 
     # Columns
@@ -171,21 +174,11 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
         },
     )
     include: Mapped[Include] = mapped_column(
-        ENUM(
-            Include,
-            name="include",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Include.INCLUDE,
     )
     match: Mapped[Match] = mapped_column(
-        ENUM(
-            Match,
-            name="match",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Match.AND,
     )
     lookup: Mapped[PostgresTypes.String12] = mapped_column(
@@ -209,7 +202,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
 
 class QueryModel(DefaultModelMixin, UnoModel):
     __tablename__ = "query"
-    __table_args__ = ({"comment": "User definable queries"},)
+    __table_args__ = ({"comment": "User definable queries", "extend_existing": True})
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -231,42 +224,22 @@ class QueryModel(DefaultModelMixin, UnoModel):
         },
     )
     include_values: Mapped[Include] = mapped_column(
-        ENUM(
-            Include,
-            name="include",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Include.INCLUDE,
         doc="Indicate if the query should return records including or excluding the queries results.",
     )
     match_values: Mapped[Match] = mapped_column(
-        ENUM(
-            Match,
-            name="match",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the filter values.",
     )
     include_queries: Mapped[Include] = mapped_column(
-        ENUM(
-            Include,
-            name="include",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Include.INCLUDE,
         doc="Indicate if the query should return records including or excluding the subqueries results.",
     )
     match_queries: Mapped[Match] = mapped_column(
-        ENUM(
-            Match,
-            name="match",
-            create_type=True,
-            schema=uno_settings.DB_SCHEMA,
-        ),
+        VARCHAR(50),
         insert_default=Match.AND,
         doc="Indicate if the query should return records matching all or any of the subquery values.",
     )

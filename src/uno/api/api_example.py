@@ -9,7 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Type
 from uuid import uuid4
 
 import uvicorn
@@ -44,7 +44,7 @@ from uno.api.service_api import (
 
 # Domain model
 
-@dataclass
+@dataclass(kw_only=True)
 class Product(Entity):
     """Product entity."""
     
@@ -53,8 +53,6 @@ class Product(Entity):
     price: float
     sku: str
     in_stock: bool = True
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert entity to a dictionary."""
@@ -70,7 +68,7 @@ class Product(Entity):
         }
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Order(AggregateRoot):
     """Order aggregate root."""
     
@@ -78,8 +76,6 @@ class Order(AggregateRoot):
     items: List[Dict[str, Any]] = field(default_factory=list)
     status: str = "pending"
     total: float = 0.0
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
     
     def add_item(self, product_id: str, quantity: int, price: float) -> None:
         """Add an item to the order."""

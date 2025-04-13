@@ -22,6 +22,7 @@ import uno.meta.sqlconfigs
 import uno.messaging.sqlconfigs
 import uno.reports.sqlconfigs
 import uno.values.sqlconfigs
+import uno.workflows.sqlconfigs
 
 from uno.utilities import import_from_path
 from uno.settings import uno_settings

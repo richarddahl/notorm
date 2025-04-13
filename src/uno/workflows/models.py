@@ -78,6 +78,7 @@ class WorkflowConditionType(enum.StrEnum):
     FIELD_VALUE = "field_value"
     TIME_BASED = "time_based"
     ROLE_BASED = "role_based"
+    QUERY_MATCH = "query_match"  # Uses existing QueryModel for complex conditions
     CUSTOM = "custom"
 
 
@@ -215,6 +216,13 @@ class WorkflowConditionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
         JSONB,
         default={},
         doc="Configuration for the condition",
+    )
+    query_id: Mapped[Optional[PostgresTypes.String26]] = mapped_column(
+        ForeignKey("query.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        doc="Reference to a QueryModel for complex condition evaluation (used with QUERY_MATCH type)",
+        info={"edge": "USES_QUERY", "reverse_edge": "USED_BY_CONDITIONS"},
     )
     name: Mapped[str] = mapped_column(
         default="",

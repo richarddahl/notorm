@@ -51,8 +51,13 @@ class UnoRegistry:
 
         Raises:
             UnoRegistryError: If a model with the same table name is already registered
+                             and it's not the same class
         """
         if table_name in self._models:
+            # Skip if trying to register the same class again
+            existing_class = self._models[table_name] 
+            if model_class.__name__ == existing_class.__name__:
+                return
             raise UnoRegistryError(
                 f"A Model class with the table name {table_name} already exists in the registry.",
                 "DUPLICATE_MODEL",

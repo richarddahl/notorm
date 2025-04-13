@@ -60,7 +60,7 @@ class DomainEvent(BaseModel):
         return cls.from_dict(json.loads(json_str))
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Entity(Generic[KeyT]):
     """
     Base class for all domain entities.
@@ -154,7 +154,7 @@ class Entity(Generic[KeyT]):
         return cls(**init_params)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class AggregateRoot(Entity[KeyT], Generic[KeyT]):
     """
     Base class for aggregate roots.

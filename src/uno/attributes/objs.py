@@ -73,7 +73,7 @@ class AttributeType(UnoObj[AttributeTypeModel], DefaultObjectMixin):
                 "required",
                 "multiple_allowed",
                 "comment_required",
-                "display_with_applicable_objects",
+                "display_with_objects",
                 "initial_comment",
             ],
         ),
@@ -81,21 +81,22 @@ class AttributeType(UnoObj[AttributeTypeModel], DefaultObjectMixin):
     terminate_filters = True
 
     # Fields
-    id: Optional[str]
+    id: Optional[str] = None
     name: str
     text: str
-    parent_id: Optional[str]
-    parent: Optional["AttributeType"]
-    describes: List[MetaType]
-    description_limiting_query_id: Optional[str]
-    description_limiting_query: Optional[Query]
-    value_type_limiting_query_id: Optional[str]
-    value_type_limiting_query: Optional[Query]
+    parent_id: Optional[str] = None
+    parent: Optional["AttributeType"] = None
+    describes: List[MetaType] = []
+    description_limiting_query_id: Optional[str] = None
+    description_limiting_query: Optional[Query] = None
+    value_type_limiting_query_id: Optional[str] = None
+    value_type_limiting_query: Optional[Query] = None
     required: bool = False
     multiple_allowed: bool = False
     comment_required: bool = False
-    display_with_applicable_objects: bool = False
+    display_with_objects: bool = False
     initial_comment: Optional[str] = None
+    value_types: List[MetaType] = []
 
     def __str__(self) -> str:
         return self.name

@@ -103,6 +103,14 @@ try:
 except ImportError:
     logging.debug("Vector search endpoints not available")
 
+# Admin UI
+try:
+    from uno.api.admin_ui import AdminUIRouter
+    admin_ui = AdminUIRouter(app)
+    logging.info("Admin UI router included")
+except ImportError:
+    logging.debug("Admin UI router not available")
+
 # Example domain endpoints using modern dependency injection
 # Comment out for now as they're causing issues
 # try:
