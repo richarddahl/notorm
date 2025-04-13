@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- Load WebAwesome components -->
+  <script type="module" src="static/components/app/wa-app-shell.js"></script>
+  <script type="module" src="static/components/admin/wa-admin-dashboard.js"></script>
+  <script type="module" src="static/components/authorization/wa-role-manager.js"></script>
+  <script type="module" src="static/components/monitoring/wa-system-monitor.js"></script>
+  <script type="module" src="static/components/vector-search/wa-semantic-search.js"></script>
+  <script type="module" src="static/components/reports/webawesome-report-builder.js"></script>
+  
+  <!-- Load Shoelace CDN components -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace.js"></script>
+  
+  <!-- Optional: Chart.js for advanced data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--sl-font-sans);
+      background-color: var(--sl-color-neutral-50);
+      color: var(--sl-color-neutral-900);
+    }
+    
+    .sl-theme-dark {
+      background-color: var(--sl-color-neutral-900);
+      color: var(--sl-color-neutral-100);
+    }
+    
+    /* Fix for Shoelace focus outline styles */
+    :focus-visible {
+      outline: 2px solid var(--sl-color-primary-600);
+      outline-offset: 2px;
+    }
+  </style>
+  
+  <!-- The main application shell component -->
+  <wa-app-shell></wa-app-shell>
+  
+  <script>
+    // Initialize any app-wide configuration
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check for stored theme preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const storedTheme = localStorage.getItem('wa-theme');
+      
+      if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add('sl-theme-dark');
+        document.documentElement.classList.remove('sl-theme-light');
+      } else {
+        document.documentElement.classList.add('sl-theme-light');
+        document.documentElement.classList.remove('sl-theme-dark');
+      }
+      
+      // Listen for theme changes
+      document.addEventListener('wa:theme-change', (e) => {
+        localStorage.setItem('wa-theme', e.detail.theme);
+      });
+    });
+  </script>
+{% endblock %}
