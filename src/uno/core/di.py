@@ -15,7 +15,8 @@ import threading
 from typing import Any, Dict, List, Optional, Set, Type, TypeVar, Callable, cast, Generic, get_type_hints
 import weakref
 
-from .errors import DomainError, ErrorCategory, with_error_context, with_async_error_context
+from .errors.base import ErrorCategory, UnoError
+from .errors import with_error_context
 from .protocols import ServiceProvider, ServiceScope, Initializable, Disposable, AsyncDisposable
 
 # =============================================================================
@@ -70,14 +71,14 @@ class ServiceRegistration(Generic[T]):
         
         # Validate the registration
         if instance is not None and lifetime != ServiceLifetime.SINGLETON:
-            raise DomainError(
+            raise UnoError(
                 message="Instance can only be provided for singleton services",
                 code="INVALID_SERVICE_REGISTRATION",
                 category=ErrorCategory.VALIDATION,
             )
         
         if factory is not None and implementation_type is not None and implementation_type != service_type:
-            raise DomainError(
+            raise UnoError(
                 message="Cannot specify both a factory and an implementation type",
                 code="INVALID_SERVICE_REGISTRATION",
                 category=ErrorCategory.VALIDATION,
@@ -172,10 +173,10 @@ class ServiceScopeImpl(ServiceScope):
             Instance of the requested service
             
         Raises:
-            DomainError: If the scope has been disposed or the service is not registered
+            UnoError: If the scope has been disposed or the service is not registered
         """
         if self._disposed:
-            raise DomainError(
+            raise UnoError(
                 message=f"Cannot resolve service {service_type.__name__} from a disposed scope",
                 code="SCOPE_DISPOSED",
                 category=ErrorCategory.UNEXPECTED,
@@ -282,7 +283,7 @@ class DIContainer(ServiceProvider):
             Instance of the requested service
             
         Raises:
-            DomainError: If the service is not registered
+            UnoError: If the service is not registered
         """
         return self._resolve_service(service_type, self._root_scope)
     
@@ -457,13 +458,13 @@ class DIContainer(ServiceProvider):
             An instance of the requested service
             
         Raises:
-            DomainError: If the service is not registered or cannot be created
+            UnoError: If the service is not registered or cannot be created
         """
         with with_error_context(service_type=service_type.__name__):
             # Check if the service is registered
             registration = self._registry.get_registration(service_type)
             if registration is None:
-                raise DomainError(
+                raise UnoError(
                     message=f"Service {service_type.__name__} is not registered",
                     code="SERVICE_NOT_REGISTERED",
                     category=ErrorCategory.UNEXPECTED,
@@ -506,7 +507,7 @@ class DIContainer(ServiceProvider):
             The created service instance
             
         Raises:
-            DomainError: If the service cannot be created
+            UnoError: If the service cannot be created
         """
         try:
             instance = None
@@ -542,7 +543,7 @@ class DIContainer(ServiceProvider):
                         else:
                             # Handle parameters without type hints
                             if param.default is inspect.Parameter.empty:
-                                raise DomainError(
+                                raise UnoError(
                                     message=f"Cannot resolve parameter '{name}' for {impl_type.__name__} without type hint",
                                     code="MISSING_TYPE_HINT",
                                     category=ErrorCategory.UNEXPECTED,
@@ -567,9 +568,9 @@ class DIContainer(ServiceProvider):
             
             return instance
         except Exception as e:
-            # Wrap in DomainError if not already
-            if not isinstance(e, DomainError):
-                raise DomainError(
+            # Wrap in UnoError if not already
+            if not isinstance(e, UnoError):
+                raise UnoError(
                     message=f"Failed to create instance of {registration.service_type.__name__}: {str(e)}",
                     code="SERVICE_CREATION_FAILED",
                     category=ErrorCategory.UNEXPECTED,
@@ -594,11 +595,11 @@ def get_container() -> DIContainer:
         The global container instance
         
     Raises:
-        DomainError: If the container is not initialized
+        UnoError: If the container is not initialized
     """
     global _container
     if _container is None:
-        raise DomainError(
+        raise UnoError(
             message="DI container is not initialized",
             code="CONTAINER_NOT_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
@@ -614,11 +615,11 @@ def initialize_container(logger: Optional[logging.Logger] = None) -> None:
         logger: Optional logger for diagnostic information
         
     Raises:
-        DomainError: If the container is already initialized
+        UnoError: If the container is already initialized
     """
     global _container
     if _container is not None:
-        raise DomainError(
+        raise UnoError(
             message="DI container is already initialized",
             code="CONTAINER_ALREADY_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
