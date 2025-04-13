@@ -457,3 +457,12 @@ def configure_workflow_module(binder):
         logger
     )
     binder.bind(WorkflowEventHandler, event_handler)
+    
+    # Initialize action executors, condition evaluators, and recipient resolvers
+    from uno.workflows.executor import init_executors
+    from uno.workflows.conditions import init_evaluators
+    from uno.workflows.recipients import init_resolvers
+    
+    init_executors()
+    init_evaluators()
+    init_resolvers()

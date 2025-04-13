@@ -279,6 +279,12 @@ class Failure(Generic[T]):
 # Type alias for Result
 Result = Union[Success[T], Failure[T]]
 
+# Alias Ok for backward compatibility
+Ok = Success
+
+# Alias Err for backward compatibility
+Err = Failure
+
 
 def of(value: T) -> Result[T]:
     """

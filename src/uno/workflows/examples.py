@@ -12,6 +12,7 @@ for creating and managing user-defined notification workflows.
 import asyncio
 import logging
 import json
+import sys
 from typing import Dict, Any, List, Optional
 
 from uno.database.db_manager import DBManager
@@ -310,6 +311,33 @@ async def example_manual_event_processing():
     print(f"Event processed: {json.dumps(result.value, indent=2)}")
 
 
+async def demonstrate_action_executors():
+    """Demonstrate the new action executor system."""
+    print("\n--- Action Executor Examples ---\n")
+    
+    # Import and run the action executor example
+    from uno.workflows.examples.action_executor_example import run_workflow_executor_example
+    await run_workflow_executor_example()
+
+
+async def demonstrate_query_integration():
+    """Demonstrate the query integration for workflow conditions."""
+    print("\n--- Query Integration Examples ---\n")
+    
+    # Import and run the query integration example
+    from uno.workflows.examples.query_integration import run_query_integration_example
+    await run_query_integration_example()
+
+
+async def demonstrate_advanced_targeting():
+    """Demonstrate advanced condition and recipient targeting."""
+    print("\n--- Advanced Targeting Examples ---\n")
+    
+    # Import and run the advanced targeting example
+    from uno.workflows.examples.advanced_targeting_example import run_advanced_targeting_example
+    await run_advanced_targeting_example()
+
+
 async def run_examples():
     """Run all the workflow examples."""
     # Configure logging
@@ -333,10 +361,32 @@ async def run_examples():
     await example_trigger_workflow_with_domain_event()
     await example_manual_event_processing()
     
+    # Demonstrate new features - Uncomment to run these demos
+    # await demonstrate_action_executors()
+    # await demonstrate_query_integration()
+    # await demonstrate_advanced_targeting()
+    
     # Uncomment to start the PostgreSQL event listener
     # await example_start_postgres_listener()
 
 
 if __name__ == "__main__":
-    # Run the examples
-    asyncio.run(run_examples())
+    # Parse command line arguments
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "executors":
+            asyncio.run(demonstrate_action_executors())
+        elif sys.argv[1] == "query":
+            asyncio.run(demonstrate_query_integration())
+        elif sys.argv[1] == "targeting":
+            asyncio.run(demonstrate_advanced_targeting())
+        elif sys.argv[1] == "all":
+            asyncio.run(run_examples())
+            asyncio.run(demonstrate_action_executors())
+            asyncio.run(demonstrate_query_integration())
+            asyncio.run(demonstrate_advanced_targeting())
+        else:
+            print(f"Unknown example: {sys.argv[1]}")
+            print("Available examples: executors, query, targeting, all")
+    else:
+        # Run the basic examples by default
+        asyncio.run(run_examples())

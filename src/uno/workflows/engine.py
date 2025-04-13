@@ -531,18 +531,30 @@ class WorkflowEngine:
         if not workflow.conditions:
             return Success(True)  # No conditions means the workflow should execute
         
+        # Try to use the advanced condition evaluators first
+        from uno.workflows.conditions import get_evaluator
+        
         for condition in workflow.conditions:
-            handler = self._condition_handlers.get(condition.condition_type)
-            if not handler:
-                self.logger.warning(f"No handler registered for condition type: {condition.condition_type}")
-                continue
+            # Try to get an advanced evaluator first
+            evaluator = get_evaluator(condition.condition_type)
             
-            # Check if the handler is async
-            if asyncio.iscoroutinefunction(handler):
-                result = await handler(condition, event, context)
+            if evaluator:
+                # Use the advanced evaluator
+                self.logger.debug(f"Using advanced evaluator for condition {condition.id} ({condition.name or condition.condition_type})")
+                result = await evaluator.evaluate(condition, event, context)
             else:
-                result = handler(condition, event, context)
+                # Fall back to legacy handler if no advanced evaluator is available
+                handler = self._condition_handlers.get(condition.condition_type)
+                if not handler:
+                    self.logger.warning(f"No handler or evaluator registered for condition type: {condition.condition_type}")
+                    continue
                 
+                # Check if the handler is async
+                if asyncio.iscoroutinefunction(handler):
+                    result = await handler(condition, event, context)
+                else:
+                    result = handler(condition, event, context)
+            
             if result.is_failure:
                 return result
             
@@ -565,25 +577,61 @@ class WorkflowEngine:
         
         results = []
         
+        # Import here to avoid circular imports
+        from uno.workflows.executor import (
+            get_executor, 
+            ActionExecutionContext
+        )
+        
         for action in workflow.actions:
             if not action.is_active:
                 continue
+            
+            # Try to get the action executor first
+            executor = get_executor(action.action_type)
+            if executor:
+                # Create action execution context
+                execution_context = ActionExecutionContext(
+                    workflow_id=workflow.id,
+                    workflow_name=workflow.name,
+                    action_id=action.id,
+                    action_name=action.name,
+                    event_data=event.payload,
+                    execution_id=context.get("execution_id", ""),
+                    variables=context.copy(),
+                    tenant_id=getattr(workflow, "tenant_id", None)
+                )
                 
-            handler = self._action_handlers.get(action.action_type)
-            if not handler:
-                self.logger.warning(f"No handler registered for action type: {action.action_type}")
-                continue
-            
-            # Resolve recipients for this action
-            recipients_result = await self._resolve_recipients(action, workflow, context)
-            if recipients_result.is_failure:
-                self.logger.warning(f"Failed to resolve recipients for action {action.id}: {recipients_result.error}")
-                recipients = []
+                # Resolve recipients for this action
+                recipients_result = await self._resolve_recipients(action, workflow, context)
+                if recipients_result.is_failure:
+                    self.logger.warning(f"Failed to resolve recipients for action {action.id}: {recipients_result.error}")
+                    recipients = []
+                else:
+                    recipients = recipients_result.value
+                
+                # Execute the action using the executor
+                self.logger.info(f"Executing action {action.id} ({action.name or action.action_type}) with executor")
+                action_result = await executor.execute(action, execution_context, recipients)
+                
             else:
-                recipients = recipients_result.value
-            
-            # Execute the action
-            action_result = handler(action, event, context, recipients)
+                # Fall back to the legacy handler if no executor is registered
+                handler = self._action_handlers.get(action.action_type)
+                if not handler:
+                    self.logger.warning(f"No handler or executor registered for action type: {action.action_type}")
+                    continue
+                
+                # Resolve recipients for this action
+                recipients_result = await self._resolve_recipients(action, workflow, context)
+                if recipients_result.is_failure:
+                    self.logger.warning(f"Failed to resolve recipients for action {action.id}: {recipients_result.error}")
+                    recipients = []
+                else:
+                    recipients = recipients_result.value
+                
+                # Execute the action using the legacy handler
+                self.logger.info(f"Executing action {action.id} ({action.name or action.action_type}) with legacy handler")
+                action_result = handler(action, event, context, recipients)
             
             if action_result.is_failure:
                 self.logger.warning(f"Action {action.id} ({action.name or action.action_type}) failed: {action_result.error}")
@@ -613,14 +661,28 @@ class WorkflowEngine:
         """Resolve all recipients for an action."""
         recipients = []
         
+        # Try to use the advanced recipient resolvers first
+        from uno.workflows.recipients import get_resolver
+        
         # First, get action-specific recipients
         for recipient in action.recipients:
-            resolver = self._recipient_resolvers.get(recipient.recipient_type)
-            if not resolver:
-                self.logger.warning(f"No resolver for recipient type: {recipient.recipient_type}")
-                continue
+            # Try to get an advanced resolver first
+            resolver = get_resolver(recipient.recipient_type)
+            
+            if resolver:
+                # Use the advanced resolver
+                self.logger.debug(f"Using advanced resolver for recipient {recipient.id} ({recipient.recipient_type})")
+                result = await resolver.resolve(recipient, context)
+            else:
+                # Fall back to legacy resolver if no advanced resolver is available
+                legacy_resolver = self._recipient_resolvers.get(recipient.recipient_type)
+                if not legacy_resolver:
+                    self.logger.warning(f"No resolver for recipient type: {recipient.recipient_type}")
+                    continue
+                    
+                # Legacy resolvers are synchronous
+                result = legacy_resolver(recipient, context)
                 
-            result = resolver(recipient, context)
             if result.is_failure:
                 self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.error}")
                 continue
@@ -633,12 +695,23 @@ class WorkflowEngine:
                 if recipient.action_id and recipient.action_id != action.id:
                     continue  # Skip recipients that are specific to other actions
                     
-                resolver = self._recipient_resolvers.get(recipient.recipient_type)
-                if not resolver:
-                    self.logger.warning(f"No resolver for recipient type: {recipient.recipient_type}")
-                    continue
+                # Try to get an advanced resolver first
+                resolver = get_resolver(recipient.recipient_type)
+                
+                if resolver:
+                    # Use the advanced resolver
+                    self.logger.debug(f"Using advanced resolver for recipient {recipient.id} ({recipient.recipient_type})")
+                    result = await resolver.resolve(recipient, context)
+                else:
+                    # Fall back to legacy resolver
+                    legacy_resolver = self._recipient_resolvers.get(recipient.recipient_type)
+                    if not legacy_resolver:
+                        self.logger.warning(f"No resolver for recipient type: {recipient.recipient_type}")
+                        continue
+                        
+                    # Legacy resolvers are synchronous
+                    result = legacy_resolver(recipient, context)
                     
-                result = resolver(recipient, context)
                 if result.is_failure:
                     self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.error}")
                     continue

@@ -7,6 +7,7 @@
   <script type="module" src="static/components/monitoring/wa-system-monitor.js"></script>
   <script type="module" src="static/components/vector-search/wa-semantic-search.js"></script>
   <script type="module" src="static/components/reports/webawesome-report-builder.js"></script>
+  <script type="module" src="static/components/workflows/index.js"></script>
   
   <!-- Load Shoelace CDN components -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
@@ -59,6 +60,36 @@
       document.addEventListener('wa:theme-change', (e) => {
         localStorage.setItem('wa-theme', e.detail.theme);
       });
+      
+      // Register the workflows module in the admin dashboard
+      const adminDashboard = document.querySelector('wa-admin-dashboard');
+      if (adminDashboard) {
+        // Wait for component to be defined and ready
+        customElements.whenDefined('wa-admin-dashboard').then(() => {
+          // Add the workflows module to the Integration group
+          const workflowsModule = {
+            id: 'workflows',
+            name: 'Workflows',
+            icon: 'account_tree',
+            description: 'Notification workflow management'
+          };
+          
+          // Add the module (component will handle this in a real implementation)
+          if (adminDashboard.moduleGroups && adminDashboard.moduleGroups.length >= 4) {
+            // Add to Integration group (index 3)
+            adminDashboard.moduleGroups[3].modules.push(workflowsModule);
+            // Force refresh
+            adminDashboard.requestUpdate();
+          }
+          
+          // Handle navigation to workflows
+          adminDashboard.addEventListener('module-selected', (e) => {
+            if (e.detail.moduleId === 'workflows') {
+              window.location.href = '/workflows';
+            }
+          });
+        });
+      }
     });
   </script>
 {% endblock %}
