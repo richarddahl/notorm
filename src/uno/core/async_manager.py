@@ -28,7 +28,7 @@ from uno.core.async_utils import (
 T = TypeVar('T')
 
 
-# Module-level singleton
+# Legacy module-level singleton (will be removed in future version)
 _async_manager_instance: Optional['AsyncManager'] = None
 
 
@@ -37,21 +37,47 @@ def get_async_manager(
     shutdown_timeout: float = 30.0,
 ) -> 'AsyncManager':
     """
-    Get the singleton instance of the AsyncManager.
+    Get an instance of the AsyncManager.
+    
+    This function provides an instance of the AsyncManager, preferring
+    to get it from the DI system but falling back to a legacy singleton
+    pattern when necessary.
     
     Args:
         logger: Optional logger instance
         shutdown_timeout: Maximum time to wait for shutdown in seconds
         
     Returns:
-        The AsyncManager instance
+        An AsyncManager instance
     """
-    global _async_manager_instance
-    
-    if _async_manager_instance is None:
-        _async_manager_instance = AsyncManager(logger, shutdown_timeout)
-    
-    return _async_manager_instance
+    # First try to get the manager from the DI system
+    try:
+        from uno.dependencies.modern_provider import get_service, register_singleton
+        
+        try:
+            # Try to get from the DI container
+            return get_service(AsyncManager)
+        except Exception:
+            # If not available, create a new instance
+            instance = AsyncManager(logger, shutdown_timeout)
+            
+            # Register in the DI container for future use
+            try:
+                register_singleton(AsyncManager, instance)
+            except Exception:
+                # Ignore registration errors if DI system not fully initialized
+                pass
+                
+            return instance
+            
+    except ImportError:
+        # Fall back to legacy singleton approach if DI not available
+        global _async_manager_instance
+        
+        if _async_manager_instance is None:
+            _async_manager_instance = AsyncManager(logger, shutdown_timeout)
+        
+        return _async_manager_instance
 
 
 class AsyncManager:

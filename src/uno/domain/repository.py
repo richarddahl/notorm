@@ -321,33 +321,87 @@ class UnoDBRepository(Repository[T]):
     
     @property
     def db(self):
-        """Get the database instance, creating it if necessary."""
+        """
+        Get the database instance, creating it if necessary.
+        
+        This uses a lazy-loading pattern for the database connection,
+        but prefers to use the injected db_factory if available.
+        """
         if self._db is None:
-            from uno.database.db import UnoDBFactory
-            from uno.model import UnoModel
-            # Convert domain entity to UnoModel wrapper if needed
-            model_type = getattr(self.entity_type, '__uno_model__', None)
-            model_instance = model_type() if model_type else UnoModel()
-            self._db = self.db_factory or UnoDBFactory(model_instance)
+            # Try to get from DI system first
+            try:
+                from uno.dependencies.modern_provider import get_service
+                from uno.database.db import UnoDB
+                
+                try:
+                    # Try to get from the DI container
+                    self._db = get_service(UnoDB)
+                except Exception:
+                    # Fall back to manual creation
+                    from uno.database.db import UnoDBFactory
+                    from uno.model import UnoModel
+                    # Convert domain entity to UnoModel wrapper if needed
+                    model_type = getattr(self.entity_type, '__uno_model__', None)
+                    model_instance = model_type() if model_type else UnoModel()
+                    self._db = self.db_factory or UnoDBFactory(model_instance)
+            except ImportError:
+                # Fall back to manual creation if DI not available
+                from uno.database.db import UnoDBFactory
+                from uno.model import UnoModel
+                # Convert domain entity to UnoModel wrapper if needed
+                model_type = getattr(self.entity_type, '__uno_model__', None)
+                model_instance = model_type() if model_type else UnoModel()
+                self._db = self.db_factory or UnoDBFactory(model_instance)
+                
         return self._db
     
     @property
     def batch_ops(self):
-        """Get the batch operations instance, creating it if necessary."""
+        """
+        Get the batch operations instance, creating it if necessary.
+        
+        This uses a lazy-loading pattern for batch operations,
+        with DI integration where available.
+        """
         if self._batch_ops is None and self.use_batch_operations:
-            from uno.queries.batch_operations import BatchOperations, BatchConfig
-            
-            # Get the model class
-            model_class = getattr(self.entity_type, '__uno_model__', self.entity_type)
-            
-            # Create batch operations with default config
-            self._batch_ops = BatchOperations(
-                model_class=model_class,
-                batch_config=BatchConfig(
-                    batch_size=self.batch_size,
-                    collect_metrics=True,
-                ),
-            )
+            # Try to get from DI system first
+            try:
+                from uno.dependencies.modern_provider import get_service
+                from uno.queries.batch_operations import BatchOperations
+                
+                try:
+                    # Try to get from the DI container
+                    self._batch_ops = get_service(BatchOperations)
+                except Exception:
+                    # Fall back to manual creation
+                    from uno.queries.batch_operations import BatchOperations, BatchConfig
+                    
+                    # Get the model class
+                    model_class = getattr(self.entity_type, '__uno_model__', self.entity_type)
+                    
+                    # Create batch operations with default config
+                    self._batch_ops = BatchOperations(
+                        model_class=model_class,
+                        batch_config=BatchConfig(
+                            batch_size=self.batch_size,
+                            collect_metrics=True,
+                        ),
+                    )
+            except ImportError:
+                # Fall back to manual creation if DI not available
+                from uno.queries.batch_operations import BatchOperations, BatchConfig
+                
+                # Get the model class
+                model_class = getattr(self.entity_type, '__uno_model__', self.entity_type)
+                
+                # Create batch operations with default config
+                self._batch_ops = BatchOperations(
+                    model_class=model_class,
+                    batch_config=BatchConfig(
+                        batch_size=self.batch_size,
+                        collect_metrics=True,
+                    ),
+                )
         return self._batch_ops
     
     async def get(self, id: str, load_relations: Optional[Union[bool, List[str]]] = None) -> Optional[T]:

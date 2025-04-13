@@ -43,26 +43,52 @@ from uno.settings import uno_settings
 T = TypeVar('T')
 
 
-# Module-level singleton instance
+# Legacy module-level singleton instance (will be removed in future version)
 _resource_manager_instance: Optional['ResourceManager'] = None
 
 
 def get_resource_manager(logger: Optional[logging.Logger] = None) -> 'ResourceManager':
     """
-    Get the global resource manager.
+    Get a resource manager instance.
+    
+    This function provides a resource manager instance, preferring to get
+    it from the DI system but falling back to a legacy singleton pattern
+    when necessary.
     
     Args:
         logger: Optional logger instance
         
     Returns:
-        The resource manager instance
+        A resource manager instance
     """
-    global _resource_manager_instance
-    
-    if _resource_manager_instance is None:
-        _resource_manager_instance = ResourceManager(logger)
-    
-    return _resource_manager_instance
+    # First try to get the manager from the DI system
+    try:
+        from uno.dependencies.modern_provider import get_service, register_singleton
+        
+        try:
+            # Try to get from the DI container
+            return get_service(ResourceManager)
+        except Exception:
+            # If not available, create a new instance
+            instance = ResourceManager(logger)
+            
+            # Register in the DI container for future use
+            try:
+                register_singleton(ResourceManager, instance)
+            except Exception:
+                # Ignore registration errors if DI system not fully initialized
+                pass
+                
+            return instance
+            
+    except ImportError:
+        # Fall back to legacy singleton approach if DI not available
+        global _resource_manager_instance
+        
+        if _resource_manager_instance is None:
+            _resource_manager_instance = ResourceManager(logger)
+        
+        return _resource_manager_instance
 
 
 class ResourceManager:

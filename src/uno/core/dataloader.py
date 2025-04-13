@@ -497,25 +497,52 @@ class BatchLoader(Generic[K, V]):
         await self.shutdown()
 
 
-# Global instance
+# Legacy global instance (will be removed in future version)
 _dataloader_registry_instance: Optional['DataLoaderRegistry'] = None
 
 
 def get_dataloader_registry(logger: Optional[logging.Logger] = None) -> 'DataLoaderRegistry':
     """
-    Get the singleton instance of the registry.
+    Get a DataLoaderRegistry instance.
+    
+    This function provides a DataLoaderRegistry instance, preferring to get
+    it from the DI system but falling back to a legacy singleton pattern
+    when necessary.
     
     Args:
         logger: Optional logger instance
         
     Returns:
-        The registry instance
+        A DataLoaderRegistry instance
     """
-    global _dataloader_registry_instance
-    
-    if _dataloader_registry_instance is None:
-        _dataloader_registry_instance = DataLoaderRegistry(logger)
-    return _dataloader_registry_instance
+    # First try to get the registry from the DI system
+    try:
+        from uno.dependencies.modern_provider import get_service, register_singleton
+        
+        try:
+            # Try to get from the DI container
+            return get_service(DataLoaderRegistry)
+        except Exception:
+            # If not available, create a new instance
+            instance = DataLoaderRegistry(logger)
+            
+            # Register in the DI container for future use
+            try:
+                register_singleton(DataLoaderRegistry, instance)
+            except Exception:
+                # Ignore registration errors if DI system not fully initialized
+                pass
+                
+            return instance
+            
+    except ImportError:
+        # Fall back to legacy singleton approach if DI not available
+        global _dataloader_registry_instance
+        
+        if _dataloader_registry_instance is None:
+            _dataloader_registry_instance = DataLoaderRegistry(logger)
+        
+        return _dataloader_registry_instance
 
 
 class DataLoaderRegistry:
