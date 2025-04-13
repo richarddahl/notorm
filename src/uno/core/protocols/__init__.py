@@ -10,7 +10,7 @@ Protocols provide interface definitions that help break circular dependencies
 and improve code organization.
 """
 
-from typing import Any, Dict, List, Optional, Protocol, Set, Type, TypeVar, Union, runtime_checkable, Tuple, Generic
+from typing import Any, Dict, List, Optional, Protocol, Set, Type, TypeVar, Union, runtime_checkable, Tuple, Generic, TypedDict, NotRequired, Literal, TypeGuard
 from types import TracebackType
 import asyncio
 from datetime import datetime
