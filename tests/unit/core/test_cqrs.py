@@ -21,7 +21,7 @@ from uno.core.cqrs import (
     initialize_mediator, reset_mediator, get_mediator,
     execute_command, execute_query
 )
-from uno.core.errors import DomainError
+from uno.core.errors.base import UnoError
 
 
 # =============================================================================
@@ -795,7 +795,7 @@ async def test_error_handling(command_bus):
     )
     
     # Execute the command and expect an exception
-    with pytest.raises(DomainError) as excinfo:
+    with pytest.raises(UnoError) as excinfo:
         await command_bus.execute(command)
     
     # Check the exception
@@ -816,7 +816,7 @@ async def test_handler_not_found(command_bus, query_bus):
     query = GetUserQuery(user_id="123")
     
     # Execute command without handler
-    with pytest.raises(DomainError) as excinfo:
+    with pytest.raises(UnoError) as excinfo:
         await command_bus.execute(command)
     
     # Check the exception
@@ -824,7 +824,7 @@ async def test_handler_not_found(command_bus, query_bus):
     assert excinfo.value.code == "COMMAND_HANDLER_NOT_FOUND"
     
     # Execute query without handler
-    with pytest.raises(DomainError) as excinfo:
+    with pytest.raises(UnoError) as excinfo:
         await query_bus.execute(query)
     
     # Check the exception
@@ -883,7 +883,7 @@ async def test_duplicate_handler_registration(command_bus):
     command_bus.register(CreateUserCommand, handler1)
     
     # Try to register a second handler for the same command
-    with pytest.raises(DomainError) as excinfo:
+    with pytest.raises(UnoError) as excinfo:
         command_bus.register(CreateUserCommand, handler2)
     
     # Check the exception
