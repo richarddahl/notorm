@@ -12,9 +12,16 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from uno.registry import UnoRegistry
-from uno.api.apidef import app
+from uno.registry import get_registry
 from uno.settings import uno_settings
+
+# Initialize the modern dependency injection system before importing the app
+from uno.dependencies.modern_provider import initialize_services
+import asyncio
+asyncio.run(initialize_services())
+
+# Now import the app after services are initialized
+from uno.api.apidef import app
 
 from uno.attributes import objs as attr_models
 from uno.authorization import objs as auth_models
@@ -77,7 +84,7 @@ def get_initialized_provider():
 # Get the initialized provider
 provider = get_initialized_provider()
 # Use the UnoRegistry singleton instance
-registry = UnoRegistry.get_instance()
+registry = get_registry()
 
 # Load all models
 for obj_name, obj in registry.get_all().items():

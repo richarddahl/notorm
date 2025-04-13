@@ -5,7 +5,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from uno.registry import UnoRegistry
+from uno.registry import get_registry
 
 tags_metadata = [
     {
@@ -26,7 +26,7 @@ tags_metadata = [
     },
 ]
 # Get registry instance
-registry = UnoRegistry.get_instance()
+registry = get_registry()
 
 tags_metadata.extend(
     [
