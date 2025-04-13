@@ -80,7 +80,9 @@ class ValueObject(BaseModel):
         return hash(tuple(sorted(self.model_dump().items())))
 
 
-class Entity(BaseModel):
+T_ID = TypeVar('T_ID')  # Entity ID type
+
+class Entity(BaseModel, Generic[T_ID]):
     """
     Base class for domain entities.
     
@@ -93,9 +95,9 @@ class Entity(BaseModel):
     # Allow arbitrary types to support rich domain models
     model_config = ConfigDict(arbitrary_types_allowed=True)
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: T_ID = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = Field(default=None)
     
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -115,9 +117,10 @@ class Entity(BaseModel):
 
 
 T = TypeVar('T', bound=Entity)
+T_Child = TypeVar('T_Child', bound=Entity)
 
 
-class AggregateRoot(Entity, Generic[T]):
+class AggregateRoot(Entity[T_ID]):
     """
     Base class for aggregate roots.
     

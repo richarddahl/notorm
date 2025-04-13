@@ -27,6 +27,10 @@ class Projection(Generic[T, EventT], ABC):
     Projections are responsible for transforming domain events into read models.
     They define how domain events are applied to read models to keep the query
     side of the application in sync with the command side.
+    
+    Type Parameters:
+        T: The type of read model this projection produces
+        EventT: The type of event this projection handles
     """
     
     def __init__(
@@ -182,7 +186,8 @@ class Projector:
         
         # Remove the projection from the list for its event type
         if event_type in self._projections:
-            self._projections[event_type] = [p for p in self._projections[event_type] if p != projection]
+            # Remove from the list
+            self._projections[event_type] = [p for p in self._projections[event_type] if id(p) != id(projection)]
             
             # If no more projections for this event type, unsubscribe the handler
             if not self._projections[event_type]:
@@ -192,6 +197,8 @@ class Projector:
                         handler=handler,
                         event_type=event_type,
                     )
+                # Remove the empty list
+                del self._projections[event_type]
                 
                 self.logger.debug(f"Unregistered projection for event type {event_type.__name__}")
     

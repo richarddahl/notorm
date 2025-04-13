@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 import json
 import copy
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator, Field
 
 from uno.domain.exceptions import AggregateInvariantViolationError, DomainValidationError
 
@@ -60,8 +60,7 @@ class DomainEvent(BaseModel):
         return cls.from_dict(json.loads(json_str))
 
 
-@dataclass(kw_only=True)
-class Entity(Generic[KeyT]):
+class Entity(BaseModel, Generic[KeyT]):
     """
     Base class for all domain entities.
     
@@ -73,12 +72,14 @@ class Entity(Generic[KeyT]):
         KeyT: The type of the entity's identifier
     """
     
-    id: KeyT = field(default_factory=lambda: str(uuid4()))
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    model_config = ConfigDict(extra="allow")
+    
+    id: KeyT = Field(default_factory=lambda: str(uuid4()))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     
-    # Domain events are tracked but not part of entity state for equality/hash
-    _events: List[DomainEvent] = field(default_factory=list, init=False, repr=False, compare=False)
+    # Use private attribute for events
+    events: List[DomainEvent] = Field(default_factory=list, exclude=True)
     
     def __eq__(self, other: Any) -> bool:
         """
@@ -110,7 +111,7 @@ class Entity(Generic[KeyT]):
         Args:
             event: The domain event to register
         """
-        self._events.append(event)
+        self.events.append(event)
     
     def clear_events(self) -> List[DomainEvent]:
         """
@@ -119,9 +120,9 @@ class Entity(Generic[KeyT]):
         Returns:
             List of registered domain events
         """
-        events = self._events.copy()
-        self._events.clear()
-        return events
+        registered_events = self.events.copy()
+        self.events.clear()
+        return registered_events
     
     def update(self) -> None:
         """Update the updated_at timestamp."""
@@ -134,9 +135,8 @@ class Entity(Generic[KeyT]):
         Returns:
             Dictionary representation of entity
         """
-        # Use dataclasses.asdict but filter out _events and other private fields
-        result = asdict(self)
-        return {k: v for k, v in result.items() if not k.startswith('_')}
+        # Use pydantic's model_dump but exclude events
+        return self.model_dump(exclude_none=False, exclude={'events'})
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Entity':
@@ -149,13 +149,11 @@ class Entity(Generic[KeyT]):
         Returns:
             Entity instance
         """
-        # Filter out keys that are not in the entity's __init__ parameters
-        init_params = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
-        return cls(**init_params)
+        # Use pydantic's model validation
+        return cls(**data)
 
 
-@dataclass(kw_only=True)
-class AggregateRoot(Entity[KeyT], Generic[KeyT]):
+class AggregateRoot(Entity[KeyT]):
     """
     Base class for aggregate roots.
     
@@ -168,10 +166,10 @@ class AggregateRoot(Entity[KeyT], Generic[KeyT]):
     """
     
     # Child entities - not part of equality/hash
-    _child_entities: Set[Entity] = field(default_factory=set, init=False, repr=False, compare=False)
+    child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
     
     # Version for optimistic concurrency control
-    version: int = field(default=1)
+    version: int = Field(default=1)
     
     def check_invariants(self) -> None:
         """
@@ -206,7 +204,7 @@ class AggregateRoot(Entity[KeyT], Generic[KeyT]):
         Args:
             entity: The child entity to add
         """
-        self._child_entities.add(entity)
+        self.child_entities.add(entity)
     
     def get_child_entities(self) -> Set[Entity]:
         """
@@ -215,11 +213,10 @@ class AggregateRoot(Entity[KeyT], Generic[KeyT]):
         Returns:
             The set of child entities
         """
-        return self._child_entities.copy()
+        return self.child_entities.copy()
 
 
-@dataclass(frozen=True)
-class ValueObject:
+class ValueObject(BaseModel):
     """
     Base class for value objects.
     
@@ -230,7 +227,10 @@ class ValueObject:
     should not be changed after creation.
     """
     
-    def __post_init__(self) -> None:
+    model_config = ConfigDict(frozen=True)
+    
+    @model_validator(mode='after')
+    def validate_value_object(self) -> 'ValueObject':
         """
         Validate the value object after initialization.
         
@@ -242,6 +242,7 @@ class ValueObject:
         """
         try:
             self.validate()
+            return self
         except ValueError as e:
             raise DomainValidationError(str(e))
     
@@ -269,7 +270,7 @@ class ValueObject:
         """
         if not isinstance(other, self.__class__):
             return False
-        return self.__dict__ == other.__dict__
+        return self.model_dump() == other.model_dump()
     
     def __eq__(self, other: Any) -> bool:
         """
@@ -290,8 +291,8 @@ class ValueObject:
         Returns:
             Hash value
         """
-        # Frozen dataclasses can be hashed by default
-        return hash(tuple(self.__dict__.values()))
+        # Use tuple of values for hash
+        return hash(tuple(self.model_dump().values()))
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -300,7 +301,7 @@ class ValueObject:
         Returns:
             Dictionary representation of value object
         """
-        return asdict(self)
+        return self.model_dump()
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ValueObject':
@@ -313,12 +314,9 @@ class ValueObject:
         Returns:
             Value object instance
         """
-        # Filter out keys that are not in the value object's __init__ parameters
-        init_params = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
-        return cls(**init_params)
+        return cls(**data)
 
 
-@dataclass(frozen=True)
 class PrimitiveValueObject(ValueObject, Generic[ValueT]):
     """
     Value object that wraps a primitive value.
@@ -355,12 +353,11 @@ class PrimitiveValueObject(ValueObject, Generic[ValueT]):
         Raises:
             ValueError: If validation fails
         """
-        return cls(value)
+        return cls(value=value)
 
 
 # Common value objects
 
-@dataclass(frozen=True)
 class Email(PrimitiveValueObject[str]):
     """Email address value object."""
     
@@ -374,7 +371,6 @@ class Email(PrimitiveValueObject[str]):
             raise ValueError("Email must have a valid domain")
 
 
-@dataclass(frozen=True)
 class Money(ValueObject):
     """Money value object."""
     
@@ -421,7 +417,6 @@ class Money(ValueObject):
         return Money(amount=self.amount - other.amount, currency=self.currency)
 
 
-@dataclass(frozen=True)
 class Address(ValueObject):
     """Address value object."""
     

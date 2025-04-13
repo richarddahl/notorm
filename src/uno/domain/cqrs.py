@@ -304,6 +304,9 @@ class Query(BaseModel, Generic[OutputT]):
     
     Queries represent requests for information. They do not change
     the system state and are handled by query handlers.
+    
+    Type Parameters:
+        OutputT: The type of the query result
     """
     
     model_config = ConfigDict(frozen=True)
