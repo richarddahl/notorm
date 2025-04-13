@@ -193,8 +193,8 @@ async def query_rewrite_example():
             print(f"\nQuery {i}: {query}")
             
             result = await optimizer.rewrite_query(query)
-            if result.is_ok():
-                rewrite = result.unwrap()
+            if result.is_success:
+                rewrite = result.value
                 print(f"Rewritten as: {rewrite.rewritten_query}")
                 print(f"Rewrite type: {rewrite.rewrite_type}")
                 if rewrite.estimated_improvement:
@@ -202,7 +202,7 @@ async def query_rewrite_example():
                 if rewrite.reason:
                     print(f"Reason: {rewrite.reason}")
             else:
-                print(f"No rewrite applied: {result.unwrap_err()}")
+                print(f"No rewrite applied: {result.error}")
 
 
 async def optimized_execution_example():
@@ -382,14 +382,13 @@ async def integration_example():
         print("  Simulating index implementation...")
         
         try:
-            # For demonstration, we'll mock the implementation
-            with patch.object(optimizer, 'implement_index', return_value=True):
-                success = await optimizer.implement_index(recommendation)
-                if success:
-                    print("  Index successfully implemented")
-                    print(f"  SQL executed: {recommendation.get_creation_sql()}")
-                else:
-                    print("  Failed to implement index")
+            # For demonstration, we'll just simulate the implementation
+            # Note: This would actually use the real method in a live example
+            # and would require unittest.mock.patch in a real test
+            print("  Would execute: " + recommendation.get_creation_sql())
+            print("  Index successfully implemented")
+            recommendation.implemented = True
+            recommendation.implementation_time = time.time()
                     
         except Exception as e:
             print(f"  Error implementing index: {e}")

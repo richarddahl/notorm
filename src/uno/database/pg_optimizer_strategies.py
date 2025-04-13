@@ -268,10 +268,10 @@ class PgOptimizationStrategies:
         """
         # Get table statistics
         stats_result = await self.get_table_statistics(table_name)
-        if stats_result.is_err():
+        if stats_result.is_failure:
             return stats_result
         
-        stats = stats_result.unwrap()
+        stats = stats_result.value
         
         # Initialize recommendations
         recommendations = []
@@ -647,22 +647,22 @@ class PgOptimizationStrategies:
         """
         # CTE optimization rewrite
         cte_result = self._rewrite_cte(query)
-        if cte_result.is_ok():
+        if cte_result.is_success:
             return cte_result
         
         # LATERAL JOIN optimization
         lateral_result = self._rewrite_to_lateral(query)
-        if lateral_result.is_ok():
+        if lateral_result.is_success:
             return lateral_result
         
         # JSON functions optimization
         json_result = self._rewrite_json_functions(query)
-        if json_result.is_ok():
+        if json_result.is_success:
             return json_result
         
         # DISTINCT ON optimization
         distinct_result = self._rewrite_to_distinct_on(query)
-        if distinct_result.is_ok():
+        if distinct_result.is_success:
             return distinct_result
         
         # No applicable rewrites
@@ -950,7 +950,7 @@ class PgQueryOptimizer(QueryOptimizer):
         """
         # Try standard rewrites first
         result = await super().rewrite_query(query, params)
-        if result.is_ok():
+        if result.is_success:
             return result
         
         # If no standard rewrites applied, try PostgreSQL-specific rewrites
@@ -998,10 +998,10 @@ class PgQueryOptimizer(QueryOptimizer):
         recommendations = {}
         for table_name in table_names:
             result = await self.pg_strategies.recommend_table_maintenance(table_name)
-            if result.is_ok():
-                recommendations[table_name] = result.unwrap()
+            if result.is_success:
+                recommendations[table_name] = result.value
             else:
-                recommendations[table_name] = {"error": result.unwrap_err()}
+                recommendations[table_name] = {"error": result.error}
         
         return recommendations
 

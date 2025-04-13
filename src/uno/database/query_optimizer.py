@@ -788,8 +788,8 @@ class QueryOptimizer:
             self._rewrite_in_clause,
         ]:
             result = rule_func(query_str)
-            if result.is_ok():
-                rewrite = result.unwrap()
+            if result.is_success:
+                rewrite = result.value
                 
                 # Log the rewrite if enabled
                 if self.config.log_rewrites:
@@ -1049,8 +1049,8 @@ class QueryOptimizer:
             # Try to rewrite the query
             rewrite_result = await self.rewrite_query(query_str, params)
             
-            if rewrite_result.is_ok():
-                rewrite = rewrite_result.unwrap()
+            if rewrite_result.is_success:
+                rewrite = rewrite_result.value
                 query_to_execute = rewrite.rewritten_query
             else:
                 query_to_execute = query_str
@@ -1394,8 +1394,8 @@ async def optimize_query(
     # Try to rewrite the query
     rewrite_result = await optimizer.rewrite_query(query, params)
     
-    if rewrite_result.is_ok():
-        rewrite = rewrite_result.unwrap()
+    if rewrite_result.is_success:
+        rewrite = rewrite_result.value
         optimized_query = rewrite.rewritten_query
     else:
         optimized_query = query

@@ -852,8 +852,8 @@ def cached(
             # Try to get from cache
             cached_result = await cache.get(cache_key)
             
-            if cached_result.is_ok():
-                return cached_result.unwrap()
+            if cached_result.is_success:
+                return cached_result.value
             
             # Execute the function
             start_time = time.time()
@@ -922,8 +922,8 @@ def cached_query(
             # Try to get from cache
             cached_result = await cache.get(cache_key)
             
-            if cached_result.is_ok():
-                return cached_result.unwrap()
+            if cached_result.is_success:
+                return cached_result.value
             
             # Execute the query function
             start_time = time.time()
@@ -981,15 +981,35 @@ class QueryCacheManager:
     Provides centralized management of query caches.
     """
     
-    _instance = None
     _default_cache: Optional[QueryCache] = None
     _named_caches: Dict[str, QueryCache] = {}
     
+    # Singleton instance (will be replaced with DI in the future)
+    _instance = None
+    
     @classmethod
     def get_instance(cls):
-        """Get or create the QueryCacheManager singleton."""
+        """
+        Get the singleton instance.
+        
+        DEPRECATED: This method is maintained for backward compatibility only and will be removed.
+        Use dependency injection via uno.dependencies.modern_provider.get_service() instead.
+        
+        Returns:
+            QueryCacheManager instance
+        """
+        # Import at function level to avoid circular imports
+        from uno.dependencies.modern_provider import register_singleton
+        
         if cls._instance is None:
             cls._instance = QueryCacheManager()
+            # Register with DI system for future use
+            try:
+                register_singleton(QueryCacheManager, cls._instance)
+            except Exception:
+                # Ignore errors if DI system is not initialized
+                pass
+                
         return cls._instance
     
     def get_default_cache(self) -> QueryCache:
@@ -1054,6 +1074,36 @@ class QueryCacheManager:
             await cache.clear()
 
 
+# Get the global cache manager (this will be replaced with DI in the future)
+def _get_cache_manager() -> QueryCacheManager:
+    """
+    Get the global cache manager.
+    
+    This function provides a bridge between the legacy singleton pattern
+    and the modern dependency injection system.
+    
+    Returns:
+        QueryCacheManager instance
+    """
+    from uno.dependencies.modern_provider import get_service, register_singleton
+    
+    try:
+        # Try to get from DI system first
+        return get_service(QueryCacheManager)
+    except Exception:
+        # Fall back to singleton pattern temporarily
+        manager = QueryCacheManager.get_instance()
+        
+        # Register with DI system for future use
+        try:
+            register_singleton(QueryCacheManager, manager)
+        except Exception:
+            # Ignore errors if DI system is not initialized
+            pass
+            
+        return manager
+
+
 def _get_default_cache() -> QueryCache:
     """
     Get the default query cache.
@@ -1061,7 +1111,7 @@ def _get_default_cache() -> QueryCache:
     Returns:
         Default QueryCache instance
     """
-    return QueryCacheManager.get_instance().get_default_cache()
+    return _get_cache_manager().get_default_cache()
 
 
 def set_default_cache(cache: QueryCache) -> None:
@@ -1071,7 +1121,7 @@ def set_default_cache(cache: QueryCache) -> None:
     Args:
         cache: QueryCache instance to use as default
     """
-    QueryCacheManager.get_instance().set_default_cache(cache)
+    _get_cache_manager().set_default_cache(cache)
 
 
 def get_named_cache(name: str) -> QueryCache:
@@ -1084,7 +1134,7 @@ def get_named_cache(name: str) -> QueryCache:
     Returns:
         QueryCache instance
     """
-    return QueryCacheManager.get_instance().get_named_cache(name)
+    return _get_cache_manager().get_named_cache(name)
 
 
 def set_named_cache(name: str, cache: QueryCache) -> None:
@@ -1095,9 +1145,9 @@ def set_named_cache(name: str, cache: QueryCache) -> None:
         name: Name of the cache
         cache: QueryCache instance
     """
-    QueryCacheManager.get_instance().set_named_cache(name, cache)
+    _get_cache_manager().set_named_cache(name, cache)
 
 
 async def clear_all_caches() -> None:
     """Clear all query caches."""
-    await QueryCacheManager.get_instance().clear_all_caches()
+    await _get_cache_manager().clear_all_caches()

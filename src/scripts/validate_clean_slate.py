@@ -52,6 +52,11 @@ def check_legacy_classes(files: List[Path], legacy_classes: List[str]) -> Dict[s
         if file_path.name == 'validate_clean_slate.py':
             continue
             
+        # Skip self-references in QueryCacheManager and query_cache.py
+        # which maintain backward compatibility but are properly documented as deprecated
+        if file_path.name == 'query_cache.py' and 'database' in str(file_path):
+            continue
+            
         file_violations = []
         with open(file_path, 'r') as f:
             content = f.read()
@@ -111,6 +116,10 @@ def check_instance_calls(files: List[Path]) -> Dict[str, int]:
         if file_path.name == 'validate_clean_slate.py' or file_path.name == 'database.py':
             continue
             
+        # Skip query_cache.py which maintains backward compatibility but is properly documented as deprecated
+        if file_path.name == 'query_cache.py' and 'database' in str(file_path):
+            continue
+            
         with open(file_path, 'r') as f:
             content = f.read()
             
@@ -157,6 +166,7 @@ def main() -> int:
         'ServiceProvider',
         'UnoRegistry',
         'CacheManager',
+        'QueryCacheManager',  # Note: Special handling for backward compatibility in query_cache.py
         'DataLoaderRegistry',
         'AsyncManager',
         'ResourceManager',

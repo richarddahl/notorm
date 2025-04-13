@@ -1198,8 +1198,8 @@ class DistributedQueryManager:
             if isinstance(query, str):
                 # Try to rewrite the query
                 rewrite_result = await self.optimizer.rewrite_query(query, params)
-                if rewrite_result.is_ok():
-                    rewrite = rewrite_result.unwrap()
+                if rewrite_result.is_success:
+                    rewrite = rewrite_result.value
                     optimized_query = rewrite.rewritten_query
                     self.logger.info(
                         f"Query optimized with {rewrite.rewrite_type}. "

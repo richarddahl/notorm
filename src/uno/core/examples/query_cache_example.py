@@ -52,9 +52,9 @@ async def basic_caching_example():
     # Try to get from cache first
     cached_result = await cache.get(user_list_key)
     
-    if cached_result.is_ok():
+    if cached_result.is_success:
         # Use cached result
-        users = cached_result.unwrap()
+        users = cached_result.value
         print(f"Cache hit! Found {len(users)} users in cache")
     else:
         # Cache miss, fetch from database
@@ -79,8 +79,8 @@ async def basic_caching_example():
     
     # Try getting it again (should be cached now)
     cached_result = await cache.get(user_list_key)
-    if cached_result.is_ok():
-        users = cached_result.unwrap()
+    if cached_result.is_success:
+        users = cached_result.value
         print(f"Second try: Cache hit! Found {len(users)} users in cache")
     
     # Show cache stats
@@ -93,7 +93,7 @@ async def basic_caching_example():
     
     # Try getting again (should miss now)
     cached_result = await cache.get(user_list_key)
-    if cached_result.is_err():
+    if cached_result.is_failure:
         print("Cache miss after invalidation")
 
 
@@ -307,7 +307,7 @@ async def advanced_features_example():
     
     # Get the result
     cached = await smart_cache.get(complex_key)
-    if cached.is_ok():
+    if cached.is_success:
         print("Successfully retrieved complex query from cache")
     
     # Demonstrate dependency tracking
@@ -351,9 +351,9 @@ async def advanced_features_example():
     user_count = await smart_cache.get("user:count")
     order_count = await smart_cache.get("order:count")
     
-    print(f"user:list in cache: {user_list.is_ok()}")
-    print(f"user:count in cache: {user_count.is_ok()}")
-    print(f"order:count in cache: {order_count.is_ok()}")
+    print(f"user:list in cache: {user_list.is_success}")
+    print(f"user:count in cache: {user_count.is_success}")
+    print(f"order:count in cache: {order_count.is_success}")
     
     # Show cache stats
     stats = smart_cache.get_stats()
