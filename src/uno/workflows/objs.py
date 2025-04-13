@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, ClassVar
 from typing_extensions import Self
 from datetime import datetime
 from pydantic import model_validator, Field
@@ -13,7 +13,8 @@ from uno.schema.schema import UnoSchemaConfig
 from uno.authorization.mixins import DefaultObjectMixin
 
 # Import additional types from auth objs to mirror their patterns
-from uno.authorization.objs import User, MetaType, MetaRecord
+from uno.authorization.objs import User
+from uno.meta.objs import MetaType, MetaRecord
 from uno.queries.objs import Query
 from uno.workflows.models import (
     WorkflowDefinition,
@@ -300,118 +301,15 @@ class WorkflowDef(UnoObj[WorkflowDefinition], DefaultObjectMixin):
         return self
 
 
-# Legacy object models for backward compatibility - will be removed in future
-class WorkflowStep(UnoObj, DefaultObjectMixin):
-    # Fields
-    name: str
-    description: Optional[str] = None
-    step_type: str  # manual, automatic, approval, notification
-    workflow_id: str
-    workflow: Optional["Workflow"] = None
-    is_start: bool = False
-    is_end: bool = False
-    config: Dict[str, Any] = {}
-
-    def __str__(self) -> str:
-        return self.name
-
-    @model_validator(mode="after")
-    def validate_step(self) -> Self:
-        # Validate step_type is one of the allowed types
-        allowed_types = ["manual", "automatic", "approval", "notification"]
-        if self.step_type not in allowed_types:
-            raise ValueError(f"Step type must be one of: {', '.join(allowed_types)}")
-        return self
-
-
-class WorkflowTransition(UnoObj, DefaultObjectMixin):
-    # Fields
-    name: str
-    description: Optional[str] = None
-    workflow_id: str
-    workflow: Optional["Workflow"] = None
-    from_step_id: str
-    from_step: Optional[WorkflowStep] = None
-    to_step_id: str
-    to_step: Optional[WorkflowStep] = None
-    condition: Optional[str] = None  # Python expression
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Workflow(UnoObj, DefaultObjectMixin):
-    # Fields
-    name: str
-    description: Optional[str] = None
-    version: str = "1.0.0"
-    is_active: bool = True
-    applicable_type_ids: List[str] = []
-    applicable_types: List[MetaType] = []
-    steps: List[WorkflowStep] = []
-    transitions: List[WorkflowTransition] = []
-
-    def __str__(self) -> str:
-        return f"{self.name} v{self.version}"
-
-
-class WorkflowTask(UnoObj, DefaultObjectMixin):
-    # Fields
-    title: str
-    description: Optional[str] = None
-    instance_id: str
-    instance: Optional["WorkflowInstance"] = None
-    step_id: str
-    step: Optional[WorkflowStep] = None
-    assigned_to_id: Optional[str] = None
-    assigned_to: Optional[User] = None
-    due_date: Optional[datetime] = None
-    priority: str = "medium"  # low, medium, high
-    status: str = "pending"  # pending, in_progress, completed, cancelled
-    completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
-
-    def __str__(self) -> str:
-        return self.title
-
-    @model_validator(mode="after")
-    def validate_task(self) -> Self:
-        # Validate priority is one of the allowed values
-        allowed_priorities = ["low", "medium", "high"]
-        if self.priority not in allowed_priorities:
-            raise ValueError(
-                f"Priority must be one of: {', '.join(allowed_priorities)}"
-            )
-
-        # Validate status is one of the allowed values
-        allowed_statuses = ["pending", "in_progress", "completed", "cancelled"]
-        if self.status not in allowed_statuses:
-            raise ValueError(f"Status must be one of: {', '.join(allowed_statuses)}")
-        return self
-
-
-class WorkflowInstance(UnoObj, DefaultObjectMixin):
-    # Fields
-    workflow_id: str
-    workflow: Optional[Workflow] = None
-    record_type_id: str
-    record_id: str
-    record: Optional[MetaRecord] = None
-    current_step_id: Optional[str] = None
-    current_step: Optional[WorkflowStep] = None
-    status: str = "active"  # active, completed, cancelled
-    context: Dict[str, Any] = {}
-    tasks: List[WorkflowTask] = []
-    completed_at: Optional[datetime] = None
-
-    def __str__(self) -> str:
-        workflow_name = self.workflow.name if self.workflow else "Unknown"
-        return f"{workflow_name} - {self.record_id}"
-
-    @model_validator(mode="after")
-    def validate_instance(self) -> Self:
-        # Validate status is one of the allowed values
-        allowed_statuses = ["active", "completed", "cancelled"]
-        if self.status not in allowed_statuses:
-            raise ValueError(f"Status must be one of: {', '.join(allowed_statuses)}")
-        return self
+# We've removed the legacy models and UnoObj classes to simplify the codebase.
+# If you need to handle workflow steps, transitions, tasks, or instances,
+# please create proper model classes in models.py and implement UnoObj classes here.
+#
+# The following classes were removed:
+# - WorkflowStep
+# - WorkflowTransition
+# - Workflow (legacy version)
+# - WorkflowTask
+# - WorkflowInstance
+#
+# Only the modern WorkflowDef class is kept for managing workflow definitions.

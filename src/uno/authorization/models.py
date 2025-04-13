@@ -31,7 +31,6 @@ from uno.settings import uno_settings
 user__group = Table(
     "user__group",
     UnoModel.metadata,
-    extend_existing=True,
     Column(
         "user_id",
         VARCHAR(26),
@@ -53,13 +52,13 @@ user__group = Table(
         "user_id",
         "group_id",
     ),
+    extend_existing=True,
 )
 
 
 user__role = Table(
     "user__role",
     UnoModel.metadata,
-    extend_existing=True,
     Column(
         "user_id",
         VARCHAR(26),
@@ -81,13 +80,13 @@ user__role = Table(
         "user_id",
         "role_id",
     ),
+    extend_existing=True,
 )
 
 
 role__permission = Table(
     "role__permission",
     UnoModel.metadata,
-    extend_existing=True,
     Column(
         "role_id",
         VARCHAR(26),
@@ -109,6 +108,7 @@ role__permission = Table(
         "role_id",
         "permission_id",
     ),
+    extend_existing=True,
 )
 
 

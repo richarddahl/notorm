@@ -39,7 +39,14 @@ ValueObj = Union[
     TimeValue,
     Attachment
 ]
-ValueError = TypeVar('ValueError')
+
+# Define a concrete error class for values
+class ValueError(Exception):
+    """Error class for value-related errors."""
+    def __init__(self, message: str, code: str = "VALUE_ERROR"):
+        self.message = message
+        self.code = code
+        super().__init__(message)
 
 
 @runtime_checkable
@@ -50,7 +57,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value_id: str, 
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[T], ValueError]:
+    ) -> Result[Optional[T]]:
         """Get a value by ID."""
         ...
 
@@ -58,7 +65,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value: Any, 
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[T], ValueError]:
+    ) -> Result[Optional[T]]:
         """Get a value object by its actual value."""
         ...
 
@@ -66,7 +73,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value_obj: T, 
         session: Optional[AsyncSession] = None
-    ) -> Result[T, ValueError]:
+    ) -> Result[T]:
         """Create a new value."""
         ...
 
@@ -74,7 +81,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value_obj: T, 
         session: Optional[AsyncSession] = None
-    ) -> Result[T, ValueError]:
+    ) -> Result[T]:
         """Update an existing value."""
         ...
 
@@ -82,7 +89,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value_id: str, 
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ValueError]:
+    ) -> Result[bool]:
         """Delete a value by ID."""
         ...
 
@@ -90,7 +97,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         self, 
         value_objs: List[T], 
         session: Optional[AsyncSession] = None
-    ) -> Result[List[T], ValueError]:
+    ) -> Result[List[T]]:
         """Create multiple values in a single operation."""
         ...
 
@@ -99,7 +106,7 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
         search_term: str, 
         limit: int = 20, 
         session: Optional[AsyncSession] = None
-    ) -> Result[List[T], ValueError]:
+    ) -> Result[List[T]]:
         """Search for values matching a term."""
         ...
 
@@ -113,7 +120,7 @@ class ValueServiceProtocol(Protocol):
         value_type: Type[ValueObj], 
         value: ValueType, 
         name: Optional[str] = None
-    ) -> Result[ValueObj, ValueError]:
+    ) -> Result[ValueObj]:
         """
         Create a new value of the specified type.
         
@@ -132,7 +139,7 @@ class ValueServiceProtocol(Protocol):
         value_type: Type[ValueObj], 
         value: ValueType, 
         name: Optional[str] = None
-    ) -> Result[ValueObj, ValueError]:
+    ) -> Result[ValueObj]:
         """
         Get a value by its actual value, or create it if it doesn't exist.
         
@@ -150,7 +157,7 @@ class ValueServiceProtocol(Protocol):
         self, 
         value_type: Type[ValueObj], 
         value_id: str
-    ) -> Result[Optional[ValueObj], ValueError]:
+    ) -> Result[Optional[ValueObj]]:
         """
         Get a value by its ID.
         
@@ -167,7 +174,7 @@ class ValueServiceProtocol(Protocol):
         self, 
         file_path: str, 
         name: str
-    ) -> Result[Attachment, ValueError]:
+    ) -> Result[Attachment]:
         """
         Create a new file attachment.
         
@@ -184,7 +191,7 @@ class ValueServiceProtocol(Protocol):
         self, 
         value_type: Type[ValueObj], 
         value: ValueType
-    ) -> Result[bool, ValueError]:
+    ) -> Result[bool]:
         """
         Validate a value against its type constraints.
         
@@ -201,7 +208,7 @@ class ValueServiceProtocol(Protocol):
         self, 
         value: Any, 
         target_type: Type[ValueObj]
-    ) -> Result[ValueType, ValueError]:
+    ) -> Result[ValueType]:
         """
         Convert a value to the appropriate type for a value object.
         

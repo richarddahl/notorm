@@ -18,7 +18,7 @@ router = DIAPIRouter(
 )
 
 
-@router.get("/")
+@router.get("/", response_model=None)
 async def get_users(
     user_service: UserServiceProtocol = None,  # This will be injected automatically
     limit: int = Query(10, description="Maximum number of users to return")
@@ -37,7 +37,7 @@ async def get_users(
     return users[:limit]
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", response_model=None)
 async def get_user(
     user_id: str = Path(..., description="The ID of the user to get"),
     user_service: UserServiceProtocol = None  # This will be injected automatically
@@ -58,7 +58,7 @@ async def get_user(
     return user
 
 
-@router.post("/")
+@router.post("/", response_model=None)
 async def create_user(
     user_data: Dict[str, Any] = Body(..., description="The user data"),
     user_service: UserServiceProtocol = None  # This will be injected automatically
@@ -76,7 +76,7 @@ async def create_user(
     return await user_service.create_user(user_data)
 
 
-@router.put("/{user_id}")
+@router.put("/{user_id}", response_model=None)
 async def update_user(
     user_id: str = Path(..., description="The ID of the user to update"),
     user_data: Dict[str, Any] = Body(..., description="The updated user data"),
@@ -99,7 +99,7 @@ async def update_user(
     return user
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", response_model=None)
 async def delete_user(
     user_id: str = Path(..., description="The ID of the user to delete"),
     user_service: UserServiceProtocol = None  # This will be injected automatically

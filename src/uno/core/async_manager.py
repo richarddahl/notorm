@@ -8,7 +8,7 @@ This module provides a central manager for:
 - Integrating with signal handlers
 """
 
-from typing import List, Dict, Any, Optional, Set, Callable, Awaitable, TypeVar, cast
+from typing import List, Dict, Any, Optional, Set, Callable, Awaitable, TypeVar, cast, AsyncIterator
 import asyncio
 import signal
 import logging

@@ -34,6 +34,15 @@ def setup_workflow_module(app: FastAPI) -> None:
     logger = logging.getLogger(__name__)
     logger.info("Setting up workflow module with FastAPI")
     
+    # Configure the workflow module dependency injection here, when the application
+    # has been initialized and the main injector is already configured
+    try:
+        from uno.workflows.provider import configure_workflow_module
+        inject.configure_once(configure_workflow_module)
+        logger.info("Workflow module dependency injection configured")
+    except Exception as e:
+        logger.error(f"Failed to configure workflow module dependency injection: {e}")
+    
     @app.on_event("startup")
     async def startup_workflow_module() -> None:
         """Register workflow integrations on application startup."""

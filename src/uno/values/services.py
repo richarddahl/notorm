@@ -14,7 +14,7 @@ import decimal
 from typing import Any, Dict, List, Optional, Type, Union, cast
 import logging
 
-from uno.core.errors.result import Result, Ok, Err
+from uno.core.errors.result import Result, Success, Failure
 from uno.database.db_manager import DBManager
 from uno.values.interfaces import ValueServiceProtocol, ValueObj, ValueType
 from uno.values.repositories import (
@@ -93,7 +93,7 @@ class ValueService(ValueServiceProtocol):
         value_type: Type[ValueObj],
         value: ValueType,
         name: Optional[str] = None
-    ) -> Result[ValueObj, ValueServiceError]:
+    ) -> Result[ValueObj]:
         """
         Create a new value of the specified type.
         
@@ -110,13 +110,13 @@ class ValueService(ValueServiceProtocol):
             repository = self._get_repository(value_type)
             
             if not repository:
-                return Err(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
+                return Failure(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
             
             # Validate value
             validation_result = await self.validate_value(value_type, value)
             
-            if validation_result.is_err():
-                return Err(ValueServiceError(f"Validation failed: {validation_result.unwrap_err()}"))
+            if validation_result.is_failure:
+                return Failure(ValueServiceError(f"Validation failed: {validation_result.error}"))
             
             # Create value object
             value_obj = value_type(
@@ -127,21 +127,21 @@ class ValueService(ValueServiceProtocol):
             # Create value
             create_result = await repository.create(value_obj)
             
-            if create_result.is_err():
-                return Err(ValueServiceError(f"Failed to create value: {create_result.unwrap_err()}"))
+            if create_result.is_failure:
+                return Failure(ValueServiceError(f"Failed to create value: {create_result.error}"))
             
-            return Ok(create_result.unwrap())
+            return Success(create_result.value)
         
         except Exception as e:
             self.logger.error(f"Error creating {value_type.__name__}: {e}")
-            return Err(ValueServiceError(f"Error creating {value_type.__name__}: {str(e)}"))
+            return Failure(ValueServiceError(f"Error creating {value_type.__name__}: {str(e)}"))
 
     async def get_or_create_value(
         self,
         value_type: Type[ValueObj],
         value: ValueType,
         name: Optional[str] = None
-    ) -> Result[ValueObj, ValueServiceError]:
+    ) -> Result[ValueObj]:
         """
         Get a value by its actual value, or create it if it doesn't exist.
         
@@ -158,32 +158,32 @@ class ValueService(ValueServiceProtocol):
             repository = self._get_repository(value_type)
             
             if not repository:
-                return Err(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
+                return Failure(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
             
             # Try to get existing value
             get_result = await repository.get_by_value(value)
             
-            if get_result.is_err():
-                return Err(ValueServiceError(f"Failed to get value: {get_result.unwrap_err()}"))
+            if get_result.is_failure:
+                return Failure(ValueServiceError(f"Failed to get value: {get_result.error}"))
             
-            existing_value = get_result.unwrap()
+            existing_value = get_result.value
             
             # Return existing value if found
             if existing_value:
-                return Ok(existing_value)
+                return Success(existing_value)
             
             # Create new value if not found
             return await self.create_value(value_type, value, name)
         
         except Exception as e:
             self.logger.error(f"Error getting or creating {value_type.__name__}: {e}")
-            return Err(ValueServiceError(f"Error getting or creating {value_type.__name__}: {str(e)}"))
+            return Failure(ValueServiceError(f"Error getting or creating {value_type.__name__}: {str(e)}"))
 
     async def get_value_by_id(
         self,
         value_type: Type[ValueObj],
         value_id: str
-    ) -> Result[Optional[ValueObj], ValueServiceError]:
+    ) -> Result[Optional[ValueObj]]:
         """
         Get a value by its ID.
         
@@ -199,25 +199,25 @@ class ValueService(ValueServiceProtocol):
             repository = self._get_repository(value_type)
             
             if not repository:
-                return Err(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
+                return Failure(ValueServiceError(f"No repository found for value type {value_type.__name__}"))
             
             # Get value
             get_result = await repository.get_by_id(value_id)
             
-            if get_result.is_err():
-                return Err(ValueServiceError(f"Failed to get value: {get_result.unwrap_err()}"))
+            if get_result.is_failure:
+                return Failure(ValueServiceError(f"Failed to get value: {get_result.error}"))
             
-            return Ok(get_result.unwrap())
+            return Success(get_result.value)
         
         except Exception as e:
             self.logger.error(f"Error getting {value_type.__name__} by ID {value_id}: {e}")
-            return Err(ValueServiceError(f"Error getting {value_type.__name__}: {str(e)}"))
+            return Failure(ValueServiceError(f"Error getting {value_type.__name__}: {str(e)}"))
 
     async def create_attachment(
         self,
         file_path: str,
         name: str
-    ) -> Result[Attachment, ValueServiceError]:
+    ) -> Result[Attachment]:
         """
         Create a new file attachment.
         
@@ -233,7 +233,7 @@ class ValueService(ValueServiceProtocol):
             repository = self._get_repository(Attachment)
             
             if not repository:
-                return Err(ValueServiceError("Attachment repository not found"))
+                return Failure(ValueServiceError("Attachment repository not found"))
             
             # Create attachment object
             attachment = Attachment(
@@ -244,20 +244,20 @@ class ValueService(ValueServiceProtocol):
             # Create attachment
             create_result = await repository.create(attachment)
             
-            if create_result.is_err():
-                return Err(ValueServiceError(f"Failed to create attachment: {create_result.unwrap_err()}"))
+            if create_result.is_failure:
+                return Failure(ValueServiceError(f"Failed to create attachment: {create_result.error}"))
             
-            return Ok(create_result.unwrap())
+            return Success(create_result.value)
         
         except Exception as e:
             self.logger.error(f"Error creating attachment: {e}")
-            return Err(ValueServiceError(f"Error creating attachment: {str(e)}"))
+            return Failure(ValueServiceError(f"Error creating attachment: {str(e)}"))
 
     async def validate_value(
         self,
         value_type: Type[ValueObj],
         value: ValueType
-    ) -> Result[bool, ValueServiceError]:
+    ) -> Result[bool]:
         """
         Validate a value against its type constraints.
         
@@ -298,21 +298,21 @@ class ValueService(ValueServiceProtocol):
                     TimeValue: "datetime.time",
                 }.get(value_type, "unknown")
                 
-                return Err(ValueServiceError(
+                return Failure(ValueServiceError(
                     f"Invalid value type: expected {expected_type}, got {type(value).__name__}"
                 ))
             
-            return Ok(True)
+            return Success(True)
         
         except Exception as e:
             self.logger.error(f"Error validating value: {e}")
-            return Err(ValueServiceError(f"Error validating value: {str(e)}"))
+            return Failure(ValueServiceError(f"Error validating value: {str(e)}"))
 
     async def convert_value(
         self,
         value: Any,
         target_type: Type[ValueObj]
-    ) -> Result[ValueType, ValueServiceError]:
+    ) -> Result[ValueType]:
         """
         Convert a value to the appropriate type for a value object.
         
@@ -325,8 +325,8 @@ class ValueService(ValueServiceProtocol):
         """
         try:
             # Already correct type
-            if await self.validate_value(target_type, value).is_ok():
-                return Ok(value)
+            if await self.validate_value(target_type, value).is_success:
+                return Success(value)
             
             # Conversion logic based on target type
             converted_value = None
@@ -409,21 +409,21 @@ class ValueService(ValueServiceProtocol):
                     converted_value = value.time()
             
             if converted_value is None:
-                return Err(ValueServiceError(
+                return Failure(ValueServiceError(
                     f"Cannot convert {type(value).__name__} to {target_type.__name__}"
                 ))
             
             # Validate converted value
             validation_result = await self.validate_value(target_type, converted_value)
             
-            if validation_result.is_err():
-                return Err(ValueServiceError(f"Conversion validation failed: {validation_result.unwrap_err()}"))
+            if validation_result.is_failure:
+                return Failure(ValueServiceError(f"Conversion validation failed: {validation_result.error}"))
             
-            return Ok(converted_value)
+            return Success(converted_value)
         
         except Exception as e:
             self.logger.error(f"Error converting value: {e}")
-            return Err(ValueServiceError(f"Error converting value: {str(e)}"))
+            return Failure(ValueServiceError(f"Error converting value: {str(e)}"))
 
     def _get_repository(self, value_type: Type[ValueObj]):
         """Get the appropriate repository for a value type."""

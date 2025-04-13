@@ -9,7 +9,7 @@ This module provides utilities for collecting and exporting application metrics,
 including counters, gauges, histograms, and timers.
 """
 
-from typing import Dict, List, Any, Optional, Callable, TypeVar, Generic, Union, Set
+from typing import Dict, List, Any, Optional, Callable, TypeVar, Generic, Union, Set, Awaitable
 import asyncio
 import time
 import logging

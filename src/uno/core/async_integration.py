@@ -5,11 +5,12 @@ This module provides ready-to-use integrations for common async patterns
 to make it easy to adopt the async-first architecture throughout the codebase.
 """
 
-from typing import Any, Callable, TypeVar, Optional, List, Dict, Union, Type, Awaitable, cast
+from typing import Any, Callable, TypeVar, Optional, List, Dict, Union, Type, Awaitable, cast, Generic, AsyncIterator
 import asyncio
 import inspect
 import functools
 import logging
+import contextlib
 from contextlib import AbstractAsyncContextManager
 
 from uno.core.async_utils import (

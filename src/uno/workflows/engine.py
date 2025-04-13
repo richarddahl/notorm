@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from uno.core.errors.result import Result, Ok, Err
+from uno.core.errors.result import Result, Success, Failure
 from uno.domain.events import DomainEvent, EventHandler
 from uno.errors import UnoError
 from uno.settings import uno_settings
@@ -137,7 +137,7 @@ class WorkflowEngine:
     def register_condition_handler(
         self,
         condition_type: WorkflowConditionType,
-        handler: Callable[[WorkflowCondition, WorkflowEventModel, Dict[str, Any]], Result[bool, WorkflowError]]
+        handler: Callable[[WorkflowCondition, WorkflowEventModel, Dict[str, Any]], Result[bool]]
     ) -> None:
         """Register a handler for a specific condition type."""
         self._condition_handlers[condition_type] = handler
@@ -145,7 +145,7 @@ class WorkflowEngine:
     def register_action_handler(
         self,
         action_type: WorkflowActionType,
-        handler: Callable[[WorkflowAction, WorkflowEventModel, Dict[str, Any], List[User]], Result[Dict[str, Any], WorkflowError]]
+        handler: Callable[[WorkflowAction, WorkflowEventModel, Dict[str, Any], List[User]], Result[Dict[str, Any]]]
     ) -> None:
         """Register a handler for a specific action type."""
         self._action_handlers[action_type] = handler
@@ -153,12 +153,12 @@ class WorkflowEngine:
     def register_recipient_resolver(
         self,
         recipient_type: WorkflowRecipientType,
-        resolver: Callable[[WorkflowRecipient, Dict[str, Any]], Result[List[User], WorkflowError]]
+        resolver: Callable[[WorkflowRecipient, Dict[str, Any]], Result[List[User]]]
     ) -> None:
         """Register a resolver for a specific recipient type."""
         self._recipient_resolvers[recipient_type] = resolver
     
-    async def process_event(self, event: WorkflowEventModel) -> Result[Dict[str, Any], WorkflowError]:
+    async def process_event(self, event: WorkflowEventModel) -> Result[Dict[str, Any]]:
         """Process a database event and execute matching workflows."""
         self.logger.debug(f"Processing event: {event.table_name} {event.operation}")
         
@@ -168,7 +168,7 @@ class WorkflowEngine:
             
             if not matching_workflows:
                 self.logger.debug(f"No matching workflows found for {event.table_name} {event.operation}")
-                return Ok({"status": "no_matches", "message": "No matching workflows found"})
+                return Success({"status": "no_matches", "message": "No matching workflows found"})
             
             results = []
             
@@ -179,18 +179,18 @@ class WorkflowEngine:
                     "workflow_id": workflow_def.id,
                     "workflow_name": workflow_def.name,
                     "status": (
-                        workflow_result.unwrap().get("status")
-                        if workflow_result.is_ok()
+                        workflow_result.value.get("status")
+                        if workflow_result.is_success
                         else "error"
                     ),
                     "message": (
-                        workflow_result.unwrap().get("message")
-                        if workflow_result.is_ok()
-                        else str(workflow_result.unwrap_err())
+                        workflow_result.value.get("message")
+                        if workflow_result.is_success
+                        else str(workflow_result.error)
                     ),
                 })
             
-            return Ok({
+            return Success({
                 "status": "processed",
                 "count": len(results),
                 "results": results
@@ -198,7 +198,7 @@ class WorkflowEngine:
             
         except Exception as e:
             self.logger.exception(f"Error processing event: {e}")
-            return Err(WorkflowError(f"Error processing event: {str(e)}"))
+            return Failure(WorkflowError(f"Error processing event: {str(e)}"))
     
     async def _find_matching_workflows(
         self,
@@ -369,7 +369,7 @@ class WorkflowEngine:
         workflow: WorkflowDef,
         trigger: WorkflowTrigger,
         event: WorkflowEventModel
-    ) -> Result[Dict[str, Any], WorkflowError]:
+    ) -> Result[Dict[str, Any]]:
         """Execute a workflow based on an event."""
         self.logger.info(f"Executing workflow '{workflow.name}' (ID: {workflow.id}) for event {event.table_name} {event.operation}")
         
@@ -388,24 +388,24 @@ class WorkflowEngine:
             
             # Check if conditions are met
             conditions_result = await self._evaluate_conditions(workflow, event, execution_context)
-            if conditions_result.is_err():
-                error = conditions_result.unwrap_err()
+            if conditions_result.is_failure:
+                error = conditions_result.error
                 await self._update_execution_record(
                     execution_record.id,
                     WorkflowExecutionStatus.FAILURE,
                     {"error": str(error)},
                     str(error)
                 )
-                return Err(error)
+                return Failure(error)
             
-            if not conditions_result.unwrap():
+            if not conditions_result.value:
                 await self._update_execution_record(
                     execution_record.id,
                     WorkflowExecutionStatus.SUCCESS,
                     {"message": "Conditions not met, workflow skipped"},
                     None
                 )
-                return Ok({
+                return Success({
                     "status": "skipped",
                     "message": "Conditions not met",
                     "execution_id": execution_record.id
@@ -413,22 +413,22 @@ class WorkflowEngine:
             
             # Execute actions
             actions_result = await self._execute_actions(workflow, event, execution_context)
-            if actions_result.is_err():
-                error = actions_result.unwrap_err()
+            if actions_result.is_failure:
+                error = actions_result.error
                 await self._update_execution_record(
                     execution_record.id,
                     WorkflowExecutionStatus.FAILURE,
                     {"error": str(error)},
                     str(error)
                 )
-                return Err(error)
+                return Failure(error)
             
             # Calculate execution time
             end_time = datetime.utcnow()
             execution_time = (end_time - start_time).total_seconds() * 1000  # in milliseconds
             
             # Update execution record
-            action_results = actions_result.unwrap()
+            action_results = actions_result.value
             await self._update_execution_record(
                 execution_record.id,
                 WorkflowExecutionStatus.SUCCESS,
@@ -437,7 +437,7 @@ class WorkflowEngine:
                 execution_time
             )
             
-            return Ok({
+            return Success({
                 "status": "success",
                 "message": f"Workflow '{workflow.name}' executed successfully",
                 "execution_id": execution_record.id,
@@ -456,7 +456,7 @@ class WorkflowEngine:
                 str(e)
             )
             
-            return Err(WorkflowError(f"Error executing workflow: {str(e)}"))
+            return Failure(WorkflowError(f"Error executing workflow: {str(e)}"))
     
     async def _create_execution_record(
         self,
@@ -526,10 +526,10 @@ class WorkflowEngine:
         workflow: WorkflowDef,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[bool, WorkflowError]:
+    ) -> Result[bool]:
         """Evaluate all conditions for a workflow."""
         if not workflow.conditions:
-            return Ok(True)  # No conditions means the workflow should execute
+            return Success(True)  # No conditions means the workflow should execute
         
         for condition in workflow.conditions:
             handler = self._condition_handlers.get(condition.condition_type)
@@ -543,25 +543,25 @@ class WorkflowEngine:
             else:
                 result = handler(condition, event, context)
                 
-            if result.is_err():
+            if result.is_failure:
                 return result
             
-            if not result.unwrap():
+            if not result.value:
                 # If any condition fails, the workflow should not execute
                 self.logger.info(f"Condition {condition.id} ({condition.name or condition.condition_type}) not met")
-                return Ok(False)
+                return Success(False)
         
-        return Ok(True)
+        return Success(True)
     
     async def _execute_actions(
         self,
         workflow: WorkflowDef,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[List[Dict[str, Any]], WorkflowError]:
+    ) -> Result[List[Dict[str, Any]]]:
         """Execute all actions for a workflow."""
         if not workflow.actions:
-            return Ok([])  # No actions to execute
+            return Success([])  # No actions to execute
         
         results = []
         
@@ -576,40 +576,40 @@ class WorkflowEngine:
             
             # Resolve recipients for this action
             recipients_result = await self._resolve_recipients(action, workflow, context)
-            if recipients_result.is_err():
-                self.logger.warning(f"Failed to resolve recipients for action {action.id}: {recipients_result.unwrap_err()}")
+            if recipients_result.is_failure:
+                self.logger.warning(f"Failed to resolve recipients for action {action.id}: {recipients_result.error}")
                 recipients = []
             else:
-                recipients = recipients_result.unwrap()
+                recipients = recipients_result.value
             
             # Execute the action
             action_result = handler(action, event, context, recipients)
             
-            if action_result.is_err():
-                self.logger.warning(f"Action {action.id} ({action.name or action.action_type}) failed: {action_result.unwrap_err()}")
+            if action_result.is_failure:
+                self.logger.warning(f"Action {action.id} ({action.name or action.action_type}) failed: {action_result.error}")
                 # Continue with next action even if this one failed
                 results.append({
                     "action_id": action.id,
                     "action_type": action.action_type.value,
                     "status": "error",
-                    "error": str(action_result.unwrap_err())
+                    "error": str(action_result.error)
                 })
             else:
                 results.append({
                     "action_id": action.id,
                     "action_type": action.action_type.value,
                     "status": "success",
-                    "result": action_result.unwrap()
+                    "result": action_result.value
                 })
         
-        return Ok(results)
+        return Success(results)
     
     async def _resolve_recipients(
         self,
         action: WorkflowAction,
         workflow: WorkflowDef,
         context: Dict[str, Any]
-    ) -> Result[List[User], WorkflowError]:
+    ) -> Result[List[User]]:
         """Resolve all recipients for an action."""
         recipients = []
         
@@ -621,11 +621,11 @@ class WorkflowEngine:
                 continue
                 
             result = resolver(recipient, context)
-            if result.is_err():
-                self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.unwrap_err()}")
+            if result.is_failure:
+                self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.error}")
                 continue
                 
-            recipients.extend(result.unwrap())
+            recipients.extend(result.value)
         
         # If no action-specific recipients, get workflow-level recipients
         if not recipients:
@@ -639,18 +639,18 @@ class WorkflowEngine:
                     continue
                     
                 result = resolver(recipient, context)
-                if result.is_err():
-                    self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.unwrap_err()}")
+                if result.is_failure:
+                    self.logger.warning(f"Failed to resolve recipient {recipient.id}: {result.error}")
                     continue
                     
-                recipients.extend(result.unwrap())
+                recipients.extend(result.value)
         
         # Deduplicate recipients by ID
         unique_recipients = {}
         for recipient in recipients:
             unique_recipients[recipient.id] = recipient
             
-        return Ok(list(unique_recipients.values()))
+        return Success(list(unique_recipients.values()))
 
     # ===== Default condition handlers =====
     
@@ -659,12 +659,12 @@ class WorkflowEngine:
         condition: WorkflowCondition,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[bool, WorkflowError]:
+    ) -> Result[bool]:
         """Handle a field value condition."""
         try:
             config = condition.condition_config
             if not config or not config.get("field"):
-                return Err(WorkflowConditionError("Field value condition missing field configuration"))
+                return Failure(WorkflowConditionError("Field value condition missing field configuration"))
             
             field = config["field"]
             operator = config.get("operator", "eq")
@@ -677,67 +677,67 @@ class WorkflowEngine:
             
             # Check if the field exists
             if field not in payload:
-                return Ok(False)
+                return Success(False)
             
             actual_value = payload[field]
             
             # Perform the comparison based on the operator
             if operator == "eq":
-                return Ok(actual_value == expected_value)
+                return Success(actual_value == expected_value)
             elif operator == "neq":
-                return Ok(actual_value != expected_value)
+                return Success(actual_value != expected_value)
             elif operator == "gt":
-                return Ok(actual_value > expected_value)
+                return Success(actual_value > expected_value)
             elif operator == "gte":
-                return Ok(actual_value >= expected_value)
+                return Success(actual_value >= expected_value)
             elif operator == "lt":
-                return Ok(actual_value < expected_value)
+                return Success(actual_value < expected_value)
             elif operator == "lte":
-                return Ok(actual_value <= expected_value)
+                return Success(actual_value <= expected_value)
             elif operator == "in":
-                return Ok(actual_value in expected_value)
+                return Success(actual_value in expected_value)
             elif operator == "nin":
-                return Ok(actual_value not in expected_value)
+                return Success(actual_value not in expected_value)
             elif operator == "contains":
-                return Ok(expected_value in actual_value)
+                return Success(expected_value in actual_value)
             elif operator == "startswith":
-                return Ok(str(actual_value).startswith(str(expected_value)))
+                return Success(str(actual_value).startswith(str(expected_value)))
             elif operator == "endswith":
-                return Ok(str(actual_value).endswith(str(expected_value)))
+                return Success(str(actual_value).endswith(str(expected_value)))
             else:
-                return Err(WorkflowConditionError(f"Unsupported operator: {operator}"))
+                return Failure(WorkflowConditionError(f"Unsupported operator: {operator}"))
                 
         except Exception as e:
-            return Err(WorkflowConditionError(f"Error evaluating field value condition: {str(e)}"))
+            return Failure(WorkflowConditionError(f"Error evaluating field value condition: {str(e)}"))
     
     def _handle_time_based_condition(
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[bool, WorkflowError]:
+    ) -> Result[bool]:
         """Handle a time-based condition."""
         # This is a placeholder implementation
         # In a real implementation, you would check time constraints
-        return Ok(True)
+        return Success(True)
     
     def _handle_role_based_condition(
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[bool, WorkflowError]:
+    ) -> Result[bool]:
         """Handle a role-based condition."""
         # This is a placeholder implementation
         # In a real implementation, you would check user roles
-        return Ok(True)
+        return Success(True)
         
     async def _handle_query_match_condition(
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
         context: Dict[str, Any]
-    ) -> Result[bool, WorkflowError]:
+    ) -> Result[bool]:
         """
         Handle a query match condition by evaluating the record against a saved Query.
         
@@ -756,7 +756,7 @@ class WorkflowEngine:
         try:
             # If no query is associated, return an error
             if not condition.query_id:
-                return Err(WorkflowConditionError(
+                return Failure(WorkflowConditionError(
                     "Query match condition requires a query_id but none was provided"
                 ))
                 
@@ -770,7 +770,7 @@ class WorkflowEngine:
             record_id = payload.get("id")
             if not record_id:
                 self.logger.warning("No record ID found in event payload")
-                return Ok(False)
+                return Success(False)
                 
             # Import Query class here to avoid circular imports
             from uno.queries.objs import Query
@@ -778,7 +778,7 @@ class WorkflowEngine:
             # Get the query
             query = await Query.get(condition.query_id)
             if not query:
-                return Err(WorkflowConditionError(
+                return Failure(WorkflowConditionError(
                     f"Query with ID {condition.query_id} not found"
                 ))
                 
@@ -786,22 +786,22 @@ class WorkflowEngine:
             # This leverages the graph database for complex queries
             match_result = await query.check_record_match(record_id)
             
-            if match_result.is_err():
-                return Err(WorkflowConditionError(
-                    f"Error executing query match: {match_result.unwrap_err()}"
+            if match_result.is_failure:
+                return Failure(WorkflowConditionError(
+                    f"Error executing query match: {match_result.error}"
                 ))
                 
             # Return the match result (True if the record matches, False otherwise)
-            matched = match_result.unwrap()
+            matched = match_result.value
             self.logger.debug(f"Query match condition: record {record_id} {'matches' if matched else 'does not match'} query {condition.query_id}")
-            return Ok(matched)
+            return Success(matched)
                 
         except Exception as e:
             self.logger.exception(f"Error evaluating query match condition: {e}")
-            return Err(WorkflowConditionError(f"Error evaluating query match condition: {str(e)}"))
+            return Failure(WorkflowConditionError(f"Error evaluating query match condition: {str(e)}"))
             
         # Fallback - assume no match
-        return Ok(False)
+        return Success(False)
     
     # ===== Default action handlers =====
     
@@ -811,7 +811,7 @@ class WorkflowEngine:
         event: WorkflowEventModel,
         context: Dict[str, Any],
         recipients: List[User]
-    ) -> Result[Dict[str, Any], WorkflowError]:
+    ) -> Result[Dict[str, Any]]:
         """Handle a notification action."""
         try:
             config = action.action_config
@@ -823,14 +823,14 @@ class WorkflowEngine:
             self.logger.info(f"Notification sent: {title} - {message}")
             self.logger.info(f"Recipients: {', '.join([r.username for r in recipients])}")
             
-            return Ok({
+            return Success({
                 "title": title,
                 "message": message,
                 "recipient_count": len(recipients)
             })
             
         except Exception as e:
-            return Err(WorkflowActionError(f"Error executing notification action: {str(e)}"))
+            return Failure(WorkflowActionError(f"Error executing notification action: {str(e)}"))
     
     def _handle_email_action(
         self,
@@ -838,10 +838,10 @@ class WorkflowEngine:
         event: WorkflowEventModel,
         context: Dict[str, Any],
         recipients: List[User]
-    ) -> Result[Dict[str, Any], WorkflowError]:
+    ) -> Result[Dict[str, Any]]:
         """Handle an email action."""
         # This is a placeholder implementation
-        return Ok({"sent": len(recipients)})
+        return Success({"sent": len(recipients)})
     
     def _handle_webhook_action(
         self,
@@ -849,10 +849,10 @@ class WorkflowEngine:
         event: WorkflowEventModel,
         context: Dict[str, Any],
         recipients: List[User]
-    ) -> Result[Dict[str, Any], WorkflowError]:
+    ) -> Result[Dict[str, Any]]:
         """Handle a webhook action."""
         # This is a placeholder implementation
-        return Ok({"status": "sent"})
+        return Success({"status": "sent"})
     
     # ===== Default recipient resolvers =====
     
@@ -860,7 +860,7 @@ class WorkflowEngine:
         self,
         recipient: WorkflowRecipient,
         context: Dict[str, Any]
-    ) -> Result[List[User], WorkflowError]:
+    ) -> Result[List[User]]:
         """Resolve a user recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch the user from the database
@@ -870,27 +870,27 @@ class WorkflowEngine:
             email=f"user_{recipient.recipient_id}@example.com",
             is_active=True
         )
-        return Ok([user])
+        return Success([user])
     
     def _resolve_role_recipient(
         self,
         recipient: WorkflowRecipient,
         context: Dict[str, Any]
-    ) -> Result[List[User], WorkflowError]:
+    ) -> Result[List[User]]:
         """Resolve a role recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch all users with this role
-        return Ok([])
+        return Success([])
     
     def _resolve_group_recipient(
         self,
         recipient: WorkflowRecipient,
         context: Dict[str, Any]
-    ) -> Result[List[User], WorkflowError]:
+    ) -> Result[List[User]]:
         """Resolve a group recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch all users in this group
-        return Ok([])
+        return Success([])
 
 
 class WorkflowEventHandler(EventHandler):
@@ -916,10 +916,10 @@ class WorkflowEventHandler(EventHandler):
         # Process the event
         result = await self.workflow_engine.process_event(workflow_event)
         
-        if result.is_err():
-            self.logger.error(f"Error processing workflow event: {result.unwrap_err()}")
+        if result.is_failure:
+            self.logger.error(f"Error processing workflow event: {result.error}")
         else:
-            response = result.unwrap()
+            response = result.value
             self.logger.debug(f"Workflow processing result: {response}")
     
     def _convert_domain_event_to_workflow_event(self, event: DomainEvent) -> WorkflowEventModel:

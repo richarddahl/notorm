@@ -8,8 +8,8 @@ import inject
 
 from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtocol
 from uno.database.db_manager import DBManager
-from uno.database.repository import UnoRepository
-from uno.core.errors.result import Result
+from uno.database.repository import UnoBaseRepository
+from uno.core.errors.result import Result, Success, Failure
 from uno.errors import UnoError
 
 from uno.workflows.models import (
@@ -39,7 +39,7 @@ from uno.workflows.engine import (
 )
 
 
-class WorkflowRepository(UnoRepository, UnoRepositoryProtocol):
+class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
     """Repository for workflow-related operations."""
     
     @inject.params(db_manager=DBManager)
@@ -306,59 +306,59 @@ class WorkflowService(UnoServiceProtocol):
         self.logger = logger or logging.getLogger(__name__)
         self.event_listener = None
     
-    async def get_workflow_by_id(self, workflow_id: str) -> Result[WorkflowDef, UnoError]:
+    async def get_workflow_by_id(self, workflow_id: str) -> Result[WorkflowDef]:
         """Get a workflow by ID."""
         try:
             workflow = await self.repository.get_workflow_by_id(workflow_id)
             if not workflow:
-                return Result.err(UnoError(f"Workflow with ID {workflow_id} not found"))
+                return Failure(UnoError(f"Workflow with ID {workflow_id} not found"))
             
-            return Result.ok(workflow)
+            return Success(workflow)
         except Exception as e:
             self.logger.exception(f"Error getting workflow {workflow_id}: {e}")
-            return Result.err(UnoError(f"Error getting workflow: {str(e)}"))
+            return Failure(UnoError(f"Error getting workflow: {str(e)}"))
     
-    async def get_active_workflows(self) -> Result[List[WorkflowDef], UnoError]:
+    async def get_active_workflows(self) -> Result[List[WorkflowDef]]:
         """Get all active workflows."""
         try:
             workflows = await self.repository.get_active_workflows()
-            return Result.ok(workflows)
+            return Success(workflows)
         except Exception as e:
             self.logger.exception(f"Error getting active workflows: {e}")
-            return Result.err(UnoError(f"Error getting active workflows: {str(e)}"))
+            return Failure(UnoError(f"Error getting active workflows: {str(e)}"))
     
-    async def create_workflow(self, workflow: WorkflowDef) -> Result[str, UnoError]:
+    async def create_workflow(self, workflow: WorkflowDef) -> Result[str]:
         """Create a new workflow."""
         try:
             workflow_id = await self.repository.create_workflow(workflow)
-            return Result.ok(workflow_id)
+            return Success(workflow_id)
         except Exception as e:
             self.logger.exception(f"Error creating workflow: {e}")
-            return Result.err(UnoError(f"Error creating workflow: {str(e)}"))
+            return Failure(UnoError(f"Error creating workflow: {str(e)}"))
     
-    async def update_workflow(self, workflow: WorkflowDef) -> Result[str, UnoError]:
+    async def update_workflow(self, workflow: WorkflowDef) -> Result[str]:
         """Update an existing workflow."""
         try:
             workflow_id = await self.repository.update_workflow(workflow)
             if not workflow_id:
-                return Result.err(UnoError(f"Workflow with ID {workflow.id} not found"))
+                return Failure(UnoError(f"Workflow with ID {workflow.id} not found"))
             
-            return Result.ok(workflow_id)
+            return Success(workflow_id)
         except Exception as e:
             self.logger.exception(f"Error updating workflow {workflow.id}: {e}")
-            return Result.err(UnoError(f"Error updating workflow: {str(e)}"))
+            return Failure(UnoError(f"Error updating workflow: {str(e)}"))
     
-    async def delete_workflow(self, workflow_id: str) -> Result[bool, UnoError]:
+    async def delete_workflow(self, workflow_id: str) -> Result[bool]:
         """Delete a workflow."""
         try:
             success = await self.repository.delete_workflow(workflow_id)
             if not success:
-                return Result.err(UnoError(f"Workflow with ID {workflow_id} not found"))
+                return Failure(UnoError(f"Workflow with ID {workflow_id} not found"))
             
-            return Result.ok(True)
+            return Success(True)
         except Exception as e:
             self.logger.exception(f"Error deleting workflow {workflow_id}: {e}")
-            return Result.err(UnoError(f"Error deleting workflow: {str(e)}"))
+            return Failure(UnoError(f"Error deleting workflow: {str(e)}"))
     
     async def get_execution_logs(
         self,
@@ -366,7 +366,7 @@ class WorkflowService(UnoServiceProtocol):
         status: Optional[str] = None,
         limit: int = 100,
         offset: int = 0
-    ) -> Result[List[WorkflowExecutionRecord], UnoError]:
+    ) -> Result[List[WorkflowExecutionRecord]]:
         """Get execution logs for workflows."""
         try:
             logs = await self.repository.get_execution_logs(
@@ -375,12 +375,12 @@ class WorkflowService(UnoServiceProtocol):
                 limit=limit,
                 offset=offset
             )
-            return Result.ok(logs)
+            return Success(logs)
         except Exception as e:
             self.logger.exception(f"Error getting execution logs: {e}")
-            return Result.err(UnoError(f"Error getting execution logs: {str(e)}"))
+            return Failure(UnoError(f"Error getting execution logs: {str(e)}"))
     
-    async def start_event_listener(self) -> Result[bool, UnoError]:
+    async def start_event_listener(self) -> Result[bool]:
         """Start the PostgreSQL event listener."""
         try:
             if self.event_listener is None:
@@ -391,24 +391,24 @@ class WorkflowService(UnoServiceProtocol):
                 )
             
             await self.event_listener.start()
-            return Result.ok(True)
+            return Success(True)
         except Exception as e:
             self.logger.exception(f"Error starting event listener: {e}")
-            return Result.err(UnoError(f"Error starting event listener: {str(e)}"))
+            return Failure(UnoError(f"Error starting event listener: {str(e)}"))
     
-    async def stop_event_listener(self) -> Result[bool, UnoError]:
+    async def stop_event_listener(self) -> Result[bool]:
         """Stop the PostgreSQL event listener."""
         try:
             if self.event_listener:
                 await self.event_listener.stop()
-                return Result.ok(True)
+                return Success(True)
             
-            return Result.ok(False)
+            return Success(False)
         except Exception as e:
             self.logger.exception(f"Error stopping event listener: {e}")
-            return Result.err(UnoError(f"Error stopping event listener: {str(e)}"))
+            return Failure(UnoError(f"Error stopping event listener: {str(e)}"))
     
-    async def process_event(self, event: Dict[str, Any]) -> Result[Dict[str, Any], UnoError]:
+    async def process_event(self, event: Dict[str, Any]) -> Result[Dict[str, Any]]:
         """Process a workflow event."""
         try:
             # Convert to WorkflowEventModel
@@ -417,13 +417,13 @@ class WorkflowService(UnoServiceProtocol):
             # Process the event
             result = await self.workflow_engine.process_event(workflow_event)
             
-            if result.is_err():
-                return Result.err(UnoError(f"Error processing workflow event: {result.unwrap_err()}"))
+            if result.is_failure:
+                return Failure(UnoError(f"Error processing workflow event: {result.error}"))
             
-            return Result.ok(result.unwrap())
+            return Success(result.value)
         except Exception as e:
             self.logger.exception(f"Error processing workflow event: {e}")
-            return Result.err(UnoError(f"Error processing workflow event: {str(e)}"))
+            return Failure(UnoError(f"Error processing workflow event: {str(e)}"))
 
 
 def configure_workflow_module(binder):

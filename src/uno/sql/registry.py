@@ -36,8 +36,13 @@ class SQLConfigRegistry:
 
         Raises:
             UnoError: If a class with the same name already exists in the registry
+                     and it's not the same class
         """
         if config_class.__name__ in cls._registry:
+            # Skip if trying to register the same class again
+            existing_class = cls._registry[config_class.__name__]
+            if config_class.__module__ == existing_class.__module__:
+                return
             raise UnoError(
                 f"SQLConfig class: {config_class.__name__} already exists in the registry.",
                 "DUPLICATE_SQLCONFIG",

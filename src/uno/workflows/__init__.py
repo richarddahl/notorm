@@ -67,10 +67,23 @@ from uno.workflows.app_integration import (
     workflow_dependency,
 )
 
-# Register the workflow module with the dependency injector
-inject.configure_once(configure_workflow_module)
+# We'll configure the workflow module later, when main application dependencies are set up
+# This prevents "No injector is configured" errors during import
+# inject.configure_once(configure_workflow_module)
 
-# Make SQL configurations available
+# Import schemas and registration function
+from uno.workflows.schemas import register_workflow_schemas
+# Legacy schemas have been removed for simplicity
+
+# Register schemas
+try:
+    register_workflow_schemas()
+except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to register workflow schemas: {e}")
+
+# Make everything available
 __all__ = [
     # Models
     "WorkflowDefinition",
@@ -87,7 +100,7 @@ __all__ = [
     "WorkflowExecutionStatus",
     "WorkflowConditionType",
     
-    # Objects
+    # Objects - Legacy objects have been removed
     "WorkflowDef",
     "WorkflowTrigger",
     "WorkflowCondition",

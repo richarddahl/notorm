@@ -85,7 +85,9 @@ class WorkflowConditionType(enum.StrEnum):
 class WorkflowDefinition(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Defines a workflow that can be triggered by database events."""
     __tablename__ = "workflow_definition"
-    __table_args__ = {"comment": "User-defined workflow definitions"}
+    __table_args__ = (
+        {"comment": "User-defined workflow definitions"},
+    )
 
     # Basic workflow information
     name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -141,8 +143,8 @@ class WorkflowTriggerModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Defines what triggers a workflow."""
     __tablename__ = "workflow_trigger"
     __table_args__ = (
-        {"comment": "Triggers that activate workflows"},
         Index("idx_workflow_trigger_entity", "entity_type"),
+        {"comment": "Triggers that activate workflows"},
     )
 
     # Foreign key to workflow
@@ -188,7 +190,9 @@ class WorkflowTriggerModel(ModelMixin, UnoModel, RecordAuditModelMixin):
 class WorkflowConditionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Additional conditions that must be met for workflow to execute."""
     __tablename__ = "workflow_condition"
-    __table_args__ = {"comment": "Conditions for workflow execution"}
+    __table_args__ = (
+        {"comment": "Conditions for workflow execution"},
+    )
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -241,7 +245,9 @@ class WorkflowConditionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
 class WorkflowActionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Action to take when workflow is triggered and conditions are met."""
     __tablename__ = "workflow_action"
-    __table_args__ = {"comment": "Actions to execute when workflow is triggered"}
+    __table_args__ = (
+        {"comment": "Actions to execute when workflow is triggered"},
+    )
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -296,7 +302,9 @@ class WorkflowActionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
 class WorkflowRecipientModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Recipients for workflow notifications."""
     __tablename__ = "workflow_recipient"
-    __table_args__ = {"comment": "Recipients for workflow notifications"}
+    __table_args__ = (
+        {"comment": "Recipients for workflow notifications"},
+    )
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -344,9 +352,9 @@ class WorkflowExecutionLog(ModelMixin, UnoModel, RecordAuditModelMixin):
     """Logs of workflow executions."""
     __tablename__ = "workflow_execution_log"
     __table_args__ = (
-        {"comment": "Log of workflow executions"},
         Index("idx_workflow_execution_status", "status"),
         Index("idx_workflow_execution_timestamp", "executed_at"),
+        {"comment": "Log of workflow executions"},
     )
 
     # Foreign key to workflow

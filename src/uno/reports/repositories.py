@@ -12,13 +12,22 @@ defined in the interfaces module, using the UnoBaseRepository as a foundation.
 from typing import List, Optional, Dict, Any, Type, cast
 from datetime import datetime
 import logging
+from enum import Enum
 
 from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError, ErrorCode
+from uno.core.errors.base import UnoError
+
+class ErrorCode(str, Enum):
+    """Error codes for report operations."""
+    OPERATION_FAILED = "OPERATION_FAILED"
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    NOT_FOUND = "NOT_FOUND"
+    CONFLICT = "CONFLICT"
+
 from uno.database.repository import UnoBaseRepository
 from uno.reports.models import (
     ReportTemplateModel,
@@ -76,7 +85,7 @@ class ReportTemplateRepository(
         self,
         template_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTemplate], ReportError]:
+    ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by ID."""
         try:
             session = session or self.session
@@ -107,7 +116,7 @@ class ReportTemplateRepository(
         self,
         name: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTemplate], ReportError]:
+    ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by name."""
         try:
             session = session or self.session
@@ -138,7 +147,7 @@ class ReportTemplateRepository(
         self,
         filters: Optional[Dict[str, Any]] = None,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTemplate], ReportError]:
+    ) -> Result[List[ReportTemplate]]:
         """List report templates, optionally filtered."""
         try:
             session = session or self.session
@@ -171,7 +180,7 @@ class ReportTemplateRepository(
         self,
         template: ReportTemplate,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportTemplate, ReportError]:
+    ) -> Result[ReportTemplate]:
         """Create a new report template."""
         try:
             session = session or self.session
@@ -203,7 +212,7 @@ class ReportTemplateRepository(
         self,
         template: ReportTemplate,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportTemplate, ReportError]:
+    ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         try:
             session = session or self.session
@@ -249,7 +258,7 @@ class ReportTemplateRepository(
         self,
         template_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a report template by ID."""
         try:
             session = session or self.session
@@ -294,7 +303,7 @@ class ReportFieldDefinitionRepository(
         self,
         field_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportFieldDefinition], ReportError]:
+    ) -> Result[Optional[ReportFieldDefinition]]:
         """Get a report field definition by ID."""
         try:
             session = session or self.session
@@ -324,7 +333,7 @@ class ReportFieldDefinitionRepository(
         self,
         template_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportFieldDefinition], ReportError]:
+    ) -> Result[List[ReportFieldDefinition]]:
         """List field definitions for a template."""
         try:
             session = session or self.session
@@ -358,7 +367,7 @@ class ReportFieldDefinitionRepository(
         self,
         field: ReportFieldDefinition,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportFieldDefinition, ReportError]:
+    ) -> Result[ReportFieldDefinition]:
         """Create a new field definition."""
         try:
             session = session or self.session
@@ -390,7 +399,7 @@ class ReportFieldDefinitionRepository(
         self,
         field: ReportFieldDefinition,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportFieldDefinition, ReportError]:
+    ) -> Result[ReportFieldDefinition]:
         """Update an existing field definition."""
         try:
             session = session or self.session
@@ -436,7 +445,7 @@ class ReportFieldDefinitionRepository(
         self,
         field_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a field definition by ID."""
         try:
             session = session or self.session
@@ -466,7 +475,7 @@ class ReportFieldDefinitionRepository(
         self,
         fields: List[ReportFieldDefinition],
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportFieldDefinition], ReportError]:
+    ) -> Result[List[ReportFieldDefinition]]:
         """Create multiple field definitions."""
         try:
             session = session or self.session
@@ -506,7 +515,7 @@ class ReportTriggerRepository(
         self,
         trigger_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTrigger], ReportError]:
+    ) -> Result[Optional[ReportTrigger]]:
         """Get a report trigger by ID."""
         try:
             session = session or self.session
@@ -533,7 +542,7 @@ class ReportTriggerRepository(
         self,
         template_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger], ReportError]:
+    ) -> Result[List[ReportTrigger]]:
         """List triggers for a template."""
         try:
             session = session or self.session
@@ -557,7 +566,7 @@ class ReportTriggerRepository(
         self,
         event_type: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger], ReportError]:
+    ) -> Result[List[ReportTrigger]]:
         """List triggers for an event type."""
         try:
             session = session or self.session
@@ -586,7 +595,7 @@ class ReportTriggerRepository(
     async def list_active_scheduled_triggers(
         self,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger], ReportError]:
+    ) -> Result[List[ReportTrigger]]:
         """List all active scheduled triggers."""
         try:
             session = session or self.session
@@ -615,7 +624,7 @@ class ReportTriggerRepository(
         self,
         trigger: ReportTrigger,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportTrigger, ReportError]:
+    ) -> Result[ReportTrigger]:
         """Create a new trigger."""
         try:
             session = session or self.session
@@ -645,7 +654,7 @@ class ReportTriggerRepository(
         self,
         trigger: ReportTrigger,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportTrigger, ReportError]:
+    ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         try:
             session = session or self.session
@@ -691,7 +700,7 @@ class ReportTriggerRepository(
         self,
         trigger_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a trigger by ID."""
         try:
             session = session or self.session
@@ -722,7 +731,7 @@ class ReportTriggerRepository(
         trigger_id: str,
         timestamp: datetime,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Update the last_triggered timestamp for a trigger."""
         try:
             session = session or self.session
@@ -767,7 +776,7 @@ class ReportOutputRepository(
         self,
         output_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportOutput], ReportError]:
+    ) -> Result[Optional[ReportOutput]]:
         """Get a report output by ID."""
         try:
             session = session or self.session
@@ -794,7 +803,7 @@ class ReportOutputRepository(
         self,
         template_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportOutput], ReportError]:
+    ) -> Result[List[ReportOutput]]:
         """List outputs for a template."""
         try:
             session = session or self.session
@@ -818,7 +827,7 @@ class ReportOutputRepository(
         self,
         output: ReportOutput,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportOutput, ReportError]:
+    ) -> Result[ReportOutput]:
         """Create a new output."""
         try:
             session = session or self.session
@@ -849,7 +858,7 @@ class ReportOutputRepository(
         self,
         output: ReportOutput,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportOutput, ReportError]:
+    ) -> Result[ReportOutput]:
         """Update an existing output."""
         try:
             session = session or self.session
@@ -895,7 +904,7 @@ class ReportOutputRepository(
         self,
         output_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete an output by ID."""
         try:
             session = session or self.session
@@ -940,7 +949,7 @@ class ReportExecutionRepository(
         self,
         execution_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportExecution], ReportError]:
+    ) -> Result[Optional[ReportExecution]]:
         """Get a report execution by ID."""
         try:
             session = session or self.session
@@ -972,7 +981,7 @@ class ReportExecutionRepository(
         status: Optional[str] = None,
         limit: int = 100,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportExecution], ReportError]:
+    ) -> Result[List[ReportExecution]]:
         """List executions for a template."""
         try:
             session = session or self.session
@@ -1004,7 +1013,7 @@ class ReportExecutionRepository(
         self,
         execution: ReportExecution,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportExecution, ReportError]:
+    ) -> Result[ReportExecution]:
         """Create a new execution."""
         try:
             session = session or self.session
@@ -1035,7 +1044,7 @@ class ReportExecutionRepository(
         self,
         execution: ReportExecution,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportExecution, ReportError]:
+    ) -> Result[ReportExecution]:
         """Update an existing execution."""
         try:
             session = session or self.session
@@ -1083,7 +1092,7 @@ class ReportExecutionRepository(
         status: str,
         error_details: Optional[str] = None,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Update the status of an execution."""
         try:
             session = session or self.session
@@ -1124,7 +1133,7 @@ class ReportExecutionRepository(
         execution_time_ms: int,
         result_hash: Optional[str] = None,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Mark an execution as completed with result information."""
         try:
             session = session or self.session
@@ -1175,7 +1184,7 @@ class ReportOutputExecutionRepository(
         self,
         output_execution_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportOutputExecution], ReportError]:
+    ) -> Result[Optional[ReportOutputExecution]]:
         """Get a report output execution by ID."""
         try:
             session = session or self.session
@@ -1205,7 +1214,7 @@ class ReportOutputExecutionRepository(
         self,
         execution_id: str,
         session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportOutputExecution], ReportError]:
+    ) -> Result[List[ReportOutputExecution]]:
         """List output executions for a report execution."""
         try:
             session = session or self.session
@@ -1230,7 +1239,7 @@ class ReportOutputExecutionRepository(
         self,
         output_execution: ReportOutputExecution,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportOutputExecution, ReportError]:
+    ) -> Result[ReportOutputExecution]:
         """Create a new output execution."""
         try:
             session = session or self.session
@@ -1261,7 +1270,7 @@ class ReportOutputExecutionRepository(
         self,
         output_execution: ReportOutputExecution,
         session: Optional[AsyncSession] = None
-    ) -> Result[ReportOutputExecution, ReportError]:
+    ) -> Result[ReportOutputExecution]:
         """Update an existing output execution."""
         try:
             session = session or self.session
@@ -1309,7 +1318,7 @@ class ReportOutputExecutionRepository(
         output_location: str,
         output_size_bytes: int,
         session: Optional[AsyncSession] = None
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Mark an output execution as completed with result information."""
         try:
             session = session or self.session

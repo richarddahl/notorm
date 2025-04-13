@@ -13,12 +13,12 @@ from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 import logging
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body, status
+from fastapi import APIRouter, HTTPException, Depends, Query, Path, Body, status, FastAPI
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.api.endpoint import UnoEndpoint
-from uno.api.endpoint_factory import EndpointFactory
+from uno.api.endpoint import UnoEndpoint, ListRouter
+from uno.api.endpoint_factory import UnoEndpointFactory
 from uno.dependencies.fastapi import get_db_session, inject_dependency
 from uno.core.errors.result import Result
 from uno.reports.interfaces import (
@@ -797,52 +797,55 @@ async def list_executions(
 
 
 # Create UnoEndpoint instances
-template_endpoint = UnoEndpoint(
-    name="report_templates",
-    router=router,
-    prefix="/report-templates",
-    tags=["reports"],
-    description="Report templates API"
-)
+# The UnoEndpoint initialization requires an app parameter
+# This needs to be passed when integrating with a FastAPI application
+# Will be initialized in the application startup code
 
-field_endpoint = UnoEndpoint(
-    name="report_fields",
-    router=router,
-    prefix="/report-fields",
-    tags=["reports"],
-    description="Report fields API"
-)
+# Define a function that will create the endpoints when an app is available
+def create_endpoints(app: FastAPI):
+    """Create UnoEndpoint instances for reports module with the FastAPI app instance."""
+    return [
+        UnoEndpoint(
+            name="report_templates",
+            model=ReportTemplate,
+            router=ListRouter,  # Use appropriate router class
+            app=app,
+            response_model="view_schema",  # Use appropriate schema
+            body_model=None,
+        ),
+        UnoEndpoint(
+            name="report_fields",
+            model=ReportFieldDefinition,
+            router=ListRouter,  # Use appropriate router class
+            app=app,
+            response_model="view_schema",  # Use appropriate schema
+            body_model=None,
+        ),
+        UnoEndpoint(
+            name="report_triggers",
+            model=ReportTrigger,
+            router=ListRouter,  # Use appropriate router class
+            app=app,
+            response_model="view_schema",  # Use appropriate schema
+            body_model=None,
+        ),
+        UnoEndpoint(
+            name="report_outputs",
+            model=ReportOutput,
+            router=ListRouter,  # Use appropriate router class
+            app=app,
+            response_model="view_schema",  # Use appropriate schema
+            body_model=None,
+        ),
+        UnoEndpoint(
+            name="report_executions",
+            model=ReportExecution,
+            router=ListRouter,  # Use appropriate router class
+            app=app,
+            response_model="view_schema",  # Use appropriate schema
+            body_model=None,
+        )
+    ]
 
-trigger_endpoint = UnoEndpoint(
-    name="report_triggers",
-    router=router,
-    prefix="/report-triggers",
-    tags=["reports"],
-    description="Report triggers API"
-)
-
-output_endpoint = UnoEndpoint(
-    name="report_outputs",
-    router=router,
-    prefix="/report-outputs",
-    tags=["reports"],
-    description="Report outputs API"
-)
-
-execution_endpoint = UnoEndpoint(
-    name="report_executions",
-    router=router,
-    prefix="/report-executions",
-    tags=["reports"],
-    description="Report executions API"
-)
-
-
-# Export endpoints
-endpoints = [
-    template_endpoint,
-    field_endpoint,
-    trigger_endpoint,
-    output_endpoint,
-    execution_endpoint
-]
+# Export endpoints via the router
+endpoints = router

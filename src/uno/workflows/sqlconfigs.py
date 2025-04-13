@@ -6,15 +6,152 @@ from uno.sql.classes import SQLConfig
 from uno.sql.emitters.table import (
     AlterGrants,
     InsertMetaType,
-    CreateTable,
-    CreateIndex,
 )
-from uno.sql.emitters.triggers import (
-    CreateTrigger,
-    CreateEventTriggerFunction,
-)
+from typing import List, Dict, Any, Optional
+from uno.sql.builders import SQLIndexBuilder, SQLTriggerBuilder, SQLFunctionBuilder
+from uno.sql.emitter import SQLEmitter
+from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.emitters.graph import GraphSQLEmitter
 from uno.meta.models import MetaTypeModel, MetaRecordModel
+
+# Custom CreateTable emitter for workflows module
+class CreateTable(SQLEmitter):
+    """Emitter for creating tables in the database."""
+    
+    # Model is needed as a field for pydantic
+    model: Any = None
+    _table: Optional[Any] = None
+    
+    def model_post_init(self, __context):
+        """Called after pydantic initialization."""
+        super().model_post_init(__context)
+        if self.model:
+            self._table = self.model.__table__
+            
+    @property
+    def table(self):
+        return self._table
+        
+    def generate_sql(self) -> List[SQLStatement]:
+        """Generate SQL statement for creating the table.
+        
+        Returns:
+            List of SQL statements with metadata
+        """
+        if self.table is None:
+            return []
+            
+        # Use sqlalchemy's CreateTable DDL
+        from sqlalchemy.schema import CreateTable as SQLACreateTable
+        
+        create_table_sql = str(SQLACreateTable(self.table))
+        
+        # Add statement to the list
+        return [
+            SQLStatement(
+                name=f"create_{self.table.name}_table",
+                type=SQLStatementType.TABLE,
+                sql=create_table_sql,
+            )
+        ]
+
+# Custom CreateIndex emitter for workflows module
+class CreateIndex(SQLEmitter):
+    """Emitter for creating indexes in the database."""
+    
+    # Fields for pydantic
+    model: Any = None
+    column_name: str = ""
+    _table: Optional[Any] = None
+    
+    def model_post_init(self, __context):
+        """Called after pydantic initialization."""
+        super().model_post_init(__context)
+        if self.model:
+            self._table = self.model.__table__
+            
+    @property
+    def table(self):
+        return self._table
+        
+    def generate_sql(self) -> List[SQLStatement]:
+        """Generate SQL statement for creating the index.
+        
+        Returns:
+            List of SQL statements with metadata
+        """
+        if self.table is None:
+            return []
+            
+        # Generate index name
+        index_name = f"idx_{self.table.name}_{self.column_name}"
+        
+        # Generate create index SQL
+        create_index_sql = f"""
+        CREATE INDEX IF NOT EXISTS {index_name}
+        ON {self.table.schema}.{self.table.name} ({self.column_name});
+        """
+        
+        # Add statement to the list
+        return [
+            SQLStatement(
+                name=f"create_{index_name}",
+                type=SQLStatementType.INDEX,
+                sql=create_index_sql,
+            )
+        ]
+        
+# Custom CreateEventTriggerFunction emitter for workflows module
+class CreateEventTriggerFunction(SQLEmitter):
+    """Emitter for creating event trigger functions."""
+    
+    # Fields for pydantic
+    name: str = ""
+    description: str = ""
+    parameters: List[Dict[str, Any]] = []
+    returns: str = "void"
+    volatility: str = "VOLATILE"
+    sql: str = ""
+    
+    @property
+    def function_name(self):
+        return self.name
+        
+    @property
+    def function_sql(self):
+        return self.sql
+        
+    def generate_sql(self) -> List[SQLStatement]:
+        """Generate SQL statement for creating the event trigger function.
+        
+        Returns:
+            List of SQL statements with metadata
+        """
+        # Format parameters
+        params_str = ""
+        if self.parameters:
+            params_str = ", ".join([f"{param['name']} {param['type']}" for param in self.parameters])
+            
+        # Generate complete function SQL
+        function_sql = f"""
+        -- {self.description}
+        CREATE OR REPLACE FUNCTION {self.config.DB_SCHEMA}.{self.function_name}({params_str})
+        RETURNS {self.returns}
+        LANGUAGE plpgsql
+        {self.volatility}
+        AS $function$
+        {self.function_sql}
+        $function$;
+        """
+        
+        # Add statement to the list
+        return [
+            SQLStatement(
+                name=f"create_{self.function_name}",
+                type=SQLStatementType.FUNCTION,
+                sql=function_sql,
+            )
+        ]
 from uno.workflows.models import (
     WorkflowDefinition,
     WorkflowTriggerModel,
@@ -25,61 +162,63 @@ from uno.workflows.models import (
 )
 
 
+# Create table objects before passing to SQLConfig to avoid positional argument issues
+wf_table = WorkflowDefinition.__table__
+wf_trigger_table = WorkflowTriggerModel.__table__
+wf_condition_table = WorkflowConditionModel.__table__
+wf_action_table = WorkflowActionModel.__table__
+wf_recipient_table = WorkflowRecipientModel.__table__
+wf_execution_table = WorkflowExecutionLog.__table__
+
 # SQL configurations for workflow-related tables
 workflow_sql_config = SQLConfig(
-    model=WorkflowDefinition,
     emitters=[
-        CreateTable(WorkflowDefinition),
-        AlterGrants(WorkflowDefinition),
+        CreateTable(model=WorkflowDefinition),
+        AlterGrants(table=wf_table),
         GraphSQLEmitter(
-            WorkflowDefinition,
-            MetaTypeModel,
-            "DEFINES_WORKFLOW",
-            "IS_DEFINED_BY_WORKFLOW",
+            source_model=WorkflowDefinition,
+            target_model=MetaTypeModel,
+            rel_name="DEFINES_WORKFLOW",
+            rev_rel_name="IS_DEFINED_BY_WORKFLOW",
         ),
     ],
 )
 
 workflow_trigger_sql_config = SQLConfig(
-    model=WorkflowTriggerModel,
     emitters=[
-        CreateTable(WorkflowTriggerModel),
-        AlterGrants(WorkflowTriggerModel),
-        CreateIndex(WorkflowTriggerModel, "entity_type"),
+        CreateTable(model=WorkflowTriggerModel),
+        AlterGrants(table=wf_trigger_table),
+        CreateIndex(model=WorkflowTriggerModel, column_name="entity_type"),
     ],
 )
 
 workflow_condition_sql_config = SQLConfig(
-    model=WorkflowConditionModel,
     emitters=[
-        CreateTable(WorkflowConditionModel),
-        AlterGrants(WorkflowConditionModel),
+        CreateTable(model=WorkflowConditionModel),
+        AlterGrants(table=wf_condition_table),
     ],
 )
 
 workflow_action_sql_config = SQLConfig(
-    model=WorkflowActionModel,
     emitters=[
-        CreateTable(WorkflowActionModel),
-        AlterGrants(WorkflowActionModel),
+        CreateTable(model=WorkflowActionModel),
+        AlterGrants(table=wf_action_table),
     ],
 )
 
 workflow_recipient_sql_config = SQLConfig(
-    model=WorkflowRecipientModel,
     emitters=[
-        CreateTable(WorkflowRecipientModel),
-        AlterGrants(WorkflowRecipientModel),
+        CreateTable(model=WorkflowRecipientModel),
+        AlterGrants(table=wf_recipient_table),
     ],
 )
 
 workflow_execution_log_sql_config = SQLConfig(
-    model=WorkflowExecutionLog,
     emitters=[
-        CreateTable(WorkflowExecutionLog),
-        AlterGrants(WorkflowExecutionLog),
-        CreateIndex(WorkflowExecutionLog, "status"),
-        CreateIndex(WorkflowExecutionLog, "executed_at"),
+        CreateTable(model=WorkflowExecutionLog),
+        AlterGrants(table=wf_execution_table),
+        CreateIndex(model=WorkflowExecutionLog, column_name="status"),
+        CreateIndex(model=WorkflowExecutionLog, column_name="executed_at"),
     ],
 )
 

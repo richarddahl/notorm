@@ -82,7 +82,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
     async def create_template(
         self, 
         template_data: Dict[str, Any]
-    ) -> Result[ReportTemplate, ReportError]:
+    ) -> Result[ReportTemplate]:
         """Create a new report template."""
         try:
             # Extract fields data if present
@@ -118,7 +118,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
         self, 
         template_id: str, 
         template_data: Dict[str, Any]
-    ) -> Result[ReportTemplate, ReportError]:
+    ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         try:
             # First get the existing template
@@ -171,7 +171,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
     async def delete_template(
         self, 
         template_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a report template."""
         try:
             # Check if template exists
@@ -199,7 +199,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
     async def get_template(
         self, 
         template_id: str
-    ) -> Result[Optional[ReportTemplate], ReportError]:
+    ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by ID."""
         try:
             return await self.template_repository.get_by_id(template_id, self.session)
@@ -213,7 +213,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
     async def list_templates(
         self, 
         filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[ReportTemplate], ReportError]:
+    ) -> Result[List[ReportTemplate]]:
         """List report templates, optionally filtered."""
         try:
             return await self.template_repository.list_templates(filters, self.session)
@@ -228,7 +228,7 @@ class ReportTemplateService(UnoServiceProtocol, ReportTemplateServiceProtocol):
         self, 
         template_id: str, 
         new_name: str
-    ) -> Result[ReportTemplate, ReportError]:
+    ) -> Result[ReportTemplate]:
         """Clone an existing template with a new name."""
         try:
             # Get the source template
@@ -306,7 +306,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
         self, 
         template_id: str, 
         field_data: Dict[str, Any]
-    ) -> Result[ReportFieldDefinition, ReportError]:
+    ) -> Result[ReportFieldDefinition]:
         """Add a field to a report template."""
         try:
             # Check if template exists
@@ -344,7 +344,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
         self, 
         field_id: str, 
         field_data: Dict[str, Any]
-    ) -> Result[ReportFieldDefinition, ReportError]:
+    ) -> Result[ReportFieldDefinition]:
         """Update a field definition."""
         try:
             # Get the existing field
@@ -379,7 +379,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
     async def delete_field(
         self, 
         field_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a field from a report template."""
         try:
             # Check if field exists
@@ -407,7 +407,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
     async def get_available_fields(
         self, 
         base_object_type: str
-    ) -> Result[List[Dict[str, Any]], ReportError]:
+    ) -> Result[List[Dict[str, Any]]]:
         """Get available fields for a specific object type."""
         try:
             # This would involve inspecting the database schema or metadata
@@ -469,7 +469,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
         self, 
         field_type: str, 
         field_config: Dict[str, Any]
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Validate a field configuration."""
         try:
             # Validate based on field type
@@ -548,7 +548,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
     async def get_field_by_id(
         self,
         field_id: str
-    ) -> Result[Optional[ReportFieldDefinition], ReportError]:
+    ) -> Result[Optional[ReportFieldDefinition]]:
         """Get a field by ID."""
         try:
             return await self.field_repository.get_by_id(field_id, self.session)
@@ -562,7 +562,7 @@ class ReportFieldService(UnoServiceProtocol, ReportFieldServiceProtocol):
     async def list_fields_by_template(
         self,
         template_id: str
-    ) -> Result[List[ReportFieldDefinition], ReportError]:
+    ) -> Result[List[ReportFieldDefinition]]:
         """List all fields for a template."""
         try:
             return await self.field_repository.list_by_template(template_id, self.session)
@@ -613,7 +613,7 @@ class ReportExecutionService(UnoServiceProtocol, ReportExecutionServiceProtocol)
         parameters: Optional[Dict[str, Any]] = None,
         trigger_type: str = "manual",
         user_id: Optional[str] = None
-    ) -> Result[ReportExecution, ReportError]:
+    ) -> Result[ReportExecution]:
         """Execute a report with optional parameters."""
         try:
             # Get the template
@@ -698,7 +698,7 @@ class ReportExecutionService(UnoServiceProtocol, ReportExecutionServiceProtocol)
     async def get_execution_status(
         self, 
         execution_id: str
-    ) -> Result[Dict[str, Any], ReportError]:
+    ) -> Result[Dict[str, Any]]:
         """Get the status of a report execution."""
         try:
             # Get the execution
@@ -757,7 +757,7 @@ class ReportExecutionService(UnoServiceProtocol, ReportExecutionServiceProtocol)
     async def cancel_execution(
         self, 
         execution_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Cancel a running report execution."""
         try:
             # Get the execution
@@ -823,7 +823,7 @@ class ReportExecutionService(UnoServiceProtocol, ReportExecutionServiceProtocol)
         self, 
         execution_id: str,
         format: Optional[str] = None
-    ) -> Result[Any, ReportError]:
+    ) -> Result[Any]:
         """Get the result of a completed report execution."""
         try:
             # Get the execution
@@ -913,7 +913,7 @@ class ReportExecutionService(UnoServiceProtocol, ReportExecutionServiceProtocol)
         status: Optional[str] = None,
         date_range: Optional[Tuple[datetime, datetime]] = None,
         limit: int = 100
-    ) -> Result[List[ReportExecution], ReportError]:
+    ) -> Result[List[ReportExecution]]:
         """List report executions, optionally filtered."""
         try:
             # For now, we only support filtering by template and status
@@ -975,7 +975,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
     async def list_triggers_by_template(
         self,
         template_id: str
-    ) -> Result[List[ReportTrigger], ReportError]:
+    ) -> Result[List[ReportTrigger]]:
         """List triggers for a template."""
         try:
             # Check if template exists
@@ -1003,7 +1003,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
         self, 
         template_id: str, 
         trigger_data: Dict[str, Any]
-    ) -> Result[ReportTrigger, ReportError]:
+    ) -> Result[ReportTrigger]:
         """Create a new trigger for a report template."""
         try:
             # Check if template exists
@@ -1037,7 +1037,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
         self, 
         trigger_id: str, 
         trigger_data: Dict[str, Any]
-    ) -> Result[ReportTrigger, ReportError]:
+    ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         try:
             # Get the existing trigger
@@ -1072,7 +1072,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
     async def delete_trigger(
         self, 
         trigger_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete a trigger."""
         try:
             # Check if trigger exists
@@ -1100,7 +1100,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
     async def enable_trigger(
         self, 
         trigger_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Enable a trigger."""
         try:
             # Get the existing trigger
@@ -1132,7 +1132,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
     async def disable_trigger(
         self, 
         trigger_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Disable a trigger."""
         try:
             # Get the existing trigger
@@ -1165,7 +1165,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
         self, 
         event_type: str, 
         event_data: Dict[str, Any]
-    ) -> Result[List[str], ReportError]:
+    ) -> Result[List[str]]:
         """Handle an event that might trigger reports (returns execution IDs)."""
         try:
             # Get triggers for this event type
@@ -1220,7 +1220,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
                 event_data=event_data
             ))
     
-    async def check_query_triggers(self) -> Result[List[str], ReportError]:
+    async def check_query_triggers(self) -> Result[List[str]]:
         """Check query-based triggers and execute reports if conditions are met."""
         try:
             # Get all active query triggers
@@ -1276,7 +1276,7 @@ class ReportTriggerService(UnoServiceProtocol, ReportTriggerServiceProtocol):
                 ErrorCode.OPERATION_FAILED
             ))
     
-    async def process_scheduled_triggers(self) -> Result[List[str], ReportError]:
+    async def process_scheduled_triggers(self) -> Result[List[str]]:
         """Process scheduled triggers and execute reports if due."""
         try:
             # Get all active scheduled triggers
@@ -1399,7 +1399,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
     async def list_outputs_by_template(
         self,
         template_id: str
-    ) -> Result[List[ReportOutput], ReportError]:
+    ) -> Result[List[ReportOutput]]:
         """List output configurations for a template."""
         try:
             # Check if template exists
@@ -1427,7 +1427,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
         self, 
         template_id: str, 
         output_data: Dict[str, Any]
-    ) -> Result[ReportOutput, ReportError]:
+    ) -> Result[ReportOutput]:
         """Create a new output configuration for a report template."""
         try:
             # Check if template exists
@@ -1461,7 +1461,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
         self, 
         output_id: str, 
         output_data: Dict[str, Any]
-    ) -> Result[ReportOutput, ReportError]:
+    ) -> Result[ReportOutput]:
         """Update an existing output configuration."""
         try:
             # Get the existing output
@@ -1496,7 +1496,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
     async def delete_output_config(
         self, 
         output_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Delete an output configuration."""
         try:
             # Check if output exists
@@ -1525,7 +1525,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
         self, 
         execution_id: str, 
         format: str
-    ) -> Result[bytes, ReportError]:
+    ) -> Result[bytes]:
         """Format a report result in the specified format."""
         try:
             # Check if format is supported
@@ -1652,7 +1652,7 @@ class ReportOutputService(UnoServiceProtocol, ReportOutputServiceProtocol):
         self, 
         execution_id: str, 
         output_id: str
-    ) -> Result[bool, ReportError]:
+    ) -> Result[bool]:
         """Deliver a report according to an output configuration."""
         try:
             # Get the execution
