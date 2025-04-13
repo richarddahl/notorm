@@ -13,7 +13,7 @@ This module provides core functionality for the Uno framework, including:
 - Error handling framework
 """
 
-# Protocols
+# Import from protocols
 from uno.core.protocols import (
     # Domain model protocols
     Entity, ValueObject, DomainEvent, AggregateRoot,
@@ -43,7 +43,11 @@ from uno.core.protocols import (
     Pagination, Sorting, QueryOptions,
     
     # Type guards
-    is_entity, is_value_object, is_aggregate_root
+    is_entity, is_value_object, is_aggregate_root,
+    
+    # Database protocols
+    DatabaseSessionProtocol, DatabaseSessionContextProtocol, DatabaseSessionFactoryProtocol,
+    DatabaseRepository
 )
 
 # Error handling
