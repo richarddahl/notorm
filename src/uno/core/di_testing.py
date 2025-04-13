@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from typing import Any, Dict, Optional, Type, TypeVar, cast
 
 from . import di
-from .errors import DomainError
+from .errors.base import UnoError
 
 T = TypeVar("T")
 
@@ -67,10 +67,10 @@ class TestContainer:
             mock_instance: The mock instance to use
             
         Raises:
-            DomainError: If the test container is not set up
+            UnoError: If the test container is not set up
         """
         if self._container is None:
-            raise DomainError(
+            raise UnoError(
                 message="Test container is not set up",
                 code="TEST_CONTAINER_NOT_SETUP",
             )
@@ -85,10 +85,10 @@ class TestContainer:
             The test container
             
         Raises:
-            DomainError: If the test container is not set up
+            UnoError: If the test container is not set up
         """
         if self._container is None:
-            raise DomainError(
+            raise UnoError(
                 message="Test container is not set up",
                 code="TEST_CONTAINER_NOT_SETUP",
             )
