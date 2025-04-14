@@ -32,13 +32,35 @@ This will load your application and apply profiling middleware to collect metric
 
 ### Dashboard Features
 
-The profiling dashboard provides several key features:
+The profiling dashboard provides several powerful features:
 
-1. **Overview**: Summary of all metrics and identified issues
-2. **SQL Queries**: Analysis of query performance, slow queries, and N+1 query detection
-3. **Endpoints**: Analysis of endpoint performance and error rates
-4. **Resources**: Real-time monitoring of CPU and memory usage
-5. **Functions**: Identification of function hotspots and slow functions
+1. **Overview**: A comprehensive summary of all metrics and identified performance issues across your application. Get a quick visual snapshot of your application's health and identify areas that need attention.
+
+2. **SQL Queries Analysis**:
+   - **Slow Query Detection**: Identify queries that exceed performance thresholds
+   - **Query Pattern Analysis**: Group similar queries to detect inefficient patterns
+   - **N+1 Query Detection**: Automatically detect N+1 query anti-patterns that can severely impact performance
+   - **Query Statistics**: View detailed statistics including average duration, max duration, and 95th percentile timing
+
+3. **Endpoint Performance Analysis**:
+   - **Slow Endpoint Detection**: Identify endpoints with slow response times
+   - **Error Rate Monitoring**: Detect endpoints with high error rates
+   - **Status Code Distribution**: Analyze HTTP status code patterns across endpoints
+   - **Request Volume Tracking**: Monitor which endpoints receive the most traffic
+
+4. **Resource Utilization Monitoring**:
+   - **Real-time Graphs**: Visual representation of CPU and memory usage over time
+   - **System vs. Process Metrics**: Compare application resource usage against overall system metrics
+   - **Configurable Time Windows**: View resource utilization across different time spans
+   - **Peak Usage Tracking**: Identify resource usage spikes and patterns
+
+5. **Function Performance Analysis**:
+   - **Hotspot Detection**: Identify functions consuming disproportionate CPU time
+   - **Slow Function Tracking**: Monitor individual function execution times
+   - **Call Frequency Analysis**: See which functions are called most frequently
+   - **Statistical Breakdowns**: View detailed timing statistics for all monitored functions
+
+Each dashboard module includes detailed recommendations for optimizing the identified issues and improving your application's performance.
 
 ## Profiling Middleware
 
