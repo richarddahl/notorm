@@ -59,6 +59,19 @@ from uno.queries.batch_operations import (
     BatchSize,
     BatchMetrics,
 )
+from uno.queries.errors import (
+    QueryErrorCode,
+    QueryExecutionError,
+    QueryNotFoundError,
+    QueryInvalidDataError,
+    QueryPathError,
+    QueryValueError,
+    FilterError,
+    register_query_errors,
+)
+
+# Register error codes in the catalog
+register_query_errors()
 
 __all__ = [
     # Filter
@@ -84,4 +97,13 @@ __all__ = [
     'BatchExecutionStrategy',
     'BatchSize',
     'BatchMetrics',
+    
+    # Error types
+    'QueryErrorCode',
+    'QueryExecutionError',
+    'QueryNotFoundError', 
+    'QueryInvalidDataError',
+    'QueryPathError',
+    'QueryValueError',
+    'FilterError',
 ]

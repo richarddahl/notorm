@@ -14,7 +14,9 @@ from typing import Callable, Any
 
 import inject
 from fastapi import FastAPI, Depends
-from uno.dependencies.scoped_container import get_service
+from uno.core.errors.result import Result
+from uno.workflows.errors import WorkflowErrorCode, WorkflowEventError
+from uno.dependencies.scoped_container import get_service, get_scoped_service
 
 from uno.workflows.integration import (
     get_workflow_integration,
@@ -43,22 +45,50 @@ def setup_workflow_module(app: FastAPI) -> None:
         logger.info("Workflow module dependency injection configured")
     except Exception as e:
         logger.error(f"Failed to configure workflow module dependency injection: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"Traceback: {e.__traceback__}")
+        
+        # Log a user-friendly message
+        logger.error("Workflow functionality may be unavailable due to initialization error")
     
     @app.on_event("startup")
     async def startup_workflow_module() -> None:
         """Register workflow integrations on application startup."""
         logger.info("Initializing workflow module")
-        await register_workflow_integrations(
+        result = await register_workflow_integrations(
             register_domain_events=True,
             start_postgres_listener=True,
         )
+        
+        if result.is_failure:
+            logger.error(f"Failed to initialize workflow module: {result.error}")
+            
+            # Log additional information if available
+            if isinstance(result.error, WorkflowEventError):
+                logger.error(f"Event type: {result.error.context.get('event_type')}")
+                logger.error(f"Reason: {result.error.context.get('reason')}")
+        else:
+            logger.info("Workflow module initialized successfully")
     
     @app.on_event("shutdown")
     async def shutdown_workflow_module() -> None:
         """Clean up workflow integrations on application shutdown."""
         logger.info("Shutting down workflow module")
         integration = get_workflow_integration()
-        await integration.stop_postgres_listener()
+        result = await integration.stop_postgres_listener()
+        
+        if result.is_failure:
+            logger.error(f"Error shutting down workflow module: {result.error}")
+            
+            # Log additional information if available
+            if isinstance(result.error, WorkflowEventError):
+                logger.error(f"Event type: {result.error.context.get('event_type')}")
+                logger.error(f"Reason: {result.error.context.get('reason')}")
+                
+            # Even if shutdown fails, we proceed to ensure a clean exit
+            logger.warning("Continuing with application shutdown despite workflow shutdown failure")
+        else:
+            logger.info("Workflow module shutdown complete")
     
     # Include workflow API endpoints
     try:
@@ -71,6 +101,11 @@ def setup_workflow_module(app: FastAPI) -> None:
         logger.info("Workflow API endpoints registered")
     except Exception as e:
         logger.error(f"Failed to register workflow API endpoints: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"Traceback: {e.__traceback__}")
+        
+        # Log a user-friendly message
+        logger.error("Workflow UI and API routes may be unavailable due to registration error")
 
 
 def get_workflow_dependency() -> Callable[[Any], Any]:
@@ -85,9 +120,9 @@ def get_workflow_dependency() -> Callable[[Any], Any]:
     """
     from uno.workflows.provider import WorkflowService
     
-    def get_workflow_service() -> WorkflowService:
+    async def get_workflow_service() -> WorkflowService:
         """Get the workflow service instance."""
-        return get_service(WorkflowService)
+        return await get_scoped_service(WorkflowService)
     
     return Depends(get_workflow_service)
 

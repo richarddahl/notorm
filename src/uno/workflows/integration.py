@@ -15,6 +15,9 @@ import asyncio
 from typing import Optional, Type, Any, Dict, List
 
 import inject
+from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.base import UnoError
+from uno.workflows.errors import WorkflowErrorCode, WorkflowEventError
 
 from uno.domain.events import (
     DomainEvent, EventBus, get_event_bus,
@@ -118,7 +121,7 @@ class WorkflowEventIntegration:
     async def start_postgres_listener(
         self,
         channel: str = 'workflow_events',
-    ) -> None:
+    ) -> Result[bool]:
         """
         Start the PostgreSQL event listener.
         
@@ -126,37 +129,48 @@ class WorkflowEventIntegration:
             channel: The PostgreSQL notification channel to listen on
         """
         if not self.workflow_service:
-            self.logger.warning(
-                "No workflow service available for PostgreSQL event integration"
-            )
-            return
+            error_msg = "No workflow service available for PostgreSQL event integration"
+            self.logger.warning(error_msg)
+            return Failure(UnoError(
+                error_msg, 
+                WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
+                component="workflow_service"
+            ))
         
         # Start the event listener via the workflow service
         result = await self.workflow_service.start_event_listener()
         
         if result.is_failure:
-            self.logger.error(
-                f"Failed to start PostgreSQL event listener: {result.error}"
-            )
-            return
+            error_msg = f"Failed to start PostgreSQL event listener: {result.error}"
+            self.logger.error(error_msg)
+            return Failure(UnoError(
+                error_msg, 
+                WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
+                operation="start_postgres_listener"
+            ))
         
         self.logger.info(f"Started PostgreSQL event listener on channel '{channel}'")
+        return Success(True)
     
-    async def stop_postgres_listener(self) -> None:
+    async def stop_postgres_listener(self) -> Result[bool]:
         """Stop the PostgreSQL event listener."""
         if not self.workflow_service:
-            return
+            return Success(False)
         
         # Stop the event listener via the workflow service
         result = await self.workflow_service.stop_event_listener()
         
         if result.is_failure:
-            self.logger.error(
-                f"Failed to stop PostgreSQL event listener: {result.error}"
-            )
-            return
+            error_msg = f"Failed to stop PostgreSQL event listener: {result.error}"
+            self.logger.error(error_msg)
+            return Failure(UnoError(
+                error_msg, 
+                WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
+                operation="stop_postgres_listener"
+            ))
         
         self.logger.info("Stopped PostgreSQL event listener")
+        return Success(True)
 
 
 # Create a singleton instance
@@ -188,7 +202,7 @@ async def register_workflow_integrations(
     register_domain_events: bool = True,
     start_postgres_listener: bool = True,
     event_types: Optional[List[Type[DomainEvent]]] = None,
-) -> None:
+) -> Result[bool]:
     """
     Register all workflow integrations.
     
@@ -197,15 +211,30 @@ async def register_workflow_integrations(
         start_postgres_listener: Whether to start the PostgreSQL event listener
         event_types: List of event types to register for
     """
-    integration = get_workflow_integration()
-    
-    # Register with domain event system
-    if register_domain_events:
-        integration.register_domain_event_handler(event_types)
-    
-    # Start PostgreSQL event listener
-    if start_postgres_listener:
-        await integration.start_postgres_listener()
+    try:
+        integration = get_workflow_integration()
+        
+        # Register with domain event system
+        if register_domain_events:
+            integration.register_domain_event_handler(event_types)
+        
+        # Start PostgreSQL event listener
+        if start_postgres_listener:
+            result = await integration.start_postgres_listener()
+            if result.is_failure:
+                return Failure(WorkflowEventError(
+                    event_type="postgres_listener",
+                    reason=f"Failed to start PostgreSQL listener: {result.error}",
+                    message="Workflow integration failure"
+                ))
+        
+        return Success(True)
+    except Exception as e:
+        return Failure(WorkflowEventError(
+            event_type="integration",
+            reason=str(e),
+            message="Failed to register workflow integrations"
+        ))
 
 
 # Add the integration to the workflow module exports

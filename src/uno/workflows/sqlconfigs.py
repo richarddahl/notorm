@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from uno.sql.classes import SQLConfig
+from uno.sql.config import SQLConfig
 from uno.sql.emitters.table import (
     AlterGrants,
     InsertMetaType,

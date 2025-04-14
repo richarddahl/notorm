@@ -12,8 +12,16 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.base import UnoError
 from uno.domain.events import DomainEvent, EventHandler
-from uno.errors import UnoError
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowNotFoundError,
+    WorkflowExecutionError,
+    WorkflowConditionError,
+    WorkflowActionError,
+    WorkflowInvalidDefinitionError
+)
 from uno.settings import uno_settings
 from uno.dependencies.interfaces import UnoRepositoryProtocol
 from uno.database.db_manager import DBManager
@@ -39,24 +47,41 @@ from uno.workflows.objs import (
 )
 
 
-class WorkflowError(UnoError):
-    """Base error class for workflow module errors."""
+class WorkflowEngineError(UnoError):
+    """Base error class for workflow engine module errors."""
+    
+    def __init__(
+        self,
+        message: str,
+        error_code: str = WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
+        **context: Any
+    ):
+        super().__init__(
+            message=message, 
+            error_code=error_code, 
+            **context
+        )
     pass
 
 
-class WorkflowNotFoundError(WorkflowError):
-    """Error raised when a workflow is not found."""
-    pass
-
-
-class WorkflowConditionError(WorkflowError):
-    """Error raised when there's an issue evaluating workflow conditions."""
-    pass
-
-
-class WorkflowActionError(WorkflowError):
-    """Error raised when there's an issue executing workflow actions."""
-    pass
+class WorkflowExecutionActionError(WorkflowEngineError):
+    """Error raised when there's an issue executing workflow actions in the engine."""
+    
+    def __init__(
+        self,
+        message: str,
+        action_name: Optional[str] = None,
+        **context: Any
+    ):
+        ctx = context.copy()
+        if action_name:
+            ctx["action_name"] = action_name
+            
+        super().__init__(
+            message=message,
+            error_code=WorkflowErrorCode.WORKFLOW_ACTION_FAILED,
+            **ctx
+        )
 
 
 class WorkflowEventModel(BaseModel):

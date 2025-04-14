@@ -18,7 +18,7 @@ import smtplib
 import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Protocol, ClassVar, Callable, Type, Union, runtime_checkable
 from pydantic import BaseModel
 
@@ -28,7 +28,11 @@ from uno.core.errors.result import Result, Success, Failure
 from uno.authorization.objs import User
 from uno.settings import uno_settings
 from uno.database.db_manager import DBManager
-from uno.errors import UnoError
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowExecutionError,
+    WorkflowActionError
+)
 from uno.domain.events import EventBus, DomainEvent
 
 from uno.workflows.models import WorkflowActionType
@@ -43,7 +47,7 @@ class ActionExecutionContext(BaseModel):
     action_name: Optional[str] = None
     event_data: Dict[str, Any]
     execution_id: str
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = datetime.now(timezone.utc)
     variables: Dict[str, Any] = {}
     tenant_id: Optional[str] = None
 

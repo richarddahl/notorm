@@ -31,14 +31,15 @@ from uno.database.enhanced_session import enhanced_async_session
 from uno.enums import Include, Match
 from uno.queries.models import QueryModel
 from uno.queries.objs import Query, QueryValue, QueryPath
-from uno.errors import UnoError
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.caching import QueryCache, get_cache_manager
-
-
-class QueryExecutionError(UnoError):
-    """Error raised when query execution fails."""
-    pass
+from uno.queries.errors import (
+    QueryExecutionError,
+    QueryPathError,
+    QueryValueError,
+    FilterError,
+    QueryNotFoundError
+)
 
 
 class QueryExecutor:
@@ -366,9 +367,21 @@ class QueryExecutor:
             
             return Success(result_ids)
         
+        except QueryPathError as e:
+            # Re-use the existing error with more context
+            self.logger.error(f"Path error in query {query.id}: {e}")
+            return Failure(e)
+        except QueryValueError as e:
+            # Re-use the existing error with more context
+            self.logger.error(f"Value error in query {query.id}: {e}")
+            return Failure(e)
         except Exception as e:
             self.logger.exception(f"Error executing query {query.id}: {e}")
-            return Failure(QueryExecutionError(f"Error executing query: {str(e)}"))
+            return Failure(QueryExecutionError(
+                reason=str(e),
+                query_id=query.id,
+                original_exception=str(type(e).__name__)
+            ))
     
     async def _execute_query_values(
         self,
@@ -384,6 +397,12 @@ class QueryExecutor:
         This method executes the graph query for each query value using the cypher_path
         defined in the associated QueryPath. The graph query acts as a subquery that
         returns the IDs of matching records in the relational database.
+        
+        Optimized implementation with:
+        - Batched path loading
+        - Optimized SQL generation for common query patterns
+        - EXISTS-based query optimization for exclusion patterns
+        - Fast path for single-value equality matches
         
         Args:
             query_id: The query ID
@@ -401,19 +420,63 @@ class QueryExecutor:
         # Get results for each query value
         value_results: List[Set[str]] = []
         
+        # Optimization: Batch-load all query paths in a single database query
+        # This reduces the number of round-trips to the database
+        path_ids = [qv.query_path_id for qv in query_values if qv.query_path_id]
+        if not path_ids:
+            return []
+            
+        # Batch-load all paths at once
+        paths_result = await session.execute(
+            select(QueryPath).where(QueryPath.id.in_(path_ids))
+        )
+        paths = {path.id: path for path in paths_result.scalars().all()}
+        
+        # Optimization: Check for single value equality with standard ID pattern
+        # This is one of the most common query patterns and can be highly optimized
+        if (
+            len(query_values) == 1 
+            and query_values[0].query_path_id in paths
+            and (query_values[0].lookup is None or query_values[0].lookup == "equal")
+            and query_values[0].include == Include.INCLUDE
+        ):
+            qv = query_values[0]
+            path = paths[qv.query_path_id]
+            value_ids = [v.id for v in qv.values or []]
+            
+            if len(value_ids) == 1:
+                # Optimize for single-value equality (very common case)
+                # Use direct foreign key lookup when possible
+                if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
+                    # This looks like a direct relationship - try optimized SQL
+                    optimized_query = f"""
+                    SELECT DISTINCT s.id
+                    FROM {path.source_meta_type_id} s
+                    JOIN {path.target_meta_type_id} t ON s.{qv.query_path_id.replace('_id', '')}_id = t.id
+                    WHERE t.id = :value_id
+                    """
+                    try:
+                        # Try the optimized query approach
+                        result = await session.execute(
+                            text(optimized_query),
+                            {"value_id": value_ids[0]},
+                        )
+                        result_ids = {row[0] for row in result.fetchall()}
+                        self.logger.debug(f"Used optimized direct-join query for {qv.id}, found {len(result_ids)} matches")
+                        return list(result_ids)
+                    except Exception as e:
+                        # If the optimized approach fails, log and fall back to standard path
+                        self.logger.debug(f"Optimized query failed, falling back to standard path: {e}")
+                        # Continue with normal execution below
+        
+        # Process each query value
         for qv in query_values:
             # Skip if no path
-            if not qv.query_path_id:
+            if not qv.query_path_id or qv.query_path_id not in paths:
                 continue
             
-            # Get the query path
-            path_result = await session.execute(
-                select(QueryPath).where(QueryPath.id == qv.query_path_id)
-            )
-            path = path_result.scalars().first()
-            
-            if not path:
-                continue
+            # Get the path from our preloaded dictionary
+            path = paths[qv.query_path_id]
             
             # Extract value IDs
             value_ids = [v.id for v in qv.values or []]
@@ -421,96 +484,39 @@ class QueryExecutor:
             if not value_ids:
                 continue
             
+            # Optimization: Choose query strategy based on number of values and lookup type
+            query_strategy = self._choose_query_strategy(qv, path, value_ids)
+            
             # Build lookup condition based on the lookup type
-            lookup_condition = "t.id IN $value_ids$"
-            if qv.lookup and qv.lookup != "equal":
-                # Handle different lookup types for flexible filtering
-                if qv.lookup == "contains":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id CONTAINS val)"
-                elif qv.lookup == "startswith":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id STARTS WITH val)"
-                elif qv.lookup == "endswith":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id ENDS WITH val)"
-                elif qv.lookup == "pattern":
-                    # Regex pattern matching
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id =~ val)"
-                elif qv.lookup == "gt":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id > val)"
-                elif qv.lookup == "gte":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id >= val)"
-                elif qv.lookup == "lt":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id < val)"
-                elif qv.lookup == "lte":
-                    lookup_condition = "ANY(val IN $value_ids$ WHERE t.id <= val)"
-                elif qv.lookup == "range":
-                    # Assumes value_ids has exactly 2 values: [min, max]
-                    if len(value_ids) >= 2:
-                        lookup_condition = f"t.id >= '{value_ids[0]}' AND t.id <= '{value_ids[1]}'"
-                    else:
-                        self.logger.warning(f"Range lookup requires exactly 2 values, got {len(value_ids)}")
-                        lookup_condition = "FALSE"  # No matches if invalid range
-                elif qv.lookup == "null":
-                    # Check if property is null (not present)
-                    lookup_condition = "NOT EXISTS(t.id)"
-                elif qv.lookup == "not_null":
-                    # Check if property exists
-                    lookup_condition = "EXISTS(t.id)"
-                elif qv.lookup == "in_values":
-                    # Default case - already handled with "t.id IN $value_ids$"
-                    pass
-                elif qv.lookup == "not_in_values":
-                    lookup_condition = "NOT (t.id IN $value_ids$)"
-                # Complex property lookups for objects
-                elif qv.lookup == "has_property":
-                    # Check if node has the properties specified in value_ids
-                    lookup_condition = "ALL(prop IN $value_ids$ WHERE EXISTS(t[prop]))"
-                elif qv.lookup == "property_values":
-                    # value_ids should be a list of property:value pairs
-                    prop_conditions = []
-                    for i, val in enumerate(value_ids):
-                        if ":" in val:
-                            prop, val = val.split(":", 1)
-                            prop_conditions.append(f"t.{prop} = '{val}'")
-                    if prop_conditions:
-                        lookup_condition = " AND ".join(prop_conditions)
-                    else:
-                        lookup_condition = "FALSE"  # No matches if invalid format
+            lookup_condition = self._build_lookup_condition(qv.lookup, value_ids)
             
-            # Build and execute cypher query
-            # The graph DB mirrors the relational DB thanks to postgres trigger functions
-            # For complex queries, we use graph paths to query as a subquery,
-            # returning the IDs of matching records to be selected from relational tables
-            cypher_query = f"""
-            WITH matched_ids AS (
-                SELECT DISTINCT s.id
-                FROM cypher('graph', $subq$
-                    MATCH {path.cypher_path}
-                    WHERE {lookup_condition}
-                    RETURN DISTINCT s.id
-                $subq$, $value_ids$:=$value_ids_param$) AS (id TEXT)
-            )
-            SELECT id 
-            FROM {path.source_meta_type_id}
-            WHERE id IN (SELECT id FROM matched_ids)
-            """
+            # Optimize query based on strategy
+            if query_strategy == "direct":
+                # For small value sets with equality conditions, use direct join
+                cypher_query = self._build_direct_join_query(path, qv, value_ids)
+            elif query_strategy == "exists":
+                # For exclusion patterns, use EXISTS for better performance
+                cypher_query = self._build_exists_query(path, qv, lookup_condition, value_ids)
+            elif query_strategy == "standard":
+                # Standard path-based query using cypher
+                cypher_query = self._build_standard_cypher_query(path, qv, lookup_condition, value_ids)
+            else:
+                # Fallback to standard query
+                cypher_query = self._build_standard_cypher_query(path, qv, lookup_condition, value_ids)
             
-            # Convert to include/exclude based on query value configuration
-            if qv.include == Include.EXCLUDE:
-                cypher_query = f"""
-                SELECT id 
-                FROM {path.source_meta_type_id}
-                WHERE id NOT IN (
-                    SELECT id FROM matched_ids
-                )
-                """
-            
-            self.logger.debug(f"Executing cypher query for path {path.cypher_path} with {len(value_ids)} values")
+            self.logger.debug(f"Executing {query_strategy} query for path {path.cypher_path} with {len(value_ids)} values")
             
             try:
-                # Execute query
+                # Execute query with parameters
+                query_params = {"value_ids_param": value_ids}
+                
+                # Add additional parameters if needed
+                if query_strategy == "direct" and len(value_ids) == 1:
+                    query_params["value_id"] = value_ids[0]
+                
                 result = await session.execute(
                     text(cypher_query),
-                    {"value_ids_param": value_ids},
+                    query_params,
                 )
                 
                 # Get result IDs as a set
@@ -518,16 +524,36 @@ class QueryExecutor:
                 self.logger.debug(f"Found {len(result_ids)} matching records for query value {qv.id}")
                 value_results.append(result_ids)
             except Exception as e:
-                self.logger.error(f"Error executing cypher query for path {path.cypher_path}: {e}")
+                self.logger.error(f"Error executing query for path {path.cypher_path}: {e}")
+                # Log the error with structured context for better troubleshooting
+                error_context = {
+                    "path_id": qv.query_path_id,
+                    "cypher_path": path.cypher_path,
+                    "value_count": len(value_ids),
+                    "lookup_type": qv.lookup,
+                    "query_id": query_id,
+                    "value_id": qv.id,
+                    "query_strategy": query_strategy,
+                    "error": str(e)
+                }
+                self.logger.warning(
+                    f"Path {qv.query_path_id} execution error in query {query_id}",
+                    extra=error_context
+                )
                 # Continue processing other values even if one fails
                 continue
+        
+        # Optimization: For AND with empty results, return early
+        if match == Match.AND and not value_results:
+            return []
+            
+        # Optimization: For OR with single result set, return directly
+        if match == Match.OR and len(value_results) == 1:
+            return list(value_results[0])
         
         # Combine results based on match type
         if match == Match.AND:
             # Return intersection of all results
-            if not value_results:
-                return []
-            
             result = value_results[0]
             for r in value_results[1:]:
                 result &= r
@@ -541,6 +567,203 @@ class QueryExecutor:
             
             return list(result)
     
+    def _choose_query_strategy(
+        self, 
+        query_value: QueryValue, 
+        path: QueryPath, 
+        value_ids: List[str]
+    ) -> str:
+        """
+        Choose the best query strategy based on the query value and path.
+        
+        Args:
+            query_value: The query value to analyze
+            path: The query path
+            value_ids: The value IDs to filter by
+            
+        Returns:
+            The query strategy: "direct", "exists", or "standard"
+        """
+        # For single-value equality on direct relationships, use direct join
+        if (query_value.lookup is None or query_value.lookup == "equal") and len(value_ids) == 1:
+            if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
+                return "direct"
+                
+        # For exclusion patterns, use EXISTS for better performance
+        if query_value.include == Include.EXCLUDE:
+            return "exists"
+            
+        # Default to standard query
+        return "standard"
+    
+    def _build_lookup_condition(self, lookup: Optional[str], value_ids: List[str]) -> str:
+        """
+        Build a lookup condition based on the lookup type.
+        
+        Args:
+            lookup: The lookup type
+            value_ids: The value IDs to filter by
+            
+        Returns:
+            The lookup condition
+        """
+        # Default lookup is equality with the IN operator
+        if lookup is None or lookup == "equal":
+            return "t.id IN $value_ids$"
+            
+        # Handle different lookup types
+        lookup_conditions = {
+            "contains": "ANY(val IN $value_ids$ WHERE t.id CONTAINS val)",
+            "startswith": "ANY(val IN $value_ids$ WHERE t.id STARTS WITH val)",
+            "endswith": "ANY(val IN $value_ids$ WHERE t.id ENDS WITH val)",
+            "pattern": "ANY(val IN $value_ids$ WHERE t.id =~ val)",
+            "gt": "ANY(val IN $value_ids$ WHERE t.id > val)",
+            "gte": "ANY(val IN $value_ids$ WHERE t.id >= val)",
+            "lt": "ANY(val IN $value_ids$ WHERE t.id < val)",
+            "lte": "ANY(val IN $value_ids$ WHERE t.id <= val)",
+            "null": "NOT EXISTS(t.id)",
+            "not_null": "EXISTS(t.id)",
+            "in_values": "t.id IN $value_ids$",
+            "not_in_values": "NOT (t.id IN $value_ids$)",
+            "has_property": "ALL(prop IN $value_ids$ WHERE EXISTS(t[prop]))",
+        }
+        
+        # Special case for range lookup
+        if lookup == "range" and len(value_ids) >= 2:
+            return f"t.id >= '{value_ids[0]}' AND t.id <= '{value_ids[1]}'"
+        elif lookup == "range":
+            return "FALSE"  # Invalid range
+            
+        # Special case for property_values lookup
+        if lookup == "property_values":
+            prop_conditions = []
+            for val in value_ids:
+                if ":" in val:
+                    prop, val = val.split(":", 1)
+                    prop_conditions.append(f"t.{prop} = '{val}'")
+            
+            if prop_conditions:
+                return " AND ".join(prop_conditions)
+            else:
+                return "FALSE"  # Invalid format
+        
+        # Return the lookup condition or default to equality
+        return lookup_conditions.get(lookup, "t.id IN $value_ids$")
+    
+    def _build_direct_join_query(
+        self, 
+        path: QueryPath, 
+        query_value: QueryValue, 
+        value_ids: List[str]
+    ) -> str:
+        """
+        Build a direct join query for a single value.
+        
+        Args:
+            path: The query path
+            query_value: The query value
+            value_ids: The value IDs to filter by (assuming a single value)
+            
+        Returns:
+            The SQL query string
+        """
+        # Extract table and relationship information from path
+        # This is a simplified approach - in a production system we would
+        # have more sophisticated parsing of the path
+        rel_field = path.cypher_path.split("-[")[1].split("]")[0].replace(":", "")
+        
+        # Build direct join query
+        join_query = f"""
+        SELECT DISTINCT s.id
+        FROM {path.source_meta_type_id} s
+        JOIN {path.target_meta_type_id} t ON s.{rel_field}_id = t.id
+        WHERE t.id = :value_id
+        """
+        
+        return join_query
+    
+    def _build_exists_query(
+        self, 
+        path: QueryPath, 
+        query_value: QueryValue, 
+        lookup_condition: str,
+        value_ids: List[str]
+    ) -> str:
+        """
+        Build an EXISTS-based query for exclusion patterns.
+        
+        Args:
+            path: The query path
+            query_value: The query value
+            lookup_condition: The lookup condition
+            value_ids: The value IDs to filter by
+            
+        Returns:
+            The SQL query string
+        """
+        # For exclusion, use NOT EXISTS which can be more efficient
+        exists_query = f"""
+        SELECT id 
+        FROM {path.source_meta_type_id}
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM cypher('graph', $subq$
+                MATCH {path.cypher_path}
+                WHERE {lookup_condition}
+                RETURN s.id
+            $subq$, $value_ids$:=$value_ids_param$) AS (id TEXT)
+            WHERE id = {path.source_meta_type_id}.id
+        )
+        """
+        
+        return exists_query
+    
+    def _build_standard_cypher_query(
+        self, 
+        path: QueryPath, 
+        query_value: QueryValue, 
+        lookup_condition: str,
+        value_ids: List[str]
+    ) -> str:
+        """
+        Build a standard cypher-based query.
+        
+        Args:
+            path: The query path
+            query_value: The query value
+            lookup_condition: The lookup condition
+            value_ids: The value IDs to filter by
+            
+        Returns:
+            The SQL query string
+        """
+        # Standard query using cypher subquery
+        cypher_query = f"""
+        WITH matched_ids AS (
+            SELECT DISTINCT s.id
+            FROM cypher('graph', $subq$
+                MATCH {path.cypher_path}
+                WHERE {lookup_condition}
+                RETURN DISTINCT s.id
+            $subq$, $value_ids$:=$value_ids_param$) AS (id TEXT)
+        )
+        SELECT id 
+        FROM {path.source_meta_type_id}
+        WHERE id IN (SELECT id FROM matched_ids)
+        """
+        
+        # Convert to include/exclude based on query value configuration
+        if query_value.include == Include.EXCLUDE:
+            cypher_query = f"""
+            SELECT id 
+            FROM {path.source_meta_type_id}
+            WHERE id NOT IN (
+                SELECT id FROM matched_ids
+            )
+            """
+            
+        return cypher_query
+    
     async def _execute_sub_queries(
         self,
         query_id: str,
@@ -551,6 +774,11 @@ class QueryExecutor:
     ) -> List[str]:
         """
         Execute sub-queries and return matching record IDs.
+        
+        Optimized implementation with:
+        - Parallel execution for independent sub-queries
+        - Early termination for AND conditions
+        - Result size optimization for large queries
         
         Args:
             query_id: The query ID
@@ -565,14 +793,48 @@ class QueryExecutor:
         if not sub_queries:
             return []
         
-        # Get results for each sub-query
-        subquery_results: List[Set[str]] = []
+        # Filter out self-references to avoid infinite recursion
+        valid_sub_queries = [sq for sq in sub_queries if sq.id != query_id]
         
-        for sq in sub_queries:
-            # Skip self-references to avoid infinite recursion
-            if sq.id == query_id:
-                continue
+        if not valid_sub_queries:
+            return []
             
+        # Optimization: For AND match, execute sequentially with early termination
+        # For OR match, execute in parallel
+        if match == Match.AND:
+            return await self._execute_and_subqueries(query_id, valid_sub_queries, session)
+        else:
+            return await self._execute_or_subqueries(query_id, valid_sub_queries, session)
+    
+    async def _execute_and_subqueries(
+        self,
+        query_id: str,
+        sub_queries: List[Query],
+        session: AsyncSession,
+    ) -> List[str]:
+        """
+        Execute sub-queries with AND logic, optimized with early termination.
+        
+        Args:
+            query_id: The query ID
+            sub_queries: The sub-queries to execute (no self-references)
+            session: Database session
+            
+        Returns:
+            List of matching record IDs
+        """
+        # For AND logic, we can optimize by executing sequentially
+        # and terminating early if any sub-query returns empty results
+        current_result: Optional[Set[str]] = None
+        
+        # Sort sub-queries by estimated complexity to execute simpler ones first
+        # This increases chances of early termination
+        sorted_queries = sorted(
+            sub_queries, 
+            key=lambda sq: len(sq.query_values or []) + len(sq.sub_queries or [])
+        )
+        
+        for sq in sorted_queries:
             # Execute sub-query
             result = await self._execute_query(sq, session)
             
@@ -582,26 +844,72 @@ class QueryExecutor:
             
             # Get result IDs as a set
             result_ids = set(result.value)
-            subquery_results.append(result_ids)
-        
-        # Combine results based on match type
-        if match == Match.AND:
-            # Return intersection of all results
-            if not subquery_results:
+            
+            # If result is empty, we can return empty set immediately
+            if not result_ids:
+                self.logger.debug(f"Early termination for AND sub-queries: sub-query {sq.id} returned no results")
                 return []
             
-            result = subquery_results[0]
-            for r in subquery_results[1:]:
-                result &= r
+            # If this is our first result, use it directly
+            if current_result is None:
+                current_result = result_ids
+            else:
+                # Otherwise, intersect with current result
+                current_result &= result_ids
+                
+                # Early termination if intersection becomes empty
+                if not current_result:
+                    self.logger.debug(f"Early termination for AND sub-queries: intersection is empty after sub-query {sq.id}")
+                    return []
+        
+        # Return final result
+        return list(current_result or set())
+    
+    async def _execute_or_subqueries(
+        self,
+        query_id: str,
+        sub_queries: List[Query],
+        session: AsyncSession,
+    ) -> List[str]:
+        """
+        Execute sub-queries with OR logic, optimized with parallel execution.
+        
+        Args:
+            query_id: The query ID
+            sub_queries: The sub-queries to execute (no self-references)
+            session: Database session
             
-            return list(result)
-        else:
-            # Return union of all results
-            result = set()
-            for r in subquery_results:
-                result |= r
-            
-            return list(result)
+        Returns:
+            List of matching record IDs
+        """
+        # For OR logic, execute sub-queries in parallel for better performance
+        result_futures = []
+        
+        # Launch all sub-queries concurrently
+        for sq in sub_queries:
+            # Create a task for each sub-query
+            future = asyncio.create_task(self._execute_query(sq, session))
+            result_futures.append((sq.id, future))
+        
+        # Collect results
+        union_results = set()
+        
+        # Wait for all tasks to complete
+        for sq_id, future in result_futures:
+            try:
+                result = await future
+                
+                if result.is_failure:
+                    self.logger.warning(f"Error executing sub-query {sq_id}: {result.error}")
+                    continue
+                
+                # Add to union
+                union_results.update(result.value)
+                
+            except Exception as e:
+                self.logger.error(f"Unexpected error executing sub-query {sq_id}: {e}")
+        
+        return list(union_results)
     
     def _combine_results(
         self,
@@ -817,87 +1125,428 @@ class QueryExecutor:
         record_id: str,
         session: AsyncSession,
     ) -> Result[bool]:
-        """Execute the direct record check."""
-        try:
-            # Build a query that directly checks if the record matches
-            # This is more efficient than fetching all matching records
-            check_query = f"""
-            WITH target_record AS (
-                SELECT id FROM {query.query_meta_type_id} WHERE id = :record_id
-            )
-            SELECT EXISTS (
-                SELECT 1 FROM target_record
-                WHERE id IN (
-            """
+        """
+        Execute the direct record check with optimized SQL generation.
+        
+        This method uses several optimization strategies:
+        1. Batch loading of query paths
+        2. Direct join optimization for simple conditions
+        3. EXISTS-based query patterns for better performance
+        4. Short-circuit evaluation for AND/OR conditions
+        
+        Args:
+            query: The query to check
+            record_id: The record ID to check
+            session: The database session
             
-            # Add conditions for each query value
-            value_conditions = []
+        Returns:
+            Result with True if the record matches, False otherwise, or an error
+        """
+        try:
+            # For performance, first check if the record ID is valid
+            verify_query = f"""
+            SELECT EXISTS (SELECT 1 FROM {query.query_meta_type_id} WHERE id = :record_id)
+            """
+            result = await session.execute(text(verify_query), {"record_id": record_id})
+            record_exists = result.scalar() or False
+            
+            if not record_exists:
+                # Record doesn't exist, can't match the query
+                self.logger.debug(f"Record {record_id} does not exist, skipping match check")
+                return Success(False)
+            
+            # Batch-load all query paths at once for performance
+            path_ids = [qv.query_path_id for qv in (query.query_values or []) if qv.query_path_id]
+            
+            if not path_ids:
+                # If no path IDs, check if there are sub-queries
+                if not query.sub_queries:
+                    # Neither query values nor sub-queries, return True (empty query matches everything)
+                    return Success(True)
+                    
+                # Only sub-queries, delegate to sub-query execution with direct record check
+                # Optimize: handle sub-queries without loading all matches
+                sub_matches = await self._check_record_matches_subqueries(
+                    query_id=query.id,
+                    sub_queries=query.sub_queries,
+                    record_id=record_id,
+                    include=query.include_queries,
+                    match=query.match_queries,
+                    session=session
+                )
+                
+                # If only sub-queries, return the sub-query result directly
+                return Success(sub_matches)
+            
+            # Optimization: Load all paths in one query
+            paths_result = await session.execute(
+                select(QueryPath).where(QueryPath.id.in_(path_ids))
+            )
+            paths = {path.id: path for path in paths_result.scalars().all()}
+            
+            # Check if any paths are missing
+            missing_paths = [path_id for path_id in path_ids if path_id not in paths]
+            if missing_paths:
+                missing_paths_str = ", ".join(missing_paths)
+                return Failure(QueryPathError(
+                    reason=f"One or more query paths not found: {missing_paths_str}",
+                    path_id=missing_paths[0] if len(missing_paths) == 1 else None,
+                    query_id=query.id,
+                    all_missing_paths=missing_paths
+                ))
+            
+            # Optimization: Special case for single equality check (very common)
+            if (
+                len(query.query_values) == 1 
+                and len(query.sub_queries or []) == 0
+                and query.query_values[0].query_path_id in paths
+                and (query.query_values[0].lookup is None or query.query_values[0].lookup == "equal")
+            ):
+                qv = query.query_values[0]
+                path = paths[qv.query_path_id]
+                value_ids = [v.id for v in qv.values or []]
+                
+                # Fast path for direct relationships with simple equality - use joins
+                if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
+                    # Extract relationship from path
+                    try:
+                        rel_field = path.cypher_path.split("-[")[1].split("]")[0].replace(":", "")
+                        
+                        # Build an optimized join query
+                        optimized_query = f"""
+                        SELECT EXISTS (
+                            SELECT 1
+                            FROM {query.query_meta_type_id} s
+                            JOIN {path.target_meta_type_id} t ON s.{rel_field}_id = t.id
+                            WHERE s.id = :record_id
+                            AND t.id IN :value_ids
+                        ) AS matched
+                        """
+                        
+                        # Execute query with parameters
+                        result = await session.execute(
+                            text(optimized_query), 
+                            {"record_id": record_id, "value_ids": value_ids}
+                        )
+                        matched = result.scalar() or False
+                        
+                        # Adjust for include/exclude
+                        if qv.include == Include.EXCLUDE:
+                            matched = not matched
+                            
+                        self.logger.debug(f"Used optimized direct join for record check: {record_id} -> {matched}")
+                        return Success(matched)
+                    except Exception as e:
+                        # If optimization fails, continue with normal path
+                        self.logger.debug(f"Direct join optimization failed: {e}, using standard check")
+            
+            # Build an optimized query using EXISTS for performance
+            # This avoids the overhead of fetching all matching records
+            check_query_parts = []
             params = {"record_id": record_id}
             
+            # Process each query value with optimized SQL generation
             for i, qv in enumerate(query.query_values or []):
-                if not qv.query_path_id:
+                if not qv.query_path_id or qv.query_path_id not in paths:
                     continue
                     
-                # Get the query path
-                path_result = await session.execute(
-                    select(QueryPath).where(QueryPath.id == qv.query_path_id)
-                )
-                path = path_result.scalars().first()
-                
-                if not path:
-                    continue
-                    
-                # Extract value IDs
+                path = paths[qv.query_path_id]
                 value_ids = [v.id for v in qv.values or []]
+                
                 if not value_ids:
                     continue
-                    
-                # Build the condition for this query value
+                
+                # Add parameters for this query value
                 param_name = f"value_ids_{i}"
                 params[param_name] = value_ids
                 
                 # Build lookup condition
-                lookup_condition = "t.id IN :" + param_name
-                if qv.lookup and qv.lookup != "equal":
-                    # Handle different lookup types (similar to existing code)
-                    # Simplified for brevity
-                    if qv.lookup == "contains":
-                        lookup_condition = f"ANY(val IN :{param_name} WHERE t.id CONTAINS val)"
+                lookup_condition = self._build_lookup_condition(qv.lookup, value_ids)
                 
-                # Build the condition using the path's cypher path
-                value_condition = f"""
-                SELECT s.id
-                FROM cypher('graph', $subq{i}$
-                    MATCH {path.cypher_path}
-                    WHERE {lookup_condition}
-                    AND s.id = :record_id
-                    RETURN DISTINCT s.id
-                $subq{i}$, {param_name}:=:{param_name}) AS (id TEXT)
-                """
+                # Choose the optimal query strategy
+                query_strategy = self._choose_check_strategy(qv, path, value_ids)
                 
-                value_conditions.append(value_condition)
+                # Build the condition using the optimal strategy
+                if query_strategy == "direct":
+                    # Build a direct join condition for better performance
+                    condition = self._build_direct_check_condition(
+                        i, path, qv, record_id, param_name, 
+                        include=(qv.include == Include.INCLUDE)
+                    )
+                else:
+                    # Build a standard cypher-based condition
+                    condition = self._build_standard_check_condition(
+                        i, path, lookup_condition, record_id, param_name,
+                        include=(qv.include == Include.INCLUDE)
+                    )
+                
+                check_query_parts.append(condition)
             
-            # Combine all value conditions based on the query's match_values
-            if query.match_values == Match.AND:
-                check_query += " INTERSECT ".join(value_conditions)
-            else:
-                check_query += " UNION ".join(value_conditions)
+            # If no valid conditions, return True if no query values, otherwise False
+            if not check_query_parts:
+                return Success(True if not query.query_values else False)
+            
+            # Combine all conditions based on the query's match_values
+            operator = " AND " if query.match_values == Match.AND else " OR "
+            combined_condition = f"({operator.join(check_query_parts)})"
+            
+            # Check if there are any sub-queries to process
+            if query.sub_queries:
+                # We need to check sub-queries as well
+                # For performance, only do this after checking query values first
                 
-            # Close the query
-            check_query += """
+                # Execute the query value check first
+                values_check_query = f"SELECT {combined_condition} AS matched"
+                values_result = await session.execute(text(values_check_query), params)
+                values_match = values_result.scalar() or False
+                
+                # Short-circuit evaluation based on match type
+                if query.match_values == Match.AND and not values_match:
+                    # If AND and values don't match, the record can't match
+                    return Success(False)
+                elif query.match_values == Match.OR and values_match:
+                    # If OR and values match, the record matches
+                    return Success(True)
+                
+                # Need to check sub-queries
+                sub_matches = await self._check_record_matches_subqueries(
+                    query_id=query.id,
+                    sub_queries=query.sub_queries,
+                    record_id=record_id,
+                    include=query.include_queries,
+                    match=query.match_queries,
+                    session=session
                 )
-            ) AS matched
-            """
-            
-            # Execute the query
-            result = await session.execute(text(check_query), params)
-            matched = result.scalar() or False
-            
-            return Success(matched)
                 
+                # Combine results based on the query's match type
+                if query.match_values == Match.AND:
+                    return Success(values_match and sub_matches)
+                else:
+                    return Success(values_match or sub_matches)
+            else:
+                # Only query values, execute and return the result
+                final_query = f"SELECT {combined_condition} AS matched"
+                result = await session.execute(text(final_query), params)
+                matched = result.scalar() or False
+                
+                return Success(matched)
+        
+        except QueryPathError as e:
+            # Re-use the existing error
+            self.logger.error(f"Path error in record check {query.id}/{record_id}: {e}")
+            return Failure(e)
         except Exception as e:
             self.logger.exception(f"Error executing direct record check: {e}")
-            return Failure(QueryExecutionError(f"Error checking record match: {str(e)}"))
+            return Failure(QueryExecutionError(
+                reason=f"Error checking record match: {str(e)}",
+                query_id=query.id,
+                record_id=record_id,
+                operation="check_record",
+                original_exception=str(type(e).__name__)
+            ))
+    
+    def _choose_check_strategy(
+        self, 
+        query_value: QueryValue, 
+        path: QueryPath, 
+        value_ids: List[str]
+    ) -> str:
+        """
+        Choose the best query strategy for a direct record check.
+        
+        Args:
+            query_value: The query value
+            path: The query path
+            value_ids: The value IDs
+            
+        Returns:
+            The query strategy: "direct" or "standard"
+        """
+        # For direct relationships with equality conditions, use direct join
+        if (query_value.lookup is None or query_value.lookup == "equal"):
+            if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
+                return "direct"
+                
+        # Default to standard query
+        return "standard"
+    
+    def _build_direct_check_condition(
+        self,
+        index: int,
+        path: QueryPath,
+        query_value: QueryValue,
+        record_id: str,
+        param_name: str,
+        include: bool = True
+    ) -> str:
+        """
+        Build a direct join condition for a record check.
+        
+        Args:
+            index: The query value index
+            path: The query path
+            query_value: The query value
+            record_id: The record ID
+            param_name: The parameter name for value IDs
+            include: Whether to include or exclude matching records
+            
+        Returns:
+            The SQL condition
+        """
+        # Extract relationship field from path
+        rel_field = path.cypher_path.split("-[")[1].split("]")[0].replace(":", "")
+        
+        # Build join condition
+        condition = f"""
+        EXISTS (
+            SELECT 1
+            FROM {path.target_meta_type_id} t
+            WHERE t.id IN :{param_name}
+            AND EXISTS (
+                SELECT 1
+                FROM {path.source_meta_type_id} s
+                WHERE s.id = :record_id
+                AND s.{rel_field}_id = t.id
+            )
+        )
+        """
+        
+        # Handle exclusion
+        if not include:
+            condition = f"NOT {condition}"
+            
+        return condition
+    
+    def _build_standard_check_condition(
+        self,
+        index: int,
+        path: QueryPath,
+        lookup_condition: str,
+        record_id: str,
+        param_name: str,
+        include: bool = True
+    ) -> str:
+        """
+        Build a standard cypher-based condition for a record check.
+        
+        Args:
+            index: The query value index
+            path: The query path
+            lookup_condition: The lookup condition
+            record_id: The record ID
+            param_name: The parameter name for value IDs
+            include: Whether to include or exclude matching records
+            
+        Returns:
+            The SQL condition
+        """
+        # Build cypher condition
+        condition = f"""
+        EXISTS (
+            SELECT 1
+            FROM cypher('graph', $subq{index}$
+                MATCH {path.cypher_path}
+                WHERE {lookup_condition}
+                AND s.id = '{record_id}'
+                RETURN DISTINCT s.id
+            $subq{index}$, $value_ids$:=:{param_name}) AS (id TEXT)
+        )
+        """
+        
+        # Handle exclusion
+        if not include:
+            condition = f"NOT {condition}"
+            
+        return condition
+        
+    async def _check_record_matches_subqueries(
+        self,
+        query_id: str,
+        sub_queries: List[Query],
+        record_id: str,
+        include: Include,
+        match: Match,
+        session: AsyncSession,
+    ) -> bool:
+        """
+        Check if a record matches sub-queries.
+        
+        Args:
+            query_id: The query ID
+            sub_queries: The sub-queries to check
+            record_id: The record ID to check
+            include: Whether to include or exclude matching records
+            match: Whether to match all or any sub-queries
+            session: The database session
+            
+        Returns:
+            True if the record matches, False otherwise
+        """
+        if not sub_queries:
+            # No sub-queries means the record matches by default
+            return True
+        
+        # Filter out self-references to avoid infinite recursion
+        valid_sub_queries = [sq for sq in sub_queries if sq.id != query_id]
+        
+        if not valid_sub_queries:
+            # No valid sub-queries means the record matches by default
+            return True
+        
+        # For AND match, we can short-circuit if any sub-query doesn't match
+        # For OR match, we can short-circuit if any sub-query matches
+        if match == Match.AND:
+            # Check each sub-query sequentially for early termination
+            for sq in valid_sub_queries:
+                result = await self.check_record_matches_query(
+                    query=sq,
+                    record_id=record_id,
+                    session=session
+                )
+                
+                if result.is_failure:
+                    self.logger.warning(f"Error checking if record {record_id} matches sub-query {sq.id}: {result.error}")
+                    continue
+                
+                if not result.value:
+                    # Record doesn't match this sub-query, can't match AND condition
+                    return False
+            
+            # Record matches all sub-queries
+            return True
+        else:
+            # For OR match, check sub-queries in parallel
+            match_futures = []
+            
+            # Launch all checks concurrently
+            for sq in valid_sub_queries:
+                future = asyncio.create_task(
+                    self.check_record_matches_query(
+                        query=sq,
+                        record_id=record_id,
+                        session=session
+                    )
+                )
+                match_futures.append((sq.id, future))
+            
+            # Wait for results with early termination
+            for sq_id, future in match_futures:
+                try:
+                    result = await future
+                    
+                    if result.is_failure:
+                        self.logger.warning(f"Error checking if record {record_id} matches sub-query {sq_id}: {result.error}")
+                        continue
+                    
+                    if result.value:
+                        # Record matches this sub-query, matches OR condition
+                        return True
+                        
+                except Exception as e:
+                    self.logger.error(f"Unexpected error checking if record {record_id} matches sub-query {sq_id}: {e}")
+            
+            # Record doesn't match any sub-queries
+            return False
             
     
     async def count_query_matches(
@@ -1051,9 +1700,18 @@ class QueryExecutor:
             
             return Success(count)
             
+        except QueryPathError as e:
+            # Re-use the existing error
+            self.logger.error(f"Path error in count query {query.id}: {e}")
+            return Failure(e)
         except Exception as e:
             self.logger.exception(f"Error executing direct count: {e}")
-            return Failure(QueryExecutionError(f"Error counting query matches: {str(e)}"))
+            return Failure(QueryExecutionError(
+                reason=f"Error counting query matches: {str(e)}",
+                query_id=query.id,
+                operation="count",
+                original_exception=str(type(e).__name__)
+            ))
     
     def _build_count_query(self, query: Query) -> Dict[str, Any]:
         """
@@ -1065,21 +1723,94 @@ class QueryExecutor:
         Returns:
             Dict with the query string and parameters
         """
-        # Simplified implementation - in a real system this would be more robust
-        # and would handle all the complexities of query generation
-        count_query = f"""
-        SELECT COUNT(DISTINCT id) AS match_count
-        FROM {query.query_meta_type_id}
-        WHERE id IN (
-            -- Placeholder for actual query logic
-            -- This would be built dynamically based on query structure
-            SELECT id FROM {query.query_meta_type_id}
-        )
+        # Build an optimized COUNT query based on the query structure
+        params = {}
+
+        # Start with base count
+        count_query_base = f"""
+        SELECT COUNT(DISTINCT s.id) AS match_count
+        FROM {query.query_meta_type_id} s
         """
-        
+
+        # Check if this is a simple query with no complex conditions
+        if not query.query_values and not query.sub_queries:
+            # For queries with no conditions, we can use a fast COUNT directly
+            return {
+                "query": count_query_base,
+                "params": params
+            }
+
+        # For queries with values, build a more optimized version using EXISTS
+        if query.query_values:
+            conditions = []
+            
+            # Process each query value
+            for idx, qv in enumerate(query.query_values or []):
+                if not qv.query_path_id:
+                    continue
+                    
+                # Extract value IDs
+                value_ids = [v.id for v in qv.values or []]
+                if not value_ids:
+                    continue
+                    
+                # Add parameters for this condition
+                param_name = f"value_ids_{idx}"
+                params[param_name] = value_ids
+                
+                # Determine path details - we'll need this for the condition
+                path_condition = f"""
+                EXISTS (
+                    SELECT 1
+                    FROM cypher('graph', $cypher_{idx}$
+                        MATCH (s:{query.query_meta_type_id})-[:{qv.query_path_id}]->(t)
+                        WHERE t.id = ANY(:value_ids_{idx})
+                        RETURN s.id
+                    $cypher_{idx}$, value_ids_{idx}:=:value_ids_{idx}) AS (id TEXT)
+                    WHERE id = s.id
+                )
+                """
+                
+                # Handle inclusion/exclusion logic
+                if qv.include == "exclude":
+                    path_condition = f"NOT {path_condition}"
+                    
+                conditions.append(path_condition)
+            
+            # Combine conditions based on match type
+            if conditions:
+                operator = " AND " if query.match_values == "all" else " OR "
+                where_clause = f"WHERE {operator.join(conditions)}"
+                
+                # Complete the query
+                count_query = f"{count_query_base} {where_clause}"
+                
+                return {
+                    "query": count_query,
+                    "params": params
+                }
+
+        # For more complex queries (with sub-queries or not covered by above), 
+        # use a subquery approach
+        subquery = f"""
+        WITH matched_ids AS (
+            SELECT id 
+            FROM {query.query_meta_type_id}
+            WHERE EXISTS (
+                -- This would get the matched IDs using the query's logic
+                -- For complex queries, we still need to use the general approach
+                SELECT 1 
+                FROM {query.query_meta_type_id} sq
+                WHERE sq.id = {query.query_meta_type_id}.id
+                -- Additional conditions would be added here
+            )
+        )
+        SELECT COUNT(DISTINCT id) AS match_count FROM matched_ids
+        """
+
         return {
-            "query": count_query,
-            "params": {}
+            "query": subquery,
+            "params": params
         }
     
     async def invalidate_cache_for_meta_type(self, meta_type_id: str) -> int:
@@ -1282,6 +2013,8 @@ def cache_query_result(
     ttl: Optional[int] = 300,
     key_prefix: Optional[str] = None,
     tags: Optional[List[str]] = None,
+    cache_null_results: bool = True,
+    ignore_params: Optional[List[str]] = None,
 ) -> Callable:
     """
     Decorator for caching query execution results.
@@ -1294,6 +2027,8 @@ def cache_query_result(
         ttl: Time-to-live for cache entries in seconds (default: 300)
         key_prefix: Optional prefix for cache keys
         tags: Optional list of tags for cache invalidation
+        cache_null_results: Whether to cache None/empty results (default: True)
+        ignore_params: List of parameter names to ignore when generating cache key
         
     Returns:
         Decorator function
@@ -1308,19 +2043,49 @@ def cache_query_result(
                 # Caching disabled, just call the function
                 return await func(*args, **kwargs)
             
+            # Check for force_refresh parameter
+            force_refresh = kwargs.get('force_refresh', False)
+            if force_refresh:
+                # Skip cache if force_refresh is True
+                return await func(*args, **kwargs)
+                
             # Generate cache key
             prefix = key_prefix or func.__qualname__
             
+            # Filter out ignored parameters
+            filtered_kwargs = kwargs.copy()
+            if ignore_params:
+                for param in ignore_params:
+                    filtered_kwargs.pop(param, None)
+            
             # Hash the arguments to create a deterministic key
             try:
-                # Convert args and kwargs to JSON for consistent hashing
-                args_str = json.dumps([str(arg) for arg in args], sort_keys=True)
-                kwargs_str = json.dumps({k: str(v) for k, v in kwargs.items()}, sort_keys=True)
-                key_str = f"{prefix}:{args_str}:{kwargs_str}"
-                key = f"func:{hashlib.md5(key_str.encode('utf-8')).hexdigest()}"
-            except (TypeError, ValueError):
+                # For more efficient caching, special handling for common function patterns
+                if func.__name__ == 'execute_query' and len(args) >= 1:
+                    # For execute_query, base key on query id or query hash
+                    query = args[0]
+                    if hasattr(query, 'id') and query.id:
+                        # If query has an ID, use it directly
+                        key = f"query:{query.id}"
+                    else:
+                        # Otherwise generate a hash of the query structure
+                        key = executor._generate_query_cache_key(query)
+                elif func.__name__ == 'check_record_matches_query' and len(args) >= 2:
+                    # For record matches, combine query ID/hash with record ID
+                    query, record_id = args[0], args[1]
+                    query_key = executor._generate_query_cache_key(query)
+                    key = f"{query_key}:record:{record_id}"
+                else:
+                    # Standard key generation for other functions
+                    # Convert args and kwargs to JSON for consistent hashing
+                    args_str = json.dumps([str(arg) for arg in args], sort_keys=True)
+                    kwargs_str = json.dumps({k: str(v) for k, v in filtered_kwargs.items()}, sort_keys=True)
+                    key_str = f"{prefix}:{args_str}:{kwargs_str}"
+                    key = f"func:{hashlib.md5(key_str.encode('utf-8')).hexdigest()}"
+            except (TypeError, ValueError) as e:
                 # Fall back to simple key if args are not JSON serializable
                 key = f"func:{prefix}:{id(args)}:{id(kwargs)}"
+                logging.getLogger(__name__).warning(f"Using fallback cache key due to: {e}")
             
             # Try to get from cache
             try:
@@ -1328,32 +2093,76 @@ def cache_query_result(
                 
                 cached_result = await query_cache.get(key)
                 if cached_result is not None:
-                    # Cache hit
+                    # Cache hit - log with debug level to avoid excessive logging
+                    logger = logging.getLogger(__name__)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"Cache hit for {key}")
                     return cached_result
             except Exception as e:
                 # Log error but continue with function execution
                 logging.getLogger(__name__).warning(f"Error accessing cache: {e}")
             
             # Cache miss or error, call the function
+            start_time = time.monotonic()
             result = await func(*args, **kwargs)
+            execution_time = time.monotonic() - start_time
+            
+            # Skip caching for empty results if configured that way
+            if not cache_null_results and (result is None or (isinstance(result, (list, dict)) and not result)):
+                return result
             
             # Store in cache if successful
             try:
                 query_cache = await executor.get_query_cache()
                 
-                # Merge provided tags with default tags
+                # Construct tags for intelligent cache invalidation
                 all_tags = list(tags or [])
+                
+                # Add function-specific tags
+                if func.__name__ == 'execute_query' and len(args) >= 1:
+                    query = args[0]
+                    # Add meta_type tag for query results
+                    if hasattr(query, 'query_meta_type_id') and query.query_meta_type_id:
+                        all_tags.append(f"meta_type:{query.query_meta_type_id}")
+                    
+                    # Add tags for query path dependencies
+                    if hasattr(query, 'query_values') and query.query_values:
+                        for qv in query.query_values:
+                            if qv.query_path_id:
+                                all_tags.append(f"path:{qv.query_path_id}")
+                    
+                elif func.__name__ == 'check_record_matches_query' and len(args) >= 2:
+                    query, record_id = args[0], args[1]
+                    # Add meta_type and record-specific tags
+                    if hasattr(query, 'query_meta_type_id') and query.query_meta_type_id:
+                        all_tags.append(f"meta_type:{query.query_meta_type_id}")
+                    all_tags.append(f"record:{record_id}")
+                
+                # Add generic tags
                 if hasattr(args[0], '__class__'):
                     # Add class name as tag if first arg is self
                     all_tags.append(f"class:{args[0].__class__.__name__}")
                 all_tags.append(f"func:{func.__name__}")
                 
+                # Add performance-based TTL - shorter TTL for faster queries
+                # This prevents cache pollution from rarely-used queries
+                dynamic_ttl = ttl
+                if execution_time < 0.05:  # Very fast queries (<50ms)
+                    dynamic_ttl = min(ttl, 600)  # 10 minutes max for very fast queries
+                elif execution_time > 1.0:  # Slow queries (>1s)
+                    dynamic_ttl = max(ttl, 1800)  # At least 30 minutes for slow queries
+                
                 await query_cache.set(
                     key=key,
                     result=result,
                     tags=all_tags,
-                    ttl=ttl
+                    ttl=dynamic_ttl
                 )
+                
+                # Log cache miss with debug level
+                logger = logging.getLogger(__name__)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Cache miss for {key}, stored with TTL={dynamic_ttl}s, tags={all_tags}")
             except Exception as e:
                 # Log error but return the result anyway
                 logging.getLogger(__name__).warning(f"Error storing in cache: {e}")

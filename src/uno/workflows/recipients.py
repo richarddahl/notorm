@@ -21,7 +21,12 @@ from enum import Enum
 import inject
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.errors import UnoError
+from uno.core.errors.base import UnoError
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowRecipientError,
+    WorkflowInvalidDefinitionError
+)
 from uno.settings import uno_settings
 from uno.database.db_manager import DBManager
 from uno.authorization.objs import User, Role, Group

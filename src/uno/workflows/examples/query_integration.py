@@ -17,7 +17,7 @@ from uno.database.db_manager import DBManager
 from uno.domain.events import DomainEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.enums import WorkflowDBEvent, Include, Match
-from uno.dependencies.scoped_container import get_service
+from uno.dependencies.scoped_container import get_service, get_scoped_service
 
 from uno.queries.objs import Query, QueryPath, QueryValue
 from uno.meta.objs import MetaType
@@ -143,7 +143,7 @@ async def create_workflow_with_query_condition(query_id: str) -> str:
         The ID of the created workflow
     """
     # Get the workflow service
-    workflow_service = get_service(WorkflowService)
+    workflow_service = await get_scoped_service(WorkflowService)
     
     # Create a workflow for premium North American customer welcome
     workflow = WorkflowDef(
@@ -230,7 +230,7 @@ async def trigger_workflow_with_event() -> None:
     the QueryExecutor to evaluate complex conditions leveraging the graph database.
     """
     # Get the event dispatcher
-    event_dispatcher = get_service(EventDispatcher)
+    event_dispatcher = await get_scoped_service(EventDispatcher)
     
     # Create a customer created event for a premium North American customer
     # This should match our complex query condition

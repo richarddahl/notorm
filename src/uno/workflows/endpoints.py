@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Query, Path
 from pydantic import BaseModel, Field
 
-from uno.core.errors.result import FailureResult
+from uno.core.errors.result import Result, Success, Failure
 from uno.workflows.app_integration import workflow_dependency
 from uno.workflows.provider import WorkflowService
 from uno.workflows.schemas import (
@@ -52,7 +52,7 @@ async def get_workflows(
         # Get all workflows
         result = await workflow_service.get_active_workflows()
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -78,7 +78,7 @@ async def get_workflow(
     """
     result = await workflow_service.get_workflow_by_id(workflow_id)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Workflow with ID {workflow_id} not found"
@@ -107,7 +107,7 @@ async def create_workflow(
     
     result = await workflow_service.create_workflow(workflow_def)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -145,7 +145,7 @@ async def update_workflow(
     
     result = await workflow_service.update_workflow(workflow_def)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(result.error)
@@ -171,7 +171,7 @@ async def delete_workflow(
     """
     result = await workflow_service.delete_workflow(workflow_id)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(result.error)
@@ -205,7 +205,7 @@ async def update_workflow_status(
     
     result = await workflow_service.update_workflow_status(workflow_id, status_update["status"])
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(result.error)
@@ -242,7 +242,7 @@ async def get_workflow_executions(
         offset=offset
     )
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -270,7 +270,7 @@ async def get_workflow_execution(
     """
     result = await workflow_service.get_execution_log(execution_id)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Execution log with ID {execution_id} not found"
@@ -307,7 +307,7 @@ async def retry_workflow_action(
     """
     result = await workflow_service.retry_workflow_action(execution_id, action_id)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(result.error)
@@ -339,7 +339,7 @@ async def simulate_workflow(
         simulation_request.entity_data
     )
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(result.error)
@@ -365,7 +365,7 @@ async def get_entity_types(
     """
     result = await workflow_service.get_entity_types()
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -391,7 +391,7 @@ async def get_entity_fields(
     """
     result = await workflow_service.get_entity_fields(entity_type)
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Entity type {entity_type} not found"
@@ -415,7 +415,7 @@ async def get_action_types(
     """
     result = await workflow_service.get_action_types()
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -439,7 +439,7 @@ async def get_condition_types(
     """
     result = await workflow_service.get_condition_types()
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)
@@ -463,7 +463,7 @@ async def get_recipient_types(
     """
     result = await workflow_service.get_recipient_types()
     
-    if isinstance(result, FailureResult):
+    if result.is_failure:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(result.error)

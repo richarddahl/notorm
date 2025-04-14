@@ -21,8 +21,13 @@ from uno.enums import (
 from uno.settings import uno_settings
 from uno.core.types import FilterParam
 from uno.queries.filter import UnoFilter
-from uno.errors import UnoError
-# Temporarily use direct imports for Result types
+from uno.core.errors.result import Result, Success, Failure
+from uno.queries.errors import (
+    QueryExecutionError,
+    QueryNotFoundError,
+    QueryPathError,
+    QueryValueError,
+)
 from typing import Union, TypeVar, Generic
 from dataclasses import dataclass
 

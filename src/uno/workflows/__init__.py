@@ -48,7 +48,16 @@ from uno.workflows.engine import (
     WorkflowEventHandler,
     PostgresWorkflowEventListener,
     WorkflowEventModel,
-    WorkflowError,
+)
+
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowNotFoundError,
+    WorkflowExecutionError,
+    WorkflowActionError,
+    WorkflowEventError,
+    WorkflowQueryError,
+    register_workflow_errors,
 )
 
 from uno.workflows.provider import (
@@ -135,13 +144,17 @@ from uno.workflows.app_integration import (
 from uno.workflows.schemas import register_workflow_schemas
 # Legacy schemas have been removed for simplicity
 
-# Register schemas
+# Register schemas and error codes
 try:
+    # Register workflow pydantic schemas
     register_workflow_schemas()
+    
+    # Register workflow error codes in the error catalog
+    register_workflow_errors()
 except Exception as e:
     import logging
     logger = logging.getLogger(__name__)
-    logger.error(f"Failed to register workflow schemas: {e}")
+    logger.error(f"Failed to register workflow components: {e}")
 
 # Make everything available
 __all__ = [
@@ -180,7 +193,6 @@ __all__ = [
     "WorkflowEventHandler",
     "PostgresWorkflowEventListener",
     "WorkflowEventModel",
-    "WorkflowError",
     
     # Action Executors
     "ActionExecutionContext",
@@ -245,4 +257,12 @@ __all__ = [
     
     # SQL configurations
     "workflow_module_sql_config",
+    
+    # Error types
+    "WorkflowErrorCode",
+    "WorkflowNotFoundError", 
+    "WorkflowExecutionError",
+    "WorkflowActionError",
+    "WorkflowEventError",
+    "WorkflowQueryError",
 ]

@@ -5,13 +5,19 @@
 import logging
 from typing import Optional, Callable, List, Dict, Any, Type
 import inject
-from uno.dependencies.scoped_container import get_service
-
+from uno.dependencies.modern_provider import get_service_provider
 from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtocol
 from uno.database.db_manager import DBManager
 from uno.database.repository import UnoBaseRepository
 from uno.core.errors.result import Result, Success, Failure
-from uno.errors import UnoError
+from uno.core.errors.base import UnoError
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowNotFoundError,
+    WorkflowExecutionError,
+    WorkflowActionError,
+    WorkflowQueryError,
+)
 
 from uno.workflows.models import (
     WorkflowDefinition,
@@ -312,12 +318,16 @@ class WorkflowService(UnoServiceProtocol):
         try:
             workflow = await self.repository.get_workflow_by_id(workflow_id)
             if not workflow:
-                return Failure(UnoError(f"Workflow with ID {workflow_id} not found"))
+                return Failure(WorkflowNotFoundError(workflow_id))
             
             return Success(workflow)
         except Exception as e:
             self.logger.exception(f"Error getting workflow {workflow_id}: {e}")
-            return Failure(UnoError(f"Error getting workflow: {str(e)}"))
+            return Failure(WorkflowExecutionError(
+                workflow_id,
+                reason=f"Database error: {str(e)}",
+                message=f"Error retrieving workflow: {str(e)}"
+            ))
     
     async def get_active_workflows(self) -> Result[List[WorkflowDef]]:
         """Get all active workflows."""
@@ -326,7 +336,11 @@ class WorkflowService(UnoServiceProtocol):
             return Success(workflows)
         except Exception as e:
             self.logger.exception(f"Error getting active workflows: {e}")
-            return Failure(UnoError(f"Error getting active workflows: {str(e)}"))
+            return Failure(UnoError(
+                f"Error getting active workflows: {str(e)}",
+                WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
+                operation="get_active_workflows"
+            ))
     
     async def create_workflow(self, workflow: WorkflowDef) -> Result[str]:
         """Create a new workflow."""
@@ -335,31 +349,43 @@ class WorkflowService(UnoServiceProtocol):
             return Success(workflow_id)
         except Exception as e:
             self.logger.exception(f"Error creating workflow: {e}")
-            return Failure(UnoError(f"Error creating workflow: {str(e)}"))
+            return Failure(UnoError(
+                f"Error creating workflow: {str(e)}",
+                WorkflowErrorCode.WORKFLOW_INVALID_DEFINITION,
+                operation="create_workflow"
+            ))
     
     async def update_workflow(self, workflow: WorkflowDef) -> Result[str]:
         """Update an existing workflow."""
         try:
             workflow_id = await self.repository.update_workflow(workflow)
             if not workflow_id:
-                return Failure(UnoError(f"Workflow with ID {workflow.id} not found"))
+                return Failure(WorkflowNotFoundError(workflow.id))
             
             return Success(workflow_id)
         except Exception as e:
             self.logger.exception(f"Error updating workflow {workflow.id}: {e}")
-            return Failure(UnoError(f"Error updating workflow: {str(e)}"))
+            return Failure(WorkflowExecutionError(
+                workflow.id,
+                reason=f"Update operation failed: {str(e)}",
+                message=f"Error updating workflow"
+            ))
     
     async def delete_workflow(self, workflow_id: str) -> Result[bool]:
         """Delete a workflow."""
         try:
             success = await self.repository.delete_workflow(workflow_id)
             if not success:
-                return Failure(UnoError(f"Workflow with ID {workflow_id} not found"))
+                return Failure(WorkflowNotFoundError(workflow_id))
             
             return Success(True)
         except Exception as e:
             self.logger.exception(f"Error deleting workflow {workflow_id}: {e}")
-            return Failure(UnoError(f"Error deleting workflow: {str(e)}"))
+            return Failure(WorkflowExecutionError(
+                workflow_id,
+                reason=f"Delete operation failed: {str(e)}",
+                message=f"Error deleting workflow"
+            ))
     
     async def get_execution_logs(
         self,
@@ -379,7 +405,11 @@ class WorkflowService(UnoServiceProtocol):
             return Success(logs)
         except Exception as e:
             self.logger.exception(f"Error getting execution logs: {e}")
-            return Failure(UnoError(f"Error getting execution logs: {str(e)}"))
+            return Failure(UnoError(
+                f"Error retrieving execution logs: {str(e)}",
+                WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
+                operation="get_execution_logs"
+            ))
     
     async def start_event_listener(self) -> Result[bool]:
         """Start the PostgreSQL event listener."""
@@ -395,7 +425,10 @@ class WorkflowService(UnoServiceProtocol):
             return Success(True)
         except Exception as e:
             self.logger.exception(f"Error starting event listener: {e}")
-            return Failure(UnoError(f"Error starting event listener: {str(e)}"))
+            return Failure(UnoError(
+                f"Error starting event listener: {str(e)}",
+                WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED
+            ))
     
     async def stop_event_listener(self) -> Result[bool]:
         """Stop the PostgreSQL event listener."""
@@ -407,7 +440,10 @@ class WorkflowService(UnoServiceProtocol):
             return Success(False)
         except Exception as e:
             self.logger.exception(f"Error stopping event listener: {e}")
-            return Failure(UnoError(f"Error stopping event listener: {str(e)}"))
+            return Failure(UnoError(
+                f"Error stopping event listener: {str(e)}",
+                WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED
+            ))
     
     async def process_event(self, event: Dict[str, Any]) -> Result[Dict[str, Any]]:
         """Process a workflow event."""
@@ -419,46 +455,57 @@ class WorkflowService(UnoServiceProtocol):
             result = await self.workflow_engine.process_event(workflow_event)
             
             if result.is_failure:
-                return Failure(UnoError(f"Error processing workflow event: {result.error}"))
+                # Forward the error from the workflow engine
+                return result
             
             return Success(result.value)
         except Exception as e:
             self.logger.exception(f"Error processing workflow event: {e}")
-            return Failure(UnoError(f"Error processing workflow event: {str(e)}"))
+            event_type = event.get("type", "unknown") if isinstance(event, dict) else "unknown"
+            return Failure(WorkflowEventError(
+                event_type=event_type,
+                reason=str(e),
+                message="Error processing workflow event"
+            ))
 
 
 def configure_workflow_module(binder):
     """Configure dependency injection for the workflow module."""
-    # Create and bind workflow engine
-    db_manager = get_service(DBManager)
+    # Register types with their implementations
+    binder.bind_to_provider(WorkflowEngine, lambda: create_workflow_engine())
+    binder.bind_to_provider(WorkflowRepository, lambda: create_workflow_repository())
+    binder.bind_to_provider(WorkflowService, lambda: create_workflow_service())
+    binder.bind_to_provider(WorkflowEventHandler, lambda: create_workflow_event_handler())
+
+async def create_workflow_engine():
+    """Create and configure a workflow engine instance."""
+    db_manager = await get_scoped_service(DBManager)
     logger = get_service(logging.Logger)
+    return WorkflowEngine(db_manager, logger)
+
+async def create_workflow_repository():
+    """Create and configure a workflow repository instance."""
+    db_manager = await get_scoped_service(DBManager)
+    return WorkflowRepository(db_manager)
+
+async def create_workflow_service():
+    """Create and configure a workflow service instance."""
+    repository = await get_scoped_service(WorkflowRepository)
+    engine = await get_scoped_service(WorkflowEngine)
+    db_manager = await get_scoped_service(DBManager)
+    logger = get_service(logging.Logger)
+    return WorkflowService(repository, engine, db_manager, logger)
+
+async def create_workflow_event_handler():
+    """Create and configure a workflow event handler instance."""
+    db_manager = await get_scoped_service(DBManager)
+    engine = await get_scoped_service(WorkflowEngine)
+    logger = get_service(logging.Logger)
+    return WorkflowEventHandler(db_manager, engine, logger)
     
-    workflow_engine = WorkflowEngine(db_manager, logger)
-    binder.bind(WorkflowEngine, workflow_engine)
-    
-    # Create and bind workflow repository
-    binder.bind(WorkflowRepository, WorkflowRepository(db_manager))
-    
-    # Create and bind workflow service
-    binder.bind(
-        WorkflowService,
-        WorkflowService(
-            get_service(WorkflowRepository),
-            workflow_engine,
-            db_manager,
-            logger
-        )
-    )
-    
-    # Create and bind workflow event handler
-    event_handler = WorkflowEventHandler(
-        db_manager,
-        workflow_engine,
-        logger
-    )
-    binder.bind(WorkflowEventHandler, event_handler)
-    
-    # Initialize action executors, condition evaluators, and recipient resolvers
+# Initialize action executors, condition evaluators, and recipient resolvers
+def initialize_workflow_components():
+    """Initialize workflow components."""
     from uno.workflows.executor import init_executors
     from uno.workflows.conditions import init_evaluators
     from uno.workflows.recipients import init_resolvers
@@ -466,3 +513,7 @@ def configure_workflow_module(binder):
     init_executors()
     init_evaluators()
     init_resolvers()
+
+# Don't initialize components automatically during import
+# This will be done explicitly when the application is ready
+# initialize_workflow_components()
