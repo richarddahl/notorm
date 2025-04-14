@@ -13,6 +13,9 @@ from pathlib import Path
 from uuid import UUID
 
 import uvicorn
+import webbrowser
+import threading
+import time
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -184,10 +187,7 @@ def start_server(host: str = "localhost", port: int = 8765, open_browser: bool =
         open_browser: Whether to open a browser window
     """
     if open_browser:
-        import webbrowser
-        import threading
-        import time
-        
+        # Use the modules imported at the top level
         def open_browser_after_delay():
             time.sleep(1.5)  # Wait for server to start
             webbrowser.open(f"http://{host}:{port}")

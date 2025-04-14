@@ -928,5 +928,10 @@ class DataModelerApp extends HTMLElement {
     }
 }
 
-// Define the custom element
-customElements.define('data-modeler-app', DataModelerApp);
+// Define the custom element if not already defined
+if (!customElements.get('data-modeler-app')) {
+    customElements.define('data-modeler-app', DataModelerApp);
+    console.log('data-modeler-app component registered');
+} else {
+    console.log('data-modeler-app component already registered');
+}

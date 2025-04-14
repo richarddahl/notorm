@@ -15,40 +15,119 @@
         #app {
             height: 100%;
         }
+        
+        .loading-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .error-message {
+            display: none;
+            padding: 20px;
+            margin: 20px;
+            border: 1px solid #f44336;
+            background-color: #ffebee;
+            border-radius: 4px;
+            color: #d32f2f;
+        }
     </style>
     <script type="module">
-        // Import web components
-        import './static/components/data-modeler-app.js';
-        
-        // Define a simple starting model with one entity
-        const initialEntities = [
-            {
-                id: 'entity_default',
-                name: 'SampleEntity',
-                fields: [
-                    { name: 'id', type: 'uuid', primaryKey: true },
-                    { name: 'name', type: 'string' },
-                    { name: 'description', type: 'string' },
-                    { name: 'created_at', type: 'datetime' },
-                    { name: 'updated_at', type: 'datetime' }
-                ],
-                x: 300,
-                y: 200
+        // Load with error handling
+        try {
+            // Import web components
+            await import('./static/components/data-modeler-app.js')
+                .catch(error => {
+                    console.error('Error loading data-modeler-app component:', error);
+                    document.querySelector('.error-message').style.display = 'block';
+                    document.querySelector('.error-message').textContent = 
+                        `Error loading component: ${error.message}. Please check the console for details.`;
+                    throw error;
+                });
+            
+            // Define a simple starting model with one entity
+            const initialEntities = [
+                {
+                    id: 'entity_default',
+                    name: 'SampleEntity',
+                    fields: [
+                        { name: 'id', type: 'uuid', primaryKey: true },
+                        { name: 'name', type: 'string' },
+                        { name: 'description', type: 'string' },
+                        { name: 'created_at', type: 'datetime' },
+                        { name: 'updated_at', type: 'datetime' }
+                    ],
+                    x: 300,
+                    y: 200
+                }
+            ];
+            
+            // Check if component is defined and initialize it
+            const initializeApp = () => {
+                const app = document.querySelector('data-modeler-app');
+                if (!app) {
+                    console.warn('data-modeler-app not found in DOM, will retry');
+                    setTimeout(initializeApp, 100);
+                    return;
+                }
+                
+                if (!app.entities) {
+                    console.warn('data-modeler-app not fully initialized, will retry');
+                    setTimeout(initializeApp, 100);
+                    return;
+                }
+                
+                // Initialize the app
+                app.entities = initialEntities;
+                app.relationships = [];
+                app.projectName = 'MyProject';
+                
+                // Hide loading message
+                document.querySelector('.loading-message').style.display = 'none';
+                
+                console.log('Modeler app successfully initialized');
+            };
+            
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeApp);
+            } else {
+                initializeApp();
             }
-        ];
-        
-        // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', () => {
-            const app = document.querySelector('data-modeler-app');
-            app.entities = initialEntities;
-            app.relationships = [];
-            app.projectName = 'MyProject';
-        });
+        } catch (error) {
+            console.error('Error initializing modeler app:', error);
+        }
     </script>
 </head>
 <body>
     <div id="app">
+        <div class="loading-message">Loading modeler app...</div>
+        <div class="error-message"></div>
         <data-modeler-app></data-modeler-app>
     </div>
+    
+    <script>
+        // Monitor component registration and handle errors
+        if (typeof customElements !== 'undefined') {
+            const originalDefine = customElements.define;
+            customElements.define = function(name, constructor, options) {
+                try {
+                    originalDefine.call(this, name, constructor, options);
+                    console.log(`Custom element registered: ${name}`);
+                } catch (error) {
+                    console.error(`Error registering custom element ${name}:`, error);
+                    // Check if it's already defined
+                    if (error.message.includes('has already been used')) {
+                        console.warn(`Component ${name} already registered, using existing registration`);
+                    } else {
+                        throw error;
+                    }
+                }
+            };
+        }
+    </script>
 </body>
 </html>
