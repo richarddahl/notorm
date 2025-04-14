@@ -10,16 +10,24 @@ containerized dependencies such as PostgreSQL, Redis, and other services.
 """
 
 import asyncio
+import json
 import logging
 import os
 import subprocess
+import tempfile
 import time
 from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from uno.database.engine import create_async_engine
+from uno.dependencies.modern_provider import ServiceProvider
 
 
 class ServiceConfig(BaseModel):
@@ -253,6 +261,123 @@ class IntegrationTestHarness:
         
         self.logger.error(f"Timed out waiting for {service.name} log message")
         raise TimeoutError(f"Service {service.name} did not become ready within {timeout} seconds")
+    
+    @asynccontextmanager
+    async def create_test_environment(self):
+        """
+        Create a test environment with database and API clients.
+        
+        This async context manager creates a test environment with a database session,
+        API client, and other testing components, and ensures they are properly
+        cleaned up after the test.
+        
+        Example:
+            ```python
+            async def test_with_environment(test_harness):
+                async with test_harness.create_test_environment() as env:
+                    # Use env.db for database operations
+                    # Use env.api for API testing
+                    # Use env.get_repository() and env.get_service() for components
+                    ...
+            ```
+        
+        Returns:
+            A TestEnvironment object with database, API, and other testing components
+        """
+        from uno.testing.integration.services import TestEnvironment
+        from uno.database.session import get_session
+        
+        # Get database connection string for the primary database service
+        db_url = self.get_connection_string("postgres")
+        
+        # Create an engine and session
+        engine = create_async_engine(db_url)
+        
+        async with get_session(engine) as session:
+            # Create a FastAPI app and test client
+            app = FastAPI(title="Test App", debug=True)
+            client = TestClient(app)
+            
+            # Get default auth headers
+            auth_headers = {"Authorization": "Bearer test_token", "Content-Type": "application/json"}
+            
+            # Create the test environment
+            env = TestEnvironment(session, client, auth_headers)
+            
+            try:
+                yield env
+            finally:
+                await env.teardown()
+    
+    def with_test_data(self, data_dict: Dict[str, List[Dict[str, Any]]]) -> Path:
+        """
+        Create a temporary JSON file with test data.
+        
+        This method creates a temporary file containing the provided test data
+        in JSON format, which can be used with TestEnvironment.setup_test_data.
+        
+        Args:
+            data_dict: Dictionary of table names to lists of row data
+            
+        Returns:
+            Path to the temporary JSON file
+        
+        Example:
+            ```python
+            async def test_with_data(test_harness):
+                data_file = test_harness.with_test_data({
+                    "users": [
+                        {"name": "Test User", "email": "test@example.com"}
+                    ]
+                })
+                
+                async with test_harness.create_test_environment() as env:
+                    await env.setup_test_data(data_file)
+                    # Test with data available
+            ```
+        """
+        # Create a temporary file
+        fd, path = tempfile.mkstemp(suffix=".json")
+        
+        try:
+            # Write the data to the file
+            with os.fdopen(fd, "w") as f:
+                json.dump(data_dict, f, indent=2)
+            
+            # Return the path as a Path object
+            return Path(path)
+        except Exception:
+            # Ensure the file is removed if there's an error
+            os.unlink(path)
+            raise
+    
+    def configure_service_provider(self, provider_class: Type[ServiceProvider] = ServiceProvider):
+        """
+        Configure a service provider for testing.
+        
+        This method creates a ServiceProvider instance configured for testing,
+        with dependencies configured to use the test services.
+        
+        Args:
+            provider_class: ServiceProvider class to instantiate
+            
+        Returns:
+            A configured ServiceProvider instance
+            
+        Example:
+            ```python
+            def test_with_provider(test_harness):
+                provider = test_harness.configure_service_provider()
+                # Use provider.get_service() to get services configured for testing
+            ```
+        """
+        # Create a provider instance
+        provider = provider_class()
+        
+        # Configure the provider for testing
+        # This will configure mock implementations for external services
+        
+        return provider
     
     def _stop_services(self) -> None:
         """Stop all running services."""

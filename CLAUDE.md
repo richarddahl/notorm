@@ -63,6 +63,7 @@ pydantic 2 # Do not use pydantic versions  < 2
 ## Prefer modern web-component based front end ui
 
 When building front end ui components, use webawesome and lit to create the ui.
+load lit from cdn, not using node
 
 ## Prefer modern open-source libraries
 

@@ -44,11 +44,29 @@ generate_docs(config)
 
 ## Command-Line Interface
 
-The documentation generator can also be used from the command line:
+The documentation generator can be used from the command line in two ways:
+
+### Core CLI
+
+For standard API documentation:
 
 ```bash
 python -m uno.core.docs.cli --title "My API" --modules my_app.api my_app.models
 ```
+
+### Developer Documentation CLI
+
+For comprehensive developer documentation with additional features:
+
+```bash
+python -m src.scripts.generate_docs --dev --playground --include-internal --modules my_app
+```
+
+This enhanced CLI provides:
+- Interactive code playgrounds (when used with HTML format)
+- Documentation for tests and benchmarks
+- More detailed internal component documentation
+- Support for additional formats and renderers
 
 ## Documentation Sources
 
