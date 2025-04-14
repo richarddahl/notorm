@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from uno.registry_errors import (
     RegistryError,
+    RegistryDuplicateError as UnoRegistryError,  # Alias for backward compatibility
     RegistryDuplicateError,
     RegistryClassNotFoundError,
     RegistrySchemaNotFoundError,

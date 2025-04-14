@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 from fastapi import APIRouter, Depends, HTTPException, Path, Body, Query
 from pydantic import BaseModel, Field
 
-from uno.api.endpoint import DomainRouter, domain_endpoint
+from uno.domain.api_integration import DomainRouter, domain_endpoint
 from uno.core.errors.result import Result
 from uno.reports.domain_provider import (
     get_report_field_definition_service,
@@ -259,59 +259,54 @@ class ReportExecutionResultResponse(BaseModel):
 
 
 # ========== Create Routers ==========
-field_definition_router = DomainRouter[ReportFieldDefinition, ReportFieldDefinitionCreate, ReportFieldDefinitionUpdate, ReportFieldDefinitionResponse](
-    prefix="/report-field-definitions",
-    tags=["Report Field Definitions"],
+field_definition_router = DomainRouter[ReportFieldDefinition, ReportFieldDefinitionService](
     entity_type=ReportFieldDefinition,
     service_type=ReportFieldDefinitionService,
-    create_schema=ReportFieldDefinitionCreate,
-    update_schema=ReportFieldDefinitionUpdate,
-    response_schema=ReportFieldDefinitionResponse,
-    get_service=get_report_field_definition_service,
+    prefix="/report-field-definitions",
+    tags=["Report Field Definitions"],
+    create_dto=ReportFieldDefinitionCreate,
+    update_dto=ReportFieldDefinitionUpdate,
+    response_dto=ReportFieldDefinitionResponse,
 )
 
-template_router = DomainRouter[ReportTemplate, ReportTemplateCreate, ReportTemplateUpdate, ReportTemplateResponse](
-    prefix="/report-templates",
-    tags=["Report Templates"],
+template_router = DomainRouter[ReportTemplate, ReportTemplateService](
     entity_type=ReportTemplate,
     service_type=ReportTemplateService,
-    create_schema=ReportTemplateCreate,
-    update_schema=ReportTemplateUpdate,
-    response_schema=ReportTemplateResponse,
-    get_service=get_report_template_service,
+    prefix="/report-templates",
+    tags=["Report Templates"],
+    create_dto=ReportTemplateCreate,
+    update_dto=ReportTemplateUpdate,
+    response_dto=ReportTemplateResponse,
 )
 
-trigger_router = DomainRouter[ReportTrigger, ReportTriggerCreate, ReportTriggerUpdate, ReportTriggerResponse](
-    prefix="/report-triggers",
-    tags=["Report Triggers"],
+trigger_router = DomainRouter[ReportTrigger, ReportTriggerService](
     entity_type=ReportTrigger,
     service_type=ReportTriggerService,
-    create_schema=ReportTriggerCreate,
-    update_schema=ReportTriggerUpdate,
-    response_schema=ReportTriggerResponse,
-    get_service=get_report_trigger_service,
+    prefix="/report-triggers",
+    tags=["Report Triggers"],
+    create_dto=ReportTriggerCreate,
+    update_dto=ReportTriggerUpdate,
+    response_dto=ReportTriggerResponse,
 )
 
-output_router = DomainRouter[ReportOutput, ReportOutputCreate, ReportOutputUpdate, ReportOutputResponse](
-    prefix="/report-outputs",
-    tags=["Report Outputs"],
+output_router = DomainRouter[ReportOutput, ReportOutputService](
     entity_type=ReportOutput,
     service_type=ReportOutputService,
-    create_schema=ReportOutputCreate,
-    update_schema=ReportOutputUpdate,
-    response_schema=ReportOutputResponse,
-    get_service=get_report_output_service,
+    prefix="/report-outputs",
+    tags=["Report Outputs"],
+    create_dto=ReportOutputCreate,
+    update_dto=ReportOutputUpdate,
+    response_dto=ReportOutputResponse,
 )
 
-execution_router = DomainRouter[ReportExecution, ReportExecutionCreate, ReportExecutionUpdateStatus, ReportExecutionResponse](
-    prefix="/report-executions",
-    tags=["Report Executions"],
+execution_router = DomainRouter[ReportExecution, ReportExecutionService](
     entity_type=ReportExecution,
     service_type=ReportExecutionService,
-    create_schema=ReportExecutionCreate,
-    update_schema=ReportExecutionUpdateStatus,
-    response_schema=ReportExecutionResponse,
-    get_service=get_report_execution_service,
+    prefix="/report-executions",
+    tags=["Report Executions"],
+    create_dto=ReportExecutionCreate,
+    update_dto=ReportExecutionUpdateStatus,
+    response_dto=ReportExecutionResponse,
 )
 
 output_execution_router = APIRouter(

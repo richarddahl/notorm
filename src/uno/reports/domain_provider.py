@@ -2,7 +2,7 @@
 from functools import lru_cache
 from typing import Dict, Any, Optional, cast
 
-from uno.dependencies.interfaces import ServiceLifecycle
+from uno.dependencies.modern_provider import ServiceLifecycle
 from uno.dependencies.modern_provider import UnoServiceProvider, get_service
 from uno.reports.domain_repositories import (
     ReportFieldDefinitionRepository,

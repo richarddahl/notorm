@@ -8,7 +8,7 @@ a domain-driven design approach in the Uno framework.
 from dataclasses import dataclass, field, asdict
 from typing import Any, Dict, Generic, List, Optional, Set, Type, TypeVar, Union, cast
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import copy
 from pydantic import BaseModel, ConfigDict, model_validator, Field
@@ -37,7 +37,7 @@ class DomainEvent(BaseModel):
     # Standard event metadata
     event_id: str = field(default_factory=lambda: str(uuid4()))
     event_type: str = field(default="domain_event")
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     aggregate_id: Optional[str] = None
     aggregate_type: Optional[str] = None
     
@@ -75,7 +75,7 @@ class Entity(BaseModel, Generic[KeyT]):
     model_config = ConfigDict(extra="allow")
     
     id: KeyT = Field(default_factory=lambda: str(uuid4()))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
     
     # Use private attribute for events
@@ -126,7 +126,7 @@ class Entity(BaseModel, Generic[KeyT]):
     
     def update(self) -> None:
         """Update the updated_at timestamp."""
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """

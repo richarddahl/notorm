@@ -1,9 +1,9 @@
 """Domain entities for the Reports module."""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Union
 
-from uno.domain.core import Entity, AggregateRoot
+from uno.domain.core import Entity, AggregateRoot, safe_dataclass
 from uno.core.errors.result import Result, Success, Failure
 
 # Define enum values
@@ -53,6 +53,7 @@ class ReportExecutionStatus:
     CANCELED = "canceled"
 
 
+@safe_dataclass
 @dataclass
 class ReportFieldDefinition(Entity[str]):
     """A field definition for a report template."""
@@ -74,6 +75,15 @@ class ReportFieldDefinition(Entity[str]):
     
     # ORM mapping
     __uno_model__ = "ReportFieldDefinitionModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
+        # Ensure collections are initialized properly
+        if self.child_fields is None:
+            self.child_fields = []
+        if self.report_templates is None:
+            self.report_templates = []
     
     def validate(self) -> Result[None]:
         """Validate the field definition."""
@@ -148,6 +158,7 @@ class ReportFieldDefinition(Entity[str]):
             child_field.parent_field_id = self.id
 
 
+@safe_dataclass
 @dataclass
 class ReportTemplate(AggregateRoot[str]):
     """A template defining a report's structure and behavior."""
@@ -167,6 +178,19 @@ class ReportTemplate(AggregateRoot[str]):
     
     # ORM mapping
     __uno_model__ = "ReportTemplateModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
+        # Ensure collections are initialized properly
+        if self.fields is None:
+            self.fields = []
+        if self.triggers is None:
+            self.triggers = []
+        if self.outputs is None:
+            self.outputs = []
+        if self.executions is None:
+            self.executions = []
     
     def validate(self) -> Result[None]:
         """Validate the report template."""
@@ -245,6 +269,7 @@ class ReportTemplate(AggregateRoot[str]):
             execution.report_template_id = self.id
 
 
+@safe_dataclass
 @dataclass
 class ReportTrigger(Entity[str]):
     """Defines when a report should be generated."""
@@ -263,6 +288,13 @@ class ReportTrigger(Entity[str]):
     
     # ORM mapping
     __uno_model__ = "ReportTriggerModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
+        # Ensure trigger_config is initialized
+        if self.trigger_config is None:
+            self.trigger_config = {}
     
     def validate(self) -> Result[None]:
         """Validate the trigger configuration based on type."""
@@ -293,6 +325,7 @@ class ReportTrigger(Entity[str]):
         return Success(None)
 
 
+@safe_dataclass
 @dataclass
 class ReportOutput(Entity[str]):
     """Defines how report results should be delivered."""
@@ -309,6 +342,17 @@ class ReportOutput(Entity[str]):
     
     # ORM mapping
     __uno_model__ = "ReportOutputModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
+        # Ensure collections and dictionaries are initialized properly
+        if self.output_config is None:
+            self.output_config = {}
+        if self.format_config is None:
+            self.format_config = {}
+        if self.output_executions is None:
+            self.output_executions = []
     
     def validate(self) -> Result[None]:
         """Validate the output configuration based on type."""
@@ -359,6 +403,7 @@ class ReportOutput(Entity[str]):
             execution.report_output_id = self.id
 
 
+@safe_dataclass
 @dataclass
 class ReportExecution(Entity[str]):
     """Record of a report execution."""
@@ -367,7 +412,7 @@ class ReportExecution(Entity[str]):
     trigger_type: str
     parameters: Dict[str, Any] = field(default_factory=dict)
     status: str = ReportExecutionStatus.PENDING
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
     error_details: Optional[str] = None
     row_count: Optional[int] = None
@@ -380,6 +425,15 @@ class ReportExecution(Entity[str]):
     
     # ORM mapping
     __uno_model__ = "ReportExecutionModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
+        # Ensure collections and dictionaries are initialized properly
+        if self.parameters is None:
+            self.parameters = {}
+        if self.output_executions is None:
+            self.output_executions = []
     
     def validate(self) -> Result[None]:
         """Validate the execution record."""
@@ -431,7 +485,7 @@ class ReportExecution(Entity[str]):
         self.status = status
         
         if status in [ReportExecutionStatus.COMPLETED, ReportExecutionStatus.FAILED, ReportExecutionStatus.CANCELED]:
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now(timezone.utc)
         
         if status == ReportExecutionStatus.FAILED and error_details:
             self.error_details = error_details
@@ -439,6 +493,7 @@ class ReportExecution(Entity[str]):
         return Success(None)
 
 
+@safe_dataclass
 @dataclass
 class ReportOutputExecution(Entity[str]):
     """Record of a report output delivery."""
@@ -456,6 +511,10 @@ class ReportOutputExecution(Entity[str]):
     
     # ORM mapping
     __uno_model__ = "ReportOutputExecutionModel"
+    
+    def __post_init__(self):
+        """Initialize after dataclass creation."""
+        super().__post_init__()
     
     def validate(self) -> Result[None]:
         """Validate the output execution record."""
@@ -489,7 +548,7 @@ class ReportOutputExecution(Entity[str]):
         self.status = status
         
         if status in [ReportExecutionStatus.COMPLETED, ReportExecutionStatus.FAILED, ReportExecutionStatus.CANCELED]:
-            self.completed_at = datetime.utcnow()
+            self.completed_at = datetime.now(timezone.utc)
         
         if status == ReportExecutionStatus.FAILED and error_details:
             self.error_details = error_details

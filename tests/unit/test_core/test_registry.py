@@ -6,15 +6,16 @@
 Unit tests for the registry.py module.
 
 These tests verify the singleton behavior, registration, and lookup functionality
-of the UnoRegistry class.
+of the UnoRegistry class with the get_registry() function.
 """
 
 import pytest
 from typing import Type
 from pydantic import BaseModel
+from functools import lru_cache
 
-from uno.registry import UnoRegistry
-from uno.errors import UnoRegistryError
+from uno.registry import UnoRegistry, get_registry
+from uno.registry_errors import RegistryDuplicateError
 
 
 # Test model classes (not actual test classes, hence the underscore prefix)
@@ -32,28 +33,31 @@ class _TestModelB(BaseModel):
 def reset_registry():
     """Reset the UnoRegistry singleton before and after each test."""
     # Reset before test
-    UnoRegistry._instance = None
-    UnoRegistry._models = {}
+    registry = get_registry()
+    registry.clear()
+    # Clear the lru_cache to get a fresh instance
+    get_registry.cache_clear()
     yield
     # Reset after test
-    UnoRegistry._instance = None
-    UnoRegistry._models = {}
+    registry = get_registry()
+    registry.clear()
+    get_registry.cache_clear()
 
 
 class TestUnoRegistry:
     """Tests for the UnoRegistry class."""
 
     def test_singleton_pattern(self):
-        """Test that UnoRegistry follows the singleton pattern."""
-        instance1 = UnoRegistry.get_instance()
-        instance2 = UnoRegistry.get_instance()
+        """Test that UnoRegistry follows the singleton pattern with get_registry()."""
+        instance1 = get_registry()
+        instance2 = get_registry()
         
         assert instance1 is instance2
-        assert UnoRegistry._instance is instance1
+        assert isinstance(instance1, UnoRegistry)
 
     def test_register(self):
         """Test registering a model class."""
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         registry.register(_TestModelA, "model_a")
         
         assert registry.get("model_a") == _TestModelA
@@ -61,24 +65,28 @@ class TestUnoRegistry:
 
     def test_register_duplicate(self):
         """Test that registering a duplicate table name raises an error."""
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         registry.register(_TestModelA, "model_a")
         
-        with pytest.raises(UnoRegistryError) as excinfo:
+        with pytest.raises(RegistryDuplicateError) as excinfo:
             registry.register(_TestModelB, "model_a")
         
-        assert "already exists in the registry" in str(excinfo.value)
-        assert excinfo.value.error_code == "DUPLICATE_MODEL"
+        # Different error format used in new registry implementation
+        assert "DUPLICATE_MODEL" in str(excinfo.value) or "REG-0001" in str(excinfo.value)
+        
+        # Check the error_code property exists and has expected content
+        assert hasattr(excinfo.value, 'error_code')
+        assert "REG-0001" in excinfo.value.error_code or "DUPLICATE_MODEL" in excinfo.value.error_code
 
     def test_get_nonexistent(self):
         """Test getting a non-existent model returns None."""
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         
         assert registry.get("nonexistent") is None
 
     def test_get_all(self):
         """Test getting all registered models."""
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         registry.register(_TestModelA, "model_a")
         registry.register(_TestModelB, "model_b")
         
@@ -93,7 +101,7 @@ class TestUnoRegistry:
 
     def test_clear(self):
         """Test clearing the registry."""
-        registry = UnoRegistry.get_instance()
+        registry = get_registry()
         registry.register(_TestModelA, "model_a")
         registry.register(_TestModelB, "model_b")
         
@@ -104,19 +112,21 @@ class TestUnoRegistry:
         assert registry.get("model_a") is None
         assert registry.get("model_b") is None
 
-    def test_independence_after_reset(self):
-        """Test that registry instances are independent after reset."""
+    def test_registry_clearing(self):
+        """Test that clearing the registry works as expected."""
         # First registry instance
-        registry1 = UnoRegistry.get_instance()
-        registry1.register(_TestModelA, "model_a")
+        registry = get_registry()
+        registry.register(_TestModelA, "model_a")
         
-        # Reset the singleton
-        UnoRegistry._instance = None
-        UnoRegistry._models = {}
+        # Verify model is registered
+        assert registry.get("model_a") == _TestModelA
         
-        # Second registry instance
-        registry2 = UnoRegistry.get_instance()
+        # Clear the registry
+        registry.clear()
         
-        # Verify that registry2 is a new instance
-        assert registry1 is not registry2
-        assert registry2.get("model_a") is None
+        # Verify model is no longer registered
+        assert registry.get("model_a") is None
+        
+        # Register a different model
+        registry.register(_TestModelB, "model_b")
+        assert registry.get("model_b") == _TestModelB

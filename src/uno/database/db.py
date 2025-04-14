@@ -51,6 +51,7 @@ class NotFoundException(Exception):
 
 
 # FilterParam has been moved to uno.core.types to avoid circular imports
+from uno.core.types import FilterParam
 
 
 T = TypeVar('T', bound=BaseModel)

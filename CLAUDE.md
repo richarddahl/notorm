@@ -95,6 +95,56 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Type check: `hatch run types:check`
 - Event Store: `python src/scripts/eventstore.py create`
 
+## Script Documentation
+
+### Docker Scripts
+- `scripts/docker/start.sh`: Starts Docker containers for development with options for verbose, clean, and detached mode
+- `scripts/docker/stop.sh`: Stops Docker containers
+- `scripts/setup_docker.sh`: Legacy script that redirects to start.sh
+- `scripts/rebuild_docker.sh`: Rebuilds Docker containers
+- `scripts/docker/test/setup.sh`: Sets up test Docker environment
+
+### Database Scripts
+- `src/scripts/createdb.py`: Creates database with proper roles, schemas, and extensions
+- `src/scripts/dropdb.py`: Drops database
+- `src/scripts/createsuperuser.py`: Creates superuser account
+- `src/scripts/db_init.py`: Initializes database structures
+- `src/scripts/postgres_extensions.py`: Sets up PostgreSQL extensions
+- `scripts/install_pgvector.sh`: Installs pgvector extension
+
+### Setup and Environment Scripts
+- `src/scripts/setup_environment.py`: Sets up development environment
+- `scripts/setup_test_env.sh`: Sets up test environment
+- `scripts/vector/setup_vector_search.sh`: Sets up vector search functionality
+- `src/scripts/eventstore.py`: Creates/manages event store
+
+### Testing and Validation Scripts
+- `src/scripts/validate_protocols.py`: Validates protocol implementations
+- `src/scripts/validate_errors.py`: Validates error handling
+- `src/scripts/validate_reports.py`: Validates report generation
+- `src/scripts/validate_workflows.py`: Validates workflow definitions
+- `src/scripts/test_merge_function.py`: Tests merge function
+
+### CI/CD Scripts
+- `scripts/ci/build.sh`: Builds project for CI
+- `scripts/ci/test.sh`: Runs tests for CI
+- `scripts/ci/deploy.sh`: Deploys project
+- `scripts/ci/verify.sh`: Verifies deployment
+- `scripts/dev/lint.sh`: Runs linting
+
+### Development Tools
+- `scripts/launch_modeler.sh`: Launches visual data modeler
+- `src/scripts/generate_docs.py`: Generates documentation
+- `src/scripts/attributes_cli.py`: CLI for managing attributes
+- `src/scripts/values_cli.py`: CLI for managing values
+- `src/scripts/reports_cli.py`: CLI for managing reports
+
+### Issues Identified
+- Some scripts have dependency issues (e.g., generate_docs.py imports missing modules)
+- Legacy scripts (setup_docker.sh) should be deprecated in favor of new ones
+- Documentation for some scripts is minimal or missing
+- Some scripts require specific environment setup to run successfully
+
 ## Code Style Guidelines
 
 - FOLLOW PEP8, PEP257, and PEP484 guidelines

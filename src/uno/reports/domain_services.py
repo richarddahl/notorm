@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, cast
 
-from uno.core.domain import UnoEntityService
+from uno.domain.service import UnoEntityService
 from uno.core.errors.result import Result, Success, Failure
 from uno.reports.entities import (
     ReportFieldDefinition,

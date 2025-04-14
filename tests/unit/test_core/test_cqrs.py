@@ -38,15 +38,19 @@ from uno.domain.exceptions import ValidationError, EntityNotFoundError, Concurre
 
 # Test domain model
 
-class TestEntity(Entity):
+class MockEntity(Entity):
     """Test entity for CQRS tests."""
+    
+    __TEST__ = True  # Marker to avoid pytest collection
     
     name: str
     value: int = 0
 
 
-class TestAggregate(AggregateRoot):
+class MockAggregate(AggregateRoot):
     """Test aggregate for CQRS tests."""
+    
+    __TEST__ = True  # Marker to avoid pytest collection
     
     name: str
     items: List[Dict[str, Any]] = []
@@ -85,13 +89,13 @@ class UpdateTestCommand(Command):
 
 # Test queries
 
-class GetTestByIdQuery(Query[Optional[TestEntity]]):
+class GetTestByIdQuery(Query[Optional[MockEntity]]):
     """Query to get a test entity by ID."""
     
     id: str
 
 
-class ListTestsQuery(Query[List[TestEntity]]):
+class ListTestsQuery(Query[List[MockEntity]]):
     """Query to list test entities."""
     
     value_gt: Optional[int] = None
@@ -104,13 +108,13 @@ class ListTestsQuery(Query[List[TestEntity]]):
 @pytest.fixture
 def test_entity_repo():
     """Create a test entity repository."""
-    return InMemoryRepository(TestEntity)
+    return InMemoryRepository(MockEntity)
 
 
 @pytest.fixture
 def test_aggregate_repo():
     """Create a test aggregate repository."""
-    return InMemoryAggregateRepository(TestAggregate)
+    return InMemoryAggregateRepository(MockAggregate)
 
 
 @pytest.fixture
@@ -139,22 +143,22 @@ def command_handlers(unit_of_work_factory, dispatcher):
     """Create and register command handlers."""
     # Create handlers
     create_entity_handler = CreateEntityCommandHandler(
-        TestEntity, unit_of_work_factory, InMemoryRepository
+        MockEntity, unit_of_work_factory, InMemoryRepository
     )
     update_entity_handler = UpdateEntityCommandHandler(
-        TestEntity, unit_of_work_factory, InMemoryRepository
+        MockEntity, unit_of_work_factory, InMemoryRepository
     )
     delete_entity_handler = DeleteEntityCommandHandler(
-        TestEntity, unit_of_work_factory, InMemoryRepository
+        MockEntity, unit_of_work_factory, InMemoryRepository
     )
     create_aggregate_handler = CreateAggregateCommandHandler(
-        TestAggregate, unit_of_work_factory, InMemoryAggregateRepository
+        MockAggregate, unit_of_work_factory, InMemoryAggregateRepository
     )
     update_aggregate_handler = UpdateAggregateCommandHandler(
-        TestAggregate, unit_of_work_factory, InMemoryAggregateRepository
+        MockAggregate, unit_of_work_factory, InMemoryAggregateRepository
     )
     delete_aggregate_handler = DeleteAggregateCommandHandler(
-        TestAggregate, unit_of_work_factory, InMemoryAggregateRepository
+        MockAggregate, unit_of_work_factory, InMemoryAggregateRepository
     )
     batch_handler = BatchCommandHandler(
         unit_of_work_factory, dispatcher
@@ -185,13 +189,13 @@ def query_handlers(test_entity_repo, test_aggregate_repo, dispatcher):
     """Create and register query handlers."""
     # Create handlers
     get_entity_by_id_handler = EntityByIdQueryHandler(
-        TestEntity, test_entity_repo
+        MockEntity, test_entity_repo
     )
     list_entities_handler = EntityListQueryHandler(
-        TestEntity, test_entity_repo
+        MockEntity, test_entity_repo
     )
     paginated_entities_handler = PaginatedEntityQueryHandler(
-        TestEntity, test_entity_repo
+        MockEntity, test_entity_repo
     )
     
     # Register handlers
@@ -234,7 +238,7 @@ async def test_create_entity_command(dispatcher, command_handlers):
 async def test_update_entity_command(dispatcher, command_handlers, test_entity_repo):
     """Test updating an entity with a command."""
     # Create a test entity
-    entity = TestEntity(id="test-1", name="Original Name", value=10)
+    entity = MockEntity(id="test-1", name="Original Name", value=10)
     await test_entity_repo.add(entity)
     
     # Update the entity
@@ -260,7 +264,7 @@ async def test_update_entity_command(dispatcher, command_handlers, test_entity_r
 async def test_delete_entity_command(dispatcher, command_handlers, test_entity_repo):
     """Test deleting an entity with a command."""
     # Create a test entity
-    entity = TestEntity(id="test-1", name="Test Entity", value=10)
+    entity = MockEntity(id="test-1", name="Test Entity", value=10)
     await test_entity_repo.add(entity)
     
     # Delete the entity
@@ -325,7 +329,7 @@ async def test_create_aggregate_command(dispatcher, command_handlers):
 async def test_update_aggregate_command(dispatcher, command_handlers, test_aggregate_repo):
     """Test updating an aggregate with a command."""
     # Create a test aggregate
-    aggregate = TestAggregate(id="agg-1", name="Original Aggregate")
+    aggregate = MockAggregate(id="agg-1", name="Original Aggregate")
     aggregate.add_item("item-1", "Original Item", 10)
     
     # Manually set the version to simulate an existing aggregate
@@ -360,7 +364,7 @@ async def test_update_aggregate_command(dispatcher, command_handlers, test_aggre
 async def test_update_aggregate_command_version_conflict(dispatcher, command_handlers, test_aggregate_repo):
     """Test updating an aggregate with a version conflict."""
     # Create a test aggregate
-    aggregate = TestAggregate(id="agg-1", name="Original Aggregate")
+    aggregate = MockAggregate(id="agg-1", name="Original Aggregate")
     aggregate.add_item("item-1", "Original Item", 10)
     
     # Add the aggregate without incrementing version
@@ -388,7 +392,7 @@ async def test_update_aggregate_command_version_conflict(dispatcher, command_han
 async def test_delete_aggregate_command(dispatcher, command_handlers, test_aggregate_repo):
     """Test deleting an aggregate with a command."""
     # Create a test aggregate
-    aggregate = TestAggregate(id="agg-1", name="Test Aggregate")
+    aggregate = MockAggregate(id="agg-1", name="Test Aggregate")
     
     # Add without version increment
     await test_aggregate_repo.add(aggregate)
@@ -416,11 +420,11 @@ async def test_delete_aggregate_command(dispatcher, command_handlers, test_aggre
 async def test_entity_by_id_query(dispatcher, query_handlers, test_entity_repo):
     """Test querying an entity by ID."""
     # Create a test entity
-    entity = TestEntity(id="test-1", name="Test Entity", value=10)
+    entity = MockEntity(id="test-1", name="Test Entity", value=10)
     await test_entity_repo.add(entity)
     
     # Query the entity
-    query = EntityByIdQuery[TestEntity](id="test-1")
+    query = EntityByIdQuery[MockEntity](id="test-1")
     
     # Execute the query
     result = await dispatcher.dispatch_query(query)
@@ -437,15 +441,15 @@ async def test_entity_by_id_query(dispatcher, query_handlers, test_entity_repo):
 async def test_entity_list_query(dispatcher, query_handlers, test_entity_repo):
     """Test querying a list of entities."""
     # Create some test entities
-    entity1 = TestEntity(id="test-1", name="Entity 1", value=10)
-    entity2 = TestEntity(id="test-2", name="Entity 2", value=20)
-    entity3 = TestEntity(id="test-3", name="Entity 3", value=30)
+    entity1 = MockEntity(id="test-1", name="Entity 1", value=10)
+    entity2 = MockEntity(id="test-2", name="Entity 2", value=20)
+    entity3 = MockEntity(id="test-3", name="Entity 3", value=30)
     await test_entity_repo.add(entity1)
     await test_entity_repo.add(entity2)
     await test_entity_repo.add(entity3)
     
     # Query all entities (simplified test)
-    query = EntityListQuery[TestEntity]()
+    query = EntityListQuery[MockEntity]()
     
     # Execute the query
     result = await dispatcher.dispatch_query(query)
@@ -460,11 +464,11 @@ async def test_paginated_entity_query(dispatcher, query_handlers, test_entity_re
     """Test paginated query of entities."""
     # Create some test entities
     for i in range(1, 11):
-        entity = TestEntity(id=f"test-{i}", name=f"Entity {i}", value=i * 10)
+        entity = MockEntity(id=f"test-{i}", name=f"Entity {i}", value=i * 10)
         await test_entity_repo.add(entity)
     
     # Query the first page (5 items per page)
-    query = PaginatedEntityQuery[TestEntity](
+    query = PaginatedEntityQuery[MockEntity](
         page=1,
         page_size=5,
         order_by=["value"]
@@ -519,8 +523,8 @@ async def test_batch_command(dispatcher, command_handlers):
     assert result.output.failure_count == 0
     
     # Query the entities to verify they were created
-    query1 = EntityByIdQuery[TestEntity](id="batch-1")
-    query2 = EntityByIdQuery[TestEntity](id="batch-2")
+    query1 = EntityByIdQuery[MockEntity](id="batch-1")
+    query2 = EntityByIdQuery[MockEntity](id="batch-2")
     
     result1 = await dispatcher.dispatch_query(query1)
     result2 = await dispatcher.dispatch_query(query2)
@@ -565,7 +569,7 @@ async def test_batch_command_partial_failure(dispatcher, command_handlers):
     assert result.output.is_partial_success
     
     # Query to verify the first entity was created
-    query = EntityByIdQuery[TestEntity](id="batch-3")
+    query = EntityByIdQuery[MockEntity](id="batch-3")
     query_result = await dispatcher.dispatch_query(query)
     
     assert query_result.is_success and query_result.output is not None
@@ -606,7 +610,7 @@ async def test_batch_command_all_or_nothing(dispatcher, command_handlers):
     
     # Query to verify the first entity was still created
     # (Transaction is not rolled back as we're using InMemoryUnitOfWork)
-    query = EntityByIdQuery[TestEntity](id="batch-4")
+    query = EntityByIdQuery[MockEntity](id="batch-4")
     query_result = await dispatcher.dispatch_query(query)
     
     assert query_result.is_success and query_result.output is not None

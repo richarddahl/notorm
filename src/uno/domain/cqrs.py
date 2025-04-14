@@ -9,7 +9,7 @@ import inspect
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast, Callable, Awaitable, Union
 from uuid import uuid4
@@ -115,7 +115,7 @@ class Command(BaseModel):
     model_config = ConfigDict(frozen=True)
     
     command_id: str = Field(default_factory=lambda: str(uuid4()))
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CommandHandler(Generic[CommandT, OutputT], ABC):

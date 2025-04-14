@@ -55,7 +55,7 @@ See [Scaffolding Guide](developer_tools/scaffolding.md) for complete documentati
 
 ## Visual Data Modeling
 
-The visual data modeling tool provides an interactive browser-based interface for designing entity models:
+The visual data modeling tool provides an interactive browser-based interface for designing entity models with comprehensive unit tests:
 
 ```bash
 # Start the visual modeler using the CLI

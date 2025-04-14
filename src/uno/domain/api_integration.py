@@ -17,7 +17,7 @@ from uno.domain.repository import Repository
 from uno.domain.core import Entity, AggregateRoot
 from uno.core.errors.result import Result, Success, Failure
 from uno.dependencies.scoped_container import get_service
-from uno.database.session import get_db_session
+from uno.dependencies.database import get_db_session
 
 # Type variables
 T = TypeVar('T', bound=Entity)

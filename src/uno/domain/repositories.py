@@ -738,6 +738,28 @@ class InMemoryRepository(Repository[T], Generic[T]):
         
         return entity
     
+    async def save(self, entity: T) -> T:
+        """
+        Save an entity (create or update).
+        
+        This method handles determining whether to add or update based on 
+        whether the entity already exists in the repository.
+        
+        Args:
+            entity: The entity to save
+            
+        Returns:
+            The saved entity
+        """
+        # Check if entity exists
+        exists = await self.exists(entity.id)
+        
+        # Save the entity
+        if exists:
+            return await self.update(entity)
+        else:
+            return await self.add(entity)
+    
     async def remove(self, entity: T) -> None:
         """Remove an entity."""
         await self.remove_by_id(entity.id)
@@ -806,3 +828,31 @@ class InMemoryAggregateRepository(AggregateRepository[A], InMemoryRepository[A],
         
         # Delegate to base implementation
         return await InMemoryRepository.update(self, aggregate)
+    
+    async def save(self, aggregate: A) -> A:
+        """
+        Save an aggregate (create or update).
+        
+        This method applies changes, checks invariants, and manages the
+        aggregate's lifecycle.
+        
+        Args:
+            aggregate: The aggregate to save
+            
+        Returns:
+            The saved aggregate
+        """
+        # Apply changes and check invariants
+        aggregate.apply_changes()
+        
+        # Collect events
+        self._collect_aggregate_events(aggregate)
+        
+        # Determine if this is a create or update
+        exists = await self.exists(aggregate.id)
+        
+        # Save the aggregate
+        if exists:
+            return await InMemoryRepository.update(self, aggregate)
+        else:
+            return await InMemoryRepository.add(self, aggregate)

@@ -43,7 +43,7 @@ class ValueObject(Protocol):
     def equals(self, other: Any) -> bool: ...
     def __eq__(self, other: Any) -> bool: ...
 
-from uno.core.events import BaseDomainEvent
+from uno.core.protocols import DomainEvent
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')

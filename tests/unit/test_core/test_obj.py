@@ -26,18 +26,28 @@ from uno.registry import UnoRegistry
 from uno.schema.schema_manager import UnoSchemaManager
 from uno.queries.filter_manager import UnoFilterManager
 from uno.database.db import UnoDBFactory
+from uno.obj_errors import UnoObjSchemaError
 
 
 @pytest.fixture
 def reset_registry():
-    """Reset the UnoRegistry singleton before and after tests."""
+    """Reset the registry before and after tests."""
+    from uno.registry import get_registry
+    
     # Reset before test
-    UnoRegistry._instance = None
-    UnoRegistry._models = {}
+    registry = get_registry()
+    registry.clear()
+    
+    # Clear the lru_cache to get a fresh instance
+    from functools import lru_cache
+    get_registry.cache_clear()
+    
     yield
+    
     # Reset after test
-    UnoRegistry._instance = None
-    UnoRegistry._models = {}
+    registry = get_registry()
+    registry.clear()
+    get_registry.cache_clear()
 
 
 class TestUnoObjBasic:
@@ -96,39 +106,34 @@ class TestUnoObjInstantiation:
         """Test basic initialization using mock components."""
         # Create mocks for all dependencies
         mock_db_factory = MagicMock()
-        mock_registry_instance = MagicMock()
         mock_schema_manager = MagicMock()
         mock_filter_manager = MagicMock()
         
-        # Patch classes to return our mocks
-        with patch('uno.obj.UnoDBFactory', return_value=mock_db_factory):
-            with patch('uno.obj.UnoRegistry') as mock_registry_class:
-                mock_registry_class.get_instance.return_value = mock_registry_instance
-                
-                with patch('uno.obj.UnoSchemaManager', return_value=mock_schema_manager):
-                    with patch('uno.obj.UnoFilterManager', return_value=mock_filter_manager):
-                        with patch.object(UnoObj, '_set_display_names'):
-                            # Create a mock model
-                            mock_model = MagicMock()
-                            
-                            # Define a test class with our mocks
-                            class TempObj(UnoObj):
-                                model = mock_model
-                                name: str
-                                description: Optional[str] = None
-                            
-                            # Create an instance
-                            obj = TempObj(name="Test")
-                            
-                            # Check attributes
-                            assert obj.name == "Test"
-                            assert obj.description is None
-                            
-                            # Check dependencies were initialized
-                            assert obj.db == mock_db_factory
-                            assert obj.registry == mock_registry_instance
-                            assert obj.schema_manager == mock_schema_manager
-                            assert obj.filter_manager == mock_filter_manager
+        # Patch the getter functions to return our mocks
+        with patch('uno.obj.get_db_factory', return_value=mock_db_factory):
+            with patch('uno.obj.get_schema_manager', return_value=mock_schema_manager):
+                with patch('uno.obj.get_filter_manager', return_value=mock_filter_manager):
+                    with patch.object(UnoObj, '_set_display_names'):
+                        # Create a mock model
+                        mock_model = MagicMock()
+                        
+                        # Define a test class with our mocks
+                        class TempObj(UnoObj):
+                            model = mock_model
+                            name: str
+                            description: Optional[str] = None
+                        
+                        # Create an instance
+                        obj = TempObj(name="Test")
+                        
+                        # Check attributes
+                        assert obj.name == "Test"
+                        assert obj.description is None
+                        
+                        # Check dependencies were initialized correctly
+                        assert obj.db == mock_db_factory
+                        assert obj.schema_manager == mock_schema_manager
+                        assert obj.filter_manager == mock_filter_manager
 
 
 @pytest.mark.skip(reason="These tests require more complex setup with SQLAlchemy and async support")
@@ -173,57 +178,55 @@ class TestUnoObjSchemaOperations:
         """Test ensuring schemas are created."""
         # Create a mock schema manager
         mock_schema_manager = MagicMock()
-        mock_schema_manager.schemas = {}
+        mock_schema_manager.get_schema.return_value = None
         
         # Create a mock model
         mock_model = MagicMock()
         
         # Patch dependencies and avoid UnoObj.__init_subclass__
-        with patch('uno.obj.UnoDBFactory'):
-            with patch('uno.obj.UnoRegistry'):
-                with patch('uno.obj.UnoSchemaManager', return_value=mock_schema_manager):
-                    with patch('uno.obj.UnoFilterManager'):
-                        with patch.object(UnoObj, '_set_display_names'):
-                            # Create a test class
-                            class TestSchemaObj(UnoObj):
-                                model = mock_model
-                            
-                            # Create an instance
-                            obj = TestSchemaObj()
-                            
-                            # Call the method
-                            obj._ensure_schemas_created()
-                            
-                            # Check that the method was called
-                            mock_schema_manager.create_all_schemas.assert_called_once_with(TestSchemaObj)
+        with patch('uno.obj.get_db_factory', return_value=MagicMock()):
+            with patch('uno.obj.get_schema_manager', return_value=mock_schema_manager):
+                with patch('uno.obj.get_filter_manager', return_value=MagicMock()):
+                    with patch.object(UnoObj, '_set_display_names'):
+                        # Create a test class
+                        class TestSchemaObj(UnoObj):
+                            model = mock_model
+                        
+                        # Create an instance
+                        obj = TestSchemaObj()
+                        
+                        # Call the method
+                        obj._ensure_schemas_created()
+                        
+                        # Check that the method was called
+                        mock_schema_manager.create_all_schemas.assert_called_once_with(TestSchemaObj)
     
     def test_ensure_schemas_created_already_exists(self, reset_registry):
         """Test ensuring schemas are created when they already exist."""
         # Create a mock schema manager with schemas already created
         mock_schema_manager = MagicMock()
-        mock_schema_manager.schemas = {"test": "schema"}
+        mock_schema_manager.get_schema.return_value = "exists"  # Will return a value for edit_schema
         
         # Create a mock model
         mock_model = MagicMock()
         
         # Patch dependencies and avoid UnoObj.__init_subclass__
-        with patch('uno.obj.UnoDBFactory'):
-            with patch('uno.obj.UnoRegistry'):
-                with patch('uno.obj.UnoSchemaManager', return_value=mock_schema_manager):
-                    with patch('uno.obj.UnoFilterManager'):
-                        with patch.object(UnoObj, '_set_display_names'):
-                            # Create a test class
-                            class TestSchemaObj(UnoObj):
-                                model = mock_model
-                            
-                            # Create an instance
-                            obj = TestSchemaObj()
-                            
-                            # Call the method
-                            obj._ensure_schemas_created()
-                            
-                            # Check that the create method was NOT called
-                            mock_schema_manager.create_all_schemas.assert_not_called()
+        with patch('uno.obj.get_db_factory', return_value=MagicMock()):
+            with patch('uno.obj.get_schema_manager', return_value=mock_schema_manager):
+                with patch('uno.obj.get_filter_manager', return_value=MagicMock()):
+                    with patch.object(UnoObj, '_set_display_names'):
+                        # Create a test class
+                        class TestSchemaObj(UnoObj):
+                            model = mock_model
+                        
+                        # Create an instance
+                        obj = TestSchemaObj()
+                        
+                        # Call the method
+                        obj._ensure_schemas_created()
+                        
+                        # Check that the create method was NOT called
+                        mock_schema_manager.create_all_schemas.assert_not_called()
     
     def test_to_model_schema_not_found(self, reset_registry):
         """Test to_model with a nonexistent schema raises an error."""
@@ -235,24 +238,23 @@ class TestUnoObjSchemaOperations:
         mock_model = MagicMock()
         
         # Patch dependencies and avoid UnoObj.__init_subclass__
-        with patch('uno.obj.UnoDBFactory'):
-            with patch('uno.obj.UnoRegistry'):
-                with patch('uno.obj.UnoSchemaManager', return_value=mock_schema_manager):
-                    with patch('uno.obj.UnoFilterManager'):
-                        with patch.object(UnoObj, '_set_display_names'):
-                            # Create a test class
-                            class TestSchemaObj(UnoObj):
-                                model = mock_model
-                            
-                            # Create an instance
-                            obj = TestSchemaObj()
-                            
-                            # Call the method - should raise an error
-                            with pytest.raises(UnoError) as excinfo:
-                                obj.to_model(schema_name="nonexistent")
-                            
-                            assert "Schema nonexistent not found" in str(excinfo.value)
-                            assert excinfo.value.error_code == "SCHEMA_NOT_FOUND"
+        with patch('uno.obj.get_db_factory', return_value=MagicMock()):
+            with patch('uno.obj.get_schema_manager', return_value=mock_schema_manager):
+                with patch('uno.obj.get_filter_manager', return_value=MagicMock()):
+                    with patch.object(UnoObj, '_set_display_names'):
+                        # Create a test class
+                        class TestSchemaObj(UnoObj):
+                            model = mock_model
+                        
+                        # Create an instance
+                        obj = TestSchemaObj()
+                        
+                        # Call the method - should raise an error
+                        with pytest.raises(UnoObjSchemaError) as excinfo:
+                            obj.to_model(schema_name="nonexistent")
+                        
+                        assert "Schema nonexistent not found" in str(excinfo.value)
+                        assert excinfo.value.error_code == "OBJ-0201"
 
 
 class TestUnoObjConfiguration:
@@ -268,9 +270,9 @@ class TestUnoObjConfiguration:
         mock_endpoint_factory = MagicMock()
         
         # Patch dependencies and avoid UnoObj.__init_subclass__
-        with patch('uno.obj.UnoFilterManager', return_value=mock_filter_manager):
-            with patch('uno.obj.UnoSchemaManager', return_value=mock_schema_manager):
-                with patch('uno.obj.UnoEndpointFactory', return_value=mock_endpoint_factory):
+        with patch('uno.obj.get_filter_manager', return_value=mock_filter_manager):
+            with patch('uno.obj.get_schema_manager', return_value=mock_schema_manager):
+                with patch('uno.obj.UnoEndpointFactory', MagicMock(return_value=mock_endpoint_factory)):
                     with patch.object(UnoObj, '_set_display_names'):
                         # Create a test class
                         class TestConfigObj(UnoObj):

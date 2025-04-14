@@ -274,6 +274,10 @@ class AuthorizationPolicy(ABC, Generic[T]):
                     prefix = resource[:-2]  # Remove .* suffix
                     if self.resource.startswith(prefix):
                         return True
+                        
+                # Check for full wildcard (e.g., *:*)
+                if resource == "*" and action == "*":
+                    return True
         
         return False
     
@@ -364,6 +368,10 @@ class OwnershipPolicy(AuthorizationPolicy[EntityT]):
             self.logger.warning(f"Ownership check failed: Target has no {self.owner_field} field")
             return False
         
+        # Check if the user has admin privileges (*:*)
+        if "*:*" in context.permissions:
+            return True
+            
         # Check if the user is the owner
         owner_id = getattr(target, self.owner_field)
         is_owner = owner_id == context.user_id
@@ -426,6 +434,10 @@ class TenantPolicy(AuthorizationPolicy[EntityT]):
             self.logger.warning(f"Tenant check failed: Target has no {self.tenant_field} field")
             return False
         
+        # Check if the user has admin privileges (*:*)
+        if "*:*" in context.permissions:
+            return True
+            
         # Check if the entity belongs to the user's tenant
         entity_tenant_id = getattr(target, self.tenant_field)
         same_tenant = entity_tenant_id == context.tenant_id
@@ -526,19 +538,26 @@ class CompositePolicy(AuthorizationPolicy[T]):
         Returns:
             True if authorized according to the combination mode, False otherwise
         """
+        # Check if the user has admin privileges (*:*)
+        if "*:*" in context.permissions:
+            return True
         if not self.policies:
             self.logger.warning("No policies to apply")
             return False
         
         results = []
         for policy in self.policies:
+            self.logger.info(f"Applying policy {policy.__class__.__name__} for {self.resource}:{self.action}")
             result = await policy.authorize(context, target)
             results.append(result)
+            self.logger.info(f"Policy {policy.__class__.__name__} result: {result}")
             
             # Short-circuit evaluation
             if self.mode == self.CombinationMode.ANY and result:
+                self.logger.info(f"ANY mode: {policy.__class__.__name__} passed, authorizing")
                 return True
             if self.mode == self.CombinationMode.ALL and not result:
+                self.logger.info(f"ALL mode: {policy.__class__.__name__} failed, denying")
                 return False
         
         # If we get here, it means:

@@ -75,7 +75,7 @@ def get_filter_manager() -> FilterManagerProtocol:
 
 def get_db_factory(obj: Type[Any]) -> Any:
     """Get the database factory instance."""
-    from uno.database.db_manager import UnoDBFactory
+    from uno.database.db import UnoDBFactory
     return UnoDBFactory(obj=obj)
 
 
@@ -230,7 +230,7 @@ class UnoObj(BaseModel, Generic[T]):
         # Get the schema
         schema_class = self.schema_manager.get_schema(schema_name)
         if not schema_class:
-            raise UnoError(
+            raise UnoObjSchemaError(
                 f"Schema {schema_name} not found in {self.__class__.__name__}",
                 "SCHEMA_NOT_FOUND",
             )
@@ -280,7 +280,7 @@ class UnoObj(BaseModel, Generic[T]):
         # Get the schema
         schema_class = self.schema_manager.get_schema(schema_name)
         if not schema_class:
-            raise UnoError(
+            raise UnoObjSchemaError(
                 f"Schema {schema_name} not found in {self.__class__.__name__}",
                 "SCHEMA_NOT_FOUND",
             )
@@ -325,7 +325,7 @@ class UnoObj(BaseModel, Generic[T]):
         # Get the edit schema
         edit_schema = self.schema_manager.get_schema("edit_schema")
         if not edit_schema:
-            raise UnoError(
+            raise UnoObjSchemaError(
                 "Edit schema not found",
                 "SCHEMA_NOT_FOUND",
             )
