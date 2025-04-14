@@ -8,7 +8,6 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { login } from "/static/assets/scripts/apiData.js";
-
 export class OKLoginFormDialog extends LitElement {
   static properties = {
     open: { type: Boolean },
@@ -17,7 +16,6 @@ export class OKLoginFormDialog extends LitElement {
     emailError: { type: String },
     passwordError: { type: String },
   };
-
   static styles = [
     css`
       :host {
@@ -48,18 +46,15 @@ export class OKLoginFormDialog extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.emailHelpText = html`Please enter your email address`;
     this.passwordHelpText = html`Please enter your password`;
     this.formInvalid = false;
   }
-
   firstUpdated() {
     this.email = this.shadowRoot.querySelector(".username");
     this.password = this.shadowRoot.querySelector(".password");
-
     this.email.addEventListener("input", (e) => {
       this._checkEmailValidation();
     });
@@ -71,12 +66,10 @@ export class OKLoginFormDialog extends LitElement {
     // i.e. there are no errors
     this.requestUpdate();
   }
-
   // called from external script to show the dialog
   showDialog() {
     this.shadowRoot.querySelector("sl-dialog").show();
   }
-
   _checkEmailValidation() {
     if (!this.email.validity.valid) {
       this.emailError = html`
@@ -92,7 +85,6 @@ export class OKLoginFormDialog extends LitElement {
       this.formInvalid = false;
     }
   }
-
   _checkPasswordValidation() {
     if (!this.password.validity.valid) {
       this.passwordError = html`
@@ -108,35 +100,29 @@ export class OKLoginFormDialog extends LitElement {
       this.formInvalid = false;
     }
   }
-
   async _handleLogin(e) {
     e.preventDefault();
     const dialog = this.shadowRoot.querySelector("sl-dialog");
     const form = this.shadowRoot.querySelector("#loginForm");
     let formData;
     this.error = false;
-
     this._checkEmailValidation();
     this._checkPasswordValidation();
     if (this.formInvalid) {
       return;
     }
-
     formData = new FormData(form);
-
     if (await login(formData)) {
       dialog.hide();
     } else {
       this.error = true;
     }
   }
-
   _clearForm() {
     this.email.value = "";
     this.password.value = "";
     this.error = false;
   }
-
   render() {
     let error = undefined;
     if (this.error) {
@@ -148,7 +134,6 @@ export class OKLoginFormDialog extends LitElement {
         </sl-alert>
       `;
     }
-
     return html`
       <sl-dialog
         @sl-hide=${this._clearForm}
@@ -158,7 +143,6 @@ export class OKLoginFormDialog extends LitElement {
       >
         <form id="loginForm" action="/" method="post" autocomplete="on">
           ${error || nothing}
-
           <sl-input
             form="loginForm"
             class="username"
@@ -203,5 +187,4 @@ export class OKLoginFormDialog extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-login-form-dialog", OKLoginFormDialog);

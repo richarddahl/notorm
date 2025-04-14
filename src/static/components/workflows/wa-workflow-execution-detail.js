@@ -1,18 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-dialog.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-workflow-execution-detail
  * @description A component for viewing detailed workflow execution results
@@ -34,7 +20,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       actionToRetry: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -280,7 +265,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.execution = null;
@@ -296,7 +280,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
     // Load mock data for demo purposes
     this._loadMockData();
   }
-
   _loadMockData() {
     // Mock execution data
     this.execution = {
@@ -432,7 +415,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       actions_failed: 1
     };
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -440,7 +422,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       this.loadExecution();
     }
   }
-
   async loadExecution() {
     this.loading = true;
     
@@ -458,29 +439,23 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       this.loading = false;
     }
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   showTriggerData() {
     this.showTriggerDataDialog = true;
   }
-
   closeTriggerDataDialog() {
     this.showTriggerDataDialog = false;
   }
-
   showRetryActionDialog(action) {
     this.actionToRetry = action;
     this.showRetryDialog = true;
   }
-
   closeRetryDialog() {
     this.showRetryDialog = false;
     this.actionToRetry = null;
   }
-
   async retryAction() {
     if (!this.actionToRetry) return;
     
@@ -531,7 +506,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       this.closeRetryDialog();
     }
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -547,7 +521,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   _formatTimestamp(timestamp) {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -565,7 +538,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       return `${minutes}m ${seconds}s`;
     }
   }
-
   _getActionTypeIcon(type) {
     switch (type) {
       case 'notification': return 'notifications';
@@ -576,7 +548,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       default: return 'play_arrow';
     }
   }
-
   _getActionTypeLabel(type) {
     switch (type) {
       case 'notification': return 'In-App Notification';
@@ -587,7 +558,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       default: return 'Action';
     }
   }
-
   _getRecipientTypeIcon(type) {
     switch (type) {
       case 'user': return 'person';
@@ -597,7 +567,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       default: return 'person';
     }
   }
-
   _getOperatorLabel(operator) {
     const operators = {
       'eq': 'equal to',
@@ -615,7 +584,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
     
     return operators[operator] || operator;
   }
-
   renderTriggerDataDialog() {
     if (!this.showTriggerDataDialog || !this.execution?.trigger?.data) return html``;
     
@@ -641,7 +609,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderRetryDialog() {
     if (!this.showRetryDialog || !this.actionToRetry) return html``;
     
@@ -670,7 +637,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderSummaryTab() {
     if (!this.execution) return html``;
     
@@ -882,7 +848,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       </div>
     `;
   }
-
   renderTimelineTab() {
     if (!this.execution) return html``;
     
@@ -906,7 +871,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       </div>
     `;
   }
-
   _getTimelineItemStatus(event) {
     if (event.event === 'action_error' || (event.result === false && event.event !== 'condition_evaluation')) {
       return 'failure';
@@ -916,7 +880,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
     }
     return '';
   }
-
   _formatTimelineEvent(event) {
     switch (event.event) {
       case 'trigger':
@@ -935,7 +898,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
         return event.event.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   }
-
   renderJsonTab() {
     if (!this.execution) return html``;
     
@@ -954,7 +916,6 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
       </wa-card>
     `;
   }
-
   render() {
     if (this.loading) {
       return html`
@@ -1035,5 +996,4 @@ export class WebAwesomeWorkflowExecutionDetail extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-workflow-execution-detail', WebAwesomeWorkflowExecutionDetail);

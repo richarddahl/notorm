@@ -1354,6 +1354,5 @@ class OkuiWorkflowSimulator extends HTMLElement {
     this.setupEventListeners();
   }
 }
-
 // Define the new element
 customElements.define('okui-workflow-simulator', OkuiWorkflowSimulator);

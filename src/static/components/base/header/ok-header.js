@@ -3,7 +3,6 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKToolbar extends LitElement {
   static properties = {
     theme: {},
@@ -11,7 +10,6 @@ export class OKToolbar extends LitElement {
     accessToken: { type: String },
     refreshToken: { type: String },
   };
-
   static styles = [
     css`
       :host {
@@ -29,11 +27,9 @@ export class OKToolbar extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   // Render the UI as a function of component state
   render() {
     return html`

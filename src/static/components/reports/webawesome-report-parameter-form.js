@@ -1,18 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-date-picker.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-radio.js';
-import '@webcomponents/awesome/wa-slider.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-report-parameter-form
  * @description Form component for entering report parameters before execution using WebAwesome components
@@ -36,7 +22,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       outputOptions: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -178,7 +163,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.templateId = '';
@@ -194,7 +178,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       delivery: 'browser' // browser, email
     };
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -203,7 +186,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       this.loadRecentExecutions();
     }
   }
-
   updated(changedProperties) {
     if (changedProperties.has('templateId') && this.templateId) {
       this.loadTemplate();
@@ -214,7 +196,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       this.validateForm();
     }
   }
-
   async loadTemplate() {
     if (!this.templateId) return;
     
@@ -247,7 +228,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       this.loading = false;
     }
   }
-
   async loadRecentExecutions() {
     if (!this.templateId) return;
     
@@ -270,7 +250,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       // Don't show error for this secondary feature
     }
   }
-
   handleParameterChange(paramName, value) {
     this.parameters = {
       ...this.parameters,
@@ -284,7 +263,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       this.validationErrors = newErrors;
     }
   }
-
   validateForm() {
     const errors = {};
     let isValid = true;
@@ -335,21 +313,18 @@ export class WebAwesomeReportParameterForm extends LitElement {
     
     return isValid;
   }
-
   selectOutputFormat(format) {
     this.outputOptions = {
       ...this.outputOptions,
       format
     };
   }
-
   selectDeliveryMethod(delivery) {
     this.outputOptions = {
       ...this.outputOptions,
       delivery
     };
   }
-
   async executeReport() {
     if (!this.validateForm()) {
       this._showNotification('Please fix the validation errors before executing the report', 'error');
@@ -401,17 +376,14 @@ export class WebAwesomeReportParameterForm extends LitElement {
       this.loading = false;
     }
   }
-
   cancel() {
     // Navigate back to the previous page
     window.history.back();
   }
-
   formatDate(dateString) {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   }
-
   getStatusClass(status) {
     switch (status) {
       case 'completed': return 'status-completed';
@@ -422,11 +394,9 @@ export class WebAwesomeReportParameterForm extends LitElement {
       default: return '';
     }
   }
-
   navigateToExecution(executionId) {
     window.location.href = `/reports/executions/${executionId}`;
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -442,7 +412,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   render() {
     if (this.loading && !this.template) {
       return html`
@@ -611,7 +580,6 @@ export class WebAwesomeReportParameterForm extends LitElement {
       </div>
     `;
   }
-
   renderParameterInput(param) {
     const value = this.parameters[param.name] !== undefined ? this.parameters[param.name] : '';
     const displayName = param.display_name || param.name;
@@ -725,5 +693,4 @@ export class WebAwesomeReportParameterForm extends LitElement {
     }
   }
 }
-
 customElements.define('wa-report-parameter-form', WebAwesomeReportParameterForm);

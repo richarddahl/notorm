@@ -1,22 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-workflow-dashboard
  * @description A dashboard component for managing notification workflows
@@ -39,7 +21,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       historyDetails: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -288,7 +269,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.workflows = [];
@@ -308,7 +288,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
     // Load mock data for the dashboard
     this._loadMockData();
   }
-
   _loadMockData() {
     // Mock workflows
     this.workflows = [
@@ -534,13 +513,11 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     // In a real implementation, this would load data from an API
     // this.loadWorkflows();
   }
-
   async loadWorkflows() {
     this.loading = true;
     
@@ -558,15 +535,12 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   handleSearchInput(e) {
     this.searchQuery = e.target.value;
   }
-
   handleEntityFilterChange(e) {
     this.filterEntity = e.target.value;
   }
-
   getFilteredWorkflows() {
     return this.workflows.filter(workflow => {
       // Apply search filter
@@ -580,27 +554,22 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       return searchMatch && entityMatch;
     });
   }
-
   createWorkflow() {
     // In a real application, this would navigate to the workflow designer
     window.location.href = '/workflows/new';
   }
-
   editWorkflow(workflow) {
     // In a real application, this would navigate to the workflow designer with the workflow ID
     window.location.href = `/workflows/edit/${workflow.id}`;
   }
-
   showDeleteConfirm(workflow) {
     this.workflowToDelete = workflow;
     this.showDeleteDialog = true;
   }
-
   cancelDelete() {
     this.showDeleteDialog = false;
     this.workflowToDelete = null;
   }
-
   async confirmDelete() {
     if (!this.workflowToDelete) return;
     
@@ -634,7 +603,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       this.workflowToDelete = null;
     }
   }
-
   async toggleWorkflowEnabled(workflow, enabled) {
     this.loading = true;
     
@@ -676,7 +644,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -692,7 +659,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
@@ -736,7 +702,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
     
     return Math.floor(seconds) + ' seconds ago';
   }
-
   renderDeleteDialog() {
     if (!this.showDeleteDialog) return html``;
     
@@ -756,7 +721,6 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderHistoryDialog() {
     if (!this.showHistoryDialog || !this.historyDetails) return html``;
     
@@ -1133,5 +1097,4 @@ export class WebAwesomeWorkflowDashboard extends LitElement {
     return Object.entries(counts);
   }
 }
-
 customElements.define('wa-workflow-dashboard', WebAwesomeWorkflowDashboard);

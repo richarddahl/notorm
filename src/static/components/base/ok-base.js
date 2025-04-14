@@ -5,7 +5,6 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { haveToken, postData } from "/static/assets/scripts/apiData.js";
-
 export class OKBase extends LitElement {
   static properties = {
     listTitle: { type: String },
@@ -17,7 +16,6 @@ export class OKBase extends LitElement {
     theme: { type: String },
     logged_in: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -36,7 +34,6 @@ export class OKBase extends LitElement {
       }
     `,
   ];
-
   _handleChangeTheme = (e) => {
     e.stopPropagation();
     const oldTheme = localStorage.getItem("theme");
@@ -49,7 +46,6 @@ export class OKBase extends LitElement {
     document.documentElement.classList.remove(`sl-theme-${oldTheme}`);
     this.theme = theme;
   };
-
   _handleAppMenuSelect = (e) => {
     this.listTitle = e.detail.selectedItem.getTextLabel().trim();
     this.dataUrl = new URL(
@@ -68,7 +64,6 @@ export class OKBase extends LitElement {
       `${window.location.origin}${e.detail.selectedItem.formUrl}`
     );
   };
-
   constructor() {
     super();
     if (!this.logged_in) {
@@ -87,7 +82,6 @@ export class OKBase extends LitElement {
     // Responds to click from change theme button
     this.addEventListener("ok-change-theme", this._handleChangeTheme);
   }
-
   // Render the UI as a function of component state
   render() {
     if (this.logged_in) {
@@ -115,5 +109,9 @@ export class OKBase extends LitElement {
     return html` <ok-login-notification></ok-login-notification> `;
   }
 }
-
-customElements.define("ok-base", OKBase);
+// Only define if not already registered
+if (!customElements.get('ok-base')) {
+  customElements.define("ok-base", OKBase);
+} else {
+  console.log('ok-base component already registered');
+}

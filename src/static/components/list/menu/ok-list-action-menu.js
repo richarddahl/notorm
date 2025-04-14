@@ -6,12 +6,10 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKListActionMenu extends LitElement {
   static properties = {
     anySelected: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -19,15 +17,12 @@ export class OKListActionMenu extends LitElement {
       }
     `,
   ];
-
   get _dropdown() {
     return this.renderRoot.querySelector("sl-dropdown");
   }
-
   constructor() {
     super();
   }
-
   render() {
     return html`
       <div>

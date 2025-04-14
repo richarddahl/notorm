@@ -6,7 +6,6 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKTileList extends LitElement {
   static properties = {
     listTitle: { type: String },
@@ -16,7 +15,6 @@ export class OKTileList extends LitElement {
     queryUrl: { type: Object },
     formUrl: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -43,7 +41,6 @@ export class OKTileList extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.drawerTab = "Sort Table";
@@ -52,20 +49,17 @@ export class OKTileList extends LitElement {
       this.dataUrl.searchParams.set("page", e.detail.page);
       this.requestUpdate();
     });
-
     this.addEventListener("ok-limit-change", (e) => {
       this.dataUrl.searchParams.set("limit", e.detail.limit);
       this.dataUrl.searchParams.set("page", 1);
       this.requestUpdate();
     });
-
     this.addEventListener("ok-select-list-menu-drawer-tab", (e) => {
       this.renderRoot.querySelector("ok-tile-list-drawer").drawerTab =
         e.detail.selectedTab;
       this.renderRoot.querySelector("ok-tile-list-drawer")._show();
     });
   }
-
   render() {
     if (this.queryParamList) {
       let queryString = "";
@@ -106,5 +100,4 @@ export class OKTileList extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-tile-list", OKTileList);

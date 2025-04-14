@@ -662,6 +662,5 @@ class OkuiWorkflowDashboard extends HTMLElement {
     this.setupEventListeners();
   }
 }
-
 // Define the new element
 customElements.define('okui-workflow-dashboard', OkuiWorkflowDashboard);

@@ -3,7 +3,6 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKLogo extends LitElement {
   static properties = {
     logoHref: {},
@@ -13,7 +12,6 @@ export class OKLogo extends LitElement {
     tagline: {},
     theme: {},
   };
-
   static styles = [
     css`
       img {
@@ -29,11 +27,9 @@ export class OKLogo extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   // Render the UI as a function of component state
   render() {
     let logoSrc;
@@ -50,5 +46,4 @@ export class OKLogo extends LitElement {
     `;
   } // end render
 }
-
 customElements.define("ok-logo", OKLogo);

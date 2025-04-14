@@ -1,24 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-date-picker.js';
-import '@webcomponents/awesome/wa-time-picker.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-values-manager
  * @description Component for managing different types of values in the UNO framework
@@ -49,7 +29,6 @@ export class WebAwesomeValuesManager extends LitElement {
       attachmentForm: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -339,7 +318,6 @@ export class WebAwesomeValuesManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.activeTab = 'boolean';
@@ -366,7 +344,6 @@ export class WebAwesomeValuesManager extends LitElement {
     // Load mock data for demonstration
     this._loadMockData();
   }
-
   _getDefaultValueForm() {
     return {
       valueType: 'boolean',
@@ -374,7 +351,6 @@ export class WebAwesomeValuesManager extends LitElement {
       value: null
     };
   }
-
   _loadMockData() {
     // Boolean values
     const booleanValues = [
@@ -615,11 +591,9 @@ export class WebAwesomeValuesManager extends LitElement {
     // Set initial values based on active tab
     this.values = this.valuesByType[this.activeTab] || [];
   }
-
   connectedCallback() {
     super.connectedCallback();
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
     this.values = this.valuesByType[this.activeTab] || [];
@@ -1543,5 +1517,4 @@ export class WebAwesomeValuesManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-values-manager', WebAwesomeValuesManager);

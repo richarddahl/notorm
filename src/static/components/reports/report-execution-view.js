@@ -12,7 +12,6 @@ class ReportExecutionView extends LitElement {
     error: { type: String },
     refreshInterval: { type: Number }
   };
-
   constructor() {
     super();
     this.executionId = null;
@@ -22,7 +21,6 @@ class ReportExecutionView extends LitElement {
     this.error = null;
     this.refreshInterval = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     // Extract execution ID from URL
@@ -34,14 +32,12 @@ class ReportExecutionView extends LitElement {
       this.loadExecution();
     }
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
   }
-
   async loadExecution() {
     if (!this.executionId) return;
     
@@ -74,7 +70,6 @@ class ReportExecutionView extends LitElement {
       this.loading = false;
     }
   }
-
   async loadTemplate(templateId) {
     try {
       const response = await fetch(`/api/reports/templates/${templateId}`);
@@ -86,7 +81,6 @@ class ReportExecutionView extends LitElement {
       console.error('Error loading template:', err);
     }
   }
-
   async downloadResult(format = 'csv') {
     try {
       const response = await fetch(`/api/reports/executions/${this.executionId}/result?format=${format}`);
@@ -109,7 +103,6 @@ class ReportExecutionView extends LitElement {
       alert(`Failed to download result: ${err.message}`);
     }
   }
-
   getStatusBadgeClass(status) {
     switch (status) {
       case 'completed': return 'badge-success';
@@ -120,7 +113,6 @@ class ReportExecutionView extends LitElement {
       default: return 'badge-info';
     }
   }
-
   formatDuration(startTime, endTime) {
     if (!startTime || !endTime) return 'N/A';
     
@@ -139,12 +131,10 @@ class ReportExecutionView extends LitElement {
       return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   }
-
   render() {
     if (this.loading && !this.execution) {
       return html`<div class="loading">Loading execution details...</div>`;
     }
-
     if (this.error) {
       return html`
         <div class="error">
@@ -153,11 +143,9 @@ class ReportExecutionView extends LitElement {
         </div>
       `;
     }
-
     if (!this.execution) {
       return html`<div class="not-found">Execution not found</div>`;
     }
-
     return html`
       <div class="report-execution">
         <div class="header">
@@ -288,7 +276,6 @@ class ReportExecutionView extends LitElement {
       </div>
     `;
   }
-
   static styles = css`
     .report-execution {
       padding: 1rem;
@@ -488,5 +475,4 @@ class ReportExecutionView extends LitElement {
     }
   `;
 }
-
 customElements.define('report-execution-view', ReportExecutionView);

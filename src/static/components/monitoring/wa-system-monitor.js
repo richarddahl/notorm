@@ -1,21 +1,5 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-progress.js';
-import { Chart } from 'chart.js/auto';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+// Use global Chart.js instance instead of importing as a module
 /**
  * @element wa-system-monitor
  * @description System monitoring dashboard for UNO framework using WebAwesome components
@@ -37,7 +21,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       autoRefresh: { type: Boolean }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -220,7 +203,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.activeTab = 'overview';
@@ -241,7 +223,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
     // Mock data for demo
     this._loadMockData();
   }
-
   _loadMockData() {
     // CPU usage history (last 24 hours, every hour)
     const cpuData = Array.from({ length: 24 }, (_, i) => {
@@ -443,7 +424,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -451,14 +431,12 @@ export class WebAwesomeSystemMonitor extends LitElement {
       this._setupRefreshTimer();
     }
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     
     this._clearRefreshTimer();
     this._destroyCharts();
   }
-
   _setupRefreshTimer() {
     this._clearRefreshTimer();
     
@@ -468,14 +446,12 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }, this.refreshInterval * 1000);
     }
   }
-
   _clearRefreshTimer() {
     if (this._refreshTimer) {
       clearInterval(this._refreshTimer);
       this._refreshTimer = null;
     }
   }
-
   refresh() {
     // In a real app, this would fetch new data from the API
     // For demo, we'll just simulate some changes in the data
@@ -539,7 +515,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       this._updateCharts();
     }, 500);
   }
-
   updated(changedProperties) {
     if (changedProperties.has('activeTab')) {
       // When tab changes, render charts if needed
@@ -563,16 +538,23 @@ export class WebAwesomeSystemMonitor extends LitElement {
       this._updateCharts();
     }
   }
-
   _renderCharts() {
     if (this.activeTab === 'overview' || this.activeTab === 'metrics') {
-      // Allow DOM to update, then initialize charts
-      setTimeout(() => {
-        this._initializeCharts();
-      }, 100);
+      // Check if Chart.js is available or wait for it to load
+      if (window.Chart) {
+        // Allow DOM to update, then initialize charts
+        setTimeout(() => {
+          this._initializeCharts();
+        }, 100);
+      } else {
+        console.warn('Chart.js not yet available, waiting for it to load...');
+        // Try again in a short while
+        setTimeout(() => {
+          this._renderCharts();
+        }, 500);
+      }
     }
   }
-
   _initializeCharts() {
     // Destroy existing charts first
     this._destroyCharts();
@@ -585,14 +567,12 @@ export class WebAwesomeSystemMonitor extends LitElement {
       this._initResponseTimeChart();
     }
   }
-
   _destroyCharts() {
     Object.values(this._charts).forEach(chart => {
       if (chart) chart.destroy();
     });
     this._charts = {};
   }
-
   _updateCharts() {
     // Update existing charts with new data
     Object.keys(this._charts).forEach(chartId => {
@@ -610,7 +590,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     });
   }
-
   _getFilteredTimeData(data, hoursBack) {
     if (!data || !Array.isArray(data)) return { labels: [], values: [] };
     
@@ -625,7 +604,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       values: filteredData.map(item => item.value)
     };
   }
-
   _getTimeRangeHours() {
     switch (this.timeRange) {
       case '1h': return 1;
@@ -636,7 +614,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       default: return 24;
     }
   }
-
   _initCpuChart() {
     const chartContainer = this.shadowRoot.querySelector('#cpuChartContainer');
     if (!chartContainer) return;
@@ -650,7 +627,11 @@ export class WebAwesomeSystemMonitor extends LitElement {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.cpu?.history, hoursBack);
     
-    this._charts.cpuChart = new Chart(ctx, {
+    if (!window.Chart) {
+      console.error('Chart.js not loaded. Unable to create CPU chart.');
+      return;
+    }
+    this._charts.cpuChart = new window.Chart(ctx, {
       type: 'line',
       data: {
         labels,
@@ -685,7 +666,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     });
   }
-
   _updateCpuChart(chart) {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.cpu?.history, hoursBack);
@@ -694,7 +674,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
     chart.data.datasets[0].data = values;
     chart.update();
   }
-
   _initMemoryChart() {
     const chartContainer = this.shadowRoot.querySelector('#memoryChartContainer');
     if (!chartContainer) return;
@@ -708,7 +687,11 @@ export class WebAwesomeSystemMonitor extends LitElement {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.memory?.history, hoursBack);
     
-    this._charts.memoryChart = new Chart(ctx, {
+    if (!window.Chart) {
+      console.error('Chart.js not loaded. Unable to create memory chart.');
+      return;
+    }
+    this._charts.memoryChart = new window.Chart(ctx, {
       type: 'line',
       data: {
         labels,
@@ -743,7 +726,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     });
   }
-
   _updateMemoryChart(chart) {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.memory?.history, hoursBack);
@@ -752,7 +734,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
     chart.data.datasets[0].data = values;
     chart.update();
   }
-
   _initRequestChart() {
     const chartContainer = this.shadowRoot.querySelector('#requestChartContainer');
     if (!chartContainer) return;
@@ -766,7 +747,11 @@ export class WebAwesomeSystemMonitor extends LitElement {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.requests?.history, hoursBack);
     
-    this._charts.requestChart = new Chart(ctx, {
+    if (!window.Chart) {
+      console.error('Chart.js not loaded. Unable to create request chart.');
+      return;
+    }
+    this._charts.requestChart = new window.Chart(ctx, {
       type: 'bar',
       data: {
         labels,
@@ -799,7 +784,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     });
   }
-
   _updateRequestChart(chart) {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.requests?.history, hoursBack);
@@ -808,7 +792,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
     chart.data.datasets[0].data = values;
     chart.update();
   }
-
   _initResponseTimeChart() {
     const chartContainer = this.shadowRoot.querySelector('#responseTimeChartContainer');
     if (!chartContainer) return;
@@ -822,7 +805,11 @@ export class WebAwesomeSystemMonitor extends LitElement {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.responseTime?.history, hoursBack);
     
-    this._charts.responseTimeChart = new Chart(ctx, {
+    if (!window.Chart) {
+      console.error('Chart.js not loaded. Unable to create response time chart.');
+      return;
+    }
+    this._charts.responseTimeChart = new window.Chart(ctx, {
       type: 'line',
       data: {
         labels,
@@ -855,7 +842,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       }
     });
   }
-
   _updateResponseTimeChart(chart) {
     const hoursBack = this._getTimeRangeHours();
     const { labels, values } = this._getFilteredTimeData(this.metrics.responseTime?.history, hoursBack);
@@ -864,23 +850,18 @@ export class WebAwesomeSystemMonitor extends LitElement {
     chart.data.datasets[0].data = values;
     chart.update();
   }
-
   handleTimeRangeChange(e) {
     this.timeRange = e.target.value;
   }
-
   handleRefreshIntervalChange(e) {
     this.refreshInterval = parseInt(e.target.value, 10);
   }
-
   handleAutoRefreshChange(e) {
     this.autoRefresh = e.target.checked;
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   render() {
     return html`
       <div class="monitor-container">
@@ -980,7 +961,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderOverviewPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1106,7 +1086,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderMetricsPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1232,7 +1211,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderHealthPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1323,7 +1301,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderAlertsPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1412,7 +1389,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderTracingPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1473,7 +1449,6 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _renderLogsPanel() {
     return html`
       <div style="margin-top: 24px;">
@@ -1550,12 +1525,10 @@ export class WebAwesomeSystemMonitor extends LitElement {
       </div>
     `;
   }
-
   _formatDate(dateString) {
     if (!dateString) return '';
     return new Date(dateString).toLocaleString();
   }
-
   _formatRelativeTime(dateString) {
     if (!dateString) return '';
     
@@ -1580,5 +1553,4 @@ export class WebAwesomeSystemMonitor extends LitElement {
     }
   }
 }
-
 customElements.define('wa-system-monitor', WebAwesomeSystemMonitor);

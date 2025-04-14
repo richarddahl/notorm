@@ -3,12 +3,10 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKLoginNotification extends LitElement {
   /*
   renders an icon within a padded div to provide user guidance that data is being loaded
   */
-
   static styles = [
     css`
       :host {
@@ -25,11 +23,9 @@ export class OKLoginNotification extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   _showLoginDialog = (e) => {
     /*
     const formDialog = document.querySelector('ok-login-form-dialog');
@@ -42,7 +38,6 @@ export class OKLoginNotification extends LitElement {
     });
     this.dispatchEvent(loginEvent);
   };
-
   // Render the UI as a function of component state
   render() {
     return html`

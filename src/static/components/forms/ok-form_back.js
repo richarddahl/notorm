@@ -9,12 +9,10 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKForm extends LitElement {
   static properties = {
     schema: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -36,12 +34,10 @@ export class OKForm extends LitElement {
       }
     `,
   ];
-
   _slShowHideListener(e) {
     // Don't let the events bubble up to the parent sl-detail
     e.stopPropagation();
   }
-
   constructor() {
     super();
     /* these are necessary to avoid the parent sl-detail from 
@@ -50,7 +46,6 @@ export class OKForm extends LitElement {
     this.addEventListener("sl-show", this._slShowHideListener);
     this.addEventListener("sl-hide", this._slShowHideListener);
   }
-
   _getCheckbox(field) {
     return html`
       <sl-checkbox
@@ -83,7 +78,6 @@ export class OKForm extends LitElement {
       ></sl-input>
     `;
   }
-
   _getSelect(field) {
     return html`
       <sl-select
@@ -104,7 +98,6 @@ export class OKForm extends LitElement {
       </sl-select>
     `;
   }
-
   _getTextArea(field) {
     return html`
       <sl-textarea
@@ -118,7 +111,6 @@ export class OKForm extends LitElement {
       ></sl-textarea>
     `;
   }
-
   _getField(field) {
     if (field.element == "input") {
       return this._getInput(field);
@@ -130,7 +122,6 @@ export class OKForm extends LitElement {
       return this._getCheckbox(field);
     }
   }
-
   // Render the UI as a function of component state
   render() {
     this.schema.fields.forEach((field) => {
@@ -144,5 +135,4 @@ export class OKForm extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-form", OKForm);

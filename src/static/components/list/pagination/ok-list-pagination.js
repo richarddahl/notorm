@@ -4,13 +4,11 @@ import {
   html,
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKListPagination extends LitElement {
   static properties = {
     listTitle: { type: String },
     pagination: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -60,11 +58,9 @@ export class OKListPagination extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   /**
    * Lifecycle method called when the element is first updated.
    * @returns {Promise<void>}
@@ -75,7 +71,6 @@ export class OKListPagination extends LitElement {
     await this.updateComplete;
     range.focus();
   }
-
   // Responds to change in limit
   _limitChangeListener(e) {
     const limit = e.column.value;
@@ -86,7 +81,6 @@ export class OKListPagination extends LitElement {
     });
     this.dispatchEvent(event);
   }
-
   // Responds to change in page number via page input or range slider
   _pageChangeListener(e) {
     const page = e.column.value;
@@ -97,7 +91,6 @@ export class OKListPagination extends LitElement {
     });
     this.dispatchEvent(event);
   }
-
   _rangeChangeListener(e) {
     const range = this.shadowRoot.querySelector("sl-range");
     if (e.column.checked) {
@@ -118,7 +111,6 @@ export class OKListPagination extends LitElement {
       ${this.pagination.default_page_range[1]}`;
     }
   }
-
   // Render the UI as a function of component state
   render() {
     const switchState =

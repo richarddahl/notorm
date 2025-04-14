@@ -1055,6 +1055,5 @@ class OkuiWorkflowDesigner extends HTMLElement {
     `;
   }
 }
-
 // Define the new element
 customElements.define('okui-workflow-designer', OkuiWorkflowDesigner);

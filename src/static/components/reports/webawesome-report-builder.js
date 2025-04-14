@@ -1,26 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-radio.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-list.js';
-import '@webcomponents/awesome/wa-list-item.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-spinner.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-report-builder
  * @description An interactive report builder component using WebAwesome
@@ -46,7 +24,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       currentOutput: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -163,7 +140,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.template = this._createEmptyTemplate();
@@ -183,7 +159,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     // Mock data for demo purposes
     this._loadMockData();
   }
-
   _createEmptyTemplate() {
     return {
       name: '',
@@ -238,14 +213,12 @@ export class WebAwesomeReportBuilder extends LitElement {
       'order': orderFields
     };
   }
-
   connectedCallback() {
     super.connectedCallback();
     
     // In a real implementation, we would load entities from the server
     // this.loadEntities();
   }
-
   async loadEntities() {
     this.loading = true;
     
@@ -263,7 +236,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   async loadEntityFields(entityType) {
     if (!entityType) return;
     
@@ -289,7 +261,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   handleEntityChange(e) {
     const entityType = e.target.value;
     this.template = {
@@ -304,21 +275,18 @@ export class WebAwesomeReportBuilder extends LitElement {
       this.availableFields = [];
     }
   }
-
   handleNameChange(e) {
     this.template = {
       ...this.template,
       name: e.target.value
     };
   }
-
   handleDescriptionChange(e) {
     this.template = {
       ...this.template,
       description: e.target.value
     };
   }
-
   showAddField() {
     this.currentField = {
       name: '',
@@ -329,24 +297,20 @@ export class WebAwesomeReportBuilder extends LitElement {
     };
     this.showFieldDialog = true;
   }
-
   showEditField(field, index) {
     this.currentField = { ...field, index };
     this.showFieldDialog = true;
   }
-
   closeFieldDialog() {
     this.showFieldDialog = false;
     this.currentField = null;
   }
-
   handleFieldTypeChange(type) {
     this.currentField = {
       ...this.currentField,
       type
     };
   }
-
   saveField() {
     // Generate a name if not provided
     if (!this.currentField.name) {
@@ -376,7 +340,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     
     this.closeFieldDialog();
   }
-
   removeField(index) {
     const fields = [...this.template.fields];
     fields.splice(index, 1);
@@ -386,7 +349,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       fields
     };
   }
-
   _generateFieldName(field) {
     let baseName = '';
     
@@ -413,7 +375,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     
     return name;
   }
-
   _formatDisplayName(name) {
     return name
       .replace(/_/g, ' ')
@@ -421,7 +382,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
-
   showAddTrigger() {
     this.currentTrigger = {
       type: 'schedule',
@@ -434,12 +394,10 @@ export class WebAwesomeReportBuilder extends LitElement {
     };
     this.showTriggerDialog = true;
   }
-
   closeTriggerDialog() {
     this.showTriggerDialog = false;
     this.currentTrigger = null;
   }
-
   saveTrigger() {
     if (this.currentTrigger.index !== undefined) {
       // Update existing trigger
@@ -459,7 +417,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     
     this.closeTriggerDialog();
   }
-
   showAddOutput() {
     this.currentOutput = {
       type: 'pdf',
@@ -472,12 +429,10 @@ export class WebAwesomeReportBuilder extends LitElement {
     };
     this.showOutputDialog = true;
   }
-
   closeOutputDialog() {
     this.showOutputDialog = false;
     this.currentOutput = null;
   }
-
   saveOutput() {
     if (this.currentOutput.index !== undefined) {
       // Update existing output
@@ -497,7 +452,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     
     this.closeOutputDialog();
   }
-
   async saveTemplate() {
     if (!this.validateTemplate()) {
       return;
@@ -546,7 +500,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   validateTemplate() {
     // Basic validation
     if (!this.template.name) {
@@ -569,7 +522,6 @@ export class WebAwesomeReportBuilder extends LitElement {
     
     return true;
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -585,15 +537,12 @@ export class WebAwesomeReportBuilder extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   cancel() {
     this.dispatchEvent(new CustomEvent('cancel'));
   }
-
   renderFieldDialog() {
     if (!this.showFieldDialog) return html``;
     
@@ -875,7 +824,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderDesignTab() {
     return html`
       <div class="form-row">
@@ -943,7 +891,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderTriggersTab() {
     return html`
       <div class="section-title">Triggers</div>
@@ -999,7 +946,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderOutputsTab() {
     return html`
       <div class="section-title">Outputs</div>
@@ -1051,7 +997,6 @@ export class WebAwesomeReportBuilder extends LitElement {
       </div>
     `;
   }
-
   render() {
     return html`
       <div class="builder-container">
@@ -1106,5 +1051,4 @@ export class WebAwesomeReportBuilder extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-report-builder', WebAwesomeReportBuilder);

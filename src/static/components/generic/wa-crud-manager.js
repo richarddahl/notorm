@@ -1,21 +1,5 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-pagination.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+import { repeat } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-crud-manager
  * @description Highly configurable component for managing entities with CRUD operations
@@ -81,11 +65,24 @@ export class WebAwesomeCrudManager extends LitElement {
       // API configuration
       apiOptions: { type: Object },
       
+      // Schema API configuration
+      schemaApiEnabled: { type: Boolean },
+      schemaApiEndpoint: { type: String },
+      
+      // Custom actions API configuration
+      actionsApiEnabled: { type: Boolean },
+      actionsApiEndpoint: { type: String },
+      
+      // Lazy loading configuration
+      lazyLoad: { type: Boolean },
+      schemaLoaded: { type: Boolean, state: true },
+      actionsLoaded: { type: Boolean, state: true },
+      loadOnConnect: { type: Boolean },
+      
       // Translations/Labels
       labels: { type: Object },
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -459,7 +456,6 @@ export class WebAwesomeCrudManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     // Initialize default values
@@ -531,6 +527,21 @@ export class WebAwesomeCrudManager extends LitElement {
       }
     };
     
+    // API schema configuration defaults
+    this.schemaApiEnabled = false;
+    this.schemaApiEndpoint = "{baseUrl}/{entityType}/schema";
+    this.actionsApiEnabled = false;
+    this.actionsApiEndpoint = "{baseUrl}/{entityType}/actions";
+    
+    // Lazy loading defaults
+    this.lazyLoad = true;
+    this.schemaLoaded = false;
+    this.actionsLoaded = false;
+    this.loadOnConnect = true;
+    
+    // Initialize cache
+    this._cache = {};
+    
     // Translation defaults
     this.labels = {
       create: 'Create',
@@ -577,25 +588,330 @@ export class WebAwesomeCrudManager extends LitElement {
       true: 'Yes',
       false: 'No',
       unknown: 'Unknown',
-      notAvailable: 'N/A'
+      notAvailable: 'N/A',
+      loadingSchema: 'Loading schema...',
+      loadingActions: 'Loading custom actions...',
+      errorLoadingSchema: 'Error loading schema',
+      errorLoadingActions: 'Error loading custom actions',
+      close: 'Close'
     };
   }
-
   connectedCallback() {
     super.connectedCallback();
-    // Load entities when component is connected to DOM
-    this.fetchEntities();
+    
+    // If loading on connect is enabled, initialize the component
+    if (this.loadOnConnect) {
+      this._initializeComponent();
+    }
   }
-
-  updated(changedProperties) {
-    // If critical props like entityType or baseUrl change, refetch
-    if (changedProperties.has('entityType') || changedProperties.has('baseUrl')) {
-      this.fetchEntities();
+  /**
+   * Initialize the component by loading schema, actions, and entities
+   * @private
+   */
+  async _initializeComponent() {
+    // If API schema is enabled, load it
+    if (this.schemaApiEnabled) {
+      await this.loadSchema();
     }
     
-    // If schema changes, update sortable fields if not explicitly set
+    // If API actions are enabled, load them
+    if (this.actionsApiEnabled) {
+      await this.loadCustomActions();
+    }
+    
+    // Once schema and actions are loaded, fetch entities
+    this.fetchEntities();
+  }
+  updated(changedProperties) {
+    // If critical props like entityType or baseUrl change, reinitialize
+    if (changedProperties.has('entityType') || changedProperties.has('baseUrl')) {
+      // Reset loaded flags if entity type or base URL changes
+      if (changedProperties.has('entityType')) {
+        this.schemaLoaded = false;
+        this.actionsLoaded = false;
+      }
+      
+      this._initializeComponent();
+    }
+    
+    // If schema API enablement changes
+    if (changedProperties.has('schemaApiEnabled') && this.schemaApiEnabled) {
+      this.loadSchema();
+    }
+    
+    // If actions API enablement changes
+    if (changedProperties.has('actionsApiEnabled') && this.actionsApiEnabled) {
+      this.loadCustomActions();
+    }
+    
+    // If schema changes, update sortable fields
     if (changedProperties.has('schema')) {
       this.updateSortableFields();
+    }
+  }
+  
+  /**
+   * Get cached item by key
+   * @param {string} key - Cache key
+   * @returns {*} Cached item or null if not found or expired
+   * @private
+   */
+  _getCachedItem(key) {
+    const cachedItem = this._cache[key];
+    if (!cachedItem) {
+      return null;
+    }
+    
+    // Check if the cache is still valid (30 minute expiration)
+    const now = Date.now();
+    if (now - cachedItem.timestamp > 30 * 60 * 1000) {
+      delete this._cache[key];
+      return null;
+    }
+    
+    return cachedItem.data;
+  }
+  
+  /**
+   * Set cached item
+   * @param {string} key - Cache key
+   * @param {*} data - Data to cache
+   * @private
+   */
+  _setCachedItem(key, data) {
+    this._cache[key] = {
+      data,
+      timestamp: Date.now()
+    };
+  }
+  /**
+   * Load schema from API
+   * @returns {Promise<void>}
+   */
+  async loadSchema() {
+    if (this.schemaLoaded || !this.schemaApiEnabled) {
+      return;
+    }
+    // Check if schema is in cache
+    const cacheKey = `schema_${this.entityType}`;
+    const cachedSchema = this._getCachedItem(cacheKey);
+    
+    if (cachedSchema) {
+      this.schema = cachedSchema;
+      this.schemaLoaded = true;
+      this.updateSortableFields();
+      return;
+    }
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      // Format the API URL
+      let endpoint = this.schemaApiEndpoint
+        .replace("{baseUrl}", this.baseUrl)
+        .replace("{entityType}", this.entityType);
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Schema API returned status ${response.status}`);
+      }
+      
+      const schemaData = await response.json();
+      
+      // Update schema with API data
+      this.schema = schemaData;
+      this.schemaLoaded = true;
+      
+      // Update sortable fields based on new schema
+      this.updateSortableFields();
+      
+      // If we have a title from the API and none is set, use it
+      if (schemaData.displayName && !this.title) {
+        this.title = schemaData.displayName;
+      }
+      
+      // If we have a description from the API and none is set, use it
+      if (schemaData.description && !this.description) {
+        this.description = schemaData.description;
+      }
+      
+      // Cache the schema
+      this._setCachedItem(cacheKey, this.schema);
+    } catch (error) {
+      console.error('Error loading schema:', error);
+      this.error = `${this.labels.errorLoadingSchema}: ${error.message}`;
+      this._showNotification(this.error, 'error');
+    } finally {
+      this.loading = false;
+    }
+  }
+  
+  /**
+   * Load custom actions from API
+   * @returns {Promise<void>}
+   */
+  async loadCustomActions() {
+    if (this.actionsLoaded || !this.actionsApiEnabled) {
+      return;
+    }
+    // Check if actions are in cache
+    const cacheKey = `actions_${this.entityType}`;
+    const cachedActions = this._getCachedItem(cacheKey);
+    
+    if (cachedActions) {
+      this.customActions = cachedActions;
+      this.actionsLoaded = true;
+      return;
+    }
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      // Format the API URL
+      let endpoint = this.actionsApiEndpoint
+        .replace("{baseUrl}", this.baseUrl)
+        .replace("{entityType}", this.entityType);
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Actions API returned status ${response.status}`);
+      }
+      
+      const actionsData = await response.json();
+      
+      // Update custom actions with API data
+      if (actionsData.actions && Array.isArray(actionsData.actions)) {
+        // Transform API action format to component format
+        this.customActions = actionsData.actions.map(action => {
+          return {
+            id: action.id,
+            label: action.label,
+            icon: action.icon,
+            color: action.color,
+            bulk: action.bulk,
+            location: action.location || (action.bulk ? 'bulk' : 'item'),
+            handler: entity => this._handleCustomAction(action, entity),
+            bulkHandler: action.bulk ? selectedIds => this._handleBulkCustomAction(action, selectedIds) : undefined,
+            requiredPermission: action.requiredPermission
+          };
+        });
+      }
+      
+      this.actionsLoaded = true;
+      
+      // Cache the actions
+      this._setCachedItem(cacheKey, this.customActions);
+    } catch (error) {
+      console.error('Error loading custom actions:', error);
+      this.error = `${this.labels.errorLoadingActions}: ${error.message}`;
+      this._showNotification(this.error, 'error');
+    } finally {
+      this.loading = false;
+    }
+  }
+  
+  /**
+   * Handle a custom action execution for a single entity
+   * @param {Object} action - Action configuration from API
+   * @param {Object} entity - Entity to perform action on
+   * @private
+   */
+  async _handleCustomAction(action, entity) {
+    // If confirmation is required, show confirmation dialog
+    if (action.confirmationRequired) {
+      if (!confirm(action.confirmationMessage || `Perform action ${action.label}?`)) {
+        return;
+      }
+    }
+    
+    this.loading = true;
+    try {
+      // Format the API URL, replacing {id} with the entity ID
+      let endpoint = action.apiEndpoint.replace("{id}", entity.id);
+      
+      const response = await fetch(endpoint, {
+        method: action.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: action.method !== 'GET' ? JSON.stringify({ id: entity.id }) : undefined
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Action API returned status ${response.status}`);
+      }
+      
+      // Parse the response
+      const result = await response.json();
+      
+      // Show success message
+      this._showNotification(`Action ${action.label} completed successfully`, 'success');
+      
+      // Dispatch event for the action
+      this.dispatchEvent(new CustomEvent('action-executed', {
+        detail: { action, entity, result }
+      }));
+      
+      // Refresh the entity list
+      this.fetchEntities();
+    } catch (error) {
+      console.error(`Error executing action ${action.label}:`, error);
+      this._showNotification(`Error executing action: ${error.message}`, 'error');
+    } finally {
+      this.loading = false;
+    }
+  }
+  /**
+   * Handle a bulk custom action execution for multiple entities
+   * @param {Object} action - Action configuration from API
+   * @param {Array<string|number>} entityIds - IDs of entities to perform action on
+   * @private
+   */
+  async _handleBulkCustomAction(action, entityIds) {
+    // If confirmation is required, show confirmation dialog
+    if (action.confirmationRequired) {
+      if (!confirm(action.confirmationMessage || `Perform bulk action ${action.label}?`)) {
+        return;
+      }
+    }
+    
+    this.loading = true;
+    try {
+      const response = await fetch(action.apiEndpoint, {
+        method: action.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ids: entityIds })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Bulk action API returned status ${response.status}`);
+      }
+      
+      // Parse the response
+      const result = await response.json();
+      
+      // Show success message
+      this._showNotification(`Bulk action ${action.label} completed successfully`, 'success');
+      
+      // Dispatch event for the action
+      this.dispatchEvent(new CustomEvent('bulk-action-executed', {
+        detail: { action, entityIds, result }
+      }));
+      
+      // Refresh the entity list
+      this.fetchEntities();
+      
+      // Clear selected items
+      this.selectedItems = [];
+    } catch (error) {
+      console.error(`Error executing bulk action ${action.label}:`, error);
+      this._showNotification(`Error executing bulk action: ${error.message}`, 'error');
+    } finally {
+      this.loading = false;
     }
   }
   
@@ -616,7 +932,6 @@ export class WebAwesomeCrudManager extends LitElement {
       }
     }
   }
-
   /**
    * Format URL for API requests based on apiOptions configuration
    * @param {string} operation - The operation type ('list', 'get', 'create', 'update', 'delete')
@@ -676,7 +991,6 @@ export class WebAwesomeCrudManager extends LitElement {
     
     return url;
   }
-
   /**
    * Fetch entities from the server
    */
@@ -2039,6 +2353,29 @@ export class WebAwesomeCrudManager extends LitElement {
   }
   
   render() {
+    // If schema is required but not loaded yet, show loading state
+    if (this.schemaApiEnabled && !this.schemaLoaded) {
+      return html`
+        <div class="container">
+          <div class="loading-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px;">
+            <wa-spinner size="large"></wa-spinner>
+            <p style="margin-top: 20px;">${this.labels.loadingSchema}</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    // If actions are required but not loaded yet, show loading state
+    if (this.actionsApiEnabled && !this.actionsLoaded) {
+      return html`
+        <div class="container">
+          <div class="loading-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px;">
+            <wa-spinner size="large"></wa-spinner>
+            <p style="margin-top: 20px;">${this.labels.loadingActions}</p>
+          </div>
+        </div>
+      `;
+    }
     return html`
       <div class="container">
         <div class="header">
@@ -2163,5 +2500,4 @@ export class WebAwesomeCrudManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-crud-manager', WebAwesomeCrudManager);

@@ -6,13 +6,11 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKFilterTile extends LitElement {
   static properties = {
     filter: { type: Object },
     open: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -23,21 +21,17 @@ export class OKFilterTile extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.filterURL = "";
     this.open = false;
   }
-
   firstUpdated() {
     this.filterURL = this.filter.url;
   }
-
   _handleGetDetail(e) {
     this.open = true;
   }
-
   // Render the UI as a function of component state
   render() {
     return html`
@@ -51,5 +45,4 @@ export class OKFilterTile extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-filter-tile", OKFilterTile);

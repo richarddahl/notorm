@@ -6,13 +6,11 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKTile extends LitElement {
   static properties = {
     item: { type: Object },
     open: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -42,16 +40,13 @@ export class OKTile extends LitElement {
       }
     `,
   ];
-
   _handleGetDetail(e) {
     this.open = true;
   }
-
   constructor() {
     super();
     this.open = false;
   }
-
   // Render the UI as a function of component state
   render() {
     return html`
@@ -102,5 +97,4 @@ export class OKTile extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-tile", OKTile);

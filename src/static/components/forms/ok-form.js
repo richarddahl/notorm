@@ -8,12 +8,10 @@ import {
   choose,
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKForm extends LitElement {
   static properties = {
     schema: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -42,11 +40,9 @@ export class OKForm extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   render() {
     return html`
       <form>
@@ -57,5 +53,4 @@ export class OKForm extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-form", OKForm);

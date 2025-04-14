@@ -13,7 +13,6 @@ class ReportTemplateForm extends LitElement {
     mode: { type: String }, // 'create' or 'edit'
     availableObjectTypes: { type: Array }
   };
-
   constructor() {
     super();
     this.templateId = null;
@@ -37,7 +36,6 @@ class ReportTemplateForm extends LitElement {
     this.mode = 'create';
     this.availableObjectTypes = ['customer', 'order', 'product', 'user'];
   }
-
   connectedCallback() {
     super.connectedCallback();
     // Check if we're in edit mode based on URL
@@ -52,7 +50,6 @@ class ReportTemplateForm extends LitElement {
       }
     }
   }
-
   async loadTemplate() {
     if (!this.templateId) return;
     
@@ -71,7 +68,6 @@ class ReportTemplateForm extends LitElement {
       this.loading = false;
     }
   }
-
   async saveTemplate(event) {
     event.preventDefault();
     
@@ -107,7 +103,6 @@ class ReportTemplateForm extends LitElement {
       this.saving = false;
     }
   }
-
   handleInputChange(event) {
     const field = event.target.name;
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -129,12 +124,10 @@ class ReportTemplateForm extends LitElement {
       };
     }
   }
-
   render() {
     if (this.loading) {
       return html`<div class="loading">Loading template...</div>`;
     }
-
     return html`
       <div class="report-template-form">
         <h2>${this.mode === 'edit' ? 'Edit' : 'Create'} Report Template</h2>
@@ -247,7 +240,6 @@ class ReportTemplateForm extends LitElement {
       </div>
     `;
   }
-
   static styles = css`
     .report-template-form {
       max-width: 800px;
@@ -338,5 +330,4 @@ class ReportTemplateForm extends LitElement {
     }
   `;
 }
-
 customElements.define('report-template-form', ReportTemplateForm);

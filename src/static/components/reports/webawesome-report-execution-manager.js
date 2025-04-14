@@ -1,23 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-date-picker.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-table.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-divider.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-report-execution-manager
  * @description Component for managing report executions including scheduling, monitoring, and viewing results
@@ -48,7 +29,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       filters: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -243,7 +223,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.templateId = '';
@@ -264,7 +243,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
     };
     this._refreshTimer = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -279,7 +257,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.refreshActiveExecutions();
     }, 30000); // 30 seconds
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     
@@ -288,7 +265,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this._refreshTimer = null;
     }
   }
-
   updated(changedProperties) {
     if (changedProperties.has('templateId') && this.templateId) {
       this.loadTemplate();
@@ -296,7 +272,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loadSchedules();
     }
   }
-
   async loadTemplate() {
     if (!this.templateId) return;
     
@@ -328,7 +303,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   async loadExecutions() {
     if (!this.templateId) return;
     
@@ -368,7 +342,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   async loadSchedules() {
     if (!this.templateId) return;
     
@@ -390,7 +363,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   async refreshActiveExecutions() {
     // Only refresh if we have active executions
     const activeExecutions = this.executions.filter(exec => 
@@ -434,11 +406,9 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       // Don't show error for background refresh
     }
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   showAddSchedule() {
     this.currentSchedule = {
       name: '',
@@ -451,24 +421,20 @@ export class WebAwesomeReportExecutionManager extends LitElement {
     };
     this.showScheduleDialog = true;
   }
-
   showEditSchedule(schedule) {
     this.currentSchedule = {...schedule};
     this.showScheduleDialog = true;
   }
-
   closeScheduleDialog() {
     this.showScheduleDialog = false;
     this.currentSchedule = null;
   }
-
   handleScheduleChange(field, value) {
     this.currentSchedule = {
       ...this.currentSchedule,
       [field]: value
     };
   }
-
   handleScheduleParameterChange(paramName, value) {
     this.currentSchedule = {
       ...this.currentSchedule,
@@ -478,14 +444,12 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       }
     };
   }
-
   applyCronExample(cronExpression) {
     this.currentSchedule = {
       ...this.currentSchedule,
       cron_expression: cronExpression
     };
   }
-
   async saveSchedule() {
     if (!this.currentSchedule.name) {
       this._showNotification('Schedule name is required', 'error');
@@ -536,7 +500,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   async toggleScheduleStatus(scheduleId, currentEnabled) {
     this.loading = true;
     
@@ -571,7 +534,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   async deleteSchedule(scheduleId) {
     if (!confirm('Are you sure you want to delete this schedule?')) return;
     
@@ -599,7 +561,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   showExecuteNow() {
     // Reset parameters to default values
     this.executionParameters = {};
@@ -614,18 +575,15 @@ export class WebAwesomeReportExecutionManager extends LitElement {
     
     this.showExecuteDialog = true;
   }
-
   closeExecuteDialog() {
     this.showExecuteDialog = false;
   }
-
   handleParameterChange(paramName, value) {
     this.executionParameters = {
       ...this.executionParameters,
       [paramName]: value
     };
   }
-
   async executeReport() {
     this.loading = true;
     
@@ -669,11 +627,9 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       this.loading = false;
     }
   }
-
   navigateToExecution(executionId) {
     window.location.href = `/reports/executions/${executionId}`;
   }
-
   handleSortChange(field) {
     if (this.sortBy === field) {
       // Toggle direction
@@ -686,17 +642,14 @@ export class WebAwesomeReportExecutionManager extends LitElement {
     
     this.loadExecutions();
   }
-
   handleStatusFilterChange(e) {
     this.filters.status = e.target.value;
     this.loadExecutions();
   }
-
   formatDate(dateString) {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   }
-
   formatDuration(startTime, endTime) {
     if (!startTime || !endTime) return 'N/A';
     
@@ -715,7 +668,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   }
-
   getStatusClass(status) {
     switch (status) {
       case 'completed': return 'status-completed';
@@ -726,7 +678,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       default: return '';
     }
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -742,7 +693,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   renderExecutionsTab() {
     const hasExecutions = this.executions && this.executions.length > 0;
     
@@ -853,7 +803,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       </div>
     `;
   }
-
   renderSchedulesTab() {
     const hasSchedules = this.schedules && this.schedules.length > 0;
     
@@ -946,7 +895,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       </div>
     `;
   }
-
   renderScheduleDialog() {
     if (!this.showScheduleDialog || !this.currentSchedule) return html``;
     
@@ -1048,7 +996,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderExecuteDialog() {
     if (!this.showExecuteDialog) return html``;
     
@@ -1091,7 +1038,6 @@ export class WebAwesomeReportExecutionManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   render() {
     return html`
       <div class="manager-container">
@@ -1140,5 +1086,4 @@ export class WebAwesomeReportExecutionManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-report-execution-manager', WebAwesomeReportExecutionManager);

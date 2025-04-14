@@ -1,19 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-dialog.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-workflow-simulator
  * @description A component for simulating workflow execution with custom test data
@@ -33,7 +18,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       activeTab: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -251,7 +235,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.workflow = null;
@@ -266,7 +249,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
     // Load mock data for demo purposes
     this._loadMockData();
   }
-
   _loadMockData() {
     // Mock workflow data
     this.workflow = {
@@ -378,7 +360,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -386,7 +367,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       this.loadWorkflow();
     }
   }
-
   async loadWorkflow() {
     this.loading = true;
     
@@ -408,7 +388,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       this.loading = false;
     }
   }
-
   _generateDefaultTestData() {
     // In a real implementation, this would be more sophisticated based on the entity type
     // For now, we'll just use a simple template
@@ -446,7 +425,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
     
     this.entityData = defaultTemplates[entityType] || {};
   }
-
   handleTestModeChange(mode) {
     this.testMode = mode;
     
@@ -456,12 +434,10 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       this.entityData = JSON.parse(JSON.stringify(this.selectedTemplate.data));
     }
   }
-
   handleTemplateSelect(template) {
     this.selectedTemplate = template;
     this.entityData = JSON.parse(JSON.stringify(template.data));
   }
-
   handleEntityDataInput(e) {
     try {
       this.entityData = JSON.parse(e.target.value);
@@ -469,7 +445,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       // Ignore JSON parse errors while typing
     }
   }
-
   async runSimulation() {
     this.loading = true;
     this.simulationResult = null;
@@ -510,7 +485,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       this.loading = false;
     }
   }
-
   _generateSimulationResult() {
     // This is a mock implementation that evaluates conditions and generates a simulated result
     const operation = this.workflow.trigger.operations[0];
@@ -622,7 +596,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       simulation_time: new Date().toISOString()
     };
   }
-
   _getConditionDescription(condition, data) {
     if (condition.type !== 'field') return '';
     
@@ -641,7 +614,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
     
     return `${condition.field} (${fieldValue}) is ${operators[condition.operator]} ${condition.value}`;
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -657,11 +629,9 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   _getActionTypeIcon(type) {
     switch (type) {
       case 'notification': return 'notifications';
@@ -672,7 +642,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       default: return 'play_arrow';
     }
   }
-
   _getActionTypeLabel(type) {
     switch (type) {
       case 'notification': return 'In-App Notification';
@@ -683,7 +652,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       default: return 'Action';
     }
   }
-
   renderEditorTab() {
     if (!this.workflow) return html``;
     
@@ -781,7 +749,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       </div>
     `;
   }
-
   renderResultsTab() {
     if (!this.simulationResult) {
       return html`
@@ -927,7 +894,6 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
       </div>
     `;
   }
-
   render() {
     if (this.loading) {
       return html`
@@ -1000,5 +966,4 @@ export class WebAwesomeWorkflowSimulator extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-workflow-simulator', WebAwesomeWorkflowSimulator);

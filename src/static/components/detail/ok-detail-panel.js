@@ -3,10 +3,8 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKDetailPanel extends LitElement {
   static properties = {};
-
   static styles = [
     css`
       :host {
@@ -19,15 +17,12 @@ export class OKDetailPanel extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   // Render the UI as a function of component state
   render() {
     return html` Object Detail `;
   }
 }
-
 customElements.define("ok-detail-panel", OKDetailPanel);

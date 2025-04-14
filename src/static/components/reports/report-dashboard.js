@@ -1,7 +1,7 @@
-import { LitElement, html, css } from 'lit-element';
-import { Chart } from 'chart.js/auto';
-import 'lit-grid-layout';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+// Import Chart.js globally, rather than as a module import
+// The UMD version of Chart.js registers itself as window.Chart
+// Using CSS Grid instead of lit-grid-layout
 /**
  * @element report-dashboard
  * @description An interactive dashboard for report data visualization with customizable widgets
@@ -24,7 +24,6 @@ export class ReportDashboard extends LitElement {
       filters: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -112,7 +111,11 @@ export class ReportDashboard extends LitElement {
         color: #666;
         font-size: 14px;
       }
-      .grid-layout {
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        grid-auto-rows: minmax(50px, auto);
+        gap: 10px;
         width: 100%;
       }
       table {
@@ -185,7 +188,6 @@ export class ReportDashboard extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.reportId = null;
@@ -239,17 +241,14 @@ export class ReportDashboard extends LitElement {
       }
     ];
   }
-
   _getDefaultStartDate() {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
     return date.toISOString().split('T')[0];
   }
-
   _getDefaultEndDate() {
     return new Date().toISOString().split('T')[0];
   }
-
   connectedCallback() {
     super.connectedCallback();
     if (this.reportId && !this.reportData) {
@@ -260,18 +259,15 @@ export class ReportDashboard extends LitElement {
     if (!this.widgets || this.widgets.length === 0) {
       this.widgets = [...this.defaultWidgets];
     }
-
     // Handle resize events for charts
     this._resizeHandler = this._handleResize.bind(this);
     window.addEventListener('resize', this._resizeHandler);
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('resize', this._resizeHandler);
     this.destroyCharts();
   }
-
   updated(changedProperties) {
     if (changedProperties.has('reportId') && this.reportId) {
       this.loadReportData();
@@ -285,7 +281,6 @@ export class ReportDashboard extends LitElement {
       });
     }
   }
-
   _handleResize() {
     // Debounce resize handling
     clearTimeout(this._resizeTimer);
@@ -294,7 +289,6 @@ export class ReportDashboard extends LitElement {
       this.renderWidgetContents();
     }, 250);
   }
-
   async loadReportData() {
     if (!this.reportId) return;
     
@@ -316,16 +310,13 @@ export class ReportDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   async refreshData() {
     this.loadReportData();
   }
-
   exportDashboard(format) {
     if (!this.reportId) return;
     window.open(`/api/reports/executions/${this.reportId}/export?format=${format}`, '_blank');
   }
-
   destroyCharts() {
     if (this.charts) {
       this.charts.forEach(chart => {
@@ -334,7 +325,6 @@ export class ReportDashboard extends LitElement {
       this.charts = [];
     }
   }
-
   renderWidgetContents() {
     this.destroyCharts();
     
@@ -362,7 +352,6 @@ export class ReportDashboard extends LitElement {
       }
     });
   }
-
   getWidgetData(dataKey) {
     if (!this.reportData || !dataKey) return null;
     
@@ -379,7 +368,6 @@ export class ReportDashboard extends LitElement {
     
     return this.reportData[dataKey];
   }
-
   renderMetricWidget(container, data, widget) {
     if (!data) {
       this.renderEmptyState(container, 'No data available');
@@ -425,7 +413,6 @@ export class ReportDashboard extends LitElement {
       <div class="metric-label">${widget.subtitle || ''}</div>
     `;
   }
-
   renderChartWidget(container, data, widget) {
     if (!data || (Array.isArray(data) && data.length === 0)) {
       this.renderEmptyState(container, 'No data available for chart');
@@ -447,7 +434,8 @@ export class ReportDashboard extends LitElement {
     chartData = { labels, datasets };
     chartOptions = this.getChartOptions(widget);
     
-    const chart = new Chart(ctx, {
+    // Use the global Chart instance
+    const chart = new window.Chart(ctx, {
       type: widget.subtype || 'bar',
       data: chartData,
       options: chartOptions
@@ -455,7 +443,6 @@ export class ReportDashboard extends LitElement {
     
     this.charts.push(chart);
   }
-
   extractChartLabels(data, widget) {
     if (!data) return [];
     
@@ -468,7 +455,6 @@ export class ReportDashboard extends LitElement {
     
     return Object.keys(data);
   }
-
   extractChartDatasets(data, widget) {
     if (!data) return [];
     
@@ -526,7 +512,6 @@ export class ReportDashboard extends LitElement {
     
     return datasets;
   }
-
   getChartOptions(widget) {
     const baseOptions = {
       responsive: true,
@@ -580,7 +565,6 @@ export class ReportDashboard extends LitElement {
         };
     }
   }
-
   getChartColors(count) {
     const baseColors = [
       'rgba(66, 133, 244, 0.8)',  // Blue
@@ -608,7 +592,6 @@ export class ReportDashboard extends LitElement {
     
     return colors;
   }
-
   renderTableWidget(container, data, widget) {
     if (!data || (Array.isArray(data) && data.length === 0)) {
       this.renderEmptyState(container, 'No data available for table');
@@ -706,7 +689,6 @@ export class ReportDashboard extends LitElement {
     
     container.innerHTML = tableHTML;
   }
-
   renderEmptyState(container, message) {
     container.innerHTML = `
       <div class="empty-state">
@@ -715,7 +697,6 @@ export class ReportDashboard extends LitElement {
       </div>
     `;
   }
-
   handleDateRangeChange(e, field) {
     this.dateRange = {
       ...this.dateRange,
@@ -723,12 +704,10 @@ export class ReportDashboard extends LitElement {
     };
     // In a real implementation, you would reload data with new date range
   }
-
   applyFilters() {
     // In a real implementation, you would reload data with filters
     this.loadReportData();
   }
-
   handleLayoutChange(e) {
     const newLayout = e.detail.layout;
     // Update widget positions based on new layout
@@ -746,7 +725,6 @@ export class ReportDashboard extends LitElement {
       return widget;
     });
   }
-
   render() {
     return html`
       <div class="dashboard-container">
@@ -785,46 +763,38 @@ export class ReportDashboard extends LitElement {
           </div>
         ` : ''}
         
-        <lit-grid-layout
-          .layout=${this.widgets.map(widget => ({
-            id: widget.id,
-            x: widget.x,
-            y: widget.y,
-            w: widget.w,
-            h: widget.h
-          }))}
-          .cols=${this.gridConfig.cols}
-          .rowHeight=${this.gridConfig.rowHeight}
-          .gap=${this.gridConfig.gap}
-          @layout-changed=${this.handleLayoutChange}
-          class="grid-layout"
-        >
-          ${this.widgets.map(widget => html`
-            <div id="widget-${widget.id}" class="widget">
-              <div class="widget-header">
-                <h3 class="widget-title">${widget.title}</h3>
-                <div class="widget-actions">
-                  <button class="widget-action-btn" title="Refresh" @click=${() => this.refreshWidgetData(widget)}>
-                    🔄
-                  </button>
-                  <button class="widget-action-btn" title="Download" @click=${() => this.downloadWidgetData(widget)}>
-                    ⬇️
-                  </button>
+        <div class="dashboard-grid">
+          ${this.widgets.map(widget => {
+            const style = `
+              grid-column: ${widget.x || 0} / span ${widget.w || 3};
+              grid-row: ${widget.y || 0} / span ${widget.h || 3};
+            `;
+            
+            return html`
+              <div id="widget-${widget.id}" class="widget" style=${style}>
+                <div class="widget-header">
+                  <h3 class="widget-title">${widget.title}</h3>
+                  <div class="widget-actions">
+                    <button class="widget-action-btn" title="Refresh" @click=${() => this.refreshWidgetData(widget)}>
+                      🔄
+                    </button>
+                    <button class="widget-action-btn" title="Download" @click=${() => this.downloadWidgetData(widget)}>
+                      ⬇️
+                    </button>
+                  </div>
                 </div>
+                <div class="widget-content"></div>
               </div>
-              <div class="widget-content"></div>
-            </div>
-          `)}
-        </lit-grid-layout>
+            `;
+          })}
+        </div>
       </div>
     `;
   }
-
   refreshWidgetData(widget) {
     // In a real implementation, you would reload just this widget's data
     this.loadReportData();
   }
-
   downloadWidgetData(widget) {
     const data = this.getWidgetData(widget.dataKey);
     if (!data) return;
@@ -849,5 +819,4 @@ export class ReportDashboard extends LitElement {
     URL.revokeObjectURL(url);
   }
 }
-
 customElements.define('report-dashboard', ReportDashboard);

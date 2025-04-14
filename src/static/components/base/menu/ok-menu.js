@@ -5,12 +5,10 @@ import {
   until,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData, haveToken } from "/static/assets/scripts/apiData.js";
-
 export class OKNavigationMenu extends LitElement {
   static properties = {
     theme: {},
   };
-
   static styles = [
     css`
       :host {
@@ -28,11 +26,9 @@ export class OKNavigationMenu extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   render() {
     return html`
       ${until(
@@ -41,7 +37,6 @@ export class OKNavigationMenu extends LitElement {
       )}
     `;
   }
-
   // Render the UI as a function of component state
   async _render() {
     if (!(await haveToken())) {
@@ -75,5 +70,4 @@ export class OKNavigationMenu extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-menu", OKNavigationMenu);

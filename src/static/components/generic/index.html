@@ -4,6 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebAwesome CRUD Manager Demo</title>
+
+  <!-- Import map for proper module resolution -->
+  <script type="importmap">
+  {
+    "imports": {
+      "@lit/reactive-element": "https://cdn.jsdelivr.net/npm/@lit/reactive-element@1.6.3/reactive-element.js",
+      "lit": "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js",
+      "lit-element": "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js",
+      "lit-html": "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js",
+      "chart.js/auto": "https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.js",
+      "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.js"
+    }
+  }
+  </script>
+  
+  <!-- Import map polyfill for older browsers -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.7.3/dist/es-module-shims.js"></script>
+  
+  <!-- WebAwesome CDN loading -->
+  <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/styles/themes/default.css" />
+  <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/styles/webawesome.css" />
+  <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/webawesome.loader.js"></script>
+
+  <!-- Module fallback system for handling bare module specifiers (backup) -->
+  <script type="module" src="/static/assets/scripts/module-fallback.js"></script>
+  
+  <!-- Dynamic import handler for better module resolution -->
+  <script type="module" src="/static/assets/scripts/dynamic-import-handler.js"></script>
+  
+  <!-- Load Lit from CDN - unified bundle that has everything -->
+  <script type="module">
+    // Load the complete Lit bundle that has everything
+    import * as lit from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+    
+    // Make it available globally for all components
+    window.lit = lit;
+    window.LitElement = lit.LitElement;
+    window.html = lit.html;
+    window.css = lit.css;
+    window.repeat = lit.repeat;
+    window.choose = lit.choose;
+    window.guard = lit.guard;
+    window.cache = lit.cache;
+    window.classMap = lit.classMap;
+    window.styleMap = lit.styleMap;
+    window.nothing = lit.nothing;
+    window.ReactiveElement = lit.ReactiveElement;
+    
+    // Also preload Chart.js to avoid import errors
+    import('https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.js')
+      .then(module => {
+        window.Chart = module.Chart;
+        console.log('Chart.js loaded and globally available');
+      })
+      .catch(err => console.error('Failed to preload Chart.js:', err));
+    
+    console.log('Lit bundle loaded and globally available');
+  </script>
+  
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;

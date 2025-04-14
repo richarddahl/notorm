@@ -1,6 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { until } from 'lit/directives/until.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element ok-data-provider
  * @description Generic data provider component for querying and managing entity data
@@ -35,7 +33,6 @@ export class OkDataProvider extends LitElement {
       cacheTime: { type: Number }, // milliseconds
     };
   }
-
   constructor() {
     super();
     this.baseUrl = '';
@@ -54,7 +51,6 @@ export class OkDataProvider extends LitElement {
     this._cache = {};
     this._lastFetchTime = null;
   }
-
   /**
    * Fetch data based on current configuration
    * @returns {Promise<Object>} Promise resolving to the fetched data
@@ -66,7 +62,6 @@ export class OkDataProvider extends LitElement {
       return this.fetchList();
     }
   }
-
   /**
    * Fetch a list of entities based on current filter, sort, and pagination
    * @returns {Promise<Array>} Promise resolving to list of entities
@@ -146,7 +141,6 @@ export class OkDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Fetch a single entity by ID
    * @returns {Promise<Object>} Promise resolving to single entity
@@ -203,7 +197,6 @@ export class OkDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Create a new entity
    * @param {Object} entity - Entity data to create
@@ -250,7 +243,6 @@ export class OkDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Update an existing entity
    * @param {string} id - Entity ID to update
@@ -298,7 +290,6 @@ export class OkDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Delete an entity
    * @param {string} id - Entity ID to delete
@@ -336,7 +327,6 @@ export class OkDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Set filter criteria and refresh data
    * @param {Object} filter - Filter criteria
@@ -346,7 +336,6 @@ export class OkDataProvider extends LitElement {
     this.filter = filter;
     return this.fetchData();
   }
-
   /**
    * Set sort order and refresh data
    * @param {Object} sort - Sort configuration
@@ -356,7 +345,6 @@ export class OkDataProvider extends LitElement {
     this.sort = sort;
     return this.fetchData();
   }
-
   /**
    * Set pagination configuration and refresh data
    * @param {Object} pagination - Pagination configuration
@@ -366,7 +354,6 @@ export class OkDataProvider extends LitElement {
     this.pagination = pagination;
     return this.fetchData();
   }
-
   /**
    * Clear cache and force-refresh data
    * @returns {Promise<Object>} Promise resolving to fetched data
@@ -376,7 +363,6 @@ export class OkDataProvider extends LitElement {
     this._lastFetchTime = null;
     return this.fetchData();
   }
-
   /**
    * Generate a cache key based on current state
    * @returns {string} Cache key
@@ -390,7 +376,6 @@ export class OkDataProvider extends LitElement {
       JSON.stringify(this.pagination)
     ].join('_');
   }
-
   /**
    * Empty render method as this is a non-UI component
    */
@@ -398,5 +383,4 @@ export class OkDataProvider extends LitElement {
     return html`<!-- No UI, this is a data provider component -->`;
   }
 }
-
 customElements.define('ok-data-provider', OkDataProvider);

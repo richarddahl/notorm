@@ -1,23 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-dialog.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-attributes-manager
  * @description Component for managing attributes and attribute types in the UNO framework
@@ -57,7 +38,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       deleteDialogData: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -291,7 +271,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.activeTab = 'attribute-types';
@@ -326,7 +305,6 @@ export class WebAwesomeAttributesManager extends LitElement {
     // Load mock data for demonstration
     this._loadMockData();
   }
-
   _getDefaultAttributeTypeForm() {
     return {
       name: '',
@@ -341,7 +319,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       value_type_ids: []
     };
   }
-
   _getDefaultAttributeForm() {
     return {
       attribute_type_id: '',
@@ -350,7 +327,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       value_ids: []
     };
   }
-
   _loadMockData() {
     // Mock meta types
     this.metaTypes = [
@@ -467,18 +443,15 @@ export class WebAwesomeAttributesManager extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     // In a real implementation, this would fetch data from the API
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
     // Reset selected item when changing tabs
     this.selectedItem = null;
   }
-
   selectAttributeType(attributeType) {
     this.selectedItem = { ...attributeType, itemType: 'attribute-type' };
   }
@@ -490,7 +463,6 @@ export class WebAwesomeAttributesManager extends LitElement {
   closeDetail() {
     this.selectedItem = null;
   }
-
   handleAttributeTypeFilterChange(e) {
     this.attributeTypeFilter = e.target.value;
   }
@@ -510,7 +482,6 @@ export class WebAwesomeAttributesManager extends LitElement {
     // In a real implementation, this would filter attribute types applicable to this meta type
     this.fetchAttributeTypesForMetaType(this.selectedMetaTypeId);
   }
-
   fetchAttributesForRecord(recordId) {
     // In a real implementation, this would be an API call
     this.loading = true;
@@ -547,7 +518,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       this.loading = false;
     }, 500);
   }
-
   // Dialog management
   openCreateAttributeTypeDialog() {
     this.attributeTypeForm = this._getDefaultAttributeTypeForm();
@@ -606,7 +576,6 @@ export class WebAwesomeAttributesManager extends LitElement {
     this.showEditAttributeDialog = false;
     this.showDeleteDialog = false;
   }
-
   // Form handlers
   handleAttributeTypeFormChange(e) {
     const field = e.target.name;
@@ -637,7 +606,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       [field]: value
     };
   }
-
   // CRUD operations
   createAttributeType() {
     // In a real implementation, this would be an API call
@@ -851,7 +819,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       }
     }, 500);
   }
-
   // Filtering
   filteredAttributeTypes() {
     if (!this.attributeTypeFilter) {
@@ -918,7 +885,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   // Render methods
   renderAttributeTypeDetail() {
     if (!this.selectedItem || this.selectedItem.itemType !== 'attribute-type') return html``;
@@ -1630,7 +1596,6 @@ export class WebAwesomeAttributesManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   render() {
     return html`
       <div class="container">
@@ -1670,5 +1635,4 @@ export class WebAwesomeAttributesManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-attributes-manager', WebAwesomeAttributesManager);

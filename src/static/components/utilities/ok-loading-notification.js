@@ -3,12 +3,10 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKLoadingNotification extends LitElement {
   /*
   renders an icon within a padded div to provide user guidance that data is being loaded
   */
-
   static styles = [
     css`
       sl-spinner {
@@ -25,11 +23,9 @@ export class OKLoadingNotification extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   // Render the UI as a function of component state
   render() {
     return html`

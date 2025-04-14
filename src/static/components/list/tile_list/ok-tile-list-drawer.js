@@ -6,7 +6,6 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKTileListDrawer extends LitElement {
   static properties = {
     listTitle: { type: String },
@@ -15,7 +14,6 @@ export class OKTileListDrawer extends LitElement {
     open: { type: Boolean },
     drawerTab: { type: String },
   };
-
   static styles = [
     css`
       :host {
@@ -29,17 +27,14 @@ export class OKTileListDrawer extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.open = false;
   }
-
   _show() {
     this.open = true;
     this.requestUpdate();
   }
-
   _mapFilter(filter) {
     if (filter.children.length === 0) {
       return html`
@@ -51,7 +46,6 @@ export class OKTileListDrawer extends LitElement {
       ${filter.children.map((child) => html`${this._mapFilter(child)}`)}
     `;
   }
-
   // Render the UI as a function of component state
   render() {
     return html`
@@ -61,7 +55,6 @@ export class OKTileListDrawer extends LitElement {
       )}
     `;
   }
-
   // Render the UI as a function of component state
   async _render() {
     const filters = await getData(this.filterUrl);
@@ -99,18 +92,15 @@ export class OKTileListDrawer extends LitElement {
             panel="actions"
             >Actions</sl-tab
           >
-
           <sl-tab-panel name="sort">
             <ok-list-sort-menu .sorting="${sorting}"></ok-list-sort-menu>
           </sl-tab-panel>
-
           <sl-tab-panel name="filter">
             ${filters.map(
               (filter) =>
                 html`<ok-filter-tile .filter="${filter}"></ok-filter-tile>`
             )}
           </sl-tab-panel>
-
           <sl-tab-panel name="queries">
             <sl-menu>
               <sl-menu-item @click=${this._createNewListener}
@@ -121,7 +111,6 @@ export class OKTileListDrawer extends LitElement {
               )}
             </sl-menu>
           </sl-tab-panel>
-
           <sl-tab-panel name="actions">
             <ok-list-action-menu></ok-list-action-menu>
           </sl-tab-panel>
@@ -130,5 +119,4 @@ export class OKTileListDrawer extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-tile-list-drawer", OKTileListDrawer);

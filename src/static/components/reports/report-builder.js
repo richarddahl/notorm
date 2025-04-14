@@ -1,5 +1,4 @@
-import { LitElement, html, css } from 'lit-element';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element report-builder
  * @description An interactive report builder for creating custom report templates
@@ -30,7 +29,6 @@ export class ReportBuilder extends LitElement {
       availableOutputTypes: { type: Array }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -363,7 +361,6 @@ export class ReportBuilder extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.template = this._createEmptyTemplate();
@@ -396,7 +393,6 @@ export class ReportBuilder extends LitElement {
       { value: 'dashboard', label: 'Dashboard', description: 'Display report on a dashboard' }
     ];
   }
-
   _createEmptyTemplate() {
     return {
       name: '',
@@ -413,7 +409,6 @@ export class ReportBuilder extends LitElement {
     super.connectedCallback();
     this.loadEntities();
   }
-
   async loadEntities() {
     this.loading = true;
     
@@ -431,7 +426,6 @@ export class ReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   async loadEntityFields(entityType) {
     if (!entityType) return;
     
@@ -458,7 +452,6 @@ export class ReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   handleEntityChange(e) {
     const entityType = e.target.value;
     this.template = {
@@ -474,21 +467,18 @@ export class ReportBuilder extends LitElement {
       this.availableFields = [];
     }
   }
-
   handleNameChange(e) {
     this.template = {
       ...this.template,
       name: e.target.value
     };
   }
-
   handleDescriptionChange(e) {
     this.template = {
       ...this.template,
       description: e.target.value
     };
   }
-
   showAddFieldDialog() {
     this.currentField = {
       name: '',
@@ -500,17 +490,14 @@ export class ReportBuilder extends LitElement {
     };
     this.showFieldConfig = true;
   }
-
   showEditFieldDialog(field, index) {
     this.currentField = { ...field, index };
     this.showFieldConfig = true;
   }
-
   closeFieldDialog() {
     this.showFieldConfig = false;
     this.currentField = null;
   }
-
   addField(field) {
     // Generate a unique name if not provided
     if (!field.name) {
@@ -529,7 +516,6 @@ export class ReportBuilder extends LitElement {
     
     this.closeFieldDialog();
   }
-
   updateField(field, index) {
     const fields = [...this.template.fields];
     fields[index] = field;
@@ -541,7 +527,6 @@ export class ReportBuilder extends LitElement {
     
     this.closeFieldDialog();
   }
-
   removeField(index) {
     const fields = [...this.template.fields];
     fields.splice(index, 1);
@@ -551,7 +536,6 @@ export class ReportBuilder extends LitElement {
       fields
     };
   }
-
   _generateFieldName(field) {
     let baseName = '';
     
@@ -578,7 +562,6 @@ export class ReportBuilder extends LitElement {
     
     return name;
   }
-
   _formatDisplayName(name) {
     return name
       .replace(/_/g, ' ')
@@ -586,49 +569,42 @@ export class ReportBuilder extends LitElement {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
-
   handleFieldTypeChange(type) {
     this.currentField = {
       ...this.currentField,
       type
     };
   }
-
   handleFieldSourceChange(e) {
     this.currentField = {
       ...this.currentField,
       source: e.target.value
     };
   }
-
   handleFieldNameChange(e) {
     this.currentField = {
       ...this.currentField,
       name: e.target.value
     };
   }
-
   handleFieldDisplayNameChange(e) {
     this.currentField = {
       ...this.currentField,
       display_name: e.target.value
     };
   }
-
   handleFieldFormatChange(e) {
     this.currentField = {
       ...this.currentField,
       format: e.target.value
     };
   }
-
   handleFieldDisplayChange(e) {
     this.currentField = {
       ...this.currentField,
       display: e.target.checked
     };
   }
-
   saveField() {
     if (this.currentField.index !== undefined) {
       this.updateField(this.currentField, this.currentField.index);
@@ -636,7 +612,6 @@ export class ReportBuilder extends LitElement {
       this.addField(this.currentField);
     }
   }
-
   async saveTemplate() {
     if (!this.validateTemplate()) {
       return;
@@ -682,7 +657,6 @@ export class ReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   validateTemplate() {
     // Basic validation
     if (!this.template.name) {
@@ -702,11 +676,9 @@ export class ReportBuilder extends LitElement {
     
     return true;
   }
-
   handleTabChange(tab) {
     this.activeTab = tab;
   }
-
   addTrigger() {
     // Initialize trigger based on type
     let trigger = {
@@ -747,7 +719,6 @@ export class ReportBuilder extends LitElement {
     // Reset trigger config
     this.triggerConfig = { type: 'schedule' };
   }
-
   removeTrigger(index) {
     const triggers = [...this.template.triggers];
     triggers.splice(index, 1);
@@ -757,7 +728,6 @@ export class ReportBuilder extends LitElement {
       triggers
     };
   }
-
   addOutput() {
     // Initialize output based on type
     let output = {
@@ -811,7 +781,6 @@ export class ReportBuilder extends LitElement {
     // Reset output config
     this.outputConfig = { type: 'pdf' };
   }
-
   removeOutput(index) {
     const outputs = [...this.template.outputs];
     outputs.splice(index, 1);
@@ -821,21 +790,18 @@ export class ReportBuilder extends LitElement {
       outputs
     };
   }
-
   handleTriggerTypeChange(e) {
     this.triggerConfig = {
       ...this.triggerConfig,
       type: e.target.value
     };
   }
-
   handleOutputTypeChange(e) {
     this.outputConfig = {
       ...this.outputConfig,
       type: e.target.value
     };
   }
-
   handleTriggerConfigChange(e) {
     const { name, value } = e.target;
     this.triggerConfig = {
@@ -843,7 +809,6 @@ export class ReportBuilder extends LitElement {
       [name]: value
     };
   }
-
   handleOutputConfigChange(e) {
     const { name, value } = e.target;
     this.outputConfig = {
@@ -851,7 +816,6 @@ export class ReportBuilder extends LitElement {
       [name]: value
     };
   }
-
   addRequiredParameter() {
     if (!this.triggerConfig.newParameter) return;
     
@@ -865,7 +829,6 @@ export class ReportBuilder extends LitElement {
       };
     }
   }
-
   removeRequiredParameter(param) {
     const requiredParameters = this.triggerConfig.requiredParameters || [];
     
@@ -874,7 +837,6 @@ export class ReportBuilder extends LitElement {
       requiredParameters: requiredParameters.filter(p => p !== param)
     };
   }
-
   addAttachmentFormat() {
     if (!this.outputConfig.newFormat) return;
     
@@ -888,7 +850,6 @@ export class ReportBuilder extends LitElement {
       };
     }
   }
-
   removeAttachmentFormat(format) {
     const attachmentFormats = this.outputConfig.attachmentFormats || [];
     
@@ -897,7 +858,6 @@ export class ReportBuilder extends LitElement {
       attachmentFormats: attachmentFormats.filter(f => f !== format)
     };
   }
-
   async generatePreview() {
     if (!this.validateTemplate()) {
       return;
@@ -927,11 +887,9 @@ export class ReportBuilder extends LitElement {
       this.loading = false;
     }
   }
-
   cancel() {
     this.dispatchEvent(new CustomEvent('cancel'));
   }
-
   renderFieldDialog() {
     if (!this.showFieldConfig) return html``;
     
@@ -1243,7 +1201,6 @@ export class ReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderDesignTab() {
     return html`
       <div class="form-row">
@@ -1309,7 +1266,6 @@ export class ReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderTriggersTab() {
     return html`
       <div class="section-title">Existing Triggers</div>
@@ -1473,7 +1429,6 @@ export class ReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderOutputsTab() {
     return html`
       <div class="section-title">Existing Outputs</div>
@@ -1713,7 +1668,6 @@ export class ReportBuilder extends LitElement {
       </div>
     `;
   }
-
   renderPreviewTab() {
     if (!this.previewData) {
       return html`
@@ -1764,7 +1718,6 @@ export class ReportBuilder extends LitElement {
       </div>
     `;
   }
-
   render() {
     return html`
       <div class="builder-container">
@@ -1830,5 +1783,4 @@ export class ReportBuilder extends LitElement {
     `;
   }
 }
-
 customElements.define('report-builder', ReportBuilder);

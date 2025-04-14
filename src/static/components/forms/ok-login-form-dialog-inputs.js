@@ -8,7 +8,6 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { login } from "/static/assets/scripts/apiData.js";
-
 export class OKLoginFormDialog extends LitElement {
   static properties = {
     open: { type: Boolean },
@@ -17,7 +16,6 @@ export class OKLoginFormDialog extends LitElement {
     emailError: { type: String },
     passwordError: { type: String },
   };
-
   static styles = [
     css`
       :host {
@@ -65,13 +63,11 @@ export class OKLoginFormDialog extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.emailHelpText = html`Please enter your email address`;
     this.passwordHelpText = html`Please enter your password`;
   }
-
   firstUpdated() {
     this.email = this.shadowRoot.querySelector(".username");
     this.password = this.shadowRoot.querySelector(".password");
@@ -99,11 +95,9 @@ export class OKLoginFormDialog extends LitElement {
     });
     this.requestUpdate();
   }
-
   showDialog() {
     this.shadowRoot.querySelector("sl-dialog").show();
   }
-
   async _handleLogin(e) {
     e.preventDefault();
     const dialog = this.shadowRoot.querySelector("sl-dialog");
@@ -111,7 +105,6 @@ export class OKLoginFormDialog extends LitElement {
     let formData;
     let invalid = false;
     this.error = false;
-
     if (!this.email.validity.valid) {
       this.emailError = html`
         <ok-form-input-validation-error
@@ -137,22 +130,18 @@ export class OKLoginFormDialog extends LitElement {
     if (invalid) {
       return;
     }
-
     formData = new FormData(form);
-
     if (await login(formData, form)) {
       dialog.hide();
     } else {
       this.error = true;
     }
   }
-
   _clearForm() {
     this.email.value = "";
     this.password.value = "";
     this.error = false;
   }
-
   render() {
     let error = undefined;
     if (this.error) {
@@ -164,7 +153,6 @@ export class OKLoginFormDialog extends LitElement {
         </sl-alert>
       `;
     }
-
     return html`
       <sl-dialog
         @sl-hide=${this._clearForm}
@@ -210,5 +198,9 @@ export class OKLoginFormDialog extends LitElement {
     `;
   }
 }
-
-customElements.define("ok-login-form-dialog", OKLoginFormDialog);
+// Only define if not already registered
+if (!customElements.get('ok-login-form-dialog')) {
+  customElements.define("ok-login-form-dialog", OKLoginFormDialog);
+} else {
+  console.log('ok-login-form-dialog component already registered');
+}

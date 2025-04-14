@@ -1,13 +1,5 @@
-import { LitElement, html, css } from 'lit';
-import { styleMap } from 'lit/directives/style-map.js';
-import { Chart } from 'chart.js/auto';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-table.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-icon.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+// Use global Chart.js instance instead of importing directly
 /**
  * @element wa-report-widget
  * @description A standalone widget for displaying report data as metrics, charts, or tables using WebAwesome
@@ -30,7 +22,6 @@ export class WebAwesomeReportWidget extends LitElement {
       theme: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -100,7 +91,6 @@ export class WebAwesomeReportWidget extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.type = 'metric';
@@ -113,7 +103,6 @@ export class WebAwesomeReportWidget extends LitElement {
     this.theme = 'light';
     this.chart = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -123,7 +112,6 @@ export class WebAwesomeReportWidget extends LitElement {
       window.addEventListener('resize', this._resizeHandler);
     }
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     
@@ -133,7 +121,6 @@ export class WebAwesomeReportWidget extends LitElement {
     
     this.destroyChart();
   }
-
   updated(changedProperties) {
     if (changedProperties.has('data') || 
         changedProperties.has('type') || 
@@ -143,7 +130,6 @@ export class WebAwesomeReportWidget extends LitElement {
       });
     }
   }
-
   _handleResize() {
     // Debounce resize handling
     clearTimeout(this._resizeTimer);
@@ -152,14 +138,12 @@ export class WebAwesomeReportWidget extends LitElement {
       this.renderContent();
     }, 250);
   }
-
   destroyChart() {
     if (this.chart) {
       this.chart.destroy();
       this.chart = null;
     }
   }
-
   renderContent() {
     if (this.loading || !this.data) return;
     
@@ -178,7 +162,6 @@ export class WebAwesomeReportWidget extends LitElement {
         break;
     }
   }
-
   renderMetric(container) {
     if (!this.data) {
       this.renderEmptyState(container);
@@ -239,7 +222,6 @@ export class WebAwesomeReportWidget extends LitElement {
       <div class="metric-label">${subtitle}</div>
     `;
   }
-
   renderChart(container) {
     // Clean up existing chart
     this.destroyChart();
@@ -264,14 +246,18 @@ export class WebAwesomeReportWidget extends LitElement {
     // Apply WebAwesome theme colors
     this.applyThemeColors(chartData);
     
-    // Create chart
-    this.chart = new Chart(canvas, {
-      type: chartType,
-      data: chartData,
-      options: chartOptions
-    });
+    // Create chart using the global Chart instance
+    if (window.Chart) {
+      this.chart = new window.Chart(canvas, {
+        type: chartType,
+        data: chartData,
+        options: chartOptions
+      });
+    } else {
+      console.error('Chart.js is not loaded or available globally');
+      this.renderEmptyState(container, 'Chart.js library not available');
+    }
   }
-
   applyThemeColors(chartData) {
     // Apply WebAwesome theme colors to chart datasets
     const primaryColor = getComputedStyle(this).getPropertyValue('--wa-primary-color').trim() || '#3f51b5';
@@ -321,7 +307,6 @@ export class WebAwesomeReportWidget extends LitElement {
     
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
-
   prepareChartData() {
     const datasets = [];
     let labels = [];
@@ -392,7 +377,6 @@ export class WebAwesomeReportWidget extends LitElement {
     
     return { labels, datasets };
   }
-
   prepareChartOptions() {
     const baseOptions = {
       responsive: true,
@@ -469,7 +453,6 @@ export class WebAwesomeReportWidget extends LitElement {
         };
     }
   }
-
   renderTable(container) {
     if (!this.data || (Array.isArray(this.data) && this.data.length === 0)) {
       this.renderEmptyState(container);
@@ -528,7 +511,6 @@ export class WebAwesomeReportWidget extends LitElement {
     
     container.appendChild(table);
   }
-
   getFormatter(format) {
     switch (format) {
       case 'number':
@@ -556,22 +538,20 @@ export class WebAwesomeReportWidget extends LitElement {
         return value => value;
     }
   }
-
-  renderEmptyState(container) {
+  renderEmptyState(container, errorMessage) {
+    const message = errorMessage || this.config?.emptyMessage || 'No data available';
     container.innerHTML = `
       <div class="empty-state">
         <wa-icon name="bar_chart" size="large" class="empty-state-icon"></wa-icon>
-        <div>${this.config.emptyMessage || 'No data available'}</div>
+        <div>${message}</div>
       </div>
     `;
   }
-
   refresh() {
     this.dispatchEvent(new CustomEvent('refresh', {
       detail: { id: this.id }
     }));
   }
-
   downloadData() {
     if (!this.data) return;
     
@@ -598,7 +578,6 @@ export class WebAwesomeReportWidget extends LitElement {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-
   render() {
     return html`
       <wa-card elevation="1">
@@ -631,5 +610,4 @@ export class WebAwesomeReportWidget extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-report-widget', WebAwesomeReportWidget);

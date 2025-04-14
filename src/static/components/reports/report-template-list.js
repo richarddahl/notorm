@@ -10,19 +10,16 @@ class ReportTemplateList extends LitElement {
     loading: { type: Boolean },
     error: { type: String }
   };
-
   constructor() {
     super();
     this.templates = [];
     this.loading = true;
     this.error = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     this.loadTemplates();
   }
-
   async loadTemplates() {
     try {
       this.loading = true;
@@ -40,7 +37,6 @@ class ReportTemplateList extends LitElement {
       this.loading = false;
     }
   }
-
   async executeReport(templateId) {
     try {
       const response = await fetch(`/api/reports/templates/${templateId}/execute`, {
@@ -66,7 +62,6 @@ class ReportTemplateList extends LitElement {
       alert(`Failed to execute report: ${err.message}`);
     }
   }
-
   async deleteTemplate(templateId) {
     if (!confirm('Are you sure you want to delete this template?')) {
       return;
@@ -88,12 +83,10 @@ class ReportTemplateList extends LitElement {
       alert(`Failed to delete template: ${err.message}`);
     }
   }
-
   render() {
     if (this.loading) {
       return html`<div class="loading">Loading templates...</div>`;
     }
-
     if (this.error) {
       return html`
         <div class="error">
@@ -102,7 +95,6 @@ class ReportTemplateList extends LitElement {
         </div>
       `;
     }
-
     if (this.templates.length === 0) {
       return html`
         <div class="empty">
@@ -111,7 +103,6 @@ class ReportTemplateList extends LitElement {
         </div>
       `;
     }
-
     return html`
       <div class="report-templates">
         <div class="header">
@@ -149,7 +140,6 @@ class ReportTemplateList extends LitElement {
       </div>
     `;
   }
-
   static styles = css`
     .header {
       display: flex;
@@ -222,5 +212,4 @@ class ReportTemplateList extends LitElement {
     }
   `;
 }
-
 customElements.define('report-template-list', ReportTemplateList);

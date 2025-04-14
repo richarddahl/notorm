@@ -8,7 +8,6 @@ class OkuiAdminDashboard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.siteName = 'UNO Admin';
   }
-
   connectedCallback() {
     // Get attribute value if provided
     if (this.hasAttribute('site-name')) {
@@ -28,7 +27,6 @@ class OkuiAdminDashboard extends HTMLElement {
           background-color: var(--wa-background-color, #f5f5f5);
           padding: 20px;
         }
-
         .header {
           background-color: var(--wa-primary-color, #3f51b5);
           color: white;
@@ -36,23 +34,19 @@ class OkuiAdminDashboard extends HTMLElement {
           border-radius: 4px;
           margin-bottom: 20px;
         }
-
         .header h1 {
           margin: 0 0 10px 0;
         }
-
         .header p {
           margin: 0;
           opacity: 0.8;
         }
-
         .dashboard-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 20px;
           margin-bottom: 20px;
         }
-
         .card {
           background-color: white;
           border-radius: 4px;
@@ -60,22 +54,18 @@ class OkuiAdminDashboard extends HTMLElement {
           padding: 20px;
           height: 100%;
         }
-
         .card h2 {
           margin-top: 0;
           color: var(--wa-primary-color, #3f51b5);
           font-size: 1.25rem;
         }
-
         ul {
           padding-left: 20px;
           margin-bottom: 10px;
         }
-
         li {
           margin-bottom: 8px;
         }
-
         .system-status {
           display: flex;
           justify-content: space-between;
@@ -83,42 +73,34 @@ class OkuiAdminDashboard extends HTMLElement {
           gap: 10px;
           margin-bottom: 10px;
         }
-
         .status-item {
           display: flex;
           align-items: center;
           gap: 10px;
         }
-
         .status-indicator {
           width: 12px;
           height: 12px;
           border-radius: 50%;
         }
-
         .status-healthy {
           background-color: #4caf50;
         }
-
         .status-warning {
           background-color: #ff9800;
         }
-
         .status-error {
           background-color: #f44336;
         }
-
         .module-list {
           margin-top: 30px;
         }
-
         .module-row {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 10px;
           margin-bottom: 10px;
         }
-
         .module-item {
           background-color: #f5f5f5;
           padding: 15px;
@@ -127,16 +109,13 @@ class OkuiAdminDashboard extends HTMLElement {
           transition: transform 0.2s ease;
           cursor: pointer;
         }
-
         .module-item:hover {
           transform: translateY(-5px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
         h3 {
           margin-top: 0;
         }
-
         .section-title {
           margin-top: 30px;
           margin-bottom: 15px;
@@ -150,7 +129,6 @@ class OkuiAdminDashboard extends HTMLElement {
           <h1>${this.siteName}</h1>
           <p>Welcome to the UNO administration interface</p>
         </div>
-
         <div class="dashboard-grid">
           <div class="card">
             <h2>System Status</h2>
@@ -170,7 +148,6 @@ class OkuiAdminDashboard extends HTMLElement {
             </div>
             <p>All systems are operational. View detailed metrics in the Monitoring panel.</p>
           </div>
-
           <div class="card">
             <h2>Quick Stats</h2>
             <ul>
@@ -181,7 +158,6 @@ class OkuiAdminDashboard extends HTMLElement {
               <li><strong>Version:</strong> 1.2.0</li>
             </ul>
           </div>
-
           <div class="card">
             <h2>Recent Activity</h2>
             <ul>
@@ -192,9 +168,7 @@ class OkuiAdminDashboard extends HTMLElement {
             </ul>
           </div>
         </div>
-
         <h2 class="section-title">Administration Modules</h2>
-
         <div class="module-list">
           <h3>Core</h3>
           <div class="module-row">
@@ -211,7 +185,6 @@ class OkuiAdminDashboard extends HTMLElement {
               <p>User roles and permissions</p>
             </div>
           </div>
-
           <h3>Tools</h3>
           <div class="module-row">
             <div class="module-item" id="workflows-module">
@@ -227,7 +200,6 @@ class OkuiAdminDashboard extends HTMLElement {
               <p>Semantic search interface</p>
             </div>
           </div>
-
           <h3>System</h3>
           <div class="module-row">
             <div class="module-item" id="jobs-module">
@@ -246,7 +218,6 @@ class OkuiAdminDashboard extends HTMLElement {
         </div>
       </div>
     `;
-
     // Add event listeners
     this.shadowRoot.getElementById('attributes-module').addEventListener('click', () => {
       window.location.href = '/admin/attributes';
@@ -277,6 +248,5 @@ class OkuiAdminDashboard extends HTMLElement {
     });
   }
 }
-
 // Define the new element
 customElements.define('okui-admin-dashboard', OkuiAdminDashboard);

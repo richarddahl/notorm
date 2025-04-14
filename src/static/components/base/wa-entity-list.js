@@ -1,18 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-pagination.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-entity-list
  * @description Generic entity list component with filtering, sorting, and pagination
@@ -63,7 +49,6 @@ export class WebAwesomeEntityList extends LitElement {
       labels: { type: Object },
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -212,7 +197,6 @@ export class WebAwesomeEntityList extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.baseUrl = '/api';
@@ -265,7 +249,6 @@ export class WebAwesomeEntityList extends LitElement {
     
     this.selectedItems = new Set();
   }
-
   connectedCallback() {
     super.connectedCallback();
     // Load entities when component is connected to DOM
@@ -1127,5 +1110,4 @@ export class WebAwesomeEntityList extends LitElement {
     this.requestUpdate();
   }
 }
-
 customElements.define('wa-entity-list', WebAwesomeEntityList);

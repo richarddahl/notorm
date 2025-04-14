@@ -1,27 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-radio.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-list.js';
-import '@webcomponents/awesome/wa-list-item.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-badge.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-workflow-designer
  * @description An interactive workflow designer component for defining notification workflows
@@ -52,7 +29,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       currentRecipient: { type: Object }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -296,7 +272,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.workflow = this._createEmptyWorkflow();
@@ -320,7 +295,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     // Load mock data for demo purposes
     this._loadMockData();
   }
-
   _createEmptyWorkflow() {
     return {
       name: '',
@@ -418,14 +392,12 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       { value: 'not_in', label: 'Not in list', types: ['string', 'number'] }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     
     // In a real implementation, we would load entities from the server
     // this.loadEntities();
   }
-
   async loadEntities() {
     this.loading = true;
     
@@ -443,21 +415,18 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       this.loading = false;
     }
   }
-
   handleNameChange(e) {
     this.workflow = {
       ...this.workflow,
       name: e.target.value
     };
   }
-
   handleDescriptionChange(e) {
     this.workflow = {
       ...this.workflow,
       description: e.target.value
     };
   }
-
   handleEntityTypeChange(e) {
     const entityType = e.target.value;
     this.workflow = {
@@ -469,7 +438,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       }
     };
   }
-
   handleOperationsChange(operation, checked) {
     const operations = [...(this.workflow.trigger.operations || [])];
     
@@ -488,7 +456,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       }
     };
   }
-
   addTriggerCondition() {
     this.currentCondition = {
       type: 'field',
@@ -498,19 +465,16 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     };
     this.showConditionDialog = true;
   }
-
   cancelConditionDialog() {
     this.showConditionDialog = false;
     this.currentCondition = null;
   }
-
   handleConditionTypeChange(type) {
     this.currentCondition = {
       ...this.currentCondition,
       type
     };
   }
-
   saveCondition() {
     const conditions = [...(this.workflow.trigger.conditions || [])];
     
@@ -533,7 +497,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     this.showConditionDialog = false;
     this.currentCondition = null;
   }
-
   removeCondition(index) {
     const conditions = [...(this.workflow.trigger.conditions || [])];
     conditions.splice(index, 1);
@@ -546,7 +509,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       }
     };
   }
-
   addAction() {
     this.currentAction = {
       type: 'notification',
@@ -556,19 +518,16 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     };
     this.showActionDialog = true;
   }
-
   cancelActionDialog() {
     this.showActionDialog = false;
     this.currentAction = null;
   }
-
   handleActionTypeChange(type) {
     this.currentAction = {
       ...this.currentAction,
       type
     };
   }
-
   saveAction() {
     const actions = [...(this.workflow.actions || [])];
     
@@ -588,7 +547,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     this.showActionDialog = false;
     this.currentAction = null;
   }
-
   removeAction(index) {
     const actions = [...(this.workflow.actions || [])];
     actions.splice(index, 1);
@@ -598,7 +556,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       actions
     };
   }
-
   addRecipient(actionIndex) {
     this.currentRecipient = {
       type: 'user',
@@ -607,19 +564,16 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     };
     this.showRecipientDialog = true;
   }
-
   cancelRecipientDialog() {
     this.showRecipientDialog = false;
     this.currentRecipient = null;
   }
-
   handleRecipientTypeChange(type) {
     this.currentRecipient = {
       ...this.currentRecipient,
       type
     };
   }
-
   saveRecipient() {
     const actions = [...(this.workflow.actions || [])];
     const actionIndex = this.currentRecipient.actionIndex;
@@ -649,7 +603,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     this.showRecipientDialog = false;
     this.currentRecipient = null;
   }
-
   removeRecipient(actionIndex, recipientIndex) {
     const actions = [...(this.workflow.actions || [])];
     actions[actionIndex].recipients.splice(recipientIndex, 1);
@@ -659,7 +612,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       actions
     };
   }
-
   async saveWorkflow() {
     if (!this.validateWorkflow()) {
       return;
@@ -708,7 +660,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       this.loading = false;
     }
   }
-
   validateWorkflow() {
     // Basic validation
     if (!this.workflow.name) {
@@ -737,7 +688,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     
     return true;
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -753,20 +703,16 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   testWorkflow() {
     // In a real implementation, this would send a request to test the workflow
     this._showNotification('Workflow test initiated', 'info');
   }
-
   cancel() {
     this.dispatchEvent(new CustomEvent('cancel'));
   }
-
   renderConditionDialog() {
     if (!this.showConditionDialog) return html``;
     
@@ -1029,7 +975,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderActionDialog() {
     if (!this.showActionDialog) return html``;
     
@@ -1336,7 +1281,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       </wa-dialog>
     `;
   }
-
   _getConditionTypeIcon(type) {
     switch (type) {
       case 'field': return 'data_object';
@@ -1346,7 +1290,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       default: return 'filter_alt';
     }
   }
-
   _getRecipientTypeIcon(type) {
     switch (type) {
       case 'user': return 'person';
@@ -1356,7 +1299,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       default: return 'person';
     }
   }
-
   _getRecipientTypeLabel(type) {
     switch (type) {
       case 'user': return 'User';
@@ -1366,7 +1308,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       default: return 'User';
     }
   }
-
   _getOperatorsForField(fieldName, fields) {
     if (!fieldName || !fields) return this._operators;
     
@@ -1375,7 +1316,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     
     return this._operators.filter(op => op.types.includes(field.type));
   }
-
   _formatConditionSummary(condition) {
     switch (condition.type) {
       case 'field':
@@ -1391,7 +1331,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
         return `Condition: ${condition.type}`;
     }
   }
-
   renderDesignTab() {
     return html`
       <div class="form-row">
@@ -1582,7 +1521,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       </div>
     `;
   }
-
   _getActionTypeIcon(type) {
     switch (type) {
       case 'notification': return 'notifications';
@@ -1593,7 +1531,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       default: return 'play_arrow';
     }
   }
-
   _getActionTypeLabel(type) {
     switch (type) {
       case 'notification': return 'In-App Notification';
@@ -1604,7 +1541,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       default: return 'Action';
     }
   }
-
   renderTestTab() {
     return html`
       <div class="section-title">Test Workflow</div>
@@ -1657,7 +1593,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       </wa-card>
     `;
   }
-
   renderJsonTab() {
     return html`
       <div class="section-title">JSON Configuration</div>
@@ -1681,7 +1616,6 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
       </wa-card>
     `;
   }
-
   render() {
     return html`
       <div class="designer-container">
@@ -1737,5 +1671,4 @@ export class WebAwesomeWorkflowDesigner extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-workflow-designer', WebAwesomeWorkflowDesigner);

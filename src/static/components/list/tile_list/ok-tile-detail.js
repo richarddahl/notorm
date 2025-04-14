@@ -5,14 +5,12 @@ import {
   until,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKTileDetail extends LitElement {
   static properties = {
     obj_id_uri: { type: String },
     obj_id: { type: String },
     open: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -30,12 +28,10 @@ export class OKTileDetail extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.open = false;
   }
-
   /**
    * Converts a string to title case.
    *
@@ -50,7 +46,6 @@ export class OKTileDetail extends LitElement {
       .replace(/_/g, " ")
       .replace(/\b\w/g, (match) => match.toUpperCase());
   }
-
   /**
    * Converts a string value to a formatted date or number.
    * If the string can be parsed as a valid date, it returns the date in a localized string format.
@@ -63,7 +58,6 @@ export class OKTileDetail extends LitElement {
   _convertValue(value) {
     const date = new Date(value);
     const number = new Number(value);
-
     if (
       value === true ||
       value === false ||
@@ -72,11 +66,9 @@ export class OKTileDetail extends LitElement {
     ) {
       return value ? "Yes" : "No";
     }
-
     if (number instanceof Number && !isNaN(number)) {
       return html`<sl-format-number value=${number}></sl-format-number>`;
     }
-
     if (date instanceof Date && !isNaN(date)) {
       return html`
         <sl-format-date
@@ -88,7 +80,6 @@ export class OKTileDetail extends LitElement {
         ></sl-format-date>
       `;
     }
-
     if (typeof value === "object" && value.currency) {
       return html`
         <sl-format-number
@@ -99,14 +90,11 @@ export class OKTileDetail extends LitElement {
         ></sl-format-number>
       `;
     }
-
     if (typeof value === "object" && value !== null) {
       return value.title || "Title not found";
     }
-
     return value;
   }
-
   /**
    * Renders the tile detail component.
    * If the component is open, it renders the content returned by _render() method.
@@ -125,7 +113,6 @@ export class OKTileDetail extends LitElement {
       return html`NO DETAIL YET`;
     }
   }
-
   /**
    * Renders the tile detail by fetching data from the API and generating HTML markup.
    * @returns {Promise<string>} The HTML markup representing the tile detail.
@@ -142,7 +129,6 @@ export class OKTileDetail extends LitElement {
       }
       return acc;
     }, []);
-
     return html`
       <div>
         ${items.map(

@@ -1,6 +1,5 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 import './wa-crud-manager.js';
-
 /**
  * @element wa-crud-example
  * @description Example usage of wa-crud-manager with a sample configuration
@@ -8,10 +7,10 @@ import './wa-crud-manager.js';
 export class WebAwesomeCrudExample extends LitElement {
   static get properties() {
     return {
-      loading: { type: Boolean }
+      loading: { type: Boolean },
+      apiMode: { type: Boolean }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -36,6 +35,22 @@ export class WebAwesomeCrudExample extends LitElement {
       
       .example-tabs {
         margin-bottom: 20px;
+        display: flex;
+        gap: 16px;
+      }
+      
+      .tab-button {
+        padding: 8px 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+      }
+      
+      .tab-button.active {
+        background: #1976d2;
+        color: white;
+        border-color: #1976d2;
       }
       
       .code-example {
@@ -48,12 +63,11 @@ export class WebAwesomeCrudExample extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.loading = false;
+    this.apiMode = false;
   }
-
   // Example schema for users
   getUserSchema() {
     return {
@@ -114,41 +128,60 @@ export class WebAwesomeCrudExample extends LitElement {
           type: 'datetime',
           sortable: true
         }
-      ]
+      ],
+      displayName: "User",
+      displayNamePlural: "Users",
+      description: "User accounts in the system"
     };
   }
-
   // Example custom actions
   getCustomActions() {
     return [
       {
+        id: 'reset-password',
         label: 'Reset Password',
         icon: 'lock_reset',
         color: 'warning',
+        location: 'item',
+        bulk: false,
+        confirmationRequired: true,
+        confirmationMessage: 'Are you sure you want to reset the password for this user?',
+        apiEndpoint: '/api/users/{id}/reset-password',
+        method: 'POST',
         handler: (entity) => {
           alert(`Password reset requested for ${entity.name}`);
         }
       },
       {
+        id: 'send-notification',
         label: 'Send Notification',
         icon: 'notification_important',
         color: 'primary',
+        location: 'item',
+        bulk: false,
+        apiEndpoint: '/api/users/{id}/notify',
+        method: 'POST',
         handler: (entity) => {
           alert(`Sending notification to ${entity.name}`);
         }
       },
       {
+        id: 'deactivate-users',
         label: 'Deactivate Users',
         icon: 'block',
         color: 'error',
+        location: 'bulk',
         bulk: true,
+        confirmationRequired: true,
+        confirmationMessage: 'Are you sure you want to deactivate the selected users?',
+        apiEndpoint: '/api/users/bulk-deactivate',
+        method: 'POST',
         bulkHandler: (selectedIds) => {
           alert(`Deactivating users with IDs: ${selectedIds.join(', ')}`);
         }
       }
     ];
   }
-
   // Mock API data for demo purposes
   generateMockUsers(count = 25) {
     const users = [];
@@ -182,16 +215,58 @@ export class WebAwesomeCrudExample extends LitElement {
     
     return users;
   }
-
   // Mock API endpoint - would replace with real API calls in production
   setupMockApi() {
     const mockUsers = this.generateMockUsers();
+    const schema = this.getUserSchema();
+    const actions = { actions: this.getCustomActions() };
     
     // Mock fetch to intercept API calls
     const originalFetch = window.fetch;
     window.fetch = (url, options) => {
       // Only intercept calls to our mock API
       if (url.toString().includes('/api/users')) {
+        const urlStr = url.toString();
+        
+        // Handle schema API
+        if (urlStr.includes('/api/users/schema')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(schema)
+          });
+        }
+        
+        // Handle actions API
+        if (urlStr.includes('/api/users/actions')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(actions)
+          });
+        }
+        
+        // Handle custom actions
+        if (urlStr.includes('/reset-password')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, message: 'Password reset link sent' })
+          });
+        }
+        
+        if (urlStr.includes('/notify')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, message: 'Notification sent' })
+          });
+        }
+        
+        if (urlStr.includes('/bulk-deactivate')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ success: true, message: 'Users deactivated' })
+          });
+        }
+        
+        // Handle standard CRUD operations
         return this.handleMockUserApi(url, options, mockUsers);
       }
       
@@ -199,7 +274,6 @@ export class WebAwesomeCrudExample extends LitElement {
       return originalFetch(url, options);
     };
   }
-
   // Handle mock API requests
   handleMockUserApi(url, options, users) {
     const urlObj = new URL(url, window.location.origin);
@@ -378,30 +452,54 @@ export class WebAwesomeCrudExample extends LitElement {
       }, 300); // Simulate network delay
     });
   }
-
   firstUpdated() {
     // Setup mock API
     this.setupMockApi();
     
-    // Configure the CRUD component
-    const crudManager = this.shadowRoot.querySelector('#userCrudManager');
-    crudManager.schema = this.getUserSchema();
-    crudManager.customActions = this.getCustomActions();
+    // Configure the traditional CRUD component
+    const traditionalCrudManager = this.shadowRoot.querySelector('#traditionalCrudManager');
+    traditionalCrudManager.schema = this.getUserSchema();
+    traditionalCrudManager.customActions = this.getCustomActions();
     
-    // Listen for events
-    crudManager.addEventListener('entity-created', (e) => {
-      console.log('User created:', e.detail.entity);
-    });
+    // Add event listeners to both components
+    const addEventListeners = (crudManager) => {
+      if (!crudManager) return;
+      
+      crudManager.addEventListener('entity-created', (e) => {
+        console.log('User created:', e.detail.entity);
+      });
+      
+      crudManager.addEventListener('entity-updated', (e) => {
+        console.log('User updated:', e.detail.entity);
+      });
+      
+      crudManager.addEventListener('entity-deleted', (e) => {
+        console.log('User deleted, ID:', e.detail.entityId);
+      });
+      
+      crudManager.addEventListener('action-executed', (e) => {
+        console.log('Custom action executed:', e.detail);
+      });
+      
+      crudManager.addEventListener('bulk-action-executed', (e) => {
+        console.log('Bulk action executed:', e.detail);
+      });
+    };
     
-    crudManager.addEventListener('entity-updated', (e) => {
-      console.log('User updated:', e.detail.entity);
-    });
+    // Add listeners to traditional mode
+    addEventListeners(traditionalCrudManager);
     
-    crudManager.addEventListener('entity-deleted', (e) => {
-      console.log('User deleted, ID:', e.detail.entityId);
+    // Add listeners to API mode when it appears
+    this.updateComplete.then(() => {
+      const apiCrudManager = this.shadowRoot.querySelector('#apiCrudManager');
+      addEventListeners(apiCrudManager);
     });
   }
-
+  
+  // Toggle between traditional and API modes
+  toggleMode() {
+    this.apiMode = !this.apiMode;
+  }
   render() {
     return html`
       <div class="header">
@@ -409,28 +507,73 @@ export class WebAwesomeCrudExample extends LitElement {
         <p class="subtitle">Demonstration of the wa-crud-manager component with mocked user data</p>
       </div>
       
-      <wa-crud-manager
-        id="userCrudManager"
-        base-url="/api"
-        entity-type="users"
-        title="User Management"
-        description="Create and manage application users"
-        layout-type="table">
-      </wa-crud-manager>
+      <div class="example-tabs">
+        <button 
+          @click=${() => this.toggleMode()} 
+          class="tab-button ${!this.apiMode ? 'active' : ''}">
+          Traditional Mode
+        </button>
+        <button 
+          @click=${() => this.toggleMode()} 
+          class="tab-button ${this.apiMode ? 'active' : ''}">
+          API Mode
+        </button>
+      </div>
       
-      <p>Open the browser console to see event output when interacting with the component.</p>
-      
-      <div class="code-example">
-        // Basic usage
-        &lt;wa-crud-manager
+      ${!this.apiMode ? html`
+        <!-- Traditional mode with schema and actions passed as properties -->
+        <wa-crud-manager
+          id="traditionalCrudManager"
           base-url="/api"
           entity-type="users"
-          title="User Management"
-          description="Create and manage application users"&gt;
-        &lt;/wa-crud-manager&gt;
-      </div>
+          title="User Management (Traditional)"
+          description="Schema and actions passed directly as properties"
+          layout-type="table">
+        </wa-crud-manager>
+        
+        <div class="code-example">
+          // Traditional usage with schema and actions passed directly
+          &lt;wa-crud-manager
+            base-url="/api"
+            entity-type="users"
+            title="User Management"
+            description="Schema and actions passed directly as properties"
+            .schema=\${mySchema}
+            .customActions=\${myCustomActions}&gt;
+          &lt;/wa-crud-manager&gt;
+        </div>
+      ` : html`
+        <!-- API mode with schema and actions loaded from API -->
+        <wa-crud-manager
+          id="apiCrudManager"
+          base-url="/api"
+          entity-type="users"
+          title="User Management (API Mode)"
+          description="Schema and actions loaded from API"
+          layout-type="table"
+          schema-api-enabled
+          schema-api-endpoint="/api/{entityType}/schema"
+          actions-api-enabled
+          actions-api-endpoint="/api/{entityType}/actions">
+        </wa-crud-manager>
+        
+        <div class="code-example">
+          // API mode with schema and actions loaded dynamically
+          &lt;wa-crud-manager
+            base-url="/api"
+            entity-type="users"
+            title="User Management"
+            description="Schema and actions loaded from API"
+            schema-api-enabled
+            schema-api-endpoint="/api/{entityType}/schema"
+            actions-api-enabled
+            actions-api-endpoint="/api/{entityType}/actions"&gt;
+          &lt;/wa-crud-manager&gt;
+        </div>
+      `}
+      
+      <p>Open the browser console to see event output when interacting with the component.</p>
     `;
   }
 }
-
 customElements.define('wa-crud-example', WebAwesomeCrudExample);

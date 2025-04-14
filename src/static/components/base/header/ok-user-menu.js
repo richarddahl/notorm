@@ -5,12 +5,10 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { haveToken } from "/static/assets/scripts/apiData.js";
-
 export class OKUserMenu extends LitElement {
   static properties = {
     theme: {},
   };
-
   static styles = [
     css`
       :host {
@@ -18,11 +16,9 @@ export class OKUserMenu extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   _changeTheme = (e) => {
     const theme = e.detail.item.value;
     let okChangeTheme = new CustomEvent("ok-change-theme", {
@@ -32,7 +28,6 @@ export class OKUserMenu extends LitElement {
     });
     this.dispatchEvent(okChangeTheme);
   };
-
   // Render the UI as a function of component state
   render() {
     let userButton;
@@ -44,7 +39,6 @@ export class OKUserMenu extends LitElement {
       themeIcon = "moon";
     }
     this.addEventListener("sl-select", this._changeTheme);
-
     return html`
       <sl-icon-button name="person-circle" label="Profile"></sl-icon-button>
       <sl-icon-button name="box-arrow-right" label="Logout"></sl-icon-button>

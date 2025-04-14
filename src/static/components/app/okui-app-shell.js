@@ -9,7 +9,6 @@ class OkuiAppShell extends HTMLElement {
     this.siteName = 'UNO Admin';
     this.theme = localStorage.getItem('wa-theme') || 'light';
   }
-
   connectedCallback() {
     // Get attribute value if provided
     if (this.hasAttribute('site-name')) {
@@ -30,13 +29,11 @@ class OkuiAppShell extends HTMLElement {
           font-family: var(--wa-font-family, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif);
           --header-height: ${headerHeight};
         }
-
         .app-container {
           min-height: 100vh;
           display: flex;
           flex-direction: column;
         }
-
         .header {
           height: var(--header-height);
           display: flex;
@@ -46,20 +43,17 @@ class OkuiAppShell extends HTMLElement {
           color: white;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
         .logo {
           font-weight: bold;
           font-size: 1.5rem;
           margin-right: 20px;
         }
-
         .header-actions {
           display: flex;
           align-items: center;
           gap: 15px;
           margin-left: auto;
         }
-
         .nav-button, .theme-button, .user-menu {
           background: none;
           border: none;
@@ -69,17 +63,14 @@ class OkuiAppShell extends HTMLElement {
           padding: 8px;
           border-radius: 4px;
         }
-
         .nav-button:hover, .theme-button:hover, .user-menu:hover {
           background-color: rgba(255, 255, 255, 0.1);
         }
-
         .main-content {
           display: flex;
           flex: 1;
           height: calc(100vh - var(--header-height));
         }
-
         .sidebar {
           width: 240px;
           background-color: var(--wa-sidebar-bg, #f5f5f5);
@@ -89,16 +80,13 @@ class OkuiAppShell extends HTMLElement {
           display: flex;
           flex-direction: column;
         }
-
         .sidebar-nav {
           display: flex;
           flex-direction: column;
         }
-
         .nav-section {
           margin-bottom: 20px;
         }
-
         .nav-section-title {
           font-size: 12px;
           font-weight: 600;
@@ -107,7 +95,6 @@ class OkuiAppShell extends HTMLElement {
           padding: 0 20px;
           margin: 15px 0 5px;
         }
-
         .nav-item {
           display: flex;
           align-items: center;
@@ -116,18 +103,15 @@ class OkuiAppShell extends HTMLElement {
           text-decoration: none;
           cursor: pointer;
         }
-
         .nav-item:hover {
           background-color: var(--wa-hover-bg, #e0e0e0);
         }
-
         .nav-item.active {
           background-color: var(--wa-active-bg, #e8eaf6);
           border-left: 3px solid var(--wa-primary-color, #3f51b5);
           color: var(--wa-primary-color, #3f51b5);
           font-weight: 500;
         }
-
         .content-area {
           flex: 1;
           overflow-y: auto;
@@ -238,6 +222,5 @@ class OkuiAppShell extends HTMLElement {
     this.dispatchEvent(event);
   }
 }
-
 // Define the new element
 customElements.define('okui-app-shell', OkuiAppShell);

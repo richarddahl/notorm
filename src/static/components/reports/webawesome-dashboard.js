@@ -1,18 +1,6 @@
-import { LitElement, html, css } from 'lit';
-import { styleMap } from 'lit/directives/style-map.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-date-picker.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-alert.js';
-import 'lit-grid-layout';
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+// We'll use a simple CSS grid instead of the missing lit-grid-layout
 import './webawesome-report-widget.js';
-
 /**
  * @element wa-dashboard
  * @description An interactive dashboard for visualizing reports using WebAwesome components
@@ -40,7 +28,6 @@ export class WebAwesomeDashboard extends LitElement {
       theme: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -83,8 +70,19 @@ export class WebAwesomeDashboard extends LitElement {
         gap: 8px;
         margin-left: auto;
       }
-      .grid-layout {
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        grid-auto-rows: 80px;
+        gap: 16px;
         width: 100%;
+      }
+      .dashboard-grid-item {
+        min-height: 80px;
+        background-color: var(--wa-surface-color, #ffffff);
+        border-radius: var(--wa-border-radius, 4px);
+        box-shadow: var(--wa-shadow-1, 0 1px 3px rgba(0,0,0,0.1));
+        overflow: hidden;
       }
       .empty-state {
         display: flex;
@@ -124,7 +122,6 @@ export class WebAwesomeDashboard extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.dashboardId = null;
@@ -144,7 +141,6 @@ export class WebAwesomeDashboard extends LitElement {
     this.theme = 'light';
     this._refreshTimer = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -161,7 +157,6 @@ export class WebAwesomeDashboard extends LitElement {
     // Listen for events from child widgets
     this.addEventListener('refresh', this._handleRefresh);
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     
@@ -174,7 +169,6 @@ export class WebAwesomeDashboard extends LitElement {
     // Remove event listeners
     this.removeEventListener('refresh', this._handleRefresh);
   }
-
   updated(changedProperties) {
     if (changedProperties.has('dashboardId') && this.dashboardId) {
       this.loadDashboardConfig();
@@ -193,17 +187,14 @@ export class WebAwesomeDashboard extends LitElement {
       this.updateChildrenTheme();
     }
   }
-
   _getDefaultStartDate() {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
     return date.toISOString().split('T')[0];
   }
-
   _getDefaultEndDate() {
     return new Date().toISOString().split('T')[0];
   }
-
   _setupRefreshTimer() {
     // Clear existing timer if any
     if (this._refreshTimer) {
@@ -218,7 +209,6 @@ export class WebAwesomeDashboard extends LitElement {
       }, this.refreshInterval * 1000);
     }
   }
-
   updateChildrenTheme() {
     // Update theme of all child wa-report-widget elements
     this.updateComplete.then(() => {
@@ -228,7 +218,6 @@ export class WebAwesomeDashboard extends LitElement {
       });
     });
   }
-
   async loadDashboardConfig() {
     if (!this.dashboardId) return;
     
@@ -270,7 +259,6 @@ export class WebAwesomeDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   async loadData() {
     if (!this.reportIds || this.reportIds.length === 0) return;
     
@@ -325,7 +313,6 @@ export class WebAwesomeDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   _processReportData(results) {
     // Convert array of report results to an object keyed by template_id
     const processedData = {};
@@ -344,7 +331,6 @@ export class WebAwesomeDashboard extends LitElement {
     
     return processedData;
   }
-
   _dispatchDataLoadedEvent() {
     const event = new CustomEvent('data-loaded', {
       detail: {
@@ -357,7 +343,6 @@ export class WebAwesomeDashboard extends LitElement {
     
     this.dispatchEvent(event);
   }
-
   async saveDashboard() {
     if (!this.dashboardId) return;
     
@@ -402,7 +387,6 @@ export class WebAwesomeDashboard extends LitElement {
       this.loading = false;
     }
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     // In WebAwesome, we'll use wa-alert
@@ -421,44 +405,36 @@ export class WebAwesomeDashboard extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   _handleRefresh(e) {
     // Handle refresh request from a widget
     this.loadData();
   }
-
   handleDateRangeChange(field, value) {
     this.dateRange = {
       ...this.dateRange,
       [field]: value
     };
   }
-
   handleRefreshIntervalChange(e) {
     const interval = parseInt(e.target.value, 10);
     this.refreshInterval = isNaN(interval) ? 0 : interval;
   }
-
   applyDateRange() {
     this.loadData();
   }
-
   removeFilter(key) {
     const newFilters = { ...this.filters };
     delete newFilters[key];
     this.filters = newFilters;
     this.loadData();
   }
-
   clearFilters() {
     this.filters = {};
     this.loadData();
   }
-
   toggleEditMode() {
     this.editMode = !this.editMode;
   }
-
   exportDashboard(format) {
     if (!this.dashboardId) return;
     
@@ -483,7 +459,6 @@ export class WebAwesomeDashboard extends LitElement {
     // Open in a new tab/window
     window.open(`/api/reports/dashboards/${this.dashboardId}/export?${params.toString()}`, '_blank');
   }
-
   handleLayoutChange(e) {
     const newLayout = e.detail.layout;
     
@@ -504,7 +479,6 @@ export class WebAwesomeDashboard extends LitElement {
       return widget;
     });
   }
-
   renderFilterBar() {
     return html`
       <div class="filter-bar">
@@ -587,7 +561,6 @@ export class WebAwesomeDashboard extends LitElement {
       ` : ''}
     `;
   }
-
   renderEmptyState() {
     return html`
       <div class="empty-state">
@@ -598,7 +571,6 @@ export class WebAwesomeDashboard extends LitElement {
       </div>
     `;
   }
-
   getWidgetData(widget) {
     if (!this.data || !widget.report_id || !widget.data_key) return null;
     
@@ -616,7 +588,6 @@ export class WebAwesomeDashboard extends LitElement {
     
     return result;
   }
-
   render() {
     const hasWidgets = this.layout && this.layout.length > 0;
     
@@ -639,41 +610,33 @@ export class WebAwesomeDashboard extends LitElement {
         ` : ''}
         
         ${!hasWidgets ? this.renderEmptyState() : html`
-          <lit-grid-layout
-            .layout=${this.layout.map(widget => ({
-              id: widget.id,
-              x: widget.position?.x || 0,
-              y: widget.position?.y || 0,
-              w: widget.position?.w || 3,
-              h: widget.position?.h || 3
-            }))}
-            .cols=${12}
-            .rowHeight=${80}
-            .gap=${16}
-            .isDraggable=${this.editMode}
-            .isResizable=${this.editMode}
-            @layout-changed=${this.handleLayoutChange}
-            class="grid-layout"
-          >
-            ${this.layout.map(widget => html`
-              <div>
-                ${this.editMode ? html`
-                  <div class="widget-placeholder">
-                    ${widget.title}
-                  </div>
-                ` : html`
-                  <wa-report-widget
-                    type=${widget.type}
-                    subtype=${widget.type === 'chart' ? widget.config?.chart_type || 'bar' : ''}
-                    title=${widget.title}
-                    .data=${this.getWidgetData(widget)}
-                    .config=${widget.config || {}}
-                    theme=${this.theme}
-                  ></wa-report-widget>
-                `}
-              </div>
-            `)}
-          </lit-grid-layout>
+          <div class="dashboard-grid">
+            ${this.layout.map(widget => {
+              const style = this.editMode ? '' : `
+                grid-column: ${widget.position?.x || 0} / span ${widget.position?.w || 3};
+                grid-row: ${widget.position?.y || 0} / span ${widget.position?.h || 3};
+              `;
+              
+              return html`
+                <div class="dashboard-grid-item" style=${style}>
+                  ${this.editMode ? html`
+                    <div class="widget-placeholder">
+                      ${widget.title}
+                    </div>
+                  ` : html`
+                    <wa-report-widget
+                      type=${widget.type}
+                      subtype=${widget.type === 'chart' ? widget.config?.chart_type || 'bar' : ''}
+                      title=${widget.title}
+                      .data=${this.getWidgetData(widget)}
+                      .config=${widget.config || {}}
+                      theme=${this.theme}
+                    ></wa-report-widget>
+                  `}
+                </div>
+              `;
+            })}
+          </div>
           
           <div class="status-bar">
             <div>
@@ -688,5 +651,4 @@ export class WebAwesomeDashboard extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-dashboard', WebAwesomeDashboard);

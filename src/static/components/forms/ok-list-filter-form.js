@@ -8,12 +8,10 @@ import {
   choose,
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKFListFilterForm extends LitElement {
   static properties = {
     filter: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -49,11 +47,9 @@ export class OKFListFilterForm extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   firstUpdated() {
     const inputs = this.shadowRoot.querySelectorAll("sl-input");
     const textareas = this.shadowRoot.querySelectorAll("sl-textarea");
@@ -69,7 +65,6 @@ export class OKFListFilterForm extends LitElement {
       });
     });
   }
-
   _changeLookupListener(e) {
     e.stopPropagation();
     e.preventDefault();
@@ -83,7 +78,6 @@ export class OKFListFilterForm extends LitElement {
       ).disabled = false;
     }
   }
-
   render() {
     return html`
       <form>
@@ -295,5 +289,4 @@ export class OKFListFilterForm extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-list-filter-form", OKFListFilterForm);

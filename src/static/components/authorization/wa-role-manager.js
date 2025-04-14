@@ -1,21 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-role-manager
  * @description Component for managing roles and permissions in the UNO authorization system
@@ -43,7 +26,6 @@ export class WebAwesomeRoleManager extends LitElement {
       selectedRoleId: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -259,7 +241,6 @@ export class WebAwesomeRoleManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.roles = [];
@@ -279,7 +260,6 @@ export class WebAwesomeRoleManager extends LitElement {
     // Mock data for demo
     this._loadMockData();
   }
-
   _loadMockData() {
     this.roles = [
       {
@@ -427,22 +407,18 @@ export class WebAwesomeRoleManager extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     // In a real app, you would fetch roles and permissions from the server
     // this.loadRoles();
     // this.loadPermissions();
   }
-
   handleSearch(e) {
     this.searchTerm = e.target.value.toLowerCase();
   }
-
   selectRole(roleId) {
     this.selectedRoleId = this.selectedRoleId === roleId ? null : roleId;
   }
-
   showAddRole() {
     this.currentRole = {
       name: '',
@@ -451,41 +427,34 @@ export class WebAwesomeRoleManager extends LitElement {
     };
     this.showRoleDialog = true;
   }
-
   showEditRole(role) {
     this.currentRole = {...role};
     this.showRoleDialog = true;
   }
-
   confirmDeleteRole(role) {
     this.roleToDelete = role;
     this.showDeleteDialog = true;
   }
-
   cancelDelete() {
     this.showDeleteDialog = false;
     this.roleToDelete = null;
   }
-
   closeRoleDialog() {
     this.showRoleDialog = false;
     this.currentRole = null;
   }
-
   handleRoleNameChange(e) {
     this.currentRole = {
       ...this.currentRole,
       name: e.target.value
     };
   }
-
   handleRoleDescriptionChange(e) {
     this.currentRole = {
       ...this.currentRole,
       description: e.target.value
     };
   }
-
   togglePermission(permissionId) {
     const permissions = [...(this.currentRole.permissions || [])];
     
@@ -503,15 +472,12 @@ export class WebAwesomeRoleManager extends LitElement {
       permissions
     };
   }
-
   selectCategory(category) {
     this.selectedCategory = category;
   }
-
   selectPermissionView(view) {
     this.permissionView = view;
   }
-
   async saveRole() {
     if (!this.currentRole.name) {
       this._showNotification('Role name is required', 'error');
@@ -565,7 +531,6 @@ export class WebAwesomeRoleManager extends LitElement {
       this.loading = false;
     }
   }
-
   async deleteRole() {
     if (!this.roleToDelete) return;
     
@@ -594,7 +559,6 @@ export class WebAwesomeRoleManager extends LitElement {
       this.loading = false;
     }
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -610,7 +574,6 @@ export class WebAwesomeRoleManager extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   get filteredRoles() {
     if (!this.roles || this.roles.length === 0) {
       return [];
@@ -627,7 +590,6 @@ export class WebAwesomeRoleManager extends LitElement {
     
     return filtered;
   }
-
   get filteredPermissions() {
     if (!this.permissions || this.permissions.length === 0) {
       return [];
@@ -641,7 +603,6 @@ export class WebAwesomeRoleManager extends LitElement {
       permission.category === this.selectedCategory
     );
   }
-
   get permissionsByCategory() {
     const grouped = {};
     
@@ -654,12 +615,10 @@ export class WebAwesomeRoleManager extends LitElement {
     
     return grouped;
   }
-
   get selectedRole() {
     if (!this.selectedRoleId) return null;
     return this.roles.find(role => role.id === this.selectedRoleId);
   }
-
   renderRoleDialog() {
     if (!this.showRoleDialog || !this.currentRole) return html``;
     
@@ -765,7 +724,6 @@ export class WebAwesomeRoleManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderDeleteDialog() {
     if (!this.showDeleteDialog || !this.roleToDelete) return html``;
     
@@ -803,7 +761,6 @@ export class WebAwesomeRoleManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   renderRoleDetail() {
     if (!this.selectedRole) return html``;
     
@@ -977,7 +934,6 @@ export class WebAwesomeRoleManager extends LitElement {
       </div>
     `;
   }
-
   render() {
     return html`
       <div class="manager-container">
@@ -1109,5 +1065,4 @@ export class WebAwesomeRoleManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-role-manager', WebAwesomeRoleManager);

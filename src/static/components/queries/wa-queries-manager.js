@@ -1,24 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-textarea.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-code-editor.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-queries-manager
  * @description Component for managing queries and filters in the UNO framework
@@ -64,7 +44,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       isExecutingQuery: { type: Boolean }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -409,7 +388,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.activeTab = 'queries';
@@ -453,7 +431,6 @@ export class WebAwesomeQueriesManager extends LitElement {
     // Load mock data for demonstration
     this._loadMockData();
   }
-
   _getDefaultQueryForm() {
     return {
       name: '',
@@ -467,7 +444,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       sub_queries: []
     };
   }
-
   _getDefaultQueryPathForm() {
     return {
       name: '',
@@ -477,7 +453,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       description: ''
     };
   }
-
   _loadMockData() {
     // Mock meta types
     this.metaTypes = [
@@ -654,18 +629,15 @@ export class WebAwesomeQueriesManager extends LitElement {
       }
     ];
   }
-
   connectedCallback() {
     super.connectedCallback();
     // In a real implementation, this would fetch data from the API
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
     // Reset selected item when changing tabs
     this.selectedItem = null;
   }
-
   selectQuery(query) {
     this.selectedItem = { ...query, itemType: 'query' };
   }
@@ -677,7 +649,6 @@ export class WebAwesomeQueriesManager extends LitElement {
   closeDetail() {
     this.selectedItem = null;
   }
-
   handleQueryFilterChange(e) {
     this.queryFilter = e.target.value;
   }
@@ -720,7 +691,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       this.loading = false;
     }, 500);
   }
-
   // Dialog management
   openCreateQueryDialog() {
     this.queryForm = this._getDefaultQueryForm();
@@ -792,7 +762,6 @@ export class WebAwesomeQueriesManager extends LitElement {
     this.showDeleteDialog = false;
     this.showExecuteQueryDialog = false;
   }
-
   // Form handlers
   handleQueryFormChange(e) {
     const field = e.target.name;
@@ -890,7 +859,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       sub_queries: updatedSubQueries
     };
   }
-
   // CRUD operations
   createQuery() {
     // In a real implementation, this would be an API call
@@ -1073,7 +1041,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       }
     }, 1000);
   }
-
   // Filtering
   filteredQueries() {
     if (!this.queryFilter) {
@@ -2040,7 +2007,6 @@ export class WebAwesomeQueriesManager extends LitElement {
       </wa-dialog>
     `;
   }
-
   render() {
     return html`
       <div class="container">
@@ -2081,5 +2047,4 @@ export class WebAwesomeQueriesManager extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-queries-manager', WebAwesomeQueriesManager);

@@ -9,9 +9,7 @@
  * - Persisting dashboard layouts and settings
  * - Handling user interactions and events
  */
-
 import { LitElement, html, css } from 'lit-element';
-
 export class DashboardController extends LitElement {
   static get properties() {
     return {
@@ -27,7 +25,6 @@ export class DashboardController extends LitElement {
       lastRefreshed: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -145,7 +142,6 @@ export class DashboardController extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.dashboardId = null;
@@ -163,7 +159,6 @@ export class DashboardController extends LitElement {
     this.lastRefreshed = '';
     this._refreshTimer = null;
   }
-
   connectedCallback() {
     super.connectedCallback();
     
@@ -183,7 +178,6 @@ export class DashboardController extends LitElement {
     this.addEventListener('date-range-changed', this._handleDateRangeChanged);
     this.addEventListener('layout-changed', this._handleLayoutChanged);
   }
-
   disconnectedCallback() {
     super.disconnectedCallback();
     
@@ -199,7 +193,6 @@ export class DashboardController extends LitElement {
     this.removeEventListener('date-range-changed', this._handleDateRangeChanged);
     this.removeEventListener('layout-changed', this._handleLayoutChanged);
   }
-
   updated(changedProps) {
     if (changedProps.has('dashboardId') && this.dashboardId) {
       this.loadDashboardConfig();
@@ -213,17 +206,14 @@ export class DashboardController extends LitElement {
       this._setupRefreshTimer();
     }
   }
-
   _getDefaultStartDate() {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
     return date.toISOString().split('T')[0];
   }
-
   _getDefaultEndDate() {
     return new Date().toISOString().split('T')[0];
   }
-
   _setupRefreshTimer() {
     // Clear existing timer if any
     if (this._refreshTimer) {
@@ -238,7 +228,6 @@ export class DashboardController extends LitElement {
       }, this.refreshInterval * 1000);
     }
   }
-
   async loadDashboardConfig() {
     if (!this.dashboardId) return;
     
@@ -275,7 +264,6 @@ export class DashboardController extends LitElement {
       this.loading = false;
     }
   }
-
   async loadData() {
     if (!this.reportIds || this.reportIds.length === 0) return;
     
@@ -330,7 +318,6 @@ export class DashboardController extends LitElement {
       this.loading = false;
     }
   }
-
   _processReportData(results) {
     // Convert array of report results to an object keyed by template_id
     const processedData = {};
@@ -349,7 +336,6 @@ export class DashboardController extends LitElement {
     
     return processedData;
   }
-
   _dispatchDataLoadedEvent() {
     const event = new CustomEvent('data-loaded', {
       detail: {
@@ -362,7 +348,6 @@ export class DashboardController extends LitElement {
     
     this.dispatchEvent(event);
   }
-
   async saveDashboardConfig() {
     if (!this.dashboardId) return;
     
@@ -400,7 +385,6 @@ export class DashboardController extends LitElement {
       this.loading = false;
     }
   }
-
   _showSuccessMessage(message) {
     // Implementation depends on your UI framework
     // This could be a toast, snackbar, or other notification
@@ -418,7 +402,6 @@ export class DashboardController extends LitElement {
     
     this.dispatchEvent(event);
   }
-
   _handleFilterChanged(e) {
     // Update filters based on event detail
     const { key, value, clear } = e.detail;
@@ -442,11 +425,9 @@ export class DashboardController extends LitElement {
     // Reload data with new filters
     this.loadData();
   }
-
   _handleRefreshRequested() {
     this.loadData();
   }
-
   _handleDateRangeChanged(e) {
     const { start, end } = e.detail;
     
@@ -458,7 +439,6 @@ export class DashboardController extends LitElement {
     // Reload data with new date range
     this.loadData();
   }
-
   _handleLayoutChanged(e) {
     this.layout = e.detail.layout;
     
@@ -467,32 +447,26 @@ export class DashboardController extends LitElement {
       this.saveDashboardConfig();
     }
   }
-
   handleDateRangeChange(e, field) {
     this.dateRange = {
       ...this.dateRange,
       [field]: e.target.value
     };
   }
-
   handleRefreshIntervalChange(e) {
     const interval = parseInt(e.target.value, 10);
     this.refreshInterval = isNaN(interval) ? 0 : interval;
   }
-
   applyDateRange() {
     this.loadData();
   }
-
   clearFilters() {
     this.filters = {};
     this.loadData();
   }
-
   handleSave() {
     this.saveDashboardConfig();
   }
-
   exportDashboard(format) {
     if (!this.dashboardId) return;
     
@@ -517,7 +491,6 @@ export class DashboardController extends LitElement {
     // Open in a new tab/window
     window.open(`/api/reports/dashboards/${this.dashboardId}/export?${params.toString()}`, '_blank');
   }
-
   render() {
     return html`
       <div class="dashboard-controller">
@@ -589,5 +562,4 @@ export class DashboardController extends LitElement {
     `;
   }
 }
-
 customElements.define('dashboard-controller', DashboardController);

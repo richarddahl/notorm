@@ -5,13 +5,11 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { haveToken } from "/static/assets/scripts/apiData.js";
-
 export class OKNavigationMenuButton extends LitElement {
   static properties = {
     theme: {},
     haveToken: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -19,13 +17,11 @@ export class OKNavigationMenuButton extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.haveToken = haveToken();
     this.addEventListener("sl-select", this._selectMenuItem);
   }
-
   _showDrawer = (e) => {
     const drawer = this.renderRoot.querySelector("sl-drawer");
     if (!this.haveToken) {
@@ -33,7 +29,6 @@ export class OKNavigationMenuButton extends LitElement {
     }
     drawer.show();
   };
-
   _selectMenuItem = (e) => {
     const drawer = this.renderRoot.querySelector("sl-drawer");
     drawer.hide();
@@ -44,7 +39,6 @@ export class OKNavigationMenuButton extends LitElement {
     });
     this.dispatchEvent(okSelectMenuItem);
   };
-
   // Render the UI as a function of component state
   render() {
     if (!this.haveToken) {

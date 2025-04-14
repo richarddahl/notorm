@@ -1,22 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-checkbox.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-table.js';
-import '@webcomponents/awesome/wa-switch.js';
-import '@webcomponents/awesome/wa-date-picker.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-security-admin
  * @description Security administration dashboard for UNO framework
@@ -368,7 +350,6 @@ export class WebAwesomeSecurityAdmin extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.activeTab = 'audit';
@@ -1984,7 +1965,6 @@ export class WebAwesomeSecurityAdmin extends LitElement {
       </wa-dialog>
     `;
   }
-
   render() {
     return html`
       <div class="container">
@@ -2033,5 +2013,4 @@ export class WebAwesomeSecurityAdmin extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-security-admin', WebAwesomeSecurityAdmin);

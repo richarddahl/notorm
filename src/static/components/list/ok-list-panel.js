@@ -4,12 +4,10 @@ import {
   html,
   until,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKListPanel extends LitElement {
   /* 
   The overall container for the list of objects obtained from the API
   */
-
   static properties = {
     listTitle: { type: String },
     dataUrl: { type: Object },
@@ -19,7 +17,6 @@ export class OKListPanel extends LitElement {
     formUrl: { type: Object },
     theme: { type: String },
   };
-
   static styles = [
     css`
       :host {
@@ -35,11 +32,9 @@ export class OKListPanel extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   // Render the UI as a function of component state
   render() {
     if (this.listTitle) {
@@ -59,5 +54,4 @@ export class OKListPanel extends LitElement {
     }
   }
 }
-
 customElements.define("ok-list-panel", OKListPanel);

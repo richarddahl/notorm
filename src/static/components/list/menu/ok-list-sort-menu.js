@@ -6,12 +6,10 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKListSortMenu extends LitElement {
   static properties = {
     sorting: { type: Array },
   };
-
   static styles = [
     css`
       :host {
@@ -19,11 +17,9 @@ export class OKListSortMenu extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   render() {
     return html`
       ${this.sorting.map(

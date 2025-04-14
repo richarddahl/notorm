@@ -1,17 +1,4 @@
-import { LitElement, html, css } from 'lit';
-import { repeat } from 'lit/directives/repeat.js';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-dialog.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-report-template-list
  * @description Component for listing and managing report templates using WebAwesome
@@ -38,7 +25,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       sortDirection: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -183,7 +169,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
     this.templates = [];
@@ -199,7 +184,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
     this.sortField = 'updated_at';
     this.sortDirection = 'desc';
   }
-
   connectedCallback() {
     super.connectedCallback();
     this.loadTemplates();
@@ -214,7 +198,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       this.view = savedView;
     }
   }
-
   async loadTemplates() {
     this.loading = true;
     this.error = null;
@@ -244,24 +227,19 @@ export class WebAwesomeReportTemplateList extends LitElement {
       this.loading = false;
     }
   }
-
   handleSearch(e) {
     this.searchTerm = e.target.value.toLowerCase();
   }
-
   handleEntityFilterChange(e) {
     this.entityFilter = e.target.value;
   }
-
   handleCategoryFilterChange(e) {
     this.categoryFilter = e.target.value;
   }
-
   changeView(viewType) {
     this.view = viewType;
     localStorage.setItem('report-template-view', viewType);
   }
-
   handleSort(field) {
     if (field === this.sortField) {
       // Toggle direction
@@ -271,7 +249,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       this.sortDirection = 'desc';
     }
   }
-
   sortTemplates(templates) {
     // Make a copy to avoid mutating original array
     const sorted = [...templates];
@@ -311,17 +288,14 @@ export class WebAwesomeReportTemplateList extends LitElement {
         valueB - valueA;
     });
   }
-
   confirmDelete(template) {
     this.templateToDelete = template;
     this.showDeleteDialog = true;
   }
-
   cancelDelete() {
     this.showDeleteDialog = false;
     this.templateToDelete = null;
   }
-
   async deleteTemplate() {
     if (!this.templateToDelete) return;
     
@@ -351,23 +325,18 @@ export class WebAwesomeReportTemplateList extends LitElement {
       this.loading = false;
     }
   }
-
   navigateToTemplate(templateId) {
     window.location.href = `/reports/templates/${templateId}`;
   }
-
   navigateToEdit(templateId) {
     window.location.href = `/reports/templates/${templateId}/edit`;
   }
-
   navigateToExecutionManager(templateId) {
     window.location.href = `/reports/templates/${templateId}/executions`;
   }
-
   createNewTemplate() {
     window.location.href = '/reports/templates/new';
   }
-
   formatDate(dateString) {
     if (!dateString) return 'N/A';
     
@@ -389,7 +358,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
     // Otherwise show full date
     return date.toLocaleString();
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -405,7 +373,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   get filteredTemplates() {
     if (!this.templates || this.templates.length === 0) {
       return [];
@@ -438,7 +405,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
     // Apply sorting
     return this.sortTemplates(filtered);
   }
-
   getUniqueEntityTypes() {
     if (!this.templates || this.templates.length === 0) {
       return [];
@@ -453,7 +419,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
     
     return Array.from(entityTypes).sort();
   }
-
   renderGridView() {
     return html`
       <div class="grid">
@@ -513,7 +478,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       </div>
     `;
   }
-
   renderListView() {
     return html`
       <div>
@@ -611,7 +575,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       </div>
     `;
   }
-
   renderDeleteDialog() {
     if (!this.showDeleteDialog || !this.templateToDelete) return html``;
     
@@ -631,7 +594,6 @@ export class WebAwesomeReportTemplateList extends LitElement {
       </wa-dialog>
     `;
   }
-
   render() {
     return html`
       <div class="list-container">
@@ -721,5 +683,4 @@ export class WebAwesomeReportTemplateList extends LitElement {
     `;
   }
 }
-
 customElements.define('wa-report-template-list', WebAwesomeReportTemplateList);

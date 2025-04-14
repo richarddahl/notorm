@@ -3,12 +3,10 @@ import {
   css,
   html,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKQueryParamList extends LitElement {
   static properties = {
     queryParamList: { type: Array },
   };
-
   static styles = [
     css`
       :host {
@@ -22,11 +20,9 @@ export class OKQueryParamList extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   _removeQueryParam(e) {
     this.dispatchEvent(
       new CustomEvent("ok-remove-query-param", {
@@ -38,7 +34,6 @@ export class OKQueryParamList extends LitElement {
       })
     );
   }
-
   // Render the UI as a function of component state
   render() {
     if (this.queryParamList.length == 0) {
@@ -62,5 +57,4 @@ export class OKQueryParamList extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-query-param-list", OKQueryParamList);

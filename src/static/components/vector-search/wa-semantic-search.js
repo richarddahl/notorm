@@ -1,24 +1,11 @@
-import { LitElement, html, css } from 'lit';
-import '@webcomponents/awesome/wa-card.js';
-import '@webcomponents/awesome/wa-button.js';
-import '@webcomponents/awesome/wa-input.js';
-import '@webcomponents/awesome/wa-select.js';
-import '@webcomponents/awesome/wa-slider.js';
-import '@webcomponents/awesome/wa-icon.js';
-import '@webcomponents/awesome/wa-spinner.js';
-import '@webcomponents/awesome/wa-divider.js';
-import '@webcomponents/awesome/wa-alert.js';
-import '@webcomponents/awesome/wa-chip.js';
-import '@webcomponents/awesome/wa-tooltip.js';
-import '@webcomponents/awesome/wa-tabs.js';
-import '@webcomponents/awesome/wa-tab.js';
-import '@webcomponents/awesome/wa-tab-panel.js';
-import '@webcomponents/awesome/wa-badge.js';
-import '@webcomponents/awesome/wa-switch.js';
-
+import { LitElement, html, css } from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
 /**
  * @element wa-semantic-search
  * @description Component for performing semantic vector searches using pgvector in the UNO framework
+ * 
+ * This component is also registered with alias names for URL compatibility:
+ * - okui-semantic-search
+ * - okui-vector-search-dashboard
  */
 export class WebAwesomeSemanticSearch extends LitElement {
   static get properties() {
@@ -41,7 +28,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       keywordQuery: { type: String }
     };
   }
-
   static get styles() {
     return css`
       :host {
@@ -224,9 +210,10 @@ export class WebAwesomeSemanticSearch extends LitElement {
       }
     `;
   }
-
   constructor() {
     super();
+    console.log('wa-semantic-search constructor called');
+    
     this.query = '';
     this.searchType = 'semantic';
     this.entityType = 'all';
@@ -247,7 +234,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
     // Mock data for demo
     this._loadMockData();
   }
-
   _loadMockData() {
     this.availableEntityTypes = [
       { value: 'all', label: 'All Entities' },
@@ -315,56 +301,62 @@ export class WebAwesomeSemanticSearch extends LitElement {
       }
     };
   }
-
   connectedCallback() {
     super.connectedCallback();
+    console.log('wa-semantic-search connected to DOM');
     // In a real app, you might fetch additional data from the server
   }
-
+  
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    console.log('wa-semantic-search disconnected from DOM');
+  }
+  
+  firstUpdated(changedProperties) {
+    super.firstUpdated(changedProperties);
+    console.log('wa-semantic-search first updated, shadow DOM initialized');
+  }
+  
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    if (changedProperties.size > 0) {
+      console.log('wa-semantic-search properties updated:', 
+        [...changedProperties.keys()].map(key => key.toString()).join(', '));
+    }
+  }
   handleQueryChange(e) {
     this.query = e.target.value;
   }
-
   handleKeywordQueryChange(e) {
     this.keywordQuery = e.target.value;
   }
-
   handleEntityTypeChange(e) {
     this.entityType = e.target.value;
   }
-
   handleSearchTypeChange(e) {
     this.searchType = e.target.value;
   }
-
   handleSimilarityThresholdChange(e) {
     this.similarityThreshold = parseFloat(e.target.value);
   }
-
   handleMaxResultsChange(e) {
     this.maxResults = parseInt(e.target.value, 10);
   }
-
   handleHybridSearchChange(e) {
     this.hybridSearch = e.target.checked;
   }
-
   handleIncludeMetadataChange(e) {
     this.includeMetadata = e.target.checked;
   }
-
   handleTabChange(e) {
     this.activeTab = e.detail.value;
   }
-
   selectItem(item) {
     this.selectedItem = item;
   }
-
   closeDetail() {
     this.selectedItem = null;
   }
-
   executeSearch() {
     if (!this.query) {
       this._showNotification('Please enter a search query', 'warning');
@@ -404,7 +396,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       }
     }, 1500);
   }
-
   _generateMockResults() {
     // Generate different mock results based on the entity type and search type
     let results = [];
@@ -540,7 +531,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
     
     return results;
   }
-
   executeHistorySearch(search) {
     this.query = search.query;
     this.entityType = search.entityType;
@@ -548,7 +538,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
     
     this.executeSearch();
   }
-
   buildIndexForEntity(entityType) {
     this.loading = true;
     
@@ -567,7 +556,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       this._showNotification(`Vector index for ${entityType} rebuilt successfully`, 'success');
     }, 2000);
   }
-
   _showNotification(message, type = 'info') {
     // Create and show a notification
     const alertEl = document.createElement('wa-alert');
@@ -583,7 +571,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       document.body.removeChild(alertEl);
     });
   }
-
   formatRelativeTime(dateString) {
     if (!dateString) return '';
     
@@ -607,12 +594,10 @@ export class WebAwesomeSemanticSearch extends LitElement {
       return new Date(dateString).toLocaleDateString();
     }
   }
-
   getEntityTypeLabel(value) {
     const entity = this.availableEntityTypes.find(e => e.value === value);
     return entity ? entity.label : value;
   }
-
   renderResultDetail() {
     if (!this.selectedItem) return html``;
     
@@ -728,7 +713,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       </div>
     `;
   }
-
   renderSearchTab() {
     return html`
       <div class="search-form">
@@ -926,7 +910,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       ${this.selectedItem ? this.renderResultDetail() : ''}
     `;
   }
-
   renderStatsTab() {
     return html`
       <div style="margin-top: 24px;">
@@ -1045,7 +1028,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       </div>
     `;
   }
-
   renderSettingsTab() {
     return html`
       <div style="margin-top: 24px;">
@@ -1185,7 +1167,6 @@ export class WebAwesomeSemanticSearch extends LitElement {
       </div>
     `;
   }
-
   render() {
     return html`
       <div class="search-container">
@@ -1224,5 +1205,10 @@ export class WebAwesomeSemanticSearch extends LitElement {
     `;
   }
 }
-
-customElements.define('wa-semantic-search', WebAwesomeSemanticSearch);
+// Define the custom element if not already registered
+if (!customElements.get('wa-semantic-search')) {
+  customElements.define('wa-semantic-search', WebAwesomeSemanticSearch);
+  console.log('wa-semantic-search component registered');
+} else {
+  console.log('wa-semantic-search component already registered');
+}

@@ -6,13 +6,11 @@ import {
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKDialog extends LitElement {
   static properties = {
     formUrl: { type: Object },
     open: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -26,17 +24,14 @@ export class OKDialog extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
   }
-
   render() {
     if (this.open) {
       return html` ${until(this._render(), html``)} `;
     }
   }
-
   // Render the UI as a function of component state
   async _render() {
     const schema = await getData(this.formUrl);
@@ -52,5 +47,4 @@ export class OKDialog extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-dialog", OKDialog);

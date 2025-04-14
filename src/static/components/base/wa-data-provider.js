@@ -1,5 +1,4 @@
-import { LitElement, html } from 'lit';
-
+import { LitElement, html } from 'https://cdn.jsdelivr.net/npm/lit@2.8.0/index.js';
 /**
  * @element wa-data-provider
  * @description Generic data provider component for querying and managing entity data
@@ -34,7 +33,6 @@ export class WebAwesomeDataProvider extends LitElement {
       cacheTime: { type: Number }, // milliseconds
     };
   }
-
   constructor() {
     super();
     this.baseUrl = '';
@@ -53,7 +51,6 @@ export class WebAwesomeDataProvider extends LitElement {
     this._cache = {};
     this._lastFetchTime = null;
   }
-
   /**
    * Fetch data based on current configuration
    * @returns {Promise<Object>} Promise resolving to the fetched data
@@ -65,7 +62,6 @@ export class WebAwesomeDataProvider extends LitElement {
       return this.fetchList();
     }
   }
-
   /**
    * Fetch a list of entities based on current filter, sort, and pagination
    * @returns {Promise<Array>} Promise resolving to list of entities
@@ -145,7 +141,6 @@ export class WebAwesomeDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Fetch a single entity by ID
    * @returns {Promise<Object>} Promise resolving to single entity
@@ -202,7 +197,6 @@ export class WebAwesomeDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Create a new entity
    * @param {Object} entity - Entity data to create
@@ -249,7 +243,6 @@ export class WebAwesomeDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Update an existing entity
    * @param {string} id - Entity ID to update
@@ -297,7 +290,6 @@ export class WebAwesomeDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Delete an entity
    * @param {string} id - Entity ID to delete
@@ -335,7 +327,6 @@ export class WebAwesomeDataProvider extends LitElement {
       this.loading = false;
     }
   }
-
   /**
    * Set filter criteria and refresh data
    * @param {Object} filter - Filter criteria
@@ -345,7 +336,6 @@ export class WebAwesomeDataProvider extends LitElement {
     this.filter = filter;
     return this.fetchData();
   }
-
   /**
    * Set sort order and refresh data
    * @param {Object} sort - Sort configuration
@@ -355,7 +345,6 @@ export class WebAwesomeDataProvider extends LitElement {
     this.sort = sort;
     return this.fetchData();
   }
-
   /**
    * Set pagination configuration and refresh data
    * @param {Object} pagination - Pagination configuration
@@ -365,7 +354,6 @@ export class WebAwesomeDataProvider extends LitElement {
     this.pagination = pagination;
     return this.fetchData();
   }
-
   /**
    * Clear cache and force-refresh data
    * @returns {Promise<Object>} Promise resolving to fetched data
@@ -375,7 +363,6 @@ export class WebAwesomeDataProvider extends LitElement {
     this._lastFetchTime = null;
     return this.fetchData();
   }
-
   /**
    * Generate a cache key based on current state
    * @returns {string} Cache key
@@ -389,7 +376,6 @@ export class WebAwesomeDataProvider extends LitElement {
       JSON.stringify(this.pagination)
     ].join('_');
   }
-
   /**
    * Empty render method as this is a non-UI component
    */
@@ -397,5 +383,4 @@ export class WebAwesomeDataProvider extends LitElement {
     return html`<!-- No UI, this is a data provider component -->`;
   }
 }
-
 customElements.define('wa-data-provider', WebAwesomeDataProvider);

@@ -5,14 +5,12 @@ import {
   until,
   nothing,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
-
 export class OKListMenu extends LitElement {
   static properties = {
     listTitle: { type: String },
     pagination: { type: Object },
     formUrl: { type: Object },
   };
-
   static styles = [
     css`
       :host {
@@ -31,7 +29,6 @@ export class OKListMenu extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.drawerTab = "Sort Table";
@@ -40,14 +37,12 @@ export class OKListMenu extends LitElement {
       this.dataUrl.searchParams.set("page", e.detail.page);
       this.requestUpdate();
     });
-
     this.addEventListener("ok-limit-change", (e) => {
       this.dataUrl.searchParams.set("limit", e.detail.limit);
       this.dataUrl.searchParams.set("page", 1);
       this.requestUpdate();
     });
   }
-
   _openDrawer(e) {
     let okSelectListMenuDrawerTab = new CustomEvent(
       "ok-select-list-menu-drawer-tab",
@@ -59,11 +54,9 @@ export class OKListMenu extends LitElement {
     );
     this.dispatchEvent(okSelectListMenuDrawerTab);
   }
-
   _openDialog(e) {
     this.renderRoot.querySelector("ok-dialog").open = true;
   }
-
   render() {
     return html`
       <div class="menu">
@@ -120,5 +113,4 @@ export class OKListMenu extends LitElement {
     `;
   }
 }
-
 customElements.define("ok-list-menu", OKListMenu);

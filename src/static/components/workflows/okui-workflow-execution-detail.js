@@ -1401,6 +1401,5 @@ class OkuiWorkflowExecutionDetail extends HTMLElement {
     }
   }
 }
-
 // Define the new element
 customElements.define('okui-workflow-execution-detail', OkuiWorkflowExecutionDetail);

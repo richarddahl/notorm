@@ -5,13 +5,11 @@ import {
   until,
 } from "https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js";
 import { getData } from "/static/assets/scripts/apiData.js";
-
 export class OKFilterTileDetail extends LitElement {
   static properties = {
     filterUrl: { type: String },
     open: { type: Boolean },
   };
-
   static styles = [
     css`
       :host {
@@ -28,12 +26,10 @@ export class OKFilterTileDetail extends LitElement {
       }
     `,
   ];
-
   constructor() {
     super();
     this.open = false;
   }
-
   _mapFilter(filter) {
     if (filter.children.length === 0) {
       return html`
@@ -41,7 +37,6 @@ export class OKFilterTileDetail extends LitElement {
       `;
     }
   }
-
   render() {
     if (this.open) {
       return html`
@@ -54,7 +49,6 @@ export class OKFilterTileDetail extends LitElement {
       return html`NO DETAIL YET`;
     }
   }
-
   async _render() {
     const filter = await getData(`${this.filterUrl}`);
     return html`
