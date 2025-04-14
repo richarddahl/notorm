@@ -76,6 +76,10 @@ When building uno, also review the best modern, well supported, mature python li
 Use the centralized database access utilities for database connections and sessions
 Use the utilities defined within the library whenever possible.
 
+## Prefer decimal.Decimal over float
+
+When needing to store numerical data that is not a whole number, use decimal.Decimal not float.
+
 ## Docker-First Approach
 
 This project uses a Docker-first approach for all database interactions. We never use local PostgreSQL installations for development, testing, or deployment. See DOCKER_FIRST.md for details.

@@ -653,6 +653,12 @@ def _create_tests(
 
 
 # Command-line interface
+try:
+    import typer
+    TYPER_AVAILABLE = True
+except ImportError:
+    TYPER_AVAILABLE = False
+
 if TYPER_AVAILABLE:
     scaffold_app = typer.Typer(help="Scaffold Uno projects and features")
     

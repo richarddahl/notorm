@@ -38,6 +38,10 @@ if TYPER_AVAILABLE:
         add_completion=True,
     )
     
+    def setup_debugger_command():
+        """Setup function for the debugger command."""
+        return debug_app
+    
     @debug_app.command("setup")
     def setup_debug_command(
         app_path: Annotated[str, typer.Argument(help="Path to the FastAPI application module (e.g., 'myapp.main:app')")],

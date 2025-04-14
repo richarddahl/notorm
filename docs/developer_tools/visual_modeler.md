@@ -8,7 +8,7 @@ The Uno Visual Data Modeler is a powerful tool for designing and generating doma
 
 Before using the visual modeler, ensure you have the following installed:
 
-- Python 3.10+
+- Python 3.12+
 - Uno framework
 - FastAPI and Uvicorn (install with `pip install fastapi uvicorn`)
 - Web browser with JavaScript enabled
@@ -18,7 +18,11 @@ Before using the visual modeler, ensure you have the following installed:
 To start the visual data modeler, run:
 
 ```bash
+# Using the CLI directly
 python -m uno.devtools.cli.main modeler start
+
+# Or use the convenience script
+./scripts/launch_modeler.sh
 ```
 
 This will start the modeler server and automatically open your default web browser. By default, the server runs at http://localhost:8765.
@@ -51,39 +55,53 @@ The visual modeler interface consists of several key components:
 To create a new entity:
 
 1. Click the "Add Entity" button in the toolbar
-2. A new entity will appear on the canvas with default fields
-3. Select the entity to edit its properties
-4. Update the entity name in the properties panel
-5. Add or remove fields as needed
+2. Enter a name for your entity in the "New Entity" form
+3. Click "Create" to add the entity to the canvas
+4. The entity appears with default fields (id, created_at, updated_at)
+5. Select the entity to edit its properties in the sidebar
 
 ### Defining Fields
 
 Each entity can have multiple fields with different types. To add a field:
 
-1. Select an entity
-2. In the properties panel, enter a field name
-3. Select a field type from the dropdown (string, integer, float, etc.)
-4. Click "Add Field"
+1. Select an entity to display its details in the sidebar
+2. Click the "Add Field" button in the sidebar
+3. Enter a field name
+4. Select a field type from the dropdown (string, integer, float, boolean, datetime, etc.)
+5. Set additional options like primary key and nullable attributes
+6. Click "Add" to create the field
 
-Fields can be removed by clicking the remove button next to each field in the properties panel.
+Fields can be managed in the entity details panel:
+- View all fields in a list
+- Delete fields using the delete button (primary key fields cannot be deleted)
+- See field types and attributes at a glance
 
-### Creating Relationships
+### Working with Relationships
 
-To create a relationship between entities:
+The current version of the modeler displays relationships between entities. Future updates will include enhanced functionality for relationship creation and management.
 
-1. Click the "Add Relationship" button in the toolbar
-2. A new relationship will be created between the first two entities
-3. Select the relationship to edit its properties
-4. Change the relationship type (one-to-one, one-to-many, many-to-many)
+Entities can be positioned by dragging them around the canvas:
+1. Click and hold on an entity header to move it
+2. Release to place the entity in its new position
+3. Entities snap to a grid for clean alignment
+
+### Managing Your Model
+
+The modeler provides several model management features:
+
+1. **Moving Entities**: Drag entities on the canvas to organize your model
+2. **Selecting Entities**: Click on an entity to edit its properties
+3. **Saving Models**: Click "Save Model" to download your model as a JSON file
+4. **Model Persistence**: Your model is automatically saved in your browser session
 
 ### Generating Code
 
 Once you've created your model, you can generate code:
 
 1. Click the "Generate Code" button in the toolbar
-2. The interface will switch to the code view
-3. Browse the generated code for entities, repositories, and services
-4. Copy the code using the "Copy Code" button
+2. The system processes your model and generates appropriate code
+3. View the code in a dialog or copy it to your clipboard
+4. Generated code includes entities, repositories, and services
 
 The generated code follows Uno's architectural patterns and includes:
 
@@ -158,8 +176,18 @@ When using the visual modeler, follow these best practices:
 
 - **Server Won't Start**: Ensure required dependencies are installed and no other service is using the same port
 - **Entities Not Displaying**: Try refreshing the browser or restarting the server
-- **Code Generation Fails**: Check for circular dependencies in your relationships
+- **Model Not Saving**: Ensure you have browser local storage enabled
 - **Browser Compatibility**: The modeler works best with modern browsers (Chrome, Firefox, Edge)
+- **Page Not Loading**: Check console for any JavaScript errors
+- **Missing Icons/Styles**: Ensure your network can access the static assets
+
+### Runtime Dependencies
+
+The visual modeler depends on:
+- FastAPI
+- Uvicorn
+- Jinja2 (for HTML templates)
+- Web browser with JavaScript ES6+ support
 
 ### Getting Help
 
@@ -167,7 +195,9 @@ If you encounter issues:
 
 1. Check the server console for error messages
 2. Use the `--help` option for command usage information
-3. Refer to the Uno documentation for more detailed information
+3. Inspect the browser console for client-side errors
+4. Check that port 8765 (or your configured port) is available
+5. Refer to the Uno documentation for more detailed information
 
 ## Examples
 

@@ -26,6 +26,51 @@ from uno.core.protocols.filter_protocols import UnoFilterProtocol
 
 # Define core protocols directly to avoid circular imports
 
+@runtime_checkable
+class ConfigProvider(Protocol):
+    """
+    Protocol for configuration providers.
+    
+    Configuration providers are responsible for managing application 
+    settings and configuration values.
+    """
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get a configuration value.
+        
+        Args:
+            key: The configuration key
+            default: Default value if the key is not found
+            
+        Returns:
+            The configuration value
+        """
+        ...
+    
+    def set(self, key: str, value: Any) -> None:
+        """
+        Set a configuration value.
+        
+        Args:
+            key: The configuration key
+            value: The value to set
+        """
+        ...
+    
+    def load(self, path: str) -> None:
+        """
+        Load configuration from a path.
+        
+        Args:
+            path: The path to load configuration from
+        """
+        ...
+    
+    def reload(self) -> None:
+        """Reload the configuration."""
+        ...
+
 
 # Domain model protocols
 @runtime_checkable

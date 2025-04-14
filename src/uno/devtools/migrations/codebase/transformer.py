@@ -7,8 +7,10 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Union, Pattern, Callab
 import os
 import re
 import ast
-import astor
 import logging
+
+# Use our local astor implementation
+from uno.devtools.migrations.codebase import astor
 from pathlib import Path
 import importlib
 import importlib.util

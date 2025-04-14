@@ -523,3 +523,25 @@ class ConfigurationOptions:
             args[field_name] = value
         
         return cls(**args)
+
+
+# Global configuration service instance
+_config_service: Optional[ConfigurationService] = None
+
+
+def get_settings() -> ConfigurationService:
+    """
+    Get the global configuration service instance.
+    
+    Returns:
+        The configuration service
+    """
+    global _config_service
+    
+    if _config_service is None:
+        # Create default configuration service
+        app_name = os.environ.get('APP_NAME', 'uno')
+        env_var_prefix = os.environ.get('ENV_VAR_PREFIX', 'UNO')
+        _config_service = ConfigurationService.create_default(app_name, env_var_prefix)
+    
+    return _config_service

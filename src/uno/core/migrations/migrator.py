@@ -125,6 +125,23 @@ class MigrationContext:
 migration_registry: Dict[str, Migration] = {}
 
 
+def get_revision_id() -> str:
+    """
+    Generate a unique revision ID for migrations.
+    
+    Returns:
+        A unique string identifier for a migration
+    """
+    import uuid
+    import time
+    
+    # Format: timestamp_random
+    timestamp = int(time.time())
+    random_part = str(uuid.uuid4())[:8]
+    
+    return f"{timestamp}_{random_part}"
+
+
 def register_migration(migration: Migration) -> None:
     """
     Register a migration with the global registry.

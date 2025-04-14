@@ -55,15 +55,24 @@ See [Scaffolding Guide](developer_tools/scaffolding.md) for complete documentati
 
 ## Visual Data Modeling
 
-The visual data modeling tool provides an interactive interface for designing entity models:
+The visual data modeling tool provides an interactive browser-based interface for designing entity models:
 
 ```bash
-# Start the visual modeler
+# Start the visual modeler using the CLI
 python -m uno.devtools.cli.main modeler start
 
-# Analyze an existing project
+# Or use the convenience script
+./scripts/launch_modeler.sh
+
+# Analyze an existing project and extract its model
 python -m uno.devtools.cli.main modeler analyze /path/to/project
 ```
+
+The modeler allows you to:
+- Create entities with fields and proper data types
+- Position entities in a visual canvas
+- Save your model as JSON
+- Generate code for entities, repositories, and services
 
 See [Visual Modeler Guide](developer_tools/visual_modeler.md) for complete documentation.
 
@@ -394,7 +403,9 @@ You can extend the developer tooling system with custom:
 1. **High Memory Usage**: When using memory profiling, be aware that it can increase memory usage significantly. Use selectively.
 2. **Performance Impact**: Debugging and profiling tools add overhead. Use selectively in performance-sensitive code.
 3. **Generated Code Conflicts**: Generated code might conflict with existing files. Use the `--force` flag to overwrite, or specify a different output path.
-4. **Visual Modeler Issues**: If the visual modeler doesn't start, check for port conflicts or missing dependencies (FastAPI, Uvicorn).
+4. **Visual Modeler Issues**: If the visual modeler doesn't start, check for port conflicts or missing dependencies (FastAPI, Uvicorn, Jinja2).
+5. **JavaScript Requirements**: The visual modeler requires a modern browser with JavaScript ES6+ support.
+6. **Network Access**: Some tools may require network access for features like API documentation fetching or template updates.
 
 ### Getting Help
 

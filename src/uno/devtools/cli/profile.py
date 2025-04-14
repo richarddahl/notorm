@@ -37,6 +37,10 @@ if TYPER_AVAILABLE:
         add_completion=True,
     )
     
+    def profile_command():
+        """Setup function for the profile command."""
+        return profile_app
+    
     @profile_app.command("dashboard")
     def start_dashboard_command(
         host: Annotated[str, typer.Option("--host", "-h", help="Host to bind to")] = "localhost",
