@@ -1,1 +1,0 @@
-"""Templates for Uno applications."""
