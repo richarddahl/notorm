@@ -15,7 +15,16 @@ from functools import lru_cache
 
 from pydantic import BaseModel
 
-from uno.errors import UnoRegistryError
+from uno.registry_errors import (
+    RegistryError,
+    RegistryDuplicateError,
+    RegistryClassNotFoundError,
+    RegistrySchemaNotFoundError,
+    register_registry_errors
+)
+
+# Register registry errors
+register_registry_errors()
 
 T = TypeVar("T", bound="BaseModel")
 

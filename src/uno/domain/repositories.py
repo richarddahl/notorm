@@ -14,7 +14,7 @@ from sqlalchemy import select, insert, update, delete
 
 from uno.domain.model import Entity, AggregateRoot
 from uno.domain.events import DomainEvent
-from uno.domain.exceptions import EntityNotFoundError, ConcurrencyError
+from uno.core.errors.base import EntityNotFoundError, ConcurrencyError
 
 
 T = TypeVar('T', bound=Entity)

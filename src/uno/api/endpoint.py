@@ -20,7 +20,7 @@ from fastapi import (
 )
 
 from uno.schema.schema import UnoSchema
-from uno.errors import UnoRegistryError
+from uno.registry_errors import RegistryClassNotFoundError
 from uno.settings import uno_settings
 
 
@@ -77,20 +77,135 @@ class ListRouter(UnoRouter):
 
     @computed_field
     def description(self) -> str:
-        return f"Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}View__ schema."
+        return f"""Returns a list of {self.model.display_name_plural} with the __{self.model.__name__.title()}View__ schema.
+        
+        Supports the following query parameters:
+        - `stream`: Set to `true` to enable streaming response for large result sets
+        - `fields`: Comma-separated list of fields to include in the response (partial response)
+        - `page`: Page number for pagination (starting from 1)
+        - `page_size`: Number of items per page (default: 50, max: 500)
+        """
 
     def endpoint_factory(self) -> None:
+        from fastapi.responses import StreamingResponse
+        from fastapi import Request, Header, Query as QueryParam
+        from typing import Optional, List
+        import json
+        import asyncio
+        from uno.database.streaming import stream_query, StreamingMode
+        
         filter_params = self.model.create_filter_params()
 
         async def endpoint(
             self,
+            request: Request,
             filter_params: Annotated[filter_params, Query()] = None,
+            fields: Optional[str] = QueryParam(None, description="Comma-separated list of fields to include in the response"),
+            stream: bool = QueryParam(False, description="Enable streaming response for large result sets"),
+            page: int = QueryParam(1, description="Page number (starting from 1)", ge=1),
+            page_size: int = QueryParam(50, description="Number of items per page", ge=1, le=500),
+            accept: Optional[str] = Header(None)
         ) -> list[BaseModel]:
-
+            # Parse fields for partial response
+            selected_fields = fields.split(',') if fields else None
+            
+            # Determine if client supports streaming (based on accept header)
+            supports_streaming = stream and (
+                accept and ('application/x-ndjson' in accept or 'text/event-stream' in accept)
+            )
+            
             # Validate the filters
             filters = self.model.validate_filter_params(filter_params)
-            results = await self.model.filter(filters=filters)
-            return results
+            
+            # If streaming is requested and supported
+            if supports_streaming:
+                # Get raw query from model's filter method
+                raw_query = await self.model.get_filter_query(filters=filters)
+                
+                # Define the transformation to include only selected fields
+                def transform_entity(entity):
+                    # Convert entity to dict
+                    if hasattr(entity, "to_dict"):
+                        entity_dict = entity.to_dict()
+                    else:
+                        entity_dict = entity
+                        
+                    # Apply field selection if specified
+                    if selected_fields:
+                        return {k: v for k, v in entity_dict.items() if k in selected_fields}
+                    return entity_dict
+                
+                # Define the streaming function
+                async def stream_results():
+                    # Initial response with content type header
+                    yield '{"type":"meta","total_count":null,"streaming":true}\n'
+                    
+                    count = 0
+                    # Stream entities in chunks using database streaming
+                    async with stream_query(
+                        query=raw_query,
+                        mode=StreamingMode.CURSOR,
+                        chunk_size=100,  # Reasonable chunk size for streaming
+                        transform_fn=None  # We'll transform after fetching
+                    ) as stream:
+                        async for entity in stream:
+                            # Transform entity to include only selected fields
+                            entity_dict = transform_entity(entity)
+                            # Stream as newline-delimited JSON
+                            yield f"{json.dumps(entity_dict)}\n"
+                            count += 1
+                            
+                            # Add progress updates every 1000 items
+                            if count % 1000 == 0:
+                                yield f'{{"type":"progress","count":{count}}}\n'
+                    
+                    # Final count
+                    yield f'{{"type":"end","total_count":{count}}}\n'
+                
+                # Return streaming response
+                return StreamingResponse(
+                    stream_results(),
+                    media_type="application/x-ndjson"
+                )
+            
+            # Standard paginated response
+            else:
+                # Get results with pagination
+                results = await self.model.filter(
+                    filters=filters, 
+                    page=page, 
+                    page_size=page_size
+                )
+                
+                # If field selection is requested, filter the results
+                if selected_fields:
+                    # Process entities to include only selected fields
+                    if hasattr(results, "items"):  # Paginated response
+                        filtered_items = []
+                        for item in results.items:
+                            if hasattr(item, "to_dict"):
+                                item_dict = item.to_dict()
+                                filtered_item = {k: v for k, v in item_dict.items() if k in selected_fields}
+                                filtered_items.append(filtered_item)
+                            else:
+                                filtered_items.append(item)
+                        
+                        # Replace items with filtered items
+                        results.items = filtered_items
+                    elif isinstance(results, list):  # List response
+                        filtered_results = []
+                        for item in results:
+                            if hasattr(item, "to_dict"):
+                                item_dict = item.to_dict()
+                                filtered_item = {k: v for k, v in item_dict.items() if k in selected_fields}
+                                filtered_results.append(filtered_item)
+                            else:
+                                filtered_results.append(item)
+                        
+                        # Replace results with filtered results
+                        results = filtered_results
+                
+                return results
 
         endpoint.__annotations__["return"] = list[self.response_model]
         setattr(self.__class__, "endpoint", endpoint)
@@ -173,14 +288,40 @@ class SelectRouter(UnoRouter):
 
     @computed_field
     def description(self) -> str:
-        return f"Select a {self.model.display_name}, by its ID. Returns the __{self.model.__name__.title()}Select__ schema."
+        return f"""Select a {self.model.display_name}, by its ID. Returns the __{self.model.__name__.title()}Select__ schema.
+        
+        Supports the following query parameters:
+        - `fields`: Comma-separated list of fields to include in the response (partial response)
+        """
 
     def endpoint_factory(self):
+        from fastapi import Query as QueryParam
+        from typing import Optional
 
-        async def endpoint(self, id: str) -> BaseModel:
+        async def endpoint(
+            self, 
+            id: str,
+            fields: Optional[str] = QueryParam(None, description="Comma-separated list of fields to include in the response")
+        ) -> BaseModel:
+            # Get the entity
             result = await self.model.get(id=id)
             if result is None:
                 raise HTTPException(status_code=404, detail="Object not found")
+                
+            # If field selection is requested, filter the response
+            if fields:
+                selected_fields = fields.split(',')
+                
+                # Apply field selection
+                if hasattr(result, "to_dict"):
+                    entity_dict = result.to_dict()
+                    # Filter to include only selected fields
+                    filtered_entity = {k: v for k, v in entity_dict.items() if k in selected_fields}
+                    
+                    # Return filtered entity
+                    return filtered_entity
+                    
+            # Return full entity
             return result
 
         endpoint.__annotations__["return"] = self.response_model
@@ -293,9 +434,8 @@ class UnoEndpoint(BaseModel):
         if cls.__name__ not in cls.registry:
             cls.registry.update({cls.__name__: cls})
         else:
-            raise UnoRegistryError(
-                f"An Endpoint class with the name {cls.__name__} already exists in the registry.",
-                "DUPLICATE_ENDPOINT",
+            raise RegistryClassNotFoundError(
+                f"An Endpoint class with the name {cls.__name__} already exists in the registry."
             )
 
 

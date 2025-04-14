@@ -116,10 +116,42 @@ class Success(Generic[T]):
         # No-op for Success
         return self
     
-    # Modern API uses .value property directly instead of unwrap() method
+    # Backward compatibility methods for tests
+    def unwrap(self) -> T:
+        """
+        Unwrap a successful result to get its value.
+        
+        Returns:
+            The value of the successful result
+            
+        Raises:
+            RuntimeError: If the result is a failure
+        """
+        return self.value
     
-    # Modern API uses .value property directly with fallback patterns
-    # instead of these unwrap_* methods
+    def unwrap_or(self, default: T) -> T:
+        """
+        Unwrap a result, returning a default value if it's a failure.
+        
+        Args:
+            default: The default value to return if the result is a failure
+            
+        Returns:
+            The value of the successful result, or the default value
+        """
+        return self.value
+    
+    def unwrap_or_else(self, func: Callable[[Exception], T]) -> T:
+        """
+        Unwrap a result, computing a default value from the error if it's a failure.
+        
+        Args:
+            func: The function to compute the default value from the error
+            
+        Returns:
+            The value of the successful result, or the computed default value
+        """
+        return self.value
     
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -234,8 +266,39 @@ class Failure(Generic[T]):
             pass
         return self
     
-    # Modern API uses .error property and exception handling
-    # rather than these unwrap_* methods
+    # Backward compatibility methods for tests
+    def unwrap(self) -> T:
+        """
+        Unwrap a successful result to get its value.
+        
+        Raises:
+            RuntimeError: Since this is a failure
+        """
+        raise RuntimeError(f"Cannot unwrap a Failure: {self.error}")
+    
+    def unwrap_or(self, default: T) -> T:
+        """
+        Unwrap a result, returning a default value if it's a failure.
+        
+        Args:
+            default: The default value to return if the result is a failure
+            
+        Returns:
+            The default value since this is a failure
+        """
+        return default
+    
+    def unwrap_or_else(self, func: Callable[[Exception], T]) -> T:
+        """
+        Unwrap a result, computing a default value from the error if it's a failure.
+        
+        Args:
+            func: The function to compute the default value from the error
+            
+        Returns:
+            The computed default value since this is a failure
+        """
+        return func(self.error)
     
     def to_dict(self) -> Dict[str, Any]:
         """

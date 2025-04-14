@@ -10,7 +10,7 @@ import inspect
 import logging
 import uuid
 from abc import abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import (
     Any, Dict, List, Optional, Type, TypeVar, Generic, Protocol, Union,
@@ -58,7 +58,7 @@ class BaseCommand[T_Result](Command[T_Result]):
         """
         self.command_id = command_id or str(uuid.uuid4())
         self.command_type = self.__class__.__name__
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
     
     def __str__(self) -> str:
         """String representation of the command."""
@@ -89,7 +89,7 @@ class BaseQuery[T_Result](Query[T_Result]):
         """
         self.query_id = query_id or str(uuid.uuid4())
         self.query_type = self.__class__.__name__
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(timezone.utc)
     
     def __str__(self) -> str:
         """String representation of the query."""
@@ -132,7 +132,7 @@ class CommandBus:
         if command_type in self._handlers:
             raise UnoError(
                 message=f"Command handler already registered for {command_type.__name__}",
-                code="COMMAND_HANDLER_ALREADY_REGISTERED",
+                error_code="COMMAND_HANDLER_ALREADY_REGISTERED",
                 category=ErrorCategory.CONFLICT
             )
         
@@ -170,7 +170,7 @@ class CommandBus:
         handler = self._get_handler_for_command(command)
         
         # Execute handler with error context
-        with with_error_context(
+        async with with_async_error_context(
             command_type=command_type.__name__, 
             command_id=command.command_id
         ):
@@ -182,7 +182,7 @@ class CommandBus:
                 if not isinstance(e, UnoError):
                     raise UnoError(
                         message=f"Error executing command {command_type.__name__}: {str(e)}",
-                        code="COMMAND_EXECUTION_ERROR",
+                        error_code="COMMAND_EXECUTION_ERROR",
                         category=ErrorCategory.UNEXPECTED,
                         cause=e
                     )
@@ -215,7 +215,7 @@ class CommandBus:
         # No handler found
         raise UnoError(
             message=f"No handler registered for command {command_type.__name__}",
-            code="COMMAND_HANDLER_NOT_FOUND",
+            error_code="COMMAND_HANDLER_NOT_FOUND",
             category=ErrorCategory.NOT_FOUND
         )
 
@@ -256,7 +256,7 @@ class QueryBus:
         if query_type in self._handlers:
             raise UnoError(
                 message=f"Query handler already registered for {query_type.__name__}",
-                code="QUERY_HANDLER_ALREADY_REGISTERED",
+                error_code="QUERY_HANDLER_ALREADY_REGISTERED",
                 category=ErrorCategory.CONFLICT
             )
         
@@ -294,7 +294,7 @@ class QueryBus:
         handler = self._get_handler_for_query(query)
         
         # Execute handler with error context
-        with with_error_context(
+        async with with_async_error_context(
             query_type=query_type.__name__, 
             query_id=query.query_id
         ):
@@ -306,7 +306,7 @@ class QueryBus:
                 if not isinstance(e, UnoError):
                     raise UnoError(
                         message=f"Error executing query {query_type.__name__}: {str(e)}",
-                        code="QUERY_EXECUTION_ERROR",
+                        error_code="QUERY_EXECUTION_ERROR",
                         category=ErrorCategory.UNEXPECTED,
                         cause=e
                     )
@@ -339,7 +339,7 @@ class QueryBus:
         # No handler found
         raise UnoError(
             message=f"No handler registered for query {query_type.__name__}",
-            code="QUERY_HANDLER_NOT_FOUND",
+            error_code="QUERY_HANDLER_NOT_FOUND",
             category=ErrorCategory.NOT_FOUND
         )
 
@@ -747,7 +747,7 @@ def get_mediator() -> Mediator:
     if _mediator is None:
         raise UnoError(
             message="Mediator is not initialized",
-            code="MEDIATOR_NOT_INITIALIZED",
+            error_code="MEDIATOR_NOT_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
         )
     return _mediator
@@ -773,7 +773,7 @@ def initialize_mediator(
     if _mediator is not None:
         raise UnoError(
             message="Mediator is already initialized",
-            code="MEDIATOR_ALREADY_INITIALIZED",
+            error_code="MEDIATOR_ALREADY_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
         )
     

@@ -73,14 +73,14 @@ class ServiceRegistration(Generic[T]):
         if instance is not None and lifetime != ServiceLifetime.SINGLETON:
             raise UnoError(
                 message="Instance can only be provided for singleton services",
-                code="INVALID_SERVICE_REGISTRATION",
+                error_code="INVALID_SERVICE_REGISTRATION",
                 category=ErrorCategory.VALIDATION,
             )
         
         if factory is not None and implementation_type is not None and implementation_type != service_type:
             raise UnoError(
                 message="Cannot specify both a factory and an implementation type",
-                code="INVALID_SERVICE_REGISTRATION",
+                error_code="INVALID_SERVICE_REGISTRATION",
                 category=ErrorCategory.VALIDATION,
             )
 
@@ -178,7 +178,7 @@ class ServiceScopeImpl(ServiceScope):
         if self._disposed:
             raise UnoError(
                 message=f"Cannot resolve service {service_type.__name__} from a disposed scope",
-                code="SCOPE_DISPOSED",
+                error_code="SCOPE_DISPOSED",
                 category=ErrorCategory.UNEXPECTED,
             )
         
@@ -270,7 +270,7 @@ class DIContainer(ServiceProvider):
         self._initialized_services: Set[Type] = set()
         
         # Register the container itself
-        self.register_singleton(ServiceProvider, instance=self)
+        self.register_instance(ServiceProvider, self)
     
     def get_service(self, service_type: Type[T]) -> T:
         """
@@ -466,7 +466,7 @@ class DIContainer(ServiceProvider):
             if registration is None:
                 raise UnoError(
                     message=f"Service {service_type.__name__} is not registered",
-                    code="SERVICE_NOT_REGISTERED",
+                    error_code="SERVICE_NOT_REGISTERED",
                     category=ErrorCategory.UNEXPECTED,
                 )
             
@@ -545,7 +545,7 @@ class DIContainer(ServiceProvider):
                             if param.default is inspect.Parameter.empty:
                                 raise UnoError(
                                     message=f"Cannot resolve parameter '{name}' for {impl_type.__name__} without type hint",
-                                    code="MISSING_TYPE_HINT",
+                                    error_code="MISSING_TYPE_HINT",
                                     category=ErrorCategory.UNEXPECTED,
                                 )
                     
@@ -572,7 +572,7 @@ class DIContainer(ServiceProvider):
             if not isinstance(e, UnoError):
                 raise UnoError(
                     message=f"Failed to create instance of {registration.service_type.__name__}: {str(e)}",
-                    code="SERVICE_CREATION_FAILED",
+                    error_code="SERVICE_CREATION_FAILED",
                     category=ErrorCategory.UNEXPECTED,
                     cause=e
                 )
@@ -601,7 +601,7 @@ def get_container() -> DIContainer:
     if _container is None:
         raise UnoError(
             message="DI container is not initialized",
-            code="CONTAINER_NOT_INITIALIZED",
+            error_code="CONTAINER_NOT_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
         )
     return _container
@@ -621,7 +621,7 @@ def initialize_container(logger: Optional[logging.Logger] = None) -> None:
     if _container is not None:
         raise UnoError(
             message="DI container is already initialized",
-            code="CONTAINER_ALREADY_INITIALIZED",
+            error_code="CONTAINER_ALREADY_INITIALIZED",
             category=ErrorCategory.UNEXPECTED,
         )
     _container = DIContainer(logger)

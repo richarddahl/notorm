@@ -110,6 +110,36 @@ from uno.database.config import ConnectionConfig
 # Import DB manager
 from uno.database.db_manager import DBManager
 
+# Import error types
+from uno.database.errors import (
+    DatabaseErrorCode,
+    DatabaseConnectionError,
+    DatabaseConnectionTimeoutError,
+    DatabaseConnectionPoolExhaustedError,
+    DatabaseQueryError,
+    DatabaseQueryTimeoutError,
+    DatabaseQuerySyntaxError,
+    DatabaseTransactionError,
+    DatabaseTransactionRollbackError,
+    DatabaseTransactionConflictError,
+    DatabaseIntegrityError,
+    DatabaseUniqueViolationError,
+    DatabaseForeignKeyViolationError,
+    DatabaseResourceNotFoundError,
+    DatabaseResourceAlreadyExistsError,
+    DatabaseTableNotFoundError,
+    DatabaseColumnNotFoundError,
+    DatabaseSessionError,
+    DatabaseSessionExpiredError,
+    DatabaseConfigError,
+    DatabaseOperationalError,
+    DatabaseNotSupportedError,
+    register_database_errors,
+)
+
+# Register database errors
+register_database_errors()
+
 __all__ = [
     # Enhanced connection pool
     'ConnectionPoolConfig',
@@ -194,4 +224,28 @@ __all__ = [
     
     # DB Manager
     'DBManager',
+    
+    # Error types
+    'DatabaseErrorCode',
+    'DatabaseConnectionError',
+    'DatabaseConnectionTimeoutError',
+    'DatabaseConnectionPoolExhaustedError',
+    'DatabaseQueryError',
+    'DatabaseQueryTimeoutError',
+    'DatabaseQuerySyntaxError',
+    'DatabaseTransactionError',
+    'DatabaseTransactionRollbackError',
+    'DatabaseTransactionConflictError',
+    'DatabaseIntegrityError',
+    'DatabaseUniqueViolationError',
+    'DatabaseForeignKeyViolationError',
+    'DatabaseResourceNotFoundError',
+    'DatabaseResourceAlreadyExistsError',
+    'DatabaseTableNotFoundError',
+    'DatabaseColumnNotFoundError',
+    'DatabaseSessionError',
+    'DatabaseSessionExpiredError',
+    'DatabaseConfigError',
+    'DatabaseOperationalError',
+    'DatabaseNotSupportedError',
 ]

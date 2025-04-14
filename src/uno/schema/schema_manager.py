@@ -16,8 +16,16 @@ from pydantic import BaseModel, create_model, Field
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
-from uno.errors import UnoError
+from uno.schema.errors import (
+    SchemaErrorCode,
+    SchemaNotFoundError,
+    SchemaInvalidError,
+    SchemaFieldMissingError,
+    SchemaFieldTypeMismatchError,
+    SchemaConversionError
+)
 from uno.schema.schema import UnoSchema, UnoSchemaConfig, PaginatedList
+from uno.core.errors.base import UnoError
 
 
 # Type variables for improved type safety
@@ -275,3 +283,25 @@ class UnoSchemaManager:
                     base_schema = self.create_schema(base_schema_name, model)
         
         return base_schema
+
+
+# Global schema manager instance
+_schema_manager: Optional[UnoSchemaManager] = None
+
+
+def get_schema_manager() -> UnoSchemaManager:
+    """
+    Get the global schema manager instance.
+    
+    This function returns the global schema manager instance, creating it
+    if it doesn't exist yet.
+    
+    Returns:
+        The global schema manager instance
+    """
+    global _schema_manager
+    
+    if _schema_manager is None:
+        _schema_manager = UnoSchemaManager()
+        
+    return _schema_manager

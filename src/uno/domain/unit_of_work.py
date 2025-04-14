@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.domain.events import DomainEvent, EventBus, default_event_bus
 from uno.domain.repositories import Repository, AggregateRepository
-from uno.domain.exceptions import DomainError
+from uno.core.errors.base import UnoError
 
 
 T = TypeVar('T')
@@ -119,7 +119,7 @@ class UnitOfWork(ABC):
         except Exception as e:
             self.logger.error(f"Error in unit of work commit: {e}")
             await self.rollback()
-            raise DomainError(f"Failed to commit transaction: {str(e)}", "TRANSACTION_ERROR")
+            raise UnoError(message=f"Failed to commit transaction: {str(e)}", error_code="TRANSACTION_ERROR")
 
 
 class SqlAlchemyUnitOfWork(UnitOfWork):

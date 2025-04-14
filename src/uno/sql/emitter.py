@@ -17,7 +17,13 @@ from sqlalchemy.exc import SQLAlchemyError
 from uno.database.config import ConnectionConfig
 from uno.database.engine.sync import SyncEngineFactory, sync_connection
 from uno.settings import uno_settings
-from uno.errors import UnoError
+from uno.sql.errors import (
+    SQLErrorCode,
+    SQLEmitterError,
+    SQLExecutionError,
+    SQLStatementError,
+    SQLSyntaxError
+)
 
 from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.observers import SQLObserver, BaseObserver

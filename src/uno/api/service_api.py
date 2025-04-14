@@ -19,7 +19,7 @@ from uno.domain.application_services import (
 )
 from uno.domain.model import Entity, AggregateRoot
 from uno.domain.cqrs import CommandResult, QueryResult
-from uno.domain.exceptions import AuthorizationError, ValidationError
+from uno.core.errors.base import AuthorizationError, ValidationError
 
 
 # Type variables
@@ -31,13 +31,13 @@ AggregateT = TypeVar('AggregateT', bound=AggregateRoot)
 class ApiErrorCode(str, Enum):
     """API error codes."""
     
-    BAD_REQUEST = "BAD_REQUEST"
-    UNAUTHORIZED = "UNAUTHORIZED"
-    FORBIDDEN = "FORBIDDEN"
-    NOT_FOUND = "NOT_FOUND"
-    CONFLICT = "CONFLICT"
-    INTERNAL_ERROR = "INTERNAL_ERROR"
-    VALIDATION_ERROR = "VALIDATION_ERROR"
+    BAD_REQUEST = "API-0001"
+    UNAUTHORIZED = "API-0002"
+    FORBIDDEN = "API-0003"
+    NOT_FOUND = "API-0004"
+    CONFLICT = "API-0005"
+    INTERNAL_ERROR = "API-0006"
+    VALIDATION_ERROR = "API-0007"
 
 
 class ApiError(BaseModel):
@@ -214,7 +214,9 @@ class ApiEndpoint:
     
     def handle_result(
         self,
-        result: Union[CommandResult, QueryResult]
+        result: Union[CommandResult, QueryResult],
+        fields: Optional[List[str]] = None,
+        stream_response: bool = False
     ) -> Union[Response, Dict[str, Any]]:
         """
         Handle a command or query result.
@@ -223,6 +225,8 @@ class ApiEndpoint:
         
         Args:
             result: The command or query result
+            fields: Optional list of fields to include in the response (partial response)
+            stream_response: Whether to return a streaming response
             
         Returns:
             HTTP response or data
@@ -230,16 +234,64 @@ class ApiEndpoint:
         if result.is_success:
             # Return the output
             if hasattr(result, "output") and result.output is not None:
+                # Handle streaming response if requested and supported
+                if stream_response and isinstance(result.output, (list, tuple)) and hasattr(result.output, "__iter__"):
+                    from fastapi.responses import StreamingResponse
+                    import json
+                    
+                    async def stream_results():
+                        # Initial response with content type header
+                        yield '{"type":"meta","total_count":null,"streaming":true}\n'
+                        
+                        count = 0
+                        # Stream entities
+                        for item in result.output:
+                            # Convert item to dict if possible
+                            if hasattr(item, "to_dict"):
+                                item_dict = item.to_dict()
+                            else:
+                                item_dict = item
+                                
+                            # Apply field selection if specified
+                            if fields:
+                                item_dict = {k: v for k, v in item_dict.items() if k in fields}
+                                
+                            # Stream as newline-delimited JSON
+                            yield f"{json.dumps(item_dict)}\n"
+                            count += 1
+                            
+                            # Add progress updates every 1000 items
+                            if count % 1000 == 0:
+                                yield f'{{"type":"progress","count":{count}}}\n'
+                        
+                        # Final count
+                        yield f'{{"type":"end","total_count":{count}}}\n'
+                    
+                    # Return streaming response
+                    return StreamingResponse(
+                        stream_results(),
+                        media_type="application/x-ndjson"
+                    )
+                
                 # Convert output to dict if it's an entity
                 if isinstance(result.output, (Entity, AggregateRoot)) and hasattr(result.output, "to_dict"):
-                    return result.output.to_dict()
+                    entity_dict = result.output.to_dict()
+                    # Apply field selection if specified
+                    if fields:
+                        return {k: v for k, v in entity_dict.items() if k in fields}
+                    return entity_dict
+                
                 # Handle paginated results
                 elif hasattr(result.output, "items") and hasattr(result.output, "total"):
-                    # Convert entity items to dicts
+                    # Convert entity items to dicts with field selection
                     items = []
                     for item in result.output.items:
                         if hasattr(item, "to_dict"):
-                            items.append(item.to_dict())
+                            item_dict = item.to_dict()
+                            # Apply field selection if specified
+                            if fields:
+                                item_dict = {k: v for k, v in item_dict.items() if k in fields}
+                            items.append(item_dict)
                         else:
                             items.append(item)
                     
@@ -253,17 +305,24 @@ class ApiEndpoint:
                         "has_next": result.output.has_next,
                         "has_previous": result.output.has_previous
                     }
+                
                 # Handle lists of entities
                 elif isinstance(result.output, list):
                     items = []
                     for item in result.output:
                         if hasattr(item, "to_dict"):
-                            items.append(item.to_dict())
+                            item_dict = item.to_dict()
+                            # Apply field selection if specified
+                            if fields:
+                                item_dict = {k: v for k, v in item_dict.items() if k in fields}
+                            items.append(item_dict)
                         else:
                             items.append(item)
                     return items
+                
                 # Return output as is
                 return result.output
+            
             # Return empty response for success without output
             return JSONResponse(
                 status_code=status.HTTP_204_NO_CONTENT,

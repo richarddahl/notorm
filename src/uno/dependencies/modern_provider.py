@@ -32,7 +32,11 @@ from uno.dependencies.interfaces import (
     SQLExecutionProtocol,
     EventBusProtocol,
 )
-from uno.errors import UnoError
+from uno.core.errors import (
+    DependencyNotFoundError,
+    DependencyResolutionError,
+    DependencyCycleError
+)
 
 
 T = TypeVar('T')
@@ -464,6 +468,30 @@ def get_service_provider() -> UnoServiceProvider:
         The service provider instance
     """
     return _service_provider
+
+
+def register_singleton(service_type: Type[T], instance: T) -> None:
+    """
+    Register a singleton instance in the container.
+    
+    This is useful for registering resources and services that should be
+    available globally across the application.
+    
+    Args:
+        service_type: The type to register
+        instance: The instance to register
+        
+    Raises:
+        DependencyResolutionError: If the dependency injection is not set up
+    """
+    try:
+        container = get_container()
+        container.register_instance(service_type, instance)
+    except Exception as e:
+        raise DependencyResolutionError(
+            f"Failed to register singleton for {service_type.__name__}: {str(e)}",
+            "DEPENDENCY_REGISTRATION_ERROR"
+        )
 
 
 async def initialize_services() -> None:

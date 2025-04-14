@@ -149,6 +149,9 @@ class TaskGroup:
         task_name = name or f"{self.name}-Task-{len(self._tasks)}"
         task = asyncio.create_task(coro, name=task_name)
         
+        # Store the task name for error reporting
+        setattr(task, 'custom_name', task_name)
+        
         # Add the task to the set and add a callback to remove it when done
         self._tasks.add(task)
         task.add_done_callback(self._on_task_done)
@@ -272,7 +275,8 @@ class TaskGroup:
                 task.result()
             except Exception as e:
                 if not isinstance(e, asyncio.CancelledError):
-                    task_name = task.get_name()
+                    # Use the custom name if available, otherwise fall back to get_name()
+                    task_name = getattr(task, 'custom_name', task.get_name())
                     self.logger.error(
                         f"Task '{task_name}' in group '{self.name}' failed: {e}",
                         exc_info=True
@@ -356,8 +360,44 @@ class TaskManager:
         self.logger = logger or logging.getLogger(__name__)
         self._groups: Dict[str, TaskGroup] = {}
         self._signal_handlers_installed = False
-        self._shutdown_event = asyncio.Event()
-        self._is_shutting_down = False
+        self._started = False
+        self._shutdown_complete = False
+        
+    async def start(self) -> None:
+        """Start the task manager and install signal handlers."""
+        if self._started:
+            return
+            
+        self.logger.info("Starting TaskManager")
+        
+        # Install signal handlers
+        self.add_signal_handlers()
+        
+        self._started = True
+    
+    async def shutdown(self) -> None:
+        """
+        Shut down the task manager and cancel all tasks.
+        
+        This method waits for all tasks to complete or be cancelled.
+        """
+        if self._shutdown_complete:
+            return
+            
+        self.logger.info("Shutting down TaskManager")
+        
+        # Cancel all tasks
+        await self.cancel_all_tasks()
+        
+        self._shutdown_complete = True
+        
+    async def cancel_all_tasks(self) -> None:
+        """Cancel all tasks in all groups."""
+        self.logger.info("Cancelling all tasks")
+        
+        # Cancel all tasks in all groups
+        for group in self._groups.values():
+            await group.cancel_all()
     
     def create_group(
         self, 

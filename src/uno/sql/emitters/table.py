@@ -12,7 +12,12 @@ from sqlalchemy.schema import ForeignKeyConstraint
 from uno.sql.emitter import SQLEmitter
 from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.builders import SQLFunctionBuilder, SQLTriggerBuilder, SQLIndexBuilder
-from uno.errors import UnoError
+from uno.sql.errors import (
+    SQLErrorCode,
+    SQLEmitterError,
+    SQLExecutionError,
+    SQLConfigError
+)
 
 
 class InsertMetaRecordFunction(SQLEmitter):

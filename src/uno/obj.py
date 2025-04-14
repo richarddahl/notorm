@@ -31,10 +31,29 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from uno.core.types import FilterParam  # Use the core types to avoid circular import
 from uno.model import UnoModel
 from uno.schema.schema import UnoSchemaConfig
-from uno.errors import UnoError, ValidationContext, ValidationError
+from uno.core.errors import ValidationContext
+from uno.core.errors.validation import ValidationError
+from uno.obj_errors import (
+    UnoObjErrorCode,
+    UnoObjNotFoundError,
+    UnoObjAlreadyExistsError,
+    UnoObjInvalidError,
+    UnoObjPropertyNotFoundError,
+    UnoObjPropertyInvalidError,
+    UnoObjSchemaError,
+    UnoObjValidationError,
+    UnoObjToModelError,
+    UnoObjFromModelError,
+    UnoObjOperationError,
+    UnoObjPersistenceError,
+    register_unoobj_errors
+)
 from uno.utilities import snake_to_title
 from uno.registry import get_registry
 from uno.api.endpoint_factory import UnoEndpointFactory
+
+# Register UnoObj errors
+register_unoobj_errors()
 
 # Import necessary protocols from core protocols
 from uno.core.protocols import (
@@ -398,25 +417,115 @@ class UnoObj(BaseModel, Generic[T]):
     @classmethod
     async def filter(
         cls, 
-        filters: Optional[FilterParam] = None
+        filters: Optional[FilterParam] = None,
+        page: int = 1,
+        page_size: int = 50
     ) -> List["UnoObj"]:
         """
         Filter objects from the database.
 
         Args:
             filters: Filter parameters
+            page: Page number (starting from 1)
+            page_size: Number of items per page
 
         Returns:
-            A list of UnoObj instances
+            A list of UnoObj instances or a paginated result
         """
         # Create the database factory using the deferred import
         db = get_db_factory(obj=cls)
 
+        # Calculate offset from page and page_size
+        offset = (page - 1) * page_size
+        
+        # If pagination is requested, add limit and offset to filters
+        if filters is None:
+            from uno.core.types import FilterParam
+            filters = FilterParam()
+            
+        # Create namedtuples for limit and offset filters
+        from collections import namedtuple
+        FilterTuple = namedtuple("FilterTuple", ["label", "val", "lookup"])
+        
+        # Add or update limit and offset filters
+        pagination_filters = []
+        limit_found = False
+        offset_found = False
+        
+        # Check existing filters and update if present
+        for f in filters:
+            if f.label == "limit":
+                pagination_filters.append(FilterTuple("limit", page_size, "limit"))
+                limit_found = True
+            elif f.label == "offset":
+                pagination_filters.append(FilterTuple("offset", offset, "offset"))
+                offset_found = True
+            else:
+                pagination_filters.append(f)
+                
+        # Add new filters if not found
+        if not limit_found:
+            pagination_filters.append(FilterTuple("limit", page_size, "limit"))
+        if not offset_found:
+            pagination_filters.append(FilterTuple("offset", offset, "offset"))
+            
         # Filter models from the database
-        models = await db.filter(filters=filters)
+        models = await db.filter(filters=pagination_filters)
 
         # Convert to UnoObj instances
         return [cls(**model) for model in models]
+        
+    @classmethod
+    async def get_filter_query(
+        cls, 
+        filters: Optional[FilterParam] = None
+    ) -> Any:
+        """
+        Get the raw query object for filtering without executing it.
+        
+        This method is used by the streaming API to get a query that can be
+        executed with the streaming infrastructure.
+        
+        Args:
+            filters: Filter parameters
+            
+        Returns:
+            A SQLAlchemy query object
+        """
+        from sqlalchemy import select, func, text
+        
+        # Create the database factory using the deferred import
+        db = get_db_factory(obj=cls)
+        
+        # Build the query similar to the db.filter method
+        column_names = cls.model.__table__.columns.keys()
+        stmt = select(cls.model.__table__.c[*column_names])
+        
+        # Apply filters
+        if filters:
+            for fltr in filters:
+                if fltr.label in ["limit", "offset", "order_by"]:
+                    if fltr.label == "limit":
+                        stmt = stmt.limit(fltr.val)
+                        continue
+                    if fltr.label == "offset":
+                        stmt = stmt.offset(fltr.val)
+                        continue
+                    if fltr.label == "order_by":
+                        if fltr.lookup == "desc":
+                            stmt = stmt.order_by(getattr(cls.model, fltr.val).desc())
+                        else:
+                            stmt = stmt.order_by(getattr(cls.model, fltr.val).asc())
+                        continue
+                
+                # Apply filter
+                label = fltr.label.split(".")[0]
+                filter_obj = db.obj.filters.get(label)
+                if filter_obj:
+                    cypher_query = filter_obj.cypher_query(fltr.val, fltr.lookup)
+                    stmt = stmt.where(cls.model.id.in_(select(text(cypher_query))))
+                    
+        return stmt
 
     @classmethod
     def configure(cls, app: Any) -> None:

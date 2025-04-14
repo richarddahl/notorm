@@ -10,7 +10,8 @@ import asyncio
 import logging
 import uuid
 
-from uno.jobs.queue import Job, JobQueue
+from uno.jobs.queue.job import Job
+from uno.jobs.queue.queue import JobQueue
 from uno.jobs.scheduler.schedules import (
     Schedule, CronSchedule, IntervalSchedule, OneTimeSchedule, 
     DailySchedule, WeeklySchedule, MonthlySchedule, EventTrigger

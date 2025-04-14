@@ -9,11 +9,16 @@ This module provides base classes and utilities for creating and managing schema
 that define the structure and validation rules for data models.
 """
 
-from typing import Set, Dict, Any, Type, TypeVar, Generic, get_args, get_origin, cast
+from typing import Set, Dict, Any, Type, TypeVar, Generic, get_args, get_origin, cast, List, Optional
 
 from pydantic import BaseModel, model_validator, create_model, Field
 
-from uno.errors import UnoError
+from uno.schema.errors import (
+    SchemaInvalidError,
+    SchemaValidationError,
+    SchemaConversionError
+)
+from uno.core.errors.base import UnoError
 
 # Type variable for schema classes
 SchemaT = TypeVar("SchemaT", bound="UnoSchema")
@@ -188,3 +193,17 @@ class PaginatedList(UnoSchema, Generic[T]):
     page: int = Field(1, description="The current page number")
     page_size: int = Field(25, description="The number of items per page")
     pages: int = Field(1, description="The total number of pages")
+
+
+class WithMetadata(UnoSchema):
+    """
+    Schema for items with metadata.
+    
+    This schema is used as a base class for objects that include metadata
+    such as created_at, updated_at, and version information.
+    """
+    
+    created_at: Optional[str] = Field(None, description="The creation timestamp")
+    updated_at: Optional[str] = Field(None, description="The last update timestamp")
+    version: Optional[int] = Field(None, description="The object version number")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")

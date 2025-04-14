@@ -18,7 +18,7 @@ from uno.domain.model import Entity, AggregateRoot
 from uno.domain.repositories import Repository, AggregateRepository
 from uno.domain.unit_of_work import UnitOfWork
 from uno.domain.events import DomainEvent
-from uno.domain.exceptions import DomainError, EntityNotFoundError, ValidationError
+from uno.domain.exceptions import UnoError, EntityNotFoundError, ValidationError
 
 
 # Type variables
@@ -325,9 +325,9 @@ class UpdateAggregateCommandHandler(CommandHandler[UpdateAggregateCommand, Aggre
         
         # Check versioning for optimistic concurrency control
         if aggregate.version != command.version:
-            raise DomainError(
-                f"Aggregate version mismatch: expected {command.version}, but got {aggregate.version}",
-                "CONCURRENCY_ERROR"
+            raise UnoError(
+                message=f"Aggregate version mismatch: expected {command.version}, but got {aggregate.version}",
+                error_code="CONCURRENCY_ERROR"
             )
         
         # Update the aggregate
@@ -395,9 +395,9 @@ class DeleteAggregateCommandHandler(CommandHandler[DeleteAggregateCommand, bool]
                 return False
             
             if aggregate.version != command.version:
-                raise DomainError(
-                    f"Aggregate version mismatch: expected {command.version}, but got {aggregate.version}",
-                    "CONCURRENCY_ERROR"
+                raise UnoError(
+                    message=f"Aggregate version mismatch: expected {command.version}, but got {aggregate.version}",
+                    error_code="CONCURRENCY_ERROR"
                 )
         
         # Delete the aggregate

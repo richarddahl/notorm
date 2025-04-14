@@ -5,18 +5,21 @@ This module provides a unified repository base that can be used
 with or without UnoObj in the Uno framework.
 """
 
-from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Tuple, Union
+from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Tuple, Union, TYPE_CHECKING
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update, delete, text, Result, RowMapping
 
 from uno.model import UnoModel
-from uno.obj import UnoObj
+
+# Forward references for type checking to avoid circular imports
+if TYPE_CHECKING:
+    from uno.obj import UnoObj
 
 
 ModelT = TypeVar('ModelT', bound=UnoModel)
-ObjT = TypeVar('ObjT', bound=UnoObj)
+ObjT = TypeVar('ObjT', bound='UnoObj')
 
 
 class UnoBaseRepository(Generic[ModelT]):
@@ -210,7 +213,7 @@ class UnoBaseRepository(Generic[ModelT]):
         return result.scalar_one()
     
     # Integration with UnoObj
-    def to_dict(self, obj: Union[UnoObj, Dict[str, Any]]) -> Dict[str, Any]:
+    def to_dict(self, obj: Union['UnoObj', Dict[str, Any]]) -> Dict[str, Any]:
         """
         Convert an object to a dictionary for database operations.
         
@@ -229,7 +232,7 @@ class UnoBaseRepository(Generic[ModelT]):
         else:
             raise TypeError(f"Expected UnoObj or dict, got {type(obj)}")
     
-    async def save(self, obj: Union[UnoObj, Dict[str, Any]]) -> ModelT:
+    async def save(self, obj: Union['UnoObj', Dict[str, Any]]) -> ModelT:
         """
         Save an object to the database.
         

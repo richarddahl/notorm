@@ -13,7 +13,7 @@ import json
 import copy
 from pydantic import BaseModel, ConfigDict, model_validator, Field
 
-from uno.domain.exceptions import AggregateInvariantViolationError, DomainValidationError
+from uno.core.errors.base import AggregateInvariantViolationError, DomainValidationError
 
 
 # Type variables

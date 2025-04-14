@@ -13,7 +13,9 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast, Prot
 from uno.domain.cqrs import Command, Query, CommandResult, QueryResult, Dispatcher, get_dispatcher
 from uno.domain.model import Entity, AggregateRoot
 from uno.domain.unit_of_work import UnitOfWork
-from uno.domain.exceptions import DomainError, ValidationError, AuthorizationError
+from uno.core.errors.base import UnoError
+from uno.core.errors.validation import ValidationError
+from uno.core.errors.security import AuthorizationError
 
 
 # Type variables

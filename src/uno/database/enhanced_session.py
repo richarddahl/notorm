@@ -460,6 +460,62 @@ async def enhanced_async_session(
         yield session
 
 
+def get_enhanced_session(
+    db_driver: str = uno_settings.DB_ASYNC_DRIVER,
+    db_name: str = uno_settings.DB_NAME,
+    db_user_pw: str = uno_settings.DB_USER_PW,
+    db_role: str = f"{uno_settings.DB_NAME}_login",
+    db_host: Optional[str] = uno_settings.DB_HOST,
+    db_port: Optional[int] = uno_settings.DB_PORT,
+    factory: Optional[DatabaseSessionFactoryProtocol] = None,
+    logger: Optional[logging.Logger] = None,
+    scoped: bool = False,
+    **kwargs,
+) -> AsyncSession:
+    """
+    Get an enhanced async session directly.
+    
+    This is a convenience function for getting a session without using a context manager.
+    The caller is responsible for closing the session when done.
+    
+    Args:
+        db_driver: Database driver name
+        db_name: Database name
+        db_user_pw: Database password
+        db_role: Database role/username
+        db_host: Database host
+        db_port: Database port
+        factory: Optional session factory
+        logger: Optional logger
+        scoped: Whether to use a scoped session tied to the current async task
+        **kwargs: Additional connection parameters
+    
+    Returns:
+        AsyncSession: The database session
+    """
+    factory = factory or EnhancedAsyncSessionFactory(logger=logger)
+    
+    # Create config object from parameters
+    config = ConnectionConfig(
+        db_role=db_role,
+        db_name=db_name,
+        db_host=db_host,
+        db_user_pw=db_user_pw,
+        db_driver=db_driver,
+        db_port=db_port,
+        **kwargs,
+    )
+    
+    # Get or create session based on scope
+    if scoped:
+        # Get a scoped session
+        scoped_session = factory.get_scoped_session(config)
+        return scoped_session()
+    else:
+        # Synchronous API, so use create_session
+        return factory.create_session(config)
+
+
 class SessionOperationGroup:
     """
     Group for coordinating multiple database session operations.

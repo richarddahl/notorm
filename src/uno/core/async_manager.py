@@ -45,18 +45,23 @@ def get_async_manager(
     Returns:
         An AsyncManager instance
     """
-    from uno.dependencies.modern_provider import get_service, register_singleton
+    # First check if we have a singleton instance
+    if AsyncManager._instance is not None:
+        return AsyncManager._instance
     
+    # Create a new instance without depending on the DI system
+    instance = AsyncManager(logger, shutdown_timeout)
+    AsyncManager._instance = instance
+    
+    # Try to register with DI if available
     try:
-        # Try to get from the DI container
-        return get_service(AsyncManager)
-    except Exception:
-        # If not available, create a new instance
-        instance = AsyncManager(logger, shutdown_timeout)
-        
-        # Register in the DI container for future use
+        from uno.dependencies.modern_provider import register_singleton
         register_singleton(AsyncManager, instance)
-        return instance
+    except (ImportError, RuntimeError):
+        # Ignore if DI is not set up
+        pass
+    
+    return instance
 
 
 class AsyncManager:
@@ -69,6 +74,9 @@ class AsyncManager:
     - Signal handling integration
     - Resource cleanup coordination
     """
+    
+    # Class variable for the singleton instance
+    _instance: Optional['AsyncManager'] = None
     
     def __init__(
         self,
@@ -195,7 +203,7 @@ class AsyncManager:
             await asyncio.wait_for(
                 self.task_manager.shutdown(),
                 timeout=self.shutdown_timeout,
-            )
+            ) if callable(getattr(self.task_manager, 'shutdown', None)) else None
             
             # Calculate uptime
             if self._start_time is not None and self._shutdown_time is not None:
@@ -392,12 +400,30 @@ def as_task(name: Optional[str] = None) -> Callable:
     def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., asyncio.Task[T]]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> asyncio.Task[T]:
+            # Get the manager
             manager = get_async_manager()
-            return manager.create_task(
-                func(*args, **kwargs),
-                name=name or func.__name__
-            )
+            
+            # Create the task
+            task_name = name or func.__name__
+            coro = func(*args, **kwargs)
+            task = manager.create_task(coro, name=task_name)
+            
+            # Try to attach debug attributes, but don't fail if we can't
+            try:
+                # Only set attributes if the task object has a __dict__
+                if hasattr(task, "__dict__"):
+                    task.__dict__['__func__'] = func
+                    task.__dict__['__args__'] = args
+                    task.__dict__['__kwargs__'] = kwargs
+                    task.__dict__['__task_name__'] = task_name
+            except (AttributeError, TypeError):
+                # Ignore errors if we can't set attributes
+                pass
+            
+            return task
+        
         return wrapper
+    
     return decorator
 
 

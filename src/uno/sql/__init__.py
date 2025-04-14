@@ -17,7 +17,8 @@ from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.observers import SQLObserver, LoggingSQLObserver
 
 # SQL builders for functions and triggers
-from uno.sql.builders import SQLFunctionBuilder, SQLTriggerBuilder
+from uno.sql.builders.function import SQLFunctionBuilder
+from uno.sql.builders.trigger import SQLTriggerBuilder
 
 # Common SQL emitters
 from uno.sql.emitters import (
@@ -25,6 +26,24 @@ from uno.sql.emitters import (
     RecordUserAuditFunction,
     InsertMetaRecordTrigger,
 )
+
+# Error types
+from uno.sql.errors import (
+    SQLErrorCode,
+    SQLStatementError,
+    SQLExecutionError,
+    SQLSyntaxError,
+    SQLEmitterError,
+    SQLEmitterInvalidConfigError,
+    SQLRegistryClassNotFoundError,
+    SQLRegistryClassAlreadyExistsError,
+    SQLConfigError,
+    SQLConfigInvalidError,
+    register_sql_errors,
+)
+
+# Register SQL errors
+register_sql_errors()
 
 __all__ = [
     "SQLConfigRegistry",
@@ -41,4 +60,16 @@ __all__ = [
     "AlterGrants",
     "RecordUserAuditFunction",
     "InsertMetaRecordTrigger",
+    
+    # Error types
+    "SQLErrorCode",
+    "SQLStatementError",
+    "SQLExecutionError", 
+    "SQLSyntaxError",
+    "SQLEmitterError",
+    "SQLEmitterInvalidConfigError",
+    "SQLRegistryClassNotFoundError",
+    "SQLRegistryClassAlreadyExistsError",
+    "SQLConfigError",
+    "SQLConfigInvalidError",
 ]

@@ -59,7 +59,7 @@ def cancellable(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]
 
 def timeout_handler(
     timeout_seconds: Optional[float],
-    timeout_message: str = "Operation timed out",
+    timeout_message: str = "Function timed out",
 ) -> Callable[[Callable[..., Awaitable[T]]], Callable[..., Awaitable[T]]]:
     """
     Decorator factory to add timeout handling to an async function.
@@ -77,7 +77,8 @@ def timeout_handler(
             if timeout_seconds is None:
                 return await func(*args, **kwargs)
             
-            async with timeout(timeout_seconds, timeout_message):
+            # Just use standard asyncio.timeout
+            async with asyncio.timeout(timeout_seconds):
                 return await func(*args, **kwargs)
         
         return wrapper
@@ -174,15 +175,18 @@ def rate_limited(
         nonlocal limiter
         if limiter is None:
             limiter = RateLimiter(
-                operations_per_second=operations_per_second,
-                burst_limit=burst_limit,
+                rate=operations_per_second,
+                burst=burst_limit or 1,
                 name=f"{func.__name__}_limiter"
             )
         
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
-            async with limiter:
+            async with limiter.acquire():
                 return await func(*args, **kwargs)
+        
+        # Store limiter on the wrapper for testing and introspection
+        setattr(wrapper, "__limiter__", limiter)
         
         return wrapper
     
@@ -208,14 +212,17 @@ def concurrent_limited(
         nonlocal limiter
         if limiter is None:
             limiter = Limiter(
-                max_concurrent=max_concurrent,
+                limit=max_concurrent,
                 name=f"{func.__name__}_limiter"
             )
         
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
-            async with limiter:
+            async with limiter.acquire():
                 return await func(*args, **kwargs)
+        
+        # Store limiter on the wrapper for testing and introspection
+        setattr(wrapper, "__limiter__", limiter)
         
         return wrapper
     

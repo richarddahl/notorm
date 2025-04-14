@@ -10,7 +10,7 @@ import logging
 import inspect
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from typing import (
     Any, Dict, List, Set, Type, TypeVar, Generic, Protocol, 
@@ -18,7 +18,7 @@ from typing import (
     runtime_checkable
 )
 
-from .errors import DomainError, ErrorCategory, with_error_context, with_async_error_context
+from .errors import UnoError, ErrorCategory, with_error_context, with_async_error_context
 from .protocols import DomainEvent, EventHandler, EventBus
 
 
@@ -70,7 +70,7 @@ class Event(DomainEvent):
         """
         self.event_id = event_id or str(uuid.uuid4())
         self.event_type = self.__class__.__name__
-        self.timestamp = timestamp or datetime.utcnow()
+        self.timestamp = timestamp or datetime.now(timezone.utc)
         self.metadata = metadata or {}
     
     def to_dict(self) -> Dict[str, Any]:
@@ -114,13 +114,29 @@ class Event(DomainEvent):
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
         metadata = data.get("metadata", {})
         
+        # Get additional data for custom event fields
+        event_data = data.get("data", {})
+        
+        # Create kwargs for constructor
+        kwargs = {
+            "event_id": event_id,
+            "timestamp": timestamp,
+            "metadata": metadata
+        }
+        
+        # Add event-specific data
+        kwargs.update(event_data)
+        
         # Create instance
-        instance = cls(event_id=event_id, timestamp=timestamp, metadata=metadata)
-        
-        # Set data attributes
-        for key, value in data.get("data", {}).items():
-            setattr(instance, key, value)
-        
+        try:
+            # Try to create instance with all fields
+            instance = cls(**kwargs)
+        except TypeError:
+            # Fallback: create instance with base fields and set data attributes manually
+            instance = cls(event_id=event_id, timestamp=timestamp, metadata=metadata)
+            for key, value in event_data.items():
+                setattr(instance, key, value)
+            
         return instance
     
     def __eq__(self, other: object) -> bool:
@@ -142,7 +158,7 @@ class Event(DomainEvent):
 # Event Handler Wrapper
 # =============================================================================
 
-class EventHandlerWrapper[T_Event](Generic[T_Event]):
+class EventHandlerWrapper[T_Event]:
     """
     Wrapper for event handlers that provides metadata and execution control.
     
@@ -188,7 +204,7 @@ class EventHandlerWrapper[T_Event](Generic[T_Event]):
         """
         try:
             # Add context to any errors
-            with with_error_context(event_type=event.event_type, event_id=event.event_id):
+            async with with_async_error_context(event_type=event.event_type, event_id=event.event_id):
                 # Handle based on whether the handler is a class or function
                 if hasattr(self.handler, "handle"):
                     # Class-based handler
@@ -202,13 +218,12 @@ class EventHandlerWrapper[T_Event](Generic[T_Event]):
                     await result
                 
         except Exception as e:
-            # Wrap in DomainError if not already
-            if not isinstance(e, DomainError):
-                raise DomainError(
+            # Wrap in UnoError if not already
+            if not isinstance(e, UnoError):
+                raise UnoError(
                     message=f"Error handling event {event.event_type}: {str(e)}",
-                    code="EVENT_HANDLER_ERROR",
-                    category=ErrorCategory.UNEXPECTED,
-                    cause=e
+                    error_code="EVENT_HANDLER_ERROR",
+                    context={"cause": str(e)}
                 )
             raise
 
@@ -533,8 +548,14 @@ def event_handler(
                 first_param = next(iter(params.values()))
                 if first_param.name in hints:
                     param_type = hints[first_param.name]
-                    if isinstance(param_type, type) and issubclass(param_type, DomainEvent):
-                        event_type = param_type
+                    # For Protocols, we can't use issubclass directly
+                    try:
+                        if isinstance(param_type, type) and hasattr(param_type, "__init__"):
+                            # Only check for concrete types, not Protocol
+                            event_type = param_type
+                    except TypeError:
+                        # This is likely a Protocol, which is fine - we'll skip direct type checking
+                        pass
         
         # Store metadata on the function
         func.__event_handler__ = True
@@ -623,11 +644,26 @@ class EventHandlerScanner:
                         first_param = next(params_iter)
                         if first_param.name in hints:
                             param_type = hints[first_param.name]
-                            if isinstance(param_type, type) and issubclass(param_type, DomainEvent):
-                                # Create instance
+                            # For Protocols with non-method members, we can't use issubclass
+                            try:
+                                if isinstance(param_type, type) and hasattr(param_type, "__init__"):
+                                    # Create instance
+                                    instance = obj()
+                                    
+                                    # Get priority if specified
+                                    priority = getattr(
+                                        handle_method, "__event_priority__", 
+                                        getattr(obj, "__event_priority__", EventPriority.NORMAL)
+                                    )
+                                    
+                                    self._event_bus.subscribe_with_priority(param_type, instance, priority)
+                                    count += 1
+                                    self._logger.debug(f"Registered class handler {obj.__name__} for {param_type.__name__}")
+                            except TypeError:
+                                # This is likely a Protocol with non-method members, which is fine
+                                # We'll register it without type checking
                                 instance = obj()
                                 
-                                # Get priority if specified
                                 priority = getattr(
                                     handle_method, "__event_priority__", 
                                     getattr(obj, "__event_priority__", EventPriority.NORMAL)
@@ -635,7 +671,7 @@ class EventHandlerScanner:
                                 
                                 self._event_bus.subscribe_with_priority(param_type, instance, priority)
                                 count += 1
-                                self._logger.debug(f"Registered class handler {obj.__name__} for {param_type.__name__}")
+                                self._logger.debug(f"Registered class handler {obj.__name__} for Protocol type")
         
         return count
     

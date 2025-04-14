@@ -17,7 +17,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from uno.domain.events import DomainEvent, EventBus, get_event_bus
-from uno.domain.exceptions import DomainError
+from uno.core.errors.base import UnoError
 from uno.domain.unit_of_work import UnitOfWork
 
 
@@ -187,13 +187,13 @@ class CommandHandler(Generic[CommandT, OutputT], ABC):
                     output=result if not isinstance(result, CommandResult) else result.output,
                     events=events
                 )
-        except DomainError as e:
+        except UnoError as e:
             self.logger.error(f"Command execution failed: {str(e)}")
             return CommandResult.failure(
                 command_id=command.command_id,
                 command_type=command.__class__.__name__,
                 error=str(e),
-                error_code=e.code
+                error_code=e.error_code
             )
         except Exception as e:
             self.logger.error(f"Command execution failed: {str(e)}")
@@ -215,7 +215,7 @@ class CommandHandler(Generic[CommandT, OutputT], ABC):
             command: The command to validate
             
         Raises:
-            DomainError: If validation fails
+            UnoError: If validation fails
         """
         pass
     
@@ -392,7 +392,7 @@ class QueryHandler(Generic[QueryT, OutputT], ABC):
             query: The query to validate
             
         Raises:
-            DomainError: If validation fails
+            UnoError: If validation fails
         """
         pass
     

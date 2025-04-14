@@ -617,3 +617,49 @@ class DBManager:
                 )
             conn.commit()
             self.logger.info(f"Granted {privileges_str} on {object_name} to {to_role}")
+
+
+# Global singleton instance
+_db_manager_instance = None
+
+
+def get_db_manager(
+    connection_provider: Optional[Callable[[], ContextManager[psycopg.Connection]]] = None,
+    logger: Optional[logging.Logger] = None,
+) -> DBManager:
+    """
+    Get the global DBManager instance.
+    
+    This function returns a singleton instance of the DBManager class.
+    If the instance does not exist, it creates one with the provided parameters.
+    
+    Args:
+        connection_provider: Optional connection provider function
+        logger: Optional logger instance
+        
+    Returns:
+        The global DBManager instance
+    """
+    global _db_manager_instance
+    
+    if _db_manager_instance is None:
+        if connection_provider is None:
+            # Create a default connection provider using uno_settings
+            from uno.settings import uno_settings
+            from uno.database.engine.sync import sync_connection
+            
+            connection_provider = lambda: sync_connection(
+                db_role=f"{uno_settings.DB_NAME}_login",
+                db_name=uno_settings.DB_NAME,
+                db_host=uno_settings.DB_HOST,
+                db_port=uno_settings.DB_PORT,
+                db_user_pw=uno_settings.DB_USER_PW,
+                db_driver="postgresql+psycopg2",
+            )
+        
+        _db_manager_instance = DBManager(
+            connection_provider=connection_provider,
+            logger=logger,
+        )
+    
+    return _db_manager_instance

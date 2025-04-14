@@ -40,7 +40,8 @@ class AsyncContextGroup(Generic[T]):
     Group of async context managers that can be entered and exited together.
     
     This class provides a way to manage multiple async context managers as a unit,
-    entering and exiting them together.
+    entering and exiting them together. It's similar to AsyncExitStack but tracks
+    the results of each context manager.
     """
     
     def __init__(
@@ -60,43 +61,36 @@ class AsyncContextGroup(Generic[T]):
         self.contexts = list(contexts)
         self.name = name or f"ContextGroup-{id(self)}"
         self.logger = logger or logging.getLogger(__name__)
-        self._entered_contexts: List[Tuple[AsyncContextManager[T], T]] = []
-        self._exit_stack = _AsyncExitStack()
+        self._exit_stack = AsyncExitStack()
+        self._results: Dict[AsyncContextManager[T], T] = {}
     
-    async def __aenter__(self) -> List[T]:
+    async def __aenter__(self) -> "AsyncContextGroup[T]":
         """
         Enter all context managers in the group.
         
         Returns:
-            List of values yielded by the context managers
+            Self, for chaining operations
         """
         self.logger.debug(f"Entering context group '{self.name}' with {len(self.contexts)} contexts")
         
-        results: List[T] = []
+        await self._exit_stack.__aenter__()
         
         try:
             # Enter each context manager and collect results
             for ctx in self.contexts:
                 result = await ctx.__aenter__()
-                results.append(result)
-                self._entered_contexts.append((ctx, result))
+                self._results[ctx] = result
+                # Also register for exit
+                self._exit_stack.push_async_exit(ctx.__aexit__)
             
-            return results
+            return self
         
         except Exception as e:
             # If any context manager fails to enter, exit all entered contexts
             self.logger.error(f"Error entering context group '{self.name}': {e}")
             
-            # Exit entered contexts in reverse order
-            for ctx, _ in reversed(self._entered_contexts):
-                try:
-                    await ctx.__aexit__(*sys.exc_info())
-                except Exception as exit_error:
-                    self.logger.error(
-                        f"Error exiting context in group '{self.name}' during error handling: {exit_error}"
-                    )
-            
-            self._entered_contexts.clear()
+            # Use exit stack to handle cleanup
+            await self._exit_stack.__aexit__(*sys.exc_info())
             raise
     
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
@@ -111,10 +105,7 @@ class AsyncContextGroup(Generic[T]):
         Returns:
             True if the exception was handled, False otherwise
         """
-        self.logger.debug(
-            f"Exiting context group '{self.name}' with "
-            f"{len(self._entered_contexts)} entered contexts"
-        )
+        self.logger.debug(f"Exiting context group '{self.name}'")
         
         # If there was an exception, log it
         if exc_type is not None:
@@ -123,30 +114,39 @@ class AsyncContextGroup(Generic[T]):
                 f"{exc_type.__name__}: {exc_val}"
             )
         
-        # Exit entered contexts in reverse order
-        suppressed = False
+        # Use the exit stack to handle exiting all contexts in reverse order
+        return await self._exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+    
+    async def enter_async_context(self, context: AsyncContextManager[T]) -> T:
+        """
+        Enter a context manager and add it to the group.
         
-        for ctx, _ in reversed(self._entered_contexts):
-            try:
-                if await ctx.__aexit__(exc_type, exc_val, exc_tb):
-                    # Context manager handled the exception
-                    suppressed = True
-                    exc_type = exc_val = exc_tb = None
-            except Exception as e:
-                # Context manager raised an exception during exit
-                self.logger.error(
-                    f"Error exiting context in group '{self.name}': {e}"
-                )
-                
-                # This becomes the new exception
-                exc_type, exc_val, exc_tb = sys.exc_info()
+        This method can be used to dynamically add context managers to the group.
         
-        self._entered_contexts.clear()
-        return suppressed
+        Args:
+            context: The context manager to enter and add
+            
+        Returns:
+            The value yielded by the context manager
+            
+        Raises:
+            RuntimeError: If the group hasn't been entered yet
+        """
+        if not hasattr(self._exit_stack, '_exit_callbacks'):
+            raise RuntimeError("AsyncContextGroup must be entered before calling enter_async_context")
+        
+        # Enter the context and store the result
+        result = await context.__aenter__()
+        self._results[context] = result
+        
+        # Register for exit
+        self._exit_stack.push_async_exit(context.__aexit__)
+        
+        return result
     
     def add(self, ctx: AsyncContextManager[T]) -> None:
         """
-        Add a context manager to the group.
+        Add a context manager to the group without entering it.
         
         Args:
             ctx: The context manager to add
@@ -154,7 +154,7 @@ class AsyncContextGroup(Generic[T]):
         Raises:
             RuntimeError: If the group has already been entered
         """
-        if self._entered_contexts:
+        if hasattr(self._exit_stack, '_exit_callbacks'):
             raise RuntimeError(
                 f"Cannot add context to group '{self.name}' after it has been entered"
             )
@@ -164,7 +164,12 @@ class AsyncContextGroup(Generic[T]):
     @property
     def entered(self) -> bool:
         """Check if the group has been entered."""
-        return len(self._entered_contexts) > 0
+        return hasattr(self._exit_stack, '_exit_callbacks')
+    
+    @property
+    def results(self) -> Dict[AsyncContextManager[T], T]:
+        """Get the results of all entered context managers."""
+        return self._results.copy()
 
 
 def async_contextmanager(func: Callable[..., Coroutine[Any, Any, AsyncIterator[T]]]) -> Callable[..., AsyncContextManager[T]]:

@@ -1,378 +1,212 @@
-# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
-#
-# SPDX-License-Identifier: MIT
-
 """
-Example demonstrating the comprehensive error handling framework.
+Example of modern error handling in Uno.
 
-This module shows how to use the various error handling components
-including structured errors, error codes, contextual information,
-validation, and logging.
+This example demonstrates the modernized error handling approach using
+UnoError, Result pattern, and contextual error information.
 """
 
 import asyncio
 from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
 
-from uno.core.errors import (
-    UnoError, ErrorCode, ErrorCategory, ErrorSeverity,
-    ValidationError, ValidationContext,
-    Result, Success, Failure, of, failure, from_exception, from_awaitable,
-    ErrorCatalog, register_error,
-    configure_logging, get_logger, LogConfig,
-    with_error_context, add_error_context, get_error_context,
-    with_logging_context, add_logging_context
+from uno.core.errors.base import (
+    UnoError, ErrorCode, add_error_context, with_error_context, with_async_error_context
 )
+from uno.core.errors.result import Result, Success, Failure, of, failure, from_exception
+from uno.core.errors.validation import ValidationError, validate_fields
+from uno.core.errors.security import AuthorizationError
 
 
-# Step 1: Initialize error catalog with application-specific error codes
-def init_error_catalog():
-    """Initialize the error catalog with application-specific error codes."""
-    # Register a custom error code for user operations
-    register_error(
-        code="USER-0001",
-        message_template="User validation error: {message}",
-        category=ErrorCategory.VALIDATION,
-        severity=ErrorSeverity.ERROR,
-        description="Error validating user data",
-        http_status_code=400,
-        retry_allowed=True
-    )
-    
-    register_error(
-        code="USER-0002",
-        message_template="User not found: {user_id}",
-        category=ErrorCategory.RESOURCE,
-        severity=ErrorSeverity.ERROR,
-        description="The requested user could not be found",
-        http_status_code=404,
-        retry_allowed=False
-    )
-    
-    register_error(
-        code="USER-0003",
-        message_template="Duplicate username: {username}",
-        category=ErrorCategory.RESOURCE,
-        severity=ErrorSeverity.ERROR,
-        description="A user with this username already exists",
-        http_status_code=409,
-        retry_allowed=False
-    )
-
-
-# Step 2: Define domain models
-@dataclass
-class User:
-    """User model for the example."""
-    id: Optional[str] = None
-    username: str = ""
-    email: str = ""
-    age: int = 0
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert user to dictionary."""
-        return {
-            "id": self.id,
-            "username": self.username,
-            "email": self.email,
-            "age": self.age
-        }
-
-
-# Step 3: Implement validation with ValidationContext
-def validate_user(user: User) -> None:
-    """
-    Validate a user object.
-    
-    Args:
-        user: The user to validate
-        
-    Raises:
-        ValidationError: If validation fails
-    """
-    context = ValidationContext("User")
-    
-    # Validate username
-    if not user.username:
-        context.add_error(
-            field="username",
-            message="Username is required",
-            error_code="FIELD_REQUIRED"
-        )
-    elif len(user.username) < 3:
-        context.add_error(
-            field="username",
-            message="Username must be at least 3 characters",
-            error_code="FIELD_INVALID",
-            value=user.username
-        )
-    
-    # Validate email using a nested context
-    email_context = context.nested("email")
-    if not user.email:
-        email_context.add_error(
-            field="",  # Empty because it's added to the path already
-            message="Email is required",
-            error_code="FIELD_REQUIRED"
-        )
-    elif "@" not in user.email:
-        email_context.add_error(
-            field="format",  # Will become email.format in the full path
-            message="Invalid email format",
-            error_code="FIELD_INVALID",
-            value=user.email
-        )
-    
-    # Validate age
-    if user.age < 18:
-        context.add_error(
-            field="age",
-            message="User must be 18 or older",
-            error_code="FIELD_INVALID",
-            value=user.age
-        )
-    
-    # Raise if there are any errors
-    context.raise_if_errors()
-
-
-# Step 4: Implement service with Result pattern for error handling
 class UserService:
-    """
-    User service implementing business logic with Result pattern for error handling.
-    """
+    """Example service demonstrating modern error handling."""
     
-    def __init__(self):
-        """Initialize the user service with an in-memory database."""
-        self.users: Dict[str, User] = {}
-        self.logger = get_logger(__name__)
+    def __init__(self, logger=None):
+        """Initialize the service."""
+        self.logger = logger
     
     @with_error_context
-    @with_logging_context
-    def create_user(self, user_data: Dict[str, Any]) -> Result[User]:
+    def validate_user_data(self, user_data: Dict[str, Any]) -> Result[Dict[str, Any]]:
         """
-        Create a new user.
+        Validate user data using structured validation.
+        
+        This demonstrates using the validate_fields utility and ValidationError.
         
         Args:
-            user_data: The user data
+            user_data: User data to validate
             
         Returns:
-            Result containing the created user or an error
+            Result with validated data or validation error
         """
-        # Add context for logging and error handling
+        try:
+            # Define required fields and validators
+            required_fields = {"username", "email", "password"}
+            
+            def validate_email(value: str) -> Optional[str]:
+                if "@" not in value:
+                    return "Invalid email format"
+                return None
+                
+            def validate_password(value: str) -> Optional[str]:
+                if len(value) < 8:
+                    return "Password must be at least 8 characters"
+                return None
+            
+            validators = {
+                "email": [validate_email],
+                "password": [validate_password]
+            }
+            
+            # Validate fields
+            validate_fields(user_data, required_fields, validators, "User")
+            
+            # If validation succeeds, return success
+            return Success(user_data)
+            
+        except ValidationError as e:
+            # Return validation error as Failure
+            return Failure(e)
+    
+    @with_error_context
+    def create_user(self, user_data: Dict[str, Any]) -> Result[Dict[str, Any]]:
+        """
+        Create a user using the Result pattern for error handling.
+        
+        This demonstrates using Result for functional error handling.
+        
+        Args:
+            user_data: User data for the new user
+            
+        Returns:
+            Result with created user or error
+        """
+        # Add context information for better debugging
         add_error_context(operation="create_user")
-        add_logging_context(operation="create_user", user_data=user_data)
         
-        self.logger.info("Creating new user")
+        # Validate user data
+        validation_result = self.validate_user_data(user_data)
+        if validation_result.is_failure:
+            return validation_result
         
-        try:
-            # Create user object
-            user = User(
-                id=f"user_{len(self.users) + 1}",
-                username=user_data.get("username", ""),
-                email=user_data.get("email", ""),
-                age=user_data.get("age", 0)
-            )
-            
-            # Check for duplicate username
-            for existing_user in self.users.values():
-                if existing_user.username == user.username:
-                    return failure(UnoError(
-                        f"Username '{user.username}' already exists",
-                        "USER-0003",
-                        username=user.username
-                    ))
-            
-            # Validate user
-            try:
-                validate_user(user)
-            except ValidationError as e:
-                return failure(e)
-            
-            # Store user
-            self.users[user.id] = user
-            self.logger.info(f"User created with ID: {user.id}")
-            
-            return of(user)
-            
-        except Exception as e:
-            self.logger.error(f"Error creating user: {str(e)}")
-            return failure(UnoError(
-                f"Failed to create user: {str(e)}",
-                ErrorCode.INTERNAL_ERROR
+        # Check if user exists (simulate database error)
+        if user_data.get("username") == "admin":
+            return Failure(UnoError(
+                message="User already exists",
+                error_code=ErrorCode.RESOURCE_CONFLICT,
+                context={"username": user_data["username"]}
             ))
-    
-    @from_exception
-    def get_user(self, user_id: str) -> User:
-        """
-        Get a user by ID using exception-based error handling.
         
-        This method demonstrates using the @from_exception decorator
-        to convert exception-based code to Result-based code.
+        # Create user (simulated)
+        created_user = {**user_data, "id": "usr_123"}
+        
+        return Success(created_user)
+    
+    @with_async_error_context
+    async def authenticate_user(self, credentials: Dict[str, Any]) -> Result[Dict[str, Any]]:
+        """
+        Authenticate a user with async error handling.
+        
+        This demonstrates using async error context and AuthorizationError.
         
         Args:
-            user_id: The user ID
+            credentials: User credentials
             
         Returns:
-            The user
-            
-        Raises:
-            UnoError: If the user is not found
+            Result with authenticated user or error
         """
-        if user_id not in self.users:
-            raise UnoError(
-                f"User with ID '{user_id}' not found",
-                "USER-0002",
-                user_id=user_id
-            )
+        username = credentials.get("username")
+        password = credentials.get("password")
         
-        return self.users[user_id]
-    
-    async def get_user_async(self, user_id: str) -> Result[User]:
-        """
-        Get a user by ID asynchronously.
+        # Add context for better debugging
+        add_error_context(username=username)
         
-        This method demonstrates converting an async operation
-        to a Result using from_awaitable.
+        # Simulate async operation
+        await asyncio.sleep(0.1)
         
-        Args:
-            user_id: The user ID
-            
-        Returns:
-            Result containing the user or an error
-        """
-        # Simulate async database query
-        async def async_get_user() -> User:
-            await asyncio.sleep(0.1)  # Simulate network delay
-            
-            if user_id not in self.users:
-                raise UnoError(
-                    f"User with ID '{user_id}' not found",
-                    "USER-0002",
-                    user_id=user_id
-                )
-            
-            return self.users[user_id]
-        
-        # Convert awaitable to Result
-        return await from_awaitable(async_get_user())
-    
-    def list_users(self) -> Result[List[User]]:
-        """
-        List all users.
-        
-        Returns:
-            Result containing list of users
-        """
-        try:
-            users = list(self.users.values())
-            return of(users)
-        except Exception as e:
-            return failure(UnoError(
-                f"Failed to list users: {str(e)}",
-                ErrorCode.INTERNAL_ERROR
+        # Check credentials
+        if not username or not password:
+            return Failure(ValidationError(
+                message="Username and password are required",
+                error_code=ErrorCode.VALIDATION_ERROR
             ))
+        
+        # Simulate authentication failure
+        if username != "admin" or password != "password123":
+            return Failure(AuthorizationError(
+                message="Invalid credentials",
+                permission="login"
+            ))
+        
+        # Return authenticated user
+        return Success({
+            "id": "usr_123",
+            "username": username,
+            "is_admin": True
+        })
 
 
 # Example usage
 async def main():
     """Run the example."""
-    # Step 1: Initialize error catalog and configure logging
-    init_error_catalog()
-    configure_logging(LogConfig(level="INFO", json_format=True))
-    
-    logger = get_logger("example")
-    logger.info("Starting error handling example")
-    
-    # Step 2: Create user service
     user_service = UserService()
     
-    # Step 3: Create a valid user
-    valid_user_result = user_service.create_user({
-        "username": "johndoe",
-        "email": "john@example.com",
-        "age": 30
-    })
-    
-    if valid_user_result.is_success:
-        user = valid_user_result.value
-        logger.info(f"Successfully created user: {user.username}")
-    else:
-        logger.error(f"Failed to create user: {valid_user_result.error}")
-    
-    # Step 4: Create an invalid user
-    invalid_user_result = user_service.create_user({
-        "username": "al",
+    # Example 1: Validation failure
+    invalid_user = {
+        "username": "john",
         "email": "invalid-email",
-        "age": 17
+        "password": "123"
+    }
+    
+    print("\nExample 1: Validation failure")
+    result1 = user_service.create_user(invalid_user)
+    if result1.is_failure:
+        print(f"Error: {result1.error}")
+        if isinstance(result1.error, ValidationError):
+            print("Validation errors:")
+            for error in result1.error.validation_errors:
+                print(f"  - {error['field']}: {error['message']}")
+    
+    # Example 2: Successful user creation
+    valid_user = {
+        "username": "john",
+        "email": "john@example.com",
+        "password": "password123"
+    }
+    
+    print("\nExample 2: Successful user creation")
+    result2 = user_service.create_user(valid_user)
+    if result2.is_success:
+        print(f"User created: {result2.value}")
+    
+    # Example 3: Resource conflict error
+    admin_user = {
+        "username": "admin",
+        "email": "admin@example.com",
+        "password": "adminpass123"
+    }
+    
+    print("\nExample 3: Resource conflict error")
+    result3 = user_service.create_user(admin_user)
+    if result3.is_failure:
+        print(f"Error: {result3.error}")
+    
+    # Example 4: Authentication with authorization error
+    print("\nExample 4: Authentication with invalid credentials")
+    result4 = await user_service.authenticate_user({
+        "username": "john",
+        "password": "wrongpass"
     })
+    if result4.is_failure:
+        print(f"Error: {result4.error}")
     
-    if invalid_user_result.is_success:
-        user = invalid_user_result.value
-        logger.info(f"Successfully created user: {user.username}")
-    else:
-        # Handle validation errors
-        error = invalid_user_result.error
-        logger.error(f"Failed to create user: {error}")
-        
-        if isinstance(error, ValidationError):
-            logger.error("Validation errors:")
-            for field_error in error.validation_errors:
-                logger.error(f"  - {field_error['field']}: {field_error['message']}")
-    
-    # Step 5: Get a user
-    get_user_result = user_service.get_user("user_1")
-    
-    if get_user_result.is_success:
-        user = get_user_result.value
-        logger.info(f"Found user: {user.username}")
-    else:
-        logger.error(f"Failed to get user: {get_user_result.error}")
-    
-    # Step 6: Get a non-existent user
-    get_user_result = user_service.get_user("user_999")
-    
-    if get_user_result.is_success:
-        user = get_user_result.value
-        logger.info(f"Found user: {user.username}")
-    else:
-        logger.error(f"Failed to get user: {get_user_result.error}")
-    
-    # Step 7: Async operations
-    get_user_async_result = await user_service.get_user_async("user_1")
-    
-    if get_user_async_result.is_success:
-        user = get_user_async_result.value
-        logger.info(f"Found user async: {user.username}")
-    else:
-        logger.error(f"Failed to get user async: {get_user_async_result.error}")
-    
-    # Step 8: Convert Result to HTTP response (example)
-    def result_to_http_response(result: Result[Any]) -> Dict[str, Any]:
-        """Convert a Result to an HTTP response."""
-        if result.is_success:
-            return {
-                "status_code": 200,
-                "body": result.to_dict()
-            }
-        else:
-            error = result.error
-            status_code = 500
-            
-            if isinstance(error, UnoError):
-                status_code = error.http_status_code
-            
-            return {
-                "status_code": status_code,
-                "body": result.to_dict()
-            }
-    
-    # Convert the get user result to an HTTP response
-    response = result_to_http_response(get_user_result)
-    logger.info(f"HTTP Response: {response}")
-    
-    logger.info("Error handling example completed")
+    # Example 5: Successful authentication
+    print("\nExample 5: Successful authentication")
+    result5 = await user_service.authenticate_user({
+        "username": "admin",
+        "password": "password123"
+    })
+    if result5.is_success:
+        print(f"Authenticated user: {result5.value}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+EOL < /dev/null

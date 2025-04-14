@@ -2,20 +2,36 @@
 Domain exceptions for the Uno framework.
 
 This module defines exceptions that represent domain-level errors.
+
+IMPORTANT: This file is deprecated and provided only for backward compatibility.
+Use the uno.core.errors package instead.
 """
 
+import warnings
 from typing import Any, Dict, Optional
 
+warnings.warn(
+    "Importing from uno.domain.exceptions is deprecated. "
+    "Import from uno.core.errors.base, uno.core.errors.result, etc. instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
-class DomainError(Exception):
+# Import from the new location to maintain backward compatibility
+from uno.core.errors.base import UnoError
+
+
+class DomainError(UnoError):
     """
     Base class for all domain-level exceptions.
     
     Domain errors represent business rule violations and other exceptional
     conditions that arise in the domain model.
+    
+    DEPRECATED: Use UnoError from uno.core.errors.base instead.
     """
     
-    def __init__(self, message: str, code: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, code: str, details: Optional[Dict[str, Any]] = None, **kwargs):
         """
         Initialize domain error.
         
@@ -27,7 +43,13 @@ class DomainError(Exception):
         self.message = message
         self.code = code
         self.details = details or {}
-        super().__init__(message)
+        
+        # Map to UnoError properties
+        context = self.details.copy()
+        if kwargs:
+            context.update(kwargs)
+        
+        super().__init__(message=message, error_code=code, **context)
     
     def to_dict(self) -> Dict[str, Any]:
         """

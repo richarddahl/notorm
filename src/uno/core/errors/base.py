@@ -46,45 +46,124 @@ def add_error_context(**context: Any) -> None:
     _error_context.set(current)
 
 
-def with_error_context(func: Callable) -> Callable:
-    """
-    Decorator that adds function parameters to error context.
+class _ErrorContextManager:
+    """Context manager for error context."""
     
-    This decorator adds the function parameters to the error context
-    when the function is called, and removes them when the function returns.
+    def __init__(self, **context_kwargs: Any):
+        """Initialize with context key-value pairs."""
+        self.context_kwargs = context_kwargs
+        self.token = None
+    
+    def __enter__(self):
+        """Enter the error context, updating the current context."""
+        current_context = _error_context.get().copy()
+        new_context = current_context.copy()
+        new_context.update(self.context_kwargs)
+        self.token = _error_context.set(new_context)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the error context, restoring the previous context."""
+        if self.token is not None:
+            _error_context.reset(self.token)
+
+
+def with_error_context(*args, **kwargs) -> Any:
+    """
+    Decorator or context manager for adding context to errors.
+    
+    Can be used as:
+    1. Decorator: @with_error_context
+    2. Context manager: with with_error_context(key=value):
     
     Args:
-        func: The function to decorate
+        *args: Function to decorate (if used as decorator)
+        **kwargs: Key-value pairs to add to the context (if used as context manager)
         
     Returns:
-        The decorated function
+        Decorated function or context manager
     """
-    @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        # Get the signature of the function
-        sig = inspect.signature(func)
+    # If used as a decorator (no kwargs and one positional arg which is callable)
+    if kwargs == {} and len(args) == 1 and callable(args[0]):
+        func = args[0]
         
-        # Bind the arguments to the signature
-        bound = sig.bind(*args, **kwargs)
-        bound.apply_defaults()
+        @functools.wraps(func)
+        def wrapper(*f_args: Any, **f_kwargs: Any) -> Any:
+            # Get the signature of the function
+            sig = inspect.signature(func)
+            
+            # Bind the arguments to the signature
+            bound = sig.bind(*f_args, **f_kwargs)
+            bound.apply_defaults()
+            
+            # Use the context manager
+            with _ErrorContextManager(**bound.arguments):
+                return func(*f_args, **f_kwargs)
         
-        # Get the current context
-        current_context = _error_context.get().copy()
-        
-        # Create a new context with function parameters
-        new_context = current_context.copy()
-        new_context.update(bound.arguments)
-        
-        # Set the new context
-        token = _error_context.set(new_context)
-        
-        try:
-            return func(*args, **kwargs)
-        finally:
-            # Restore the previous context
-            _error_context.reset(token)
+        return wrapper
     
-    return wrapper
+    # If used as a context manager
+    return _ErrorContextManager(**kwargs)
+
+
+class _AsyncErrorContextManager:
+    """Async context manager for error context."""
+    
+    def __init__(self, **context_kwargs: Any):
+        """Initialize with context key-value pairs."""
+        self.context_kwargs = context_kwargs
+        self.token = None
+    
+    async def __aenter__(self):
+        """Enter the error context, updating the current context."""
+        current_context = _error_context.get().copy()
+        new_context = current_context.copy()
+        new_context.update(self.context_kwargs)
+        self.token = _error_context.set(new_context)
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit the error context, restoring the previous context."""
+        if self.token is not None:
+            _error_context.reset(self.token)
+
+
+def with_async_error_context(*args, **kwargs) -> Any:
+    """
+    Decorator or async context manager for adding context to errors.
+    
+    Can be used as:
+    1. Decorator: @with_async_error_context
+    2. Async context manager: async with with_async_error_context(key=value):
+    
+    Args:
+        *args: Function to decorate (if used as decorator)
+        **kwargs: Key-value pairs to add to the context (if used as context manager)
+        
+    Returns:
+        Decorated async function or async context manager
+    """
+    # If used as a decorator (no kwargs and one positional arg which is callable)
+    if kwargs == {} and len(args) == 1 and callable(args[0]):
+        func = args[0]
+        
+        @functools.wraps(func)
+        async def wrapper(*f_args: Any, **f_kwargs: Any) -> Any:
+            # Get the signature of the function
+            sig = inspect.signature(func)
+            
+            # Bind the arguments to the signature
+            bound = sig.bind(*f_args, **f_kwargs)
+            bound.apply_defaults()
+            
+            # Use the async context manager
+            async with _AsyncErrorContextManager(**bound.arguments):
+                return await func(*f_args, **f_kwargs)
+        
+        return wrapper
+    
+    # If used as an async context manager
+    return _AsyncErrorContextManager(**kwargs)
 
 
 class ErrorCategory(Enum):
@@ -105,6 +184,14 @@ class ErrorCategory(Enum):
     CONFIGURATION = auto()   # System configuration errors
     INTEGRATION = auto()     # External system integration errors
     INTERNAL = auto()        # Unexpected internal errors
+    INITIALIZATION = auto()  # Initialization errors
+    SERIALIZATION = auto()   # Serialization/deserialization errors
+    DEPENDENCY = auto()      # Dependency resolution errors
+    EXECUTION = auto()       # Execution/processing errors
+    SECURITY = auto()        # Security-related errors
+    CONFLICT = auto()        # Resource conflicts
+    NOT_FOUND = auto()       # Resource not found
+    UNEXPECTED = auto()      # Unexpected errors
     
 
 class ErrorSeverity(Enum):
@@ -313,3 +400,196 @@ class UnoError(Exception):
             A string representation of the error
         """
         return f"{self.error_code}: {self.message}"
+
+
+class DomainValidationError(UnoError):
+    """Error raised when domain validation fails."""
+    
+    def __init__(
+        self,
+        message: str,
+        entity_name: Optional[str] = None,
+        **context: Any
+    ):
+        """
+        Initialize a DomainValidationError.
+        
+        Args:
+            message: The error message
+            entity_name: The name of the entity that failed validation
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if entity_name:
+            context_dict["entity_name"] = entity_name
+            
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            **context_dict
+        )
+
+
+class AggregateInvariantViolationError(UnoError):
+    """Error raised when an aggregate invariant is violated."""
+    
+    def __init__(
+        self,
+        message: str,
+        aggregate_name: Optional[str] = None,
+        aggregate_id: Optional[str] = None,
+        **context: Any
+    ):
+        """
+        Initialize an AggregateInvariantViolationError.
+        
+        Args:
+            message: The error message
+            aggregate_name: The name of the aggregate
+            aggregate_id: The ID of the aggregate
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if aggregate_name:
+            context_dict["aggregate_name"] = aggregate_name
+        if aggregate_id:
+            context_dict["aggregate_id"] = aggregate_id
+            
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.BUSINESS_RULE,
+            **context_dict
+        )
+
+
+class EntityNotFoundError(UnoError):
+    """Error raised when an entity is not found."""
+    
+    def __init__(
+        self,
+        entity_type: str,
+        entity_id: Any,
+        **context: Any
+    ):
+        """
+        Initialize an EntityNotFoundError.
+        
+        Args:
+            entity_type: The type of entity that was not found
+            entity_id: The ID of the entity that was not found
+            **context: Additional context information
+        """
+        message = f"{entity_type} with ID {entity_id} not found"
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.RESOURCE_NOT_FOUND,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            **context
+        )
+
+
+class ConcurrencyError(UnoError):
+    """Error raised when there is a concurrency conflict."""
+    
+    def __init__(
+        self,
+        entity_type: str,
+        entity_id: Any,
+        expected_version: Optional[int] = None,
+        actual_version: Optional[int] = None,
+        **context: Any
+    ):
+        """
+        Initialize a ConcurrencyError.
+        
+        Args:
+            entity_type: The type of entity with the concurrency conflict
+            entity_id: The ID of the entity with the concurrency conflict
+            expected_version: The expected version of the entity
+            actual_version: The actual version of the entity
+            **context: Additional context information
+        """
+        message = f"Concurrency conflict detected for {entity_type} with ID {entity_id}"
+        
+        context_dict = context.copy()
+        if expected_version is not None:
+            context_dict["expected_version"] = expected_version
+        if actual_version is not None:
+            context_dict["actual_version"] = actual_version
+            
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.RESOURCE_CONFLICT,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            **context_dict
+        )
+
+
+class AuthorizationError(UnoError):
+    """Error raised when user is not authorized to perform an operation."""
+    
+    def __init__(
+        self,
+        message: str = "User is not authorized to perform this operation",
+        resource_type: Optional[str] = None,
+        resource_id: Optional[Any] = None,
+        permission: Optional[str] = None,
+        **context: Any
+    ):
+        """
+        Initialize an AuthorizationError.
+        
+        Args:
+            message: The error message
+            resource_type: The type of resource the user tried to access
+            resource_id: The ID of the resource the user tried to access
+            permission: The permission the user was missing
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if resource_type:
+            context_dict["resource_type"] = resource_type
+        if resource_id:
+            context_dict["resource_id"] = resource_id
+        if permission:
+            context_dict["permission"] = permission
+            
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.AUTHORIZATION_ERROR,
+            **context_dict
+        )
+
+
+class ValidationError(UnoError):
+    """Error raised when validation fails."""
+    
+    def __init__(
+        self,
+        message: str,
+        field: Optional[str] = None,
+        value: Optional[Any] = None,
+        **context: Any
+    ):
+        """
+        Initialize a ValidationError.
+        
+        Args:
+            message: The error message
+            field: The field that failed validation
+            value: The value that failed validation
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if field:
+            context_dict["field"] = field
+        if value is not None:
+            context_dict["value"] = value
+            
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            **context_dict
+        )

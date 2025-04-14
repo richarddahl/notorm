@@ -194,12 +194,12 @@ def validate_fields(
     
     # Check required fields
     for field in required_fields:
-        if field not in data or data[field] is None:
+        if field not in data or data[field] is None or (isinstance(data[field], str) and not data[field]):
             context.add_error(
                 field=field,
                 message=f"Field '{field}' is required",
                 error_code="FIELD_REQUIRED",
-                value=None
+                value=data.get(field)
             )
     
     # Run validators

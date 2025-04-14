@@ -25,8 +25,16 @@ from uno.database.engine import (
     async_connection,
 )
 from uno.model import UnoModel
-from uno.errors import UnoError
 from uno.settings import uno_settings
+from uno.database.errors import (
+    DatabaseErrorCode,
+    DatabaseQueryError,
+    DatabaseIntegrityError,
+    DatabaseUniqueViolationError,
+    DatabaseTransactionError,
+    DatabaseResourceNotFoundError
+)
+from uno.core.errors.result import Result, Success, Failure
 from uno.core.protocols import (
     DatabaseSessionProtocol,
     DatabaseSessionContextProtocol,

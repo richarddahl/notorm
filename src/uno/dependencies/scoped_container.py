@@ -504,3 +504,20 @@ async def create_async_scope(scope_id: Optional[str] = None) -> ServiceResolver:
     """
     async with get_container().create_async_scope(scope_id) as scope:
         yield scope
+
+
+async def get_scoped_service(service_type: Type[T]) -> T:
+    """
+    Get a scoped service from the container.
+    
+    This function creates a temporary scope and resolves the service within it.
+    The scope is then closed, so any scoped dependencies will be disposed.
+    
+    Args:
+        service_type: The type of service to resolve
+        
+    Returns:
+        An instance of the requested service
+    """
+    async with create_async_scope(f"temp_scope_{id(object())}") as scope:
+        return scope.resolve(service_type)

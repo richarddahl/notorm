@@ -8,10 +8,10 @@ domain operations that don't naturally belong to a single entity or value object
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 from abc import ABC, abstractmethod
 
-from uno.core.result import Result, Success, Failure
+from uno.core.errors.result import Result, Success, Failure
 from uno.core.uow import UnitOfWork
 from uno.core.events import EventBus
-from uno.domain.exceptions import DomainError
+from uno.core.errors.base import UnoError
 
 
 InputT = TypeVar('InputT')
@@ -73,7 +73,7 @@ class DomainService(ABC, Generic[InputT, OutputT, UowT]):
                 
                 return result
                 
-        except DomainError as e:
+        except UnoError as e:
             # Domain errors are returned as failures
             return Failure(e)
         except Exception as e:
@@ -132,7 +132,7 @@ class ReadOnlyDomainService(ABC, Generic[InputT, OutputT, UowT]):
         """
         try:
             return await self._execute_internal(input_data)
-        except DomainError as e:
+        except UnoError as e:
             return Failure(e)
         except Exception as e:
             return Failure(e)
