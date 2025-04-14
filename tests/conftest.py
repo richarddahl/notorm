@@ -14,6 +14,7 @@ import inspect
 import pytest
 import pytest_asyncio
 import importlib
+import inject
 
 from psycopg import sql
 
@@ -215,3 +216,22 @@ async def session(test_db):
             yield session
         finally:
             await session.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_inject():
+    """
+    Set up the inject dependency injection framework.
+    This is required for all tests that use the workflows module.
+    """
+    # Create a simple injector configuration to prevent "No injector is configured" errors
+    def config(binder):
+        pass
+    
+    # Configure the injector
+    inject.clear_and_configure(config)
+    
+    yield
+    
+    # Clear the injector after all tests
+    inject.clear()
