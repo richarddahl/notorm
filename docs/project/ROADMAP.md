@@ -1,6 +1,16 @@
-# Uno Framework Modernization Roadmap (April 2025 Update)
+# Uno Framework Modernization Roadmap (May 2025 Update)
 
-This roadmap outlines the key improvements planned for the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices. All planned roadmap items have been completed as of April 2025.
+This roadmap outlines the key improvements planned for the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices. All planned roadmap items have been completed as of May 2025.
+
+## Legacy Code Cleanup (✅ Completed May 2025)
+
+We have successfully completed a thorough cleanup of legacy code patterns:
+
+- [x] **Removal of Legacy DI System**: Replaced `inject` library with modern dependency injection
+- [x] **Elimination of Singleton Pattern**: Removed all `get_instance()` patterns in favor of DI
+- [x] **Result Pattern Modernization**: Updated result handling to use modern conventions
+- [x] **Circular Import Resolution**: Solved circular import issues with protocol-based design
+- [x] **Python 3.12+ Features**: Full adoption of the latest Python language features
 
 ## Core Architecture Standardization (✅ Completed)
 
@@ -20,6 +30,8 @@ With the completion of the standardization effort, we recommend the following fu
 3. **Performance Optimization**: Use benchmark results to identify and optimize bottlenecks
 4. **External Integrations**: Focus on more third-party system integrations
 5. **Client Libraries**: Develop client libraries in various languages
+6. **Advanced AI Features**: Expand AI capabilities with anomaly detection and more
+7. **Enhanced Developer Experience**: Further refinement of developer tooling
 
 ## Phase 1: Core Architecture Improvements (✅ Completed)
 
@@ -176,3 +188,42 @@ With the completion of the standardization effort, we recommend the following fu
 - [x] Add debugging and profiling tools
 - [x] Implement code generation utilities
 - [x] Create interactive documentation tools
+
+## Phase 6: AI-Enhanced Features (✅ Completed)
+
+### 25. Semantic Search (✅ Completed)
+- [x] Implement embedding model infrastructure
+- [x] Create vector storage with pgvector
+- [x] Develop semantic search engine
+- [x] Add REST API endpoints for search operations
+- [x] Implement domain entity integration
+
+### 26. Recommendation Engine (✅ Completed)
+- [x] Develop multiple recommendation algorithms
+- [x] Implement user and item profile management
+- [x] Create training pipeline for interaction data
+- [x] Build REST API for recommendations
+- [x] Add domain entity integration
+
+### 27. Content Generation (✅ Completed)
+- [x] Implement text generation capabilities
+- [x] Create summarization services
+- [x] Add Retrieval Augmented Generation (RAG)
+- [x] Integrate with Apache AGE graph database
+- [x] Build comprehensive API endpoints
+
+## Phase 7: Enhanced Developer Experience (✅ Completed)
+
+### 28. Scaffolding System (✅ Completed)
+- [x] Create project template system
+- [x] Implement feature scaffolding
+- [x] Add entity, repository, service, and endpoint generation
+- [x] Create test generation capabilities
+- [x] Build CLI interface
+
+### 29. AI-Assisted Development (✅ Completed)
+- [x] Implement code suggestion features
+- [x] Add context-aware template customization
+- [x] Create code pattern recognition
+- [x] Develop automatic documentation generation
+- [x] Build semantic code search

@@ -1,16 +1,18 @@
 # Developer Tools
 
-This document provides an overview of the Developer Tools available in the Uno framework. These tools are designed to improve the developer experience by providing debugging utilities, profiling tools, code generation capabilities, and interactive documentation.
+This document provides an overview of the Developer Tools available in the Uno framework. These tools are designed to improve the developer experience by providing debugging utilities, profiling tools, code generation capabilities, interactive modeling, and comprehensive documentation.
 
 ## Overview
 
 The Developer Tools module is organized into several key components:
 
-1. **Debugging Tools**: Utilities for debugging application code, including middleware for request/response inspection, function tracing, and SQL query analysis.
-2. **Profiling Tools**: Performance and memory profiling utilities to identify bottlenecks and optimization opportunities.
-3. **Code Generation**: Tools for generating code templates for models, repositories, and API endpoints.
-4. **Documentation Tools**: Utilities for automatically generating documentation from code.
-5. **CLI Tools**: Command-line interface for accessing all developer tools.
+1. **Project Scaffolding**: Tools for creating new projects and features with standardized structure and best practices.
+2. **Visual Data Modeling**: Interactive entity modeling and code generation with a browser-based interface.
+3. **Debugging Tools**: Utilities for debugging application code, including middleware for request/response inspection, function tracing, and SQL query analysis.
+4. **Profiling Tools**: Performance and memory profiling utilities to identify bottlenecks and optimization opportunities.
+5. **Code Generation**: Tools for generating code templates for models, repositories, and API endpoints.
+6. **Documentation Tools**: Utilities for automatically generating documentation from code.
+7. **CLI Tools**: Command-line interface for accessing all developer tools.
 
 ## Installation
 
@@ -19,6 +21,50 @@ The Developer Tools are included in the main Uno package. To ensure you have all
 ```bash
 pip install uno[devtools]
 ```
+
+## Command Line Interface
+
+The central entry point for all developer tools is the CLI module:
+
+```bash
+python -m uno.devtools.cli.main [COMMAND] [OPTIONS]
+```
+
+### Global Options
+
+All commands support these options:
+
+- `--help`: Show help information
+- `--verbose`: Enable verbose output
+- `--quiet`: Suppress non-essential output
+
+## Scaffolding
+
+The scaffolding system allows you to quickly create projects and components:
+
+```bash
+# Create a new project
+python -m uno.devtools.cli.main scaffold new my_project --template standard --database postgresql
+
+# Scaffold a complete feature
+python -m uno.devtools.cli.main scaffold feature product --domain ecommerce
+```
+
+See [Scaffolding Guide](developer_tools/scaffolding.md) for complete documentation.
+
+## Visual Data Modeling
+
+The visual data modeling tool provides an interactive interface for designing entity models:
+
+```bash
+# Start the visual modeler
+python -m uno.devtools.cli.main modeler start
+
+# Analyze an existing project
+python -m uno.devtools.cli.main modeler analyze /path/to/project
+```
+
+See [Visual Modeler Guide](developer_tools/visual_modeler.md) for complete documentation.
 
 ## Debugging Tools
 
@@ -221,6 +267,16 @@ generator = ApiGenerator()
 api_code = generator.generate_api(api_def)
 ```
 
+## AI Integration
+
+All developer tools integrate with Uno's AI capabilities:
+
+- **Smart Template Completion**: AI-enhanced template completion
+- **Code Generation**: Intelligent code suggestions
+- **Documentation**: Automated documentation generation
+- **Entity Analysis**: AI-assisted entity relationship detection
+- **Best Practices**: Suggestions for architectural improvements
+
 ## Documentation Tools
 
 ### Documentation Generator
@@ -238,27 +294,6 @@ generator.generate_docs_for_package("myapp", output_dir="docs")
 from myapp import users
 module_doc = generator.extract_module_doc(users)
 markdown = generator.generate_markdown(module_doc)
-```
-
-## Command-Line Interface
-
-The Developer Tools can be accessed through a command-line interface:
-
-```bash
-# Debug middleware for a FastAPI application
-uno-dev debug middleware example.py --log-requests --log-responses
-
-# Trace a function execution
-uno-dev debug trace module.py --function=my_function
-
-# Profile a function's performance
-uno-dev profile function module.py --function=my_function
-
-# Generate a model
-uno-dev codegen model User --table=users --fields=id:int:pk,name:str,email:str:unique --output=user.py
-
-# Generate documentation
-uno-dev docs generate myapp --output=docs --format=markdown
 ```
 
 ## Integration with FastAPI
@@ -311,11 +346,22 @@ export UNO_DEVTOOLS_OUTPUT_DIR=./devtools_output
 
 ## Best Practices
 
-1. **Debugging in Development**: Enable debugging only in development environments, not in production.
-2. **Selective Profiling**: Focus profiling on specific operations rather than the entire application.
-3. **Code Generation as Starting Points**: Use generated code as a starting point, then customize as needed.
-4. **Documentation Updates**: Regenerate documentation when making significant code changes.
-5. **CLI for Automation**: Use the CLI tools in automation scripts and CI/CD pipelines.
+1. **Use Scaffolding**: Start new projects and features with the scaffolding system for consistent structure
+2. **Visual Modeling**: Design entity models visually before implementation for better architecture
+3. **Selective Profiling**: Focus profiling on specific operations rather than the entire application
+4. **Code Generation as Starting Points**: Use generated code as a starting point, then customize as needed
+5. **Documentation Updates**: Regenerate documentation when making significant code changes
+6. **CLI for Automation**: Use the CLI tools in automation scripts and CI/CD pipelines
+7. **Debug in Development**: Enable debugging only in development environments, not in production
+
+## Extending Developer Tools
+
+You can extend the developer tooling system with custom:
+
+- Project templates
+- Component templates
+- Code generators
+- Analysis tools
 
 ## Troubleshooting
 
@@ -324,17 +370,17 @@ export UNO_DEVTOOLS_OUTPUT_DIR=./devtools_output
 1. **High Memory Usage**: When using memory profiling, be aware that it can increase memory usage significantly. Use selectively.
 2. **Performance Impact**: Debugging and profiling tools add overhead. Use selectively in performance-sensitive code.
 3. **Generated Code Conflicts**: Generated code might conflict with existing files. Use the `--force` flag to overwrite, or specify a different output path.
+4. **Visual Modeler Issues**: If the visual modeler doesn't start, check for port conflicts or missing dependencies (FastAPI, Uvicorn).
 
 ### Getting Help
 
 For more help with the Developer Tools, use the built-in help command:
 
 ```bash
-uno-dev --help
-uno-dev <command> --help
+python -m uno.devtools.cli.main --help
+python -m uno.devtools.cli.main <command> --help
 ```
 
 ## Conclusion
 
-The Developer Tools provide a comprehensive suite of utilities to enhance your development experience with the Uno framework. From debugging and profiling to code generation and documentation, these tools are designed to make your development workflow more efficient and productive.
-EOF < /dev/null
+The Developer Tools provide a comprehensive suite of utilities to enhance your development experience with the Uno framework. From scaffolding and visual modeling to debugging, profiling, code generation and documentation, these tools are designed to make your development workflow more efficient and productive.

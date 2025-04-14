@@ -84,7 +84,7 @@ class SummarySchema(UnoSchema):
     """Base class for summary schemas with metadata."""
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "description": "A summary view of the data"
         }
 

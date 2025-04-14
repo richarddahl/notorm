@@ -274,7 +274,7 @@ class CustomerResponse(BaseModel):
     status: str = "active"
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": "abc123",
                 "name": "John Doe",
