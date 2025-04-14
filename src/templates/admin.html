@@ -310,13 +310,34 @@
           if (componentName && componentName !== 'admin') {
             console.log(`Loading component from URL path: ${componentName}`);
             try {
-              // Define loadComponentByName function
+              // Define loadComponentByName function with robust error handling
               const loadComponentByName = async (tagName, container) => {
-                await ensureComponentLoaded(tagName);
-                const component = document.createElement(tagName);
-                container.innerHTML = '';
-                container.appendChild(component);
-                console.log(`Component ${tagName} loaded from URL`);
+                try {
+                  // First try to ensure the component is loaded
+                  await ensureComponentLoaded(tagName);
+                  
+                  // Verify component is actually registered before creating element
+                  if (!customElements.get(tagName)) {
+                    console.warn(`Component ${tagName} not registered after loading, might be a registration issue`);
+                    throw new Error(`Component ${tagName} not registered after loading attempt`);
+                  }
+                  
+                  // Create and append the component
+                  const component = document.createElement(tagName);
+                  container.innerHTML = '';
+                  container.appendChild(component);
+                  console.log(`Component ${tagName} loaded from URL`);
+                  
+                  // Add a safety check to make sure component initialized properly
+                  setTimeout(() => {
+                    if (component && !component.shadowRoot && !component.innerHTML) {
+                      console.warn(`Component ${tagName} may not have initialized properly`);
+                    }
+                  }, 1000);
+                } catch (err) {
+                  console.error(`Error in loadComponentByName for ${tagName}:`, err);
+                  throw err; // Re-throw to be handled by the caller
+                }
               };
               
               // Try to handle plural/singular names (e.g., "reports" vs "report")
@@ -353,7 +374,43 @@
                 await loadComponentByName('wa-report-dashboard', container);
               } else if (componentName === 'vector-search') {
                 console.log('Loading vector-search component');
-                await loadComponentByName('wa-semantic-search', container);
+                try {
+                  // Try loading the index.js first to ensure all components are registered
+                  await import('/static/components/vector-search/index.js')
+                    .catch(e => console.warn('Error pre-loading vector-search module:', e));
+                  
+                  // Try each possible tag name for the vector search component
+                  const vectorSearchTags = [
+                    'wa-semantic-search',
+                    'okui-semantic-search',
+                    'okui-vector-search-dashboard'
+                  ];
+                  
+                  let loaded = false;
+                  for (const tag of vectorSearchTags) {
+                    if (customElements.get(tag)) {
+                      console.log(`Using registered vector search component: ${tag}`);
+                      await loadComponentByName(tag, container);
+                      loaded = true;
+                      break;
+                    }
+                  }
+                  
+                  // If no components were found registered, try the original approach
+                  if (!loaded) {
+                    console.warn('No vector search components registered, using default fallback');
+                    await loadComponentByName('wa-semantic-search', container);
+                  }
+                } catch (vectorError) {
+                  console.error('Error loading vector-search component:', vectorError);
+                  container.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                      <h3 style="color: #d32f2f;">Vector Search Component Error</h3>
+                      <p>${vectorError.message || 'Unknown error loading vector search component'}</p>
+                      <p>Please try refreshing the page or contact support.</p>
+                    </div>
+                  `;
+                }
               } else {
                 // If no specific match, try the original pattern as a fallback
                 await loadComponentByName(`okui-${componentName}-dashboard`, container);
