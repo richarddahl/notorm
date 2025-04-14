@@ -22,6 +22,25 @@ from uno.attributes.interfaces import AttributeRepositoryProtocol, AttributeType
 from uno.attributes.repositories import AttributeRepository, AttributeTypeRepository
 from uno.attributes.services import AttributeService, AttributeTypeService
 from uno.attributes.api_integration import register_attribute_endpoints
+from uno.attributes.errors import (
+    AttributeErrorCode,
+    AttributeNotFoundError,
+    AttributeTypeNotFoundError,
+    AttributeInvalidDataError,
+    AttributeTypeInvalidDataError,
+    AttributeValueError,
+    AttributeServiceError,
+    AttributeTypeServiceError,
+    register_attribute_errors,
+)
+
+# Register attribute error codes in the catalog
+try:
+    register_attribute_errors()
+except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to register attribute error codes: {e}")
 
 __all__ = [
     # Core models and objects
@@ -44,4 +63,14 @@ __all__ = [
     
     # API integration
     "register_attribute_endpoints",
+    
+    # Error types
+    "AttributeErrorCode",
+    "AttributeNotFoundError",
+    "AttributeTypeNotFoundError",
+    "AttributeInvalidDataError",
+    "AttributeTypeInvalidDataError",
+    "AttributeValueError",
+    "AttributeServiceError",
+    "AttributeTypeServiceError",
 ]

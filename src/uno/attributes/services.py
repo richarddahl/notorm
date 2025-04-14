@@ -18,16 +18,16 @@ from uno.attributes.interfaces import AttributeServiceProtocol, AttributeTypeSer
 from uno.attributes.repositories import AttributeRepository, AttributeTypeRepository
 from uno.attributes.objs import Attribute, AttributeType
 from uno.meta.objs import MetaType, MetaRecord
-
-
-class AttributeServiceError(Exception):
-    """Base error class for attribute service errors."""
-    pass
-
-
-class AttributeTypeServiceError(Exception):
-    """Base error class for attribute type service errors."""
-    pass
+from uno.attributes.errors import (
+    AttributeErrorCode,
+    AttributeNotFoundError,
+    AttributeTypeNotFoundError,
+    AttributeInvalidDataError,
+    AttributeTypeInvalidDataError,
+    AttributeValueError,
+    AttributeServiceError,
+    AttributeTypeServiceError,
+)
 
 
 class AttributeService(AttributeServiceProtocol):
@@ -85,7 +85,10 @@ class AttributeService(AttributeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error creating attribute: {e}")
-            return Failure(AttributeServiceError(f"Error creating attribute: {str(e)}"))
+            return Failure(AttributeServiceError(
+                reason=str(e),
+                operation="create"
+            ))
     
     async def add_values(
         self, 
@@ -103,7 +106,7 @@ class AttributeService(AttributeServiceProtocol):
             attribute = attribute_result.value
             
             if attribute is None:
-                return Failure(AttributeServiceError(f"Attribute with ID {attribute_id} not found"))
+                return Failure(AttributeNotFoundError(attribute_id))
             
             # Update the attribute's values
             # In a real implementation, this would handle many-to-many relationship updates
@@ -117,7 +120,11 @@ class AttributeService(AttributeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error adding values to attribute {attribute_id}: {e}")
-            return Failure(AttributeServiceError(f"Error adding values to attribute: {str(e)}"))
+            return Failure(AttributeServiceError(
+                reason=str(e),
+                operation="add_values",
+                attribute_id=attribute_id
+            ))
     
     async def remove_values(
         self, 
@@ -135,7 +142,7 @@ class AttributeService(AttributeServiceProtocol):
             attribute = attribute_result.value
             
             if attribute is None:
-                return Failure(AttributeServiceError(f"Attribute with ID {attribute_id} not found"))
+                return Failure(AttributeNotFoundError(attribute_id))
             
             # Remove the specified values
             if attribute.values:
@@ -148,7 +155,11 @@ class AttributeService(AttributeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error removing values from attribute {attribute_id}: {e}")
-            return Failure(AttributeServiceError(f"Error removing values from attribute: {str(e)}"))
+            return Failure(AttributeServiceError(
+                reason=str(e),
+                operation="remove_values",
+                attribute_id=attribute_id
+            ))
     
     async def validate_attribute(
         self, 
@@ -168,7 +179,10 @@ class AttributeService(AttributeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error validating attribute: {e}")
-            return Failure(AttributeServiceError(f"Error validating attribute: {str(e)}"))
+            return Failure(AttributeInvalidDataError(
+                reason=str(e),
+                message="Error validating attribute"
+            ))
     
     async def get_attributes_for_record(
         self, 
@@ -184,7 +198,11 @@ class AttributeService(AttributeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error getting attributes for record {record_id}: {e}")
-            return Failure(AttributeServiceError(f"Error getting attributes for record: {str(e)}"))
+            return Failure(AttributeServiceError(
+                reason=str(e),
+                operation="get_attributes_for_record",
+                record_id=record_id
+            ))
 
 
 class AttributeTypeService(AttributeTypeServiceProtocol):
@@ -228,7 +246,10 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error creating attribute type: {e}")
-            return Failure(AttributeTypeServiceError(f"Error creating attribute type: {str(e)}"))
+            return Failure(AttributeTypeServiceError(
+                reason=str(e),
+                operation="create"
+            ))
     
     async def update_applicable_meta_types(
         self, 
@@ -246,7 +267,7 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             attribute_type = attribute_type_result.value
             
             if attribute_type is None:
-                return Failure(AttributeTypeServiceError(f"Attribute type with ID {attribute_type_id} not found"))
+                return Failure(AttributeTypeNotFoundError(attribute_type_id))
             
             # Update the applicable meta types
             # In a real implementation, this would handle many-to-many relationship updates
@@ -258,7 +279,11 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error updating applicable meta types for attribute type {attribute_type_id}: {e}")
-            return Failure(AttributeTypeServiceError(f"Error updating applicable meta types: {str(e)}"))
+            return Failure(AttributeTypeServiceError(
+                reason=str(e),
+                operation="update_applicable_meta_types",
+                attribute_type_id=attribute_type_id
+            ))
     
     async def update_value_meta_types(
         self, 
@@ -276,7 +301,7 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             attribute_type = attribute_type_result.value
             
             if attribute_type is None:
-                return Failure(AttributeTypeServiceError(f"Attribute type with ID {attribute_type_id} not found"))
+                return Failure(AttributeTypeNotFoundError(attribute_type_id))
             
             # Update the value meta types
             # In a real implementation, this would handle many-to-many relationship updates
@@ -288,7 +313,11 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error updating value meta types for attribute type {attribute_type_id}: {e}")
-            return Failure(AttributeTypeServiceError(f"Error updating value meta types: {str(e)}"))
+            return Failure(AttributeTypeServiceError(
+                reason=str(e),
+                operation="update_value_meta_types",
+                attribute_type_id=attribute_type_id
+            ))
     
     async def get_applicable_attribute_types(
         self, 
@@ -303,4 +332,8 @@ class AttributeTypeService(AttributeTypeServiceProtocol):
             
         except Exception as e:
             self.logger.error(f"Error getting applicable attribute types for meta type {meta_type_id}: {e}")
-            return Failure(AttributeTypeServiceError(f"Error getting applicable attribute types: {str(e)}"))
+            return Failure(AttributeTypeServiceError(
+                reason=str(e),
+                operation="get_applicable_attribute_types",
+                meta_type_id=meta_type_id
+            ))

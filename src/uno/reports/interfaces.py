@@ -14,7 +14,14 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.core.errors.result import Result
-from uno.core.errors.base import UnoError
+from uno.reports.errors import (
+    ReportTemplateNotFoundError,
+    ReportFieldNotFoundError,
+    ReportExecutionNotFoundError,
+    ReportTriggerNotFoundError,
+    ReportExecutionFailedError,
+    ReportOutputFormatInvalidError
+)
 from uno.reports.objs import (
     ReportTemplate,
     ReportFieldDefinition,
@@ -26,10 +33,6 @@ from uno.reports.objs import (
 
 
 T = TypeVar('T')
-
-class ReportError(UnoError):
-    """Base class for report operation errors."""
-    pass
 
 
 # Repository protocols

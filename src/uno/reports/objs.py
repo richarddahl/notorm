@@ -4,7 +4,7 @@
 
 from typing import Optional, List, Dict, Any
 from typing_extensions import Self
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import model_validator, field_validator, ConfigDict
 
 from uno.schema.schema import UnoSchemaConfig
@@ -543,7 +543,7 @@ class ReportExecution(UnoObj[ReportExecutionModel], DefaultObjectMixin):
     trigger_type: str  # MANUAL, SCHEDULED, EVENT, QUERY
     parameters: Dict[str, Any] = {}
     status: str = ReportExecutionStatus.PENDING
-    started_at: datetime = datetime.utcnow()
+    started_at: datetime = datetime.now(timezone.utc)
     completed_at: Optional[datetime] = None
     error_details: Optional[str] = None
     row_count: Optional[int] = None

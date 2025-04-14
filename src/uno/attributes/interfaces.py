@@ -16,14 +16,15 @@ from uno.core.errors.result import Result
 from uno.attributes.models import AttributeModel, AttributeTypeModel
 from uno.attributes.objs import Attribute, AttributeType
 from uno.meta.objs import MetaType, MetaRecord
-from uno.errors import UnoError
+from uno.attributes.errors import (
+    AttributeErrorCode,
+    AttributeNotFoundError,
+    AttributeValidationError,
+    AttributeGraphError
+)
 
 
 T = TypeVar('T')
-# Use a concrete error type instead of a TypeVar
-class AttributeOperationError(UnoError):
-    """Error raised during attribute operations"""
-    pass
 
 
 @runtime_checkable

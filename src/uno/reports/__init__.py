@@ -44,7 +44,21 @@ from uno.reports.services import (
     ReportExecutionService,
     ReportTriggerService,
     ReportOutputService,
-    ReportError,
+)
+
+from uno.reports.errors import (
+    ReportErrorCode,
+    ReportTemplateNotFoundError,
+    ReportFieldNotFoundError,
+    ReportExecutionNotFoundError,
+    ReportTriggerNotFoundError,
+    ReportExecutionFailedError,
+    ReportOutputFormatInvalidError,
+    ReportOutputDeliveryFailedError,
+    ReportTemplateInvalidError,
+    ReportFieldInvalidError,
+    ReportTriggerInvalidError,
+    register_report_errors,
 )
 
 from uno.reports.repositories import (
@@ -58,6 +72,9 @@ from uno.reports.repositories import (
 
 # Export endpoints for API integration
 from uno.reports.endpoints import endpoints
+
+# Register report errors
+register_report_errors()
 
 __all__ = [
     # Interfaces
@@ -92,7 +109,19 @@ __all__ = [
     "ReportExecutionService",
     "ReportTriggerService",
     "ReportOutputService",
-    "ReportError",
+    
+    # Error classes
+    "ReportErrorCode",
+    "ReportTemplateNotFoundError",
+    "ReportFieldNotFoundError",
+    "ReportExecutionNotFoundError",
+    "ReportTriggerNotFoundError",
+    "ReportExecutionFailedError",
+    "ReportOutputFormatInvalidError",
+    "ReportOutputDeliveryFailedError",
+    "ReportTemplateInvalidError",
+    "ReportFieldInvalidError",
+    "ReportTriggerInvalidError",
     
     # Repositories
     "ReportTemplateRepository",

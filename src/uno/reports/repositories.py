@@ -20,13 +20,16 @@ from sqlalchemy.orm import joinedload
 
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.errors.base import UnoError
-
-class ErrorCode(str, Enum):
-    """Error codes for report operations."""
-    OPERATION_FAILED = "OPERATION_FAILED"
-    VALIDATION_ERROR = "VALIDATION_ERROR"
-    NOT_FOUND = "NOT_FOUND"
-    CONFLICT = "CONFLICT"
+from uno.reports.errors import (
+    ReportErrorCode,
+    ReportTemplateNotFoundError,
+    ReportFieldNotFoundError,
+    ReportExecutionNotFoundError,
+    ReportTriggerNotFoundError,
+    ReportExecutionFailedError,
+    ReportOutputDeliveryFailedError,
+    ReportTemplateInvalidError
+)
 
 from uno.database.repository import UnoBaseRepository
 from uno.reports.models import (
@@ -61,10 +64,14 @@ class ReportError(UnoError):
     def __init__(
         self,
         message: str,
-        error_code: ErrorCode = ErrorCode.OPERATION_FAILED,
+        error_code: str = ReportErrorCode.REPORT_OPERATION_FAILED,
         **context: Any
     ):
-        super().__init__(message, error_code, **context)
+        super().__init__(
+            message=message, 
+            error_code=error_code, 
+            **context
+        )
 
 
 class ReportTemplateRepository(

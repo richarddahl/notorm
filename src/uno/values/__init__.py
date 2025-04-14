@@ -55,6 +55,24 @@ from uno.values.repositories import (
 )
 from uno.values.services import ValueService
 from uno.values.api_integration import register_value_endpoints
+from uno.values.errors import (
+    ValueErrorCode,
+    ValueNotFoundError,
+    ValueInvalidDataError,
+    ValueTypeMismatchError,
+    ValueValidationError,
+    ValueServiceError,
+    ValueRepositoryError,
+    register_value_errors,
+)
+
+# Register value error codes in the catalog
+try:
+    register_value_errors()
+except Exception as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to register value error codes: {e}")
 
 __all__ = [
     # Models
@@ -94,4 +112,13 @@ __all__ = [
     
     # API integration
     "register_value_endpoints",
+    
+    # Error types
+    "ValueErrorCode",
+    "ValueNotFoundError",
+    "ValueInvalidDataError",
+    "ValueTypeMismatchError",
+    "ValueValidationError",
+    "ValueServiceError",
+    "ValueRepositoryError",
 ]
