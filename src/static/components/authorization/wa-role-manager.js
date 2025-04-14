@@ -1065,4 +1065,10 @@ export class WebAwesomeRoleManager extends LitElement {
     `;
   }
 }
-customElements.define('wa-role-manager', WebAwesomeRoleManager);
+// Define the custom element if not already registered
+if (!customElements.get('wa-role-manager')) {
+  customElements.define('wa-role-manager', WebAwesomeRoleManager);
+  console.log('wa-role-manager component registered');
+} else {
+  console.log('wa-role-manager component already registered');
+}

@@ -372,6 +372,45 @@
               // If we reach here, try special case mappings
               if (componentName === 'reports' || componentName === 'report') {
                 await loadComponentByName('wa-report-dashboard', container);
+              } else if (componentName === 'authorization') {
+                console.log('Loading authorization component');
+                try {
+                  // Try loading the index.js first to ensure all components are registered
+                  await import('/static/components/authorization/index.js')
+                    .catch(e => console.warn('Error pre-loading authorization module:', e));
+                  
+                  // Try each possible tag name for the authorization component
+                  const authTags = [
+                    'wa-role-manager',
+                    'okui-role-manager',
+                    'okui-authorization-dashboard'
+                  ];
+                  
+                  let loaded = false;
+                  for (const tag of authTags) {
+                    if (customElements.get(tag)) {
+                      console.log(`Using registered authorization component: ${tag}`);
+                      await loadComponentByName(tag, container);
+                      loaded = true;
+                      break;
+                    }
+                  }
+                  
+                  // If no components were found registered, try the original approach
+                  if (!loaded) {
+                    console.warn('No authorization components registered, using default fallback');
+                    await loadComponentByName('wa-role-manager', container);
+                  }
+                } catch (authError) {
+                  console.error('Error loading authorization component:', authError);
+                  container.innerHTML = `
+                    <div style="padding: 40px; text-align: center;">
+                      <h3 style="color: #d32f2f;">Authorization Component Error</h3>
+                      <p>${authError.message || 'Unknown error loading authorization component'}</p>
+                      <p>Please try refreshing the page or contact support.</p>
+                    </div>
+                  `;
+                }
               } else if (componentName === 'vector-search') {
                 console.log('Loading vector-search component');
                 try {
