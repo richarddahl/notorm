@@ -11,10 +11,14 @@ from typing import Optional
 
 try:
     import typer
+    from rich.console import Console
     TYPER_AVAILABLE = True
 except ImportError:
     TYPER_AVAILABLE = False
     import argparse
+
+# Initialize console for rich output
+console = Console() if TYPER_AVAILABLE else None
 
 
 if TYPER_AVAILABLE:
@@ -23,6 +27,18 @@ if TYPER_AVAILABLE:
         help="Developer tools for Uno",
         add_completion=True,
     )
+    
+    # Import and register the scaffolding command
+    from uno.devtools.cli.scaffold import scaffold_app
+    app.add_typer(scaffold_app, name="scaffold")
+    
+    # Import and register the modeler command
+    from uno.devtools.cli.modeler import modeler_app
+    app.add_typer(modeler_app, name="modeler")
+    
+    # Import and register the migrations command
+    from uno.devtools.cli.migrations import migrations_app
+    app.add_typer(migrations_app, name="migrations")
     
     def cli():
         """Run the CLI application."""
@@ -45,6 +61,18 @@ else:
         from uno.devtools.cli.profile import setup_parser as setup_profile_parser
         setup_profile_parser(subparsers)
         
+        # Add scaffold command
+        from uno.devtools.cli.scaffold import setup_parser as setup_scaffold_parser
+        setup_scaffold_parser(subparsers)
+        
+        # Add modeler command
+        from uno.devtools.cli.modeler import setup_parser as setup_modeler_parser
+        setup_modeler_parser(subparsers)
+        
+        # Add migrations command
+        from uno.devtools.cli.migrations import setup_parser as setup_migrations_parser
+        setup_migrations_parser(subparsers)
+        
         # Parse arguments and dispatch
         args = parser.parse_args()
         
@@ -62,6 +90,15 @@ else:
         elif args.command == "profile":
             from uno.devtools.cli.profile import handle_command as handle_profile
             handle_profile(args)
+        elif args.command == "scaffold":
+            from uno.devtools.cli.scaffold import handle_command as handle_scaffold
+            handle_scaffold(args)
+        elif args.command == "modeler":
+            from uno.devtools.cli.modeler import handle_command as handle_modeler
+            handle_modeler(args)
+        elif args.command == "migrations":
+            from uno.devtools.cli.migrations import handle_command as handle_migrations
+            handle_migrations(args)
         else:
             print(f"Unknown command: {args.command}")
 

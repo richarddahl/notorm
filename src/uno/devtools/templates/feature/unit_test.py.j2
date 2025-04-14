@@ -1,0 +1,194 @@
+"""
+Unit tests for {{ feature_name|pascal_case }} domain.
+"""
+
+import pytest
+from uuid import UUID, uuid4
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, patch
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}Entity
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_repository import {{ feature_name|pascal_case }}Repository
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_service import {{ feature_name|pascal_case }}Service
+
+
+class Test{{ feature_name|pascal_case }}Entity:
+    """Tests for {{ feature_name|pascal_case }}Entity."""
+    
+    def test_create_entity(self):
+        """Test creating a {{ feature_name|pascal_case }} entity."""
+        entity = {{ feature_name|pascal_case }}Entity(
+            name="Test {{ feature_name|pascal_case }}",
+            description="Test description",
+        )
+        
+        assert entity.id is not None
+        assert entity.name == "Test {{ feature_name|pascal_case }}"
+        assert entity.description == "Test description"
+        assert entity.created_at is not None
+        assert entity.updated_at is None
+    
+    def test_update_entity(self):
+        """Test updating a {{ feature_name|pascal_case }} entity."""
+        entity = {{ feature_name|pascal_case }}Entity(
+            name="Test {{ feature_name|pascal_case }}",
+            description="Test description",
+        )
+        
+        # Store original values
+        original_id = entity.id
+        original_created_at = entity.created_at
+        
+        # Wait a moment to ensure updated_at will be different
+        created_time = datetime.utcnow() - timedelta(seconds=1)
+        entity.created_at = created_time
+        
+        # Update entity
+        entity.update(
+            name="Updated {{ feature_name|pascal_case }}",
+            description="Updated description",
+        )
+        
+        # Check that fields were updated
+        assert entity.id == original_id  # ID should not change
+        assert entity.name == "Updated {{ feature_name|pascal_case }}"
+        assert entity.description == "Updated description"
+        assert entity.created_at == created_time  # created_at should not change
+        assert entity.updated_at is not None
+        assert entity.updated_at > entity.created_at
+
+
+class Test{{ feature_name|pascal_case }}Service:
+    """Tests for {{ feature_name|pascal_case }}Service."""
+    
+    @pytest.fixture
+    def repository_mock(self):
+        """Create a mock repository."""
+        repository = AsyncMock(spec={{ feature_name|pascal_case }}Repository)
+        return repository
+    
+    @pytest.fixture
+    def service(self, repository_mock):
+        """Create a service with a mock repository."""
+        return {{ feature_name|pascal_case }}Service(repository=repository_mock)
+    
+    @pytest.fixture
+    def sample_entity(self):
+        """Create a sample entity."""
+        return {{ feature_name|pascal_case }}Entity(
+            id=uuid4(),
+            name="Test {{ feature_name|pascal_case }}",
+            description="Test description",
+            created_at=datetime.utcnow(),
+        )
+    
+    async def test_get_by_id(self, service, repository_mock, sample_entity):
+        """Test getting a {{ feature_name|pascal_case }} by ID."""
+        # Setup mock
+        repository_mock.get_by_id.return_value = sample_entity
+        
+        # Call service
+        result = await service.get_by_id(sample_entity.id)
+        
+        # Verify
+        assert result == sample_entity
+        repository_mock.get_by_id.assert_called_once_with(sample_entity.id)
+    
+    async def test_list(self, service, repository_mock, sample_entity):
+        """Test listing {{ feature_name|pascal_case }} entities."""
+        # Setup mock
+        repository_mock.list.return_value = [sample_entity]
+        
+        # Call service
+        result = await service.list(skip=0, limit=10)
+        
+        # Verify
+        assert result == [sample_entity]
+        repository_mock.list.assert_called_once_with(skip=0, limit=10, filters=None)
+    
+    async def test_create(self, service, repository_mock):
+        """Test creating a {{ feature_name|pascal_case }}."""
+        # Setup data
+        data = {
+            "name": "New {{ feature_name|pascal_case }}",
+            "description": "New description",
+        }
+        
+        # Setup mock
+        def side_effect(entity):
+            assert entity.name == data["name"]
+            assert entity.description == data["description"]
+            return entity
+        
+        repository_mock.create.side_effect = side_effect
+        
+        # Call service
+        result = await service.create(data)
+        
+        # Verify
+        assert result.name == data["name"]
+        assert result.description == data["description"]
+        assert repository_mock.create.called
+    
+    async def test_update(self, service, repository_mock, sample_entity):
+        """Test updating a {{ feature_name|pascal_case }}."""
+        # Setup data
+        entity_id = sample_entity.id
+        update_data = {
+            "name": "Updated {{ feature_name|pascal_case }}",
+        }
+        
+        # Setup mocks
+        repository_mock.get_by_id.return_value = sample_entity
+        
+        def update_side_effect(entity):
+            assert entity.id == entity_id
+            assert entity.name == update_data["name"]
+            assert entity.updated_at is not None
+            return entity
+        
+        repository_mock.update.side_effect = update_side_effect
+        
+        # Call service
+        result = await service.update(entity_id, update_data)
+        
+        # Verify
+        assert result.id == entity_id
+        assert result.name == update_data["name"]
+        assert result.updated_at is not None
+        repository_mock.get_by_id.assert_called_once_with(entity_id)
+        assert repository_mock.update.called
+    
+    async def test_update_not_found(self, service, repository_mock):
+        """Test updating a non-existent {{ feature_name|pascal_case }}."""
+        # Setup data
+        entity_id = uuid4()
+        update_data = {
+            "name": "Updated {{ feature_name|pascal_case }}",
+        }
+        
+        # Setup mocks
+        repository_mock.get_by_id.return_value = None
+        
+        # Call service
+        result = await service.update(entity_id, update_data)
+        
+        # Verify
+        assert result is None
+        repository_mock.get_by_id.assert_called_once_with(entity_id)
+        repository_mock.update.assert_not_called()
+    
+    async def test_delete(self, service, repository_mock):
+        """Test deleting a {{ feature_name|pascal_case }}."""
+        # Setup data
+        entity_id = uuid4()
+        
+        # Setup mock
+        repository_mock.delete.return_value = True
+        
+        # Call service
+        result = await service.delete(entity_id)
+        
+        # Verify
+        assert result is True
+        repository_mock.delete.assert_called_once_with(entity_id)

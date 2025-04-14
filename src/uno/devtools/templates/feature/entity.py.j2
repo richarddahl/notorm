@@ -1,0 +1,41 @@
+"""
+{{ feature_name|pascal_case }} entity module.
+"""
+
+from datetime import datetime
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field
+from uuid import UUID, uuid4
+
+
+class {{ feature_name|pascal_case }}Entity(BaseModel):
+    """
+    {{ feature_name|pascal_case }} entity.
+    
+    This class represents the domain entity for {{ feature_name|pascal_case }}.
+    """
+    
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., description="Name of the {{ feature_name|pascal_case }}")
+    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(None)
+    # Add additional fields as needed for your domain
+    
+    class Config:
+        """Pydantic model configuration."""
+        
+        validate_assignment = True
+        
+    def update(self, **kwargs: Any) -> None:
+        """
+        Update entity fields.
+        
+        Args:
+            **kwargs: Fields to update
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        
+        self.updated_at = datetime.utcnow()

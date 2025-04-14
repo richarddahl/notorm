@@ -1,0 +1,91 @@
+"""
+Configuration management for the {{ project_name|pascal_case }} application.
+"""
+
+from functools import lru_cache
+from typing import Dict, Any, Optional, Type, TypeVar
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings as PydanticBaseSettings
+
+T = TypeVar("T", bound="BaseSettings")
+
+
+class BaseSettings(PydanticBaseSettings):
+    """Base settings class with common configuration."""
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
+
+
+class AppSettings(BaseSettings):
+    """Application settings."""
+
+    # App config
+    APP_NAME: str = "{{ project_name|pascal_case }}"
+    DEBUG: bool = False
+    HOST: str = "127.0.0.1"
+    PORT: int = 8000
+    API_PREFIX: str = "/api"
+    SECRET_KEY: str = "change_me_in_production"
+    ENVIRONMENT: str = "development"
+    
+    # CORS
+    CORS_ORIGINS: str = "*"
+    CORS_ALLOW_CREDENTIALS: bool = True
+    
+    @field_validator("CORS_ORIGINS")
+    def parse_cors_origins(cls, value: str) -> list:
+        """Parse CORS origins from string to list."""
+        if value == "*":
+            return ["*"]
+        return [origin.strip() for origin in value.split(",")]
+    
+    {% if database == "postgresql" %}
+    # Database
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_USER: str = "postgres"
+    DB_PASSWORD: str = "postgres"
+    DB_NAME: str = "{{ project_name }}"
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        """Get the database URL."""
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    {% endif %}
+    
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    
+    class Config:
+        env_prefix = "{{ project_name|upper }}_"
+
+
+class TestSettings(AppSettings):
+    """Test settings."""
+    
+    DEBUG: bool = True
+    ENVIRONMENT: str = "test"
+    
+    {% if database == "postgresql" %}
+    # Test database
+    DB_NAME: str = "test_{{ project_name }}"
+    {% endif %}
+
+
+@lru_cache
+def get_settings() -> AppSettings:
+    """Get the application settings."""
+    env = BaseSettings().Config.env_file
+    if env.endswith(".test"):
+        return TestSettings()
+    return AppSettings()
+
+
+@lru_cache
+def get_test_settings() -> TestSettings:
+    """Get the test settings."""
+    return TestSettings()

@@ -37,6 +37,58 @@ if TYPER_AVAILABLE:
         add_completion=True,
     )
     
+    @profile_app.command("dashboard")
+    def start_dashboard_command(
+        host: Annotated[str, typer.Option("--host", "-h", help="Host to bind to")] = "localhost",
+        port: Annotated[int, typer.Option("--port", "-p", help="Port to bind to")] = 8765,
+        app_path: Annotated[Optional[str], typer.Option("--app", "-a", help="Path to ASGI application to profile")] = None,
+        no_browser: Annotated[bool, typer.Option("--no-browser", help="Don't open browser")] = False,
+        verbose: Annotated[int, typer.Option("--verbose", "-v", count=True, help="Verbosity level")] = 0,
+    ):
+        """Start the performance profiling dashboard."""
+        setup_logging(verbose)
+        
+        try:
+            # Import the profiler dashboard components
+            try:
+                from uno.devtools.profiler.middleware.profiling_middleware import ProfilerMiddleware
+                from uno.devtools.profiler.dashboard.server import initialize_dashboard
+            except ImportError as e:
+                logger.error(f"Failed to import profiler dashboard: {e}")
+                logger.error("Make sure the dependencies are installed: fastapi uvicorn psutil")
+                sys.exit(1)
+            
+            # Create a profiler middleware
+            app = None
+            if app_path:
+                # Try to load the application
+                try:
+                    logger.info(f"Loading application from {app_path}...")
+                    module_path, app_name = app_path.split(":") if ":" in app_path else (app_path, "app")
+                    module = __import__(module_path, fromlist=[app_name])
+                    app = getattr(module, app_name)
+                    logger.info("Application loaded successfully")
+                except (ImportError, AttributeError) as e:
+                    logger.error(f"Failed to load application: {str(e)}")
+                    logger.info("Starting dashboard with dummy profiler")
+            
+            # Create profiler middleware
+            profiler = ProfilerMiddleware(app=app)
+            
+            logger.info(f"Starting profiler dashboard at http://{host}:{port}")
+            logger.info("Press Ctrl+C to exit")
+            
+            # Initialize dashboard
+            initialize_dashboard(
+                profiler_middleware=profiler,
+                host=host,
+                port=port,
+                open_browser=not no_browser,
+            )
+        except Exception as e:
+            logger.error(f"Error starting profiler dashboard: {e}")
+            sys.exit(1)
+    
     @profile_app.command("run")
     def run_profile_command(
         target: Annotated[str, typer.Argument(help="Module.function to profile (e.g., 'myapp.main:run_app')")],
@@ -259,6 +311,14 @@ else:
         profile_parser = subparsers.add_parser("profile", help="Profiling utilities for Uno")
         profile_subparsers = profile_parser.add_subparsers(dest="subcommand")
         
+        # Dashboard command
+        dashboard_parser = profile_subparsers.add_parser("dashboard", help="Start the performance profiling dashboard")
+        dashboard_parser.add_argument("--host", "-h", default="localhost", help="Host to bind to")
+        dashboard_parser.add_argument("--port", "-p", type=int, default=8765, help="Port to bind to")
+        dashboard_parser.add_argument("--app", "-a", help="Path to ASGI application to profile")
+        dashboard_parser.add_argument("--no-browser", action="store_true", help="Don't open browser")
+        dashboard_parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbosity level")
+        
         # Run command
         run_parser = profile_subparsers.add_parser("run", help="Profile a Python function or method")
         run_parser.add_argument("target", help="Module.function to profile (e.g., 'myapp.main:run_app')")
@@ -297,7 +357,9 @@ else:
         """
         setup_logging(getattr(args, "verbose", 0))
         
-        if args.subcommand == "run":
+        if args.subcommand == "dashboard":
+            _handle_dashboard_command(args)
+        elif args.subcommand == "run":
             _handle_run_command(args)
         elif args.subcommand == "memory":
             _handle_memory_command(args)
@@ -305,6 +367,53 @@ else:
             _handle_hotspots_command(args)
         else:
             print(f"Unknown profile subcommand: {args.subcommand}")
+    
+    def _handle_dashboard_command(args):
+        """Handle dashboard command.
+        
+        Args:
+            args: Command arguments
+        """
+        try:
+            # Import the profiler dashboard components
+            try:
+                from uno.devtools.profiler.middleware.profiling_middleware import ProfilerMiddleware
+                from uno.devtools.profiler.dashboard.server import initialize_dashboard
+            except ImportError as e:
+                print(f"Failed to import profiler dashboard: {e}")
+                print("Make sure the dependencies are installed: fastapi uvicorn psutil")
+                sys.exit(1)
+            
+            # Create a profiler middleware
+            app = None
+            if hasattr(args, "app") and args.app:
+                # Try to load the application
+                try:
+                    print(f"Loading application from {args.app}...")
+                    module_path, app_name = args.app.split(":") if ":" in args.app else (args.app, "app")
+                    module = __import__(module_path, fromlist=[app_name])
+                    app = getattr(module, app_name)
+                    print("Application loaded successfully")
+                except (ImportError, AttributeError) as e:
+                    print(f"Failed to load application: {str(e)}")
+                    print("Starting dashboard with dummy profiler")
+            
+            # Create profiler middleware
+            profiler = ProfilerMiddleware(app=app)
+            
+            print(f"Starting profiler dashboard at http://{args.host}:{args.port}")
+            print("Press Ctrl+C to exit")
+            
+            # Initialize dashboard
+            initialize_dashboard(
+                profiler_middleware=profiler,
+                host=args.host,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except Exception as e:
+            print(f"Error starting profiler dashboard: {e}")
+            sys.exit(1)
     
     def _handle_run_command(args):
         """Handle run profile command.

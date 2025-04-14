@@ -1,0 +1,48 @@
+"""
+Main entry point for the {{ project_name|pascal_case }} application.
+"""
+
+import logging
+import sys
+from typing import Optional
+
+{% if include_api %}
+import uvicorn
+from fastapi import FastAPI
+
+from {{ project_name }}.api.app import create_app
+{% endif %}
+from {{ project_name }}.core.settings import get_settings
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+
+logger = logging.getLogger(__name__)
+
+{% if include_api %}
+# Create FastAPI application
+app = create_app()
+
+def cli():
+    """Command line interface for the application."""
+    settings = get_settings()
+    uvicorn.run(
+        "{{ project_name }}.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level="debug" if settings.DEBUG else "info",
+    )
+{% else %}
+def cli():
+    """Command line interface for the application."""
+    # Add your CLI logic here
+    pass
+{% endif %}
+
+if __name__ == "__main__":
+    cli()

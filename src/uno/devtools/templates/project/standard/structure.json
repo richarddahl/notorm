@@ -1,0 +1,92 @@
+{
+  "directories": [
+    "src",
+    "src/{project_name}",
+    "src/{project_name}/api",
+    "src/{project_name}/core",
+    "src/{project_name}/domain",
+    "src/{project_name}/infrastructure",
+    "src/{project_name}/infrastructure/repositories",
+    "src/{project_name}/infrastructure/services",
+    "tests",
+    "tests/unit",
+    "tests/integration",
+    "docs"
+  ],
+  "files": [
+    {
+      "template": "pyproject.toml.j2",
+      "output": "pyproject.toml"
+    },
+    {
+      "template": "README.md.j2",
+      "output": "README.md"
+    },
+    {
+      "template": "main.py.j2",
+      "output": "src/{project_name}/main.py"
+    },
+    {
+      "template": "config.py.j2",
+      "output": "src/{project_name}/core/config.py"
+    },
+    {
+      "template": "dependencies.py.j2",
+      "output": "src/{project_name}/core/dependencies.py"
+    },
+    {
+      "template": "__init__.py.j2",
+      "output": "src/{project_name}/__init__.py"
+    },
+    {
+      "template": "__init__.py.j2",
+      "output": "src/{project_name}/api/__init__.py"
+    },
+    {
+      "template": "__init__.py.j2",
+      "output": "src/{project_name}/core/__init__.py"
+    },
+    {
+      "template": "__init__.py.j2",
+      "output": "src/{project_name}/domain/__init__.py"
+    },
+    {
+      "template": "__init__.py.j2",
+      "output": "src/{project_name}/infrastructure/__init__.py"
+    },
+    {
+      "template": "app.py.j2",
+      "output": "src/{project_name}/api/app.py",
+      "condition": "include_api=True"
+    },
+    {
+      "template": "router.py.j2",
+      "output": "src/{project_name}/api/router.py",
+      "condition": "include_api=True"
+    },
+    {
+      "template": "settings.py.j2",
+      "output": "src/{project_name}/core/settings.py"
+    },
+    {
+      "template": "conftest.py.j2",
+      "output": "tests/conftest.py"
+    },
+    {
+      "template": "docker-compose.yml.j2",
+      "output": "docker-compose.yml"
+    },
+    {
+      "template": "Dockerfile.j2",
+      "output": "Dockerfile"
+    },
+    {
+      "template": ".env.example.j2",
+      "output": ".env.example"
+    },
+    {
+      "template": ".gitignore.j2",
+      "output": ".gitignore"
+    }
+  ]
+}

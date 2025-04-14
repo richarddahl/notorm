@@ -1,0 +1,204 @@
+"""
+{{ feature_name|pascal_case }} API endpoints.
+"""
+
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}Entity
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_service import {{ feature_name|pascal_case }}Service
+from {{ project_name }}.core.dependencies import get_{{ feature_name|snake_case }}_service
+
+
+# Request and response models
+class {{ feature_name|pascal_case }}Create(BaseModel):
+    """Model for creating a {{ feature_name|pascal_case }}."""
+    
+    name: str = Field(..., description="Name of the {{ feature_name|pascal_case }}")
+    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    # Add additional fields as needed
+
+
+class {{ feature_name|pascal_case }}Update(BaseModel):
+    """Model for updating a {{ feature_name|pascal_case }}."""
+    
+    name: Optional[str] = Field(None, description="Name of the {{ feature_name|pascal_case }}")
+    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    # Add additional fields as needed
+
+
+class {{ feature_name|pascal_case }}Response(BaseModel):
+    """Response model for {{ feature_name|pascal_case }}."""
+    
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    # Add additional fields as needed
+    
+    @classmethod
+    def from_entity(cls, entity: {{ feature_name|pascal_case }}Entity) -> "{{ feature_name|pascal_case }}Response":
+        """
+        Create a response model from an entity.
+        
+        Args:
+            entity: The entity to convert
+            
+        Returns:
+            Response model
+        """
+        return cls(
+            id=entity.id,
+            name=entity.name,
+            description=entity.description,
+            # Add additional fields as needed
+        )
+
+
+class {{ feature_name|pascal_case }}ListResponse(BaseModel):
+    """Response model for a list of {{ feature_name|pascal_case }}s."""
+    
+    items: List[{{ feature_name|pascal_case }}Response]
+    total: int
+
+
+# Router
+router = APIRouter(prefix="/{{ feature_name|snake_case }}s", tags=["{{ feature_name|snake_case }}s"])
+
+
+@router.get("", response_model={{ feature_name|pascal_case }}ListResponse)
+async def list_{{ feature_name|snake_case }}s(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    service: {{ feature_name|pascal_case }}Service = Depends(get_{{ feature_name|snake_case }}_service),
+):
+    """
+    List {{ feature_name|snake_case }}s.
+    
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        List of {{ feature_name|snake_case }}s
+    """
+    items = await service.list(skip=skip, limit=limit)
+    # In a real implementation, you would get the total count from the service
+    total = len(items)  # Simplified for the example
+    
+    return {{ feature_name|pascal_case }}ListResponse(
+        items=[{{ feature_name|pascal_case }}Response.from_entity(item) for item in items],
+        total=total,
+    )
+
+
+@router.get("/{id}", response_model={{ feature_name|pascal_case }}Response)
+async def get_{{ feature_name|snake_case }}(
+    id: UUID,
+    service: {{ feature_name|pascal_case }}Service = Depends(get_{{ feature_name|snake_case }}_service),
+):
+    """
+    Get a {{ feature_name|snake_case }} by ID.
+    
+    Args:
+        id: {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        {{ feature_name|pascal_case }} details
+        
+    Raises:
+        HTTPException: If {{ feature_name|snake_case }} not found
+    """
+    item = await service.get_by_id(id)
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found",
+        )
+    
+    return {{ feature_name|pascal_case }}Response.from_entity(item)
+
+
+@router.post("", response_model={{ feature_name|pascal_case }}Response, status_code=status.HTTP_201_CREATED)
+async def create_{{ feature_name|snake_case }}(
+    data: {{ feature_name|pascal_case }}Create,
+    service: {{ feature_name|pascal_case }}Service = Depends(get_{{ feature_name|snake_case }}_service),
+):
+    """
+    Create a new {{ feature_name|snake_case }}.
+    
+    Args:
+        data: {{ feature_name|pascal_case }} data
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Created {{ feature_name|snake_case }}
+    """
+    item = await service.create(data.model_dump())
+    return {{ feature_name|pascal_case }}Response.from_entity(item)
+
+
+@router.patch("/{id}", response_model={{ feature_name|pascal_case }}Response)
+async def update_{{ feature_name|snake_case }}(
+    id: UUID,
+    data: {{ feature_name|pascal_case }}Update,
+    service: {{ feature_name|pascal_case }}Service = Depends(get_{{ feature_name|snake_case }}_service),
+):
+    """
+    Update a {{ feature_name|snake_case }}.
+    
+    Args:
+        id: {{ feature_name|pascal_case }} ID
+        data: {{ feature_name|pascal_case }} data
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Updated {{ feature_name|snake_case }}
+        
+    Raises:
+        HTTPException: If {{ feature_name|snake_case }} not found
+    """
+    # Filter out None values
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    item = await service.update(id, update_data)
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found",
+        )
+    
+    return {{ feature_name|pascal_case }}Response.from_entity(item)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{ feature_name|snake_case }}(
+    id: UUID,
+    service: {{ feature_name|pascal_case }}Service = Depends(get_{{ feature_name|snake_case }}_service),
+):
+    """
+    Delete a {{ feature_name|snake_case }}.
+    
+    Args:
+        id: {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Raises:
+        HTTPException: If {{ feature_name|snake_case }} not found
+    """
+    deleted = await service.delete(id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found",
+        )
+
+
+# Register router in your API
+# In your main API router file:
+# from {{ project_name }}.api.{{ feature_name|snake_case }}_endpoints import router as {{ feature_name|snake_case }}_router
+# app.include_router({{ feature_name|snake_case }}_router, prefix="/api")

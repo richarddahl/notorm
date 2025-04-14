@@ -1,0 +1,113 @@
+"""
+{{ feature_name|pascal_case }} service module.
+"""
+
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}Entity
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_repository import {{ feature_name|pascal_case }}Repository
+
+
+class {{ feature_name|pascal_case }}Service:
+    """
+    Service for managing {{ feature_name|pascal_case }} entities.
+    
+    This class implements the business logic for {{ feature_name|pascal_case }} entities.
+    """
+    
+    def __init__(self, repository: {{ feature_name|pascal_case }}Repository):
+        """
+        Initialize the service.
+        
+        Args:
+            repository: Repository for {{ feature_name|pascal_case }} entities
+        """
+        self.repository = repository
+    
+    async def get_by_id(self, id: UUID) -> Optional[{{ feature_name|pascal_case }}Entity]:
+        """
+        Get a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to retrieve
+            
+        Returns:
+            The {{ feature_name|pascal_case }} entity or None if not found
+        """
+        return await self.repository.get_by_id(id)
+    
+    async def list(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> List[{{ feature_name|pascal_case }}Entity]:
+        """
+        List {{ feature_name|pascal_case }} entities.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            filters: Optional filters to apply
+            
+        Returns:
+            List of {{ feature_name|pascal_case }} entities
+        """
+        return await self.repository.list(skip=skip, limit=limit, filters=filters)
+    
+    async def create(self, data: Dict[str, Any]) -> {{ feature_name|pascal_case }}Entity:
+        """
+        Create a new {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            data: The data for the new entity
+            
+        Returns:
+            The created entity
+        """
+        # Create entity from data
+        entity = {{ feature_name|pascal_case }}Entity(**data)
+        
+        # Perform business logic validations
+        # ...
+        
+        # Save to repository
+        return await self.repository.create(entity)
+    
+    async def update(self, id: UUID, data: Dict[str, Any]) -> Optional[{{ feature_name|pascal_case }}Entity]:
+        """
+        Update an existing {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            id: The ID of the entity to update
+            data: The data to update
+            
+        Returns:
+            The updated entity or None if not found
+        """
+        # Get existing entity
+        entity = await self.repository.get_by_id(id)
+        if entity is None:
+            return None
+        
+        # Update entity fields
+        entity.update(**data)
+        
+        # Perform business logic validations
+        # ...
+        
+        # Save to repository
+        return await self.repository.update(entity)
+    
+    async def delete(self, id: UUID) -> bool:
+        """
+        Delete a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to delete
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        return await self.repository.delete(id)
