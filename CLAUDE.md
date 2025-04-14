@@ -56,6 +56,12 @@ For testing with dependencies:
 
 python 3.13.0+
 postgresql 16
+webawesome
+lit
+
+## Prefer modern web-component based front end ui
+
+When building front end ui components, use webawesome and lit to create the ui.
 
 ## Prefer modern open-source libraries
 
