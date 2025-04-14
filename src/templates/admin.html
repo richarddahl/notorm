@@ -173,6 +173,7 @@
       'okui-report-dashboard': '/static/components/reports/report-dashboard.js',
       'okui-reports-dashboard': '/static/components/reports/report-dashboard.js', // Special mapping for plural URL
       'okui-semantic-search': '/static/components/vector-search/wa-semantic-search.js',
+      'okui-vector-search-dashboard': '/static/components/vector-search/wa-semantic-search.js', // Special mapping for URL
       'okui-role-manager': '/static/components/authorization/wa-role-manager.js',
       'okui-system-monitor': '/static/components/monitoring/wa-system-monitor.js',
       'okui-crud-manager': '/static/components/generic/wa-crud-manager.js',
@@ -206,6 +207,7 @@
         'okui-reports-dashboard': 'reports-module', // Added for plural URL support
         'wa-semantic-search': 'vector-search-module',
         'okui-semantic-search': 'vector-search-module',
+        'okui-vector-search-dashboard': 'vector-search-module', // Added for URL support
         'wa-role-manager': 'authorization-module',
         'okui-role-manager': 'authorization-module',
         'wa-system-monitor': 'monitoring-module',
@@ -346,9 +348,12 @@
                 }
               }
               
-              // If we reach here, try special case mapping for reports
+              // If we reach here, try special case mappings
               if (componentName === 'reports' || componentName === 'report') {
                 await loadComponentByName('wa-report-dashboard', container);
+              } else if (componentName === 'vector-search') {
+                console.log('Loading vector-search component');
+                await loadComponentByName('wa-semantic-search', container);
               } else {
                 // If no specific match, try the original pattern as a fallback
                 await loadComponentByName(`okui-${componentName}-dashboard`, container);
@@ -357,33 +362,76 @@
               console.error("Error loading component from URL:", error);
               
               // Display a more helpful error message in the component container
-              container.innerHTML = `
-                <div style="padding: 40px; border: 1px solid #f44336; margin: 20px; border-radius: 4px; background-color: #ffebee;">
-                  <h3 style="color: #d32f2f; margin-top: 0;">Component Loading Error</h3>
-                  <p>Failed to load component <code>okui-${componentName}-dashboard</code></p>
-                  <details>
-                    <summary>Technical Details</summary>
-                    <pre style="overflow: auto; background: #f8f8f8; padding: 10px;">${error.message || 'Unknown error'}</pre>
-                    <p>Attempted component names:</p>
-                    <ul style="font-family: monospace;">
-                      ${namesToTry.map(name => `<li>${name}</li>`).join('')}
-                    </ul>
-                    <p>Available components in registry:</p>
-                    <ul style="font-family: monospace;">
-                      ${Array.from(customElements.define.arguments || [])
-                          .filter(arg => typeof arg === 'string')
-                          .map(name => `<li>${name}</li>`)
-                          .join('') || 'None detected'}
-                    </ul>
-                  </details>
-                  <p>Try these troubleshooting steps:</p>
-                  <ol>
-                    <li>Check that the component name in URL matches a defined component</li>
-                    <li>Check browser console for additional error details</li>
-                    <li>Verify that all required scripts are properly loaded</li>
-                  </ol>
-                </div>
-              `;
+              (() => {
+                try {
+                  const attemptedNames = namesToTry ? namesToTry.map(name => `<li>${name}</li>`).join('') : 'None specified';
+                  
+                  // Get registered custom elements safely
+                  let registeredElements = 'None detected';
+                  try {
+                    registeredElements = Array.from(document.querySelectorAll('*'))
+                      .map(el => el.tagName.toLowerCase())
+                      .filter(name => name.includes('-'))
+                      .filter((v, i, a) => a.indexOf(v) === i) // unique values
+                      .map(name => `<li>${name}</li>`)
+                      .join('') || 'None detected';
+                  } catch (e) {
+                    registeredElements = 'Error getting custom elements';
+                  }
+                  
+                  // Get component mappings safely
+                  let componentMappings = 'None detected';
+                  try {
+                    if (window.componentModuleMap) {
+                      componentMappings = Object.keys(window.componentModuleMap)
+                        .filter(key => key.startsWith('okui-') || key.startsWith('wa-'))
+                        .map(name => `<li>${name}</li>`)
+                        .join('') || 'None detected';
+                    }
+                  } catch (e) {
+                    componentMappings = 'Error getting component mappings';
+                  }
+                  
+                  container.innerHTML = `
+                    <div style="padding: 40px; border: 1px solid #f44336; margin: 20px; border-radius: 4px; background-color: #ffebee;">
+                      <h3 style="color: #d32f2f; margin-top: 0;">Component Loading Error</h3>
+                      <p>Failed to load component <code>okui-${componentName}-dashboard</code></p>
+                      <details>
+                        <summary>Technical Details</summary>
+                        <pre style="overflow: auto; background: #f8f8f8; padding: 10px;">${error.message || 'Unknown error'}</pre>
+                        <p>Attempted component names:</p>
+                        <ul style="font-family: monospace;">
+                          ${attemptedNames}
+                        </ul>
+                        <p>Available custom elements in registry:</p>
+                        <ul style="font-family: monospace;">
+                          ${registeredElements}
+                        </ul>
+                        <p>Available component mappings:</p>
+                        <ul style="font-family: monospace;">
+                          ${componentMappings}
+                        </ul>
+                      </details>
+                      <p>Try these troubleshooting steps:</p>
+                      <ol>
+                        <li>Check that the component name in URL matches a defined component</li>
+                        <li>Check browser console for additional error details</li>
+                        <li>Verify that all required scripts are properly loaded</li>
+                      </ol>
+                    </div>
+                  `;
+                } catch (displayError) {
+                  // Last resort fallback if error display fails
+                  console.error("Error displaying error details:", displayError);
+                  container.innerHTML = `
+                    <div style="padding: 40px; border: 1px solid #f44336; margin: 20px; border-radius: 4px; background-color: #ffebee;">
+                      <h3 style="color: #d32f2f; margin-top: 0;">Component Loading Error</h3>
+                      <p>Failed to load component for "${componentName}"</p>
+                      <p>Error: ${error.message || 'Unknown error'}</p>
+                    </div>
+                  `;
+                }
+              })();
             }
           }
         }
