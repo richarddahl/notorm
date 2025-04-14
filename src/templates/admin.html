@@ -1,18 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- Load WebAwesome components -->
-  <script type="module" src="static/components/app/wa-app-shell.js"></script>
-  <script type="module" src="static/components/admin/wa-admin-dashboard.js"></script>
-  <script type="module" src="static/components/authorization/wa-role-manager.js"></script>
-  <script type="module" src="static/components/monitoring/wa-system-monitor.js"></script>
-  <script type="module" src="static/components/vector-search/wa-semantic-search.js"></script>
-  <script type="module" src="static/components/reports/webawesome-report-builder.js"></script>
-  <script type="module" src="static/components/workflows/index.js"></script>
+  <!-- WebAwesome CDN loading -->
+  <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/styles/themes/default.css" />
+  <link rel="stylesheet" href="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/styles/webawesome.css" />
+  <script type="module" src="https://early.webawesome.com/webawesome@3.0.0-alpha.12/dist/webawesome.loader.js"></script>
+
+  <!-- Load Lit from CDN - unified bundle that has everything -->
+  <script type="module">
+    // Load the complete Lit bundle that has everything
+    import * as lit from 'https://cdn.jsdelivr.net/gh/lit/dist@3/all/lit-all.min.js';
+    
+    // Make it available globally for all components
+    window.lit = lit;
+    window.LitElement = lit.LitElement;
+    window.html = lit.html;
+    window.css = lit.css;
+    window.repeat = lit.repeat;
+    window.choose = lit.choose;
+    window.guard = lit.guard;
+    window.cache = lit.cache;
+    window.classMap = lit.classMap;
+    window.styleMap = lit.styleMap;
+    window.nothing = lit.nothing;
+    window.ReactiveElement = lit.ReactiveElement;
+    
+    // Centralize all errors to help debug
+    window.addEventListener('error', (event) => {
+      if (event.error && event.error.message && event.error.message.includes('module specifier')) {
+        console.error('Module error intercepted:', event.error.message);
+      }
+    });
+    
+    console.log('Lit bundle loaded and globally available');
+  </script>
   
   <!-- Load Shoelace CDN components -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/light.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/themes/dark.css" />
   <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.12.0/cdn/shoelace.js"></script>
+  
+  <!-- Load our component scripts with the new naming convention -->
+  <script type="module" src="/static/components/okui-app-shell.js"></script>
+  <script type="module" src="/static/components/admin/okui-admin-dashboard.js"></script>
+  
+  <!-- Load module-specific components -->
+  <!-- Workflow components -->
+  <script type="module" src="/static/components/workflows/okui-workflow-dashboard.js"></script>
+  <script type="module" src="/static/components/workflows/okui-workflow-designer.js"></script>
+  <script type="module" src="/static/components/workflows/okui-workflow-execution-detail.js"></script>
+  <script type="module" src="/static/components/workflows/okui-workflow-simulator.js"></script>
+  
+  <!-- Try to load other module indexes if they exist -->
+  <script type="module" src="/static/components/reports/index.js"></script>
+  <script type="module" src="/static/components/authorization/index.js"></script>
+  <script type="module" src="/static/components/monitoring/index.js"></script>
+  <script type="module" src="/static/components/vector-search/index.js"></script>
   
   <!-- Optional: Chart.js for advanced data visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -36,13 +78,142 @@
       outline: 2px solid var(--sl-color-primary-600);
       outline-offset: 2px;
     }
+    
+    .admin-container {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .admin-component-container {
+      flex: 1;
+      padding: 20px;
+    }
   </style>
   
-  <!-- The main application shell component -->
-  <wa-app-shell></wa-app-shell>
+  <!-- Define component paths for dynamic loading -->
+  <script>
+    // Map component names to their module paths for dynamic loading
+    window.componentModuleMap = {
+      // Workflow components (new OKUI versions)
+      'okui-workflow-dashboard': '/static/components/workflows/okui-workflow-dashboard.js',
+      'okui-workflow-designer': '/static/components/workflows/okui-workflow-designer.js',
+      'okui-workflow-execution-detail': '/static/components/workflows/okui-workflow-execution-detail.js',
+      'okui-workflow-simulator': '/static/components/workflows/okui-workflow-simulator.js',
+      
+      // Legacy components (still using WebAwesome naming)
+      'okui-attributes-manager': '/static/components/attributes/wa-attributes-manager.js',
+      'okui-values-manager': '/static/components/values/wa-values-manager.js',
+      'okui-queries-manager': '/static/components/queries/wa-queries-manager.js',
+      'okui-job-dashboard': '/static/components/jobs/wa-job-dashboard.js',
+      'okui-security-admin': '/static/components/security/wa-security-admin.js',
+      'okui-report-dashboard': '/static/components/reports/report-dashboard.js',
+      'okui-semantic-search': '/static/components/vector-search/wa-semantic-search.js',
+      'okui-role-manager': '/static/components/authorization/wa-role-manager.js',
+      'okui-system-monitor': '/static/components/monitoring/wa-system-monitor.js'
+    };
+    
+    // Function to load component dynamically if not already registered
+    async function ensureComponentLoaded(tagName) {
+      tagName = tagName.toLowerCase();
+      
+      // Skip if component is already defined
+      if (customElements.get(tagName)) {
+        return Promise.resolve();
+      }
+      
+      // Try to load the component if we have a mapping for it
+      if (window.componentModuleMap[tagName]) {
+        try {
+          await import(window.componentModuleMap[tagName]);
+          console.log(`Dynamically loaded component: ${tagName}`);
+          return Promise.resolve();
+        } catch (error) {
+          console.error(`Failed to load component ${tagName}:`, error);
+          return Promise.reject(error);
+        }
+      } else {
+        console.warn(`No module path configured for component: ${tagName}`);
+        return Promise.resolve();
+      }
+    }
+  </script>
+  
+  <div class="admin-container">
+    <!-- Use App Shell for navigation and global UI -->
+    <okui-app-shell site-name="{{ site_name }}">
+      <div class="admin-component-container" id="component-container">
+        <!-- The dynamic component will be inserted here -->
+        {% if component %}
+          <div id="component-placeholder" data-component="{{ component }}"
+            {% if props %}
+              {% for key, value in props.items() %}
+                data-{{ key }}="{{ value }}"
+              {% endfor %}
+            {% endif %}
+          >
+            <div style="padding: 40px; text-align: center; color: #666;">
+              Loading component...
+            </div>
+          </div>
+        {% else %}
+          <okui-admin-dashboard></okui-admin-dashboard>
+        {% endif %}
+      </div>
+    </okui-app-shell>
+  </div>
+  
+  <!-- Script for dynamic component instantiation -->
+  <script>
+    // Dynamic component loading
+    document.addEventListener('DOMContentLoaded', async () => {
+      const placeholder = document.getElementById('component-placeholder');
+      if (placeholder) {
+        const componentTag = placeholder.dataset.component;
+        console.log('Loading component:', componentTag);
+        
+        try {
+          await ensureComponentLoaded(componentTag);
+          
+          // Create the component
+          const component = document.createElement(componentTag);
+          
+          // Add any attributes from the data- attributes
+          Object.keys(placeholder.dataset).forEach(key => {
+            if (key !== 'component') {
+              component.setAttribute(key, placeholder.dataset[key]);
+            }
+          });
+          
+          // Replace the placeholder with the actual component
+          placeholder.parentNode.replaceChild(component, placeholder);
+          console.log('Component successfully rendered:', componentTag);
+        } catch (error) {
+          console.error('Error loading component:', error);
+          placeholder.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: #666;">
+              <div style="color: #f44336; font-weight: bold; margin-bottom: 10px;">
+                Error loading component
+              </div>
+              <div>${error.message || 'Unknown error'}</div>
+            </div>
+          `;
+        }
+      }
+    });
+  </script>
   
   <script>
-    // Initialize any app-wide configuration
+    // Handle script loading errors
+    const scriptElements = document.querySelectorAll('script[type="module"]');
+    for (const script of scriptElements) {
+      script.addEventListener('error', (event) => {
+        console.error('Error loading script:', script.src, event);
+      });
+    }
+    
+    // Initialize theme handling
     document.addEventListener('DOMContentLoaded', () => {
       // Check for stored theme preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -59,36 +230,67 @@
       // Listen for theme changes
       document.addEventListener('wa:theme-change', (e) => {
         localStorage.setItem('wa-theme', e.detail.theme);
+        
+        if (e.detail.theme === 'dark') {
+          document.documentElement.classList.add('sl-theme-dark');
+          document.documentElement.classList.remove('sl-theme-light');
+        } else {
+          document.documentElement.classList.add('sl-theme-light');
+          document.documentElement.classList.remove('sl-theme-dark');
+        }
       });
       
-      // Register the workflows module in the admin dashboard
-      const adminDashboard = document.querySelector('wa-admin-dashboard');
-      if (adminDashboard) {
-        // Wait for component to be defined and ready
-        customElements.whenDefined('wa-admin-dashboard').then(() => {
-          // Add the workflows module to the Integration group
-          const workflowsModule = {
-            id: 'workflows',
-            name: 'Workflows',
-            icon: 'account_tree',
-            description: 'Notification workflow management'
-          };
+      // Debug component loading
+      console.log('Registered custom elements:', 
+        Array.from(document.querySelectorAll('*'))
+          .map(el => el.tagName)
+          .filter((tag, i, arr) => arr.indexOf(tag) === i) // Get unique tags
+          .filter(tag => tag.toLowerCase().includes('okui-') || tag.toLowerCase().includes('wa-'))
+          .sort()
+      );
+      
+      // Log component container state
+      const componentContainer = document.getElementById('component-container');
+      console.log('Component container:', componentContainer);
+      console.log('Component container children:', componentContainer.children);
+      
+      // Add fallback for components that might not be registered yet
+      if (componentContainer.children.length === 1) {
+        const targetComponent = componentContainer.children[0];
+        if (targetComponent.tagName.toLowerCase().startsWith('okui-') && 
+            !targetComponent.shadowRoot && 
+            !targetComponent.innerHTML) {
+          console.log('Component appears to be unregistered:', targetComponent.tagName);
           
-          // Add the module (component will handle this in a real implementation)
-          if (adminDashboard.moduleGroups && adminDashboard.moduleGroups.length >= 4) {
-            // Add to Integration group (index 3)
-            adminDashboard.moduleGroups[3].modules.push(workflowsModule);
-            // Force refresh
-            adminDashboard.requestUpdate();
+          // Check if we need to load the component on demand
+          const componentName = targetComponent.tagName.toLowerCase();
+          
+          if (componentName === 'okui-workflow-dashboard') {
+            import('/static/components/workflows/okui-workflow-dashboard.js')
+              .then(() => console.log('Successfully loaded workflow dashboard'))
+              .catch(err => console.error('Failed to load component:', err));
+          } else if (componentName === 'okui-workflow-designer') {
+            import('/static/components/workflows/okui-workflow-designer.js')
+              .then(() => console.log('Successfully loaded workflow designer'))
+              .catch(err => console.error('Failed to load component:', err));
+          } else if (componentName === 'okui-workflow-execution-detail') {
+            import('/static/components/workflows/okui-workflow-execution-detail.js')
+              .then(() => console.log('Successfully loaded workflow execution detail'))
+              .catch(err => console.error('Failed to load component:', err));
+          } else if (componentName === 'okui-workflow-simulator') {
+            import('/static/components/workflows/okui-workflow-simulator.js')
+              .then(() => console.log('Successfully loaded workflow simulator'))
+              .catch(err => console.error('Failed to load component:', err));
           }
           
-          // Handle navigation to workflows
-          adminDashboard.addEventListener('module-selected', (e) => {
-            if (e.detail.moduleId === 'workflows') {
-              window.location.href = '/workflows';
-            }
-          });
-        });
+          // Add a message to indicate loading
+          const loadingMessage = document.createElement('div');
+          loadingMessage.textContent = 'Loading component...';
+          loadingMessage.style.padding = '40px';
+          loadingMessage.style.textAlign = 'center';
+          loadingMessage.style.color = '#666';
+          componentContainer.appendChild(loadingMessage);
+        }
       }
     });
   </script>

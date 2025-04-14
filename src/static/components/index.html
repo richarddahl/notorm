@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Framework Components</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.5;
+      color: #333;
+      background-color: #f5f7fa;
+    }
+    
+    header {
+      background-color: #1976d2;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    
+    .subtitle {
+      margin-top: 0.5rem;
+      opacity: 0.8;
+    }
+    
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .component-card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .component-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .component-header {
+      background-color: #f0f4f8;
+      padding: 1rem;
+      border-bottom: 1px solid #e0e4e8;
+    }
+    
+    .component-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .component-content {
+      padding: 1rem;
+    }
+    
+    .component-description {
+      color: #4a5568;
+      margin-bottom: 1rem;
+    }
+    
+    .component-demo-link {
+      display: inline-block;
+      background-color: #1976d2;
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .component-demo-link:hover {
+      background-color: #1565c0;
+    }
+    
+    .section-title {
+      margin: 2rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e0e4e8;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 2rem;
+      margin-top: 2rem;
+      background-color: #f0f4f8;
+      color: #4a5568;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>UNO Framework Components</h1>
+    <p class="subtitle">WebAwesome component library for UNO applications</p>
+  </header>
+  
+  <main>
+    <p>
+      This page showcases the WebAwesome component library built for the UNO framework.
+      These components provide UI interfaces for various UNO modules and functionalities.
+    </p>
+    
+    <h2 class="section-title">Core Components</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Admin Dashboard</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Main administration dashboard with system overview and status information.
+          </p>
+          <a href="/admin" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Role Manager</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Manage user roles, permissions, and role assignments.
+          </p>
+          <a href="/admin/authorization" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">System Monitor</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Monitor system health, performance metrics, and resource usage.
+          </p>
+          <a href="/admin/monitoring" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+    </div>
+    
+    <h2 class="section-title">Data Management Components</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Attributes Manager</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Manage entity attributes and attribute configurations.
+          </p>
+          <a href="/admin/attributes" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Values Manager</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Manage entity values and value configurations.
+          </p>
+          <a href="/admin/values" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Queries Manager</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Create, edit, and execute database queries and query paths.
+          </p>
+          <a href="/admin/queries" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+    </div>
+    
+    <h2 class="section-title">Administration Components</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Jobs Dashboard</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Monitor and manage background jobs and scheduled tasks.
+          </p>
+          <a href="/admin/jobs" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Security Admin</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Manage security settings, encryption keys, and audit logs.
+          </p>
+          <a href="/admin/security" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Workflows</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Create and manage notification and process workflows.
+          </p>
+          <a href="/admin/workflows" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+    </div>
+    
+    <h2 class="section-title">Tool Components</h2>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Vector Search</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Semantic search interface for vector-based data retrieval.
+          </p>
+          <a href="/admin/vector-search" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Reports Dashboard</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Create, manage, and execute data reports.
+          </p>
+          <a href="/admin/reports" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+      
+      <div class="component-card">
+        <div class="component-header">
+          <h3 class="component-title">Generic CRUD Manager</h3>
+        </div>
+        <div class="component-content">
+          <p class="component-description">
+            Reusable component for creating CRUD interfaces for any entity type.
+          </p>
+          <a href="/admin/crud/examples" class="component-demo-link">View Component</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    <p>&copy; 2025 UNO Framework. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -88,11 +88,11 @@
       // Render the appropriate component based on the URL parameters
       if (mode === 'dashboard' || !mode) {
         // Render the workflow dashboard
-        const dashboard = document.createElement('wa-workflow-dashboard');
+        const dashboard = document.createElement('okui-workflow-dashboard');
         container.appendChild(dashboard);
       } else if (mode === 'designer') {
         // Render the workflow designer
-        const designer = document.createElement('wa-workflow-designer');
+        const designer = document.createElement('okui-workflow-designer');
         
         if (workflowId) {
           designer.setAttribute('workflow-id', workflowId);
@@ -117,20 +117,20 @@
         container.appendChild(designer);
       } else if (mode === 'execution' && workflowId && executionId) {
         // Render the execution detail view
-        const executionDetail = document.createElement('wa-workflow-execution-detail');
+        const executionDetail = document.createElement('okui-workflow-execution-detail');
         executionDetail.setAttribute('workflow-id', workflowId);
         executionDetail.setAttribute('execution-id', executionId);
         
         container.appendChild(executionDetail);
       } else if (mode === 'simulator' && workflowId) {
         // Render the workflow simulator
-        const simulator = document.createElement('wa-workflow-simulator');
+        const simulator = document.createElement('okui-workflow-simulator');
         simulator.setAttribute('workflow-id', workflowId);
         
         container.appendChild(simulator);
       } else {
         // Invalid parameters, default to dashboard
-        const dashboard = document.createElement('wa-workflow-dashboard');
+        const dashboard = document.createElement('okui-workflow-dashboard');
         container.appendChild(dashboard);
       }
       
