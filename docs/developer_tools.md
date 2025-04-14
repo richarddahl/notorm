@@ -8,11 +8,12 @@ The Developer Tools module is organized into several key components:
 
 1. **Project Scaffolding**: Tools for creating new projects and features with standardized structure and best practices.
 2. **Visual Data Modeling**: Interactive entity modeling and code generation with a browser-based interface.
-3. **Debugging Tools**: Utilities for debugging application code, including middleware for request/response inspection, function tracing, and SQL query analysis.
-4. **Profiling Tools**: Performance and memory profiling utilities to identify bottlenecks and optimization opportunities.
-5. **Code Generation**: Tools for generating code templates for models, repositories, and API endpoints.
-6. **Documentation Tools**: Utilities for automatically generating documentation from code.
-7. **CLI Tools**: Command-line interface for accessing all developer tools.
+3. **Migration Assistance**: Tools for database schema migrations and codebase transformations.
+4. **Debugging Tools**: Utilities for debugging application code, including middleware for request/response inspection, function tracing, and SQL query analysis.
+5. **Profiling Tools**: Performance and memory profiling utilities to identify bottlenecks and optimization opportunities.
+6. **Code Generation**: Tools for generating code templates for models, repositories, and API endpoints.
+7. **Documentation Tools**: Utilities for automatically generating documentation from code.
+8. **CLI Tools**: Command-line interface for accessing all developer tools.
 
 ## Installation
 
@@ -65,6 +66,29 @@ python -m uno.devtools.cli.main modeler analyze /path/to/project
 ```
 
 See [Visual Modeler Guide](developer_tools/visual_modeler.md) for complete documentation.
+
+## Migration Assistance
+
+The migration assistance tools help with database schema migrations and codebase transformations:
+
+```bash
+# Compare SQLAlchemy models to database schema
+python -m uno.devtools.cli.main migrations diff-schema --connection postgresql://user:password@localhost/dbname --models my_project.models
+
+# Generate a migration script
+python -m uno.devtools.cli.main migrations generate-migration --connection postgresql://user:password@localhost/dbname --models my_project.models --output-dir migrations --message "Add user table"
+
+# Apply a migration script
+python -m uno.devtools.cli.main migrations apply-migration path/to/migration_script.py --connection postgresql://user:password@localhost/dbname
+
+# Analyze code for migration needs
+python -m uno.devtools.cli.main migrations analyze-code path/to/your/code
+
+# Transform code to fix identified issues
+python -m uno.devtools.cli.main migrations transform-code path/to/your/code --no-dry-run
+```
+
+See [Migration Assistance Guide](developer_tools/migrations.md) for complete documentation.
 
 ## Debugging Tools
 
