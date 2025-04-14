@@ -27,6 +27,10 @@ uno does use jwt for token validation and authorization.
 uno allows definition of postgres row level security using postgres session variables to control access to database records.
 uno is a brand new library, any "legacy" code was simply defined as protoypes to define capabilities, it does not have to be preserved. No developers are currently using the existing code base.
 
+## Proposals for improvements
+The PROPOSALS folder in the root is where proposals and plans for enhancements and refactoring are documented.
+PROPOSALS/CODE_STANDARDIZATION_PROGRESS.md is an excellent example.
+
 ## Dependency Injection System
 
 Uno implements a dependency injection system using the `inject` library. Key components include:
