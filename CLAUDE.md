@@ -58,6 +58,7 @@ python 3.13.0+
 postgresql 16
 webawesome
 lit
+pydantic 2 # Do not use pydantic versions  < 2
 
 ## Prefer modern web-component based front end ui
 
@@ -67,7 +68,13 @@ When building front end ui components, use webawesome and lit to create the ui.
 
 When building uno, also review the best modern, well supported, mature python libraries over building functionality from scratch.
 
+## Prefer internal resources
+
+Use the centralized database access utilities for database connections and sessions
+Use the utilities defined within the library whenever possible.
+
 ## Docker-First Approach
+
 This project uses a Docker-first approach for all database interactions. We never use local PostgreSQL installations for development, testing, or deployment. See DOCKER_FIRST.md for details.
 
 ## Commands
