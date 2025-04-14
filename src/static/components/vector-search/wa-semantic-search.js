@@ -305,6 +305,16 @@ export class WebAwesomeSemanticSearch extends LitElement {
     super.connectedCallback();
     console.log('wa-semantic-search connected to DOM');
     // In a real app, you might fetch additional data from the server
+    
+    // Force UI update after connection
+    this.requestUpdate();
+    
+    // Dispatch a custom event to notify the app that we're ready
+    this.dispatchEvent(new CustomEvent('component-ready', {
+      bubbles: true,
+      composed: true,
+      detail: { component: 'wa-semantic-search' }
+    }));
   }
   
   disconnectedCallback() {
@@ -1168,6 +1178,26 @@ export class WebAwesomeSemanticSearch extends LitElement {
     `;
   }
   render() {
+    // Add a guard to ensure we don't render before we're ready
+    if (!this || !this.isConnected) {
+      console.log('wa-semantic-search render called before component is ready');
+      return html`
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 16px;">Loading Vector Search Component...</div>
+            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3f51b5; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto;"></div>
+            <style>
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </div>
+        </div>
+      `;
+    }
+
+    console.log('wa-semantic-search rendering component');
     return html`
       <div class="search-container">
         <div class="search-header">
