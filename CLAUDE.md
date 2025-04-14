@@ -44,6 +44,8 @@ When implementing new features:
 5. Use `get_db_session()` or `get_scoped_db_session()` for database access
 6. Prefer `UnoRepository` for data access patterns
 7. Use `inject_dependency()` for non-session dependencies
+8. Create unit tests and verify they are working
+9. Create detailed documentation for developers, admins, users, etc..., as appropriate.
 
 For testing with dependencies:
 1. Use `TestingContainer` to configure test-specific dependencies

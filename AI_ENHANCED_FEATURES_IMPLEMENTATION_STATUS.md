@@ -181,9 +181,72 @@ The implementation includes:
    - Integration with unified context for better personalization
    - Comprehensive recommendation API
 
+### 6. Advanced Graph Integration
+
+✅ **Core Components** (Implemented):
+- Sophisticated graph traversal algorithms for knowledge graph exploration
+- Automated knowledge graph construction from text
+- Graph-based reasoning capabilities 
+- RAG enhancement through graph context
+
+The implementation includes:
+
+1. **Graph Navigator**:
+   - Advanced graph traversal algorithms (BFS, DFS, Dijkstra, A*, bidirectional)
+   - Multiple navigation strategies (shortest path, all paths, subgraph extraction)
+   - Path constraints and filtering capabilities
+   - Community detection algorithms
+   - Graph reasoning patterns (causal, hierarchical, temporal)
+   - Integration with RAG for context retrieval
+   - Path explanation generation for interpretability
+
+2. **Knowledge Constructor**:
+   - Automated knowledge graph construction from text
+   - Multiple entity extraction methods (rule-based, NER, transformer-based)
+   - Multiple relationship extraction methods (pattern-based, dependency parsing, transformer-based)
+   - Validation and deduplication of extracted knowledge
+   - Configurable construction pipelines
+   - Integration with Apache AGE for graph storage
+   - Export capabilities for visualization and analysis
+
+3. **Graph Reasoning**:
+   - Inference methods for logical reasoning over graphs
+   - Path-based reasoning strategies
+   - Triple validation for knowledge base consistency
+   - Integration with Uno domain model
+
+4. **Graph RAG Enhancer**:
+   - Context enrichment through graph exploration
+   - Relevance determination for graph-based context
+   - Intelligent query formulation for knowledge graphs
+   - Integration with content generation services
+
+## Domain-Specific Fine-tuning
+
+✅ **Core Components** (Implemented):
+- Domain embedding adaptation for specific industries
+- Domain knowledge integration for enhanced AI features
+- Custom model fine-tuning strategies
+
+The implementation includes:
+
+1. **Domain Embedding Adapter**:
+   - Specialized embedding models for specific domains
+   - Multiple fine-tuning methods (contrastive, triplet, supervised, domain adaptation)
+   - Evaluation metrics for domain-specific embeddings
+   - Training data preparation utilities
+   - Integration with existing embedding infrastructure
+
+2. **Domain Knowledge Manager**:
+   - Integration of domain-specific knowledge
+   - Support for various knowledge sources (structured data, ontologies, expert rules)
+   - Prompt enhancement strategies for domain-specific queries
+   - Domain knowledge search and retrieval
+   - Validation mechanisms for domain knowledge
+
 ## Next Steps for Enhancement
 
-With all planned AI features and cross-feature integration components now successfully implemented, the following enhancements are planned for future development:
+With all planned AI features, cross-feature integration components, and advanced graph capabilities now successfully implemented, the following enhancements are planned for future development:
 
 ### 2. Performance and Scalability Improvements
 
@@ -256,25 +319,6 @@ Implement additional security measures:
    - Implement fine-grained access controls for AI features
    - Develop role-based permissions for AI operations
    - Create usage quotas and rate limiting for AI endpoints
-
-### 5. Domain-Specific Adaptations
-
-Create specialized versions of AI features for specific domains:
-
-1. **Industry-Specific Models**:
-   - Develop domain-specific embeddings for industries like healthcare, finance, and legal
-   - Implement specialized anomaly detection for industry-specific metrics
-   - Create domain-aware content generation with regulatory compliance
-
-2. **Custom Knowledge Integration**:
-   - Develop tools for integrating custom knowledge bases
-   - Implement domain-specific ontologies for enhanced semantic understanding
-   - Create specialized context retrieval for domain-specific applications
-
-3. **Workflow Integration**:
-   - Integrate AI features into domain-specific workflows
-   - Develop specialized UI components for domain experts
-   - Create automated processes using AI capabilities
 
 ## Usage Examples
 
@@ -551,6 +595,93 @@ async def cross_feature_example():
 asyncio.run(cross_feature_example())
 ```
 
+### Knowledge Graph Construction Example
+
+```python
+import asyncio
+from uno.ai.graph_integration import (
+    KnowledgeConstructor,
+    KnowledgeConstructorConfig,
+    EntityExtractionMethod,
+    RelationshipExtractionMethod,
+    TextSource
+)
+
+async def knowledge_graph_example():
+    # Configure the knowledge constructor
+    config = KnowledgeConstructorConfig(
+        graph_name="business_knowledge_graph",
+        spacy_model="en_core_web_sm",
+        # Custom entity patterns for business domain
+        custom_entity_patterns={
+            "PRODUCT": [
+                r"\b[A-Z][a-zA-Z]+ (v\d+\.\d+|Suite|Platform|API)\b",
+                r"\b[A-Z][a-zA-Z]+ (Pro|Enterprise|Cloud)\b"
+            ],
+            "TECHNOLOGY": [
+                r"\b(AI|ML|NLP|API|REST|GraphQL|SQL|NoSQL|Kubernetes|Docker)\b"
+            ]
+        }
+    )
+    
+    # Create a knowledge constructor
+    constructor = KnowledgeConstructor(
+        connection_string="postgresql://user:password@localhost:5432/dbname", 
+        config=config
+    )
+    
+    # Initialize the constructor
+    await constructor.initialize()
+    
+    # Sample business document
+    business_doc = TextSource(
+        id="tech_article_1",
+        content="""
+        TechCorp Inc is a leading technology company located in San Francisco. 
+        The company was founded by John Smith in 2010. TechCorp Inc develops AI Platform 
+        that uses NLP for analyzing business data. Sarah Johnson is the current CEO.
+        
+        MegaSoft Corporation, based in Seattle, is known for their MegaSoft Cloud product.
+        They recently announced a partnership with TechCorp Inc to integrate 
+        MegaSoft Cloud with AI Platform. MegaSoft Corporation uses Kubernetes
+        for their infrastructure and has over 5000 employees.
+        """,
+        source_type="article",
+        metadata={"domain": "technology"}
+    )
+    
+    # Extract knowledge from text
+    extraction_result = await constructor.extract_knowledge(
+        business_doc, 
+        pipeline=None  # Use default pipeline
+    )
+    
+    print(f"Extracted {len(extraction_result.entities)} entities")
+    print(f"Extracted {len(extraction_result.relationships)} relationships")
+    
+    # Construct knowledge graph
+    construction_result = await constructor.construct_knowledge_graph(
+        [business_doc]
+    )
+    
+    print(f"Added {construction_result.entity_count} entities to graph")
+    print(f"Added {construction_result.relationship_count} relationships to graph")
+    
+    # Query the graph
+    companies = await constructor.query_graph("""
+        MATCH (c:ORGANIZATION)
+        RETURN c
+    """)
+    
+    print(f"Found {len(companies)} companies in the graph")
+    
+    # Clean up
+    await constructor.close()
+
+# Run the example
+asyncio.run(knowledge_graph_example())
+```
+
 ## API Integration Example
 
 ### Semantic Search API
@@ -664,6 +795,8 @@ We have successfully implemented all planned AI features for the Uno framework:
 3. ✅ **Content Generation and Summarization**: Implemented with RAG support, Apache AGE integration, and multiple model options.
 4. ✅ **Anomaly Detection System**: Implemented with statistical, machine learning, and hybrid approaches for comprehensive monitoring.
 5. ✅ **Cross-Feature Integration**: Implemented with unified context management, shared embeddings, enhanced RAG, and intelligent recommendations.
+6. ✅ **Advanced Graph Integration**: Implemented with graph navigation, automated knowledge construction, graph reasoning, and RAG enhancement.
+7. ✅ **Domain-Specific Fine-tuning**: Implemented with domain embedding adaptation and domain knowledge integration.
 
 ## Recommendations for Future Enhancement
 
@@ -675,23 +808,23 @@ With all planned AI features successfully implemented, we recommend the followin
    - Develop query parallelization techniques
    - Create adaptive resource management
 
-2. **Domain-Specific Adaptations**:
-   - Develop domain-specific embeddings for key industries
-   - Implement specialized anomaly detection for vertical markets
-   - Create domain-aware content generation with compliance features
-   - Build integration points for industry-specific knowledge bases
-
-3. **Evaluation and Quality Assurance**:
+2. **Evaluation and Quality Assurance**:
    - Develop comprehensive evaluation metrics for all AI features
    - Implement A/B testing infrastructure
    - Create automated feedback collection mechanisms
    - Build performance monitoring dashboards
 
-4. **Security and Privacy Enhancements**:
+3. **Security and Privacy Enhancements**:
    - Enhance data filtering for sensitive information
    - Implement prompt injection prevention
    - Develop content moderation for generated content
    - Create enhanced access controls for AI features
+
+4. **Advanced Model Integration**:
+   - Integrate with next-generation LLMs and embedding models
+   - Develop model selection strategies based on query complexity
+   - Implement model fallback mechanisms for reliability
+   - Create model performance monitoring
 
 5. **Documentation and Examples**:
    - Create comprehensive tutorials for all AI features
