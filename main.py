@@ -105,7 +105,7 @@ async def lifespan(app: FastAPI):
         logger.debug("Configuring UnoObj models with app")
         for obj_name, obj in registry.get_all().items():
             if hasattr(obj, "configure"):
-                obj.configure(app)
+                obj.configure(api_app)
                 
         logger.info("All UnoObj models loaded and configured")
         
@@ -114,18 +114,18 @@ async def lifespan(app: FastAPI):
         
         # Authorization endpoints
         from uno.authorization.endpoints import router as auth_router
-        app.include_router(auth_router)
+        api_app.include_router(auth_router)
         logger.debug("Authorization router included")
 
         # Meta endpoints
         from uno.meta.endpoints import router as meta_router
-        app.include_router(meta_router)
+        api_app.include_router(meta_router)
         logger.debug("Meta router included")
 
         # Vector search endpoints (if available)
         try:
             from uno.vector_search.endpoints import router as vector_router
-            app.include_router(vector_router)
+            api_app.include_router(vector_router)
             logger.info("Vector search router included")
         except ImportError:
             logger.debug("Vector search router not available")
@@ -137,9 +137,9 @@ async def lifespan(app: FastAPI):
                 query_value_router,
                 query_router
             )
-            app.include_router(query_path_router.router)
-            app.include_router(query_value_router.router)
-            app.include_router(query_router)
+            api_app.include_router(query_path_router.router)
+            api_app.include_router(query_value_router.router)
+            api_app.include_router(query_router)
             logger.info("Queries module domain routers included")
         except ImportError:
             logger.debug("Queries module domain routers not available")
@@ -154,12 +154,12 @@ async def lifespan(app: FastAPI):
                 execution_router,
                 output_execution_router
             )
-            app.include_router(field_definition_router.router)
-            app.include_router(template_router.router)
-            app.include_router(trigger_router.router)
-            app.include_router(output_router.router)
-            app.include_router(execution_router.router)
-            app.include_router(output_execution_router)
+            api_app.include_router(field_definition_router.router)
+            api_app.include_router(template_router.router)
+            api_app.include_router(trigger_router.router)
+            api_app.include_router(output_router.router)
+            api_app.include_router(execution_router.router)
+            api_app.include_router(output_execution_router)
             logger.info("Reports module domain routers included")
         except ImportError:
             logger.debug("Reports module domain routers not available")
@@ -167,15 +167,25 @@ async def lifespan(app: FastAPI):
         # Admin UI
         try:
             from uno.api.admin_ui import AdminUIRouter
-            admin_ui = AdminUIRouter(app)
+            admin_ui = AdminUIRouter(api_app)
             logger.info("Admin UI router included")
         except ImportError:
             logger.debug("Admin UI router not available")
+            
+        # Set up the workflow module
+        try:
+            from uno.workflows.app_integration import setup_workflow_module
+            setup_workflow_module(api_app)
+            logger.info("Workflow module setup complete")
+        except ImportError:
+            logger.debug("Workflow module not available")
+        except Exception as e:
+            logger.error(f"Error setting up workflow module: {e}", exc_info=True)
 
         # Example domain endpoints using modern dependency injection
         # try:
         #     from uno.domain.api_example import router as example_router
-        #     app.include_router(example_router)
+        #     api_app.include_router(example_router)
         #     logger.info("Example domain router included")
         # except ImportError:
         #     logger.debug("Example domain router not available")
@@ -199,48 +209,31 @@ async def lifespan(app: FastAPI):
         logger.error(f"Error during application lifecycle: {e}", exc_info=True)
         raise
 
-# Create a new FastAPI app with our lifespan handler
-from fastapi import FastAPI
-app = FastAPI(
-    lifespan=lifespan,
-    title=api_app.title,
-    openapi_tags=api_app.openapi_tags
-)
+# Modify the existing app instead of creating a new one
+# This ensures all OpenAPI metadata is preserved
+api_app.router.lifespan_context = lifespan
 
-# Copy routes from the original app
-for route in api_app.routes:
-    app.router.routes.append(route)
-
-# Copy middleware settings (CORS, etc.) - we don't directly copy middleware instances
-# Instead we add the CORS middleware explicitly, since we know that's what's used
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-for exc, handler in api_app.exception_handlers.items():
-    app.add_exception_handler(exc, handler)
+# We no longer need to copy these settings since we're using the original app
 
 templates = Jinja2Templates(directory="src/templates")
 
-app.mount(
-    "/static",
-    StaticFiles(directory="src/static"),
-    name="static",
-)
+# Make sure static files are properly mounted
+if "/static" not in [route.path for route in api_app.routes]:
+    api_app.mount(
+        "/static",
+        StaticFiles(directory="src/static"),
+        name="static",
+    )
 
 # Configure the modern dependency injection system with FastAPI
 from uno.dependencies.fastapi_integration import configure_fastapi
-configure_fastapi(app)
+configure_fastapi(api_app)
 
 # Example of an endpoint using the new dependency injection system
 from uno.dependencies.decorators import inject_params
 from uno.dependencies.interfaces import UnoConfigProtocol
 
-@app.get("/app", response_class=HTMLResponse, tags=["0KUI"])
+@api_app.get("/app", response_class=HTMLResponse, tags=["0KUI"])
 async def app_base(request: Request):
     """Render the main application page."""
     return templates.TemplateResponse(
@@ -252,16 +245,88 @@ async def app_base(request: Request):
         },
     )
 
+@api_app.get("/routes", response_class=JSONResponse, tags=["0KUI"])
+async def list_routes():
+    """List all available routes for debugging"""
+    routes = []
+    for route in api_app.routes:
+        if hasattr(route, "methods"):
+            methods = list(route.methods)
+        else:
+            methods = ["N/A"]
+        
+        routes.append({
+            "path": route.path,
+            "name": route.name,
+            "methods": methods,
+            "include_in_schema": getattr(route, "include_in_schema", "N/A")
+        })
+    
+    return {"routes": routes}
+
+# Add admin routes directly for testing
+@api_app.get("/admin", response_class=HTMLResponse, tags=["0KUI"], include_in_schema=False)
+async def admin_page(request: Request):
+    """Admin dashboard page"""
+    return templates.TemplateResponse(
+        "admin.html", 
+        {
+            "request": request,
+            "site_name": "UNO Admin",
+            "component": "okui-admin-dashboard"
+        }
+    )
+
+@api_app.get("/admin-direct", response_class=HTMLResponse, tags=["0KUI"])
+async def admin_direct(request: Request):
+    """Direct admin page for testing"""
+    return templates.TemplateResponse(
+        "admin.html", 
+        {
+            "request": request,
+            "site_name": "UNO Admin (Direct)",
+            "component": "okui-admin-dashboard"
+        }
+    )
+
+# Add sub-admin routes for direct access
+@api_app.get("/admin/{module}", response_class=HTMLResponse, tags=["0KUI"], include_in_schema=False)
+async def admin_module(request: Request, module: str):
+    """Admin module page"""
+    component_map = {
+        "attributes": "okui-attributes-manager",
+        "values": "okui-values-manager",
+        "queries": "okui-queries-manager",
+        "jobs": "okui-job-dashboard",
+        "security": "okui-security-admin",
+        "workflows": "okui-workflow-dashboard",
+        "reports": "okui-report-dashboard",
+        "vector-search": "okui-semantic-search",
+        "authorization": "okui-role-manager",
+        "monitoring": "okui-system-monitor"
+    }
+    
+    component = component_map.get(module, "okui-admin-dashboard")
+    
+    return templates.TemplateResponse(
+        "admin.html", 
+        {
+            "request": request,
+            "site_name": f"UNO Admin: {module.title()}",
+            "component": component
+        }
+    )
+
 def generate_openapi_schema():
     """Generate the OpenAPI schema for the FastAPI application."""
     return get_openapi(
         title="My API",
         version="1.0.0",
         description="Uno API",
-        routes=app.routes,
+        routes=api_app.routes,
     )
 
-@app.get(
+@api_app.get(
     "/api/v1.0/schema",
     response_class=JSONResponse,
     tags=["Schemas"],
@@ -272,7 +337,7 @@ def get_openapi_endpoint():
     """Retrieve the generated OpenAPI schema."""
     return JSONResponse(content=generate_openapi_schema())
 
-@app.get(
+@api_app.get(
     "/api/v1.0/schema/{schema_name}",
     response_class=JSONResponse,
     tags=["Schemas"],
@@ -284,7 +349,7 @@ def get_schema(schema_name: str):
         title="My API",
         version="1.0.0",
         description="This is my API description",
-        routes=app.routes,
+        routes=api_app.routes,
     )
 
     schemas = openapi_schema.get("components", {}).get("schemas", {})
@@ -295,3 +360,6 @@ def get_schema(schema_name: str):
     schema = schemas[schema_name]
 
     return JSONResponse(content=schema)
+
+# Export api_app as app for uvicorn to run it
+app = api_app
