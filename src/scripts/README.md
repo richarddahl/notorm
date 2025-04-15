@@ -1,6 +1,6 @@
-# Uno Python Scripts
+# uno Python Scripts
 
-This directory contains Python scripts for managing and working with the Uno framework. These scripts handle tasks like database operations, validation, CLI interfaces, and development utilities.
+This directory contains Python scripts for managing and working with uno. These scripts handle tasks like database operations, validation, CLI interfaces, and development utilities.
 
 ## Table of Contents
 - [Database Management](#database-management)

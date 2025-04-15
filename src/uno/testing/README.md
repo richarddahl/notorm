@@ -1,10 +1,10 @@
-# Uno Testing Framework
+# uno Testing Framework
 
-The Uno Testing Framework provides comprehensive utilities for testing Uno applications, including property-based testing, integration testing with containerized dependencies, mock data generation, snapshot testing for complex objects, and performance regression testing.
+The uno Testing Framework provides comprehensive utilities for testing uno applications, including property-based testing, integration testing with containerized dependencies, mock data generation, snapshot testing for complex objects, and performance regression testing.
 
 ## Installation
 
-The testing framework is included in the core Uno package. For optional dependencies, install:
+The testing framework is included in the core uno package. For optional dependencies, install:
 
 ```bash
 pip install -r requirements.txt
@@ -47,9 +47,9 @@ class TestUserService(PropertyTest):
 
 Key features:
 - Built on top of Hypothesis for powerful property-based testing
-- Domain-specific features for Uno applications
+- Domain-specific features for uno applications
 - Support for stateful testing with `stateful_test`
-- Integrates with Uno's dependency injection system
+- Integrates with uno's dependency injection system
 
 ## Integration Testing
 

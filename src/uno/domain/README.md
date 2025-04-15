@@ -1,6 +1,6 @@
-# Domain-Driven Design for Uno Framework
+# Domain-Driven Design for uno Framework
 
-This module implements a domain-driven design (DDD) approach for the Uno framework, providing a clear separation of concerns and a rich domain model.
+This module implements a domain-driven design (DDD) approach for uno, providing a clear separation of concerns and a rich domain model.
 
 ## Architecture Overview
 
@@ -76,9 +76,9 @@ The domain layer follows these key principles:
 4. **Dependency Injection**: Services and repositories are designed for DI.
 5. **Testability**: All components are designed to be easily testable in isolation.
 
-## Integration with Uno Framework
+## Integration with uno Framework
 
-The domain layer integrates with other parts of the Uno framework:
+The domain layer integrates with other parts of uno:
 
 - **Database**: Through repositories and the DB manager
 - **API Layer**: Through domain services that are used by API endpoints

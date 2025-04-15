@@ -1,6 +1,6 @@
 # Docker Scripts
 
-This directory contains scripts for managing Docker containers and environments for Uno.
+This directory contains scripts for managing Docker containers and environments for uno.
 
 ## Available Scripts
 

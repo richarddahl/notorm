@@ -2,7 +2,7 @@
 
 ## Overview
 
-API middleware components add measurable overhead to request processing in the Uno framework. This document outlines the approach for optimizing middleware processing to reduce latency and resource consumption while maintaining functionality.
+API middleware components add measurable overhead to request processing in uno. This document outlines the approach for optimizing middleware processing to reduce latency and resource consumption while maintaining functionality.
 
 ## Key Optimization Areas
 

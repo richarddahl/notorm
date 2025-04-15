@@ -1,6 +1,6 @@
-# Uno Offline Module
+# uno Offline Module
 
-The Offline module provides capabilities for offline operation, data synchronization, conflict resolution, and progressive enhancement in Uno applications.
+The Offline module provides capabilities for offline operation, data synchronization, conflict resolution, and progressive enhancement in uno applications.
 
 ## Components
 

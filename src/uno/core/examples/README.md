@@ -1,6 +1,6 @@
-# Uno Framework Examples
+# uno Framework Examples
 
-This directory contains example code demonstrating how to use various features of the Uno framework.
+This directory contains example code demonstrating how to use various features of uno.
 
 ## Examples
 
@@ -26,7 +26,7 @@ python -m uno.core.examples.batch_operations_example
 
 ### Async Examples
 
-The `async_example.py` file demonstrates Uno's async capabilities:
+The `async_example.py` file demonstrates uno's async capabilities:
 
 - Task management
 - Concurrency control
@@ -35,7 +35,7 @@ The `async_example.py` file demonstrates Uno's async capabilities:
 
 ### Error Handling Examples
 
-The `error_handling_example.py` file demonstrates Uno's error handling system:
+The `error_handling_example.py` file demonstrates uno's error handling system:
 
 - Using the Result type for error handling
 - Error catalog for standardized errors
@@ -44,7 +44,7 @@ The `error_handling_example.py` file demonstrates Uno's error handling system:
 
 ### Migration Examples
 
-The `migration_example.py` file demonstrates Uno's migration system:
+The `migration_example.py` file demonstrates uno's migration system:
 
 - Database schema migrations
 - Data migrations
@@ -53,7 +53,7 @@ The `migration_example.py` file demonstrates Uno's migration system:
 
 ### Monitoring Examples
 
-The `monitoring_example.py` file demonstrates Uno's monitoring capabilities:
+The `monitoring_example.py` file demonstrates uno's monitoring capabilities:
 
 - Health checks
 - Metrics collection
@@ -63,7 +63,7 @@ The `monitoring_example.py` file demonstrates Uno's monitoring capabilities:
 
 ### Plugin Examples
 
-The `plugin_example.py` file demonstrates Uno's plugin system:
+The `plugin_example.py` file demonstrates uno's plugin system:
 
 - Creating plugins
 - Plugin discovery
@@ -72,7 +72,7 @@ The `plugin_example.py` file demonstrates Uno's plugin system:
 
 ### Resource Examples
 
-The `resource_example.py` file demonstrates Uno's resource management:
+The `resource_example.py` file demonstrates uno's resource management:
 
 - Resource lifecycle management
 - Resource monitoring

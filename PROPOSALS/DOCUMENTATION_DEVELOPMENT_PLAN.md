@@ -1,6 +1,6 @@
 # Documentation Development Plan
 
-This document outlines a systematic plan for ongoing development and improvement of the Uno framework documentation. It establishes priorities, processes, and timelines to ensure that documentation remains accurate, comprehensive, and useful. For a visual representation of current documentation status and priorities, see [DOCUMENTATION_STATUS_VISUALIZATION.md](./DOCUMENTATION_STATUS_VISUALIZATION.md).
+This document outlines a systematic plan for ongoing development and improvement of uno documentation. It establishes priorities, processes, and timelines to ensure that documentation remains accurate, comprehensive, and useful. For a visual representation of current documentation status and priorities, see [DOCUMENTATION_STATUS_VISUALIZATION.md](./DOCUMENTATION_STATUS_VISUALIZATION.md).
 
 ## Documentation Objectives
 
@@ -233,6 +233,6 @@ Based on the audit completed in the documentation cleanup process, the following
 
 ## Conclusion
 
-This documentation development plan provides a structured approach to systematically improve the Uno framework documentation. By prioritizing critical missing documentation, implementing process improvements, and establishing regular review cycles, we can ensure that the documentation becomes and remains a key strength of the framework.
+This documentation development plan provides a structured approach to systematically improve uno documentation. By prioritizing critical missing documentation, implementing process improvements, and establishing regular review cycles, we can ensure that the documentation becomes and remains a key strength of the framework.
 
 This plan should be reviewed and updated every three months to ensure it continues to address the most pressing documentation needs and aligns with the broader project roadmap.

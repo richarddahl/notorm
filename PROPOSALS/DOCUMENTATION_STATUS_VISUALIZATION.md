@@ -1,6 +1,6 @@
 # Documentation Status Visualization
 
-This document provides a visual representation of the current state of the Uno framework documentation, highlighting areas that are well-documented, areas that need improvement, and areas where documentation is missing.
+This document provides a visual representation of the current state of uno documentation, highlighting areas that are well-documented, areas that need improvement, and areas where documentation is missing.
 
 ## Documentation Coverage Map
 
@@ -8,7 +8,7 @@ The following map shows the coverage status of major documentation areas:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       Uno Framework Documentation                        │
+│                       uno Framework Documentation                        │
 └─────────────────────────────────────────────────────────────────────────┘
                                      │
            ┌──────────┬─────────────┼─────────────┬──────────┐

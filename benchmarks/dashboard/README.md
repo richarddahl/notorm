@@ -1,6 +1,6 @@
-# Uno Framework Benchmark Dashboard
+# uno Framework Benchmark Dashboard
 
-This dashboard visualizes performance metrics from the Uno Framework benchmark tests.
+This dashboard visualizes performance metrics from the uno Framework benchmark tests.
 
 ## Features
 

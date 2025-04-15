@@ -1,6 +1,6 @@
 # Clean Slate Implementation Plan: Removing Legacy Code
 
-This document outlines a direct approach to remove all backward compatibility code from the Uno framework, resulting in a clean, modern, testable, and well-designed library.
+This document outlines a direct approach to remove all backward compatibility code from uno, resulting in a clean, modern, testable, and well-designed library.
 
 ## Identified Legacy Code Patterns
 

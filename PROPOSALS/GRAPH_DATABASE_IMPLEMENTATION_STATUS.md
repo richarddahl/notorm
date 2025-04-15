@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the current status of the Apache AGE graph database integration in the Uno framework. The integration provides comprehensive graph database capabilities that complement the relational database foundation, allowing developers to leverage the strengths of both paradigms.
+This document summarizes the current status of the Apache AGE graph database integration in uno. The integration provides comprehensive graph database capabilities that complement the relational database foundation, allowing developers to leverage the strengths of both paradigms.
 
 ## Implementation Status
 
@@ -278,4 +278,4 @@ path_context = await graph_rag.retrieve_path_context(
 
 ## Conclusion
 
-The Apache AGE graph database integration in the Uno framework provides powerful graph database capabilities that complement the relational database foundation. By leveraging the strengths of both paradigms, Uno offers a flexible and efficient solution for complex data modeling and querying needs.
+The Apache AGE graph database integration in uno provides powerful graph database capabilities that complement the relational database foundation. By leveraging the strengths of both paradigms, uno offers a flexible and efficient solution for complex data modeling and querying needs.

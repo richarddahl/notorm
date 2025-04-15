@@ -1,6 +1,6 @@
 # Performance Benchmarks
 
-This directory contains performance benchmark tests for various modules in the Uno framework.
+This directory contains performance benchmark tests for various modules in uno.
 
 ## Running the Benchmarks
 

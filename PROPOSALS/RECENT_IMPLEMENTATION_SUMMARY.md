@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the recent implementation work done on the Uno framework to enhance developer experience and add new capabilities. Four major enhancements have been implemented:
+This document summarizes the recent implementation work done on uno to enhance developer experience and add new capabilities. Four major enhancements have been implemented:
 
 1. **Developer Tooling**: A comprehensive CLI and scaffolding system for project and feature generation
 2. **AI-Enhanced Features**: Semantic search functionality with vector embeddings and text similarity
@@ -11,7 +11,7 @@ This document summarizes the recent implementation work done on the Uno framewor
 
 ## Developer Tooling Implementation
 
-The developer tooling enhancement focuses on improving the developer experience with the Uno framework by providing command-line tools for project scaffolding and code generation.
+The developer tooling enhancement focuses on improving the developer experience with uno by providing command-line tools for project scaffolding and code generation.
 
 ### Key Components
 
@@ -40,7 +40,7 @@ python -m uno.devtools.cli.main scaffold feature product --domain ecommerce
 
 ## AI-Enhanced Features Implementation
 
-The AI enhancements add semantic search and recommendation capabilities to the Uno framework, allowing developers to easily integrate these advanced features into their applications.
+The AI enhancements add semantic search and recommendation capabilities to uno, allowing developers to easily integrate these advanced features into their applications.
 
 ### Key Components
 
@@ -195,7 +195,7 @@ async with health_aware_async_connection() as connection:
 
 ## Graph Database Integration
 
-The graph database integration adds comprehensive support for Apache AGE (A Graph Extension) to the Uno framework, enabling developers to leverage graph database capabilities alongside traditional relational database features.
+The graph database integration adds comprehensive support for Apache AGE (A Graph Extension) to uno, enabling developers to leverage graph database capabilities alongside traditional relational database features.
 
 ### Key Components
 
@@ -362,7 +362,7 @@ entities = await constructor.query_graph("""
 
 ## Benefits to Developers
 
-These enhancements provide significant benefits to developers working with the Uno framework:
+These enhancements provide significant benefits to developers working with uno:
 
 1. **Reduced Boilerplate**: Automated generation of common code patterns
 2. **Faster Development**: Quick scaffolding of projects and features

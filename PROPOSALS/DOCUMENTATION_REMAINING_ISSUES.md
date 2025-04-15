@@ -1,6 +1,6 @@
 # Documentation Remaining Issues
 
-This document identifies the remaining documentation issues that need to be addressed in future documentation sprints for the Uno framework. For a visual representation of documentation status and priorities, see [DOCUMENTATION_STATUS_VISUALIZATION.md](./DOCUMENTATION_STATUS_VISUALIZATION.md).
+This document identifies the remaining documentation issues that need to be addressed in future documentation sprints for uno. For a visual representation of documentation status and priorities, see [DOCUMENTATION_STATUS_VISUALIZATION.md](./DOCUMENTATION_STATUS_VISUALIZATION.md).
 
 ## Broken Links
 
@@ -99,7 +99,7 @@ While many formatting issues have been resolved, some areas still need attention
 Several documentation areas have content gaps that need to be addressed:
 
 1. **Conceptual Documentation**
-   - Deeper explanations of the Domain-Driven Design principles in Uno
+   - Deeper explanations of the Domain-Driven Design principles in uno
    - More detailed architecture documentation for complex components
    - Clearer migration guides from legacy patterns to modern approaches
 

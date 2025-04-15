@@ -1,6 +1,6 @@
 # Unit Tests for uno
 
-This directory contains unit tests for the core components of the uno framework. The tests are organized by module to provide comprehensive coverage of the codebase.
+This directory contains unit tests for the core components of uno. The tests are organized by module to provide comprehensive coverage of the codebase.
 
 ## Test Structure
 

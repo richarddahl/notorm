@@ -42,6 +42,8 @@ nav:
       - Overview: database/overview.md
       - Database Engine: database/engine.md
       - UnoDB: database/unodb.md
+      - Transaction Management: database/transaction_management.md
+      - Transaction Isolation: database/transaction_isolation.md
       - Repository: database/repository.md
       - Schema Manager: database/schema_manager.md
       - Query Cache: database/query_cache.md
@@ -54,11 +56,14 @@ nav:
    - Models Layer:
       - Overview: models/overview.md
       - UnoModel: models/model.md
+      - Field Types & Validators: models/field_types_and_validators.md
    - Business Logic Layer:
       - Overview: business_logic/overview.md
       - UnoObj: business_logic/unoobj.md
       - Registry: business_logic/registry.md
       - Schema Management: business_logic/schema.md
+      - Best Practices: business_logic/best_practices.md
+      - Extending UnoObj: business_logic/extending_unoobj.md
    - API Layer:
       - Overview: api/overview.md
       - Endpoint: api/endpoint.md
@@ -78,6 +83,10 @@ nav:
    - Error Handling:
       - Overview: error_handling/overview.md
       - Error Catalog: error_handling/catalog.md
+      - Expanded Error Catalog: error_handling/expanded_catalog.md
+      - Consistent Error Handling: error_handling/consistent_handling.md
+      - Error Monitoring: error_handling/monitoring.md
+      - APM Integration: error_handling/apm.md
       - Result Pattern: error_handling/result.md
       - Validation: error_handling/validation.md
       - Structured Logging: error_handling/logging.md
@@ -107,8 +116,9 @@ nav:
       - Migration: type_safety/migration.md
    - Dependency Injection:
       - Overview: dependency_injection/overview.md
-      - Migration: dependency_injection/migration.md
       - Examples: dependency_injection/examples.md
+      - Advanced Patterns: dependency_injection/advanced_patterns.md
+      - Migration: dependency_injection/migration.md
    - Dependencies:
       - Overview: dependencies/overview.md
       - Decision Guide: dependencies/decision_guide.md
@@ -205,6 +215,7 @@ nav:
       - Strategies: deployment/strategies.md
       - CI/CD: deployment/ci-cd.md
       - Docker Setup: docker_setup.md
+      - Comprehensive Docker Guide: docker/comprehensive_guide.md
    - Developer Tools: 
       - Overview: developer_tools.md
       - Migrations: developer_tools/migrations.md
@@ -219,6 +230,7 @@ nav:
          - Extractors: documentation_generation/extractors.md
    - Testing:
       - Overview: testing.md
+      - Comprehensive Guide: testing/comprehensive_guide.md
       - Framework: testing/framework.md
       - Integration Testing: testing/integration_testing.md
    - Migrations:
@@ -249,6 +261,7 @@ nav:
       - Guide: domain/guide.md
    - Schema:
       - Schema Service: schema/schema_service.md
+      - Validation: schema/validation.md
    - Benchmarks:
       - Dashboard: benchmarks/dashboard.md
    - Project:

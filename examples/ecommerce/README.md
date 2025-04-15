@@ -1,6 +1,6 @@
 # E-commerce Domain Example
 
-This example demonstrates a complete domain-driven design (DDD) implementation for an e-commerce application using the Uno framework. It showcases:
+This example demonstrates a complete domain-driven design (DDD) implementation for an e-commerce application using uno. It showcases:
 
 1. **Rich Domain Model** - Value objects, entities, and aggregates
 2. **Persistence** - PostgreSQL repository pattern implementation
@@ -29,13 +29,13 @@ This example demonstrates a complete domain-driven design (DDD) implementation f
 
 - PostgreSQL 16+
 - Python 3.12+
-- Uno framework
+- uno framework
 
 ### Setup
 
 1. **Initialize the database**
 
-   First, make sure the Uno framework database is set up:
+   First, make sure uno database is set up:
 
    ```bash
    python src/scripts/createdb.py

@@ -1,12 +1,12 @@
 # Documentation Contributor Guide
 
-This guide is designed to help contributors create and update documentation for the Uno framework. Following these guidelines will help ensure that documentation is consistent, accurate, and easy to understand.
+This guide is designed to help contributors create and update documentation for uno. Following these guidelines will help ensure that documentation is consistent, accurate, and easy to understand.
 
 ## Getting Started
 
 ### Documentation Structure
 
-The Uno documentation is organized into several key sections:
+The uno documentation is organized into several key sections:
 
 1. **Overview Pages**: High-level introductions to major components
 2. **API References**: Detailed documentation of classes, methods, and functions
@@ -295,4 +295,4 @@ If you need help with documentation:
 3. Ask for guidance in the #documentation channel
 4. Request a review of early drafts before finalizing
 
-Remember, good documentation is a key part of the Uno framework. Your contributions help make the framework more accessible and easier to use for everyone.
+Remember, good documentation is a key part of uno. Your contributions help make the framework more accessible and easier to use for everyone.

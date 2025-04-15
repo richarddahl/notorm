@@ -1,6 +1,6 @@
 # Vector Search Examples
 
-This directory contains examples demonstrating the vector search capabilities of the Uno framework.
+This directory contains examples demonstrating the vector search capabilities of uno.
 
 ## Contents
 
@@ -9,7 +9,7 @@ This directory contains examples demonstrating the vector search capabilities of
 ## Prerequisites
 
 1. PostgreSQL with pgvector extension installed
-2. Database setup with the Uno framework
+2. Database setup with uno
 3. Sample document data in the database
 
 ## Setting Up the Environment
@@ -136,4 +136,4 @@ await update_service.queue_update(
 
 ## Further Learning
 
-For more information about vector search in Uno, refer to the [Vector Search Documentation](../../docs/vector_search/overview.md).
+For more information about vector search in uno, refer to the [Vector Search Documentation](../../docs/vector_search/overview.md).

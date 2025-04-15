@@ -1,6 +1,6 @@
 # Documentation Cleanup Summary
 
-This document provides a summary of the documentation cleanup performed to ensure accuracy and consistency in the Uno framework documentation.
+This document provides a summary of the documentation cleanup performed to ensure accuracy and consistency in uno documentation.
 
 ## Cleanup Actions Taken
 
@@ -175,4 +175,4 @@ Based on our documentation cleanup, the following documentation should be create
    - Prioritize based on feature usage and developer confusion points
    - Consider bundling documentation tasks with related feature development
 
-This cleanup effort has significantly improved the quality, consistency, and usability of the Uno framework documentation. By consolidating duplicate content, standardizing formatting, and establishing documentation processes, this work ensures that developers can more easily find and understand the information they need to use the framework effectively.
+This cleanup effort has significantly improved the quality, consistency, and usability of uno documentation. By consolidating duplicate content, standardizing formatting, and establishing documentation processes, this work ensures that developers can more easily find and understand the information they need to use the framework effectively.

@@ -1,6 +1,6 @@
 # Future Enhancement Proposals
 
-This document outlines potential future enhancements for the Uno framework, providing a roadmap for capabilities that could make Uno even more powerful and developer-friendly.
+This document outlines potential future enhancements for uno, providing a roadmap for capabilities that could make uno even more powerful and developer-friendly.
 
 ## GraphQL Integration
 

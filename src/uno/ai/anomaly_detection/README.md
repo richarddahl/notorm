@@ -1,6 +1,6 @@
 # Anomaly Detection System
 
-The Uno Anomaly Detection System provides comprehensive tools for detecting anomalies in system metrics, user behavior, and data quality. This module enables proactive monitoring and alerting for potential issues in your applications.
+The uno Anomaly Detection System provides comprehensive tools for detecting anomalies in system metrics, user behavior, and data quality. This module enables proactive monitoring and alerting for potential issues in your applications.
 
 ## Features
 

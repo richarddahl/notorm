@@ -1,6 +1,6 @@
 # Workflow Module Examples
 
-This directory contains examples demonstrating how to use the workflow module in Uno.
+This directory contains examples demonstrating how to use the workflow module in uno.
 
 ## Examples
 

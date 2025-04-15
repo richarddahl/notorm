@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Documentation Generation System has been successfully implemented as Phase 5 of the Developer Tooling plan. This system provides comprehensive, automated documentation generation for the Uno framework, with specialized support for both API users and framework developers.
+The Documentation Generation System has been successfully implemented as Phase 5 of the Developer Tooling plan. This system provides comprehensive, automated documentation generation for uno, with specialized support for both API users and framework developers.
 
 ## Key Components
 

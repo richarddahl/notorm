@@ -87,4 +87,4 @@ While we've made significant progress, there are still items to complete:
 
 ## Conclusion
 
-The standardization efforts have significantly improved the quality, maintainability, and developer experience of the Uno framework. Our focus on comprehensive testing for vector search functionality ensures that this critical component is robust and reliable. By completing the remaining tasks, we will ensure that the codebase remains consistent, maintainable, and future-proof for ongoing development.
+The standardization efforts have significantly improved the quality, maintainability, and developer experience of uno. Our focus on comprehensive testing for vector search functionality ensures that this critical component is robust and reliable. By completing the remaining tasks, we will ensure that the codebase remains consistent, maintainable, and future-proof for ongoing development.

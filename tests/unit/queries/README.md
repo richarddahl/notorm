@@ -1,6 +1,6 @@
 # Query Module Tests
 
-This directory contains tests for the query-related modules in the uno framework. These tests focus on the functionality of filters and query construction.
+This directory contains tests for the query-related modules in uno. These tests focus on the functionality of filters and query construction.
 
 ## Test Files
 

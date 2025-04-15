@@ -1,6 +1,6 @@
 # Benchmark Expansion Plan
 
-This document outlines the plan for expanding performance benchmarks to additional modules in the Uno framework.
+This document outlines the plan for expanding performance benchmarks to additional modules in uno.
 
 ## Phase 1: Benchmark Infrastructure Enhancement
 

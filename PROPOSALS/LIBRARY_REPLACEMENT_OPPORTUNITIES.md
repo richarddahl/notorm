@@ -263,4 +263,4 @@ For successfully replacing custom components with third-party libraries:
    - Medium-term: Validation, Background Tasks, Realtime
    - Long-term: Database, Caching, Authorization
 
-By strategically replacing custom implementations with well-supported libraries, the uno framework can benefit from community maintenance, additional features, and potentially improved performance while reducing the maintenance burden on the development team.
+By strategically replacing custom implementations with well-supported libraries, uno can benefit from community maintenance, additional features, and potentially improved performance while reducing the maintenance burden on the development team.

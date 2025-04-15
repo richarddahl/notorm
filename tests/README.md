@@ -1,6 +1,6 @@
 # uno Test Suite
 
-This directory contains the test suite for the uno framework. The tests are organized into different categories to provide comprehensive coverage of the codebase.
+This directory contains the test suite for uno. The tests are organized into different categories to provide comprehensive coverage of the codebase.
 
 ## Test Structure
 

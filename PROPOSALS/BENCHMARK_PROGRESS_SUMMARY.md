@@ -2,7 +2,7 @@
 
 ## Overview
 
-We have successfully implemented comprehensive performance benchmarks for ten core modules of the Uno Framework plus integration benchmarks across modules, completing the majority of the Benchmark Expansion Plan. These benchmarks provide a solid foundation for identifying performance bottlenecks and will be instrumental in guiding optimization efforts.
+We have successfully implemented comprehensive performance benchmarks for ten core modules of the uno Framework plus integration benchmarks across modules, completing the majority of the Benchmark Expansion Plan. These benchmarks provide a solid foundation for identifying performance bottlenecks and will be instrumental in guiding optimization efforts.
 
 ## Completed Benchmarks
 

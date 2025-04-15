@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the implementation plan for the developer tooling suite for the Uno framework. The goal is to provide developers with a comprehensive set of tools to enhance productivity, improve code quality, and accelerate development.
+This document outlines the implementation plan for the developer tooling suite for uno. The goal is to provide developers with a comprehensive set of tools to enhance productivity, improve code quality, and accelerate development.
 
 ## Implementation Phases
 

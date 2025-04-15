@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide helps you migrate existing Uno applications from the UnoObj pattern to the recommended Domain Layer approach. The Domain Layer offers better separation of concerns, improved testability, and cleaner architecture for complex applications.
+This guide helps you migrate existing uno applications from the UnoObj pattern to the recommended Domain Layer approach. The Domain Layer offers better separation of concerns, improved testability, and cleaner architecture for complex applications.
 
 ## Core Concept Mapping
 

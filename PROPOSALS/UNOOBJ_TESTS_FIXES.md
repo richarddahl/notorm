@@ -106,10 +106,10 @@ with patch('uno.obj.UnoEndpointFactory', MagicMock(return_value=mock_endpoint_fa
 
 3. **Error Handling**: Error codes in UnoObjErrors are now more specific (e.g., "OBJ-0201" instead of "SCHEMA_NOT_FOUND").
 
-4. **Dependency Injection**: The modern DI system in Uno uses protocols and getter functions instead of direct class imports.
+4. **Dependency Injection**: The modern DI system in uno uses protocols and getter functions instead of direct class imports.
 
 5. **Type Safety**: The new system uses Protocol classes for better type safety with dependency injection.
 
 ## Summary
 
-All UnoObj tests now pass with Python 3.13. The changes were primarily focused on adapting the tests to use the modern dependency injection system with deferred imports via getter functions, rather than direct class imports. These changes reflect a architectural shift in the Uno framework toward more loosely coupled components and better handling of circular dependencies.
+All UnoObj tests now pass with Python 3.13. The changes were primarily focused on adapting the tests to use the modern dependency injection system with deferred imports via getter functions, rather than direct class imports. These changes reflect a architectural shift in uno toward more loosely coupled components and better handling of circular dependencies.

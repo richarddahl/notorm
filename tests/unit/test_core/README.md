@@ -1,6 +1,6 @@
 # Core Module Tests
 
-This directory contains tests for the core modules of the uno framework. These tests focus on the fundamental building blocks of the system.
+This directory contains tests for the core modules of uno. These tests focus on the fundamental building blocks of the system.
 
 ## Test Files
 

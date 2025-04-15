@@ -1,6 +1,6 @@
 # Performance Optimization Plan
 
-This document outlines the prioritized performance optimizations based on the comprehensive benchmarks implemented across all core modules of the Uno Framework.
+This document outlines the prioritized performance optimizations based on the comprehensive benchmarks implemented across all core modules of the uno Framework.
 
 ## Priority Matrix
 

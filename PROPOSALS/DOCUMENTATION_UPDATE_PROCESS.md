@@ -1,6 +1,6 @@
 # Documentation Update Process
 
-This document outlines the process used to review and update the Uno framework documentation to ensure accuracy and consistency.
+This document outlines the process used to review and update uno documentation to ensure accuracy and consistency.
 
 ## Documentation Review Process
 

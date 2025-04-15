@@ -2,7 +2,7 @@
 
 ## Overview
 
-We've implemented a comprehensive developer tooling infrastructure to enhance the Uno framework's developer experience. The implementation follows a modular, extensible design that aligns with modern CLI best practices.
+We've implemented a comprehensive developer tooling infrastructure to enhance uno's developer experience. The implementation follows a modular, extensible design that aligns with modern CLI best practices.
 
 ## Implemented Components
 
@@ -10,7 +10,7 @@ We've implemented a comprehensive developer tooling infrastructure to enhance th
 
 ✅ **Scaffolding Module**: A complete feature scaffolding system that can:
 
-- Create new Uno projects from templates
+- Create new uno projects from templates
 - Scaffold complete features with entities, repositories, services, and endpoints
 - Generate unit and integration tests automatically
 
@@ -23,7 +23,7 @@ The implementation includes:
 
 ### 2. Templates
 
-✅ **Project Templates**: Basic templates for new Uno projects with configurable options:
+✅ **Project Templates**: Basic templates for new uno projects with configurable options:
 
 - Standard project structure with common directories
 - Domain-driven design project structure

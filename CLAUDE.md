@@ -33,7 +33,7 @@ PROPOSALS/CODE_STANDARDIZATION_PROGRESS.md is an excellent example.
 
 ## Dependency Injection System
 
-Uno implements a dependency injection system using the `inject` library. Key components include:
+uno implements a dependency injection system using the `inject` library. Key components include:
 
 - **Interfaces**: Protocol classes in `uno.dependencies.interfaces` like `UnoRepositoryProtocol` and `UnoServiceProtocol`
 - **Container**: Configured in `uno.dependencies.container`, provides centralized dependency management
@@ -95,6 +95,7 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Run app: `hatch run dev:app` (sets up Docker and runs the app)
 - Test with Docker: `hatch run test:all` (sets up Docker and runs tests)
 - Run integration tests: `hatch run test:integration`
+- Run transaction tests: `hatch run test:test tests/integration/test_transaction.py -v`
 - Run vector tests: `hatch run test:integration-vector`
 - Run benchmarks: `./tests/integration/run_benchmarks.py`
 - Individual tests: `hatch run test:test tests/path/to/test_file.py::TestClass::test_method`

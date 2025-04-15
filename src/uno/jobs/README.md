@@ -1,6 +1,6 @@
-# Uno Background Processing System
+# uno Background Processing System
 
-The Uno Background Processing system provides robust support for executing tasks asynchronously and on a schedule, enabling applications to handle time-consuming or resource-intensive operations without blocking the main application thread.
+The uno Background Processing system provides robust support for executing tasks asynchronously and on a schedule, enabling applications to handle time-consuming or resource-intensive operations without blocking the main application thread.
 
 ## Overview
 
@@ -25,7 +25,7 @@ The system follows a distributed job processing architecture with the following 
 
 ## Installation
 
-The background processing system is included as part of the Uno framework.
+The background processing system is included as part of uno.
 
 ## Basic Usage
 
@@ -218,7 +218,7 @@ app.include_router(jobs_router)
 
 ## Dependency Injection
 
-The system integrates with Uno's dependency injection system:
+The system integrates with uno's dependency injection system:
 
 ```python
 from uno.dependencies.fastapi import get_job_manager, get_job_metrics

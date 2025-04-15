@@ -1,6 +1,6 @@
 # Unit Test Status Report
 
-This document provides an overview of the unit tests in the Uno framework, including their purpose, any failures, and the status of fixes.
+This document provides an overview of the unit tests in uno, including their purpose, any failures, and the status of fixes.
 
 ## Test Execution Summary
 
@@ -226,7 +226,7 @@ The unit tests in the codebase cover the following categories:
 
 ## Conclusion
 
-The unit tests for the Uno framework are comprehensive but faced several technical issues that we've systematically addressed:
+The unit tests for uno are comprehensive but faced several technical issues that we've systematically addressed:
 
 1. **Import Conflicts**: Several modules were importing from incorrect locations, which have been fixed by updating import paths:
    - Fixed imports in `reports/domain_endpoints.py` to use `uno.domain.api_integration` instead of `uno.api.endpoint`

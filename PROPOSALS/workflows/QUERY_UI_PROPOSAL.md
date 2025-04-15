@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document proposes the development of a UI component for configuring QueryModel conditions in the Uno framework's workflow module. The component will enable non-technical users to build complex graph-based queries without understanding the underlying technical implementation.
+This document proposes the development of a UI component for configuring QueryModel conditions in uno's workflow module. The component will enable non-technical users to build complex graph-based queries without understanding the underlying technical implementation.
 
 ## Goals
 
@@ -138,7 +138,7 @@ For integrating with the workflow system:
 
 ## Conclusion
 
-The Query UI Component will significantly enhance the power and flexibility of the Uno framework by enabling non-technical users to leverage the graph database for complex conditional logic in workflows. By providing an intuitive visual interface, the component bridges the gap between sophisticated query capabilities and business-oriented workflow configuration.
+The Query UI Component will significantly enhance the power and flexibility of uno by enabling non-technical users to leverage the graph database for complex conditional logic in workflows. By providing an intuitive visual interface, the component bridges the gap between sophisticated query capabilities and business-oriented workflow configuration.
 
 OTHER STUFF:
 

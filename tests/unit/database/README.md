@@ -1,6 +1,6 @@
 # Database Module Tests
 
-This directory contains tests for the database-related modules in the uno framework.
+This directory contains tests for the database-related modules in uno.
 
 ## Test Files
 

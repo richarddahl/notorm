@@ -1,6 +1,6 @@
-# Uno Scripts
+# uno Scripts
 
-This directory contains scripts used for development, deployment, and maintenance of the Uno application.
+This directory contains scripts used for development, deployment, and maintenance of the uno application.
 
 > **Note:** We are currently reorganizing these scripts. If you're looking for the original scripts, they're still available but will be migrated to the new structure soon.
 

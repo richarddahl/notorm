@@ -1,20 +1,20 @@
-# An Introduction to Uno
+# An Introduction to uno
 
-## What is Uno?
+## What is uno?
 
-**Uno** ("Uno is Not an ORM") is a comprehensive application framework that goes beyond traditional ORMs to provide a unified approach to building modern, data-driven applications with PostgreSQL and FastAPI. Despite its playful name, Uno is much more than what it claims not to be—it's an integrated framework that bridges the gap between your database, application logic, and API layer.
+**uno** ("uno is Not an ORM") is a comprehensive application framework that goes beyond traditional ORMs to provide a unified approach to building modern, data-driven applications with PostgreSQL and FastAPI. Despite its playful name, uno is much more than what it claims not to be—it's an integrated framework that bridges the gap between your database, application logic, and API layer.
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system. It allows you to express complex relationships and operations in a way that plays to PostgreSQL's strengths while maintaining clean, maintainable Python code.
 
 ## Core Philosophy
 
-Uno is built on several key philosophical principles:
+uno is built on several key philosophical principles:
 
-1. **Database-First Approach**: Unlike ORMs that try to abstract away the database, Uno embraces PostgreSQL's powerful features and encourages leveraging them for optimal performance.
+1. **Database-First Approach**: Unlike ORMs that try to abstract away the database, uno embraces PostgreSQL's powerful features and encourages leveraging them for optimal performance.
 
 2. **Domain-Driven Design**: The framework supports building applications based on DDD principles with entities, value objects, aggregates, and repositories.
 
-3. **Clean Architecture**: Uno promotes separation of concerns with clear boundaries between infrastructure, domain, and application layers.
+3. **Clean Architecture**: uno promotes separation of concerns with clear boundaries between infrastructure, domain, and application layers.
 
 4. **Async-First**: Built from the ground up with asynchronous operations in mind, with proper handling of cancellation, concurrency, and resource management.
 
@@ -24,7 +24,7 @@ Uno is built on several key philosophical principles:
 
 ## Key Components
 
-Uno consists of several core components that work together to provide a complete application development experience:
+uno consists of several core components that work together to provide a complete application development experience:
 
 ### 1. Domain Layer
 
@@ -74,11 +74,11 @@ This layer ensures that your application is robust, maintainable, and well-struc
 
 ## How It All Works Together
 
-Let's walk through a high-level example of how Uno's components work together in a typical application flow:
+Let's walk through a high-level example of how uno's components work together in a typical application flow:
 
 1. **Domain Definition**: You define your domain entities, value objects, and business rules.
 
-2. **Data Access**: Uno's repository pattern connects your domain model to the database, automating common CRUD operations while allowing you to write custom queries when needed.
+2. **Data Access**: uno's repository pattern connects your domain model to the database, automating common CRUD operations while allowing you to write custom queries when needed.
 
 3. **Business Logic**: Your application services implement business processes by orchestrating domain objects and repositories.
 
@@ -88,15 +88,15 @@ Let's walk through a high-level example of how Uno's components work together in
 
 6. **Event Processing**: Domain events trigger follow-up actions, ensuring loose coupling between components.
 
-Uno handles much of the boilerplate, allowing you to focus on your domain-specific code while ensuring that all components work together harmoniously.
+uno handles much of the boilerplate, allowing you to focus on your domain-specific code while ensuring that all components work together harmoniously.
 
 ## Distinctive Features
 
-What makes Uno stand out from other frameworks?
+What makes uno stand out from other frameworks?
 
 ### 1. PostgreSQL Integration
 
-Uno is built specifically for PostgreSQL, leveraging its advanced features:
+uno is built specifically for PostgreSQL, leveraging its advanced features:
 
 - **Row-Level Security**: Automatic application of access controls at the database level
 - **JSONB**: Native support for semi-structured data
@@ -106,7 +106,7 @@ Uno is built specifically for PostgreSQL, leveraging its advanced features:
 
 ### 2. Modern Dependency Injection
 
-Uno provides a state-of-the-art dependency injection system:
+uno provides a state-of-the-art dependency injection system:
 
 - **Protocol-Based Interfaces**: Definition of clear contracts between components
 - **Hierarchical Scoping**: Proper management of object lifecycles (singleton, scoped, transient)
@@ -115,7 +115,7 @@ Uno provides a state-of-the-art dependency injection system:
 
 ### 3. Unified Domain Model
 
-Uno connects all layers through a consistent domain model:
+uno connects all layers through a consistent domain model:
 
 - **Smart Attribute System**: Type-safe attribute management with validation
 - **Graph-Based Querying**: Model relationships as a graph for complex traversals
@@ -124,7 +124,7 @@ Uno connects all layers through a consistent domain model:
 
 ### 4. Enhanced AsyncIO Support
 
-Uno includes robust async utilities:
+uno includes robust async utilities:
 
 - **Structured Concurrency**: Task groups for related operations
 - **Resource Management**: Proper handling of async resource lifecycle
@@ -133,7 +133,7 @@ Uno includes robust async utilities:
 
 ### 5. Integrated Security Framework
 
-Uno provides comprehensive security features:
+uno provides comprehensive security features:
 
 - **Field-Level Encryption**: Automatic encryption of sensitive data
 - **Audit Logging**: Immutable logging of security-relevant operations
@@ -142,7 +142,7 @@ Uno provides comprehensive security features:
 
 ### 6. Comprehensive Testing Framework
 
-Uno includes an extensive testing infrastructure:
+uno includes an extensive testing infrastructure:
 
 - **Integration Tests**: Verify that components work correctly together in real environments
 - **Performance Benchmarks**: Measure and monitor system performance
@@ -152,7 +152,7 @@ Uno includes an extensive testing infrastructure:
 
 ## Getting Started
 
-Uno is designed to be approachable while providing advanced capabilities as your application grows. The recommended way to start is with Docker:
+uno is designed to be approachable while providing advanced capabilities as your application grows. The recommended way to start is with Docker:
 
 ```bash
 # Set up Docker and run the application
@@ -166,7 +166,7 @@ This creates a PostgreSQL 16 container with all required extensions, including p
 
 ### Running Tests
 
-Uno comes with a comprehensive test suite that verifies all components work correctly:
+uno comes with a comprehensive test suite that verifies all components work correctly:
 
 ```bash
 # Run all tests
@@ -236,10 +236,10 @@ class User(AggregateEntity[str]):
 
 ## Conclusion
 
-Uno provides a comprehensive, integrated approach to building modern applications with PostgreSQL and Python. It combines the best practices of domain-driven design, clean architecture, and modern async programming while leveraging PostgreSQL's powerful features.
+uno provides a comprehensive, integrated approach to building modern applications with PostgreSQL and Python. It combines the best practices of domain-driven design, clean architecture, and modern async programming while leveraging PostgreSQL's powerful features.
 
 The framework is built on a foundation of reliability, with extensive integration tests verifying that all components work correctly together. This testing infrastructure ensures that as your application grows, you can be confident in its stability and performance.
 
-Whether you're building a small API or a complex application with advanced querying needs, Uno provides the tools and structure to make your development process more efficient and your code more maintainable.
+Whether you're building a small API or a complex application with advanced querying needs, uno provides the tools and structure to make your development process more efficient and your code more maintainable.
 
-By unifying your database, domain logic, and API into a cohesive system, Uno enables you to build applications that are robust, performant, and a joy to develop and maintain. The comprehensive test suite and benchmarking tools help you maintain this quality as your application evolves.
+By unifying your database, domain logic, and API into a cohesive system, uno enables you to build applications that are robust, performant, and a joy to develop and maintain. The comprehensive test suite and benchmarking tools help you maintain this quality as your application evolves.

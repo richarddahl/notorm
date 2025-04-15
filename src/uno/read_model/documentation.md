@@ -1,6 +1,6 @@
 # Read Model Projection System
 
-The Read Model Projection system is a key component of the CQRS (Command Query Responsibility Segregation) pattern in the Uno framework. It allows for efficient querying by creating and maintaining specialized read models that are optimized for specific query use cases.
+The Read Model Projection system is a key component of the CQRS (Command Query Responsibility Segregation) pattern in uno. It allows for efficient querying by creating and maintaining specialized read models that are optimized for specific query use cases.
 
 ## Overview
 
@@ -110,7 +110,7 @@ query_service = ReadModelQueryService(repository, UserReadModel, cache)
 
 ## Integration with Existing Systems
 
-The Read Model Projection system integrates seamlessly with the existing Uno framework:
+The Read Model Projection system integrates seamlessly with the existing uno framework:
 
 1. It subscribes to domain events from the event bus
 2. It can use the event store for event sourcing and rebuilding read models
@@ -201,4 +201,4 @@ class BatchUserProjection(BatchProjection[UserReadModel, UserEvent]):
 
 ## Conclusion
 
-The Read Model Projection system provides a powerful way to implement the query side of CQRS in the Uno framework. By creating specialized read models that are optimized for specific query scenarios, you can achieve better performance and scalability while maintaining a clean separation of concerns.
+The Read Model Projection system provides a powerful way to implement the query side of CQRS in uno. By creating specialized read models that are optimized for specific query scenarios, you can achieve better performance and scalability while maintaining a clean separation of concerns.

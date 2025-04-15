@@ -1,6 +1,6 @@
 # Docker Configuration
 
-This directory contains Docker configuration for the Uno framework.
+This directory contains Docker configuration for uno.
 
 This project uses a Docker-first approach for all PostgreSQL database operations. Never use a local PostgreSQL installation for development, testing, or deployment.
 

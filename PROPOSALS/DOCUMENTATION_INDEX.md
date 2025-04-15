@@ -1,6 +1,6 @@
 # Documentation Resources Index
 
-This document serves as a central index for all documentation-related resources, plans, and standards for the Uno framework.
+This document serves as a central index for all documentation-related resources, plans, and standards for uno.
 
 ## Documentation Standards and Processes
 
@@ -32,7 +32,7 @@ For day-to-day documentation maintenance, the following tools and scripts are av
 
 ## Getting Started with Documentation
 
-If you're new to working with Uno framework documentation, we recommend reading these resources in the following order:
+If you're new to working with uno framework documentation, we recommend reading these resources in the following order:
 
 1. [Documentation Contributor Guide](./DOCUMENTATION_CONTRIBUTOR_GUIDE.md) - To understand the basics
 2. [Documentation Status Visualization](./DOCUMENTATION_STATUS_VISUALIZATION.md) - To see the big picture

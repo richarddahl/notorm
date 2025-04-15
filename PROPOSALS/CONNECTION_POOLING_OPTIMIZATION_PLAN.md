@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the approach for optimizing the connection pooling system in Uno, based on benchmarks and identified performance bottlenecks. The EnhancedConnectionPool implementation provides an excellent foundation, but several strategic optimizations can further improve performance and resource utilization.
+This document outlines the approach for optimizing the connection pooling system in uno, based on benchmarks and identified performance bottlenecks. The EnhancedConnectionPool implementation provides an excellent foundation, but several strategic optimizations can further improve performance and resource utilization.
 
 ## Key Optimization Areas
 

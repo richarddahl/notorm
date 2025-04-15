@@ -4,7 +4,7 @@ The Entity Service Layer provides a bridge between the UnoObj business logic lay
 
 ## Overview
 
-Uno has two complementary approaches to implementing business logic:
+uno has two complementary approaches to implementing business logic:
 
 1. **UnoObj Pattern**: The original approach where business logic is encapsulated within UnoObj classes, which combine data representation, validation, and business operations.
 

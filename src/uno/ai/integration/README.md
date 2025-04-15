@@ -1,6 +1,6 @@
 # AI Cross-Feature Integration
 
-This module provides integration between the different AI features in the Uno platform, including:
+This module provides integration between the different AI features in the uno platform, including:
 - Semantic search
 - Recommendations
 - Content generation

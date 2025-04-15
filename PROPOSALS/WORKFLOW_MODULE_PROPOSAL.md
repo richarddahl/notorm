@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-This document outlines a proposal for expanding the workflows module in the Uno framework to enable tenant administrators to define and manage custom notification workflows for database events without requiring developer intervention.
+This document outlines a proposal for expanding the workflows module in uno to enable tenant administrators to define and manage custom notification workflows for database events without requiring developer intervention.
 
 ## Current State
 
-The workflows module exists in a preliminary state with basic model scaffolding but lacks the comprehensive functionality needed for business users to define notification rules. Meanwhile, the Uno framework includes a robust event system that provides the technical foundation for event processing.
+The workflows module exists in a preliminary state with basic model scaffolding but lacks the comprehensive functionality needed for business users to define notification rules. Meanwhile, uno includes a robust event system that provides the technical foundation for event processing.
 
 ## Vision
 

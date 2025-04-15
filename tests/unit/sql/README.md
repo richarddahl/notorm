@@ -1,6 +1,6 @@
 # SQL Module Tests
 
-This directory contains tests for the SQL-related modules in the uno framework. These tests focus on the SQL generation and execution components.
+This directory contains tests for the SQL-related modules in uno. These tests focus on the SQL generation and execution components.
 
 ## Test Files
 

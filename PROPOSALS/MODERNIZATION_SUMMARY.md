@@ -1,6 +1,6 @@
 # Modernization Summary
 
-This document summarizes the modernization efforts completed to make the Uno framework a showcase of modern Python development.
+This document summarizes the modernization efforts completed to make uno a showcase of modern Python development.
 
 ## Current Status
 
