@@ -29,15 +29,13 @@ To generate documentation for your application:
 from uno.core.docs.generator import DocGeneratorConfig, DocFormat, generate_docs
 
 # Configure the documentation generator
-config = DocGeneratorConfig(```
-
-title="My API Documentation",
-description="Documentation for my API",
-version="1.0.0",
-formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
-output_dir="docs/api",
-modules_to_document=["my_app.api", "my_app.models"]
-```
+config = DocGeneratorConfig(
+    title="My API Documentation",
+    description="Documentation for my API",
+    version="1.0.0",
+    formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
+    output_dir="docs/api",
+    modules_to_document=["my_app.api", "my_app.models"]
 )
 
 # Generate documentation
