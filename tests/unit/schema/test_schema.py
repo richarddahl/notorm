@@ -15,7 +15,7 @@ from typing import Set, Optional
 from pydantic import BaseModel, Field, ValidationError
 
 from uno.schema.schema import UnoSchema, UnoSchemaConfig
-from uno.errors import UnoError
+from uno.core.errors.base import UnoError
 
 
 class TestModel(BaseModel):

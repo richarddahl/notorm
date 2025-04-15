@@ -596,6 +596,7 @@ def configured_container():
 
 
 # Integration tests
+@pytest.mark.integration
 class TestDIIntegrationScenarios:
     """Integration tests for dependency injection scenarios."""
     

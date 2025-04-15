@@ -27,6 +27,7 @@ class DBManager:
         self,
         connection_provider: Callable[[], ContextManager[psycopg.Connection]],
         logger: Optional[logging.Logger] = None,
+        environment: str = "development",
     ):
         """
         Initialize the schema manager.
@@ -34,9 +35,11 @@ class DBManager:
         Args:
             connection_provider: Function that provides a database connection
             logger: Optional logger instance
+            environment: Environment (development, test, production)
         """
         self.get_connection = connection_provider
         self.logger = logger or logging.getLogger(__name__)
+        self.environment = environment
 
     def execute_ddl(self, ddl: str) -> None:
         """
@@ -44,7 +47,24 @@ class DBManager:
 
         Args:
             ddl: The DDL statement to execute
+            
+        Raises:
+            ValueError: If destructive operations are attempted in production
         """
+        # Check for destructive operations in production
+        if self.environment == "production":
+            lower_ddl = ddl.lower()
+            # Check for potentially dangerous operations
+            dangerous_keywords = ["drop ", "truncate ", "delete from ", "alter table ", "drop database"]
+            for keyword in dangerous_keywords:
+                if keyword in lower_ddl:
+                    # Allow certain alter table statements
+                    if keyword == "alter table " and "add " in lower_ddl:
+                        continue
+                    raise ValueError(
+                        f"Destructive DDL operation '{keyword.strip()}' is not allowed in production environment."
+                    )
+                    
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
                 self.logger.debug(f"Executing DDL: {ddl[:100]}...")
@@ -57,7 +77,24 @@ class DBManager:
 
         Args:
             script: The SQL script to execute
+            
+        Raises:
+            ValueError: If destructive operations are attempted in production
         """
+        # Check for destructive operations in production
+        if self.environment == "production":
+            lower_script = script.lower()
+            # Check for potentially dangerous operations
+            dangerous_keywords = ["drop ", "truncate ", "delete from ", "alter table ", "drop database"]
+            for keyword in dangerous_keywords:
+                if keyword in lower_script:
+                    # Allow certain alter table statements
+                    if keyword == "alter table " and "add " in lower_script:
+                        continue
+                    raise ValueError(
+                        f"Destructive SQL operation '{keyword.strip()}' is not allowed in production environment."
+                    )
+                    
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
                 self.logger.debug(f"Executing SQL script ({len(script)} characters)")
@@ -136,6 +173,99 @@ class DBManager:
                         FROM pg_proc p
                         JOIN pg_namespace n ON p.pronamespace = n.oid
                         WHERE p.proname = '{function_name}'
+                        {schema_clause}
+                    )
+                """
+                )
+                result = cursor.fetchone()
+                return result[0] if result else False
+                
+    def type_exists(self, type_name: str, schema: Optional[str] = None) -> bool:
+        """
+        Check if a type exists in the database.
+
+        Args:
+            type_name: The name of the type to check
+            schema: The schema containing the type
+
+        Returns:
+            True if the type exists, False otherwise
+        """
+        schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
+
+        with self.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_type t
+                        JOIN pg_namespace n ON t.typnamespace = n.oid
+                        WHERE t.typname = '{type_name}'
+                        {schema_clause}
+                    )
+                """
+                )
+                result = cursor.fetchone()
+                return result[0] if result else False
+                
+    def trigger_exists(self, trigger_name: str, table_name: str, schema: Optional[str] = None) -> bool:
+        """
+        Check if a trigger exists in the database.
+
+        Args:
+            trigger_name: The name of the trigger to check
+            table_name: The table the trigger is on
+            schema: The schema containing the trigger
+
+        Returns:
+            True if the trigger exists, False otherwise
+        """
+        schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
+
+        with self.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_trigger t
+                        JOIN pg_class c ON t.tgrelid = c.oid
+                        JOIN pg_namespace n ON c.relnamespace = n.oid
+                        WHERE t.tgname = '{trigger_name}'
+                        AND c.relname = '{table_name}'
+                        {schema_clause}
+                    )
+                """
+                )
+                result = cursor.fetchone()
+                return result[0] if result else False
+                
+    def policy_exists(self, policy_name: str, table_name: str, schema: Optional[str] = None) -> bool:
+        """
+        Check if a row level security policy exists in the database.
+
+        Args:
+            policy_name: The name of the policy to check
+            table_name: The table the policy is on
+            schema: The schema containing the policy
+
+        Returns:
+            True if the policy exists, False otherwise
+        """
+        schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
+
+        with self.get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_policy p
+                        JOIN pg_class c ON p.polrelid = c.oid
+                        JOIN pg_namespace n ON c.relnamespace = n.oid
+                        WHERE p.polname = '{policy_name}'
+                        AND c.relname = '{table_name}'
                         {schema_clause}
                     )
                 """
@@ -252,6 +382,90 @@ class DBManager:
 
             conn.commit()
             self.logger.info(f"Initialized database {config.db_name}")
+
+    def execute_from_emitter(self, emitter: Any) -> None:
+        """
+        Execute SQL statements from an emitter.
+
+        Args:
+            emitter: SQLEmitter instance
+        """
+        statements = emitter.generate_sql()
+        for statement in statements:
+            self.execute_ddl(statement.sql)
+            
+    def execute_from_emitters(self, emitters: List[Any]) -> None:
+        """
+        Execute SQL statements from multiple emitters.
+
+        Args:
+            emitters: List of SQLEmitter instances
+        """
+        for emitter in emitters:
+            self.execute_from_emitter(emitter)
+            
+    def create_extension(self, extension_name: str, schema: Optional[str] = None) -> None:
+        """
+        Create a PostgreSQL extension.
+
+        Args:
+            extension_name: The name of the extension to create
+            schema: Optional schema for the extension
+        """
+        schema_clause = f"SCHEMA {schema}" if schema else ""
+        ddl = f"CREATE EXTENSION IF NOT EXISTS {extension_name} {schema_clause}"
+        self.execute_ddl(ddl)
+        
+    def create_user(self, username: str, password: str, is_superuser: bool = False) -> None:
+        """
+        Create a PostgreSQL user.
+
+        Args:
+            username: Username for the new user
+            password: Password for the new user
+            is_superuser: Whether the user should be a superuser
+        """
+        superuser_clause = "SUPERUSER" if is_superuser else "NOSUPERUSER"
+        ddl = f"CREATE USER {username} WITH PASSWORD '{password}' {superuser_clause}"
+        self.execute_ddl(ddl)
+        
+    def create_role(self, role_name: str, granted_roles: Optional[List[str]] = None) -> None:
+        """
+        Create a PostgreSQL role.
+
+        Args:
+            role_name: Name for the new role
+            granted_roles: Optional list of roles to grant to the new role
+        """
+        ddl = f"CREATE ROLE {role_name}"
+        self.execute_ddl(ddl)
+        
+        if granted_roles:
+            for granted_role in granted_roles:
+                self.execute_ddl(f"GRANT {granted_role} TO {role_name}")
+                
+    def grant_privileges(
+        self, 
+        privileges: List[str], 
+        on_object: str, 
+        to_role: str, 
+        object_type: str = "TABLE", 
+        schema: Optional[str] = None
+    ) -> None:
+        """
+        Grant privileges to a role.
+
+        Args:
+            privileges: List of privileges to grant (e.g. ["SELECT", "INSERT"])
+            on_object: Object to grant privileges on
+            to_role: Role to grant privileges to
+            object_type: Type of object (e.g. "TABLE", "FUNCTION")
+            schema: Optional schema
+        """
+        privileges_str = ", ".join(privileges)
+        schema_prefix = f"{schema}." if schema else ""
+        ddl = f"GRANT {privileges_str} ON {object_type} {schema_prefix}{on_object} TO {to_role}"
+        self.execute_ddl(ddl)
 
     def drop_database(self, config: ConnectionConfig) -> None:
         """

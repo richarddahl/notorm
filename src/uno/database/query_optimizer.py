@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union, Type, cast
 import asyncio
 import dataclasses
 import enum
+import functools
 import json
 import logging
 import re

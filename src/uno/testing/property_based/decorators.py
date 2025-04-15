@@ -32,7 +32,8 @@ def given_model(
     exclude_fields: Optional[list[str]] = None,
     min_examples: int = 20,
     max_examples: int = 100,
-    **field_overrides: Dict[str, SearchStrategy]
+    field_overrides: Optional[Dict[str, Any]] = None,
+    **kwargs: Any
 ) -> Callable[[F], F]:
     """
     A decorator that provides property-based testing for functions that operate on Uno models.
@@ -45,7 +46,8 @@ def given_model(
         exclude_fields: List of field names to exclude from generation
         min_examples: Minimum number of examples to test with
         max_examples: Maximum number of examples to test with
-        **field_overrides: Override strategies for specific fields
+        field_overrides: Dictionary of field name to override strategy
+        **kwargs: Additional field overrides (alternative to field_overrides)
         
     Returns:
         A decorator function that wraps the test function
@@ -58,10 +60,17 @@ def given_model(
         ```
     """
     def decorator(func: F) -> F:
+        # Combine both ways of providing field overrides
+        all_overrides = {}
+        if field_overrides:
+            all_overrides.update(field_overrides)
+        if kwargs:
+            all_overrides.update(kwargs)
+            
         strategy = ModelStrategy.for_model(
             model_class, 
             exclude_fields=exclude_fields,
-            **field_overrides
+            **all_overrides
         )
         
         @functools.wraps(func)

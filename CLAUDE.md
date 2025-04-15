@@ -66,6 +66,25 @@ webawesome
 lit
 pydantic 2 # Do not use pydantic versions  < 2
 
+## Testing
+
+passing tests arent important if they don't test the actual functionality defined within uno.
+
+Ensure tests accurately define and test against as-built implementation details.
+
+## Implement changes for all Deprecation Warnings
+
+uno is a new library, there is no reason to support backwards compatibilty, implement the latest modern language requirements
+
+## Prefer the future to the past
+
+uno is a new library, there is NO reason to support backwards compatibility.  Make improvements to the code to simplify things, always looking forward, not back.
+
+## Prefer datetime.now(datetime.UTC) 
+
+  DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+
 ## Prefer modern web-component based front end ui
 
 When building front end ui components, use webawesome and lit to create the ui.
@@ -94,6 +113,8 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Rebuild Docker: `./scripts/rebuild_docker.sh`
 - Run app: `hatch run dev:app` (sets up Docker and runs the app)
 - Test with Docker: `hatch run test:all` (sets up Docker and runs tests)
+- Run only unit tests (no integration): `python -m pytest -m "not integration"`
+- Run core unit tests: `python -m pytest tests/unit/core -v`
 - Run integration tests: `hatch run test:integration`
 - Run transaction tests: `hatch run test:test tests/integration/test_transaction.py -v`
 - Run vector tests: `hatch run test:integration-vector`

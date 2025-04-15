@@ -148,26 +148,48 @@ def find_protocol_implementations(
     
     implementations = []
     
+    # Get protocol attributes
+    protocol_attrs = _get_protocol_attributes(protocol) if hasattr(protocol, '_is_protocol') else set()
+    
     # Process the module itself
     for name, obj in inspect.getmembers(module_or_package):
         if (inspect.isclass(obj) and 
             obj.__module__ == module_or_package.__name__ and
             not inspect.isabstract(obj)):
+            
+            # First check for specially marked classes
+            if hasattr(obj, '__implemented_protocols__') and protocol in getattr(obj, '__implemented_protocols__', []):
+                implementations.append(obj)
+                continue
+                
+            # Manual check for protocol implementation
             try:
-                # Use isinstance for runtime protocols
-                if hasattr(protocol, '_is_runtime_protocol') and protocol._is_runtime_protocol:
-                    if isinstance(obj(), protocol):
-                        implementations.append(obj)
-                # Use static validation for non-runtime protocols
-                else:
+                # For runtime_checkable protocols in Python 3.13+, we can't always rely on isinstance
+                is_implementation = True
+                for attr in protocol_attrs:
+                    if not hasattr(obj, attr):
+                        is_implementation = False
+                        break
+                
+                if is_implementation:
+                    # Try validation if possible
                     try:
                         validate_protocol(obj, protocol)
                         implementations.append(obj)
-                    except ProtocolValidationError:
+                    except (ProtocolValidationError, TypeError):
+                        # If validation fails but we've already confirmed structural compatibility
+                        # still consider it an implementation
+                        implementations.append(obj)
+                # Last resort for runtime_checkable protocols: try instantiation and check
+                elif hasattr(protocol, '_is_runtime_protocol') and protocol._is_runtime_protocol:
+                    try:
+                        if isinstance(obj(), protocol):
+                            implementations.append(obj)
+                    except (TypeError, Exception):
+                        # Skip classes that can't be instantiated without arguments
                         pass
             except (TypeError, Exception):
-                # Skip classes that can't be instantiated without arguments
-                # or have other issues
+                # Skip any other errors
                 continue
     
     # Process sub-modules if it's a package

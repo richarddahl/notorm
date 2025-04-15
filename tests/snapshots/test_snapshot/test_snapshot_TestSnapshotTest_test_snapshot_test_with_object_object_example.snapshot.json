@@ -1,0 +1,6 @@
+{
+  "__type__": "test_snapshot.TestObject",
+  "created_at": "2023-01-01T12:00:00",
+  "name": "test_object",
+  "value": 42
+}

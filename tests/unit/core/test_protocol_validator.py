@@ -58,11 +58,16 @@ class TestEventProtocol(Protocol):
 
 
 # Test implementations
-@dataclass
 class ValidEntity:
     """A valid implementation of TestEntityProtocol."""
 
-    id: UUID = field(default_factory=uuid4)
+    def __init__(self):
+        self._id = uuid4()
+
+    @property
+    def id(self) -> UUID:
+        """Get the entity ID."""
+        return self._id
 
     def save(self) -> None:
         """Save the entity."""

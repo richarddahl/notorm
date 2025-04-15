@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 
 from uno.schema.schema_manager import UnoSchemaManager
 from uno.schema.schema import UnoSchema, UnoSchemaConfig
-from uno.errors import UnoError
+from uno.core.errors.base import UnoError
 
 
 class TestModel(BaseModel):

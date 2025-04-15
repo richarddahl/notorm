@@ -542,7 +542,8 @@ class Limiter:
     
     def __init__(
         self, 
-        limit: int,
+        limit: int = None,
+        max_concurrent: int = None,
         name: str = None,
         logger: Optional[logging.Logger] = None
     ):
@@ -550,14 +551,17 @@ class Limiter:
         Initialize a Limiter.
         
         Args:
-            limit: Maximum number of concurrent operations
+            limit: Maximum number of concurrent operations (deprecated, use max_concurrent)
+            max_concurrent: Maximum number of concurrent operations 
             name: Optional name for the limiter
             logger: Optional logger instance
         """
-        self.limit = limit
+        # Use max_concurrent if provided, otherwise fall back to limit
+        self.limit = max_concurrent if max_concurrent is not None else (limit or 10)
+        self.max_concurrent = self.limit  # For compatibility with enhanced async modules
         self.name = name or f"Limiter-{id(self)}"
         self.logger = logger or logging.getLogger(__name__)
-        self._semaphore = AsyncSemaphore(limit, name=self.name)
+        self._semaphore = AsyncSemaphore(self.limit, name=self.name)
         self._active_tasks: Set[str] = set()
     
     @asynccontextmanager

@@ -42,27 +42,31 @@ class IGreetingService(Protocol):
         ...
 
 
-class SimpleMessageService(IMessageService):
+class SimpleMessageService:
     """Simple message service implementation."""
     
+    def __init__(self):
+        """Initialize the service."""
+        pass
+        
     def get_message(self) -> str:
         """Get a simple message."""
         return "Hello, World!"
 
 
-class ConfigurableMessageService(IMessageService):
+class ConfigurableMessageService:
     """Configurable message service implementation."""
     
-    def __init__(self, message: str = "Configurable message"):
-        """Initialize with a message."""
-        self.message = message
+    def __init__(self):
+        """Initialize with a default message."""
+        self.message = "Configurable message"
     
     def get_message(self) -> str:
         """Get the configured message."""
         return self.message
 
 
-class SimpleGreetingService(IGreetingService):
+class SimpleGreetingService:
     """Simple greeting service implementation."""
     
     def __init__(self, message_service: IMessageService):
@@ -75,7 +79,19 @@ class SimpleGreetingService(IGreetingService):
         return f"{base_message} {name}!"
 
 
-class LifecycleService(Initializable, Disposable):
+@runtime_checkable
+class LocalInitializable(Protocol):
+    def initialize(self) -> None:
+        """Initialize the service."""
+        ...
+
+@runtime_checkable
+class LocalDisposable(Protocol):
+    def dispose(self) -> None:
+        """Dispose of the service."""
+        ...
+
+class LifecycleService(LocalInitializable, LocalDisposable):
     """Service with initialization and disposal."""
     
     def __init__(self):
@@ -153,7 +169,8 @@ def test_instance_registration():
     container = get_container()
     
     # Create an instance
-    message_service = ConfigurableMessageService("Custom message")
+    message_service = ConfigurableMessageService()
+    message_service.message = "Custom message"  # Set message directly
     
     # Register the instance
     container.register_instance(IMessageService, message_service)
@@ -240,7 +257,9 @@ def test_factory_registration():
     
     # Define a factory function
     def create_message_service() -> IMessageService:
-        return ConfigurableMessageService("Factory-created message")
+        service = ConfigurableMessageService()
+        service.message = "Factory-created message"
+        return service
     
     # Register a factory
     container.register_factory(IMessageService, create_message_service)

@@ -16,6 +16,7 @@ from uno.sql.errors import (
     SQLExecutionError,
     SQLConfigError
 )
+from uno.core.errors import UnoError
 
 
 class CreateRolesAndDatabase(SQLEmitter):

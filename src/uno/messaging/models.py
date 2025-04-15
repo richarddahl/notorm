@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Table, Column, FetchedValue, func, text, Identity
 from sqlalchemy.dialects.postgresql import ENUM
@@ -16,9 +16,12 @@ from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.meta.objs import MetaRecordModel
 from uno.authorization.mixins import GroupModelMixin
-from uno.authorization.models import UserModel
 from uno.enums import MessageImportance
 from uno.settings import uno_settings
+
+# Handle circular imports
+if TYPE_CHECKING:
+    from uno.authorization.models import UserModel
 
 
 message__meta_record = Table(
@@ -172,7 +175,8 @@ class MessageUserModel(UnoModel):
         foreign_keys=[message_id],
         doc="Message associated with the user",
     )
-    user: Mapped[UserModel] = relationship(
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",  # Use string literal to avoid circular import issues
         back_populates="messages",
         foreign_keys=[user_id],
         doc="User associated with the message",

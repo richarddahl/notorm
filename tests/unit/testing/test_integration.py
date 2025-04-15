@@ -102,10 +102,13 @@ class TestIntegrationTestHarness:
             assert mock_run.call_count >= 2
             
             # Check the calls for postgres
-            postgres_args = [
-                arg for call in mock_run.call_args_list
+            postgres_calls = [
+                call for call in mock_run.call_args_list
                 if "postgres" in str(call)
-            ][0][0][0]
+            ]
+            if not postgres_calls:
+                pytest.fail("No call with 'postgres' found in mock_run calls")
+            postgres_args = postgres_calls[0][0][0]
             assert "docker" in postgres_args
             assert "run" in postgres_args
             assert "--name" in postgres_args
@@ -116,10 +119,13 @@ class TestIntegrationTestHarness:
             assert "POSTGRES_PASSWORD=test" in postgres_args
             
             # Check the calls for redis
-            redis_args = [
-                arg for call in mock_run.call_args_list
+            redis_calls = [
+                call for call in mock_run.call_args_list
                 if "redis" in str(call)
-            ][0][0][0]
+            ]
+            if not redis_calls:
+                pytest.fail("No call with 'redis' found in mock_run calls")
+            redis_args = redis_calls[0][0][0]
             assert "docker" in redis_args
             assert "run" in redis_args
             assert "--name" in redis_args

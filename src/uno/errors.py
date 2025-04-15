@@ -86,9 +86,12 @@ class ValidationContext:
             ValidationError: If there are validation errors
         """
         if self.has_errors():
+            # Import ValidationError and ErrorCode from core.errors.base to ensure consistency
+            from uno.core.errors.base import ValidationError, ErrorCode
+            
             raise ValidationError(
                 f"Validation failed for {self.entity_name}",
-                "VALIDATION_ERROR",
+                ErrorCode.VALIDATION_ERROR,
                 validation_errors=self.errors
             )
 

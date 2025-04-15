@@ -32,7 +32,8 @@ from uno.dependencies.interfaces import (
     SQLExecutionProtocol,
     EventBusProtocol,
 )
-from uno.core.errors import (
+from uno.core.errors.base import UnoError
+from uno.core.errors.core_errors import (
     DependencyNotFoundError,
     DependencyResolutionError,
     DependencyCycleError
@@ -562,7 +563,14 @@ async def configure_base_services() -> None:
     # Register registry
     from uno.registry import get_registry, UnoRegistry
     # Use the modern singleton pattern
-    services.add_instance(UnoRegistry, get_registry())
+    registry = get_registry()
+    services.add_instance(UnoRegistry, registry)
+    
+    # Add method to get registry for convenience and backward compatibility
+    def get_registry_impl():
+        return registry
+    
+    UnoServiceProvider.get_registry = get_registry_impl
     
     # Register database provider
     from uno.database.config import ConnectionConfig

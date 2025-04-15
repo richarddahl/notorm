@@ -10,7 +10,7 @@ focusing on database operations like create, update, get, and filter.
 """
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
 from asyncpg.exceptions import UniqueViolationError
 from sqlalchemy import UniqueConstraint
 

@@ -215,11 +215,22 @@ class Entity(BaseModel, Generic[T_ID]):
         return hash(self.id)
 
     @model_validator(mode="before")
-    def set_updated_at(self, values):
+    def set_updated_at(cls, values):
         """Update the updated_at field whenever the entity is modified."""
-        # Only set updated_at for existing entities that are being modified
-        if values.get("id") and values.get("created_at"):
+        # Handle Pydantic v2 ValidationInfo objects
+        if hasattr(values, 'get_default_value'):
+            # We're dealing with a ValidationInfo object in Pydantic v2
+            # In this case, we're in the before validator and values is the data dict
+            data = values
+            # Only set updated_at for existing entities that are being modified
+            if isinstance(data, dict) and 'id' in data and 'created_at' in data and data['id'] and data['created_at']:
+                data['updated_at'] = datetime.now(timezone.utc)
+            return data
+        
+        # Handle regular dict (for backward compatibility)
+        if isinstance(values, dict) and values.get("id") and values.get("created_at"):
             values["updated_at"] = datetime.now(timezone.utc)
+        
         return values
 
     # Python 3.13 compatibility methods for dataclasses

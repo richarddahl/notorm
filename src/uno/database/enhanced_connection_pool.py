@@ -1004,10 +1004,10 @@ class EnhancedConnectionPool(Generic[T]):
         invalid_connections = []
         
         # Validate in parallel with a limit to avoid overwhelming the database
-        max_concurrent = min(5, len(to_validate))
-        async with TaskGroup(name=f"{self.name}_validation", max_concurrency=max_concurrent) as group:
-            for conn_id in to_validate:
-                group.create_task(self._validate_connection_task(conn_id, invalid_connections))
+        if to_validate:
+            async with TaskGroup(name=f"{self.name}_validation") as group:
+                for conn_id in to_validate:
+                    group.create_task(self._validate_connection_task(conn_id, invalid_connections))
         
         # Step 3: Close connections outside the lock
         close_tasks = []
@@ -1016,9 +1016,10 @@ class EnhancedConnectionPool(Generic[T]):
         to_close.extend(invalid_connections)
         
         # Close connections in parallel
-        async with TaskGroup(name=f"{self.name}_close", max_concurrency=5) as group:
-            for conn_id in to_close:
-                group.create_task(self._close_connection(conn_id))
+        if to_close:
+            async with TaskGroup(name=f"{self.name}_close") as group:
+                for conn_id in to_close:
+                    group.create_task(self._close_connection(conn_id))
         
         # Step 4: Check if we need to create new connections to maintain min_size
         need_to_create = 0
@@ -1030,7 +1031,7 @@ class EnhancedConnectionPool(Generic[T]):
         
         # Create new connections if needed
         if need_to_create > 0:
-            async with TaskGroup(name=f"{self.name}_create", max_concurrency=5) as group:
+            async with TaskGroup(name=f"{self.name}_create") as group:
                 for _ in range(need_to_create):
                     group.create_task(self._add_connection())
         
@@ -1117,7 +1118,7 @@ class EnhancedConnectionPool(Generic[T]):
                 )
                 
                 # Create new connections
-                async with TaskGroup(name=f"{self.name}_scale_up", max_concurrency=5) as group:
+                async with TaskGroup(name=f"{self.name}_scale_up") as group:
                     for _ in range(to_add):
                         group.create_task(self._add_connection())
                 
@@ -1161,7 +1162,7 @@ class EnhancedConnectionPool(Generic[T]):
                             self._available_conn_ids.discard(conn_id)
                     
                     # Close connections
-                    async with TaskGroup(name=f"{self.name}_scale_down", max_concurrency=5) as group:
+                    async with TaskGroup(name=f"{self.name}_scale_down") as group:
                         for conn_id in connections_to_remove:
                             group.create_task(self._close_connection(conn_id))
                     

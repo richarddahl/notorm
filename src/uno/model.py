@@ -46,8 +46,10 @@ class PostgresTypes:
     # String types with specific lengths
     String12 = Annotated[str, VARCHAR(12)]
     String26 = Annotated[str, VARCHAR(26)]
+    String50 = Annotated[str, VARCHAR(50)]
     String63 = Annotated[str, VARCHAR(63)]
     String64 = Annotated[str, VARCHAR(64)]
+    String100 = Annotated[str, VARCHAR(100)]
     String128 = Annotated[str, VARCHAR(128)]
     String255 = Annotated[str, VARCHAR(255)]
     Text = Annotated[str, TEXT]
@@ -142,8 +144,10 @@ class UnoModel(AsyncAttrs, DeclarativeBase):
             PostgresTypes.Decimal: NUMERIC,
             PostgresTypes.String12: VARCHAR(12),
             PostgresTypes.String26: VARCHAR(26),
+            PostgresTypes.String50: VARCHAR(50),
             PostgresTypes.String63: VARCHAR(63),
             PostgresTypes.String64: VARCHAR(64),
+            PostgresTypes.String100: VARCHAR(100),
             PostgresTypes.String128: VARCHAR(128),
             PostgresTypes.String255: VARCHAR(255),
             PostgresTypes.UUID: UUID,

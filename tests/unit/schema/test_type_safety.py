@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from uno.schema.schema import UnoSchema, UnoSchemaConfig, PaginatedList
 from uno.schema.schema_manager import UnoSchemaManager
-from uno.errors import UnoError, ValidationError, ValidationContext
+from uno.core.errors.base import UnoError, ValidationError
+from uno.errors import ValidationContext
 
 
 # Test models
@@ -174,8 +175,10 @@ class TestValidationContext:
 
         # Check error details in the exception
         assert "Validation failed for TestEntity" in str(exc_info.value)
-        assert exc_info.value.error_code == "VALIDATION_ERROR"
-        assert len(exc_info.value.validation_errors) == 1
+        assert exc_info.value.error_code == "CORE-0002"  # Updated to match core.errors.base.ErrorCode.VALIDATION_ERROR
+        # Check context contains validation errors
+        assert "validation_errors" in exc_info.value.context
+        assert len(exc_info.value.context["validation_errors"]) == 1
 
     def test_nested_validation_context(self):
         """Test nested validation contexts for hierarchical validation."""
@@ -206,5 +209,10 @@ class TestValidationContext:
         # Raising from any context should include all errors
         with pytest.raises(ValidationError) as exc_info:
             child.raise_if_errors()
-
-        assert len(exc_info.value.validation_errors) == 3
+            
+        # Verify the error was raised
+        assert "Validation failed for Parent" in str(exc_info.value)
+        assert exc_info.value.error_code == "CORE-0002"  # Updated to match core.errors.base.ErrorCode.VALIDATION_ERROR
+        # Check context contains validation errors
+        assert "validation_errors" in exc_info.value.context
+        assert len(exc_info.value.context["validation_errors"]) == 3

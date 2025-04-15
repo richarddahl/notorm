@@ -11,6 +11,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uno.domain.core import Entity, DomainException
 from uno.domain.repository import Repository, UnoDBRepository
 
+# Create a mock class to use in tests instead of the actual FilterParam
+class MockFilterParam:
+    def __init__(self, label, lookup="eq", val=None):
+        self.label = label
+        self.lookup = lookup
+        self.val = val
+
 
 class TestEntity(Entity):
     """Test entity for repository tests."""
@@ -114,7 +121,9 @@ class TestUnoDBRepository:
         db_mock = AsyncMock()
         db_mock.filter.return_value = [entity_dict, entity_dict]
 
-        with patch("uno.database.db.UnoDBFactory", return_value=db_mock):
+        # Patch the FilterParam import to use our mock class
+        with patch("uno.core.types.FilterParam", MockFilterParam), \
+             patch("uno.database.db.UnoDBFactory", return_value=db_mock):
             repo = UnoDBRepository(TestEntity)
             entities = await repo.list(
                 filters={"name": "Test"}, order_by=["name"], limit=10, offset=0
@@ -155,8 +164,9 @@ class TestUnoDBRepository:
             # Entity data was converted correctly
             model_data = call_args.args[0]
             assert model_data is not None
-            assert model_data.get("id") == test_entity.id
-            assert model_data.get("name") == test_entity.name
+            # Use dict access rather than .get() for compatibility with Pydantic validation objects
+            assert model_data["id"] == test_entity.id
+            assert model_data["name"] == test_entity.name
 
     @pytest.mark.asyncio
     async def test_add_entity_duplicate(self, mock_db_factory, test_entity):
@@ -202,7 +212,8 @@ class TestUnoDBRepository:
             # Entity data was converted correctly
             model_data = call_args.args[0]
             assert model_data is not None
-            assert model_data.get("name") == "Updated Name"
+            # Use dict access rather than .get() for compatibility with Pydantic validation objects
+            assert model_data["name"] == "Updated Name"
 
     @pytest.mark.asyncio
     async def test_update_entity_not_found(self, mock_db_factory, test_entity):
@@ -295,15 +306,19 @@ class TestUnoDBRepository:
     async def test_count(self, mock_db_factory, entity_dict):
         """Test counting entities with filters."""
         db_mock = AsyncMock()
+        # Set up count method of db_mock to return 2
+        db_mock.count = AsyncMock(return_value=2)
         db_mock.filter.return_value = [entity_dict, entity_dict]
 
-        with patch("uno.database.db.UnoDBFactory", return_value=db_mock):
+        # Patch the FilterParam import to use our mock class
+        with patch("uno.core.types.FilterParam", MockFilterParam), \
+             patch("uno.database.db.UnoDBFactory", return_value=db_mock):
             repo = UnoDBRepository(TestEntity)
             count = await repo.count(filters={"name": "Test"})
 
             assert count == 2
 
-            # Filter was passed correctly
-            db_mock.filter.assert_called_once()
-            call_args = db_mock.filter.call_args
+            # Count method was called - with our filter params
+            db_mock.count.assert_called_once()
+            call_args = db_mock.count.call_args
             assert call_args is not None

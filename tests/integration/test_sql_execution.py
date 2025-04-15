@@ -466,6 +466,7 @@ class CleanupEmitter(SQLEmitter):
 
 
 # Tests
+@pytest.mark.integration
 class TestSQLExecution:
     """Integration tests for SQL execution."""
 

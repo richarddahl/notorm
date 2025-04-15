@@ -12,12 +12,34 @@ from abc import abstractmethod
 from contextlib import contextmanager, asynccontextmanager
 from enum import Enum, auto
 import threading
-from typing import Any, Dict, List, Optional, Set, Type, TypeVar, Callable, cast, Generic, get_type_hints
+from typing import Any, Dict, List, Optional, Set, Type, TypeVar, Callable, cast, Generic, get_type_hints, Protocol, runtime_checkable
 import weakref
 
 from .errors.base import ErrorCategory, UnoError
 from .errors import with_error_context
-from .protocols import ServiceProvider, ServiceScope, Initializable, Disposable, AsyncDisposable
+from .protocols import ServiceProvider, ServiceScope
+
+# Create local protocol versions to ensure runtime_checkable compatibility
+@runtime_checkable
+class Initializable(Protocol):
+    """Protocol for services that need initialization."""
+    def initialize(self) -> None:
+        """Initialize the service."""
+        ...
+
+@runtime_checkable
+class Disposable(Protocol):
+    """Protocol for services that need cleanup."""
+    def dispose(self) -> None:
+        """Dispose of the service's resources."""
+        ...
+
+@runtime_checkable
+class AsyncDisposable(Protocol):
+    """Protocol for services that need asynchronous cleanup."""
+    async def dispose_async(self) -> None:
+        """Dispose of the service's resources asynchronously."""
+        ...
 
 # =============================================================================
 # Type Variables
@@ -630,6 +652,19 @@ def initialize_container(logger: Optional[logging.Logger] = None) -> None:
 def reset_container() -> None:
     """Reset the global DI container (primarily for testing)."""
     global _container
+    
+    # Dispose services if container exists
+    if _container is not None:
+        # Get all disposable services
+        for service_type, instance in _container._registry._singleton_instances.items():
+            if isinstance(instance, Disposable):
+                try:
+                    instance.dispose()
+                except Exception as e:
+                    # Log but don't raise
+                    if _container._logger:
+                        _container._logger.error(f"Error disposing service {service_type.__name__}: {str(e)}")
+    
     _container = None
 
 

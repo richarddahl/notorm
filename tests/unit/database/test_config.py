@@ -25,7 +25,7 @@ class TestConnectionConfig:
         config = ConnectionConfig()
         
         # Verify defaults from settings were applied
-        assert config.db_role == f"{uno_settings.DB_NAME}_login"
+        assert config.db_role == uno_settings.DB_USER
         assert config.db_name == uno_settings.DB_NAME
         assert config.db_user_pw == uno_settings.DB_USER_PW
         assert config.db_host == uno_settings.DB_HOST

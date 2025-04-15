@@ -4,12 +4,63 @@ Tests for authorization repositories.
 This module contains tests for the User and Group repositories.
 """
 
+import sys
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock, AsyncMock, patch
+
+from sqlalchemy import select, and_, Column, String, Boolean, ForeignKey, Integer
+from sqlalchemy.orm import relationship, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.dependencies.testing import MockRepository
-from uno.authorization.models import UserModel, GroupModel
 from uno.authorization.repositories import UserRepository, GroupRepository
+
+# Create a mock base class for testing
+class Base(DeclarativeBase):
+    pass
+
+# Define minimal mock models for testing
+class MockUserModel(Base):
+    __tablename__ = "user"
+    
+    id = Column(String, primary_key=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    handle = Column(String, index=True, nullable=False)
+    full_name = Column(String, nullable=False)
+    tenant_id = Column(String, ForeignKey("tenant.id"), index=True, nullable=True)
+    is_superuser = Column(Boolean, default=False)
+    
+    # Mock relationships
+    groups = MagicMock()
+    roles = MagicMock()
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class MockGroupModel(Base):
+    __tablename__ = "group"
+    
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    tenant_id = Column(String, ForeignKey("tenant.id"), index=True, nullable=False)
+    
+    # Mock relationships
+    users = MagicMock()
+    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+# Patch the original models with our mock models
+patch('uno.authorization.models.UserModel', MockUserModel).start()
+patch('uno.authorization.models.GroupModel', MockGroupModel).start()
+patch('uno.authorization.repositories.UserModel', MockUserModel).start()
+patch('uno.authorization.repositories.GroupModel', MockGroupModel).start()
+
+# Use these mock models in our tests
+UserModel = MockUserModel
+GroupModel = MockGroupModel
 
 
 @pytest.fixture

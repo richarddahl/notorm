@@ -397,12 +397,15 @@ async def test_redis_backend():
         # Verify Redis setex was called
         mock_redis.setex.assert_awaited_once()
         
-        # Test get operation
+        # We need to ensure the memory cache is empty
+        cache._cache = {}
+        
+        # Test get operation - make sure we only check Redis
         result = await cache.get(key)
-        assert result.is_failure  # Simulating miss
         
         # Verify Redis get was called
         mock_redis.get.assert_awaited_once()
+        assert result.is_failure  # Should be a miss since we're returning None
         
         # Simulate a hit by setting up a pickled value
         import pickle

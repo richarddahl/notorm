@@ -5,8 +5,10 @@ This module provides fixtures for testing database-related functionality.
 """
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+import asyncio
+from unittest.mock import MagicMock, AsyncMock, patch
 
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection, AsyncSession
 from uno.database.db import UnoDBFactory
 from uno.database.config import ConnectionConfig
 
@@ -159,4 +161,71 @@ def mock_async_connection():
     connection = AsyncMock()
     cursor = AsyncMock()
     connection.cursor.return_value = AsyncMockContextManager(cursor)
+    # Add SQLAlchemy AsyncConnection attributes
+    connection.execution_options = AsyncMock(return_value=None)
+    connection.close = AsyncMock()
+    connection.begin = AsyncMock()
+    connection.commit = AsyncMock()
+    connection.rollback = AsyncMock()
+    connection.engine = MagicMock()
     return AsyncMockContextManager(connection)
+
+
+@pytest.fixture
+def mock_async_utils():
+    """Mock the async_utils module components for testing."""
+    with patch("uno.core.async_utils.TaskGroup") as mock_task_group, \
+         patch("uno.core.async_utils.AsyncLock") as mock_async_lock, \
+         patch("uno.core.async_utils.Limiter") as mock_limiter, \
+         patch("uno.core.async_utils.AsyncContextGroup") as mock_context_group, \
+         patch("uno.core.async_utils.AsyncExitStack") as mock_exit_stack, \
+         patch("uno.core.async_utils.timeout") as mock_timeout:
+        
+        # Configure the mocks
+        mock_task_group.return_value = AsyncMock()
+        mock_async_lock.return_value = AsyncMock()
+        mock_limiter.return_value = AsyncMock()
+        mock_context_group.return_value = AsyncMock()
+        mock_exit_stack.return_value = AsyncMock()
+        
+        yield {
+            "TaskGroup": mock_task_group,
+            "AsyncLock": mock_async_lock,
+            "Limiter": mock_limiter,
+            "AsyncContextGroup": mock_context_group,
+            "AsyncExitStack": mock_exit_stack,
+            "timeout": mock_timeout,
+        }
+
+@pytest.fixture
+def mock_engine_factory():
+    """Mock the AsyncEngineFactory for testing."""
+    mock_factory = MagicMock()
+    mock_factory.create_engine.return_value = AsyncMock(spec=AsyncEngine)
+    mock_factory.get_connection_lock.return_value = AsyncMock()
+    mock_factory.connection_limiter = AsyncMock()
+    mock_factory.execute_callbacks = AsyncMock()
+    
+    return mock_factory
+
+@pytest.fixture
+def mock_sqlalchemy_async_connection():
+    """Mock a SQLAlchemy AsyncConnection for testing."""
+    mock_conn = AsyncMock(spec=AsyncConnection)
+    mock_conn.execution_options = AsyncMock(return_value=None)
+    mock_conn.close = AsyncMock()
+    mock_conn.begin = AsyncMock()
+    mock_conn.commit = AsyncMock()
+    mock_conn.rollback = AsyncMock()
+    mock_conn.__aenter__.return_value = mock_conn
+    
+    return mock_conn
+
+@pytest.fixture
+def mock_async_engine():
+    """Mock an AsyncEngine for testing."""
+    mock_engine = AsyncMock(spec=AsyncEngine)
+    mock_engine.connect = AsyncMock()
+    mock_engine.dispose = AsyncMock()
+    
+    return mock_engine

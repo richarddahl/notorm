@@ -15,6 +15,7 @@ import os
 from typing import List, Dict, Any
 
 from pydantic import BaseModel, Field
+from uno.core.errors import UnoError
 
 from uno.sql.emitters.database import (
     CreateRolesAndDatabase,
@@ -28,7 +29,6 @@ from uno.sql.emitters.database import (
 )
 from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.database.config import ConnectionConfig
-from uno.errors import UnoError
 
 
 class MockSettings(BaseModel):
