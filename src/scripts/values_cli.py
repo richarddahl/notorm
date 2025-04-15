@@ -150,8 +150,8 @@ class ValueCLI:
             args.name
         )
         
-        if result.is_ok():
-            value_obj = result.unwrap()
+        if result.is_success:
+            value_obj = result.value
             print(f"Successfully created {args.value_type} value with ID: {value_obj.id}")
             print(json.dumps({
                 "id": value_obj.id,
@@ -161,7 +161,7 @@ class ValueCLI:
                 "created_at": value_obj.created_at.isoformat() if value_obj.created_at else None
             }, indent=2))
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to create value: {error}")
             sys.exit(1)
     
@@ -180,8 +180,8 @@ class ValueCLI:
             args.name
         )
         
-        if result.is_ok():
-            value_obj = result.unwrap()
+        if result.is_success:
+            value_obj = result.value
             print(f"Successfully got or created {args.value_type} value with ID: {value_obj.id}")
             print(json.dumps({
                 "id": value_obj.id,
@@ -191,7 +191,7 @@ class ValueCLI:
                 "created_at": value_obj.created_at.isoformat() if value_obj.created_at else None
             }, indent=2))
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to get or create value: {error}")
             sys.exit(1)
     
@@ -203,8 +203,8 @@ class ValueCLI:
         # Get value
         result = await self.value_service.get_value_by_id(value_type_class, args.id)
         
-        if result.is_ok():
-            value_obj = result.unwrap()
+        if result.is_success:
+            value_obj = result.value
             
             if not value_obj:
                 logger.error(f"{args.value_type.capitalize()} value with ID {args.id} not found")
@@ -231,7 +231,7 @@ class ValueCLI:
                     "updated_at": value_obj.updated_at.isoformat() if value_obj.updated_at else None
                 }, indent=2))
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to get value: {error}")
             sys.exit(1)
     
@@ -247,21 +247,21 @@ class ValueCLI:
         # Validate the value
         validation_result = await self.value_service.validate_value(source_value_type_class, parsed_value)
         
-        if validation_result.is_err():
-            error = validation_result.unwrap_err()
+        if validation_result.is_failure:
+            error = validation_result.error
             logger.error(f"Validation failed: {error}")
             sys.exit(1)
         
         # Convert the value
         convert_result = await self.value_service.convert_value(parsed_value, target_value_type_class)
         
-        if convert_result.is_ok():
-            converted_value = convert_result.unwrap()
+        if convert_result.is_success:
+            converted_value = convert_result.value
             print(f"Successfully converted {args.source_type} value to {args.target_type}:")
             print(f"Original value ({args.source_type}): {parsed_value}")
             print(f"Converted value ({args.target_type}): {converted_value}")
         else:
-            error = convert_result.unwrap_err()
+            error = convert_result.error
             logger.error(f"Failed to convert value: {error}")
             sys.exit(1)
     
@@ -275,8 +275,8 @@ class ValueCLI:
         # Create attachment
         result = await self.value_service.create_attachment(args.file_path, args.name)
         
-        if result.is_ok():
-            attachment = result.unwrap()
+        if result.is_success:
+            attachment = result.value
             print(f"Successfully uploaded attachment with ID: {attachment.id}")
             print(json.dumps({
                 "id": attachment.id,
@@ -286,7 +286,7 @@ class ValueCLI:
                 "created_at": attachment.created_at.isoformat() if attachment.created_at else None
             }, indent=2))
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to upload attachment: {error}")
             sys.exit(1)
     
@@ -298,8 +298,8 @@ class ValueCLI:
         # Delete value
         result = await repository.delete(args.id)
         
-        if result.is_ok():
-            success = result.unwrap()
+        if result.is_success:
+            success = result.value
             
             if success:
                 print(f"Successfully deleted {args.value_type} value with ID {args.id}")
@@ -307,7 +307,7 @@ class ValueCLI:
                 logger.error(f"{args.value_type.capitalize()} value with ID {args.id} not found")
                 sys.exit(1)
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to delete value: {error}")
             sys.exit(1)
     
@@ -319,8 +319,8 @@ class ValueCLI:
         # Search values
         result = await repository.search(args.term, args.limit)
         
-        if result.is_ok():
-            values = result.unwrap()
+        if result.is_success:
+            values = result.value
             print(f"Found {len(values)} {args.value_type} values matching '{args.term}':")
             
             for idx, value_obj in enumerate(values, 1):
@@ -332,7 +332,7 @@ class ValueCLI:
                     print(f"   Value: {value_obj.value}")
                 print()
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to search values: {error}")
             sys.exit(1)
 

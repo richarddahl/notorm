@@ -20,23 +20,8 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 
 
-from uno.database.engine import (
-    sync_connection,
-    async_connection,
-)
-from uno.model import UnoModel
-from uno.settings import uno_settings
-from uno.database.errors import (
-    DatabaseErrorCode,
-    DatabaseQueryError,
-    DatabaseIntegrityError,
-    DatabaseUniqueViolationError,
-    DatabaseTransactionError,
-    DatabaseResourceNotFoundError
-)
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.protocols import (
-    DatabaseSessionProtocol,
     DatabaseSessionContextProtocol,
     DatabaseRepository,
 )
@@ -54,29 +39,30 @@ class NotFoundException(Exception):
 from uno.core.types import FilterParam
 
 
-T = TypeVar('T', bound=BaseModel)
-K = TypeVar('K')
+T = TypeVar("T", bound=BaseModel)
+K = TypeVar("K")
+
 
 def UnoDBFactory(
     obj: BaseModel,
-    session_context_factory: Optional[Type[DatabaseSessionContextProtocol]] = None
+    session_context_factory: Optional[Type[DatabaseSessionContextProtocol]] = None,
 ) -> Type[DatabaseRepository[T, K, Any, Dict[str, Any], Any]]:
     """
     Factory function that creates a UnoDB class implementing the DatabaseRepository protocol.
-    
+
     Args:
         obj: A BaseModel containing model and filter information
         session_context_factory: Optional session context class
-        
+
     Returns:
         A UnoDB class that implements the DatabaseRepository protocol
     """
     # Dynamically import async_session to avoid circular imports
     from uno.database.session import AsyncSessionContext
-    
+
     # Use provided session factory or default
     SessionContextClass = session_context_factory or AsyncSessionContext
-    
+
     class UnoDB(DatabaseRepository[T, K, Any, Dict[str, Any], Any]):
 
         @classmethod
@@ -212,17 +198,17 @@ def UnoDBFactory(
         async def get(cls, select_related=None, **kwargs: Any) -> Optional[T]:
             """
             Get a record from the database with optional relationship loading.
-            
+
             Args:
                 select_related: Controls which relationships to load:
                     - None/False: Load no relationships
                     - True: Load all relationships
                     - List[str]: Load only specified relationships
                 **kwargs: Keyword arguments for filtering
-                
+
             Returns:
                 The requested record if found, None otherwise
-                
+
             Raises:
                 NotFoundException: If the record does not exist
                 IntegrityConflictException: If multiple records match the query
@@ -259,19 +245,25 @@ def UnoDBFactory(
                             f"Multiple records found for the provided natural key: {kwargs}"
                         )
                     row = rows[0]
-                    
+
                     # Convert to mapping
                     record = row._mapping if row is not None else None
-                    
+
                     # Load relationships if requested
-                    if select_related and record and hasattr(obj.model, '__relationships__'):
+                    if (
+                        select_related
+                        and record
+                        and hasattr(obj.model, "__relationships__")
+                    ):
                         # Import the relationship loader
                         from uno.database.relationship_loader import RelationshipLoader
-                        
+
                         # Create loader and load relationships
                         loader = RelationshipLoader(obj.model.__class__)
-                        record = await loader.load_relationships(record, select_related, session)
-                        
+                        record = await loader.load_relationships(
+                            record, select_related, session
+                        )
+
                     return record
             except Exception as e:
                 raise UnoError(
@@ -302,21 +294,24 @@ def UnoDBFactory(
                     return True
             except Exception as e:
                 raise UnoError(
-                    f"Unhandled error occurred during delete: {e}", error_code="DELETE_ERROR"
+                    f"Unhandled error occurred during delete: {e}",
+                    error_code="DELETE_ERROR",
                 ) from e
 
         @classmethod
-        async def filter(cls, filters: Optional[FilterParam] = None, select_related=None) -> List[T]:
+        async def filter(
+            cls, filters: Optional[FilterParam] = None, select_related=None
+        ) -> List[T]:
             """
             Filter records with optional relationship loading.
-            
+
             Args:
                 filters: Filter parameters for querying
                 select_related: Controls which relationships to load:
                     - None/False: Load no relationships
                     - True: Load all relationships
                     - List[str]: Load only specified relationships
-                
+
             Returns:
                 List of matching records
             """
@@ -360,20 +355,22 @@ def UnoDBFactory(
                     await session.execute(func.set_role("reader"))
                     result = await session.execute(stmt)
                     records = result.mappings().all()
-                    
+
                     # Load relationships if requested
-                    if select_related and records and hasattr(obj.model, '__relationships__'):
+                    if (
+                        select_related
+                        and records
+                        and hasattr(obj.model, "__relationships__")
+                    ):
                         # Import the relationship loader
                         from uno.database.relationship_loader import RelationshipLoader
-                        
+
                         # Create loader and load relationships in batch
                         loader = RelationshipLoader(obj.model.__class__)
                         records = await loader.load_relationships_batch(
-                            records, 
-                            select_related, 
-                            session
+                            records, select_related, session
                         )
-                        
+
                     return records
             except Exception as e:
                 raise UnoError(

@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, AsyncConnection
 from sqlalchemy.sql import Select, Executable
 from sqlalchemy.orm import DeclarativeMeta, joinedload, selectinload
 
-from uno.core.errors.result import Result as OpResult, Ok, Err
+from uno.core.errors.result import Result as OpResult, Success, Failure
 
 
 class QueryComplexity(enum.Enum):
@@ -769,7 +769,7 @@ class QueryOptimizer:
             Result containing QueryRewrite on success, error message on failure
         """
         if not self.config.rewrite_queries:
-            return Err("Query rewriting is disabled")
+            return Failure("Query rewriting is disabled")
         
         # Convert query to string if it's a SQLAlchemy executable
         query_str = query
@@ -802,10 +802,10 @@ class QueryOptimizer:
                 query_hash = self._hash_query(query_str)
                 self._query_rewrites[query_hash] = rewrite
                 
-                return Ok(rewrite)
+                return Success(rewrite)
         
         # No rewrites applied
-        return Err("No applicable rewrites found")
+        return Failure("No applicable rewrites found")
     
     def _rewrite_unnecessary_distinct(self, query: str) -> OpResult[QueryRewrite]:
         """
@@ -822,7 +822,7 @@ class QueryOptimizer:
         match = re.search(pattern, query, re.IGNORECASE | re.DOTALL)
         
         if not match:
-            return Err("No DISTINCT clause found")
+            return Failure("No DISTINCT clause found")
         
         columns = match.group(1).strip()
         table = match.group(2).strip()
@@ -836,7 +836,7 @@ class QueryOptimizer:
                 f"SELECT{match.group(1)}"
             )
             
-            return Ok(QueryRewrite(
+            return Success(QueryRewrite(
                 original_query=query,
                 rewritten_query=rewritten,
                 rewrite_type="remove_unnecessary_distinct",
@@ -844,7 +844,7 @@ class QueryOptimizer:
                 reason="DISTINCT is unnecessary when selecting primary key or unique columns",
             ))
         
-        return Err("DISTINCT may be necessary")
+        return Failure("DISTINCT may be necessary")
     
     def _rewrite_count_star(self, query: str) -> OpResult[QueryRewrite]:
         """
@@ -861,7 +861,7 @@ class QueryOptimizer:
         match = re.search(pattern, query, re.IGNORECASE)
         
         if not match:
-            return Err("Not a COUNT(*) query")
+            return Failure("Not a COUNT(*) query")
         
         table = match.group(1).strip()
         
@@ -872,7 +872,7 @@ class QueryOptimizer:
             # For tables with primary key, COUNT(1) is slightly faster
             rewritten = query.replace("COUNT(*)", "COUNT(1)")
             
-            return Ok(QueryRewrite(
+            return Success(QueryRewrite(
                 original_query=query,
                 rewritten_query=rewritten,
                 rewrite_type="optimize_count",
@@ -880,7 +880,7 @@ class QueryOptimizer:
                 reason="COUNT(1) is slightly faster than COUNT(*) for simple counts",
             ))
         
-        return Err("Query already has WHERE clause, COUNT(*) optimization not applicable")
+        return Failure("Query already has WHERE clause, COUNT(*) optimization not applicable")
     
     def _rewrite_or_to_union(self, query: str) -> OpResult[QueryRewrite]:
         """
@@ -894,14 +894,14 @@ class QueryOptimizer:
         """
         # Only apply if in aggressive mode
         if self.config.optimization_level != OptimizationLevel.AGGRESSIVE:
-            return Err("OR to UNION rewrite requires aggressive optimization")
+            return Failure("OR to UNION rewrite requires aggressive optimization")
         
         # Look for OR conditions on different columns
         pattern = r"WHERE\s+(.+?)\s+OR\s+(.+?)(?:\s+ORDER BY|\s+GROUP BY|\s+LIMIT|\s*$)"
         match = re.search(pattern, query, re.IGNORECASE | re.DOTALL)
         
         if not match:
-            return Err("No suitable OR conditions found")
+            return Failure("No suitable OR conditions found")
         
         left_condition = match.group(1).strip()
         right_condition = match.group(2).strip()
@@ -925,7 +925,7 @@ class QueryOptimizer:
             if after_where:
                 rewritten += f" {after_where}"
             
-            return Ok(QueryRewrite(
+            return Success(QueryRewrite(
                 original_query=query,
                 rewritten_query=rewritten,
                 rewrite_type="or_to_union",
@@ -933,7 +933,7 @@ class QueryOptimizer:
                 reason="Splitting OR conditions on different columns into UNION can improve index usage",
             ))
         
-        return Err("OR conditions not suitable for UNION rewrite")
+        return Failure("OR conditions not suitable for UNION rewrite")
     
     def _rewrite_in_clause(self, query: str) -> OpResult[QueryRewrite]:
         """
@@ -950,14 +950,14 @@ class QueryOptimizer:
         match = re.search(pattern, query, re.IGNORECASE)
         
         if not match:
-            return Err("No IN clause found")
+            return Failure("No IN clause found")
         
         column = match.group(1).strip()
         values = match.group(2).strip().split(",")
         
         # Only optimize large IN clauses
         if len(values) <= 5:
-            return Err("IN clause not large enough to optimize")
+            return Failure("IN clause not large enough to optimize")
         
         # For very large IN clauses, use a temporary table
         if len(values) > 100:
@@ -976,7 +976,7 @@ class QueryOptimizer:
                 f"{query.replace(original_in_clause, rewritten_in_clause)}"
             )
             
-            return Ok(QueryRewrite(
+            return Success(QueryRewrite(
                 original_query=query,
                 rewritten_query=rewritten,
                 rewrite_type="optimize_large_in",
@@ -984,7 +984,7 @@ class QueryOptimizer:
                 reason="Large IN clauses perform better with temporary tables",
             ))
         
-        return Err("IN clause optimization not applicable")
+        return Failure("IN clause optimization not applicable")
     
     def _hash_query(self, query: str) -> str:
         """

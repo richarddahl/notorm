@@ -5,7 +5,7 @@ This module contains DTOs for order management and processing.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, fieldvalidator
 from datetime import datetime
 
 from examples.ecommerce.api.dto.common import AddressDTO, MoneyDTO
@@ -17,7 +17,7 @@ class OrderItemDTO(BaseModel):
     product_id: str = Field(..., description="Product ID")
     quantity: int = Field(..., gt=0, description="Quantity")
 
-    @validator("quantity")
+    @fieldvalidator("quantity")
     def quantity_must_be_positive(cls, v):
         """Validate that quantity is positive."""
         if v <= 0:
@@ -230,7 +230,7 @@ class UpdateOrderStatusRequest(BaseModel):
     status: str = Field(..., description="New order status")
     notes: Optional[str] = Field(None, description="Status change notes")
 
-    @validator("status")
+    @field_validator("status")
     def validate_status(cls, v):
         """Validate that the status is valid."""
         valid_statuses = [

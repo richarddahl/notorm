@@ -15,7 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine, AsyncConnection
 from sqlalchemy.sql import Select, Executable
 
-from uno.core.errors.result import Result as OpResult, Ok, Err
+from uno.core.errors.result import Result as OpResult, Success, Failure
 from uno.database.query_optimizer import (
     QueryComplexity,
     OptimizationLevel,
@@ -123,7 +123,7 @@ class PgOptimizationStrategies:
             Result with success message or error
         """
         if not self.optimizer.session and not self.optimizer.engine:
-            return Err("Either session or engine must be provided")
+            return Failure("Either session or engine must be provided")
         
         try:
             analyze_sql = f"ANALYZE {table_name}"
@@ -136,12 +136,12 @@ class PgOptimizationStrategies:
                     await connection.execute(text(analyze_sql))
                     await connection.commit()
             
-            return Ok({"message": f"Successfully analyzed table {table_name}"})
+            return Success({"message": f"Successfully analyzed table {table_name}"})
             
         except Exception as e:
             error_msg = f"Error analyzing table {table_name}: {e}"
             self.logger.error(error_msg)
-            return Err(error_msg)
+            return Failure(error_msg)
     
     async def get_table_statistics(self, table_name: str) -> OpResult[Dict[str, Any]]:
         """
@@ -154,7 +154,7 @@ class PgOptimizationStrategies:
             Result with table statistics or error
         """
         if not self.optimizer.session and not self.optimizer.engine:
-            return Err("Either session or engine must be provided")
+            return Failure("Either session or engine must be provided")
         
         try:
             stats_sql = f"""
@@ -219,7 +219,7 @@ class PgOptimizationStrategies:
                     column_stats = [dict(row) for row in col_stats_result.mappings()]
             
             if not stats_data:
-                return Err(f"Table {table_name} not found or no statistics available")
+                return Failure(f"Table {table_name} not found or no statistics available")
             
             # Convert to dict and add column stats
             stats = dict(stats_data)
@@ -236,12 +236,12 @@ class PgOptimizationStrategies:
                 bytes_value = stats[size_key]
                 stats[f"{size_key}_human"] = self._format_bytes(bytes_value)
             
-            return Ok(stats)
+            return Success(stats)
             
         except Exception as e:
             error_msg = f"Error getting statistics for table {table_name}: {e}"
             self.logger.error(error_msg)
-            return Err(error_msg)
+            return Failure(error_msg)
     
     def _format_bytes(self, size_bytes: int) -> str:
         """Format bytes to human-readable string"""
@@ -320,7 +320,7 @@ class PgOptimizationStrategies:
                     "priority": "low"
                 })
         
-        return Ok({
+        return Success({
             "table_name": table_name,
             "statistics": stats,
             "recommendations": recommendations
@@ -666,7 +666,7 @@ class PgOptimizationStrategies:
             return distinct_result
         
         # No applicable rewrites
-        return Err("No PostgreSQL-specific rewrites applicable")
+        return Failure("No PostgreSQL-specific rewrites applicable")
     
     def _rewrite_cte(self, query: str) -> OpResult[QueryRewrite]:
         """
@@ -683,7 +683,7 @@ class PgOptimizationStrategies:
         matches = list(re.finditer(subquery_pattern, query, re.IGNORECASE | re.DOTALL))
         
         if not matches:
-            return Err("No subqueries found to convert to CTEs")
+            return Failure("No subqueries found to convert to CTEs")
         
         # Construct the CTE query
         cte_parts = []
@@ -702,7 +702,7 @@ class PgOptimizationStrategies:
         # Construct the final CTE query
         cte_query = f"WITH {', '.join(cte_parts)}\n{main_query}"
         
-        return Ok(QueryRewrite(
+        return Success(QueryRewrite(
             original_query=query,
             rewritten_query=cte_query,
             rewrite_type="cte_optimization",
@@ -726,7 +726,7 @@ class PgOptimizationStrategies:
         match = re.search(pattern, query, re.IGNORECASE | re.DOTALL)
         
         if not match:
-            return Err("No suitable joins found for LATERAL optimization")
+            return Failure("No suitable joins found for LATERAL optimization")
         
         # Analyze the match
         main_table = match.group(1)
@@ -737,14 +737,14 @@ class PgOptimizationStrategies:
         
         # Only proceed if the filter table is the same as the main table
         if filter_table != main_table:
-            return Err("Join filter doesn't reference the main table")
+            return Failure("Join filter doesn't reference the main table")
         
         # Extract the subquery
         subquery_pattern = r"JOIN\s+(\(\s*SELECT\s+.*?\))\s+AS\s+(\w+)"
         subquery_match = re.search(subquery_pattern, query, re.IGNORECASE | re.DOTALL)
         
         if not subquery_match:
-            return Err("Could not extract subquery for LATERAL join")
+            return Failure("Could not extract subquery for LATERAL join")
         
         subquery = subquery_match.group(1)
         subquery_alias = subquery_match.group(2)
@@ -760,7 +760,7 @@ class PgOptimizationStrategies:
             f"CROSS JOIN LATERAL {lateral_subquery} AS {subquery_alias}"
         )
         
-        return Ok(QueryRewrite(
+        return Success(QueryRewrite(
             original_query=query,
             rewritten_query=rewritten,
             rewrite_type="lateral_join_optimization",
@@ -782,7 +782,7 @@ class PgOptimizationStrategies:
         json_extract_pattern = r"JSON_EXTRACT\(\s*(\w+)\.(\w+)\s*,\s*['\"]([^'\"]+)['\"]\s*\)"
         
         if not re.search(json_extract_pattern, query, re.IGNORECASE):
-            return Err("No JSON_EXTRACT functions found to optimize")
+            return Failure("No JSON_EXTRACT functions found to optimize")
         
         rewritten = re.sub(
             json_extract_pattern,
@@ -802,7 +802,7 @@ class PgOptimizationStrategies:
                 flags=re.IGNORECASE
             )
         
-        return Ok(QueryRewrite(
+        return Success(QueryRewrite(
             original_query=query,
             rewritten_query=rewritten,
             rewrite_type="json_function_optimization",
@@ -825,7 +825,7 @@ class PgOptimizationStrategies:
         match = re.search(pattern, query, re.IGNORECASE | re.DOTALL)
         
         if not match:
-            return Err("No suitable GROUP BY pattern found for DISTINCT ON optimization")
+            return Failure("No suitable GROUP BY pattern found for DISTINCT ON optimization")
         
         select_clause = match.group(1)
         group_cols = match.group(4).split(",")
@@ -834,7 +834,7 @@ class PgOptimizationStrategies:
         # Only proceed if we're essentially taking the first row per group
         # This is a simplified check; a real implementation would be more robust
         if "MIN(" not in select_clause and "MAX(" not in select_clause:
-            return Err("No first-value aggregates found")
+            return Failure("No first-value aggregates found")
         
         # Rewrite to use DISTINCT ON
         distinct_cols = ", ".join(col.strip() for col in group_cols)
@@ -848,7 +848,7 @@ class PgOptimizationStrategies:
         
         rewritten = f"SELECT DISTINCT ON ({distinct_cols}) {new_select} FROM {match.group(3)} ORDER BY {distinct_cols}, {order_cols}"
         
-        return Ok(QueryRewrite(
+        return Success(QueryRewrite(
             original_query=query,
             rewritten_query=rewritten,
             rewrite_type="distinct_on_optimization",

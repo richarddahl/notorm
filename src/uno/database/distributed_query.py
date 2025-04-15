@@ -33,7 +33,7 @@ from uno.database.enhanced_connection_pool import (
     EnhancedAsyncEnginePool,
     get_connection_manager,
 )
-from uno.core.errors.result import Result as OpResult, Ok, Err
+from uno.core.errors.result import Result as OpResult, Success, Failure
 
 
 class DistributionStrategy(Enum):

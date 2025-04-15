@@ -11,7 +11,7 @@ from sqlalchemy import text
 from uno.core.caching import QueryCache
 from uno.queries.executor import QueryExecutor, QueryExecutionError, cache_query_result
 from uno.queries.objs import Query, QueryPath, QueryValue
-from uno.core.errors.result import Ok, Err
+from uno.core.errors.result import Success, Failure
 
 
 class TestQueryExecutor:
@@ -85,8 +85,8 @@ class TestQueryExecutor:
         result = await executor._execute_query(mock_query, mock_session)
         
         # Assert
-        assert result.is_ok()
-        assert result.unwrap() == []
+        assert result.is_success
+        assert result.value == []
 
     async def test_execute_query_legacy_cache(self, executor, mock_session, mock_query):
         """Test query result caching with legacy cache."""
@@ -105,11 +105,11 @@ class TestQueryExecutor:
             result2 = await executor.execute_query(mock_query, mock_session, force_refresh=True)
         
         # Assert
-        assert result1.is_ok()
-        assert result1.unwrap() == ['cached1', 'cached2']  # Should return cached result
+        assert result1.is_success
+        assert result1.value == ['cached1', 'cached2']  # Should return cached result
         
-        assert result2.is_ok()
-        assert result2.unwrap() == []  # Should return fresh result
+        assert result2.is_success
+        assert result2.value == []  # Should return fresh result
         
     async def test_execute_query_modern_cache(self, executor, mock_session, mock_query):
         """Test query result caching with modern cache system."""
@@ -127,11 +127,11 @@ class TestQueryExecutor:
             result2 = await executor.execute_query(mock_query, mock_session, force_refresh=True)
         
         # Assert
-        assert result1.is_ok()
-        assert result1.unwrap() == ['cached1', 'cached2']  # Should return cached result
+        assert result1.is_success
+        assert result1.value == ['cached1', 'cached2']  # Should return cached result
         
-        assert result2.is_ok()
-        assert result2.unwrap() == []  # Should return fresh result
+        assert result2.is_success
+        assert result2.value == []  # Should return fresh result
         
         # Verify cache was accessed
         mock_cache.get.assert_called_once()
@@ -177,8 +177,8 @@ class TestQueryExecutor:
             result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
         
         # Assert
-        assert result.is_ok()
-        assert result.unwrap() is True
+        assert result.is_success
+        assert result.value is True
         assert mock_session.execute.call_count == 0  # Should not query the database
         
     async def test_check_record_matches_query_modern_cached(self, executor, mock_session, mock_query):
@@ -193,8 +193,8 @@ class TestQueryExecutor:
             result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
         
         # Assert
-        assert result.is_ok()
-        assert result.unwrap() is True
+        assert result.is_success
+        assert result.value is True
         assert mock_session.execute.call_count == 0  # Should not query the database
         
         # Verify cache was accessed
@@ -208,28 +208,28 @@ class TestQueryExecutor:
         
         # Mock optimized check capability
         with patch.object(executor, '_can_use_optimized_check', return_value=True), \
-             patch.object(executor, '_check_record_direct', return_value=Ok(True)):
+             patch.object(executor, '_check_record_direct', return_value=Success(True)):
             
             # Execute
             result = await executor.check_record_matches_query(mock_query, record_id, mock_session)
             
             # Assert
-            assert result.is_ok()
-            assert result.unwrap() is True
+            assert result.is_success
+            assert result.value is True
 
     async def test_count_query_matches_optimized(self, executor, mock_session, mock_query):
         """Test optimized query count."""
         # Setup
         # Mock optimized count capability
         with patch.object(executor, '_can_use_optimized_count', return_value=True), \
-             patch.object(executor, '_count_direct', return_value=Ok(42)):
+             patch.object(executor, '_count_direct', return_value=Success(42)):
             
             # Execute
             result = await executor.count_query_matches(mock_query, mock_session)
             
             # Assert
-            assert result.is_ok()
-            assert result.unwrap() == 42
+            assert result.is_success
+            assert result.value == 42
 
     async def test_count_query_matches_fallback(self, executor, mock_session, mock_query):
         """Test query count falling back to normal execution."""
@@ -237,14 +237,14 @@ class TestQueryExecutor:
         # Mock the query execution to return record IDs
         with patch.object(executor, '_can_use_optimized_count', return_value=True), \
              patch.object(executor, '_count_direct', side_effect=Exception("Test error")), \
-             patch.object(executor, 'execute_query', return_value=Ok(['id1', 'id2', 'id3'])):
+             patch.object(executor, 'execute_query', return_value=Success(['id1', 'id2', 'id3'])):
             
             # Execute
             result = await executor.count_query_matches(mock_query, mock_session)
             
             # Assert
-            assert result.is_ok()
-            assert result.unwrap() == 3  # Count of records returned by execute_query
+            assert result.is_success
+            assert result.value == 3  # Count of records returned by execute_query
 
     async def test_execute_query_error_handling(self, executor, mock_session, mock_query, mock_query_value):
         """Test error handling during query execution."""
@@ -256,8 +256,8 @@ class TestQueryExecutor:
         result = await executor._execute_query(mock_query, mock_session)
         
         # Assert
-        assert result.is_err()
-        assert "Error executing query" in str(result.unwrap_err())
+        assert result.is_failure
+        assert "Error executing query" in str(result.error)
 
     async def test_count_query_matches_cached(self, executor, mock_session, mock_query):
         """Test count query matches with cache."""
@@ -270,8 +270,8 @@ class TestQueryExecutor:
             result = await executor.count_query_matches(mock_query, mock_session)
         
         # Assert
-        assert result.is_ok()
-        assert result.unwrap() == 42
+        assert result.is_success
+        assert result.value == 42
         # Verify cache was accessed
         mock_cache.get.assert_called_once()
         

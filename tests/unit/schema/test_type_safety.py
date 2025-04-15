@@ -23,7 +23,8 @@ from uno.errors import UnoError, ValidationError, ValidationContext
 class TestModel(BaseModel):
     """Test model for schema tests."""
 
-    __test__ = False  # Prevent pytest from treating this as a test case
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     id: str = Field(default="")
     name: str = Field(default="")
     email: str = Field(default="")
@@ -33,7 +34,8 @@ class TestModel(BaseModel):
 class TestNestedModel(BaseModel):
     """Test model with nested fields for schema tests."""
 
-    __test__ = False
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     id: str = Field(default="")
     details: TestModel = Field(default_factory=TestModel)
     tags: List[str] = Field(default_factory=list)
@@ -41,6 +43,8 @@ class TestNestedModel(BaseModel):
 
 class TestPaginatedList(UnoSchema):
     """Test paginated list schema with validation."""
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
 
     items: List[TestModel]
     total: int
@@ -51,6 +55,8 @@ class TestPaginatedList(UnoSchema):
 
 class TestListSchema(PaginatedList[TestModel]):
     """Test implementation of the generic PaginatedList."""
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
 
     class Config:
         json_schema_extra = {

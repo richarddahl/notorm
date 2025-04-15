@@ -32,7 +32,7 @@ from uno.database.errors import (
     DatabaseOperationalError
 )
 from uno.database.query_cache import QueryCache, cached, CachedResult
-from uno.core.errors.result import Result as OpResult, Ok, Err
+from uno.core.errors.result import Result as OpResult, Success, Failure
 
 
 T = TypeVar('T')
@@ -130,7 +130,7 @@ class RelationshipCache:
             Result containing the cached entity or an error
         """
         if not self.config.enabled or not self.config.cache_to_one:
-            return Err("Cache disabled for to-one relationships")
+            return Failure("Cache disabled for to-one relationships")
         
         # Generate cache key
         cache_key = self._generate_to_one_key(
@@ -148,10 +148,10 @@ class RelationshipCache:
                     f"Relationship cache stats - hits: {self.hits}, "
                     f"misses: {self.misses}, stores: {self.stores}"
                 )
-            return Ok(result.value)
+            return Success(result.value)
         
         self.misses += 1
-        return Err("Cache miss")
+        return Failure("Cache miss")
     
     async def store_to_one(
         self,
@@ -210,7 +210,7 @@ class RelationshipCache:
             Result containing the cached entities or an error
         """
         if not self.config.enabled or not self.config.cache_to_many:
-            return Err("Cache disabled for to-many relationships")
+            return Failure("Cache disabled for to-many relationships")
         
         # Generate cache key
         cache_key = self._generate_to_many_key(
@@ -229,10 +229,10 @@ class RelationshipCache:
                     f"Relationship cache stats - hits: {self.hits}, "
                     f"misses: {self.misses}, stores: {self.stores}"
                 )
-            return Ok(result.value)
+            return Success(result.value)
         
         self.misses += 1
-        return Err("Cache miss")
+        return Failure("Cache miss")
     
     async def store_to_many(
         self,

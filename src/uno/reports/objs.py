@@ -35,6 +35,7 @@ from uno.reports.models import (
 
 # Original classes (for backward compatibility)
 
+
 class ReportFieldConfig(UnoObj[ReportFieldConfigModel], DefaultObjectMixin):
     # Class variables
     model = ReportFieldConfigModel
@@ -192,6 +193,7 @@ class Report(UnoObj[ReportModel], DefaultObjectMixin):
 
 # Enhanced classes for the new reporting system
 
+
 class ReportFieldDefinition(UnoObj[ReportFieldDefinitionModel], DefaultObjectMixin):
     """A field definition for a report template."""
 
@@ -225,7 +227,7 @@ class ReportFieldDefinition(UnoObj[ReportFieldDefinitionModel], DefaultObjectMix
 
     # Fields
     name: str
-    display_name: str
+    display: str
     description: Optional[str] = None
     field_type: str  # DB_COLUMN, ATTRIBUTE, METHOD, QUERY, AGGREGATE, RELATED, CUSTOM
     field_config: Dict[str, Any] = {}
@@ -238,9 +240,7 @@ class ReportFieldDefinition(UnoObj[ReportFieldDefinitionModel], DefaultObjectMix
     child_fields: List["ReportFieldDefinition"] = []
     templates: List["ReportTemplate"] = []
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return self.display_name
@@ -263,33 +263,35 @@ class ReportFieldDefinition(UnoObj[ReportFieldDefinitionModel], DefaultObjectMix
             for prop in required_props:
                 if prop not in self.field_config:
                     raise ValueError(f"Field config for DB_COLUMN must include {prop}")
-        
+
         elif self.field_type == ReportFieldType.ATTRIBUTE:
             if "attribute_type_id" not in self.field_config:
-                raise ValueError("Field config for ATTRIBUTE must include attribute_type_id")
-        
+                raise ValueError(
+                    "Field config for ATTRIBUTE must include attribute_type_id"
+                )
+
         elif self.field_type == ReportFieldType.METHOD:
             required_props = ["method", "module"]
             for prop in required_props:
                 if prop not in self.field_config:
                     raise ValueError(f"Field config for METHOD must include {prop}")
-        
+
         elif self.field_type == ReportFieldType.QUERY:
             if "query_id" not in self.field_config:
                 raise ValueError("Field config for QUERY must include query_id")
-        
+
         elif self.field_type == ReportFieldType.AGGREGATE:
             required_props = ["function", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
                     raise ValueError(f"Field config for AGGREGATE must include {prop}")
-        
+
         elif self.field_type == ReportFieldType.RELATED:
             required_props = ["relation", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
                     raise ValueError(f"Field config for RELATED must include {prop}")
-        
+
         return self
 
 
@@ -334,9 +336,7 @@ class ReportTemplate(UnoObj[ReportTemplateModel], DefaultObjectMixin):
     outputs: List["ReportOutput"] = []
     executions: List["ReportExecution"] = []
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return self.name
@@ -347,10 +347,14 @@ class ReportTemplate(UnoObj[ReportTemplateModel], DefaultObjectMixin):
         # Ensure parameter definitions are valid
         for param_name, param_def in self.parameter_definitions.items():
             if not isinstance(param_def, dict):
-                raise ValueError(f"Parameter definition for {param_name} must be a dictionary")
+                raise ValueError(
+                    f"Parameter definition for {param_name} must be a dictionary"
+                )
             if "type" not in param_def:
-                raise ValueError(f"Parameter definition for {param_name} must include a type")
-        
+                raise ValueError(
+                    f"Parameter definition for {param_name} must include a type"
+                )
+
         return self
 
 
@@ -395,9 +399,7 @@ class ReportTrigger(UnoObj[ReportTriggerModel], DefaultObjectMixin):
     is_active: bool = True
     last_triggered: Optional[datetime] = None
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return f"{self.trigger_type} trigger for {self.report_template_id}"
@@ -417,15 +419,15 @@ class ReportTrigger(UnoObj[ReportTriggerModel], DefaultObjectMixin):
         if self.trigger_type == ReportTriggerType.SCHEDULED:
             if not self.schedule:
                 raise ValueError("Scheduled triggers must include a schedule")
-        
+
         elif self.trigger_type == ReportTriggerType.EVENT:
             if not self.event_type:
                 raise ValueError("Event triggers must include an event_type")
-        
+
         elif self.trigger_type == ReportTriggerType.QUERY:
             if not self.query_id:
                 raise ValueError("Query triggers must include a query_id")
-        
+
         return self
 
 
@@ -466,9 +468,7 @@ class ReportOutput(UnoObj[ReportOutputModel], DefaultObjectMixin):
     is_active: bool = True
     output_executions: List["ReportOutputExecution"] = []
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return f"{self.output_type} output in {self.format} format"
@@ -498,15 +498,17 @@ class ReportOutput(UnoObj[ReportOutputModel], DefaultObjectMixin):
         if self.output_type == ReportOutputType.FILE:
             if "path" not in self.output_config:
                 raise ValueError("File output must include a path in output_config")
-        
+
         elif self.output_type == ReportOutputType.EMAIL:
             if "recipients" not in self.output_config:
-                raise ValueError("Email output must include recipients in output_config")
-        
+                raise ValueError(
+                    "Email output must include recipients in output_config"
+                )
+
         elif self.output_type == ReportOutputType.WEBHOOK:
             if "url" not in self.output_config:
                 raise ValueError("Webhook output must include a URL in output_config")
-        
+
         return self
 
 
@@ -551,9 +553,7 @@ class ReportExecution(UnoObj[ReportExecutionModel], DefaultObjectMixin):
     result_hash: Optional[str] = None
     output_executions: List["ReportOutputExecution"] = []
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return f"Execution of {self.report_template_id} ({self.status})"
@@ -612,9 +612,7 @@ class ReportOutputExecution(UnoObj[ReportOutputExecutionModel], DefaultObjectMix
     output_location: Optional[str] = None
     output_size_bytes: Optional[int] = None
 
-    model_config = ConfigDict(
-        extra="allow"
-    )
+    model_config = ConfigDict(extra="allow")
 
     def __str__(self) -> str:
         return f"Output execution for {self.report_execution_id} ({self.status})"

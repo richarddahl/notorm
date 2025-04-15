@@ -11,11 +11,9 @@ This module extends the enhanced async database engine with:
 from typing import Optional, AsyncIterator, TypeVar, Dict, Any, List, cast
 import logging
 import asyncio
-import time
-import contextlib
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, DisconnectionError
+from sqlalchemy.exc import SQLAlchemyError
 
 from uno.database.config import ConnectionConfig
 from uno.database.engine.enhanced_async import (
@@ -27,7 +25,6 @@ from uno.core.resources import (
     CircuitBreaker,
     ResourceRegistry,
     get_resource_registry,
-    managed_resource,
 )
 from uno.core.async_utils import (
     timeout,
@@ -41,19 +38,19 @@ from uno.core.async_integration import (
 from uno.settings import uno_settings
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     """
     Factory for creating pooled asynchronous database engines.
-    
+
     This factory extends the enhanced async engine factory with:
     - Connection pooling
     - Health checking
     - Circuit breaker pattern
     """
-    
+
     def __init__(
         self,
         resource_registry: Optional[ResourceRegistry] = None,
@@ -61,7 +58,7 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     ):
         """
         Initialize the pooled async engine factory.
-        
+
         Args:
             resource_registry: Optional resource registry
             logger: Optional logger instance
@@ -71,7 +68,7 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
         self._engine_pools: Dict[str, ConnectionPool[AsyncEngine]] = {}
         self._circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._registry_lock = AsyncLock()
-    
+
     async def create_engine_pool(
         self,
         config: ConnectionConfig,
@@ -83,7 +80,7 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     ) -> ConnectionPool[AsyncEngine]:
         """
         Create or get a connection pool for a configuration.
-        
+
         Args:
             config: Connection configuration
             pool_size: Maximum pool size
@@ -91,26 +88,26 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
             max_idle: Maximum idle connections
             ttl: Time-to-live for connections
             validation_interval: Time between validation checks
-            
+
         Returns:
             A connection pool for the configuration
         """
         # Create a key from connection details
         conn_key = f"{config.db_role}@{config.db_host}/{config.db_name}"
-        
+
         # Check if pool already exists
         async with self._registry_lock:
             if conn_key in self._engine_pools:
                 return self._engine_pools[conn_key]
-            
+
             # Create a factory function for the pool
             async def engine_factory() -> AsyncEngine:
                 return self.create_engine(config)
-            
+
             # Create a close function for the pool
             async def engine_close(engine: AsyncEngine) -> None:
                 await engine.dispose()
-            
+
             # Create a validation function for the pool
             async def engine_validate(engine: AsyncEngine) -> bool:
                 try:
@@ -124,7 +121,7 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
                         f"Engine validation failed for {conn_key}: {str(e)}"
                     )
                     return False
-            
+
             # Create the pool
             pool = ConnectionPool(
                 name=f"engine_pool_{conn_key}",
@@ -138,21 +135,18 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
                 validation_interval=validation_interval,
                 logger=self.logger,
             )
-            
+
             # Start the pool
             await pool.start()
-            
+
             # Register the pool with the registry
-            await self.resource_registry.register(
-                f"engine_pool_{conn_key}",
-                pool
-            )
-            
+            await self.resource_registry.register(f"engine_pool_{conn_key}", pool)
+
             # Store in our internal dictionary
             self._engine_pools[conn_key] = pool
-            
+
             return pool
-    
+
     async def get_circuit_breaker(
         self,
         config: ConnectionConfig,
@@ -161,23 +155,23 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     ) -> CircuitBreaker:
         """
         Get a circuit breaker for a configuration.
-        
+
         Args:
             config: Connection configuration
             failure_threshold: Number of failures before opening the circuit
             recovery_timeout: Time in seconds to wait before trying recovery
-            
+
         Returns:
             A circuit breaker for the configuration
         """
         # Create a key from connection details
         conn_key = f"{config.db_role}@{config.db_host}/{config.db_name}"
-        
+
         # Check if circuit breaker already exists
         async with self._registry_lock:
             if conn_key in self._circuit_breakers:
                 return self._circuit_breakers[conn_key]
-            
+
             # Create the circuit breaker
             circuit_breaker = CircuitBreaker(
                 name=f"db_circuit_{conn_key}",
@@ -191,18 +185,17 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
                 ],
                 logger=self.logger,
             )
-            
+
             # Register the circuit breaker with the registry
             await self.resource_registry.register(
-                f"db_circuit_{conn_key}",
-                circuit_breaker
+                f"db_circuit_{conn_key}", circuit_breaker
             )
-            
+
             # Store in our internal dictionary
             self._circuit_breakers[conn_key] = circuit_breaker
-            
+
             return circuit_breaker
-    
+
     @cancellable
     @retry(max_attempts=3, base_delay=1.0, max_delay=10.0)
     async def get_pooled_engine(
@@ -213,15 +206,15 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     ) -> AsyncEngine:
         """
         Get an engine from a connection pool.
-        
+
         Args:
             config: Connection configuration
             pool_size: Maximum pool size
             min_size: Minimum pool size
-            
+
         Returns:
             An engine from the pool
-            
+
         Raises:
             Exception: If engine acquisition fails
         """
@@ -231,13 +224,13 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
             pool_size=pool_size,
             min_size=min_size,
         )
-        
+
         # Get the circuit breaker
         circuit_breaker = await self.get_circuit_breaker(config)
-        
+
         # Use the circuit breaker to get an engine
         return await circuit_breaker(pool.acquire)
-    
+
     async def close(self) -> None:
         """
         Close all engine pools and circuit breakers.
@@ -248,16 +241,16 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
             circuit_breakers = list(self._circuit_breakers.values())
             self._engine_pools = {}
             self._circuit_breakers = {}
-        
+
         # Close all pools
         for pool in pools:
             try:
                 await pool.close()
             except Exception as e:
                 self.logger.warning(f"Error closing engine pool: {str(e)}")
-        
+
         # No need to close circuit breakers as they don't have resources
-        
+
         self.logger.info(
             f"Closed all engine pools ({len(pools)}) and circuit breakers ({len(circuit_breakers)})"
         )
@@ -266,11 +259,11 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
 class PooledAsyncConnectionContext(AsyncConnectionContext):
     """
     Context manager for pooled asynchronous database connections.
-    
+
     This context manager extends the async connection context with
     connection pooling and circuit breaker support.
     """
-    
+
     def __init__(
         self,
         db_role: str,
@@ -289,7 +282,7 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
     ):
         """
         Initialize the pooled async connection context.
-        
+
         Args:
             db_role: Database role
             db_name: Database name
@@ -319,25 +312,25 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
             logger=logger,
             **kwargs,
         )
-        
+
         # Store additional parameters
         self.pool_size = pool_size
         self.min_size = min_size
         self.engine_pool: Optional[ConnectionPool[AsyncEngine]] = None
-    
+
     async def __aenter__(self) -> AsyncConnection:
         """
         Enter the async context, returning a database connection.
-        
+
         Returns:
             A database connection
-            
+
         Raises:
             Exception: If connection acquisition fails
         """
         # Get the engine factory
         engine_factory = cast(PooledAsyncEngineFactory, self.factory)
-        
+
         try:
             # Get the engine pool
             self.engine_pool = await engine_factory.create_engine_pool(
@@ -345,33 +338,33 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
                 pool_size=self.pool_size,
                 min_size=self.min_size,
             )
-            
+
             # Get the circuit breaker
             circuit_breaker = await engine_factory.get_circuit_breaker(self.config)
-            
+
             # Use the circuit breaker to get an engine
-            self.engine = await circuit_breaker(
-                lambda: self.engine_pool.acquire()
-            )
-            
+            self.engine = await circuit_breaker(lambda: self.engine_pool.acquire())
+
             # Create a connection
             self.connection = await self.engine.connect()
-            await self.connection.execution_options(isolation_level=self.isolation_level)
-            
+            await self.connection.execution_options(
+                isolation_level=self.isolation_level
+            )
+
             # Execute callbacks
             engine_factory.execute_callbacks(self.connection)
-            
+
             return self.connection
-            
+
         except Exception as e:
             # Clean up any resources on error
             await self.__aexit__(type(e), e, e.__traceback__)
             raise
-    
+
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """
         Exit the async context, closing the connection and returning the engine to the pool.
-        
+
         Args:
             exc_type: Exception type
             exc_val: Exception value
@@ -385,15 +378,13 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
                 self.logger.warning(f"Error closing connection: {str(e)}")
             finally:
                 self.connection = None
-        
+
         # Return the engine to the pool
         if self.engine is not None and self.engine_pool is not None:
             try:
                 await self.engine_pool.release(self.engine)
             except Exception as e:
-                self.logger.warning(
-                    f"Error returning engine to pool: {str(e)}"
-                )
+                self.logger.warning(f"Error returning engine to pool: {str(e)}")
             finally:
                 self.engine = None
 
@@ -415,12 +406,12 @@ async def pooled_async_connection(
 ) -> AsyncIterator[AsyncConnection]:
     """
     Context manager for pooled asynchronous database connections.
-    
+
     This function provides:
     - Connection pooling
     - Health checking
     - Circuit breaker pattern
-    
+
     Args:
         db_role: Database role
         db_name: Database name
@@ -435,7 +426,7 @@ async def pooled_async_connection(
         min_size: Minimum pool size
         logger: Optional logger instance
         **kwargs: Additional connection parameters
-        
+
     Yields:
         A database connection
     """
@@ -455,7 +446,7 @@ async def pooled_async_connection(
         logger=logger,
         **kwargs,
     )
-    
+
     # Use the connection context
     async with context as connection:
         yield connection

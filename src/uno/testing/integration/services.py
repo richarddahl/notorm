@@ -24,8 +24,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.database.db_manager import DBManager
 from uno.database.engine import AsyncEngine
-from uno.database.repository import Repository
-from uno.dependencies.modern_provider import ServiceProvider
 
 
 T = TypeVar("T")
@@ -377,7 +375,7 @@ class TestEnvironment:
         self.auth_headers = auth_headers or {}
         self.db = DatabaseTestService(session)
         self.api = ApiTestService(client, auth_headers) if client else None
-        self._repositories: Dict[Type[Repository], Repository] = {}
+        self._repositories: Dict[Type, Any] = {}
         self._services: Dict[Any, Any] = {}
     
     def get_repository(self, repo_type: Type[T]) -> T:
@@ -423,8 +421,6 @@ class TestEnvironment:
                     params[name] = kwargs[name]
                 elif param.annotation is AsyncSession:
                     params[name] = self.session
-                elif param.annotation and issubclass(param.annotation, Repository):
-                    params[name] = self.get_repository(param.annotation)
                 elif param.default is not inspect.Parameter.empty:
                     params[name] = param.default
             

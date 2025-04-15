@@ -8,12 +8,12 @@ performance regression testing.
 """
 
 # Property-based testing
-from uno.testing.property_based import (
+from uno.testing.property_based.framework import (
     PropertyTest,
     ModelPropertyTest,
     SQLPropertyTest,
-    UnoStrategy, 
-    ModelStrategy, 
+    UnoStrategy,
+    ModelStrategy,
     SQLStrategy,
     register_custom_strategy,
     forall,
@@ -21,6 +21,8 @@ from uno.testing.property_based import (
     note,
     event,
     stateful_test,
+)
+from uno.testing.property_based import (
     given_model,
     given_sql,
 )
@@ -80,7 +82,6 @@ __all__ = [
     "stateful_test",
     "given_model",
     "given_sql",
-    
     # Integration testing
     "IntegrationTestHarness",
     "TestEnvironment",
@@ -90,20 +91,17 @@ __all__ = [
     "test_database",
     "test_app",
     "test_client",
-    
     # Mock data generation
     "MockDataGenerator",
     "RandomGenerator",
     "RealisticGenerator",
     "SchemaBasedGenerator",
     "ModelDataGenerator",
-    
     # Snapshot testing
     "snapshot_test",
     "compare_snapshot",
     "update_snapshot",
     "SnapshotManager",
-    
     # Performance testing
     "PerformanceTest",
     "benchmark",

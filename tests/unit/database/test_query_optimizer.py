@@ -27,7 +27,7 @@ from uno.database.query_optimizer import (
     optimize_query,
     optimized_query,
 )
-from uno.core.errors.result import Result, Ok, Err
+from uno.core.errors.result import Result, Success, Failure
 
 
 # Test QueryPlan
@@ -478,30 +478,30 @@ async def test_rewrite_query():
     # Test with rewrite_queries disabled
     optimizer.config.rewrite_queries = False
     result = await optimizer.rewrite_query("SELECT * FROM users")
-    assert result.is_err()
+    assert result.is_failure
     
     # Enable rewrite_queries
     optimizer.config.rewrite_queries = True
     
     # Test rewrite_unnecessary_distinct
     result = await optimizer.rewrite_query("SELECT DISTINCT id, name FROM users")
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert rewrite.rewrite_type == "remove_unnecessary_distinct"
     assert rewrite.rewritten_query == "SELECT id, name FROM users"
     
     # Test rewrite_count_star
     result = await optimizer.rewrite_query("SELECT COUNT(*) FROM users")
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert rewrite.rewrite_type == "optimize_count"
     assert rewrite.rewritten_query == "SELECT COUNT(1) FROM users"
     
     # Test rewrite_or_to_union (requires AGGRESSIVE mode)
     optimizer.config.optimization_level = OptimizationLevel.AGGRESSIVE
     result = await optimizer.rewrite_query("SELECT * FROM users WHERE email = 'test@example.com' OR status = 'active'")
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert rewrite.rewrite_type == "or_to_union"
     assert "UNION ALL" in rewrite.rewritten_query
     
@@ -509,14 +509,14 @@ async def test_rewrite_query():
     values = ", ".join([f"'{i}'" for i in range(150)])
     query = f"SELECT * FROM users WHERE id IN ({values})"
     result = await optimizer.rewrite_query(query)
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert rewrite.rewrite_type == "optimize_large_in"
     assert "WITH temp_in_values" in rewrite.rewritten_query
     
     # Test no applicable rewrites
     result = await optimizer.rewrite_query("SELECT * FROM users LIMIT 10")
-    assert result.is_err()
+    assert result.is_failure
 
 
 # Test execute_optimized_query
@@ -853,7 +853,7 @@ async def test_optimize_query_helper():
     
     # Mock rewrite_query to always succeed
     with patch("uno.database.query_optimizer.QueryOptimizer.rewrite_query") as mock_rewrite:
-        mock_rewrite.return_value = Ok(QueryRewrite(
+        mock_rewrite.return_value = Success(QueryRewrite(
             original_query="SELECT * FROM users",
             rewritten_query="SELECT * FROM users LIMIT 100",
             rewrite_type="add_limit",
@@ -870,7 +870,7 @@ async def test_optimize_query_helper():
         assert optimized == "SELECT * FROM users LIMIT 100"
         
         # Mock rewrite_query to fail
-        mock_rewrite.return_value = Err("No applicable rewrites")
+        mock_rewrite.return_value = Failure("No applicable rewrites")
         
         # Call optimize_query
         optimized, recommendations = await optimize_query(

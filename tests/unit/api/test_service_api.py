@@ -8,7 +8,7 @@ application services to HTTP endpoints.
 import asyncio
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from unittest.mock import MagicMock, AsyncMock
 
@@ -20,28 +20,38 @@ from pydantic import BaseModel
 from uno.domain.model import Entity, AggregateRoot
 from uno.domain.cqrs import CommandResult, QueryResult, CommandStatus, QueryStatus
 from uno.domain.application_services import (
-    ApplicationService, EntityService, AggregateService,
-    ServiceContext, ServiceRegistry
+    ApplicationService,
+    EntityService,
+    AggregateService,
+    ServiceContext,
+    ServiceRegistry,
 )
 from uno.api.service_api import (
-    EntityApi, AggregateApi, ServiceApiRegistry, 
-    create_dto_for_entity, create_response_model_for_entity,
-    ContextProvider, get_context
+    EntityApi,
+    AggregateApi,
+    ServiceApiRegistry,
+    create_dto_for_entity,
+    create_response_model_for_entity,
+    ContextProvider,
+    get_context,
 )
-from uno.domain.exceptions import ValidationError, AuthorizationError
+from uno.core.errors.base import ValidationError, AuthorizationError
 
 
 # Test domain model
 
+
 @dataclass
 class TestEntity(Entity):
     """Test entity for API tests."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     name: str
     value: int = 0
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert entity to dictionary."""
         return {
@@ -49,19 +59,20 @@ class TestEntity(Entity):
             "name": self.name,
             "value": self.value,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
 @dataclass
 class TestAggregate(AggregateRoot):
     """Test aggregate for API tests."""
-    
+
     name: str
     items: List[Dict[str, Any]] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.now(timezone.utc))
     updated_at: Optional[datetime] = None
-    
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert aggregate to dictionary."""
         return {
@@ -70,29 +81,36 @@ class TestAggregate(AggregateRoot):
             "items": self.items,
             "version": self.version,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 
 # Test DTOs
 
+
 class TestEntityCreateDto(BaseModel):
     """DTO for creating a test entity."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     name: str
     value: int = 0
 
 
 class TestEntityUpdateDto(BaseModel):
     """DTO for updating a test entity."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     name: Optional[str] = None
     value: Optional[int] = None
 
 
 class TestEntityResponseDto(BaseModel):
     """Response DTO for a test entity."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     id: str
     name: str
     value: int
@@ -102,20 +120,26 @@ class TestEntityResponseDto(BaseModel):
 
 class TestAggregateCreateDto(BaseModel):
     """DTO for creating a test aggregate."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     name: str
     items: List[Dict[str, Any]] = []
 
 
 class TestAggregateUpdateDto(BaseModel):
     """DTO for updating a test aggregate."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     name: Optional[str] = None
 
 
 class TestAggregateResponseDto(BaseModel):
     """Response DTO for a test aggregate."""
-    
+
+    __test__ = False  # Prevent pytest from collecting this class as a test
+
     id: str
     name: str
     items: List[Dict[str, Any]]
@@ -126,9 +150,10 @@ class TestAggregateResponseDto(BaseModel):
 
 # Mock services
 
+
 class MockEntityService(EntityService[TestEntity]):
     """Mock entity service for testing."""
-    
+
     def __init__(self):
         """Initialize the mock service."""
         self.create = AsyncMock()
@@ -141,7 +166,7 @@ class MockEntityService(EntityService[TestEntity]):
 
 class MockAggregateService(AggregateService[TestAggregate]):
     """Mock aggregate service for testing."""
-    
+
     def __init__(self):
         """Initialize the mock service."""
         self.create = AsyncMock()
@@ -155,27 +180,31 @@ class MockAggregateService(AggregateService[TestAggregate]):
 
 # Mock context provider
 
+
 class MockContextProvider(ContextProvider):
     """Mock context provider for testing."""
-    
-    def __init__(self, user_id=None, tenant_id=None, is_authenticated=True, permissions=None):
+
+    def __init__(
+        self, user_id=None, tenant_id=None, is_authenticated=True, permissions=None
+    ):
         """Initialize the mock context provider."""
         self.user_id = user_id or "test-user"
         self.tenant_id = tenant_id
         self.is_authenticated = is_authenticated
         self.permissions = permissions or ["entities:read", "entities:write"]
-    
+
     async def __call__(self, request: Request) -> ServiceContext:
         """Create a service context."""
         return ServiceContext(
             user_id=self.user_id,
             tenant_id=self.tenant_id,
             is_authenticated=self.is_authenticated,
-            permissions=self.permissions
+            permissions=self.permissions,
         )
 
 
 # Test fixtures
+
 
 @pytest.fixture
 def mock_entity_service():
@@ -201,7 +230,7 @@ def mock_service_registry(mock_entity_service, mock_aggregate_service):
     registry = MagicMock(spec=ServiceRegistry)
     registry.get.side_effect = lambda name: {
         "TestEntityService": mock_entity_service,
-        "TestAggregateService": mock_aggregate_service
+        "TestAggregateService": mock_aggregate_service,
     }.get(name)
     return registry
 
@@ -235,7 +264,7 @@ def entity_api(mock_entity_service, router):
         tags=["Entities"],
         create_dto=TestEntityCreateDto,
         update_dto=TestEntityUpdateDto,
-        response_model=TestEntityResponseDto
+        response_model=TestEntityResponseDto,
     )
 
 
@@ -250,7 +279,7 @@ def aggregate_api(mock_aggregate_service, router):
         tags=["Aggregates"],
         create_dto=TestAggregateCreateDto,
         update_dto=TestAggregateUpdateDto,
-        response_model=TestAggregateResponseDto
+        response_model=TestAggregateResponseDto,
     )
 
 
@@ -260,40 +289,37 @@ def client(app, router, mock_context_provider):
     # Register the mock context provider
     # We need to patch the module to replace the default context provider
     import uno.api.service_api
+
     original_provider = uno.api.service_api.default_context_provider
     uno.api.service_api.default_context_provider = mock_context_provider
-    
+
     # Include the router
     app.include_router(router)
-    
+
     # Create the test client
     client = TestClient(app)
-    
+
     # Yield the client
     yield client
-    
+
     # Restore the original context provider
     uno.api.service_api.default_context_provider = original_provider
 
 
 # Entity API tests
 
+
 def test_entity_api_create(entity_api, mock_entity_service, client):
     """Test creating an entity through the API."""
     # Mock the service response
     entity = TestEntity(id="test-1", name="Test Entity", value=42)
     mock_entity_service.create.return_value = CommandResult.success(
-        command_id="cmd-1",
-        command_type="CreateEntityCommand",
-        output=entity
+        command_id="cmd-1", command_type="CreateEntityCommand", output=entity
     )
-    
+
     # Make the request
-    response = client.post(
-        "/entities",
-        json={"name": "Test Entity", "value": 42}
-    )
-    
+    response = client.post("/entities", json={"name": "Test Entity", "value": 42})
+
     # Check the response
     assert response.status_code == 200
     assert response.json() == {
@@ -301,9 +327,9 @@ def test_entity_api_create(entity_api, mock_entity_service, client):
         "name": "Test Entity",
         "value": 42,
         "created_at": entity.created_at.isoformat(),
-        "updated_at": None
+        "updated_at": None,
     }
-    
+
     # Check that the service was called
     mock_entity_service.create.assert_called_once()
     args, kwargs = mock_entity_service.create.call_args
@@ -316,14 +342,12 @@ def test_entity_api_get_by_id(entity_api, mock_entity_service, client):
     # Mock the service response
     entity = TestEntity(id="test-1", name="Test Entity", value=42)
     mock_entity_service.get_by_id.return_value = QueryResult.success(
-        query_id="query-1",
-        query_type="EntityByIdQuery",
-        output=entity
+        query_id="query-1", query_type="EntityByIdQuery", output=entity
     )
-    
+
     # Make the request
     response = client.get("/entities/test-1")
-    
+
     # Check the response
     assert response.status_code == 200
     assert response.json() == {
@@ -331,9 +355,9 @@ def test_entity_api_get_by_id(entity_api, mock_entity_service, client):
         "name": "Test Entity",
         "value": 42,
         "created_at": entity.created_at.isoformat(),
-        "updated_at": None
+        "updated_at": None,
     }
-    
+
     # Check that the service was called
     mock_entity_service.get_by_id.assert_called_once()
     args, kwargs = mock_entity_service.get_by_id.call_args
@@ -345,20 +369,18 @@ def test_entity_api_get_by_id_not_found(entity_api, mock_entity_service, client)
     """Test getting a non-existent entity by ID."""
     # Mock the service response
     mock_entity_service.get_by_id.return_value = QueryResult.success(
-        query_id="query-1",
-        query_type="EntityByIdQuery",
-        output=None
+        query_id="query-1", query_type="EntityByIdQuery", output=None
     )
-    
+
     # Make the request
     response = client.get("/entities/nonexistent")
-    
+
     # Check the response
     assert response.status_code == 404
     assert response.json() == {
         "code": "NOT_FOUND",
         "message": "TestEntity not found",
-        "details": {}
+        "details": {},
     }
 
 
@@ -367,17 +389,14 @@ def test_entity_api_update(entity_api, mock_entity_service, client):
     # Mock the service response
     entity = TestEntity(id="test-1", name="Updated Entity", value=43)
     mock_entity_service.update.return_value = CommandResult.success(
-        command_id="cmd-1",
-        command_type="UpdateEntityCommand",
-        output=entity
+        command_id="cmd-1", command_type="UpdateEntityCommand", output=entity
     )
-    
+
     # Make the request
     response = client.put(
-        "/entities/test-1",
-        json={"name": "Updated Entity", "value": 43}
+        "/entities/test-1", json={"name": "Updated Entity", "value": 43}
     )
-    
+
     # Check the response
     assert response.status_code == 200
     assert response.json() == {
@@ -385,9 +404,9 @@ def test_entity_api_update(entity_api, mock_entity_service, client):
         "name": "Updated Entity",
         "value": 43,
         "created_at": entity.created_at.isoformat(),
-        "updated_at": None
+        "updated_at": None,
     }
-    
+
     # Check that the service was called
     mock_entity_service.update.assert_called_once()
     args, kwargs = mock_entity_service.update.call_args
@@ -400,18 +419,16 @@ def test_entity_api_delete(entity_api, mock_entity_service, client):
     """Test deleting an entity through the API."""
     # Mock the service response
     mock_entity_service.delete.return_value = CommandResult.success(
-        command_id="cmd-1",
-        command_type="DeleteEntityCommand",
-        output=True
+        command_id="cmd-1", command_type="DeleteEntityCommand", output=True
     )
-    
+
     # Make the request
     response = client.delete("/entities/test-1")
-    
+
     # Check the response
     assert response.status_code == 204
-    assert response.content == b''
-    
+    assert response.content == b""
+
     # Check that the service was called
     mock_entity_service.delete.assert_called_once()
     args, kwargs = mock_entity_service.delete.call_args
@@ -424,23 +441,21 @@ def test_entity_api_list(entity_api, mock_entity_service, client):
     # Mock the service response
     entities = [
         TestEntity(id="test-1", name="Entity 1", value=10),
-        TestEntity(id="test-2", name="Entity 2", value=20)
+        TestEntity(id="test-2", name="Entity 2", value=20),
     ]
     mock_entity_service.list.return_value = QueryResult.success(
-        query_id="query-1",
-        query_type="EntityListQuery",
-        output=entities
+        query_id="query-1", query_type="EntityListQuery", output=entities
     )
-    
+
     # Make the request
     response = client.get("/entities")
-    
+
     # Check the response
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert response.json()[0]["id"] == "test-1"
     assert response.json()[1]["id"] == "test-2"
-    
+
     # Check that the service was called
     mock_entity_service.list.assert_called_once()
     args, kwargs = mock_entity_service.list.call_args
@@ -449,22 +464,18 @@ def test_entity_api_list(entity_api, mock_entity_service, client):
 
 # Aggregate API tests
 
+
 def test_aggregate_api_create(aggregate_api, mock_aggregate_service, client):
     """Test creating an aggregate through the API."""
     # Mock the service response
     aggregate = TestAggregate(id="agg-1", name="Test Aggregate")
     mock_aggregate_service.create.return_value = CommandResult.success(
-        command_id="cmd-1",
-        command_type="CreateAggregateCommand",
-        output=aggregate
+        command_id="cmd-1", command_type="CreateAggregateCommand", output=aggregate
     )
-    
+
     # Make the request
-    response = client.post(
-        "/aggregates",
-        json={"name": "Test Aggregate", "items": []}
-    )
-    
+    response = client.post("/aggregates", json={"name": "Test Aggregate", "items": []})
+
     # Check the response
     assert response.status_code == 200
     assert response.json() == {
@@ -473,9 +484,9 @@ def test_aggregate_api_create(aggregate_api, mock_aggregate_service, client):
         "items": [],
         "version": 1,  # Default version for new aggregates
         "created_at": aggregate.created_at.isoformat(),
-        "updated_at": None
+        "updated_at": None,
     }
-    
+
     # Check that the service was called
     mock_aggregate_service.create.assert_called_once()
     args, kwargs = mock_aggregate_service.create.call_args
@@ -489,17 +500,14 @@ def test_aggregate_api_update(aggregate_api, mock_aggregate_service, client):
     aggregate = TestAggregate(id="agg-1", name="Updated Aggregate")
     aggregate.version = 2  # Increment version after update
     mock_aggregate_service.update.return_value = CommandResult.success(
-        command_id="cmd-1",
-        command_type="UpdateAggregateCommand",
-        output=aggregate
+        command_id="cmd-1", command_type="UpdateAggregateCommand", output=aggregate
     )
-    
+
     # Make the request with version parameter
     response = client.put(
-        "/aggregates/agg-1?version=1",
-        json={"name": "Updated Aggregate"}
+        "/aggregates/agg-1?version=1", json={"name": "Updated Aggregate"}
     )
-    
+
     # Check the response
     assert response.status_code == 200
     assert response.json() == {
@@ -508,9 +516,9 @@ def test_aggregate_api_update(aggregate_api, mock_aggregate_service, client):
         "items": [],
         "version": 2,
         "created_at": aggregate.created_at.isoformat(),
-        "updated_at": None
+        "updated_at": None,
     }
-    
+
     # Check that the service was called
     mock_aggregate_service.update.assert_called_once()
     args, kwargs = mock_aggregate_service.update.call_args
@@ -522,23 +530,21 @@ def test_aggregate_api_update(aggregate_api, mock_aggregate_service, client):
 
 # Error handling tests
 
+
 def test_api_validation_error(entity_api, mock_entity_service, client):
     """Test handling of validation errors."""
     # Mock the service to raise a validation error
     mock_entity_service.create.side_effect = ValidationError("Name is required")
-    
+
     # Make the request
-    response = client.post(
-        "/entities",
-        json={"value": 42}  # Missing required name
-    )
-    
+    response = client.post("/entities", json={"value": 42})  # Missing required name
+
     # Check the response
     assert response.status_code == 422
     assert response.json() == {
         "code": "VALIDATION_ERROR",
         "message": "Name is required",
-        "details": {}
+        "details": {},
     }
 
 
@@ -546,16 +552,16 @@ def test_api_authorization_error(entity_api, mock_entity_service, client):
     """Test handling of authorization errors."""
     # Mock the service to raise an authorization error
     mock_entity_service.get_by_id.side_effect = AuthorizationError("Permission denied")
-    
+
     # Make the request
     response = client.get("/entities/test-1")
-    
+
     # Check the response
     assert response.status_code == 403
     assert response.json() == {
         "code": "FORBIDDEN",
         "message": "Permission denied",
-        "details": {}
+        "details": {},
     }
 
 
@@ -566,21 +572,21 @@ def test_api_command_error(entity_api, mock_entity_service, client):
         command_id="cmd-1",
         command_type="CreateEntityCommand",
         error="Invalid data",
-        error_code="VALIDATION_ERROR"
+        error_code="VALIDATION_ERROR",
     )
-    
+
     # Make the request
     response = client.post(
         "/entities",
-        json={"name": "Test Entity", "value": -1}  # Negative value not allowed
+        json={"name": "Test Entity", "value": -1},  # Negative value not allowed
     )
-    
+
     # Check the response
     assert response.status_code == 422
     assert response.json() == {
         "code": "VALIDATION_ERROR",
         "message": "Invalid data",
-        "details": {}
+        "details": {},
     }
 
 
@@ -591,24 +597,27 @@ def test_api_query_error(entity_api, mock_entity_service, client):
         query_id="query-1",
         query_type="EntityByIdQuery",
         error="Entity not found",
-        error_code="ENTITY_NOT_FOUND"
+        error_code="ENTITY_NOT_FOUND",
     )
-    
+
     # Make the request
     response = client.get("/entities/nonexistent")
-    
+
     # Check the response
     assert response.status_code == 404
     assert response.json() == {
         "code": "NOT_FOUND",
         "message": "Entity not found",
-        "details": {}
+        "details": {},
     }
 
 
 # Service API registry tests
 
-def test_service_api_registry_register_entity_api(api_registry, mock_service_registry, router):
+
+def test_service_api_registry_register_entity_api(
+    api_registry, mock_service_registry, router
+):
     """Test registering an entity API with the service API registry."""
     # Register an entity API
     api = api_registry.register_entity_api(
@@ -618,21 +627,23 @@ def test_service_api_registry_register_entity_api(api_registry, mock_service_reg
         service_name="TestEntityService",
         create_dto=TestEntityCreateDto,
         update_dto=TestEntityUpdateDto,
-        response_model=TestEntityResponseDto
+        response_model=TestEntityResponseDto,
     )
-    
+
     # Check that the API was created
     assert api is not None
     assert isinstance(api, EntityApi)
     assert api.entity_type == TestEntity
     assert api.prefix == "/entities"
     assert api.tags == ["Entities"]
-    
+
     # Check that the service was retrieved from the registry
     mock_service_registry.get.assert_called_with("TestEntityService")
 
 
-def test_service_api_registry_register_aggregate_api(api_registry, mock_service_registry, router):
+def test_service_api_registry_register_aggregate_api(
+    api_registry, mock_service_registry, router
+):
     """Test registering an aggregate API with the service API registry."""
     # Register an aggregate API
     api = api_registry.register_aggregate_api(
@@ -642,16 +653,16 @@ def test_service_api_registry_register_aggregate_api(api_registry, mock_service_
         service_name="TestAggregateService",
         create_dto=TestAggregateCreateDto,
         update_dto=TestAggregateUpdateDto,
-        response_model=TestAggregateResponseDto
+        response_model=TestAggregateResponseDto,
     )
-    
+
     # Check that the API was created
     assert api is not None
     assert isinstance(api, AggregateApi)
     assert api.entity_type == TestAggregate
     assert api.prefix == "/aggregates"
     assert api.tags == ["Aggregates"]
-    
+
     # Check that the service was retrieved from the registry
     mock_service_registry.get.assert_called_with("TestAggregateService")
 
@@ -663,21 +674,22 @@ def test_service_api_registry_get_api(api_registry):
         entity_type=TestEntity,
         prefix="/entities",
         tags=["Entities"],
-        service_name="TestEntityService"
+        service_name="TestEntityService",
     )
-    
+
     # Get the API by name
     retrieved_api = api_registry.get_api("TestEntityApi")
-    
+
     # Check that the API was retrieved
     assert retrieved_api is api
-    
+
     # Check that getting a non-existent API raises an error
     with pytest.raises(KeyError):
         api_registry.get_api("NonexistentApi")
 
 
 # DTO creation utility tests
+
 
 def test_create_dto_for_entity():
     """Test creating a DTO for an entity."""
@@ -686,24 +698,24 @@ def test_create_dto_for_entity():
         entity_type=TestEntity,
         name="TestEntityDto",
         exclude=["id", "created_at", "updated_at"],
-        optional=["value"]
+        optional=["value"],
     )
-    
+
     # Check the DTO class
     assert dto_class.__name__ == "TestEntityDto"
-    
+
     # Check the DTO fields
     assert "name" in dto_class.__annotations__
     assert "value" in dto_class.__annotations__
     assert "id" not in dto_class.__annotations__
     assert "created_at" not in dto_class.__annotations__
     assert "updated_at" not in dto_class.__annotations__
-    
+
     # Check that name is required and value is optional
     dto = dto_class(name="Test")
     assert dto.name == "Test"
     assert dto.value is None
-    
+
     # Check that the DTO can be serialized to JSON
     dto_json = dto.model_dump_json()
     data = json.loads(dto_json)
@@ -717,12 +729,12 @@ def test_create_response_model_for_entity():
     response_model = create_response_model_for_entity(
         entity_type=TestEntity,
         name="TestEntityResponse",
-        additional_fields={"extra_field": (str, None)}
+        additional_fields={"extra_field": (str, None)},
     )
-    
+
     # Check the response model class
     assert response_model.__name__ == "TestEntityResponse"
-    
+
     # Check the response model fields
     assert "id" in response_model.__annotations__
     assert "name" in response_model.__annotations__

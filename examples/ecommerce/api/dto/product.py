@@ -40,7 +40,7 @@ class CreateProductRequest(BaseModel):
     inventory_count: int = Field(default=0, ge=0, description="Initial inventory count")
     attributes: Optional[Dict[str, str]] = Field(None, description="Product attributes")
 
-    @validator("price")
+    @field_validator("price")
     def price_must_be_positive(cls, v):
         """Validate that price is positive."""
         if v <= 0:

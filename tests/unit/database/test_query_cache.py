@@ -28,7 +28,7 @@ from uno.database.query_cache import (
     set_default_cache,
     clear_all_caches,
 )
-from uno.core.errors.result import Result, Ok
+from uno.core.errors.result import Result, Success, Failure
 
 
 # Test QueryCacheKey
@@ -195,7 +195,7 @@ async def test_query_cache():
     
     # Initially, the key should not exist
     result = await cache.get(key)
-    assert result.is_err()
+    assert result.is_failure
     assert cache.stats.misses == 1
     
     # Set the value
@@ -205,8 +205,8 @@ async def test_query_cache():
     
     # Get the value
     result = await cache.get(key)
-    assert result.is_ok()
-    assert result.unwrap() == value
+    assert result.is_success
+    assert result.value == value
     assert cache.stats.hits == 1
     
     # Test invalidation
@@ -216,7 +216,7 @@ async def test_query_cache():
     
     # Key should no longer exist
     result = await cache.get(key)
-    assert result.is_err()
+    assert result.is_failure
     assert cache.stats.misses == 2
     
     # Test dependencies
@@ -399,7 +399,7 @@ async def test_redis_backend():
         
         # Test get operation
         result = await cache.get(key)
-        assert result.is_err()  # Simulating miss
+        assert result.is_failure  # Simulating miss
         
         # Verify Redis get was called
         mock_redis.get.assert_awaited_once()
@@ -414,8 +414,8 @@ async def test_redis_backend():
         
         # Get should now hit
         result = await cache.get(key)
-        assert result.is_ok()
-        assert result.unwrap() == value
+        assert result.is_success
+        assert result.value == value
         
         # Test invalidate
         await cache.invalidate(key)

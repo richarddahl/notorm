@@ -288,7 +288,7 @@ def workflow_definitions():
                 }
             )
         ]
-    }
+    )
     
     return workflows
 

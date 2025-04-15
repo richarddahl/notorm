@@ -32,7 +32,7 @@ from uno.database.pg_optimizer_strategies import (
     add_pg_strategies,
     create_pg_optimizer,
 )
-from uno.core.errors.result import Result, Ok, Err
+from uno.core.errors.result import Result, Success, Failure
 
 
 # Test PgIndexRecommendation
@@ -184,8 +184,8 @@ async def test_analyze_table():
     assert "ANALYZE users" in args[0].text
     
     # Verify result
-    assert result.is_ok()
-    assert "message" in result.unwrap()
+    assert result.is_success
+    assert "message" in result.value
     
     # Test with engine instead of session
     session.execute.reset_mock()
@@ -215,8 +215,8 @@ async def test_analyze_table():
     result = await strategies.analyze_table("users")
     
     # Verify error handling
-    assert result.is_err()
-    assert "Error analyzing table" in result.unwrap_err()
+    assert result.is_failure
+    assert "Error analyzing table" in result.error
     
     # Test with missing session and engine
     optimizer.session = None
@@ -224,8 +224,8 @@ async def test_analyze_table():
     result = await strategies.analyze_table("users")
     
     # Verify error
-    assert result.is_err()
-    assert "Either session or engine must be provided" in result.unwrap_err()
+    assert result.is_failure
+    assert "Either session or engine must be provided" in result.error
 
 
 # Test get_table_statistics
@@ -292,8 +292,8 @@ async def test_get_table_statistics():
     result = await strategies.get_table_statistics("users")
     
     # Verify
-    assert result.is_ok()
-    stats = result.unwrap()
+    assert result.is_success
+    stats = result.value
     assert stats["table_name"] == "users"
     assert stats["row_estimate"] == 1000
     assert "columns" in stats
@@ -306,16 +306,16 @@ async def test_get_table_statistics():
     result = await strategies.get_table_statistics("nonexistent")
     
     # Verify error
-    assert result.is_err()
-    assert "not found" in result.unwrap_err()
+    assert result.is_failure
+    assert "not found" in result.error
     
     # Test error handling
     session.execute.side_effect = Exception("Test error")
     result = await strategies.get_table_statistics("users")
     
     # Verify error handling
-    assert result.is_err()
-    assert "Error getting statistics" in result.unwrap_err()
+    assert result.is_failure
+    assert "Error getting statistics" in result.error
 
 
 # Test recommend_table_maintenance
@@ -330,7 +330,7 @@ async def test_recommend_table_maintenance():
     strategies = PgOptimizationStrategies(optimizer)
     
     # Mock get_table_statistics
-    stats_result = Ok({
+    stats_result = Success({
         "table_name": "users",
         "row_estimate": 1000,
         "page_count": 10,
@@ -358,8 +358,8 @@ async def test_recommend_table_maintenance():
     result = await strategies.recommend_table_maintenance("users")
     
     # Verify
-    assert result.is_ok()
-    recommendations = result.unwrap()
+    assert result.is_success
+    recommendations = result.value
     assert "table_name" in recommendations
     assert "statistics" in recommendations
     assert "recommendations" in recommendations
@@ -372,12 +372,12 @@ async def test_recommend_table_maintenance():
     assert "CLUSTER" in rec_types
     
     # Test error handling
-    strategies.get_table_statistics = AsyncMock(return_value=Err("Stats error"))
+    strategies.get_table_statistics = AsyncMock(return_value=Failure("Stats error"))
     result = await strategies.recommend_table_maintenance("users")
     
     # Verify error is passed through
-    assert result.is_err()
-    assert "Stats error" in result.unwrap_err()
+    assert result.is_failure
+    assert "Stats error" in result.error
 
 
 # Test recommend_covering_index
@@ -623,8 +623,8 @@ async def test_rewrite_for_pg_features():
     result = await strategies.rewrite_for_pg_features(query)
     
     # Verify
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert "WITH" in rewrite.rewritten_query
     assert rewrite.rewrite_type == "cte_optimization"
     
@@ -636,13 +636,13 @@ async def test_rewrite_for_pg_features():
     """
     
     # Mock _rewrite_cte to return error so we hit the next rewrite
-    strategies._rewrite_cte = AsyncMock(return_value=Err("No CTE rewrite"))
+    strategies._rewrite_cte = AsyncMock(return_value=Failure("No CTE rewrite"))
     
     result = await strategies.rewrite_for_pg_features(query)
     
     # Verify
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert "LATERAL" in rewrite.rewritten_query
     assert rewrite.rewrite_type == "lateral_join_optimization"
     
@@ -653,14 +653,14 @@ async def test_rewrite_for_pg_features():
     """
     
     # Mock previous rewrites to return error
-    strategies._rewrite_cte = AsyncMock(return_value=Err("No CTE rewrite"))
-    strategies._rewrite_to_lateral = AsyncMock(return_value=Err("No LATERAL rewrite"))
+    strategies._rewrite_cte = AsyncMock(return_value=Failure("No CTE rewrite"))
+    strategies._rewrite_to_lateral = AsyncMock(return_value=Failure("No LATERAL rewrite"))
     
     result = await strategies.rewrite_for_pg_features(query)
     
     # Verify
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert "data -> 'name'" in rewrite.rewritten_query
     assert "data ->> 'email'" in rewrite.rewritten_query
     assert rewrite.rewrite_type == "json_function_optimization"
@@ -674,15 +674,15 @@ async def test_rewrite_for_pg_features():
     """
     
     # Mock previous rewrites to return error
-    strategies._rewrite_cte = AsyncMock(return_value=Err("No CTE rewrite"))
-    strategies._rewrite_to_lateral = AsyncMock(return_value=Err("No LATERAL rewrite"))
-    strategies._rewrite_json_functions = AsyncMock(return_value=Err("No JSON rewrite"))
+    strategies._rewrite_cte = AsyncMock(return_value=Failure("No CTE rewrite"))
+    strategies._rewrite_to_lateral = AsyncMock(return_value=Failure("No LATERAL rewrite"))
+    strategies._rewrite_json_functions = AsyncMock(return_value=Failure("No JSON rewrite"))
     
     result = await strategies.rewrite_for_pg_features(query)
     
     # Verify
-    assert result.is_ok()
-    rewrite = result.unwrap()
+    assert result.is_success
+    rewrite = result.value
     assert "DISTINCT ON" in rewrite.rewritten_query
     assert rewrite.rewrite_type == "distinct_on_optimization"
     
@@ -690,16 +690,16 @@ async def test_rewrite_for_pg_features():
     query = "SELECT * FROM users LIMIT 10"
     
     # Mock all rewrites to return error
-    strategies._rewrite_cte = AsyncMock(return_value=Err("No CTE rewrite"))
-    strategies._rewrite_to_lateral = AsyncMock(return_value=Err("No LATERAL rewrite"))
-    strategies._rewrite_json_functions = AsyncMock(return_value=Err("No JSON rewrite"))
-    strategies._rewrite_to_distinct_on = AsyncMock(return_value=Err("No DISTINCT ON rewrite"))
+    strategies._rewrite_cte = AsyncMock(return_value=Failure("No CTE rewrite"))
+    strategies._rewrite_to_lateral = AsyncMock(return_value=Failure("No LATERAL rewrite"))
+    strategies._rewrite_json_functions = AsyncMock(return_value=Failure("No JSON rewrite"))
+    strategies._rewrite_to_distinct_on = AsyncMock(return_value=Failure("No DISTINCT ON rewrite"))
     
     result = await strategies.rewrite_for_pg_features(query)
     
     # Verify
-    assert result.is_err()
-    assert "No PostgreSQL-specific rewrites applicable" in result.unwrap_err()
+    assert result.is_failure
+    assert "No PostgreSQL-specific rewrites applicable" in result.error
 
 
 # Test PgQueryOptimizer
@@ -734,16 +734,16 @@ async def test_pg_query_optimizer():
                     mock_expression.assert_called_once()
     
     # Test rewrite_query
-    with patch.object(QueryOptimizer, 'rewrite_query', return_value=Err("No standard rewrite")) as mock_rewrite:
-        with patch.object(optimizer.pg_strategies, 'rewrite_for_pg_features', return_value=Ok(MagicMock())) as mock_pg_rewrite:
+    with patch.object(QueryOptimizer, 'rewrite_query', return_value=Failure("No standard rewrite")) as mock_rewrite:
+        with patch.object(optimizer.pg_strategies, 'rewrite_for_pg_features', return_value=Success(MagicMock())) as mock_pg_rewrite:
             result = await optimizer.rewrite_query("SELECT * FROM users")
             
             mock_rewrite.assert_awaited_once()
             mock_pg_rewrite.assert_awaited_once()
-            assert result.is_ok()
+            assert result.is_success
     
     # Test analyze_tables
-    with patch.object(optimizer.pg_strategies, 'analyze_table', side_effect=[Ok({}), Ok({})]) as mock_analyze:
+    with patch.object(optimizer.pg_strategies, 'analyze_table', side_effect=[Success({}), Success({})]) as mock_analyze:
         result = await optimizer.analyze_tables(["users", "orders"])
         
         assert mock_analyze.await_count == 2
@@ -752,7 +752,7 @@ async def test_pg_query_optimizer():
     
     # Test get_maintenance_recommendations
     with patch.object(optimizer.pg_strategies, 'recommend_table_maintenance',
-                     side_effect=[Ok({"recommendations": []}), Err("Error")]) as mock_recommend:
+                     side_effect=[Success({"recommendations": []}), Failure("Error")]) as mock_recommend:
         result = await optimizer.get_maintenance_recommendations(["users", "orders"])
         
         assert mock_recommend.await_count == 2

@@ -514,7 +514,7 @@ def _generate_validator(field_name: str, field_info: Dict[str, Any]) -> List[str
     lines = []
     validator_name = f"validate_{field_name}"
 
-    lines.append("    @validator('" + field_name + "', pre=True)")
+    lines.append("    @field_validator('" + field_name + "', pre=True)")
     lines.append(f"    def {validator_name}(cls, v):")
 
     if field_info.get("min_length") or field_info.get("max_length"):

@@ -31,7 +31,7 @@ from sqlalchemy.sql import Select, Executable
 from sqlalchemy.orm import DeclarativeMeta
 
 from uno.core.async_integration import AsyncCache
-from uno.core.errors.result import Result as OpResult, Ok, Err
+from uno.core.errors.result import Result as OpResult, Success, Failure
 from uno.settings import uno_settings
 
 
@@ -497,7 +497,7 @@ class QueryCache:
         # Check if caching is disabled
         if not self.config.enabled:
             self.stats.record_miss(time.time() - start_time)
-            return Err("Caching is disabled")
+            return Failure(Exception("Caching is disabled"))
         
         # Try to get from in-memory cache first
         cached_result = self._cache.get(key)
@@ -512,7 +512,7 @@ class QueryCache:
                 if self.config.log_misses:
                     self.logger.debug(f"Cache miss (expired): {key}")
                 
-                return Err("Cache entry expired")
+                return Failure(Exception("Cache entry expired"))
             
             # Record cache hit
             duration = time.time() - start_time
@@ -527,7 +527,7 @@ class QueryCache:
             # Update access metrics
             cached_result.update_access()
             
-            return Ok(cached_result.get_value())
+            return Success(cached_result.get_value())
         
         # If using Redis or Hybrid backend, try Redis
         if self.config.backend in (CacheBackend.REDIS, CacheBackend.HYBRID):
@@ -550,7 +550,7 @@ class QueryCache:
                         if self.config.log_misses:
                             self.logger.debug(f"Cache miss (Redis expired): {key}")
                         
-                        return Err("Redis cache entry expired")
+                        return Failure(Exception("Redis cache entry expired"))
                     
                     # Store in memory for Hybrid backend
                     if self.config.backend == CacheBackend.HYBRID:
@@ -569,7 +569,7 @@ class QueryCache:
                     # Update access metrics
                     cached_result.update_access()
                     
-                    return Ok(cached_result.get_value())
+                    return Success(cached_result.get_value())
             
             except Exception as e:
                 self.logger.warning(f"Error accessing Redis cache: {str(e)}")
@@ -581,7 +581,7 @@ class QueryCache:
         if self.config.log_misses:
             self.logger.debug(f"Cache miss: {key}")
         
-        return Err("Cache miss")
+        return Failure(Exception("Cache miss"))
     
     async def set(
         self,

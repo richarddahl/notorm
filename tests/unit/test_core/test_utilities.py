@@ -77,10 +77,10 @@ class TestBooleanConversions:
         assert result["value"] is True
         assert result["type"] == "boolean"
         assert result["element"] == "checkbox"
-        
+
         result = boolean_to_okui(False)
         assert result["value"] is False
-        
+
         assert boolean_to_okui(None) is None
 
 
@@ -102,7 +102,7 @@ class TestDateTimeConversions:
     def test_datetime_to_okui(self):
         """Test converting datetime objects to OKUI format."""
         # Mock the config since it's imported in the function
-        with mock.patch('uno.utilities.uno_settings') as mock_settings:
+        with mock.patch("uno.utilities.uno_settings") as mock_settings:
             mock_settings.LOCALE = "en_US"
             test_datetime = datetime(2023, 4, 15, 14, 30, 0)
             result = datetime_to_okui(test_datetime)
@@ -126,7 +126,7 @@ class TestDecimalConversions:
         assert result["value"] == test_decimal
         assert result["type"] == "decimal"
         assert result["element"] == "imput"
-        
+
         assert decimal_to_okui(None) is None
 
 
@@ -135,20 +135,26 @@ class TestObjectConversions:
 
     def test_obj_to_string(self):
         """Test converting objects to strings using __str__."""
+
         class TestObject:
+            __test__ = False  # Prevent pytest from collecting this class as a test
+
             def __str__(self):
                 return "Test Object"
-        
+
         test_obj = TestObject()
         assert obj_to_string(test_obj) == "Test Object"
         assert obj_to_string(None) is None
 
     def test_obj_to_okui(self):
         """Test converting objects to OKUI format using __str__."""
+
         class TestObject:
+            __test__ = False  # Prevent pytest from collecting this class as a test
+
             def __str__(self):
                 return "Test Object"
-        
+
         test_obj = TestObject()
         assert obj_to_okui(test_obj) == "Test Object"
         assert obj_to_okui(None) is None
@@ -175,11 +181,11 @@ class TestModuleImport:
             f.write(b"def test_func():\n")
             f.write(b"    return 'Test Function'\n")
             module_path = f.name
-        
+
         try:
             # Import the module using a patched version of the function
             module_name = "temp_test_module"
-            
+
             # Mock the importlib functions
             with mock.patch("uno.utilities.importlib") as mock_importlib:
                 # Configure the mocks to return a suitable module
@@ -188,17 +194,19 @@ class TestModuleImport:
                 mock_module.__name__ = module_name
                 mock_module.test_var = "Hello World"
                 mock_module.test_func.return_value = "Test Function"
-                
+
                 mock_importlib.util.spec_from_file_location.return_value = mock_spec
                 mock_importlib.util.module_from_spec.return_value = mock_module
-                
+
                 module = import_from_path(module_name, module_path)
-                
+
                 # Check function calls
-                mock_importlib.util.spec_from_file_location.assert_called_once_with(module_name, module_path)
+                mock_importlib.util.spec_from_file_location.assert_called_once_with(
+                    module_name, module_path
+                )
                 mock_importlib.util.module_from_spec.assert_called_once_with(mock_spec)
                 mock_spec.loader.exec_module.assert_called_once_with(mock_module)
-                
+
                 # Check the returned module
                 assert module.__name__ == module_name
                 assert module.test_var == "Hello World"

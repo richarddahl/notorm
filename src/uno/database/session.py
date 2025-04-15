@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     async_scoped_session,
+    AsyncEngine
 )
 from asyncio import current_task
 
@@ -210,3 +211,23 @@ async def async_session(
     
     async with context as session:
         yield session
+
+
+@contextlib.asynccontextmanager
+async def get_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
+    """
+    Context manager that creates a new AsyncSession from an engine.
+    
+    Args:
+        engine: The AsyncEngine to create a session from
+        
+    Yields:
+        AsyncSession: A new database session
+    """
+    # Create a session
+    async_session = AsyncSession(engine, expire_on_commit=False)
+    
+    try:
+        yield async_session
+    finally:
+        await async_session.close()
