@@ -29,9 +29,11 @@ from uno.dependencies import get_db_session
 router = APIRouter()
 
 @router.get("/items")
-async def list_items(session = Depends(get_db_session)):
-    result = await session.execute("SELECT * FROM items")
-    return result.scalars().all()
+async def list_items(session = Depends(get_db_session)):```
+
+result = await session.execute("SELECT * FROM items")
+return result.scalars().all()
+```
 ```
 
 ### Accessing the Provider Directly
@@ -45,17 +47,23 @@ from uno.dependencies import get_instance, UnoDatabaseProviderProtocol
 db_provider = get_instance(UnoDatabaseProviderProtocol)
 
 # Use with async context manager
-async with db_provider.async_session() as session:
-    # Use SQLAlchemy ORM
-    result = await session.execute("SELECT * FROM items")
-    items = result.scalars().all()
+async with db_provider.async_session() as session:```
+
+# Use SQLAlchemy ORM
+result = await session.execute("SELECT * FROM items")
+items = result.scalars().all()
+```
     
 # Use with sync context manager
-with db_provider.sync_connection() as conn:
-    # Use raw psycopg connection
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT * FROM items")
-        items = cursor.fetchall()
+with db_provider.sync_connection() as conn:```
+
+# Use raw psycopg connection
+with conn.cursor() as cursor:```
+
+cursor.execute("SELECT * FROM items")
+items = cursor.fetchall()
+```
+```
 ```
 
 ### Raw Connections
@@ -65,11 +73,15 @@ For operations that require direct database access:
 ```python
 from uno.dependencies import get_raw_connection
 
-async def execute_complex_query():
-    async with get_raw_connection() as conn:
-        # Use asyncpg features
-        records = await conn.fetch("SELECT * FROM items WHERE id = $1", some_id)
-        return records
+async def execute_complex_query():```
+
+async with get_raw_connection() as conn:```
+
+# Use asyncpg features
+records = await conn.fetch("SELECT * FROM items WHERE id = $1", some_id)
+return records
+```
+```
 ```
 
 ## Connection Types
@@ -104,10 +116,12 @@ The database provider includes a health check method that can be used to verify 
 ```python
 from uno.dependencies import get_instance, UnoDatabaseProviderProtocol
 
-async def check_database_health():
-    db_provider = get_instance(UnoDatabaseProviderProtocol)
-    is_healthy = await db_provider.health_check()
-    return {"database": "up" if is_healthy else "down"}
+async def check_database_health():```
+
+db_provider = get_instance(UnoDatabaseProviderProtocol)
+is_healthy = await db_provider.health_check()
+return {"database": "up" if is_healthy else "down"}
+```
 ```
 
 ## Lifecycle Management
@@ -121,9 +135,11 @@ from uno.dependencies import get_instance, UnoDatabaseProviderProtocol
 app = FastAPI()
 
 @app.on_event("shutdown")
-async def shutdown_event():
-    db_provider = get_instance(UnoDatabaseProviderProtocol)
-    await db_provider.close()
+async def shutdown_event():```
+
+db_provider = get_instance(UnoDatabaseProviderProtocol)
+await db_provider.close()
+```
 ```
 
 ## Advanced Usage
@@ -131,12 +147,16 @@ async def shutdown_event():
 ### Transaction Management
 
 ```python
-async with get_db_session() as session:
-    async with session.begin():
-        # All operations in this block will be in a transaction
-        await session.execute("INSERT INTO items (name) VALUES (:name)", {"name": "New Item"})
-        await session.execute("UPDATE counters SET value = value + 1 WHERE name = 'items'")
-        # Transaction automatically committed if no exceptions, rolled back otherwise
+async with get_db_session() as session:```
+
+async with session.begin():```
+
+# All operations in this block will be in a transaction
+await session.execute("INSERT INTO items (name) VALUES (:name)", {"name": "New Item"})
+await session.execute("UPDATE counters SET value = value + 1 WHERE name = 'items'")
+# Transaction automatically committed if no exceptions, rolled back otherwise
+```
+```
 ```
 
 ### Multiple Databases
@@ -149,10 +169,12 @@ from uno.database.config import ConnectionConfig
 import inject
 
 # Create a new database provider
-analytics_config = ConnectionConfig(
-    db_name="analytics",
-    db_host="analytics.example.com",
-    # other parameters...
+analytics_config = ConnectionConfig(```
+
+db_name="analytics",
+db_host="analytics.example.com",
+# other parameters...
+```
 )
 analytics_db = DatabaseProvider(analytics_config)
 

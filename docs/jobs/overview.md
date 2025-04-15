@@ -23,19 +23,27 @@ The system follows a distributed job processing architecture:
 │ - Job storage         │      │ - Creates jobs on a   │
 │ - Priority management │      │   schedule            │
 │ - Queue operations    │      │ - Manages schedules   │
-└─────────┬─────────────┘      └───────────────────────┘
-          │                                  ▲
-          │                                  │
-          ▼                                  │
+└─────────┬─────────────┘      └───────────────────────┘```
+```
+
+  │                                  ▲
+  │                                  │
+  ▼                                  │
+```
+```
 ┌───────────────────────┐      ┌───────────────────────┐
 │  Worker Pool          │      │  Job Manager          │
 │                       │      │                       │
 │ - Job execution       │◄─────┤ - Dispatches jobs     │
 │ - Scaling             │      │ - Handles lifecycle   │
 │ - Health checks       │      │ - Manages workers     │
-└─────────┬─────────────┘      └───────────┬───────────┘
-          │                                │
-          ▼                                ▼
+└─────────┬─────────────┘      └───────────┬───────────┘```
+```
+
+  │                                │
+  ▼                                ▼
+```
+```
 ┌───────────────────────┐      ┌───────────────────────┐
 │  Job Results          │      │  Monitoring           │
 │                       │      │                       │

@@ -21,14 +21,18 @@ from uno.core.monitoring.health import HealthRegistry, HealthCheck, HealthStatus
 registry = HealthRegistry()
 
 # Define a simple health check
-class DatabaseHealthCheck(HealthCheck):
-    async def check(self) -> HealthStatus:
-        try:
-            # Perform a simple database query
-            await db.execute("SELECT 1")
-            return HealthStatus.healthy("Database connection successful")
-        except Exception as e:
-            return HealthStatus.unhealthy(f"Database connection failed: {str(e)}")
+class DatabaseHealthCheck(HealthCheck):```
+
+async def check(self) -> HealthStatus:```
+
+try:
+    # Perform a simple database query
+    await db.execute("SELECT 1")
+    return HealthStatus.healthy("Database connection successful")
+except Exception as e:
+    return HealthStatus.unhealthy(f"Database connection failed: {str(e)}")
+```
+```
 
 # Register the health check
 registry.register("database", DatabaseHealthCheck())
@@ -70,22 +74,28 @@ Creating custom health checks is straightforward:
 ```python
 from uno.core.monitoring.health import HealthCheck, HealthStatus
 
-class CustomServiceHealthCheck(HealthCheck):
-    def __init__(self, service_client):
-        self.service_client = service_client
-        
-    async def check(self) -> HealthStatus:
-        try:
-            response = await self.service_client.ping()
-            if response.status_code == 200:
-                return HealthStatus.healthy("Service is responding")
-            else:
-                return HealthStatus.degraded(
-                    f"Service returned unexpected status: {response.status_code}",
-                    data={"response": response.json()}
-                )
-        except Exception as e:
-            return HealthStatus.unhealthy(f"Service check failed: {str(e)}")
+class CustomServiceHealthCheck(HealthCheck):```
+
+def __init__(self, service_client):```
+
+self.service_client = service_client
+```
+    
+async def check(self) -> HealthStatus:```
+
+try:
+    response = await self.service_client.ping()
+    if response.status_code == 200:
+        return HealthStatus.healthy("Service is responding")
+    else:
+        return HealthStatus.degraded(
+            f"Service returned unexpected status: {response.status_code}",
+            data={"response": response.json()}
+        )
+except Exception as e:
+    return HealthStatus.unhealthy(f"Service check failed: {str(e)}")
+```
+```
 ```
 
 ## Health Check Registration
@@ -93,8 +103,12 @@ class CustomServiceHealthCheck(HealthCheck):
 Health checks can be registered with tags for organizational purposes:
 
 ```python
-registry.register("payment-service", PaymentServiceHealthCheck(), 
-                  tags=["external", "critical"])
+registry.register("payment-service", PaymentServiceHealthCheck(), ```
+```
+
+          tags=["external", "critical"])
+```
+```
 ```
 
 You can then query health checks by tag:
@@ -107,9 +121,10 @@ critical_checks = registry.get_checks_by_tag("critical")
 When integrated with FastAPI, the health check system exposes endpoints:
 
 - `/health`: Overall application health status
-- `/health/live`: Liveness checks (is the application running?)
-- `/health/ready`: Readiness checks (is the application ready to accept requests?)
-- `/health/detailed`: Detailed health information for all components
+- `/health/details`: Detailed health information for all components
+- `/health/resources`: Health information for system resources
+
+The monitoring dashboard provides a visual interface for health status at `/monitoring/dashboard/health`.
 
 ## Integration with Kubernetes
 
@@ -117,16 +132,20 @@ The health endpoints are designed to work with Kubernetes:
 
 ```yaml
 livenessProbe:
-  httpGet:
-    path: /health/live
-    port: 8000
+  httpGet:```
+
+path: /health/live
+port: 8000
+```
   initialDelaySeconds: 5
   periodSeconds: 10
 
 readinessProbe:
-  httpGet:
-    path: /health/ready
-    port: 8000
+  httpGet:```
+
+path: /health/ready
+port: 8000
+```
   initialDelaySeconds: 5
   periodSeconds: 10
 ```

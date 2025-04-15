@@ -38,18 +38,32 @@ Protocols can be parameterized with type variables to create generic interfaces:
 
 ```python
 @runtime_checkable
-class Repository(Protocol[EntityT, KeyT]):
-    """
-    Protocol for repositories.
-    
-    Type Parameters:
-        EntityT: Type of entity managed by this repository
-        KeyT: Type of entity key/identifier
-    """
-    
-    async def get(self, id: KeyT) -> Optional[EntityT]:
-        """Get an entity by its ID."""
-        ...
+class Repository(Protocol[EntityT, KeyT]):```
+
+"""
+Protocol for repositories.
+``````
+
+```
+```
+
+Type Parameters:```
+
+EntityT: Type of entity managed by this repository
+KeyT: Type of entity key/identifier
+```
+"""
+``````
+
+```
+```
+
+async def get(self, id: KeyT) -> Optional[EntityT]:```
+
+"""Get an entity by its ID."""
+...
+```
+```
 ```
 
 ## Enhanced Protocols
@@ -60,16 +74,30 @@ The database session protocols now use generic type parameters to specify the ty
 
 ```python
 @runtime_checkable
-class DatabaseSessionProtocol(Protocol[StatementT, ResultT_co, ModelT]):
-    """Protocol for database sessions."""
-    
-    async def execute(self, statement: StatementT, *args: Any, **kwargs: Any) -> ResultT_co:
-        """Execute a statement."""
-        ...
-    
-    def add(self, instance: ModelT) -> None:
-        """Add an instance to the session."""
-        ...
+class DatabaseSessionProtocol(Protocol[StatementT, ResultT_co, ModelT]):```
+
+"""Protocol for database sessions."""
+``````
+
+```
+```
+
+async def execute(self, statement: StatementT, *args: Any, **kwargs: Any) -> ResultT_co:```
+
+"""Execute a statement."""
+...
+```
+``````
+
+```
+```
+
+def add(self, instance: ModelT) -> None:```
+
+"""Add an instance to the session."""
+...
+```
+```
 ```
 
 ### Repository Pattern
@@ -78,18 +106,32 @@ The repository pattern has been extended with additional type parameters:
 
 ```python
 @runtime_checkable
-class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):
-    """Protocol for database repositories."""
-    
-    @classmethod
-    async def get(cls, **kwargs: Any) -> Optional[EntityT]:
-        """Get an entity by keyword arguments."""
-        ...
-    
-    @classmethod
-    async def filter(cls, filters: Optional[FilterT] = None) -> List[EntityT]:
-        """Filter entities by criteria."""
-        ...
+class DatabaseRepository(Protocol[EntityT, KeyT, FilterT, DataT, MergeResultT]):```
+
+"""Protocol for database repositories."""
+``````
+
+```
+```
+
+@classmethod
+async def get(cls, **kwargs: Any) -> Optional[EntityT]:```
+
+"""Get an entity by keyword arguments."""
+...
+```
+``````
+
+```
+```
+
+@classmethod
+async def filter(cls, filters: Optional[FilterT] = None) -> List[EntityT]:```
+
+"""Filter entities by criteria."""
+...
+```
+```
 ```
 
 ### Configuration Management
@@ -98,12 +140,20 @@ The configuration provider protocol uses contravariant key types and covariant v
 
 ```python
 @runtime_checkable
-class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):
-    """Protocol for configuration providers."""
-    
-    def get(self, key: KeyT_contra, default: Optional[DefaultT] = None) -> Union[ValueT_co, DefaultT]:
-        """Get a configuration value."""
-        ...
+class ConfigProvider(Protocol[KeyT_contra, ValueT_co, SectionT, DefaultT]):```
+
+"""Protocol for configuration providers."""
+``````
+
+```
+```
+
+def get(self, key: KeyT_contra, default: Optional[DefaultT] = None) -> Union[ValueT_co, DefaultT]:```
+
+"""Get a configuration value."""
+...
+```
+```
 ```
 
 ### Cache Implementations
@@ -112,16 +162,30 @@ Cache protocols now have proper type constraints for keys, values, and TTL:
 
 ```python
 @runtime_checkable
-class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):
-    """Protocol for cache implementations."""
-    
-    async def get(self, key: KeyT) -> Optional[ValueT]:
-        """Get a value from the cache."""
-        ...
-    
-    async def set(self, key: KeyT, value: ValueT, ttl: Optional[TTLT] = None) -> None:
-        """Set a value in the cache."""
-        ...
+class Cache(Protocol[KeyT, ValueT, TTLT, PrefixT]):```
+
+"""Protocol for cache implementations."""
+``````
+
+```
+```
+
+async def get(self, key: KeyT) -> Optional[ValueT]:```
+
+"""Get a value from the cache."""
+...
+```
+``````
+
+```
+```
+
+async def set(self, key: KeyT, value: ValueT, ttl: Optional[TTLT] = None) -> None:```
+
+"""Set a value in the cache."""
+...
+```
+```
 ```
 
 ### Plugin Architecture
@@ -130,16 +194,30 @@ Plugin protocols now have rich type parameters for context, configuration, and e
 
 ```python
 @runtime_checkable
-class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, PluginVersionT]):
-    """Protocol for plugins."""
-    
-    async def initialize(self, context: PluginContextT) -> None:
-        """Initialize the plugin."""
-        ...
-    
-    async def configure(self, config: PluginConfigT) -> None:
-        """Configure the plugin."""
-        ...
+class Plugin(Protocol[PluginContextT, PluginConfigT, PluginEventT, PluginNameT, PluginVersionT]):```
+
+"""Protocol for plugins."""
+``````
+
+```
+```
+
+async def initialize(self, context: PluginContextT) -> None:```
+
+"""Initialize the plugin."""
+...
+```
+``````
+
+```
+```
+
+async def configure(self, config: PluginConfigT) -> None:```
+
+"""Configure the plugin."""
+...
+```
+```
 ```
 
 ### Health Checks
@@ -148,12 +226,20 @@ Health check protocols now use type parameters for status, details, and componen
 
 ```python
 @runtime_checkable
-class HealthCheck(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):
-    """Protocol for health checks."""
-    
-    async def check(self) -> Tuple[HealthStatusT, Optional[HealthDetailsT]]:
-        """Perform the health check."""
-        ...
+class HealthCheck(Protocol[HealthStatusT, HealthDetailsT, HealthComponentT]):```
+
+"""Protocol for health checks."""
+``````
+
+```
+```
+
+async def check(self) -> Tuple[HealthStatusT, Optional[HealthDetailsT]]:```
+
+"""Perform the health check."""
+...
+```
+```
 ```
 
 ## Best Practices
@@ -180,9 +266,11 @@ Always document what each type parameter represents:
 
 ```python
 """
-Type Parameters:
-    EntityT: Type of entity managed by this repository
-    KeyT: Type of entity key/identifier
+Type Parameters:```
+
+EntityT: Type of entity managed by this repository
+KeyT: Type of entity key/identifier
+```
 """
 ```
 
@@ -201,9 +289,11 @@ ConfigDictT = Dict[str, ConfigValueT]
 Combine multiple protocols using union types or inheritance:
 
 ```python
-class AdvancedRepository(Repository[EntityT, KeyT], Cacheable[EntityT, KeyT], Protocol[EntityT, KeyT]):
-    """A repository with caching capabilities."""
-    ...
+class AdvancedRepository(Repository[EntityT, KeyT], Cacheable[EntityT, KeyT], Protocol[EntityT, KeyT]):```
+
+"""A repository with caching capabilities."""
+...
+```
 ```
 
 ## Examples
@@ -211,21 +301,27 @@ class AdvancedRepository(Repository[EntityT, KeyT], Cacheable[EntityT, KeyT], Pr
 ### Example 1: Using Database Repository
 
 ```python
-class UserModel(BaseModel):
-    id: UUID
-    name: str
-    email: str
+class UserModel(BaseModel):```
+
+id: UUID
+name: str
+email: str
+```
 
 # Type-safe repository for users
 UserRepo = DatabaseRepository[UserModel, UUID, UserFilter, Dict[str, Any], Dict[str, Any]]
 
 # Implementation
 @implements(UserRepo)
-class PostgresUserRepository:
-    @classmethod
-    async def get(cls, **kwargs: Any) -> Optional[UserModel]:
-        # Implementation details...
-        return user if user else None
+class PostgresUserRepository:```
+
+@classmethod
+async def get(cls, **kwargs: Any) -> Optional[UserModel]:```
+
+# Implementation details...
+return user if user else None
+```
+```
 ```
 
 ### Example 2: Using Configuration Provider
@@ -236,10 +332,14 @@ AppConfig = ConfigProvider[str, Union[str, int, bool, List[str]], str, Any]
 
 # Implementation
 @implements(AppConfig)
-class EnvironmentConfigProvider:
-    def get(self, key: str, default: Optional[Any] = None) -> Union[str, int, bool, List[str], Any]:
-        # Implementation details...
-        return value or default
+class EnvironmentConfigProvider:```
+
+def get(self, key: str, default: Optional[Any] = None) -> Union[str, int, bool, List[str], Any]:```
+
+# Implementation details...
+return value or default
+```
+```
 ```
 
 ## Conclusion

@@ -118,10 +118,10 @@ uno is built on several key design principles:
 
 ## Architecture Documentation
 
-- [Database Layer](../database/overview.md): Understand the database connection management
-- [Models](../models/overview.md): Learn how to define data models
-- [Business Logic](../business_logic/overview.md): Understand how to implement business logic with UnoObj
-- [API Integration](../api/overview.md): Learn how to expose your business logic through API endpoints
+- [Database Layer](/docs/database/overview.md): Understand the database connection management
+- [Models](/docs/models/overview.md): Learn how to define data models
+- [Business Logic](/docs/business_logic/overview.md): Understand how to implement business logic with UnoObj
+- [API Integration](/docs/api/overview.md): Learn how to expose your business logic through API endpoints
 - [Domain-Driven Design](domain_driven_design.md): Implementing DDD with Uno
 - [Event-Driven Architecture](event_driven_architecture.md): Using the event system
 - [CQRS Pattern](cqrs.md): Implementing Command Query Responsibility Segregation

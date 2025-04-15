@@ -39,20 +39,24 @@ from sqlalchemy import Table
 from uno.sql.emitters.vector import VectorSQLEmitter, VectorConfig
 
 # Create vector config
-vector_config = VectorConfig(
-    dimensions=1536,  # OpenAI embedding dimensions
-    index_type="hnsw",  # "hnsw", "ivfflat", or "none"
-    m=16,             # HNSW m parameter
-    ef_construction=64,  # HNSW ef_construction parameter
-    ef_search=40      # HNSW search parameter
+vector_config = VectorConfig(```
+
+dimensions=1536,  # OpenAI embedding dimensions
+index_type="hnsw",  # "hnsw", "ivfflat", or "none"
+m=16,             # HNSW m parameter
+ef_construction=64,  # HNSW ef_construction parameter
+ef_search=40      # HNSW search parameter
+```
 )
 
 # Create vector SQL emitter
-vector_emitter = VectorSQLEmitter(
-    table=your_table,
-    vector_columns=["title", "content"],  # Columns to vectorize
-    exclude_columns=["id"],  # Columns to exclude
-    vector_config=vector_config
+vector_emitter = VectorSQLEmitter(```
+
+table=your_table,
+vector_columns=["title", "content"],  # Columns to vectorize
+exclude_columns=["id"],  # Columns to exclude
+vector_config=vector_config
+```
 )
 
 # Generate and execute SQL
@@ -74,12 +78,14 @@ The system supports multiple index types:
 Hierarchical Navigable Small World (HNSW) indexes are generally faster for search but slower to build:
 
 ```python
-vector_config = VectorConfig(
-    dimensions=1536,
-    index_type="hnsw",
-    m=16,             # Controls index quality/size
-    ef_construction=64,  # Controls build time/quality
-    ef_search=40      # Controls search time/quality
+vector_config = VectorConfig(```
+
+dimensions=1536,
+index_type="hnsw",
+m=16,             # Controls index quality/size
+ef_construction=64,  # Controls build time/quality
+ef_search=40      # Controls search time/quality
+```
 )
 ```
 
@@ -88,11 +94,13 @@ vector_config = VectorConfig(
 IVF-Flat indexes are faster to build but can be slower for search:
 
 ```python
-vector_config = VectorConfig(
-    dimensions=1536,
-    index_type="ivfflat",
-    lists=100,        # Number of clusters
-    probes=10         # Number of clusters to search
+vector_config = VectorConfig(```
+
+dimensions=1536,
+index_type="ivfflat",
+lists=100,        # Number of clusters
+probes=10         # Number of clusters to search
+```
 )
 ```
 
@@ -101,9 +109,11 @@ vector_config = VectorConfig(
 For small tables or testing, you can disable indexing:
 
 ```python
-vector_config = VectorConfig(
-    dimensions=1536,
-    index_type="none"
+vector_config = VectorConfig(```
+
+dimensions=1536,
+index_type="none"
+```
 )
 ```
 
@@ -112,9 +122,11 @@ vector_config = VectorConfig(
 To enable hybrid searches that combine graph traversal with vector similarity, use `VectorIntegrationEmitter`:
 
 ```python
-integration_emitter = VectorIntegrationEmitter(
-    table=your_table,
-    vector_config=vector_config
+integration_emitter = VectorIntegrationEmitter(```
+
+table=your_table,
+vector_config=vector_config
+```
 )
 
 db_manager.execute_from_emitter(integration_emitter)

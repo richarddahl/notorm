@@ -18,53 +18,67 @@ tenant_service = TenantService(session)
 admin_service = TenantAdminService(tenant_service)
 
 # Create a new tenant
-tenant = await admin_service.create_tenant(
-    name="ACME Corporation",
-    slug="acme",
-    domain="acme.example.com",
-    tier="premium",
-    settings={"theme": "dark"}
+tenant = await admin_service.create_tenant(```
+
+name="ACME Corporation",
+slug="acme",
+domain="acme.example.com",
+tier="premium",
+settings={"theme": "dark"}
+```
 )
 
 # Update an existing tenant
-updated_tenant = await admin_service.update_tenant(
-    tenant_id=tenant.id,
-    name="ACME Inc.",
-    domain="acme-inc.example.com"
+updated_tenant = await admin_service.update_tenant(```
+
+tenant_id=tenant.id,
+name="ACME Inc.",
+domain="acme-inc.example.com"
+```
 )
 
 # Delete a tenant (sets status to DELETED)
 deleted = await admin_service.delete_tenant(tenant.id)
 
 # Add a user to a tenant
-association = await admin_service.add_user_to_tenant(
-    tenant_id=tenant.id,
-    user_data={"user_id": "user123", "roles": ["admin", "editor"]}
+association = await admin_service.add_user_to_tenant(```
+
+tenant_id=tenant.id,
+user_data={"user_id": "user123", "roles": ["admin", "editor"]}
+```
 )
 
 # Update a user's roles in a tenant
-updated_association = await admin_service.update_user_tenant(
-    tenant_id=tenant.id,
-    user_id="user123",
-    user_data={"roles": ["admin", "editor", "viewer"]}
+updated_association = await admin_service.update_user_tenant(```
+
+tenant_id=tenant.id,
+user_id="user123",
+user_data={"roles": ["admin", "editor", "viewer"]}
+```
 )
 
 # Remove a user from a tenant
-removed = await admin_service.remove_user_from_tenant(
-    tenant_id=tenant.id,
-    user_id="user123"
+removed = await admin_service.remove_user_from_tenant(```
+
+tenant_id=tenant.id,
+user_id="user123"
+```
 )
 
 # Invite a user to join a tenant
-invitation = await admin_service.invite_user_to_tenant(
-    tenant_id=tenant.id,
-    invite_data={
-        "email": "user@example.com",
-        "roles": ["editor"],
-        "expires_in_days": 7,
-        "message": "Please join our tenant"
-    },
-    invited_by="admin_user_id"
+invitation = await admin_service.invite_user_to_tenant(```
+
+tenant_id=tenant.id,
+invite_data={```
+
+"email": "user@example.com",
+"roles": ["editor"],
+"expires_in_days": 7,
+"message": "Please join our tenant"
+```
+},
+invited_by="admin_user_id"
+```
 )
 ```
 
@@ -113,15 +127,19 @@ The `TenantConfig` and `TenantConfigService` classes provide methods for managin
 from uno.core.multitenancy import TenantConfig, TenantConfigService, DEFAULT_CONFIG
 
 # Create a tenant config manager
-tenant_config = TenantConfig(
-    default_config=DEFAULT_CONFIG,
-    settings_repo=settings_repository
+tenant_config = TenantConfig(```
+
+default_config=DEFAULT_CONFIG,
+settings_repo=settings_repository
+```
 )
 
 # Create a tenant config service
-config_service = TenantConfigService(
-    tenant_config=tenant_config,
-    schema=CONFIG_SCHEMA
+config_service = TenantConfigService(```
+
+tenant_config=tenant_config,
+schema=CONFIG_SCHEMA
+```
 )
 
 # Get the configuration for the current tenant
@@ -131,8 +149,10 @@ config = await config_service.get_config()
 setting = await config_service.get_setting("appearance.theme")
 
 # Set a specific setting
-updated_setting = await config_service.set_setting(
-    "appearance.theme", "dark"
+updated_setting = await config_service.set_setting(```
+
+"appearance.theme", "dark"
+```
 )
 
 # Delete a specific setting (reset to default)
@@ -153,9 +173,11 @@ from uno.core.multitenancy import create_tenant_config_router, DEFAULT_CONFIG, C
 app = FastAPI()
 
 # Add tenant config routes
-tenant_config_router = create_tenant_config_router(
-    default_config=DEFAULT_CONFIG,
-    schema=CONFIG_SCHEMA
+tenant_config_router = create_tenant_config_router(```
+
+default_config=DEFAULT_CONFIG,
+schema=CONFIG_SCHEMA
+```
 )
 app.include_router(tenant_config_router)
 
@@ -192,21 +214,25 @@ The default configuration can be found in the `DEFAULT_CONFIG` constant, and its
 
 ```python
 from fastapi import FastAPI
-from uno.core.multitenancy import (
-    TenantIdentificationMiddleware, TenantService,
-    create_tenant_admin_router, default_tenant_config_router
+from uno.core.multitenancy import (```
+
+TenantIdentificationMiddleware, TenantService,
+create_tenant_admin_router, default_tenant_config_router
+```
 )
 
 app = FastAPI()
 
 # Add tenant identification middleware
-app.add_middleware(
-    TenantIdentificationMiddleware,
-    tenant_service=TenantService(session_factory),
-    header_name="X-Tenant-ID",
-    subdomain_pattern=r"(.+)\.example\.com",
-    path_prefix=True,
-    exclude_paths=["/api/docs", "/api/auth"]
+app.add_middleware(```
+
+TenantIdentificationMiddleware,
+tenant_service=TenantService(session_factory),
+header_name="X-Tenant-ID",
+subdomain_pattern=r"(.+)\.example\.com",
+path_prefix=True,
+exclude_paths=["/api/docs", "/api/auth"]
+```
 )
 
 # Add tenant admin routes
@@ -222,23 +248,37 @@ app.include_router(default_tenant_config_router)
 from uno.core.multitenancy import TenantConfig, DEFAULT_CONFIG, tenant_context
 
 # Create a tenant config manager
-tenant_config = TenantConfig(
-    default_config=DEFAULT_CONFIG,
-    settings_repo=settings_repository
+tenant_config = TenantConfig(```
+
+default_config=DEFAULT_CONFIG,
+settings_repo=settings_repository
+```
 )
 
 # Get configuration in a tenant context
-async with tenant_context("tenant123"):
-    config = await tenant_config.get_tenant_config()
-    
-    # Use configuration values
-    theme = config["appearance"]["theme"]
-    page_size = config["defaults"]["page_size"]
-    
-    # Check if features are enabled
-    if config["features"]["analytics"]:
-        # Provide analytics features
-        pass
+async with tenant_context("tenant123"):```
+
+config = await tenant_config.get_tenant_config()
+``````
+
+```
+```
+
+# Use configuration values
+theme = config["appearance"]["theme"]
+page_size = config["defaults"]["page_size"]
+``````
+
+```
+```
+
+# Check if features are enabled
+if config["features"]["analytics"]:```
+
+# Provide analytics features
+pass
+```
+```
 ```
 
 ## Security Considerations

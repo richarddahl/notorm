@@ -93,36 +93,56 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 from uno.core.docs.extractors import DocExtractor
 
-class CustomExtractor(DocExtractor):
-    """Custom extractor for specialized components."""
+class CustomExtractor(DocExtractor):```
+
+"""Custom extractor for specialized components."""
+``````
+
+```
+```
+
+def extract(self, components: List[Any], config: Any) -> List[Any]:```
+
+"""
+Extract documentation from components.
+``````
+
+```
+```
+
+Args:
+    components: List of components to extract documentation from
+    config: Configuration for extraction
     
-    def extract(self, components: List[Any], config: Any) -> List[Any]:
-        """
-        Extract documentation from components.
-        
-        Args:
-            components: List of components to extract documentation from
-            config: Configuration for extraction
-            
-        Returns:
-            List of extracted documentation objects
-        """
-        result = []
-        
-        for component in components:
-            # Extract information from the component
-            # ...
-            
-            # Create documentation object
-            doc = {
-                "name": component.__name__,
-                "description": "..."
-                # ...
-            }
-            
-            result.append(doc)
-        
-        return result
+Returns:
+    List of extracted documentation objects
+"""
+result = []
+``````
+
+```
+```
+
+for component in components:
+    # Extract information from the component
+    # ...
+    
+    # Create documentation object
+    doc = {
+        "name": component.__name__,
+        "description": "..."
+        # ...
+    }
+    
+    result.append(doc)
+``````
+
+```
+```
+
+return result
+```
+```
 ```
 
 ## Registering Extractors
@@ -150,16 +170,24 @@ generator.generate()
 Extractors parse docstrings to get descriptions and parameter information:
 
 ```python
-def _parse_docstring(self, doc_str: str) -> str:
-    """Parse docstring to extract description."""
-    if not doc_str:
-        return ""
-        
-    # Split by sections and take the first part as description
-    sections = re.split(r'\n\s*\n', doc_str)
-    description = sections[0].strip()
+def _parse_docstring(self, doc_str: str) -> str:```
+
+"""Parse docstring to extract description."""
+if not doc_str:```
+
+return ""
+```
     
-    return description
+# Split by sections and take the first part as description
+sections = re.split(r'\n\s*\n', doc_str)
+description = sections[0].strip()
+``````
+
+```
+```
+
+return description
+```
 ```
 
 ### Type Extraction
@@ -167,19 +195,29 @@ def _parse_docstring(self, doc_str: str) -> str:
 Extractors convert type annotations to string representations:
 
 ```python
-def _type_to_string(self, type_hint: Any) -> str:
-    """Convert a type hint to a string representation."""
-    if hasattr(type_hint, "__origin__"):
-        # Handle generic types like List[str], Dict[str, int], etc.
-        origin = type_hint.__origin__
-        args = type_hint.__args__
-        
-        if origin == list:
-            return f"List[{self._type_to_string(args[0])}]"
-        # ...
-    else:
-        # Handle simple types
-        return getattr(type_hint, "__name__", str(type_hint))
+def _type_to_string(self, type_hint: Any) -> str:```
+
+"""Convert a type hint to a string representation."""
+if hasattr(type_hint, "__origin__"):```
+
+# Handle generic types like List[str], Dict[str, int], etc.
+origin = type_hint.__origin__
+args = type_hint.__args__
+``````
+
+```
+```
+
+if origin == list:
+    return f"List[{self._type_to_string(args[0])}]"
+# ...
+```
+else:```
+
+# Handle simple types
+return getattr(type_hint, "__name__", str(type_hint))
+```
+```
 ```
 
 ### Parameter Extraction
@@ -187,43 +225,75 @@ def _type_to_string(self, type_hint: Any) -> str:
 Extractors analyze function signatures to extract parameter information:
 
 ```python
-def _extract_parameters_from_function(self, func: Any, doc_str: str) -> List[ParameterDoc]:
-    """Extract parameters from a function."""
-    parameters = []
+def _extract_parameters_from_function(self, func: Any, doc_str: str) -> List[ParameterDoc]:```
+
+"""Extract parameters from a function."""
+parameters = []
+``````
+
+```
+```
+
+# Get signature parameters
+try:```
+
+sig = inspect.signature(func)
+```
+except (ValueError, TypeError):```
+
+return parameters
+```
+``````
+
+```
+```
+
+for name, param in sig.parameters.items():```
+
+if name == "self" or name == "cls":
+    continue
     
-    # Get signature parameters
-    try:
-        sig = inspect.signature(func)
-    except (ValueError, TypeError):
-        return parameters
-    
-    for name, param in sig.parameters.items():
-        if name == "self" or name == "cls":
-            continue
-            
-        # Get parameter type
-        param_type = param.annotation
-        if param_type == inspect.Parameter.empty:
-            param_type = "Any"
-        
-        # Get parameter description from docstring
-        description = ""
-        param_pattern = rf":param {name}:\s*([^\n]+)"
-        match = re.search(param_pattern, doc_str)
-        if match:
-            description = match.group(1).strip()
-        
-        # Create parameter doc
-        param_doc = ParameterDoc(
-            name=name,
-            description=description,
-            type=self._type_to_string(param_type),
-            # ...
-        )
-        
-        parameters.append(param_doc)
-    
-    return parameters
+# Get parameter type
+param_type = param.annotation
+if param_type == inspect.Parameter.empty:
+    param_type = "Any"
+``````
+
+```
+```
+
+# Get parameter description from docstring
+description = ""
+param_pattern = rf":param {name}:\s*([^\n]+)"
+match = re.search(param_pattern, doc_str)
+if match:
+    description = match.group(1).strip()
+``````
+
+```
+```
+
+# Create parameter doc
+param_doc = ParameterDoc(
+    name=name,
+    description=description,
+    type=self._type_to_string(param_type),
+    # ...
+)
+``````
+
+```
+```
+
+parameters.append(param_doc)
+```
+``````
+
+```
+```
+
+return parameters
+```
 ```
 
 ## Best Practices
@@ -238,6 +308,6 @@ def _extract_parameters_from_function(self, func: Any, doc_str: str) -> List[Par
 
 ## Next Steps
 
-- Learn how to customize [renderers](renderers.md) to output documentation in different formats
-- Explore the [command-line interface](cli.md) for generating documentation
-- See practical [examples](examples.md) of documentation generation
+- Learn how to customize renderers to output documentation in different formats
+- Explore the command-line interface for generating documentation (`src/scripts/generate_docs.py`)
+- See practical examples of documentation generation in the source code

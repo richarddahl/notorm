@@ -59,13 +59,15 @@ resource_manager = ResourceManager()
 resource_monitor = ResourceMonitor(resource_manager)
 
 # Setup monitoring
-setup_monitoring(
-    app,
-    metrics_registry=metrics_registry,
-    health_registry=health_registry,
-    tracer=tracer,
-    event_logger=event_logger,
-    resource_monitor=resource_monitor
+setup_monitoring(```
+
+app,
+metrics_registry=metrics_registry,
+health_registry=health_registry,
+tracer=tracer,
+event_logger=event_logger,
+resource_monitor=resource_monitor
+```
 )
 ```
 
@@ -78,13 +80,15 @@ The monitoring system can be configured through environment variables, configura
 ```python
 from uno.core.monitoring.config import MonitoringConfig
 
-config = MonitoringConfig(
-    service_name="my-service",
-    environment="production",
-    metrics_enabled=True,
-    tracing_enabled=True,
-    health_checks_enabled=True,
-    resource_monitoring_enabled=True
+config = MonitoringConfig(```
+
+service_name="my-service",
+environment="production",
+metrics_enabled=True,
+tracing_enabled=True,
+health_checks_enabled=True,
+resource_monitoring_enabled=True
+```
 )
 ```
 

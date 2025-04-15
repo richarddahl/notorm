@@ -17,16 +17,18 @@ Encryption is configured through the `EncryptionConfig` class:
 ```python
 from uno.security.config import EncryptionConfig, EncryptionAlgorithm, KeyManagementType
 
-encryption_config = EncryptionConfig(
-    algorithm=EncryptionAlgorithm.AES_GCM,
-    key_management=KeyManagementType.VAULT,
-    key_rotation_days=90,
-    data_at_rest_encryption=True,
-    data_in_transit_encryption=True,
-    field_level_encryption=True,
-    encrypted_fields=["password", "ssn", "credit_card", "api_key"],
-    key_vault_url="https://vault.example.com",
-    key_identifier="main-encryption-key"
+encryption_config = EncryptionConfig(```
+
+algorithm=EncryptionAlgorithm.AES_GCM,
+key_management=KeyManagementType.VAULT,
+key_rotation_days=90,
+data_at_rest_encryption=True,
+data_in_transit_encryption=True,
+field_level_encryption=True,
+encrypted_fields=["password", "ssn", "credit_card", "api_key"],
+key_vault_url="https://vault.example.com",
+key_identifier="main-encryption-key"
+```
 )
 ```
 
@@ -65,15 +67,19 @@ decrypted_data = security_manager.decrypt(encrypted_data)
 print(decrypted_data)  # "sensitive data"
 
 # Encrypt with context
-encrypted_with_context = security_manager.encrypt(
-    "sensitive data", 
-    context={"purpose": "authentication"}
+encrypted_with_context = security_manager.encrypt(```
+
+"sensitive data", 
+context={"purpose": "authentication"}
+```
 )
 
 # Decrypt with the same context
-decrypted_with_context = security_manager.decrypt(
-    encrypted_with_context, 
-    context={"purpose": "authentication"}
+decrypted_with_context = security_manager.decrypt(```
+
+encrypted_with_context, 
+context={"purpose": "authentication"}
+```
 )
 ```
 
@@ -89,11 +95,13 @@ encrypted_ssn = security_manager.encrypt_field("ssn", "123-45-6789")
 decrypted_ssn = security_manager.decrypt_field("ssn", encrypted_ssn)
 
 # Encrypt multiple fields in a dictionary
-user_data = {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "ssn": "123-45-6789",
-    "credit_card": "4111-1111-1111-1111"
+user_data = {```
+
+"name": "John Doe",
+"email": "john@example.com",
+"ssn": "123-45-6789",
+"credit_card": "4111-1111-1111-1111"
+```
 }
 
 from uno.security.encryption import FieldEncryption
@@ -113,26 +121,36 @@ You can also encrypt entire models:
 from dataclasses import dataclass
 
 @dataclass
-class User:
-    name: str
-    email: str
-    ssn: str
-    credit_card: str
-    
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "email": self.email,
-            "ssn": self.ssn,
-            "credit_card": self.credit_card
-        }
+class User:```
+
+name: str
+email: str
+ssn: str
+credit_card: str
+``````
+
+```
+```
+
+def to_dict(self):```
+
+return {
+    "name": self.name,
+    "email": self.email,
+    "ssn": self.ssn,
+    "credit_card": self.credit_card
+}
+```
+```
 
 # Create a user
-user = User(
-    name="John Doe",
-    email="john@example.com",
-    ssn="123-45-6789",
-    credit_card="4111-1111-1111-1111"
+user = User(```
+
+name="John Doe",
+email="john@example.com",
+ssn="123-45-6789",
+credit_card="4111-1111-1111-1111"
+```
 )
 
 # Encrypt the model
@@ -151,10 +169,12 @@ For more control over field encryption, you can use the `EncryptedField` wrapper
 from uno.security.encryption.field import EncryptedField
 
 # Create an encrypted field
-ssn_field = EncryptedField(
-    value="123-45-6789",
-    field_name="ssn",
-    entity_type="User"
+ssn_field = EncryptedField(```
+
+value="123-45-6789",
+field_name="ssn",
+entity_type="User"
+```
 )
 
 # Set the encryption manager
@@ -198,10 +218,12 @@ For production environments, you should use a secure key management system like 
 ```python
 from uno.security.encryption.vault_key_manager import VaultKeyManager
 
-vault_manager = VaultKeyManager(
-    encryption_config,
-    vault_url="https://vault.example.com",
-    token="vault-token"
+vault_manager = VaultKeyManager(```
+
+encryption_config,
+vault_url="https://vault.example.com",
+token="vault-token"
+```
 )
 
 # Get the current key

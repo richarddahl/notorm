@@ -38,25 +38,27 @@ Jobs move through the following states:
 Each job contains:
 
 ```python
-{
-    "id": "uuid-string",                      # Unique job identifier
-    "task": "module.function",                # Task to execute
-    "args": [1, 2, 3],                        # Positional arguments
-    "kwargs": {"param1": "value1"},           # Keyword arguments
-    "queue": "default",                       # Queue name
-    "priority": "normal",                     # Priority level
-    "status": "pending",                      # Current job status
-    "created_at": "2023-04-12T10:00:00Z",     # Creation timestamp
-    "scheduled_for": "2023-04-12T10:05:00Z",  # When to process the job
-    "started_at": null,                       # When processing started
-    "completed_at": null,                     # When processing completed
-    "result": null,                           # Result data (if successful)
-    "error": null,                            # Error information (if failed)
-    "retry_count": 0,                         # Number of retries attempted
-    "max_retries": 3,                         # Maximum retry attempts
-    "retry_delay": 60,                        # Seconds between retries
-    "tags": ["report", "monthly"],            # Optional tags for filtering
-    "metadata": {"user_id": 123}              # Custom metadata
+{```
+
+"id": "uuid-string",                      # Unique job identifier
+"task": "module.function",                # Task to execute
+"args": [1, 2, 3],                        # Positional arguments
+"kwargs": {"param1": "value1"},           # Keyword arguments
+"queue": "default",                       # Queue name
+"priority": "normal",                     # Priority level
+"status": "pending",                      # Current job status
+"created_at": "2023-04-12T10:00:00Z",     # Creation timestamp
+"scheduled_for": "2023-04-12T10:05:00Z",  # When to process the job
+"started_at": null,                       # When processing started
+"completed_at": null,                     # When processing completed
+"result": null,                           # Result data (if successful)
+"error": null,                            # Error information (if failed)
+"retry_count": 0,                         # Number of retries attempted
+"max_retries": 3,                         # Maximum retry attempts
+"retry_delay": 60,                        # Seconds between retries
+"tags": ["report", "monthly"],            # Optional tags for filtering
+"metadata": {"user_id": 123}              # Custom metadata
+```
 }
 ```
 
@@ -80,16 +82,18 @@ The queue supports the following operations:
 Add a new job to the queue:
 
 ```python
-await queue.enqueue(
-    task="reports.generate_monthly_report",
-    args=[123, "monthly"],
-    kwargs={"format": "pdf"},
-    priority="high",
-    scheduled_for=datetime.now() + timedelta(minutes=5),
-    max_retries=3,
-    retry_delay=60,
-    tags=["report", "monthly"],
-    metadata={"requester": "user_123"}
+await queue.enqueue(```
+
+task="reports.generate_monthly_report",
+args=[123, "monthly"],
+kwargs={"format": "pdf"},
+priority="high",
+scheduled_for=datetime.now() + timedelta(minutes=5),
+max_retries=3,
+retry_delay=60,
+tags=["report", "monthly"],
+metadata={"requester": "user_123"}
+```
 )
 ```
 
@@ -114,10 +118,12 @@ await queue.complete(job_id="job123", result={"file_url": "/reports/123.pdf"})
 Mark a job as failed:
 
 ```python
-await queue.fail(
-    job_id="job123",
-    error={"type": "ValueError", "message": "Invalid parameters"},
-    retry=True
+await queue.fail(```
+
+job_id="job123",
+error={"type": "ValueError", "message": "Invalid parameters"},
+retry=True
+```
 )
 ```
 
@@ -142,13 +148,15 @@ job = await queue.get_job(job_id="job123")
 List jobs with filtering:
 
 ```python
-jobs = await queue.list_jobs(
-    status=["pending", "running"],
-    queue="default",
-    priority="high",
-    tags=["report"],
-    limit=20,
-    offset=0
+jobs = await queue.list_jobs(```
+
+status=["pending", "running"],
+queue="default",
+priority="high",
+tags=["report"],
+limit=20,
+offset=0
+```
 )
 ```
 
@@ -159,23 +167,29 @@ The queue provides statistics for monitoring:
 ```python
 stats = await queue.get_statistics()
 """
-{
-    "total_jobs": 1250,
-    "pending_jobs": 45,
-    "running_jobs": 10,
-    "completed_jobs": 1150,
-    "failed_jobs": 45,
-    "retry_jobs": 5,
-    "by_priority": {
-        "critical": 0,
-        "high": 5,
-        "normal": 35,
-        "low": 5
-    },
-    "by_queue": {
-        "default": 30,
-        "reports": 15
-    }
+{```
+
+"total_jobs": 1250,
+"pending_jobs": 45,
+"running_jobs": 10,
+"completed_jobs": 1150,
+"failed_jobs": 45,
+"retry_jobs": 5,
+"by_priority": {```
+
+"critical": 0,
+"high": 5,
+"normal": 35,
+"low": 5
+```
+},
+"by_queue": {```
+
+"default": 30,
+"reports": 15
+```
+}
+```
 }
 """
 ```
@@ -229,9 +243,11 @@ The queue provides tools for management:
 Remove old completed jobs:
 
 ```python
-await queue.prune(
-    status=["completed", "failed"],
-    older_than=datetime.now() - timedelta(days=30)
+await queue.prune(```
+
+status=["completed", "failed"],
+older_than=datetime.now() - timedelta(days=30)
+```
 )
 ```
 
@@ -240,8 +256,10 @@ await queue.prune(
 Requeue stuck jobs:
 
 ```python
-count = await queue.requeue_stuck(
-    older_than=datetime.now() - timedelta(hours=1)
+count = await queue.requeue_stuck(```
+
+older_than=datetime.now() - timedelta(hours=1)
+```
 )
 ```
 
@@ -270,10 +288,12 @@ The queue implements sophisticated error handling:
 Jobs that fail can be automatically retried:
 
 ```python
-await queue.enqueue(
-    task="external_api.make_request",
-    max_retries=3,
-    retry_delay=60
+await queue.enqueue(```
+
+task="external_api.make_request",
+max_retries=3,
+retry_delay=60
+```
 )
 ```
 
@@ -295,9 +315,11 @@ Detailed error information is captured for debugging:
 
 ```python
 job = await queue.get_job(job_id="job123")
-if job["status"] == "failed":
-    error = job["error"]
-    print(f"Error type: {error['type']}")
-    print(f"Error message: {error['message']}")
-    print(f"Error traceback: {error['traceback']}")
+if job["status"] == "failed":```
+
+error = job["error"]
+print(f"Error type: {error['type']}")
+print(f"Error message: {error['message']}")
+print(f"Error traceback: {error['traceback']}")
+```
 ```

@@ -32,12 +32,16 @@ failure_result = failure(error)  # Helper function
 ```python
 result = some_operation()
 
-if result.is_success:
-    value = result.value
-    print(f"Operation succeeded with value: {value}")
-else:
-    error = result.error
-    print(f"Operation failed with error: {error}")
+if result.is_success:```
+
+value = result.value
+print(f"Operation succeeded with value: {value}")
+```
+else:```
+
+error = result.error
+print(f"Operation failed with error: {error}")
+```
 ```
 
 ### Transforming Results
@@ -108,17 +112,25 @@ result_dict = result.to_dict()
 from uno.core.errors import from_exception
 
 # Original function that uses exceptions
-def divide(a, b):
-    if b == 0:
-        raise ValueError("Division by zero")
-    return a / b
+def divide(a, b):```
+
+if b == 0:```
+
+raise ValueError("Division by zero")
+```
+return a / b
+```
 
 # Converted function that returns a Result
 @from_exception
-def safe_divide(a, b):
-    if b == 0:
-        raise ValueError("Division by zero")
-    return a / b
+def safe_divide(a, b):```
+
+if b == 0:```
+
+raise ValueError("Division by zero")
+```
+return a / b
+```
 
 # Usage
 result = safe_divide(10, 2)  # Success(5.0)
@@ -131,20 +143,28 @@ result = safe_divide(10, 0)  # Failure(ValueError("Division by zero"))
 from uno.core.errors import from_awaitable
 import asyncio
 
-async def fetch_data(url):
-    # Some async operation that might fail
-    if "invalid" in url:
-        raise ValueError("Invalid URL")
-    return {"data": "some data"}
+async def fetch_data(url):```
 
-async def safe_fetch_data(url):
-    # Convert awaitable to Result
-    return await from_awaitable(fetch_data(url))
+# Some async operation that might fail
+if "invalid" in url:```
+
+raise ValueError("Invalid URL")
+```
+return {"data": "some data"}
+```
+
+async def safe_fetch_data(url):```
+
+# Convert awaitable to Result
+return await from_awaitable(fetch_data(url))
+```
 
 # Usage
-async def main():
-    result = await safe_fetch_data("https://example.com")  # Success({"data": "some data"})
-    result = await safe_fetch_data("https://invalid.com")  # Failure(ValueError("Invalid URL"))
+async def main():```
+
+result = await safe_fetch_data("https://example.com")  # Success({"data": "some data"})
+result = await safe_fetch_data("https://invalid.com")  # Failure(ValueError("Invalid URL"))
+```
 ```
 
 ## Combining Multiple Results
@@ -169,18 +189,22 @@ combined = combine(results)  # Failure(error)
 from uno.core.errors import combine_dict
 
 # All success
-results = {
-    "a": Success(1),
-    "b": Success(2),
-    "c": Success(3)
+results = {```
+
+"a": Success(1),
+"b": Success(2),
+"c": Success(3)
+```
 }
 combined = combine_dict(results)  # Success({"a": 1, "b": 2, "c": 3})
 
 # With failure
-results = {
-    "a": Success(1),
-    "b": Failure(error),
-    "c": Success(3)
+results = {```
+
+"a": Success(1),
+"b": Failure(error),
+"c": Success(3)
+```
 }
 combined = combine_dict(results)  # Failure(error)
 ```

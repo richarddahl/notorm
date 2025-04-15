@@ -32,12 +32,14 @@ report = scanner.generate_report(vulnerabilities)
 print(f"Found {len(vulnerabilities)} vulnerabilities")
 
 # Remediation recommendations
-for vuln in vulnerabilities:
-    print(f"Package: {vuln.package_name} (v{vuln.version})")
-    print(f"Severity: {vuln.severity}")
-    print(f"Description: {vuln.description}")
-    print(f"Recommendation: {vuln.recommendation}")
-    print()
+for vuln in vulnerabilities:```
+
+print(f"Package: {vuln.package_name} (v{vuln.version})")
+print(f"Severity: {vuln.severity}")
+print(f"Description: {vuln.description}")
+print(f"Recommendation: {vuln.recommendation}")
+print()
+```
 ```
 
 ### Static Analysis
@@ -58,13 +60,15 @@ report = analyzer.generate_report(issues)
 print(f"Found {len(issues)} security issues")
 
 # Review issues
-for issue in issues:
-    print(f"File: {issue.file_path}:{issue.line_number}")
-    print(f"Type: {issue.issue_type}")
-    print(f"Severity: {issue.severity}")
-    print(f"Description: {issue.description}")
-    print(f"Recommendation: {issue.recommendation}")
-    print()
+for issue in issues:```
+
+print(f"File: {issue.file_path}:{issue.line_number}")
+print(f"Type: {issue.issue_type}")
+print(f"Severity: {issue.severity}")
+print(f"Description: {issue.description}")
+print(f"Recommendation: {issue.recommendation}")
+print()
+```
 ```
 
 ### Penetration Testing
@@ -75,14 +79,18 @@ The `PenetrationTester` helps identify security weaknesses in applications:
 from uno.security.testing import PenetrationTester
 
 # Create tester instance
-pen_tester = PenetrationTester(
-    target_url="https://myapp.example.com",
-    api_endpoints=["/api/login", "/api/users", "/api/data"]
+pen_tester = PenetrationTester(```
+
+target_url="https://myapp.example.com",
+api_endpoints=["/api/login", "/api/users", "/api/data"]
+```
 )
 
 # Run specific tests
-results = pen_tester.run_tests(
-    categories=["injection", "authentication", "authorization"]
+results = pen_tester.run_tests(```
+
+categories=["injection", "authentication", "authorization"]
+```
 )
 
 # Generate report
@@ -100,10 +108,14 @@ Example GitHub Actions workflow for security testing:
 name: Security Testing
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  push:```
+
+branches: [ main ]
+```
+  pull_request:```
+
+branches: [ main ]
+```
   schedule:
     - cron: '0 0 * * 0'  # Weekly scan
 
@@ -145,34 +157,38 @@ Configure security testing through the `SecurityConfig`:
 ```python
 from uno.security.config import SecurityConfig
 
-config = SecurityConfig(
-    testing={
-        "dependency_scanning": {
-            "enabled": True,
-            "scan_frequency": "daily",
-            "severity_threshold": "medium",  # Fail on medium or higher
-            "ignore_vulnerabilities": [
-                "CVE-2023-12345",  # Specific CVEs to ignore
-            ],
-        },
-        "static_analysis": {
-            "enabled": True,
-            "paths": ["src/", "tests/"],
-            "exclude_paths": ["src/vendor/"],
-            "rules": ["all"],
-            "exclude_rules": ["rule1", "rule2"],
-            "max_issues": 0,  # Zero tolerance policy
-        },
-        "penetration_testing": {
-            "enabled": True,
-            "target_url": "https://staging.example.com",
-            "auth": {
-                "username": "${ENV_USERNAME}",
-                "password": "${ENV_PASSWORD}",
-            },
-            "tests": ["injection", "authentication", "authorization"],
-        }
-    }
+config = SecurityConfig(```
+
+testing={```
+
+"dependency_scanning": {
+    "enabled": True,
+    "scan_frequency": "daily",
+    "severity_threshold": "medium",  # Fail on medium or higher
+    "ignore_vulnerabilities": [
+        "CVE-2023-12345",  # Specific CVEs to ignore
+    ],
+},
+"static_analysis": {
+    "enabled": True,
+    "paths": ["src/", "tests/"],
+    "exclude_paths": ["src/vendor/"],
+    "rules": ["all"],
+    "exclude_rules": ["rule1", "rule2"],
+    "max_issues": 0,  # Zero tolerance policy
+},
+"penetration_testing": {
+    "enabled": True,
+    "target_url": "https://staging.example.com",
+    "auth": {
+        "username": "${ENV_USERNAME}",
+        "password": "${ENV_PASSWORD}",
+    },
+    "tests": ["injection", "authentication", "authorization"],
+}
+```
+}
+```
 )
 ```
 
@@ -249,9 +265,11 @@ results = suite.run_all()
 report = suite.generate_report(results)
 
 # Check if any critical issues were found
-if any(issue.severity == "critical" for issue in results.all_issues()):
-    print("Critical security issues found!")
-    exit(1)
+if any(issue.severity == "critical" for issue in results.all_issues()):```
+
+print("Critical security issues found!")
+exit(1)
+```
 ```
 
 ### Continuous Monitoring
@@ -270,9 +288,11 @@ schedule.every().week.do(monitor.run_static_analysis)
 schedule.every().month.do(monitor.run_penetration_tests)
 
 # Run monitoring loop
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+while True:```
+
+schedule.run_pending()
+time.sleep(1)
+```
 ```
 
 ## Troubleshooting

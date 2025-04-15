@@ -24,12 +24,18 @@ The command side handles state changes in the system through commands and is imp
 A command represents an intent to change the system state. It is immutable and named with an imperative verb.
 
 ```python
-class CreateUserCommand(BaseCommand[User]):
-    """Command to create a new user in the system."""
-    
-    username: str
-    email: str
-    password: str
+class CreateUserCommand(BaseCommand[User]):```
+
+"""Command to create a new user in the system."""
+``````
+
+```
+```
+
+username: str
+email: str
+password: str
+```
 ```
 
 #### Command Handler
@@ -37,29 +43,55 @@ class CreateUserCommand(BaseCommand[User]):
 Command handlers process commands and execute the business logic that changes the system state.
 
 ```python
-class CreateUserCommandHandler(CommandHandler[CreateUserCommand, User]):
-    """Handler for the CreateUserCommand."""
-    
-    def __init__(self, user_repository: UserRepository, password_service: PasswordService):
-        self.user_repository = user_repository
-        self.password_service = password_service
-    
-    async def handle(self, command: CreateUserCommand) -> User:
-        """Handle the command to create a user."""
-        # Business logic to create a user
-        hashed_password = await self.password_service.hash_password(command.password)
-        
-        user = User(
-            username=command.username,
-            email=command.email,
-            password=hashed_password
-        )
-        
-        # Persist the user
-        created_user = await self.user_repository.add(user)
-        
-        # Return the created user
-        return created_user
+class CreateUserCommandHandler(CommandHandler[CreateUserCommand, User]):```
+
+"""Handler for the CreateUserCommand."""
+``````
+
+```
+```
+
+def __init__(self, user_repository: UserRepository, password_service: PasswordService):```
+
+self.user_repository = user_repository
+self.password_service = password_service
+```
+``````
+
+```
+```
+
+async def handle(self, command: CreateUserCommand) -> User:```
+
+"""Handle the command to create a user."""
+# Business logic to create a user
+hashed_password = await self.password_service.hash_password(command.password)
+``````
+
+```
+```
+
+user = User(
+    username=command.username,
+    email=command.email,
+    password=hashed_password
+)
+``````
+
+```
+```
+
+# Persist the user
+created_user = await self.user_repository.add(user)
+``````
+
+```
+```
+
+# Return the created user
+return created_user
+```
+```
 ```
 
 #### Command Result
@@ -72,16 +104,22 @@ from uno.core.cqrs import get_mediator
 
 mediator = get_mediator()
 
-result = await mediator.send(CreateUserCommand(
-    username="johndoe",
-    email="john@example.com",
-    password="secure_password"
+result = await mediator.send(CreateUserCommand(```
+
+username="johndoe",
+email="john@example.com",
+password="secure_password"
+```
 ))
 
-if result.is_success:
-    print(f"User created with ID: {result.value.id}")
-else:
-    print(f"Error: {result.error.message}")
+if result.is_success:```
+
+print(f"User created with ID: {result.value.id}")
+```
+else:```
+
+print(f"Error: {result.error.message}")
+```
 ```
 
 ### Query Side
@@ -93,8 +131,10 @@ The query side handles read operations that don't change the system state.
 A query represents a request for information. It is immutable and typically named with a noun.
 
 ```python
-class GetUserByIdQuery(Query[User]):
-    id: str
+class GetUserByIdQuery(Query[User]):```
+
+id: str
+```
 ```
 
 #### Query Handler
@@ -102,11 +142,15 @@ class GetUserByIdQuery(Query[User]):
 Query handlers process queries and retrieve information without changing the system state.
 
 ```python
-class GetUserByIdQueryHandler(QueryHandler[GetUserByIdQuery, Optional[User]]):
-    async def _handle(self, query: GetUserByIdQuery) -> Optional[User]:
-        # Business logic to get a user
-        repository = self.repository
-        return await repository.get(query.id)
+class GetUserByIdQueryHandler(QueryHandler[GetUserByIdQuery, Optional[User]]):```
+
+async def _handle(self, query: GetUserByIdQuery) -> Optional[User]:```
+
+# Business logic to get a user
+repository = self.repository
+return await repository.get(query.id)
+```
+```
 ```
 
 #### Query Result
@@ -117,13 +161,21 @@ Queries return standardized results that contain the requested information or er
 # Example of a query execution
 result = await dispatcher.dispatch_query(GetUserByIdQuery(id="user123"))
 
-if result.is_success:
-    if result.output:
-        print(f"Found user: {result.output.username}")
-    else:
-        print("User not found")
-else:
-    print(f"Error: {result.error}")
+if result.is_success:```
+
+if result.output:```
+
+print(f"Found user: {result.output.username}")
+```
+else:```
+
+print("User not found")
+```
+```
+else:```
+
+print(f"Error: {result.error}")
+```
 ```
 
 ### Specialized Implementations
@@ -133,21 +185,31 @@ else:
 For performance-critical read operations, the Uno framework provides SQL-based query handlers that bypass the domain model and execute optimized SQL queries directly.
 
 ```python
-class GetUserStatsQueryHandler(SqlQueryHandler[GetUserStatsQuery, UserStats, UserModel]):
-    def build_query(self, query: GetUserStatsQuery) -> Select:
-        return select(
-            self.model_class.id,
-            func.count(self.model_class.posts).label("post_count"),
-            func.avg(self.model_class.posts.likes).label("avg_likes")
-        ).where(self.model_class.id == query.user_id)
-    
-    def map_result(self, result: Any) -> UserStats:
-        row = result.first()
-        return UserStats(
-            user_id=row.id,
-            post_count=row.post_count,
-            average_likes=row.avg_likes
-        )
+class GetUserStatsQueryHandler(SqlQueryHandler[GetUserStatsQuery, UserStats, UserModel]):```
+
+def build_query(self, query: GetUserStatsQuery) -> Select:```
+
+return select(
+    self.model_class.id,
+    func.count(self.model_class.posts).label("post_count"),
+    func.avg(self.model_class.posts.likes).label("avg_likes")
+).where(self.model_class.id == query.user_id)
+```
+``````
+
+```
+```
+
+def map_result(self, result: Any) -> UserStats:```
+
+row = result.first()
+return UserStats(
+    user_id=row.id,
+    post_count=row.post_count,
+    average_likes=row.avg_likes
+)
+```
+```
 ```
 
 #### Pagination Support
@@ -155,25 +217,35 @@ class GetUserStatsQueryHandler(SqlQueryHandler[GetUserStatsQuery, UserStats, Use
 The Uno framework includes built-in support for pagination, making it easy to work with large result sets.
 
 ```python
-class GetUsersQuery(PaginatedQuery[User]):
-    search_term: Optional[str] = None
+class GetUsersQuery(PaginatedQuery[User]):```
 
-class GetUsersQueryHandler(PaginatedEntityQueryHandler[User]):
-    async def _handle(self, query: GetUsersQuery) -> PaginatedResult[User]:
-        # Additional filtering based on search term
-        filters = {}
-        if query.search_term:
-            filters["username"] = {"$like": f"%{query.search_term}%"}
-        
-        # The base class handles pagination automatically
-        return await super()._handle(
-            PaginatedEntityQuery(
-                page=query.page,
-                page_size=query.page_size,
-                filters=filters,
-                order_by=["username"]
-            )
-        )
+search_term: Optional[str] = None
+```
+
+class GetUsersQueryHandler(PaginatedEntityQueryHandler[User]):```
+
+async def _handle(self, query: GetUsersQuery) -> PaginatedResult[User]:```
+
+# Additional filtering based on search term
+filters = {}
+if query.search_term:
+    filters["username"] = {"$like": f"%{query.search_term}%"}
+``````
+
+```
+```
+
+# The base class handles pagination automatically
+return await super()._handle(
+    PaginatedEntityQuery(
+        page=query.page,
+        page_size=query.page_size,
+        filters=filters,
+        order_by=["username"]
+    )
+)
+```
+```
 ```
 
 #### Specialized Command Handlers
@@ -212,15 +284,19 @@ CQRS in the Uno framework integrates seamlessly with other architectural pattern
 ```python
 # Register command handlers
 dispatcher = get_dispatcher()
-dispatcher.register_command_handler(CreateUserCommandHandler(
-    command_type=CreateUserCommand,
-    unit_of_work_factory=lambda: SqlAlchemyUnitOfWork(session_factory)
+dispatcher.register_command_handler(CreateUserCommandHandler(```
+
+command_type=CreateUserCommand,
+unit_of_work_factory=lambda: SqlAlchemyUnitOfWork(session_factory)
+```
 ))
 
 # Register query handlers
-dispatcher.register_query_handler(GetUserByIdQueryHandler(
-    query_type=GetUserByIdQuery,
-    repository=user_repository
+dispatcher.register_query_handler(GetUserByIdQueryHandler(```
+
+query_type=GetUserByIdQuery,
+repository=user_repository
+```
 ))
 ```
 
@@ -228,20 +304,32 @@ dispatcher.register_query_handler(GetUserByIdQueryHandler(
 
 ```python
 # Execute a command
-create_result = await dispatcher.dispatch_command(CreateUserCommand(
-    username="johndoe",
-    email="john@example.com", 
-    password="secure_password"
+create_result = await dispatcher.dispatch_command(CreateUserCommand(```
+
+username="johndoe",
+email="john@example.com", 
+password="secure_password"
+```
 ))
 
-if create_result.is_success:
-    # Execute a query
-    get_result = await dispatcher.dispatch_query(GetUserByIdQuery(
-        id=create_result.output.id
-    ))
-    
-    if get_result.is_success:
-        print(f"Created and retrieved user: {get_result.output.username}")
+if create_result.is_success:```
+
+# Execute a query
+get_result = await dispatcher.dispatch_query(GetUserByIdQuery(```
+
+id=create_result.output.id
+```
+))
+``````
+
+```
+```
+
+if get_result.is_success:```
+
+print(f"Created and retrieved user: {get_result.output.username}")
+```
+```
 ```
 
 ## Best Practices

@@ -38,8 +38,10 @@ Collects and aggregates metrics from the query optimizer over time.
 
 ```python
 # Create collector with metrics manager integration
-metrics_collector = OptimizerMetricsCollector(
-    metrics_manager=metrics_manager
+metrics_collector = OptimizerMetricsCollector(```
+
+metrics_manager=metrics_manager
+```
 )
 
 # Collect metrics
@@ -47,9 +49,11 @@ snapshot = metrics_collector.collect_metrics(optimizer)
 
 # Get historical snapshots
 all_snapshots = metrics_collector.get_snapshots()
-recent_snapshots = metrics_collector.get_snapshots(
-    start_time=time.time() - 3600,  # Last hour
-    end_time=time.time()
+recent_snapshots = metrics_collector.get_snapshots(```
+
+start_time=time.time() - 3600,  # Last hour
+end_time=time.time()
+```
 )
 
 # Generate a report
@@ -62,10 +66,12 @@ Middleware for collecting query optimizer metrics in web applications.
 
 ```python
 # Create middleware for FastAPI
-app.add_middleware(
-    OptimizerMetricsMiddleware,
-    metrics_collector=metrics_collector,
-    optimizer_factory=get_optimizer
+app.add_middleware(```
+
+OptimizerMetricsMiddleware,
+metrics_collector=metrics_collector,
+optimizer_factory=get_optimizer
+```
 )
 ```
 
@@ -75,21 +81,39 @@ app.add_middleware(
 
 ```python
 # Create session and optimizer
-async with enhanced_pool_session() as session:
-    optimizer = QueryOptimizer(session=session)
-    
-    # Create metrics collector
-    metrics_collector = OptimizerMetricsCollector()
-    
-    # Use the optimizer
-    # (execute queries, analyze plans, etc.)
-    
-    # Collect metrics
-    snapshot = metrics_collector.collect_metrics(optimizer)
-    
-    # Display metrics
-    print(f"Query count: {snapshot.query_count}")
-    print(f"Avg execution time: {snapshot.avg_execution_time:.2f}s")
+async with enhanced_pool_session() as session:```
+
+optimizer = QueryOptimizer(session=session)
+``````
+
+```
+```
+
+# Create metrics collector
+metrics_collector = OptimizerMetricsCollector()
+``````
+
+```
+```
+
+# Use the optimizer
+# (execute queries, analyze plans, etc.)
+``````
+
+```
+```
+
+# Collect metrics
+snapshot = metrics_collector.collect_metrics(optimizer)
+``````
+
+```
+```
+
+# Display metrics
+print(f"Query count: {snapshot.query_count}")
+print(f"Avg execution time: {snapshot.avg_execution_time:.2f}s")
+```
 ```
 
 ### Tracking Performance Over Time
@@ -99,15 +123,25 @@ async with enhanced_pool_session() as session:
 metrics_collector = OptimizerMetricsCollector()
 
 # Collect metrics at regular intervals
-for _ in range(10):
-    # Use the optimizer
-    # (execute queries, analyze plans, etc.)
-    
-    # Collect a snapshot
-    metrics_collector.collect_metrics(optimizer)
-    
-    # Wait for next interval
-    await asyncio.sleep(300)  # Every 5 minutes
+for _ in range(10):```
+
+# Use the optimizer
+# (execute queries, analyze plans, etc.)
+``````
+
+```
+```
+
+# Collect a snapshot
+metrics_collector.collect_metrics(optimizer)
+``````
+
+```
+```
+
+# Wait for next interval
+await asyncio.sleep(300)  # Every 5 minutes
+```
 
 # Generate a report with trends
 report = metrics_collector.generate_report()
@@ -121,13 +155,17 @@ metrics_collector = OptimizerMetricsCollector()
 
 # Define a query function with metrics tracking
 @with_query_metrics(optimizer, metrics_collector)
-async def get_users(session, status=None):
-    # Query logic
-    query = select(User)
-    if status:
-        query = query.where(User.status == status)
-    result = await session.execute(query)
-    return result.scalars().all()
+async def get_users(session, status=None):```
+
+# Query logic
+query = select(User)
+if status:```
+
+query = query.where(User.status == status)
+```
+result = await session.execute(query)
+return result.scalars().all()
+```
 
 # Call the function
 users = await get_users(session, status="active")
@@ -138,10 +176,12 @@ users = await get_users(session, status="active")
 ```python
 # Track query performance
 @track_query_performance(metrics_collector, optimizer)
-async def get_user_orders(session, user_id):
-    query = select(Order).where(Order.user_id == user_id)
-    result = await session.execute(query)
-    return result.scalars().all()
+async def get_user_orders(session, user_id):```
+
+query = select(Order).where(Order.user_id == user_id)
+result = await session.execute(query)
+return result.scalars().all()
+```
 
 # Performance statistics are collected automatically
 orders = await get_user_orders(session, user_id=123)
@@ -156,19 +196,23 @@ from uno.database.optimizer_metrics import OptimizerMetricsMiddleware
 app = FastAPI()
 
 # Configure middleware
-app.add_middleware(
-    OptimizerMetricsMiddleware,
-    metrics_collector=metrics_collector,
-    optimizer_factory=lambda: get_optimizer()
+app.add_middleware(```
+
+OptimizerMetricsMiddleware,
+metrics_collector=metrics_collector,
+optimizer_factory=lambda: get_optimizer()
+```
 )
 
 # Define your API endpoints
 @app.get("/users")
-async def get_users(session: AsyncSession = Depends(get_session)):
-    # Use the optimizer
-    query = "SELECT * FROM users WHERE status = 'active'"
-    result = await optimizer.execute_optimized_query(query)
-    return result
+async def get_users(session: AsyncSession = Depends(get_session)):```
+
+# Use the optimizer
+query = "SELECT * FROM users WHERE status = 'active'"
+result = await optimizer.execute_optimized_query(query)
+return result
+```
 ```
 
 ### Generating Reports
@@ -183,9 +227,11 @@ print(f"Query count: {report['latest']['query_count']}")
 print(f"Slow query count: {report['latest']['slow_query_count']}")
 
 # Check trends if available
-if 'trends' in report:
-    print(f"Query count change: {report['trends']['query_count_change']}")
-    print(f"Execution time change: {report['trends']['avg_execution_time_change']:.2f}s")
+if 'trends' in report:```
+
+print(f"Query count change: {report['trends']['query_count_change']}")
+print(f"Execution time change: {report['trends']['avg_execution_time_change']:.2f}s")
+```
 ```
 
 ## Metrics Integration
@@ -199,8 +245,10 @@ from uno.core.monitoring.metrics import MetricsManager
 metrics_manager = MetricsManager()
 
 # Create metrics collector with manager
-metrics_collector = OptimizerMetricsCollector(
-    metrics_manager=metrics_manager
+metrics_collector = OptimizerMetricsCollector(```
+
+metrics_manager=metrics_manager
+```
 )
 
 # Metrics are automatically registered and recorded
@@ -220,10 +268,12 @@ pg_optimizer = create_pg_optimizer(session=session)
 pg_snapshot = metrics_collector.collect_metrics(pg_optimizer)
 
 # Enhanced snapshot with additional metadata
-snapshot.metadata.update({
-    "environment": "production",
-    "database_size": db_size,
-    "connection_count": connection_count,
+snapshot.metadata.update({```
+
+"environment": "production",
+"database_size": db_size,
+"connection_count": connection_count,
+```
 })
 ```
 
@@ -241,8 +291,10 @@ report = metrics_collector.generate_report(optimizer)
 
 ```python
 # Report for the last hour
-report = metrics_collector.generate_report(
-    time_range=(time.time() - 3600, time.time())
+report = metrics_collector.generate_report(```
+
+time_range=(time.time() - 3600, time.time())
+```
 )
 ```
 
@@ -250,20 +302,32 @@ report = metrics_collector.generate_report(
 
 ```python
 # Custom reporting logic
-def generate_custom_report(collector, optimizer):
-    # Get snapshots
-    snapshots = collector.get_snapshots()
-    
-    # Calculate custom metrics
-    query_throughput = sum(s.query_count for s in snapshots) / len(snapshots)
-    avg_slow_queries = sum(s.slow_query_count for s in snapshots) / len(snapshots)
-    
-    # Generate report
-    return {
-        "query_throughput": query_throughput,
-        "avg_slow_queries": avg_slow_queries,
-        "current_recommendations": len(optimizer._index_recommendations),
-    }
+def generate_custom_report(collector, optimizer):```
+
+# Get snapshots
+snapshots = collector.get_snapshots()
+``````
+
+```
+```
+
+# Calculate custom metrics
+query_throughput = sum(s.query_count for s in snapshots) / len(snapshots)
+avg_slow_queries = sum(s.slow_query_count for s in snapshots) / len(snapshots)
+``````
+
+```
+```
+
+# Generate report
+return {```
+
+"query_throughput": query_throughput,
+"avg_slow_queries": avg_slow_queries,
+"current_recommendations": len(optimizer._index_recommendations),
+```
+}
+```
 ```
 
 ## Monitoring Dashboard Integration
@@ -272,13 +336,17 @@ The metrics can be easily integrated with monitoring dashboards:
 
 ```python
 # Export metrics to Prometheus
-for metric_name, metric_value in report['latest'].items():
-    prometheus.gauge(f"query_optimizer_{metric_name}", metric_value)
+for metric_name, metric_value in report['latest'].items():```
+
+prometheus.gauge(f"query_optimizer_{metric_name}", metric_value)
+```
 
 # Export metrics to Grafana
 metrics_json = json.dumps(report)
-with open("/var/metrics/query_optimizer.json", "w") as f:
-    f.write(metrics_json)
+with open("/var/metrics/query_optimizer.json", "w") as f:```
+
+f.write(metrics_json)
+```
 ```
 
 ## Performance Impact
@@ -311,9 +379,11 @@ metrics_collector._snapshot_interval = 60  # 1 minute
 metrics_collector._max_snapshots = 1440    # 24 hours at 1-minute intervals
 
 # Custom middleware configuration
-middleware = OptimizerMetricsMiddleware(
-    metrics_collector=metrics_collector,
-    optimizer_factory=get_optimizer
+middleware = OptimizerMetricsMiddleware(```
+
+metrics_collector=metrics_collector,
+optimizer_factory=get_optimizer
+```
 )
 middleware.collection_interval = 300  # Collect every 5 minutes
 ```
@@ -322,42 +392,72 @@ middleware.collection_interval = 300  # Collect every 5 minutes
 
 ```python
 # Import components
-from uno.database.optimizer_metrics import (
-    OptimizerMetricsCollector,
-    OptimizerMetricsMiddleware,
-    with_query_metrics,
-    collect_optimizer_metrics,
+from uno.database.optimizer_metrics import (```
+
+OptimizerMetricsCollector,
+OptimizerMetricsMiddleware,
+with_query_metrics,
+collect_optimizer_metrics,
+```
 )
 
 # Create session and optimizer
-async with enhanced_pool_session() as session:
-    optimizer = QueryOptimizer(session=session)
-    
-    # Create metrics collector
-    metrics_collector = OptimizerMetricsCollector()
-    
-    # Decorate query functions
-    @with_query_metrics(optimizer, metrics_collector)
-    async def get_users(session, status=None):
-        # Query logic
-        query = "SELECT * FROM users"
-        if status:
-            query += f" WHERE status = '{status}'"
-        return await optimizer.execute_optimized_query(query)
-    
-    # Execute some queries
-    all_users = await get_users(session)
-    active_users = await get_users(session, "active")
-    
-    # Collect metrics
-    snapshot = await collect_optimizer_metrics(optimizer, metrics_collector)
-    
-    # Generate report
-    report = metrics_collector.generate_report()
-    
-    # Display key metrics
-    print(f"Queries tracked: {snapshot.query_count}")
-    print(f"Slow queries: {snapshot.slow_query_count}")
-    print(f"Avg execution time: {snapshot.avg_execution_time:.2f}s")
-    print(f"Recommendations: {snapshot.index_recommendations}")
+async with enhanced_pool_session() as session:```
+
+optimizer = QueryOptimizer(session=session)
+``````
+
+```
+```
+
+# Create metrics collector
+metrics_collector = OptimizerMetricsCollector()
+``````
+
+```
+```
+
+# Decorate query functions
+@with_query_metrics(optimizer, metrics_collector)
+async def get_users(session, status=None):```
+
+# Query logic
+query = "SELECT * FROM users"
+if status:
+    query += f" WHERE status = '{status}'"
+return await optimizer.execute_optimized_query(query)
+```
+``````
+
+```
+```
+
+# Execute some queries
+all_users = await get_users(session)
+active_users = await get_users(session, "active")
+``````
+
+```
+```
+
+# Collect metrics
+snapshot = await collect_optimizer_metrics(optimizer, metrics_collector)
+``````
+
+```
+```
+
+# Generate report
+report = metrics_collector.generate_report()
+``````
+
+```
+```
+
+# Display key metrics
+print(f"Queries tracked: {snapshot.query_count}")
+print(f"Slow queries: {snapshot.slow_query_count}")
+print(f"Avg execution time: {snapshot.avg_execution_time:.2f}s")
+print(f"Recommendations: {snapshot.index_recommendations}")
+```
 ```

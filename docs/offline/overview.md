@@ -10,23 +10,31 @@ Modern web and mobile applications need to function reliably regardless of netwo
 
 The offline support system consists of several key components:
 
+``````
 ```
-                   ┌───────────────────┐
-                   │   Offline Store   │
-                   └─────────┬─────────┘
-                             │
-                             ▼
+
+           ┌───────────────────┐
+           │   Offline Store   │
+           └─────────┬─────────┘
+                     │
+                     ▼
+```
+```
 ┌───────────────┐    ┌───────────────────┐    ┌────────────────────┐
 │               │    │  Synchronization  │    │                    │
 │  Local Cache  │◄───┤      Engine      ├────►│  Remote Database   │
 │               │    │                   │    │                    │
-└───────────────┘    └─────────┬─────────┘    └────────────────────┘
-                               │
-                     ┌─────────┴─────────┐
-                     │                   │
-           ┌─────────┴────────┐  ┌───────┴─────────┐
-           │  Change Tracker  │  │ Conflict Solver │
-           └──────────────────┘  └─────────────────┘
+└───────────────┘    └─────────┬─────────┘    └────────────────────┘```
+```
+
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+   ┌─────────┴────────┐  ┌───────┴─────────┐
+   │  Change Tracker  │  │ Conflict Solver │
+   └──────────────────┘  └─────────────────┘
+```
+```
 ```
 
 ### Key Features

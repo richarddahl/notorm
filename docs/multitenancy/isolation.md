@@ -50,11 +50,13 @@ The `RLSIsolationStrategy` class provides methods for applying RLS policies to t
 from uno.core.multitenancy import RLSIsolationStrategy
 
 # Initialize the strategy
-isolation_strategy = RLSIsolationStrategy(
-    session=db_session,
-    schema="public",
-    tenant_column="tenant_id",
-    excluded_tables={"logs", "audit_trail"}
+isolation_strategy = RLSIsolationStrategy(```
+
+session=db_session,
+schema="public",
+tenant_column="tenant_id",
+excluded_tables={"logs", "audit_trail"}
+```
 )
 
 # Enable RLS for all tenant-aware tables
@@ -83,24 +85,30 @@ The following SQL functions are created to manage tenant context:
 -- Get the current tenant ID
 CREATE OR REPLACE FUNCTION get_current_tenant_id()
 RETURNS TEXT AS $$
-BEGIN
-    RETURN NULLIF(current_setting('app.current_tenant_id', TRUE), '');
+BEGIN```
+
+RETURN NULLIF(current_setting('app.current_tenant_id', TRUE), '');
+```
 END;
 $$ LANGUAGE plpgsql;
 
 -- Set the current tenant ID
 CREATE OR REPLACE FUNCTION set_current_tenant_id(tenant_id TEXT)
 RETURNS VOID AS $$
-BEGIN
-    PERFORM set_config('app.current_tenant_id', tenant_id, FALSE);
+BEGIN```
+
+PERFORM set_config('app.current_tenant_id', tenant_id, FALSE);
+```
 END;
 $$ LANGUAGE plpgsql;
 
 -- Clear the current tenant ID
 CREATE OR REPLACE FUNCTION clear_current_tenant_id()
 RETURNS VOID AS $$
-BEGIN
-    PERFORM set_config('app.current_tenant_id', '', FALSE);
+BEGIN```
+
+PERFORM set_config('app.current_tenant_id', '', FALSE);
+```
 END;
 $$ LANGUAGE plpgsql;
 ```
@@ -115,15 +123,25 @@ For administrative purposes, sometimes it's necessary to bypass tenant isolation
 from uno.core.multitenancy import SuperuserBypassMixin
 from sqlalchemy import text
 
-class AdminService(SuperuserBypassMixin):
-    def __init__(self, session):
-        super().__init__(session)
-    
-    async def get_all_products_across_tenants(self):
-        async with self:  # Enter the bypass context
-            # This query will bypass RLS and return all products from all tenants
-            result = await self.session.execute(text("SELECT * FROM products"))
-            return result.fetchall()
+class AdminService(SuperuserBypassMixin):```
+
+def __init__(self, session):```
+
+super().__init__(session)
+```
+``````
+
+```
+```
+
+async def get_all_products_across_tenants(self):```
+
+async with self:  # Enter the bypass context
+    # This query will bypass RLS and return all products from all tenants
+    result = await self.session.execute(text("SELECT * FROM products"))
+    return result.fetchall()
+```
+```
 ```
 
 A bypass function is created in the database to facilitate this:
@@ -131,16 +149,24 @@ A bypass function is created in the database to facilitate this:
 ```sql
 CREATE OR REPLACE FUNCTION bypass_rls()
 RETURNS VOID AS $$
-BEGIN
-    -- Only superusers can execute this function
-    IF NOT (SELECT usesuper FROM pg_user WHERE usename = current_user) THEN
-        RAISE EXCEPTION 'Only superusers can bypass RLS';
-    END IF;
-    
-    -- Temporary table for the session
-    CREATE TEMP TABLE IF NOT EXISTS _rls_bypass (bypass BOOLEAN);
-    TRUNCATE TABLE _rls_bypass;
-    INSERT INTO _rls_bypass VALUES (TRUE);
+BEGIN```
+
+-- Only superusers can execute this function
+IF NOT (SELECT usesuper FROM pg_user WHERE usename = current_user) THEN```
+
+RAISE EXCEPTION 'Only superusers can bypass RLS';
+```
+END IF;
+``````
+
+```
+```
+
+-- Temporary table for the session
+CREATE TEMP TABLE IF NOT EXISTS _rls_bypass (bypass BOOLEAN);
+TRUNCATE TABLE _rls_bypass;
+INSERT INTO _rls_bypass VALUES (TRUE);
+```
 END;
 $$ LANGUAGE plpgsql;
 ```
@@ -152,26 +178,40 @@ For cross-tenant operations, the `AdminTenantMixin` provides methods for switchi
 ```python
 from uno.core.multitenancy import AdminTenantMixin
 
-class TenantAdminService(AdminTenantMixin):
-    def __init__(self, session):
-        super().__init__(session)
+class TenantAdminService(AdminTenantMixin):```
+
+def __init__(self, session):```
+
+super().__init__(session)
+```
+``````
+
+```
+```
+
+async def count_products_by_tenant(self, tenant_ids):```
+
+results = {}
+```
+    ```
+
+for tenant_id in tenant_ids:
+    # Switch to the tenant's context
+    await self.switch_tenant(tenant_id)
     
-    async def count_products_by_tenant(self, tenant_ids):
-        results = {}
-        
-        for tenant_id in tenant_ids:
-            # Switch to the tenant's context
-            await self.switch_tenant(tenant_id)
-            
-            # Run a query in the tenant's context
-            result = await self.session.execute(text("SELECT COUNT(*) FROM products"))
-            count = result.scalar()
-            results[tenant_id] = count
-            
-            # Optional: restore the original tenant context when done
-            await self.restore_tenant()
-        
-        return results
+    # Run a query in the tenant's context
+    result = await self.session.execute(text("SELECT COUNT(*) FROM products"))
+    count = result.scalar()
+    results[tenant_id] = count
+    
+    # Optional: restore the original tenant context when done
+    await self.restore_tenant()
+```
+    ```
+
+return results
+```
+```
 ```
 
 ## Security Considerations

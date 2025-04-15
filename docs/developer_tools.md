@@ -51,7 +51,8 @@ python -m uno.devtools.cli.main scaffold new my_project --template standard --da
 python -m uno.devtools.cli.main scaffold feature product --domain ecommerce
 ```
 
-See [Scaffolding Guide](developer_tools/scaffolding.md) for complete documentation.
+<!-- TODO: Create scaffolding documentation -->
+<!-- See [Scaffolding Guide](developer_tools/scaffolding.md) for complete documentation. -->
 
 ## Visual Data Modeling
 
@@ -74,7 +75,7 @@ The modeler allows you to:
 - Save your model as JSON
 - Generate code for entities, repositories, and services
 
-See [Visual Modeler Guide](developer_tools/visual_modeler.md) for complete documentation.
+See [Visual Modeler Guide](/docs/developer_tools/visual_modeler.md) for complete documentation.
 
 ## Migration Assistance
 
@@ -97,7 +98,7 @@ python -m uno.devtools.cli.main migrations analyze-code path/to/your/code
 python -m uno.devtools.cli.main migrations transform-code path/to/your/code --no-dry-run
 ```
 
-See [Migration Assistance Guide](developer_tools/migrations.md) for complete documentation.
+See [Migration Assistance Guide](/docs/developer_tools/migrations.md) for complete documentation.
 
 ## Debugging Tools
 
@@ -110,14 +111,16 @@ from fastapi import FastAPI
 from uno.devtools.debugging.middleware import DebugMiddleware
 
 app = FastAPI()
-app.add_middleware(
-    DebugMiddleware,
-    enabled=True,
-    log_requests=True,
-    log_responses=True,
-    log_sql=True,
-    log_errors=True,
-    log_level="DEBUG"
+app.add_middleware(```
+
+DebugMiddleware,
+enabled=True,
+log_requests=True,
+log_responses=True,
+log_sql=True,
+log_errors=True,
+log_level="DEBUG"
+```
 )
 ```
 
@@ -129,18 +132,30 @@ The Function Tracer provides detailed logging of function execution, including a
 from uno.devtools.debugging.tracer import trace_function, trace_class
 
 @trace_function
-def my_function(arg1, arg2):
-    # Function code here
-    return result
+def my_function(arg1, arg2):```
+
+# Function code here
+return result
+```
 
 # Or trace an entire class
 @trace_class
-class MyClass:
-    def __init__(self):
-        pass
-    
-    def my_method(self, arg):
-        return arg
+class MyClass:```
+
+def __init__(self):```
+
+pass
+```
+``````
+
+```
+```
+
+def my_method(self, arg):```
+
+return arg
+```
+```
 ```
 
 ### SQL Query Debugger
@@ -151,9 +166,11 @@ The SQL Query Debugger tracks SQL queries, analyzes patterns, and detects issues
 from uno.devtools.debugging.sql_debug import capture_sql_queries, analyze_query_patterns
 
 # Capture and analyze SQL queries
-with capture_sql_queries() as queries:
-    # Database operations here
-    results = repository.get_all_users()
+with capture_sql_queries() as queries:```
+
+# Database operations here
+results = repository.get_all_users()
+```
 
 # Analyze the queries for patterns and issues
 analysis = analyze_query_patterns(queries)
@@ -169,9 +186,11 @@ The Error Enhancer provides additional context for exceptions, including source 
 from uno.devtools.debugging.error_enhancer import enhance_errors
 
 @enhance_errors
-def function_that_might_fail():
-    # Function code here
-    raise ValueError("Something went wrong")
+def function_that_might_fail():```
+
+# Function code here
+raise ValueError("Something went wrong")
+```
 ```
 
 ## Profiling Tools
@@ -185,14 +204,18 @@ from uno.devtools.profiling.profiler import profile, Profiler
 
 # As a decorator
 @profile
-def function_to_profile():
-    # Function code here
-    return result
+def function_to_profile():```
+
+# Function code here
+return result
+```
 
 # Or as a context manager
-with Profiler("operation_name") as profiler:
-    # Code to profile
-    result = perform_operation()
+with Profiler("operation_name") as profiler:```
+
+# Code to profile
+result = perform_operation()
+```
 ```
 
 ### Memory Profiler
@@ -204,14 +227,18 @@ from uno.devtools.profiling.memory import track_memory, MemoryTracker, MemoryLea
 
 # As a decorator
 @track_memory
-def memory_intensive_function():
-    # Function code here
-    return result
+def memory_intensive_function():```
+
+# Function code here
+return result
+```
 
 # Or as a context manager
-with MemoryTracker("operation_name") as snapshot:
-    # Code to track
-    result = perform_operation()
+with MemoryTracker("operation_name") as snapshot:```
+
+# Code to track
+result = perform_operation()
+```
 
 # Or to detect memory leaks
 detector = MemoryLeakDetector()
@@ -230,14 +257,18 @@ The Model Generator creates UnoModel and UnoSchema classes from field definition
 from uno.devtools.codegen.model import ModelGenerator, ModelDefinition, FieldDefinition
 
 # Define a model
-model_def = ModelDefinition(
-    name="User",
-    table_name="users",
-    fields=[
-        FieldDefinition(name="id", field_type="int", primary_key=True),
-        FieldDefinition(name="name", field_type="str", nullable=False),
-        FieldDefinition(name="email", field_type="str", unique=True)
-    ]
+model_def = ModelDefinition(```
+
+name="User",
+table_name="users",
+fields=[```
+
+FieldDefinition(name="id", field_type="int", primary_key=True),
+FieldDefinition(name="name", field_type="str", nullable=False),
+FieldDefinition(name="email", field_type="str", unique=True)
+```
+]
+```
 )
 
 # Generate the model code
@@ -257,10 +288,12 @@ The Repository Generator creates repository classes for Uno models.
 from uno.devtools.codegen.repository import RepositoryGenerator, RepositoryDefinition
 
 # Define a repository
-repo_def = RepositoryDefinition(
-    name="UserRepository",
-    model_name="User",
-    table_name="users"
+repo_def = RepositoryDefinition(```
+
+name="UserRepository",
+model_name="User",
+table_name="users"
+```
 )
 
 # Generate the repository code
@@ -280,19 +313,23 @@ The API Generator creates FastAPI endpoints for Uno models.
 from uno.devtools.codegen.api import ApiGenerator, ApiDefinition, EndpointDefinition, EndpointType
 
 # Define an API
-api_def = ApiDefinition(
-    name="UserApi",
-    model_name="User",
-    schema_name="UserSchema",
-    repository_name="UserRepository",
-    route_prefix="/users",
-    endpoints=[
-        EndpointDefinition(type=EndpointType.GET_ALL, include_pagination=True),
-        EndpointDefinition(type=EndpointType.GET_BY_ID),
-        EndpointDefinition(type=EndpointType.CREATE, include_validation=True),
-        EndpointDefinition(type=EndpointType.UPDATE, include_validation=True),
-        EndpointDefinition(type=EndpointType.DELETE)
-    ]
+api_def = ApiDefinition(```
+
+name="UserApi",
+model_name="User",
+schema_name="UserSchema",
+repository_name="UserRepository",
+route_prefix="/users",
+endpoints=[```
+
+EndpointDefinition(type=EndpointType.GET_ALL, include_pagination=True),
+EndpointDefinition(type=EndpointType.GET_BY_ID),
+EndpointDefinition(type=EndpointType.CREATE, include_validation=True),
+EndpointDefinition(type=EndpointType.UPDATE, include_validation=True),
+EndpointDefinition(type=EndpointType.DELETE)
+```
+]
+```
 )
 
 # Generate the API code
@@ -348,9 +385,11 @@ app.add_middleware(ProfilerMiddleware, enabled=True)
 
 # Route-specific debugging
 @app.get("/debug_example")
-def debug_example(debug=Depends(DebugMiddleware.debug_dependency)):
-    # This route will have detailed debugging
-    return {"message": "Debug example"}
+def debug_example(debug=Depends(DebugMiddleware.debug_dependency)):```
+
+# This route will have detailed debugging
+return {"message": "Debug example"}
+```
 ```
 
 ## Configuration
@@ -360,11 +399,13 @@ The Developer Tools can be configured through environment variables or a configu
 ```python
 from uno.devtools.config import DevToolsConfig
 
-config = DevToolsConfig(
-    debug=True,
-    profiling=True,
-    log_level="DEBUG",
-    output_dir="./devtools_output"
+config = DevToolsConfig(```
+
+debug=True,
+profiling=True,
+log_level="DEBUG",
+output_dir="./devtools_output"
+```
 )
 ```
 

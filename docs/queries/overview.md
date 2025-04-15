@@ -85,21 +85,27 @@ products = await product_repository.list(filter=filter)
 from uno.queries import OptimizedModelQuery, QueryHints
 
 # Create optimized query
-query = OptimizedModelQuery(
-    model_class=Product,
-    use_cache=True,
-    cache_ttl=300,  # 5 minutes
+query = OptimizedModelQuery(```
+
+model_class=Product,
+use_cache=True,
+cache_ttl=300,  # 5 minutes
+```
 )
 
 # Build query with hints
-select_query = query.build_select(
-    where=Product.category == "Electronics",
-    order_by=[Product.price.desc()],
-    limit=10,
-    hints=QueryHints(
-        parallel_workers=2,
-        work_mem="64MB",
-    ),
+select_query = query.build_select(```
+
+where=Product.category == "Electronics",
+order_by=[Product.price.desc()],
+limit=10,
+hints=QueryHints(```
+
+parallel_workers=2,
+work_mem="64MB",
+```
+),
+```
 )
 
 # Execute query
@@ -112,32 +118,40 @@ result = await query.execute(select_query)
 from uno.queries import CommonQueryPatterns, QueryPattern
 
 # Create common patterns instance
-patterns = CommonQueryPatterns(
-    model_class=Product,
-    use_cache=True,
-    collect_metrics=True,
+patterns = CommonQueryPatterns(```
+
+model_class=Product,
+use_cache=True,
+collect_metrics=True,
+```
 )
 
 # Use pre-built patterns
-products = await patterns.find_by_field(
-    field_name="category",
-    field_value="Electronics",
-    load_relations=["brand", "reviews"],
+products = await patterns.find_by_field(```
+
+field_name="category",
+field_value="Electronics",
+load_relations=["brand", "reviews"],
+```
 )
 
 # Pagination
-products, total_count, total_pages = await patterns.paginate(
-    page=2,
-    page_size=20,
-    where=Product.is_active == True,
-    order_by=[Product.created_at.desc()],
+products, total_count, total_pages = await patterns.paginate(```
+
+page=2,
+page_size=20,
+where=Product.is_active == True,
+order_by=[Product.created_at.desc()],
+```
 )
 
 # Full-text search
-search_results = await patterns.fts_search(
-    search_text="wireless headphones",
-    search_fields=["name", "description"],
-    limit=25,
+search_results = await patterns.fts_search(```
+
+search_text="wireless headphones",
+search_fields=["name", "description"],
+limit=25,
+```
 )
 ```
 
@@ -147,35 +161,47 @@ search_results = await patterns.fts_search(
 from uno.queries import BatchOperations, BatchConfig, BatchExecutionStrategy
 
 # Create batch operations instance
-batch_ops = BatchOperations(
-    model_class=Product,
-    batch_config=BatchConfig(
-        batch_size=500,
-        execution_strategy=BatchExecutionStrategy.CHUNKED,
-    ),
+batch_ops = BatchOperations(```
+
+model_class=Product,
+batch_config=BatchConfig(```
+
+batch_size=500,
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+```
+),
+```
 )
 
 # Batch insert
-records = [
-    {"name": f"Product {i}", "price": i * 10} 
-    for i in range(1, 1001)
+records = [```
+
+{"name": f"Product {i}", "price": i * 10} 
+for i in range(1, 1001)
+```
 ]
 inserted = await batch_ops.batch_insert(records)
 
 # Batch update
-updates = [
-    {"id": i, "price": i * 12}  # 20% price increase
-    for i in range(1, 501)
+updates = [```
+
+{"id": i, "price": i * 12}  # 20% price increase
+for i in range(1, 501)
+```
 ]
-updated = await batch_ops.batch_update(
-    records=updates,
-    id_field="id",
-    fields_to_update=["price"],
+updated = await batch_ops.batch_update(```
+
+records=updates,
+id_field="id",
+fields_to_update=["price"],
+```
 )
 
 # Batch delete
-deleted = await batch_ops.batch_delete(
-    id_values=list(range(501, 701)),
+deleted = await batch_ops.batch_delete(```
+
+id_values=list(range(501, 701)),
+```
 )
 ```
 
@@ -187,20 +213,26 @@ The queries system integrates seamlessly with Uno's repository pattern:
 from uno.domain.repository import UnoDBRepository
 
 # Create repository with batch operations enabled
-repo = UnoDBRepository(
-    entity_type=Product,
-    use_batch_operations=True,
+repo = UnoDBRepository(```
+
+entity_type=Product,
+use_batch_operations=True,
+```
 )
 
 # Use batch operations through repository
-products = await repo.batch_get(
-    ids=["1", "2", "3", "4", "5"],
-    load_relations=["category"],
+products = await repo.batch_get(```
+
+ids=["1", "2", "3", "4", "5"],
+load_relations=["category"],
+```
 )
 
 # Update products
-for product in products:
-    product.price *= 1.1  # 10% price increase
+for product in products:```
+
+product.price *= 1.1  # 10% price increase
+```
 
 # Batch update
 updated = await repo.batch_update(products)
@@ -214,10 +246,12 @@ The queries module includes several performance optimizations:
 
 ```python
 # Enable caching
-query = OptimizedModelQuery(
-    model_class=Product,
-    use_cache=True,
-    cache_ttl=300,  # 5 minutes
+query = OptimizedModelQuery(```
+
+model_class=Product,
+use_cache=True,
+cache_ttl=300,  # 5 minutes
+```
 )
 
 # Cached query results
@@ -228,21 +262,27 @@ product = await query.get_by_id(1)
 
 ```python
 # Configure batch operations with different strategies
-config_chunked = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.CHUNKED,
-    batch_size=500,
+config_chunked = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+batch_size=500,
+```
 )
 
-config_parallel = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.PARALLEL,
-    batch_size=500,
-    max_workers=4,
+config_parallel = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.PARALLEL,
+batch_size=500,
+max_workers=4,
+```
 )
 
-config_pipelined = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.PIPELINED,
-    pre_process_fn=validate_data,
-    post_process_fn=transform_results,
+config_pipelined = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.PIPELINED,
+pre_process_fn=validate_data,
+post_process_fn=transform_results,
+```
 )
 ```
 
@@ -250,27 +290,34 @@ config_pipelined = BatchConfig(
 
 ```python
 # Configure SQL query hints
-hints = QueryHints(
-    parallel_workers=4,
-    work_mem="128MB",
-    enable_seqscan=False,
-    use_hashjoin=True,
+hints = QueryHints(```
+
+parallel_workers=4,
+work_mem="128MB",
+enable_seqscan=False,
+use_hashjoin=True,
+```
 )
 
 # Use with optimized query
-query = query_builder.build_select(
-    where=Product.category == "Electronics",
-    hints=hints,
+query = query_builder.build_select(```
+
+where=Product.category == "Electronics",
+hints=hints,
+```
 )
 ```
 
 ## Related Documentation
 
-- [Filter Manager](filter-manager.md): Detailed documentation on filter management
-- [Optimized Queries](optimized_queries.md): In-depth guide to query optimization
-- [Common Query Patterns](common_patterns.md): Guide to pre-built query patterns
+<!-- TODO: Create filter manager documentation -->
+<!-- - [Filter Manager](filter-manager.md): Detailed documentation on filter management -->
+<!-- TODO: Create optimized queries documentation -->
+<!-- - [Optimized Queries](optimized_queries.md): In-depth guide to query optimization -->
+<!-- TODO: Create common patterns documentation -->
+<!-- - [Common Query Patterns](common_patterns.md): Guide to pre-built query patterns -->
 - [Batch Operations](batch_operations.md): Comprehensive guide to batch operations
-- [Performance Optimization](../performance/batch_operations.md): Performance tips
+- [Performance Optimization](/docs/performance/batch_operations.md): Performance tips
 
 ## Conclusion
 

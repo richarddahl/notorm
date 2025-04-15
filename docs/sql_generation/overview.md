@@ -13,14 +13,24 @@ The `BaseEmitter` class is the foundation for all SQL emitters. It provides comm
 ```python
 from uno.sql.emitter import BaseEmitter
 
-class CustomEmitter(BaseEmitter):
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-    
-    def emit(self):
-        """Generate SQL for the model."""
-        return f"-- SQL for {self.model.__tablename__}"
+class CustomEmitter(BaseEmitter):```
+
+def __init__(self, model):```
+
+super().__init__()
+self.model = model
+```
+``````
+
+```
+```
+
+def emit(self):```
+
+"""Generate SQL for the model."""
+return f"-- SQL for {self.model.__tablename__}"
+```
+```
 ```
 
 ### TableEmitter
@@ -51,9 +61,11 @@ The `FunctionEmitter` generates SQL statements for creating functions:
 from uno.sql.emitters.function import FunctionEmitter
 
 # Define function parameters
-params = [
-    {"name": "customer_id", "type": "TEXT"},
-    {"name": "new_status", "type": "TEXT"}
+params = [```
+
+{"name": "customer_id", "type": "TEXT"},
+{"name": "new_status", "type": "TEXT"}
+```
 ]
 
 # Define function body
@@ -65,12 +77,14 @@ RETURN 1;
 """
 
 # Generate SQL for creating a function
-emitter = FunctionEmitter(
-    name="update_customer_status",
-    params=params,
-    return_type="INTEGER",
-    body=body,
-    language="plpgsql"
+emitter = FunctionEmitter(```
+
+name="update_customer_status",
+params=params,
+return_type="INTEGER",
+body=body,
+language="plpgsql"
+```
 )
 
 sql = emitter.emit()
@@ -84,13 +98,15 @@ The `TriggerEmitter` generates SQL statements for creating triggers:
 from uno.sql.emitters.trigger import TriggerEmitter
 
 # Generate SQL for creating a trigger
-emitter = TriggerEmitter(
-    name="customer_update_trigger",
-    table="customer",
-    events=["INSERT", "UPDATE"],
-    timing="AFTER",
-    function="log_customer_changes",
-    for_each="ROW"
+emitter = TriggerEmitter(```
+
+name="customer_update_trigger",
+table="customer",
+events=["INSERT", "UPDATE"],
+timing="AFTER",
+function="log_customer_changes",
+for_each="ROW"
+```
 )
 
 sql = emitter.emit()
@@ -104,11 +120,13 @@ The `SecurityEmitter` generates SQL statements for security-related operations, 
 from uno.sql.emitters.security import SecurityEmitter
 
 # Generate SQL for creating a security policy
-emitter = SecurityEmitter(
-    table="customer",
-    policy_name="customer_access_policy",
-    using_expr="(user_id = current_user_id())",
-    check_expr="(user_id = current_user_id())"
+emitter = SecurityEmitter(```
+
+table="customer",
+policy_name="customer_access_policy",
+using_expr="(user_id = current_user_id())",
+check_expr="(user_id = current_user_id())"
+```
 )
 
 sql = emitter.emit()
@@ -122,10 +140,12 @@ The `GrantsEmitter` generates SQL statements for granting permissions:
 from uno.sql.emitters.grants import GrantsEmitter
 
 # Generate SQL for granting permissions
-emitter = GrantsEmitter(
-    table="customer",
-    privileges=["SELECT", "INSERT", "UPDATE"],
-    roles=["app_user", "app_admin"]
+emitter = GrantsEmitter(```
+
+table="customer",
+privileges=["SELECT", "INSERT", "UPDATE"],
+roles=["app_user", "app_admin"]
+```
 )
 
 sql = emitter.emit()
@@ -158,9 +178,11 @@ The `SQLStatement` class represents a SQL statement with parameters:
 from uno.sql.statement import SQLStatement
 
 # Create a SQL statement
-statement = SQLStatement(
-    text="SELECT * FROM customer WHERE id = :id",
-    params={"id": "abc123"}
+statement = SQLStatement(```
+
+text="SELECT * FROM customer WHERE id = :id",
+params={"id": "abc123"}
+```
 )
 
 # Execute the statement

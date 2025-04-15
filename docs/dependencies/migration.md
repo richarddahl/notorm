@@ -58,22 +58,28 @@ provider = get_service_provider()
 service = provider.get_service(ServiceType)
 
 # In scoped context
-with create_scope() as scope:
-    service = scope.resolve(ServiceType)
+with create_scope() as scope:```
+
+service = scope.resolve(ServiceType)
+```
 
 # In async scoped context
-async with create_async_scope() as scope:
-    service = scope.resolve(ServiceType)
+async with create_async_scope() as scope:```
+
+service = scope.resolve(ServiceType)
+```
 ```
 
 ### 3. Replace Dependency Registration
 
 **Before:**
 ```python
-def configure_di(binder):
-    # Bind services
-    binder.bind(ServiceType, ServiceImplementation())
-    binder.bind_to_provider(ServiceType, lambda: ServiceImplementation())
+def configure_di(binder):```
+
+# Bind services
+binder.bind(ServiceType, ServiceImplementation())
+binder.bind_to_provider(ServiceType, lambda: ServiceImplementation())
+```
 
 # Configure the container
 inject.configure(configure_di)
@@ -104,12 +110,16 @@ await initialize_services()  # Calls configure_base_services() internally
 from uno.dependencies import inject_dependency, get_repository
 
 @router.get("/items")
-async def list_items(
-    config = Depends(inject_dependency(ConfigType)),
-    repo = Depends(get_repository(RepoType))
-):
-    # Use dependencies
-    pass
+async def list_items(```
+
+config = Depends(inject_dependency(ConfigType)),
+repo = Depends(get_repository(RepoType))
+```
+):```
+
+# Use dependencies
+pass
+```
 ```
 
 **After:**
@@ -123,54 +133,86 @@ configure_fastapi(app)
 
 @router.get("/items")
 @inject_params()  # Optional decorator for constructor injection
-async def list_items(
-    repo = Depends(get_repository(RepoType))
-):
-    # Use dependencies
-    pass
+async def list_items(```
+
+repo = Depends(get_repository(RepoType))
+```
+):```
+
+# Use dependencies
+pass
+```
 ```
 
 ### 5. Update Testing Code
 
 **Before:**
 ```python
-def configure_test_di(binder):
-    # Create mocks
-    mock_service = MagicMock()
-    
-    # Bind mocks
-    binder.bind(ServiceType, mock_service)
+def configure_test_di(binder):```
+
+# Create mocks
+mock_service = MagicMock()
+``````
+
+```
+```
+
+# Bind mocks
+binder.bind(ServiceType, mock_service)
+```
 
 @pytest.fixture
-def setup_di():
-    # Configure test container
-    inject.clear_and_configure(configure_test_di)
-    
-    # Get service from container
-    service = inject.instance(ServiceType)
-    return service
+def setup_di():```
+
+# Configure test container
+inject.clear_and_configure(configure_test_di)
+``````
+
+```
+```
+
+# Get service from container
+service = inject.instance(ServiceType)
+return service
+```
 ```
 
 **After:**
 ```python
 @pytest.fixture
-def setup_test_di():
-    # Create mocks
-    mock_service = MagicMock(spec=ServiceImplementation)
-    
-    # Create service collection
-    services = ServiceCollection()
-    services.add_instance(ServiceType, mock_service)
-    
-    # Initialize container with test services
-    initialize_container(services, logging.getLogger("test"))
-    
-    return mock_service
+def setup_test_di():```
+
+# Create mocks
+mock_service = MagicMock(spec=ServiceImplementation)
+``````
+
+```
+```
+
+# Create service collection
+services = ServiceCollection()
+services.add_instance(ServiceType, mock_service)
+``````
+
+```
+```
+
+# Initialize container with test services
+initialize_container(services, logging.getLogger("test"))
+``````
+
+```
+```
+
+return mock_service
+```
 
 @pytest.fixture
-def service():
-    # Get service from container
-    return get_service(ServiceType)
+def service():```
+
+# Get service from container
+return get_service(ServiceType)
+```
 ```
 
 ## Lifecycle Management Migration
@@ -179,17 +221,25 @@ For services that need initialization and cleanup:
 
 **Before:**
 ```python
-class MyService:
-    def __init__(self):
-        self.initialized = False
-        
-    def initialize(self):
-        # Initialize resources
-        self.initialized = True
-        
-    def cleanup(self):
-        # Clean up resources
-        pass
+class MyService:```
+
+def __init__(self):```
+
+self.initialized = False
+```
+    
+def initialize(self):```
+
+# Initialize resources
+self.initialized = True
+```
+    
+def cleanup(self):```
+
+# Clean up resources
+pass
+```
+```
 
 # Manual initialization
 service = get_instance(MyService)
@@ -200,17 +250,25 @@ service.initialize()
 ```python
 from uno.dependencies.modern_provider import ServiceLifecycle
 
-class MyService(ServiceLifecycle):
-    def __init__(self):
-        self.initialized = False
-        
-    async def initialize(self) -> None:
-        # Initialize resources asynchronously
-        self.initialized = True
-        
-    async def dispose(self) -> None:
-        # Clean up resources asynchronously
-        pass
+class MyService(ServiceLifecycle):```
+
+def __init__(self):```
+
+self.initialized = False
+```
+    
+async def initialize(self) -> None:```
+
+# Initialize resources asynchronously
+self.initialized = True
+```
+    
+async def dispose(self) -> None:```
+
+# Clean up resources asynchronously
+pass
+```
+```
 
 # Register for automatic lifecycle management
 provider = get_service_provider()
@@ -228,17 +286,27 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize services on startup
-    from uno.dependencies.modern_provider import initialize_services
-    await initialize_services()
-    
-    # Yield control to FastAPI
-    yield
-    
-    # Shut down services on shutdown
-    from uno.dependencies.modern_provider import shutdown_services
-    await shutdown_services()
+async def lifespan(app: FastAPI):```
+
+# Initialize services on startup
+from uno.dependencies.modern_provider import initialize_services
+await initialize_services()
+``````
+
+```
+```
+
+# Yield control to FastAPI
+yield
+``````
+
+```
+```
+
+# Shut down services on shutdown
+from uno.dependencies.modern_provider import shutdown_services
+await shutdown_services()
+```
 
 # Create app with lifespan
 app = FastAPI(lifespan=lifespan)

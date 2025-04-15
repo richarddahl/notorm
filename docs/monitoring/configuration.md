@@ -9,14 +9,16 @@ The monitoring system can be configured through a configuration object:
 ```python
 from uno.core.monitoring.config import MonitoringConfig
 
-config = MonitoringConfig(
-    service_name="my-service",
-    environment="production",
-    metrics_enabled=True,
-    tracing_enabled=True,
-    health_checks_enabled=True,
-    resource_monitoring_enabled=True,
-    event_logging_enabled=True
+config = MonitoringConfig(```
+
+service_name="my-service",
+environment="production",
+metrics_enabled=True,
+tracing_enabled=True,
+health_checks_enabled=True,
+resource_monitoring_enabled=True,
+event_logging_enabled=True
+```
 )
 ```
 
@@ -62,39 +64,51 @@ Example JSON configuration:
 {
   "service_name": "my-service",
   "environment": "production",
-  "metrics": {
-    "enabled": true,
-    "prometheus_export": true,
-    "export_interval_seconds": 15
+  "metrics": {```
+
+"enabled": true,
+"prometheus_export": true,
+"export_interval_seconds": 15
+```
   },
-  "tracing": {
-    "enabled": true,
-    "sampler": "always_on",
-    "max_attributes": 128
+  "tracing": {```
+
+"enabled": true,
+"sampler": "always_on",
+"max_attributes": 128
+```
   },
-  "health_checks": {
-    "enabled": true,
-    "interval_seconds": 30
+  "health_checks": {```
+
+"enabled": true,
+"interval_seconds": 30
+```
   },
-  "resource_monitoring": {
-    "enabled": true,
-    "collection_interval_seconds": 60
+  "resource_monitoring": {```
+
+"enabled": true,
+"collection_interval_seconds": 60
+```
   },
-  "event_logging": {
-    "enabled": true,
-    "min_level": "INFO",
-    "console_output": true,
-    "file_output": "/var/log/application/events.log"
+  "event_logging": {```
+
+"enabled": true,
+"min_level": "INFO",
+"console_output": true,
+"file_output": "/var/log/application/events.log"
+```
   },
-  "exporters": {
-    "otlp": {
-      "endpoint": "http://otel-collector:4317",
-      "protocol": "grpc"
-    },
-    "prometheus": {
-      "endpoint": "/metrics",
-      "push_gateway": null
-    }
+  "exporters": {```
+
+"otlp": {
+  "endpoint": "http://otel-collector:4317",
+  "protocol": "grpc"
+},
+"prometheus": {
+  "endpoint": "/metrics",
+  "push_gateway": null
+}
+```
   }
 }
 ```
@@ -106,14 +120,18 @@ Configure metrics collection:
 ```python
 from uno.core.monitoring.config import MetricsConfig
 
-metrics_config = MetricsConfig(
-    enabled=True,
-    prometheus_export=True,
-    export_interval_seconds=15,
-    default_labels={
-        "service": "my-service",
-        "environment": "production"
-    }
+metrics_config = MetricsConfig(```
+
+enabled=True,
+prometheus_export=True,
+export_interval_seconds=15,
+default_labels={```
+
+"service": "my-service",
+"environment": "production"
+```
+}
+```
 )
 ```
 
@@ -124,15 +142,19 @@ Configure distributed tracing:
 ```python
 from uno.core.monitoring.config import TracingConfig
 
-tracing_config = TracingConfig(
-    enabled=True,
-    sampler="parent_based_always_on",
-    max_attributes=128,
-    max_events=32,
-    max_links=32,
-    span_processors=[
-        {"type": "batch", "max_queue_size": 1000, "max_export_batch_size": 100}
-    ]
+tracing_config = TracingConfig(```
+
+enabled=True,
+sampler="parent_based_always_on",
+max_attributes=128,
+max_events=32,
+max_links=32,
+span_processors=[```
+
+{"type": "batch", "max_queue_size": 1000, "max_export_batch_size": 100}
+```
+]
+```
 )
 ```
 
@@ -143,11 +165,13 @@ Configure health checks:
 ```python
 from uno.core.monitoring.config import HealthCheckConfig
 
-health_config = HealthCheckConfig(
-    enabled=True,
-    interval_seconds=30,
-    timeout_seconds=5,
-    include_details=True
+health_config = HealthCheckConfig(```
+
+enabled=True,
+interval_seconds=30,
+timeout_seconds=5,
+include_details=True
+```
 )
 ```
 
@@ -158,16 +182,20 @@ Configure resource monitoring:
 ```python
 from uno.core.monitoring.config import ResourceMonitoringConfig
 
-resource_config = ResourceMonitoringConfig(
-    enabled=True,
-    collection_interval_seconds=60,
-    resource_types=["database", "http_client", "redis"],
-    default_thresholds={
-        "utilization": {
-            "warning": 0.7,
-            "critical": 0.9
-        }
-    }
+resource_config = ResourceMonitoringConfig(```
+
+enabled=True,
+collection_interval_seconds=60,
+resource_types=["database", "http_client", "redis"],
+default_thresholds={```
+
+"utilization": {
+    "warning": 0.7,
+    "critical": 0.9
+}
+```
+}
+```
 )
 ```
 
@@ -178,16 +206,20 @@ Configure event logging:
 ```python
 from uno.core.monitoring.config import EventLoggingConfig
 
-event_config = EventLoggingConfig(
-    enabled=True,
-    min_level="INFO",
-    include_context=True,
-    console_output=True,
-    file_output="/var/log/application/events.log",
-    processors=[
-        {"type": "console", "colored": True},
-        {"type": "json_file", "path": "/var/log/application/events.json"}
-    ]
+event_config = EventLoggingConfig(```
+
+enabled=True,
+min_level="INFO",
+include_context=True,
+console_output=True,
+file_output="/var/log/application/events.log",
+processors=[```
+
+{"type": "console", "colored": True},
+{"type": "json_file", "path": "/var/log/application/events.json"}
+```
+]
+```
 )
 ```
 
@@ -198,18 +230,24 @@ Configure telemetry data exporters:
 ```python
 from uno.core.monitoring.config import ExporterConfig
 
-exporter_config = ExporterConfig(
-    otlp={
-        "endpoint": "http://otel-collector:4317",
-        "protocol": "grpc",
-        "certificate": "/path/to/cert.pem",
-        "headers": {"api-key": "${OTLP_API_KEY}"}
-    },
-    prometheus={
-        "endpoint": "/metrics",
-        "push_gateway": "http://prometheus-pushgateway:9091",
-        "push_interval_seconds": 15
-    }
+exporter_config = ExporterConfig(```
+
+otlp={```
+
+"endpoint": "http://otel-collector:4317",
+"protocol": "grpc",
+"certificate": "/path/to/cert.pem",
+"headers": {"api-key": "${OTLP_API_KEY}"}
+```
+},
+prometheus={```
+
+"endpoint": "/metrics",
+"push_gateway": "http://prometheus-pushgateway:9091",
+"push_interval_seconds": 15
+```
+}
+```
 )
 ```
 
@@ -242,9 +280,13 @@ Validate configuration before applying:
 # Validate configuration
 validation_result = config.validate()
 
-if not validation_result.is_valid:
-    for error in validation_result.errors:
-        print(f"Configuration error: {error}")
+if not validation_result.is_valid:```
+
+for error in validation_result.errors:```
+
+print(f"Configuration error: {error}")
+```
+```
 ```
 
 ## Environment-Specific Configuration
@@ -271,15 +313,19 @@ Integrate with your application's configuration system:
 from uno.core.monitoring.config import MonitoringConfig
 from your_app.config import AppConfig
 
-def setup_monitoring_from_app_config(app_config: AppConfig) -> MonitoringConfig:
-    """Create monitoring config from application config."""
-    return MonitoringConfig(
-        service_name=app_config.service_name,
-        environment=app_config.environment,
-        metrics_enabled=app_config.monitoring.metrics_enabled,
-        tracing_enabled=app_config.monitoring.tracing_enabled,
-        # Other settings...
-    )
+def setup_monitoring_from_app_config(app_config: AppConfig) -> MonitoringConfig:```
+
+"""Create monitoring config from application config."""
+return MonitoringConfig(```
+
+service_name=app_config.service_name,
+environment=app_config.environment,
+metrics_enabled=app_config.monitoring.metrics_enabled,
+tracing_enabled=app_config.monitoring.tracing_enabled,
+# Other settings...
+```
+)
+```
 ```
 
 ## Secret Management
@@ -290,12 +336,16 @@ Handle sensitive configuration values:
 from uno.core.monitoring.config import ExporterConfig, SecretValue
 
 # Define configuration with secrets
-exporter_config = ExporterConfig(
-    otlp={
-        "headers": {
-            "api-key": SecretValue("${OTLP_API_KEY}")
-        }
-    }
+exporter_config = ExporterConfig(```
+
+otlp={```
+
+"headers": {
+    "api-key": SecretValue("${OTLP_API_KEY}")
+}
+```
+}
+```
 )
 
 # Resolve secrets when applying configuration

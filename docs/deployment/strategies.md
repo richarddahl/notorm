@@ -187,16 +187,32 @@ You can create custom deployment strategies by extending the `DeploymentStrategy
 ```python
 from uno.deployment.strategies import DeploymentStrategy, DeploymentResult
 
-class MyCustomStrategy(DeploymentStrategy):
-    def __init__(self, logger=None, **options):
-        super().__init__("my-custom", logger)
-        self.options = options
-    
-    def deploy(self, context):
-        # Implement your deployment logic here
-        return DeploymentResult(True, "Deployment succeeded")
-    
-    def rollback(self, context):
-        # Implement your rollback logic here
-        return DeploymentResult(True, "Rollback succeeded")
+class MyCustomStrategy(DeploymentStrategy):```
+
+def __init__(self, logger=None, **options):```
+
+super().__init__("my-custom", logger)
+self.options = options
+```
+``````
+
+```
+```
+
+def deploy(self, context):```
+
+# Implement your deployment logic here
+return DeploymentResult(True, "Deployment succeeded")
+```
+``````
+
+```
+```
+
+def rollback(self, context):```
+
+# Implement your rollback logic here
+return DeploymentResult(True, "Rollback succeeded")
+```
+```
 ```

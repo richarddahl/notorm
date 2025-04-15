@@ -38,8 +38,10 @@ RETURN o
 ### Find Objects with Specific Attribute Type and Value
 
 ```cypher
-MATCH (o:Object)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),
-      (a)-[:HAS_VALUE]->(v:Value)
+MATCH (o:Object)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),```
+
+  (a)-[:HAS_VALUE]->(v:Value)
+```
 WHERE at.name = 'Priority' AND v.value = 'High'
 RETURN o
 ```
@@ -51,16 +53,24 @@ Find objects with multiple specific attributes:
 ```cypher
 MATCH (o:Object)
 WHERE 
-  EXISTS {
-    MATCH (o)-[:HAS_ATTRIBUTE]->(a1:Attribute)-[:ATTRIBUTE_TYPE]->(at1:AttributeType),
-          (a1)-[:HAS_VALUE]->(v1:Value)
-    WHERE at1.name = 'Priority' AND v1.value = 'High'
+  EXISTS {```
+
+MATCH (o)-[:HAS_ATTRIBUTE]->(a1:Attribute)-[:ATTRIBUTE_TYPE]->(at1:AttributeType),```
+
+  (a1)-[:HAS_VALUE]->(v1:Value)
+```
+WHERE at1.name = 'Priority' AND v1.value = 'High'
+```
   }
   AND
-  EXISTS {
-    MATCH (o)-[:HAS_ATTRIBUTE]->(a2:Attribute)-[:ATTRIBUTE_TYPE]->(at2:AttributeType),
-          (a2)-[:HAS_VALUE]->(v2:Value)
-    WHERE at2.name = 'Status' AND v2.value = 'Active'
+  EXISTS {```
+
+MATCH (o)-[:HAS_ATTRIBUTE]->(a2:Attribute)-[:ATTRIBUTE_TYPE]->(at2:AttributeType),```
+
+  (a2)-[:HAS_VALUE]->(v2:Value)
+```
+WHERE at2.name = 'Status' AND v2.value = 'Active'
+```
   }
 RETURN o
 ```
@@ -73,11 +83,13 @@ We'll register attribute-specific query paths to enable easy and efficient query
 
 ```python
 # Register attribute query paths
-attribute_path = QueryPath(
-    source_meta_type_id="task",
-    target_meta_type_id="priority",
-    cypher_path="(s:Task)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType {name: 'Priority'})-[:HAS_VALUE]->(t:Value)",
-    data_type="str"
+attribute_path = QueryPath(```
+
+source_meta_type_id="task",
+target_meta_type_id="priority",
+cypher_path="(s:Task)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType {name: 'Priority'})-[:HAS_VALUE]->(t:Value)",
+data_type="str"
+```
 )
 await attribute_path.save()
 ```
@@ -88,20 +100,24 @@ Create queryable attribute paths for common attribute types:
 
 ```python
 # Create a query for high priority tasks
-priority_query = Query(
-    name="High Priority Tasks",
-    description="Tasks with high priority",
-    query_meta_type_id="task",
-    include_values=Include.INCLUDE,
-    match_values=Match.AND
+priority_query = Query(```
+
+name="High Priority Tasks",
+description="Tasks with high priority",
+query_meta_type_id="task",
+include_values=Include.INCLUDE,
+match_values=Match.AND
+```
 )
 
 # Create query values
-priority_value = QueryValue(
-    query_path_id=attribute_path.id,
-    include=Include.INCLUDE,
-    match=Match.AND,
-    lookup="equal"
+priority_value = QueryValue(```
+
+query_path_id=attribute_path.id,
+include=Include.INCLUDE,
+match=Match.AND,
+lookup="equal"
+```
 )
 priority_value.values = [high_priority_value]
 
@@ -115,35 +131,55 @@ await priority_query.save()
 Implement specialized functions for attribute-based queries:
 
 ```python
-async def find_objects_by_attribute(
-    object_type: str,
-    attribute_type: str,
-    value: Any
-) -> List[str]:
-    """
-    Find objects with a specific attribute type and value.
+async def find_objects_by_attribute(```
+
+object_type: str,
+attribute_type: str,
+value: Any
+```
+) -> List[str]:```
+
+"""
+Find objects with a specific attribute type and value.
+``````
+
+```
+```
+
+Args:```
+
+object_type: The type of object to search
+attribute_type: The attribute type name
+value: The attribute value
+```
     
-    Args:
-        object_type: The type of object to search
-        attribute_type: The attribute type name
-        value: The attribute value
-        
-    Returns:
-        List of object IDs matching the criteria
-    """
-    cypher_query = f"""
-    MATCH (o:{object_type})-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),
-          (a)-[:HAS_VALUE]->(v:Value)
-    WHERE at.name = $attribute_type AND v.value = $value
-    RETURN o.id
-    """
-    
-    async with enhanced_async_session() as session:
-        result = await session.execute(
-            text(cypher_query),
-            {"attribute_type": attribute_type, "value": str(value)}
-        )
-        return [row[0] for row in result.fetchall()]
+Returns:```
+
+List of object IDs matching the criteria
+```
+"""
+cypher_query = f"""
+MATCH (o:{object_type})-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),```
+
+  (a)-[:HAS_VALUE]->(v:Value)
+```
+WHERE at.name = $attribute_type AND v.value = $value
+RETURN o.id
+"""
+``````
+
+```
+```
+
+async with enhanced_async_session() as session:```
+
+result = await session.execute(
+    text(cypher_query),
+    {"attribute_type": attribute_type, "value": str(value)}
+)
+return [row[0] for row in result.fetchall()]
+```
+```
 ```
 
 ## Query Optimization
@@ -163,9 +199,11 @@ Implement caching for frequent attribute-based queries:
 
 ```python
 @cached(ttl=300)  # Cache for 5 minutes
-async def get_objects_with_attribute(attribute_type: str, value: Any) -> List[str]:
-    # Implementation
-    ...
+async def get_objects_with_attribute(attribute_type: str, value: Any) -> List[str]:```
+
+# Implementation
+...
+```
 ```
 
 ### Result Windowing
@@ -173,15 +211,21 @@ async def get_objects_with_attribute(attribute_type: str, value: Any) -> List[st
 For large result sets, implement windowing:
 
 ```python
-async def find_objects_by_attribute_paged(
-    object_type: str,
-    attribute_type: str,
-    value: Any,
-    limit: int = 100,
-    offset: int = 0
-) -> List[str]:
-    # Implementation with LIMIT and OFFSET
-    ...
+async def find_objects_by_attribute_paged(```
+
+object_type: str,
+attribute_type: str,
+value: Any
+```,```
+
+limit: int = 100,
+offset: int = 0
+```
+) -> List[str]:```
+
+# Implementation with LIMIT and OFFSET
+...
+```
 ```
 
 ## Integration with UI Components
@@ -226,13 +270,17 @@ Each value type will have an appropriate input component:
 
 ```python
 # Find high priority active tasks
-results = await find_objects_with_attributes(
-    object_type="Task",
-    conditions=[
-        {"attribute_type": "Priority", "value": "High"},
-        {"attribute_type": "Status", "value": "Active"}
-    ],
-    logic="AND"
+results = await find_objects_with_attributes(```
+
+object_type="Task",
+conditions=[```
+
+{"attribute_type": "Priority", "value": "High"},
+{"attribute_type": "Status", "value": "Active"}
+```
+],
+logic="AND"
+```
 )
 ```
 
@@ -243,11 +291,13 @@ results = await find_objects_with_attributes(
 next_week_start = datetime.date.today() + datetime.timedelta(days=7)
 next_week_end = next_week_start + datetime.timedelta(days=7)
 
-results = await find_objects_by_attribute_range(
-    object_type="Task",
-    attribute_type="DueDate",
-    min_value=next_week_start,
-    max_value=next_week_end
+results = await find_objects_by_attribute_range(```
+
+object_type="Task",
+attribute_type="DueDate",
+min_value=next_week_start,
+max_value=next_week_end
+```
 )
 ```
 

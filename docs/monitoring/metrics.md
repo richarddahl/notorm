@@ -21,30 +21,38 @@ To create and use metrics, use the helper functions:
 from uno.core.monitoring import counter, gauge, histogram, timer, MetricUnit
 
 # Create a counter
-request_counter = await counter(
-    name="http_requests_total",
-    description="Total number of HTTP requests",
-    tags={"handler": "items"}
+request_counter = await counter(```
+
+name="http_requests_total",
+description="Total number of HTTP requests",
+tags={"handler": "items"}
+```
 )
 
 # Create a gauge
-active_connections = await gauge(
-    name="active_connections",
-    description="Number of active connections",
-    unit=MetricUnit.COUNT
+active_connections = await gauge(```
+
+name="active_connections",
+description="Number of active connections",
+unit=MetricUnit.COUNT
+```
 )
 
 # Create a histogram
-request_size = await histogram(
-    name="http_request_size_bytes",
-    description="HTTP request size in bytes",
-    unit=MetricUnit.BYTES
+request_size = await histogram(```
+
+name="http_request_size_bytes",
+description="HTTP request size in bytes",
+unit=MetricUnit.BYTES
+```
 )
 
 # Create a timer
-request_duration = await timer(
-    name="http_request_duration_milliseconds",
-    description="HTTP request duration in milliseconds"
+request_duration = await timer(```
+
+name="http_request_duration_milliseconds",
+description="HTTP request duration in milliseconds"
+```
 )
 ```
 
@@ -60,17 +68,21 @@ await request_counter.increment()
 await active_connections.set(42)
 
 # Track in-progress operations with a gauge
-async with await active_connections.track_inprogress():
-    # Do something while incrementing the gauge
-    pass
+async with await active_connections.track_inprogress():```
+
+# Do something while incrementing the gauge
+pass
+```
 
 # Record a value in a histogram
 await request_size.observe(1024)
 
 # Time an operation
-async with await request_duration.time():
-    # Operation to time
-    await asyncio.sleep(0.1)
+async with await request_duration.time():```
+
+# Operation to time
+await asyncio.sleep(0.1)
+```
 
 # Record a duration directly
 await request_duration.record(42.0)
@@ -84,10 +96,12 @@ You can easily time functions using the `timed` decorator:
 from uno.core.monitoring import timed
 
 @timed(timer_name="function_duration", description="Duration of my function")
-async def my_function():
-    # Function to time
-    await asyncio.sleep(0.1)
-    return "result"
+async def my_function():```
+
+# Function to time
+await asyncio.sleep(0.1)
+return "result"
+```
 ```
 
 ## Metrics in FastAPI
@@ -105,12 +119,16 @@ app.add_middleware(MetricsMiddleware)
 
 # Add metrics endpoint
 @app.get("/metrics")
-async def metrics():
-    registry = get_metrics_registry()
-    return Response(
-        content=registry.get_prometheus_metrics(),
-        media_type="text/plain"
-    )
+async def metrics():```
+
+registry = get_metrics_registry()
+return Response(```
+
+content=registry.get_prometheus_metrics(),
+media_type="text/plain"
+```
+)
+```
 ```
 
 The `setup_monitoring` function does this automatically if enabled in the configuration.
@@ -131,9 +149,11 @@ exporter = PrometheusExporter(namespace="my_service")
 
 # Set up metrics registry with exporter
 registry = get_metrics_registry()
-await registry.setup(
-    export_interval=60.0,
-    exporters=[exporter]
+await registry.setup(```
+
+export_interval=60.0,
+exporters=[exporter]
+```
 )
 ```
 
@@ -149,9 +169,11 @@ exporter = LoggingExporter()
 
 # Set up metrics registry with exporter
 registry = get_metrics_registry()
-await registry.setup(
-    export_interval=60.0,
-    exporters=[exporter]
+await registry.setup(```
+
+export_interval=60.0,
+exporters=[exporter]
+```
 )
 ```
 
@@ -193,14 +215,18 @@ from uno.core.monitoring import MetricsRegistry
 my_registry = MetricsRegistry()
 
 # Set up exporters
-await my_registry.setup(
-    export_interval=30.0,
-    exporters=[PrometheusExporter(namespace="my_subsystem")]
+await my_registry.setup(```
+
+export_interval=30.0,
+exporters=[PrometheusExporter(namespace="my_subsystem")]
+```
 )
 
 # Create metrics with this registry
-my_counter = await counter(
-    name="my_counter",
-    registry=my_registry
+my_counter = await counter(```
+
+name="my_counter",
+registry=my_registry
+```
 )
 ```

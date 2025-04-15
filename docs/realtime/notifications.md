@@ -48,44 +48,52 @@ notification_hub.register_delivery_channel(SSENotificationChannel(sse_manager))
 
 ```python
 # Simple system notification
-await notification_hub.notify_system(
-    title="System Maintenance",
-    message="The system will be down for maintenance in 30 minutes.",
-    recipients=["user123", "user456"],
-    priority=NotificationPriority.HIGH
+await notification_hub.notify_system(```
+
+title="System Maintenance",
+message="The system will be down for maintenance in 30 minutes.",
+recipients=["user123", "user456"],
+priority=NotificationPriority.HIGH
+```
 )
 
 # User-to-user notification
-await notification_hub.notify_user(
-    title="New Message",
-    message="You have a new message from John.",
-    recipients=["user123"],
-    sender_id="user456",
-    type_=NotificationType.MESSAGE
+await notification_hub.notify_user(```
+
+title="New Message",
+message="You have a new message from John.",
+recipients=["user123"],
+sender_id="user456",
+type_=NotificationType.MESSAGE
+```
 )
 
 # Resource notification with actions
-await notification_hub.notify_resource(
-    title="Comment on Your Post",
-    message="John commented on your post 'Hello World'",
-    recipients=["user123"],
-    resource_type="post",
-    resource_id="post789",
-    type_=NotificationType.COMMENT,
-    sender_id="user456",
-    actions=[
-        {
-            "label": "View",
-            "action": "view_post",
-            "data": {"post_id": "post789"}
-        },
-        {
-            "label": "Reply",
-            "action": "reply_comment",
-            "data": {"post_id": "post789", "comment_id": "comment123"}
-        }
-    ],
-    channels={"in_app", "websocket", "sse"}
+await notification_hub.notify_resource(```
+
+title="Comment on Your Post",
+message="John commented on your post 'Hello World'",
+recipients=["user123"],
+resource_type="post",
+resource_id="post789",
+type_=NotificationType.COMMENT,
+sender_id="user456",
+actions=[```
+
+{
+    "label": "View",
+    "action": "view_post",
+    "data": {"post_id": "post789"}
+},
+{
+    "label": "Reply",
+    "action": "reply_comment",
+    "data": {"post_id": "post789", "comment_id": "comment123"}
+}
+```
+],
+channels={"in_app", "websocket", "sse"}
+```
 )
 ```
 
@@ -93,19 +101,23 @@ await notification_hub.notify_resource(
 
 ```python
 # Get recent unread notifications
-notifications = await notification_hub.get_user_notifications(
-    user_id="user123",
-    limit=10,
-    include_read=False
+notifications = await notification_hub.get_user_notifications(```
+
+user_id="user123",
+limit=10,
+include_read=False
+```
 )
 
 # Get notification count
 count = await notification_hub.get_unread_count(user_id="user123")
 
 # Mark notification as read
-await notification_hub.mark_as_read(
-    notification_id="notif123",
-    user_id="user123"
+await notification_hub.mark_as_read(```
+
+notification_id="notif123",
+user_id="user123"
+```
 )
 
 # Mark all notifications as read
@@ -121,24 +133,38 @@ You can create custom delivery channels by implementing the `DeliveryChannel` pr
 ```python
 from uno.realtime.notifications import DeliveryChannel
 
-class EmailNotificationChannel(DeliveryChannel):
-    """Email delivery channel for notifications."""
-    
-    @property
-    def channel_id(self) -> str:
-        return "email"
-    
-    async def deliver(self, notification: Notification) -> bool:
-        # Implement email delivery logic here
-        for recipient in notification.recipients:
-            email = await get_user_email(recipient)
-            if email:
-                await send_email(
-                    to=email,
-                    subject=notification.title,
-                    body=notification.message
-                )
-        return True
+class EmailNotificationChannel(DeliveryChannel):```
+
+"""Email delivery channel for notifications."""
+``````
+
+```
+```
+
+@property
+def channel_id(self) -> str:```
+
+return "email"
+```
+``````
+
+```
+```
+
+async def deliver(self, notification: Notification) -> bool:```
+
+# Implement email delivery logic here
+for recipient in notification.recipients:
+    email = await get_user_email(recipient)
+    if email:
+        await send_email(
+            to=email,
+            subject=notification.title,
+            body=notification.message
+        )
+return True
+```
+```
 
 # Register the custom channel
 notification_hub.register_delivery_channel(EmailNotificationChannel())
@@ -150,16 +176,22 @@ You can add hooks that run before and after notification delivery:
 
 ```python
 # Pre-notification hook for filtering
-async def sensitive_content_filter(notification: Notification) -> bool:
-    # Check if notification contains sensitive content
-    if contains_sensitive_content(notification.message):
-        return False
-    return True
+async def sensitive_content_filter(notification: Notification) -> bool:```
+
+# Check if notification contains sensitive content
+if contains_sensitive_content(notification.message):```
+
+return False
+```
+return True
+```
 
 # Post-notification hook for logging
-async def log_notification(notification: Notification) -> None:
-    # Log the notification delivery
-    logger.info(f"Notification {notification.id} delivered to {len(notification.recipients)} recipients")
+async def log_notification(notification: Notification) -> None:```
+
+# Log the notification delivery
+logger.info(f"Notification {notification.id} delivered to {len(notification.recipients)} recipients")
+```
 
 # Add the hooks
 notification_hub.add_pre_notification_hook(sensitive_content_filter)
@@ -174,21 +206,27 @@ You can customize the rate limiting behavior:
 from uno.realtime.notifications import RateLimiter, NotificationPriority
 
 # Create a custom rate limiter
-rate_limiter = RateLimiter(
-    max_per_minute={
-        NotificationPriority.LOW: 3,
-        NotificationPriority.NORMAL: 5,
-        NotificationPriority.HIGH: 10,
-        NotificationPriority.URGENT: 15,
-        NotificationPriority.EMERGENCY: 30,
-    },
-    max_per_hour={
-        NotificationPriority.LOW: 10,
-        NotificationPriority.NORMAL: 20,
-        NotificationPriority.HIGH: 40,
-        NotificationPriority.URGENT: 60,
-        NotificationPriority.EMERGENCY: 120,
-    }
+rate_limiter = RateLimiter(```
+
+max_per_minute={```
+
+NotificationPriority.LOW: 3,
+NotificationPriority.NORMAL: 5,
+NotificationPriority.HIGH: 10,
+NotificationPriority.URGENT: 15,
+NotificationPriority.EMERGENCY: 30,
+```
+},
+max_per_hour={```
+
+NotificationPriority.LOW: 10,
+NotificationPriority.NORMAL: 20,
+NotificationPriority.HIGH: 40,
+NotificationPriority.URGENT: 60,
+NotificationPriority.EMERGENCY: 120,
+```
+}
+```
 )
 
 # Create a notification hub with the custom rate limiter
@@ -202,25 +240,43 @@ You can implement a custom notification store for database persistence:
 ```python
 from uno.realtime.notifications import NotificationStore, Notification
 
-class PostgresNotificationStore(NotificationStore):
-    """PostgreSQL-based notification store."""
-    
-    def __init__(self, db_connection):
-        self.db = db_connection
-    
-    async def save(self, notification: Notification) -> str:
-        # Implement database save logic
-        query = """
-        INSERT INTO notifications 
-            (id, title, message, type, priority, recipients, ...)
-        VALUES 
-            ($1, $2, $3, $4, $5, $6, ...)
-        """
-        await self.db.execute(query, notification.id, notification.title, ...)
-        return notification.id
-    
-    # Implement other required methods
-    # ...
+class PostgresNotificationStore(NotificationStore):```
+
+"""PostgreSQL-based notification store."""
+``````
+
+```
+```
+
+def __init__(self, db_connection):```
+
+self.db = db_connection
+```
+``````
+
+```
+```
+
+async def save(self, notification: Notification) -> str:```
+
+# Implement database save logic
+query = """
+INSERT INTO notifications 
+    (id, title, message, type, priority, recipients, ...)
+VALUES 
+    ($1, $2, $3, $4, $5, $6, ...)
+"""
+await self.db.execute(query, notification.id, notification.title, ...)
+return notification.id
+```
+``````
+
+```
+```
+
+# Implement other required methods
+# ...
+```
 
 # Create a notification hub with the custom store
 db_connection = await create_database_connection()
@@ -236,44 +292,60 @@ The notification system can be integrated with domain events:
 from uno.events import EventBus, Event
 from uno.realtime.notifications import NotificationHub, NotificationPriority, NotificationType
 
-class CommentAddedEvent(Event):
-    """Event raised when a comment is added to a post."""
-    
-    def __init__(self, post_id: str, comment_id: str, author_id: str, post_author_id: str):
-        super().__init__()
-        self.post_id = post_id
-        self.comment_id = comment_id
-        self.author_id = author_id
-        self.post_author_id = post_author_id
+class CommentAddedEvent(Event):```
 
-async def comment_added_handler(event: CommentAddedEvent, notification_hub: NotificationHub):
-    """Handle comment added event by creating a notification."""
-    # Get user data
-    author = await get_user(event.author_id)
-    post = await get_post(event.post_id)
-    
-    # Create notification for post author
-    await notification_hub.notify_resource(
-        title=f"New Comment from {author.name}",
-        message=f"{author.name} commented on your post '{post.title}'",
-        recipients=[event.post_author_id],
-        resource_type="post",
-        resource_id=event.post_id,
-        type_=NotificationType.COMMENT,
-        sender_id=event.author_id,
-        actions=[
-            {
-                "label": "View",
-                "action": "view_comment",
-                "data": {"post_id": event.post_id, "comment_id": event.comment_id}
-            },
-            {
-                "label": "Reply",
-                "action": "reply_comment",
-                "data": {"post_id": event.post_id, "comment_id": event.comment_id}
-            }
-        ]
-    )
+"""Event raised when a comment is added to a post."""
+``````
+
+```
+```
+
+def __init__(self, post_id: str, comment_id: str, author_id: str, post_author_id: str):```
+
+super().__init__()
+self.post_id = post_id
+self.comment_id = comment_id
+self.author_id = author_id
+self.post_author_id = post_author_id
+```
+```
+
+async def comment_added_handler(event: CommentAddedEvent, notification_hub: NotificationHub):```
+
+"""Handle comment added event by creating a notification."""
+# Get user data
+author = await get_user(event.author_id)
+post = await get_post(event.post_id)
+``````
+
+```
+```
+
+# Create notification for post author
+await notification_hub.notify_resource(```
+
+title=f"New Comment from {author.name}",
+message=f"{author.name} commented on your post '{post.title}'",
+recipients=[event.post_author_id],
+resource_type="post",
+resource_id=event.post_id,
+type_=NotificationType.COMMENT,
+sender_id=event.author_id,
+actions=[
+    {
+        "label": "View",
+        "action": "view_comment",
+        "data": {"post_id": event.post_id, "comment_id": event.comment_id}
+    },
+    {
+        "label": "Reply",
+        "action": "reply_comment",
+        "data": {"post_id": event.post_id, "comment_id": event.comment_id}
+    }
+]
+```
+)
+```
 
 # Register the event handler
 event_bus = EventBus()
@@ -288,66 +360,98 @@ event_bus.register(CommentAddedEvent, comment_added_handler, notification_hub=no
 // Connect to WebSocket and handle notifications
 const socket = new WebSocket('wss://example.com/ws');
 
-socket.addEventListener('message', (event) => {
-    const data = JSON.parse(event.data);
-    
-    // Handle notification messages
-    if (data.type === 'NOTIFICATION') {
-        const notification = data.payload;
-        showNotification(
-            notification.title,
-            notification.message,
-            notification.level,
-            notification.actions
-        );
-    }
+socket.addEventListener('message', (event) => {```
+
+const data = JSON.parse(event.data);
+``````
+
+```
+```
+
+// Handle notification messages
+if (data.type === 'NOTIFICATION') {```
+
+const notification = data.payload;
+showNotification(```
+
+notification.title,
+notification.message,
+notification.level,
+notification.actions
+```
+);
+```
+}
+```
 });
 
 // Helper function to display notifications
-function showNotification(title, message, level, actions) {
-    // Create notification UI element
-    const notificationElement = document.createElement('div');
-    notificationElement.className = `notification notification-${level}`;
-    
-    // Set content
-    notificationElement.innerHTML = `
-        <h3>${title}</h3>
-        <p>${message}</p>
-        <div class="notification-actions">
-            ${actions.map(action => 
-                `<button data-action="${action.action}" 
-                         data-action-data='${JSON.stringify(action.data)}'>
-                    ${action.label}
-                </button>`
-            ).join('')}
-        </div>
-    `;
-    
-    // Add event listeners for actions
-    const actionButtons = notificationElement.querySelectorAll('[data-action]');
-    actionButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const actionType = button.getAttribute('data-action');
-            const actionData = JSON.parse(button.getAttribute('data-action-data') || '{}');
-            handleNotificationAction(actionType, actionData);
-        });
-    });
-    
-    // Add to notifications area
-    document.getElementById('notifications-container').appendChild(notificationElement);
+function showNotification(title, message, level, actions) {```
+
+// Create notification UI element
+const notificationElement = document.createElement('div');
+notificationElement.className = `notification notification-${level}`;
+``````
+
+```
+```
+
+// Set content
+notificationElement.innerHTML = ````
+
+<h3>${title}</h3>
+<p>${message}</p>
+<div class="notification-actions">
+    ${actions.map(action => 
+        `<button data-action="${action.action}" 
+                 data-action-data='${JSON.stringify(action.data)}'>
+            ${action.label}
+        </button>`
+    ).join('')}
+</div>
+```
+`;
+``````
+
+```
+```
+
+// Add event listeners for actions
+const actionButtons = notificationElement.querySelectorAll('[data-action]');
+actionButtons.forEach(button => {```
+
+button.addEventListener('click', (e) => {
+    const actionType = button.getAttribute('data-action');
+    const actionData = JSON.parse(button.getAttribute('data-action-data') || '{}');
+    handleNotificationAction(actionType, actionData);
+});
+```
+});
+``````
+
+```
+```
+
+// Add to notifications area
+document.getElementById('notifications-container').appendChild(notificationElement);
+```
 }
 
 // Handle notification actions
-function handleNotificationAction(actionType, actionData) {
-    switch (actionType) {
-        case 'view_post':
-            window.location.href = `/posts/${actionData.post_id}`;
-            break;
-        case 'reply_comment':
-            window.location.href = `/posts/${actionData.post_id}#comment-${actionData.comment_id}`;
-            break;
-        // Handle other action types
-    }
+function handleNotificationAction(actionType, actionData) {```
+
+switch (actionType) {```
+
+case 'view_post':
+    window.location.href = `/posts/${actionData.post_id}`;
+    break;
+case 'reply_comment':
+    window.location.href = `/posts/${actionData.post_id}#comment-${actionData.comment_id}`;
+    break;
+// Handle other action types
+```
+}
+```
 }
 ```
 
@@ -358,14 +462,18 @@ function handleNotificationAction(actionType, actionData) {
 const eventSource = new EventSource('/sse');
 
 // Listen for notification events
-eventSource.addEventListener('notification', (event) => {
-    const notification = JSON.parse(event.data);
-    showNotification(
-        notification.title,
-        notification.message,
-        notification.level,
-        notification.actions
-    );
+eventSource.addEventListener('notification', (event) => {```
+
+const notification = JSON.parse(event.data);
+showNotification(```
+
+notification.title,
+notification.message,
+notification.level,
+notification.actions
+```
+);
+```
 });
 
 // Use the same showNotification and handleNotificationAction functions

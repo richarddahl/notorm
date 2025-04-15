@@ -26,10 +26,14 @@ When you set up vector search for a table using `VectorSQLEmitter`, it creates:
 The system creates a PostgreSQL function to generate embeddings:
 
 ```sql
-CREATE OR REPLACE FUNCTION schema.generate_embedding(
-    text_input TEXT
-) RETURNS vector(dimensions) AS $$
-    -- Function body that generates an embedding
+CREATE OR REPLACE FUNCTION schema.generate_embedding(```
+
+text_input TEXT
+```
+) RETURNS vector(dimensions) AS $$```
+
+-- Function body that generates an embedding
+```
 $$ LANGUAGE plpgsql;
 ```
 
@@ -58,33 +62,51 @@ When a record is updated:
 For production use, you'll likely want to customize the embedding generation function to use a real embedding API. Here's an example of modifying the function:
 
 ```sql
-CREATE OR REPLACE FUNCTION schema.generate_embedding(
-    text_input TEXT
+CREATE OR REPLACE FUNCTION schema.generate_embedding(```
+
+text_input TEXT
+```
 ) RETURNS vector(1536) AS $$
-DECLARE
-    result vector(1536);
-    response JSONB;
-BEGIN
-    -- Call external API (example using PostgreSQL's http extension)
-    SELECT content::jsonb INTO response
-    FROM http_post(
-        'https://api.openai.com/v1/embeddings',
-        jsonb_build_object(
-            'input', text_input,
-            'model', 'text-embedding-3-small'
-        )::text,
-        'application/json',
-        ARRAY[
-            'Authorization: Bearer ' || current_setting('app.openai_key', true)
-        ]
-    );
-    
-    -- Parse response to get embedding
-    result := array_to_vector(
-        (response->'data'->0->'embedding')::text::float[]
-    );
-    
-    RETURN result;
+DECLARE```
+
+result vector(1536);
+response JSONB;
+```
+BEGIN```
+
+-- Call external API (example using PostgreSQL's http extension)
+SELECT content::jsonb INTO response
+FROM http_post(```
+
+'https://api.openai.com/v1/embeddings',
+jsonb_build_object(
+    'input', text_input,
+    'model', 'text-embedding-3-small'
+)::text,
+'application/json',
+ARRAY[
+    'Authorization: Bearer ' || current_setting('app.openai_key', true)
+]
+```
+);
+``````
+
+```
+```
+
+-- Parse response to get embedding
+result := array_to_vector(```
+
+(response->'data'->0->'embedding')::text::float[]
+```
+);
+``````
+
+```
+```
+
+RETURN result;
+```
 END;
 $$ LANGUAGE plpgsql;
 ```

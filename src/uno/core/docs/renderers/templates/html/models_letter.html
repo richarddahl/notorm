@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Models - {{ letter }} - {{ schema.title }}{% endblock %}
+
+{% block content %}
+<div class="content-section">
+    <h1>Models - {{ letter }}</h1>
+    
+    <div class="model-list">
+        {% for model in models %}
+        <div class="model-card" id="{{ model.name|slugify }}">
+            <div class="model-header">
+                <h2>{{ model.name }}</h2>
+                
+                <div class="model-badges">
+                    {% if model.deprecated %}
+                    <span class="badge badge-deprecated">Deprecated</span>
+                    {% endif %}
+                    <span class="badge {{ model.status|status_class }}">{{ model.status.name|title }}</span>
+                    
+                    {% if model.version %}
+                    <span class="badge badge-version">v{{ model.version }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="model-description">
+                {{ model.description|md_to_html }}
+            </div>
+            
+            {% if model.inherits_from %}
+            <div class="model-inheritance">
+                <strong>Inherits from:</strong>
+                {% for parent in model.inherits_from %}
+                <a href="#{{ parent|slugify }}" class="model-link">{{ parent }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if model.tags %}
+            <div class="model-tags">
+                <strong>Tags:</strong>
+                {% for tag in model.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if model.source_file and config.include_source_links %}
+            <div class="source-link">
+                <strong>Source:</strong> <a href="{{ config.url_base }}/{{ model.source_file }}" target="_blank">{{ model.source_file.split('/')[-1] }}</a>
+            </div>
+            {% endif %}
+            
+            {% if model.fields %}
+            <div class="model-section">
+                <h3>Fields</h3>
+                <table class="fields-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in model.fields %}
+                        <tr>
+                            <td><code>{{ field.name }}</code>{% if field.deprecated %} <span class="badge badge-deprecated">Deprecated</span>{% endif %}</td>
+                            <td><code>{{ field.type }}</code></td>
+                            <td>{% if field.required %}✓{% else %}✗{% endif %}</td>
+                            <td>
+                                {{ field.description }}
+                                
+                                {% if field.enum_values %}
+                                <div class="field-extra">
+                                    <strong>Allowed values:</strong> {% for val in field.enum_values %}<code>{{ val }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if field.pattern %}
+                                <div class="field-extra">
+                                    <strong>Pattern:</strong> <code>{{ field.pattern }}</code>
+                                </div>
+                                {% endif %}
+                                
+                                {% if field.min_value is not none or field.max_value is not none %}
+                                <div class="field-extra">
+                                    <strong>Range:</strong>
+                                    {% if field.min_value is not none %}Min: <code>{{ field.min_value }}</code>{% endif %}
+                                    {% if field.min_value is not none and field.max_value is not none %}, {% endif %}
+                                    {% if field.max_value is not none %}Max: <code>{{ field.max_value }}</code>{% endif %}
+                                </div>
+                                {% endif %}
+                                
+                                {% if field.default is not none %}
+                                <div class="field-extra">
+                                    <strong>Default:</strong> <code>{{ field.default }}</code>
+                                </div>
+                                {% endif %}
+                                
+                                {% if field.example is not none %}
+                                <div class="field-extra">
+                                    <strong>Example:</strong> <code>{{ field.example }}</code>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            {% if model.examples %}
+            <div class="model-section">
+                <h3>Examples</h3>
+                {% for example in model.examples %}
+                <div class="example">
+                    <h4>{{ example.name }}</h4>
+                    <p>{{ example.description }}</p>
+                    <pre><code class="language-json">{{ example.value|json_pretty }}</code></pre>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

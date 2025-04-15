@@ -68,23 +68,30 @@ class MigrationContext:
     logger: logging.Logger = field(default_factory=lambda: logging.getLogger("uno.migrations"))
     """Logger instance."""
     
-    async def execute_sql(self, sql: str) -> Any:
+    async def execute_sql(self, sql: str, params: Any = None) -> Any:
         """
         Execute an SQL statement.
         
         Args:
             sql: SQL statement to execute
+            params: Optional parameters for the SQL statement (list, tuple, or dict)
             
         Returns:
             Result of the SQL execution
         """
         if hasattr(self.connection, 'execute'):
             # Handle SQLAlchemy-like connections
-            return await self.connection.execute(sql)
+            if params is None:
+                return await self.connection.execute(sql)
+            else:
+                return await self.connection.execute(sql, params)
         elif hasattr(self.connection, 'cursor'):
             # Handle database-api connections
             cursor = await self.connection.cursor()
-            await cursor.execute(sql)
+            if params is None:
+                await cursor.execute(sql)
+            else:
+                await cursor.execute(sql, params)
             return cursor
         else:
             raise TypeError("Unsupported connection type")
@@ -270,40 +277,76 @@ class Migrator:
         schema_prefix = f"{self.config.schema_name}." if self.config.schema_name != "public" else ""
         table_name = f"{schema_prefix}{self.config.migration_table}"
         
+        # Get tracker to handle database-specific operations
+        from uno.core.migrations.tracker import get_migration_tracker
+        tracker = get_migration_tracker()
+        
+        if tracker is not None:
+            # Use the tracker to record or remove the migration
+            if revert:
+                await tracker.remove_migration(migration.id)
+            else:
+                await tracker.record_migration(migration)
+            return
+            
+        # Fallback implementation if no tracker is set
         if revert:
-            # Remove the migration record
-            query = f"DELETE FROM {table_name} WHERE id = $1"
-            await context.execute_sql(query.replace("$1", f"'{migration.id}'"))
+            # Delete the migration record
+            try:
+                # Use the context's execute transaction method for safety
+                async def delete_migration():
+                    query = f"DELETE FROM {table_name} WHERE id = %s"
+                    return await context.execute_sql(query, [migration.id])
+                
+                await context.execute_transaction(delete_migration)
+                self.logger.info(f"Removed migration: {migration.id}")
+            except Exception as e:
+                self.logger.error(f"Failed to remove migration record: {e}")
+                raise
         else:
             # Insert the migration record
             import json
             
+            # Prepare data
             checksum = migration.get_checksum()
-            tags = "{" + ",".join(f'"{tag}"' for tag in migration.tags) + "}" if migration.tags else "{}"
+            
+            # Safe handling of tags
+            if migration.tags:
+                tags = "{" + ",".join(f'"{tag.replace("\"", "")}"' for tag in migration.tags) + "}"
+            else:
+                tags = "{}"
+                
             metadata = json.dumps({})
             
-            query = f"""
-            INSERT INTO {table_name} (
-                id, name, applied_at, version, checksum, description, tags, metadata
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8
-            )
-            """
-            
-            # Simple parameter substitution (for demonstration)
-            query = (
-                query
-                .replace("$1", f"'{migration.id}'")
-                .replace("$2", f"'{migration.name}'")
-                .replace("$3", f"'{migration.applied_at.isoformat()}'")
-                .replace("$4", f"'{migration.version}'" if migration.version else "NULL")
-                .replace("$5", f"'{checksum}'")
-                .replace("$6", f"'{migration.description}'")
-                .replace("$7", f"'{tags}'")
-                .replace("$8", f"'{metadata}'")
-            )
-            
-            await context.execute_sql(query)
+            try:
+                # Use the context's execute transaction method for safety
+                async def insert_migration():
+                    # Use proper parameter binding based on database type
+                    query = f"""
+                    INSERT INTO {table_name} (
+                        id, name, applied_at, version, checksum, description, tags, metadata
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    
+                    # Parameters as a list
+                    params = [
+                        migration.id,
+                        migration.name,
+                        migration.applied_at.isoformat(),
+                        migration.version,
+                        checksum,
+                        migration.description,
+                        tags,
+                        metadata
+                    ]
+                    
+                    return await context.execute_sql(query, params)
+                
+                await context.execute_transaction(insert_migration)
+                self.logger.info(f"Recorded migration: {migration.id}")
+            except Exception as e:
+                self.logger.error(f"Failed to record migration: {e}")
+                raise
     
     def _build_dependency_graph(self, migrations: Dict[str, Migration]) -> Dict[str, Set[str]]:
         """

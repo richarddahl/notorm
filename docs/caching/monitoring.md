@@ -34,11 +34,15 @@ print(f"Overall hit rate: {metrics['default'].hit_rate:.1f}%")
 
 # Check cache health
 health = monitor.check_health()
-if not health['healthy']:
-    print(f"Cache health issues: {health['status']}")
-    for cache_name, cache_health in health['caches'].items():
-        if cache_health['issues']:
-            print(f"Issues with {cache_name}: {cache_health['issues']}")
+if not health['healthy']:```
+
+print(f"Cache health issues: {health['status']}")
+for cache_name, cache_health in health['caches'].items():```
+
+if cache_health['issues']:
+    print(f"Issues with {cache_name}: {cache_health['issues']}")
+```
+```
 ```
 
 ### Filtering Metrics
@@ -75,13 +79,17 @@ The cache monitor can export metrics to Prometheus for advanced monitoring and a
 ```python
 from uno.caching.config import CacheConfig, MonitoringConfig
 
-monitoring_config = MonitoringConfig(
-    enable_prometheus=True,
-    prometheus_port=9090  # Default port
+monitoring_config = MonitoringConfig(```
+
+enable_prometheus=True,
+prometheus_port=9090  # Default port
+```
 )
 
-cache_config = CacheConfig(
-    monitoring=monitoring_config
+cache_config = CacheConfig(```
+
+monitoring=monitoring_config
+```
 )
 
 # Create cache manager with prometheus enabled
@@ -129,8 +137,10 @@ metrics_json = monitor.export_metrics_json()
 
 # Example: Write to a file for external processing
 import json
-with open("cache_metrics.json", "w") as f:
-    json.dump(metrics_json, f, indent=2)
+with open("cache_metrics.json", "w") as f:```
+
+json.dump(metrics_json, f, indent=2)
+```
 ```
 
 ## Practical Tips

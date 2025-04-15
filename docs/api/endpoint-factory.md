@@ -28,13 +28,17 @@ from uno.model import UnoModel, PostgresTypes
 app = FastAPI()
 
 # Define your model and business object
-class CustomerModel(UnoModel):
-    __tablename__ = "customer"
-    # ... fields ...
+class CustomerModel(UnoModel):```
 
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    # ... configuration ...
+__tablename__ = "customer"
+# ... fields ...
+```
+
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+# ... configuration ...
+```
 
 # Create endpoints for the model
 endpoint_factory.create_endpoints(app, Customer)
@@ -55,10 +59,12 @@ You can specify which types of endpoints to create:
 
 ```python
 # Create only specific endpoint types
-endpoint_factory.create_endpoints(
-    app,
-    Customer,
-    endpoints=["Create", "View", "List"]  # Only these endpoints will be created
+endpoint_factory.create_endpoints(```
+
+app,
+Customer,
+endpoints=["Create", "View", "List"]  # Only these endpoints will be created
+```
 )
 ```
 
@@ -77,10 +83,12 @@ You can add custom tags to the endpoints for better API documentation:
 
 ```python
 # Add custom tags
-endpoint_factory.create_endpoints(
-    app,
-    Customer,
-    endpoint_tags=["customers", "core-api"]
+endpoint_factory.create_endpoints(```
+
+app,
+Customer,
+endpoint_tags=["customers", "core-api"]
+```
 )
 ```
 
@@ -97,15 +105,19 @@ from fastapi import FastAPI
 app = FastAPI()
 
 # Create a specific endpoint
-CreateEndpoint(
-    model=Customer,
-    app=app,
+CreateEndpoint(```
+
+model=Customer,
+app=app,
+```
 )
 
 # Create a custom view endpoint
-ViewEndpoint(
-    model=Customer,
-    app=app,
+ViewEndpoint(```
+
+model=Customer,
+app=app,
+```
 )
 ```
 
@@ -124,20 +136,34 @@ endpoint_factory.create_endpoints(app, Customer)
 
 # Add a custom route
 @app.get("/api/v1/customers/search")
-async def search_customers(q: str):
-    """Search customers by name or email."""
-    if len(q) < 3:
-        raise HTTPException(status_code=400, detail="Search term must be at least 3 characters")
-    
-    # Create filter parameters
-    filter_params = Customer.create_filter_params()(
-        name__i_contains=q,
-        limit=10
-    )
-    
-    # Validate and filter
-    validated_filters = Customer.validate_filter_params(filter_params)
-    return await Customer.filter(filters=validated_filters)
+async def search_customers(q: str):```
+
+"""Search customers by name or email."""
+if len(q) < 3:```
+
+raise HTTPException(status_code=400, detail="Search term must be at least 3 characters")
+```
+``````
+
+```
+```
+
+# Create filter parameters
+filter_params = Customer.create_filter_params()(```
+
+name__i_contains=q,
+limit=10
+```
+)
+``````
+
+```
+```
+
+# Validate and filter
+validated_filters = Customer.validate_filter_params(filter_params)
+return await Customer.filter(filters=validated_filters)
+```
 ```
 
 ### Adding Middleware
@@ -149,17 +175,29 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.base import BaseHTTPMiddleware
 from typing import Callable
 
-class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Callable):
-        # Process request
-        print(f"Request: {request.method} {request.url.path}")
-        
-        # Call next middleware or endpoint
-        response = await call_next(request)
-        
-        # Process response
-        print(f"Response: {response.status_code}")
-        return response
+class LoggingMiddleware(BaseHTTPMiddleware):```
+
+async def dispatch(self, request: Request, call_next: Callable):```
+
+# Process request
+print(f"Request: {request.method} {request.url.path}")
+``````
+
+```
+```
+
+# Call next middleware or endpoint
+response = await call_next(request)
+``````
+
+```
+```
+
+# Process response
+print(f"Response: {response.status_code}")
+return response
+```
+```
 
 # Create FastAPI app with middleware
 app = FastAPI()
@@ -180,40 +218,58 @@ from typing import List
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    # Implement token validation and user lookup
-    # This is just a placeholder - implement your own auth logic
-    if token != "valid_token":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return {"username": "testuser"}
+async def get_current_user(token: str = Depends(oauth2_scheme)):```
+
+# Implement token validation and user lookup
+# This is just a placeholder - implement your own auth logic
+if token != "valid_token":```
+
+raise HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid authentication credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+```
+return {"username": "testuser"}
+```
 
 # Create the app
 app = FastAPI()
 
 # Create protected endpoints for Customer
 @app.get("/api/v1/customers")
-async def list_customers(
-    current_user = Depends(get_current_user),
-    limit: int = 10,
-    offset: int = 0
-):
-    """List customers with authorization."""
-    # Implement authorization check
-    # e.g., check if user has permission to list customers
-    
-    # Create filter parameters
-    filter_params = Customer.create_filter_params()(
-        limit=limit,
-        offset=offset
-    )
-    
-    # Validate and filter
-    validated_filters = Customer.validate_filter_params(filter_params)
-    return await Customer.filter(filters=validated_filters)
+async def list_customers(```
+
+current_user = Depends(get_current_user),
+limit: int = 10,
+offset: int = 0
+```
+):```
+
+"""List customers with authorization."""
+# Implement authorization check
+# e.g., check if user has permission to list customers
+``````
+
+```
+```
+
+# Create filter parameters
+filter_params = Customer.create_filter_params()(```
+
+limit=limit,
+offset=offset
+```
+)
+``````
+
+```
+```
+
+# Validate and filter
+validated_filters = Customer.validate_filter_params(filter_params)
+return await Customer.filter(filters=validated_filters)
+```
 ```
 
 ## Common Patterns
@@ -237,14 +293,18 @@ v1_factory = UnoEndpointFactory()
 v2_factory = UnoEndpointFactory()
 
 # Create v1 endpoints
-class CustomerV1(UnoObj[CustomerModel]):
-    model = CustomerModel
-    # v1 configuration
+class CustomerV1(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+# v1 configuration
+```
 
 # Create v2 endpoints with different behavior
-class CustomerV2(UnoObj[CustomerModel]):
-    model = CustomerModel
-    # v2 configuration with additional fields or different validation
+class CustomerV2(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+# v2 configuration with additional fields or different validation
+```
 
 # Create endpoints for each version
 v1_factory.create_endpoints(v1_router, CustomerV1)
@@ -265,37 +325,53 @@ from typing import List, Optional
 from uno.endpoint import ViewEndpoint, ListEndpoint
 
 # Define a custom response model
-class CustomerResponse(BaseModel):
-    id: str
-    name: str
-    email: str
-    # Add computed fields
-    full_name: Optional[str] = None
-    status: str = "active"
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "abc123",
-                "name": "John Doe",
-                "email": "john@example.com",
-                "full_name": "John Doe",
-                "status": "active"
-            }
-        }
+class CustomerResponse(BaseModel):```
+
+id: str
+name: str
+email: str
+# Add computed fields
+full_name: Optional[str] = None
+status: str = "active"
+``````
+
+```
+```
+
+class Config:```
+
+json_schema_extra = {
+    "example": {
+        "id": "abc123",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "full_name": "John Doe",
+        "status": "active"
+    }
+}
+```
+```
 
 # Create endpoints with custom response models
-ViewEndpoint(
-    model=Customer,
-    app=app,
-    response_model=CustomerResponse
+ViewEndpoint(```
+
+model=Customer,
+app=app,
+``````
+
+response_model=CustomerResponse
+```
 )
 
 # For list endpoint
-ListEndpoint(
-    model=Customer,
-    app=app,
-    response_model=CustomerResponse
+ListEndpoint(```
+
+model=Customer,
+app=app,
+``````
+
+response_model=CustomerResponse
+```
 )
 ```
 
@@ -306,21 +382,33 @@ Override the endpoint factory method to customize behavior:
 ```python
 from uno.endpoint_factory import UnoEndpointFactory
 
-class CustomEndpointFactory(UnoEndpointFactory):
-    def create_endpoints(self, app, model_obj, endpoints=None, endpoint_tags=None):
-        """Custom endpoint creation with additional behavior."""
-        # Call parent method
-        super().create_endpoints(app, model_obj, endpoints, endpoint_tags)
-        
-        # Add custom behavior
-        model_name = model_obj.__name__.lower()
-        
-        # Add a custom export endpoint
-        @app.get(f"/api/v1/{model_name}/export")
-        async def export_data():
-            """Export all data as CSV."""
-            # Implement export logic
-            return {"message": f"Exporting {model_name} data"}
+class CustomEndpointFactory(UnoEndpointFactory):```
+
+def create_endpoints(self, app, model_obj, endpoints=None, endpoint_tags=None):```
+
+"""Custom endpoint creation with additional behavior."""
+# Call parent method
+super().create_endpoints(app, model_obj, endpoints, endpoint_tags)
+``````
+
+```
+```
+
+# Add custom behavior
+model_name = model_obj.__name__.lower()
+``````
+
+```
+```
+
+# Add a custom export endpoint
+@app.get(f"/api/v1/{model_name}/export")
+async def export_data():
+    """Export all data as CSV."""
+    # Implement export logic
+    return {"message": f"Exporting {model_name} data"}
+```
+```
 
 # Use the custom factory
 custom_factory = CustomEndpointFactory()
@@ -337,41 +425,65 @@ import pytest
 
 # Create a test client
 @pytest.fixture
-def client():
-    # Create app and endpoints
-    app = FastAPI()
-    endpoint_factory = UnoEndpointFactory()
-    endpoint_factory.create_endpoints(app, Customer)
-    
-    return TestClient(app)
+def client():```
 
-def test_list_endpoint(client):
-    """Test the list endpoint."""
-    # Make a request
-    response = client.get("/api/v1/customer")
-    
-    # Check response
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
+# Create app and endpoints
+app = FastAPI()
+endpoint_factory = UnoEndpointFactory()
+endpoint_factory.create_endpoints(app, Customer)
+``````
 
-def test_create_endpoint(client):
-    """Test the create endpoint."""
-    # Create test data
-    test_data = {
-        "name": "Test Customer",
-        "email": "test@example.com"
-    }
-    
-    # Make a request
-    response = client.post("/api/v1/customer", json=test_data)
-    
-    # Check response
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == test_data["name"]
-    assert data["email"] == test_data["email"]
-    assert "id" in data  # Should have an ID
+```
+```
+
+return TestClient(app)
+```
+
+def test_list_endpoint(client):```
+
+"""Test the list endpoint."""
+# Make a request
+response = client.get("/api/v1/customer")
+``````
+
+```
+```
+
+# Check response
+assert response.status_code == 200
+data = response.json()
+assert isinstance(data, list)
+```
+
+def test_create_endpoint(client):```
+
+"""Test the create endpoint."""
+# Create test data
+test_data = {```
+
+"name": "Test Customer",
+"email": "test@example.com"
+```
+}
+``````
+
+```
+```
+
+# Make a request
+response = client.post("/api/v1/customer", json=test_data)
+``````
+
+```
+```
+
+# Check response
+assert response.status_code == 201
+data = response.json()
+assert data["name"] == test_data["name"]
+assert data["email"] == test_data["email"]
+assert "id" in data  # Should have an ID
+```
 ```
 
 ## Best Practices

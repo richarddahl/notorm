@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+
 """
 Migration providers for loading migrations from different sources.
 
@@ -120,6 +124,10 @@ class FileMigrationProvider(MigrationProvider):
             parts = content.split('-- DOWN', 1)
             up_sql = parts[0].strip()
             down_sql = parts[1].strip()
+        elif '-- === DOWN MIGRATION ===' in content:
+            parts = content.split('-- === DOWN MIGRATION ===', 1)
+            up_sql = parts[0].strip()
+            down_sql = parts[1].strip()
         
         # Create migration base
         base = create_migration(
@@ -153,7 +161,16 @@ class FileMigrationProvider(MigrationProvider):
         name_part = match.group(2).replace('_', ' ').title() if match.group(2) else "Migration"
         
         # Create migration ID
-        migration_id = f"{timestamp}_{name_part.lower().replace(' ', '_')}"
+        migration_id = f"{timestamp}_{formatted_name}"
+        
+        # Format name for ID
+        formatted_name = name_part.lower().replace(' ', '_')
+        
+        # Remove special characters 
+        for char in r'!@#$%^&*()+={}[]:;"\',.<>?/\\|':
+            formatted_name = formatted_name.replace(char, '_')
+            
+        migration_id = f"{timestamp}_{formatted_name}"
         
         # Load the Python module
         module_name = os.path.splitext(filename)[0]
@@ -326,6 +343,83 @@ class ModuleMigrationProvider(MigrationProvider):
                 continue
         
         return migrations
+
+
+class MigrationServiceProvider:
+    """
+    Provider for migration-related services in dependency injection system.
+    
+    This provider integrates the migration system with the dependency injection system.
+    """
+    
+    def __init__(self, migration_dirs: List[str] = None, migration_modules: List[str] = None):
+        """
+        Initialize the migration service provider.
+        
+        Args:
+            migration_dirs: List of directories containing migrations
+            migration_modules: List of modules containing migrations
+        """
+        self.migration_dirs = migration_dirs or []
+        self.migration_modules = migration_modules or []
+        
+    async def get_migration_providers(self) -> List[MigrationProvider]:
+        """
+        Get migration providers based on configuration.
+        
+        Returns:
+            List of migration providers
+        """
+        providers = []
+        
+        # Add directory provider if directories are specified
+        if self.migration_dirs:
+            providers.append(DirectoryMigrationProvider(self.migration_dirs))
+        
+        # Add module provider if modules are specified
+        if self.migration_modules:
+            providers.append(ModuleMigrationProvider(self.migration_modules))
+        
+        return providers
+    
+    async def get_migrations(self) -> List[Migration]:
+        """
+        Get all migrations from all providers.
+        
+        Returns:
+            List of migrations
+        """
+        migrations = []
+        
+        # Get providers
+        providers = await self.get_migration_providers()
+        
+        # Load migrations from all providers
+        for provider in providers:
+            provider_migrations = await provider.load_migrations()
+            migrations.extend(provider_migrations)
+        
+        return migrations
+    
+    async def register_providers(self) -> None:
+        """Register migration providers with the global registry."""
+        from uno.core.migrations.providers import register_provider
+        
+        providers = await self.get_migration_providers()
+        
+        # Register directory provider
+        if self.migration_dirs:
+            register_provider(
+                "directory", 
+                DirectoryMigrationProvider(self.migration_dirs)
+            )
+        
+        # Register module provider
+        if self.migration_modules:
+            register_provider(
+                "module", 
+                ModuleMigrationProvider(self.migration_modules)
+            )
 
 
 # Registry of migration providers

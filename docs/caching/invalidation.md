@@ -22,9 +22,11 @@ Time-based invalidation is the simplest form of cache invalidation. Each cache e
 from uno.caching.invalidation import TimeBasedInvalidation
 
 # Create time-based invalidation strategy
-strategy = TimeBasedInvalidation(
-    default_ttl=300,  # Default TTL in seconds
-    ttl_jitter=0.1,   # Add 10% randomness to prevent cache stampede
+strategy = TimeBasedInvalidation(```
+
+default_ttl=300,  # Default TTL in seconds
+ttl_jitter=0.1,   # Add 10% randomness to prevent cache stampede
+```
 )
 ```
 
@@ -51,9 +53,11 @@ ttl = strategy.apply_jitter(300)  # Will be between 270-330 seconds with 10% jit
 
 # Background refresh with cached decorator
 @async_cached(ttl=300, refresh_before=30)  # Refresh 30 seconds before expiration
-async def get_user(user_id: str):
-    # Expensive operation to get user data
-    return {"id": user_id, "name": "John Doe"}
+async def get_user(user_id: str):```
+
+# Expensive operation to get user data
+return {"id": user_id, "name": "John Doe"}
+```
 ```
 
 ## Event-Based Invalidation
@@ -66,11 +70,13 @@ Event-based invalidation removes or updates cache entries in response to specifi
 from uno.caching.invalidation import EventBasedInvalidation
 
 # Define event handlers mapping events to cache patterns
-event_handlers = {
-    "user.updated": ["user:{id}*", "profile:{id}*"],
-    "user.deleted": ["user:{id}*", "profile:{id}*", "friends:{id}*"],
-    "post.created": ["timeline:*", "feed:*"],
-    "post.*": ["stats:posts"],  # Wildcard event pattern
+event_handlers = {```
+
+"user.updated": ["user:{id}*", "profile:{id}*"],
+"user.deleted": ["user:{id}*", "profile:{id}*", "friends:{id}*"],
+"post.created": ["timeline:*", "feed:*"],
+"post.*": ["stats:posts"],  # Wildcard event pattern
+```
 }
 
 # Create event-based invalidation strategy
@@ -85,8 +91,10 @@ user_id = "123"
 patterns = strategy.handle_event("user.updated", {"id": user_id})
 
 # Invalidate cache entries matching the patterns
-for pattern in patterns:
-    cache_manager.invalidate_pattern(pattern)
+for pattern in patterns:```
+
+cache_manager.invalidate_pattern(pattern)
+```
 ```
 
 ### Integration with Domain Events
@@ -98,14 +106,22 @@ from uno.caching import CacheManager
 from uno.caching.invalidation import EventBasedInvalidation
 
 # Event handler function
-def handle_domain_event(event_type, payload):
-    cache_manager = CacheManager.get_instance()
-    invalidation = cache_manager.invalidation_strategy
-    
-    if isinstance(invalidation, EventBasedInvalidation):
-        patterns = invalidation.handle_event(event_type, payload)
-        for pattern in patterns:
-            cache_manager.invalidate_pattern(pattern)
+def handle_domain_event(event_type, payload):```
+
+cache_manager = CacheManager.get_instance()
+invalidation = cache_manager.invalidation_strategy
+``````
+
+```
+```
+
+if isinstance(invalidation, EventBasedInvalidation):```
+
+patterns = invalidation.handle_event(event_type, payload)
+for pattern in patterns:
+    cache_manager.invalidate_pattern(pattern)
+```
+```
 
 # Register with your event system
 event_bus.subscribe(handle_domain_event)
@@ -117,8 +133,10 @@ Event handlers support dynamic pattern substitution using event payload data:
 
 ```python
 # Event handler with dynamic patterns
-event_handlers = {
-    "user.updated": ["user:{id}", "profile:{id}"],
+event_handlers = {```
+
+"user.updated": ["user:{id}", "profile:{id}"],
+```
 }
 
 # Event with payload
@@ -137,9 +155,11 @@ Pattern-based invalidation makes it easy to invalidate related cache entries whe
 from uno.caching.invalidation import PatternBasedInvalidation
 
 # Define patterns for entity types
-patterns = {
-    "user": ["user:{id}", "profile:{id}", "friends:{id}*"],
-    "post": ["post:{id}", "user:{user_id}:posts", "timeline:*"],
+patterns = {```
+
+"user": ["user:{id}", "profile:{id}", "friends:{id}*"],
+"post": ["post:{id}", "user:{user_id}:posts", "timeline:*"],
+```
 }
 
 # Create pattern-based invalidation strategy
@@ -154,8 +174,10 @@ user_id = "123"
 patterns = strategy.invalidate_entity("user", user_id)
 
 # Invalidate cache entries matching the patterns
-for pattern in patterns:
-    cache_manager.invalidate_pattern(pattern)
+for pattern in patterns:```
+
+cache_manager.invalidate_pattern(pattern)
+```
 ```
 
 ### Consistent Hashing Support
@@ -166,9 +188,11 @@ For distributed environments, consistent hashing ensures that the same entity is
 from uno.caching.invalidation import PatternBasedInvalidation
 
 # Enable consistent hashing
-strategy = PatternBasedInvalidation(
-    patterns=patterns,
-    consistent_hashing=True
+strategy = PatternBasedInvalidation(```
+
+patterns=patterns,
+consistent_hashing=True
+```
 )
 
 # Get the shard key for an entity
@@ -180,11 +204,13 @@ shard_key = strategy.get_shard_key("user", "123")
 The Uno Caching Framework allows combining multiple invalidation strategies:
 
 ```python
-from uno.caching.invalidation import (
-    InvalidationStrategy,
-    TimeBasedInvalidation,
-    EventBasedInvalidation,
-    PatternBasedInvalidation
+from uno.caching.invalidation import (```
+
+InvalidationStrategy,
+TimeBasedInvalidation,
+EventBasedInvalidation,
+PatternBasedInvalidation
+```
 )
 
 # Create individual strategies
@@ -193,19 +219,25 @@ event_based = EventBasedInvalidation(event_handlers)
 pattern_based = PatternBasedInvalidation(patterns)
 
 # Combine strategies
-combined_strategy = InvalidationStrategy([
-    time_based,
-    event_based,
-    pattern_based
+combined_strategy = InvalidationStrategy([```
+
+time_based,
+event_based,
+pattern_based
+```
 ])
 
 # Use combined strategy
-cache_manager = CacheManager(CacheConfig(
-    invalidation=InvalidationConfig(
-        time_based=True,
-        event_based=True,
-        pattern_based=True,
-    )
+cache_manager = CacheManager(CacheConfig(```
+
+invalidation=InvalidationConfig(```
+
+time_based=True,
+event_based=True,
+pattern_based=True,
+```
+)
+```
 ))
 ```
 

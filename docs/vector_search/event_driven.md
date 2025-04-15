@@ -41,10 +41,12 @@ from uno.domain.event_dispatcher import EventDispatcher
 dispatcher = EventDispatcher()
 
 # Configure entity triggers
-VectorEntityTriggers.setup_entity_triggers(
-    entity_class=Document,
-    content_fields=["title", "content", "summary"],
-    dispatcher=dispatcher
+VectorEntityTriggers.setup_entity_triggers(```
+
+entity_class=Document,
+content_fields=["title", "content", "summary"],
+dispatcher=dispatcher
+```
 )
 ```
 
@@ -56,19 +58,25 @@ Register the vector event handlers:
 from uno.domain.vector_events import VectorEventHandler, VectorUpdateHandler
 
 # Define which entity types and fields should be vectorized
-vectorizable_types = {
-    "Document": ["title", "content", "summary"],
-    "Product": ["name", "description"]
+vectorizable_types = {```
+
+"Document": ["title", "content", "summary"],
+"Product": ["name", "description"]
+```
 }
 
 # Create handlers
-vector_event_handler = VectorEventHandler(
-    dispatcher=dispatcher,
-    vectorizable_types=vectorizable_types
+vector_event_handler = VectorEventHandler(```
+
+dispatcher=dispatcher,
+vectorizable_types=vectorizable_types
+```
 )
 
-vector_update_handler = VectorUpdateHandler(
-    dispatcher=dispatcher
+vector_update_handler = VectorUpdateHandler(```
+
+dispatcher=dispatcher
+```
 )
 ```
 
@@ -80,10 +88,14 @@ Set up and start the vector update service:
 from uno.domain.vector_update_service import VectorUpdateService
 
 # Create update service
-update_service = VectorUpdateService(
-    dispatcher=dispatcher,
-    batch_size=10,
-    update_interval=1.0
+update_service = VectorUpdateService(```
+
+dispatcher=dispatcher
+```,```
+
+batch_size=10,
+update_interval=1.0
+```
 )
 
 # Start the service
@@ -106,11 +118,13 @@ You can also manually trigger updates:
 
 ```python
 # Queue a single update
-await update_service.queue_update(
-    entity_id="doc123",
-    entity_type="Document",
-    content="This is the document content to embed",
-    priority=5  # Higher priority
+await update_service.queue_update(```
+
+entity_id="doc123",
+entity_type="Document",
+content="This is the document content to embed",
+priority=5  # Higher priority
+```
 )
 ```
 
@@ -122,24 +136,32 @@ For large data sets or initial loading, use batch updates:
 from uno.domain.vector_update_service import BatchVectorUpdateService
 
 # Create batch service
-batch_service = BatchVectorUpdateService(
-    dispatcher=dispatcher,
-    batch_size=100
+batch_service = BatchVectorUpdateService(```
+
+dispatcher=dispatcher
+```,```
+
+batch_size=100
+```
 )
 
 # Update all documents
-stats = await batch_service.update_all_entities(
-    entity_type="Document",
-    content_fields=["title", "content"]
+stats = await batch_service.update_all_entities(```
+
+entity_type="Document",
+content_fields=["title", "content"]
+```
 )
 
 print(f"Processed {stats['processed']} entities with {stats['succeeded']} successes")
 
 # Or update specific entities
-stats = await batch_service.update_entities_by_ids(
-    entity_type="Document",
-    entity_ids=["doc1", "doc2", "doc3"],
-    content_fields=["title", "content"]
+stats = await batch_service.update_entities_by_ids(```
+
+entity_type="Document",
+entity_ids=["doc1", "doc2", "doc3"],
+content_fields=["title", "content"]
+```
 )
 ```
 
@@ -164,12 +186,16 @@ You can create custom event handlers to perform additional actions when embeddin
 from uno.domain.event_dispatcher import EventSubscriber, domain_event_handler
 from uno.domain.vector_events import VectorEmbeddingUpdated
 
-class MyVectorHandler(EventSubscriber):
-    @domain_event_handler()
-    async def handle_embedding_updated(self, event: VectorEmbeddingUpdated) -> None:
-        if event.success:
-            print(f"Successfully updated embedding for {event.entity_type} {event.entity_id}")
-            # Perform additional actions like updating a search index
+class MyVectorHandler(EventSubscriber):```
+
+@domain_event_handler()
+async def handle_embedding_updated(self, event: VectorEmbeddingUpdated) -> None:```
+
+if event.success:
+    print(f"Successfully updated embedding for {event.entity_type} {event.entity_id}")
+    # Perform additional actions like updating a search index
+```
+```
 ```
 
 ## Database Integration

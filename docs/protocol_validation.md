@@ -22,28 +22,52 @@ from uno.core import validate_protocol, validate_implementation, ProtocolValidat
 
 # Define a protocol
 @runtime_checkable
-class UserRepository(Protocol):
-    async def get(self, id: UUID) -> Optional['User']:
-        ...
-    
-    async def save(self, user: 'User') -> None:
-        ...
+class UserRepository(Protocol):```
+
+async def get(self, id: UUID) -> Optional['User']:```
+
+...
+```
+``````
+
+```
+```
+
+async def save(self, user: 'User') -> None:```
+
+...
+```
+```
 
 # Validate a class against the protocol
-class PostgresUserRepository:
-    async def get(self, id: UUID) -> Optional['User']:
-        # Implementation
-        return None
-    
-    async def save(self, user: 'User') -> None:
-        # Implementation
-        pass
+class PostgresUserRepository:```
 
-try:
-    validate_protocol(PostgresUserRepository, UserRepository)
-    print("Class implements the protocol correctly!")
-except ProtocolValidationError as e:
-    print(f"Protocol validation failed: {e}")
+async def get(self, id: UUID) -> Optional['User']:```
+
+# Implementation
+return None
+```
+``````
+
+```
+```
+
+async def save(self, user: 'User') -> None:```
+
+# Implementation
+pass
+```
+```
+
+try:```
+
+validate_protocol(PostgresUserRepository, UserRepository)
+print("Class implements the protocol correctly!")
+```
+except ProtocolValidationError as e:```
+
+print(f"Protocol validation failed: {e}")
+```
 
 # Validate an instance
 repo = PostgresUserRepository()
@@ -56,14 +80,24 @@ validate_implementation(repo, UserRepository)
 from uno.core import implements
 
 @implements(UserRepository)
-class MongoUserRepository:
-    async def get(self, id: UUID) -> Optional['User']:
-        # Implementation
-        return None
-    
-    async def save(self, user: 'User') -> None:
-        # Implementation
-        pass
+class MongoUserRepository:```
+
+async def get(self, id: UUID) -> Optional['User']:```
+
+# Implementation
+return None
+```
+``````
+
+```
+```
+
+async def save(self, user: 'User') -> None:```
+
+# Implementation
+pass
+```
+```
 
 # The decorator has already validated the implementation at class definition time
 # If the class doesn't properly implement the protocol, a ProtocolValidationError 
@@ -78,8 +112,10 @@ from uno.core import find_protocol_implementations
 # Find all classes that implement UserRepository in a module
 implementations = find_protocol_implementations("app.repositories", UserRepository)
 
-for impl in implementations:
-    print(f"Found implementation: {impl.__name__}")
+for impl in implementations:```
+
+print(f"Found implementation: {impl.__name__}")
+```
 ```
 
 ### Validating All Implementations
@@ -90,14 +126,20 @@ from uno.core import verify_all_implementations
 # Verify all classes marked with @implements in multiple modules
 errors = verify_all_implementations(["app.repositories", "app.services"])
 
-if errors:
-    print(f"Found {len(errors)} classes with validation errors:")
-    for class_name, class_errors in errors.items():
-        print(f"  {class_name}:")
-        for error in class_errors:
-            print(f"    - {error}")
-else:
-    print("All implementations are valid!")
+if errors:```
+
+print(f"Found {len(errors)} classes with validation errors:")
+for class_name, class_errors in errors.items():```
+
+print(f"  {class_name}:")
+for error in class_errors:
+    print(f"    - {error}")
+```
+```
+else:```
+
+print("All implementations are valid!")
+```
 ```
 
 ## Command-Line Validation Tool

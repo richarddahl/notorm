@@ -108,19 +108,21 @@ When writing tests, follow these guidelines:
 2. **Testing Database Operations**:
    ```python
    # Mock the database connection
-   with patch("uno.database.db.async_connection") as mock_conn:
-       mock_cursor = AsyncMock()
-       mock_conn.__aenter__.return_value = mock_conn
-       mock_conn.cursor.return_value.__aenter__.return_value = mock_cursor
-       
-       # Set up the expected result
-       mock_cursor.fetchone.return_value = {"id": "test_id"}
-       
-       # Call the method being tested
-       result = await obj.get_by_id("test_id")
-       
-       # Verify the result
-       assert result.id == "test_id"
+   with patch("uno.database.db.async_connection") as mock_conn:```
+
+   mock_cursor = AsyncMock()
+   mock_conn.__aenter__.return_value = mock_conn
+   mock_conn.cursor.return_value.__aenter__.return_value = mock_cursor
+   
+   # Set up the expected result
+   mock_cursor.fetchone.return_value = {"id": "test_id"}
+   
+   # Call the method being tested
+   result = await obj.get_by_id("test_id")
+   
+   # Verify the result
+   assert result.id == "test_id"
+```
    ```
 
 3. **Testing Database Configuration**:
@@ -129,26 +131,32 @@ When writing tests, follow these guidelines:
    from uno.database.config import ConnectionConfig
    
    # Create config with test values
-   config = ConnectionConfig(
-       db_role="test_role",
-       db_name="test_db",
-       db_host="localhost",
-       db_port=5432,
-       db_user_pw="test@password",
-       db_driver="postgresql+psycopg2"
+   config = ConnectionConfig(```
+
+   db_role="test_role",
+   db_name="test_db",
+   db_host="localhost",
+   db_port=5432,
+   db_user_pw="test@password",
+   db_driver="postgresql+psycopg2"
+```
    )
    
    # Test immutability
-   with pytest.raises(Exception) as exc_info:
-       config.db_name = "new_name"
+   with pytest.raises(Exception) as exc_info:```
+
+   config.db_name = "new_name"
+```
    assert "frozen" in str(exc_info.value).lower()
    
    # Test URI generation with password encoding
-   with patch('urllib.parse.quote_plus') as mock_quote_plus:
-       mock_quote_plus.return_value = "encoded_password"
-       uri = config.get_uri()
-       mock_quote_plus.assert_called_once_with("test@password")
-       assert uri == "postgresql+psycopg2://test_role:encoded_password@localhost:5432/test_db"
+   with patch('urllib.parse.quote_plus') as mock_quote_plus:```
+
+   mock_quote_plus.return_value = "encoded_password"
+   uri = config.get_uri()
+   mock_quote_plus.assert_called_once_with("test@password")
+   assert uri == "postgresql+psycopg2://test_role:encoded_password@localhost:5432/test_db"
+```
    ```
 
 4. **Testing Database Engine Factory**:
@@ -161,22 +169,24 @@ When writing tests, follow these guidelines:
    config = ConnectionConfig(db_driver="postgresql+asyncpg", ...)
    
    # Test with patch
-   with patch('sqlalchemy.ext.asyncio.create_async_engine') as mock_create_engine:
-       mock_engine = AsyncMock(spec=AsyncEngine)
-       mock_create_engine.return_value = mock_engine
-       
-       # Call factory method
-       engine = factory.create_engine(config)
-       
-       # Verify engine creation
-       assert engine == mock_engine
-       mock_create_engine.assert_called_once()
-       
-       # Verify URL was correctly formed
-       url_arg = mock_create_engine.call_args[0][0]
-       assert url_arg.drivername == config.db_driver
-       assert url_arg.username == config.db_role
-       assert url_arg.database == config.db_name
+   with patch('sqlalchemy.ext.asyncio.create_async_engine') as mock_create_engine:```
+
+   mock_engine = AsyncMock(spec=AsyncEngine)
+   mock_create_engine.return_value = mock_engine
+   
+   # Call factory method
+   engine = factory.create_engine(config)
+   
+   # Verify engine creation
+   assert engine == mock_engine
+   mock_create_engine.assert_called_once()
+   
+   # Verify URL was correctly formed
+   url_arg = mock_create_engine.call_args[0][0]
+   assert url_arg.drivername == config.db_driver
+   assert url_arg.username == config.db_role
+   assert url_arg.database == config.db_name
+```
    ```
 
 5. **Testing Filters and Queries**:
@@ -194,15 +204,19 @@ When writing tests, follow these guidelines:
 6. **Testing API Endpoints**:
    ```python
    # Test endpoint factory
-   with patch("uno.api.endpoint.UnoEndpoint.__init__", return_value=None):
-       factory = UnoEndpointFactory()
-       factory.create_endpoints(app=mock_app, model_obj=mock_model, endpoints=["Create"])
-       
-       # Verify endpoint was created
-       mock_endpoint_init.assert_called_once_with(
-           model=mock_model,
-           app=mock_app,
-       )
+   with patch("uno.api.endpoint.UnoEndpoint.__init__", return_value=None):```
+
+   factory = UnoEndpointFactory()
+   factory.create_endpoints(app=mock_app, model_obj=mock_model, endpoints=["Create"])
+   
+   # Verify endpoint was created
+   mock_endpoint_init.assert_called_once_with(```
+
+   model=mock_model,
+   app=mock_app,
+```
+   )
+```
    ```
 
 ## Test Coverage

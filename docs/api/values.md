@@ -166,17 +166,19 @@ To integrate the Values API into your FastAPI application:
 ```python
 from fastapi import FastAPI, APIRouter
 from uno.database.db_manager import DBManager
-from uno.values import (
-    AttachmentRepository,
-    BooleanValueRepository,
-    DateTimeValueRepository,
-    DateValueRepository,
-    DecimalValueRepository,
-    IntegerValueRepository,
-    TextValueRepository,
-    TimeValueRepository,
-    ValueService,
-    register_value_endpoints,
+from uno.values import (```
+
+AttachmentRepository,
+BooleanValueRepository,
+DateTimeValueRepository,
+DateValueRepository,
+DecimalValueRepository,
+IntegerValueRepository,
+TextValueRepository,
+TimeValueRepository,
+ValueService,
+register_value_endpoints,
+```
 )
 
 # Create FastAPI app
@@ -197,24 +199,28 @@ time_repository = TimeValueRepository(db_manager)
 attachment_repository = AttachmentRepository(db_manager)
 
 # Create service
-value_service = ValueService(
-    boolean_repository=boolean_repository,
-    text_repository=text_repository,
-    integer_repository=integer_repository,
-    decimal_repository=decimal_repository,
-    date_repository=date_repository,
-    datetime_repository=datetime_repository,
-    time_repository=time_repository,
-    attachment_repository=attachment_repository,
-    db_manager=db_manager
+value_service = ValueService(```
+
+boolean_repository=boolean_repository,
+text_repository=text_repository,
+integer_repository=integer_repository,
+decimal_repository=decimal_repository,
+date_repository=date_repository,
+datetime_repository=datetime_repository,
+time_repository=time_repository,
+attachment_repository=attachment_repository,
+db_manager=db_manager
+```
 )
 
 # Register endpoints
-register_value_endpoints(
-    router=router,
-    value_service=value_service,
-    prefix="/values",
-    tags=["Values"]
+register_value_endpoints(```
+
+router=router,
+value_service=value_service,
+prefix="/values",
+tags=["Values"]
+```
 )
 
 # Include router in app

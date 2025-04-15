@@ -71,37 +71,49 @@ The Uno framework is organized into several bounded contexts, each with its own 
 
 The Context Map illustrates how different bounded contexts relate to each other:
 
+``````
 ```
-                             +----------------+
-                             |                |
-                       +---->|  API Context   |
-                       |     |                |
-                       |     +----------------+
-                       |              ^
-                       |              |
+
+                     +----------------+
+                     |                |
+               +---->|  API Context   |
+               |     |                |
+               |     +----------------+
+               |              ^
+               |              |
+```
+```
 +----------------+     |     +----------------+     +----------------+
 |                |     |     |                |     |                |
 | Domain Model   +-----------> Authorization  +---->+  Meta Context  |
 |   Context      |     |     |   Context      |     |                |
 |                |     |     |                |     +----------------+
-+----------------+     |     +----------------+
-        ^              |              ^
-        |              |              |
-        |              |     +----------------+
-        |              |     |                |
-        |              +---->+  Query Context |
-        |                    |                |
-        |                    +----------------+
-        |                              ^
-        |                              |
++----------------+     |     +----------------+```
+```
+
+^              |              ^
+|              |              |
+|              |     +----------------+
+|              |     |                |
+|              +---->+  Query Context |
+|                    |                |
+|                    +----------------+
+|                              ^
+|                              |
+```
+```
 +----------------+           +----------------+
 |                |           |                |
 | Schema Context +---------->+ SQL Generation |
 |                |           |    Context     |
-+----------------+           |                |
-        ^                    +----------------+
-        |                              ^
-        |                              |
++----------------+           |                |```
+```
+
+^                    +----------------+
+|                              ^
+|                              |
+```
+```
 +----------------+           +----------------+
 |                |           |                |
 |    Database    +---------->+  Database     |
@@ -168,12 +180,14 @@ Bounded contexts are registered using the `BoundedContext` class:
 from uno.domain.bounded_context import BoundedContext, register_bounded_context
 
 # Define a bounded context
-context = BoundedContext(
-    name="domain_model",
-    package_path="uno.domain",
-    description="Core domain model components",
-    responsibility="Define fundamental domain patterns and abstractions",
-    is_core_domain=True
+context = BoundedContext(```
+
+name="domain_model",
+package_path="uno.domain",
+description="Core domain model components",
+responsibility="Define fundamental domain patterns and abstractions",
+is_core_domain=True
+```
 )
 
 # Add ubiquitous language terms

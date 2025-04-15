@@ -2,8 +2,10 @@
 
 The Database Layer in Uno provides a comprehensive approach to database operations with specialized components for connection management, model definition, and SQL generation.
 
-!!! note "Architectural Evolution"
-    Uno now offers both the original database architecture and a new unified architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. The new architecture provides better separation of concerns, improved testability, and support for dependency injection.
+!!! note "Architectural Evolution"```
+
+Uno now offers both the original database architecture and a new unified architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. The new architecture provides better separation of concerns, improved testability, and support for dependency injection.
+```
 
 ## In This Section
 
@@ -44,12 +46,18 @@ The `UnoModel` class is a SQLAlchemy `DeclarativeBase` subclass that provides st
 from uno.model import UnoModel, PostgresTypes
 from sqlalchemy.orm import Mapped, mapped_column
 
-class CustomerModel(UnoModel):
-    __tablename__ = "customer"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
-    name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+class CustomerModel(UnoModel):```
+
+__tablename__ = "customer"
+``````
+
+```
+```
+
+id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
+name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+```
 ```
 
 ### UnoDB
@@ -103,19 +111,23 @@ from uno.database.provider import DatabaseProvider
 from uno.database.config import ConnectionConfig
 
 # Create a database provider
-config = ConnectionConfig(
-    host="localhost", 
-    port=5432, 
-    user="postgres", 
-    password="password", 
-    database="mydb"
+config = ConnectionConfig(```
+
+host="localhost", 
+port=5432, 
+user="postgres", 
+password="password", 
+database="mydb"
+```
 )
 db_provider = DatabaseProvider(config)
 
 # Get an async session
-async with db_provider.async_session() as session:
-    # Use the session
-    result = await session.execute(query)
+async with db_provider.async_session() as session:```
+
+# Use the session
+result = await session.execute(query)
+```
 ```
 
 ### UnoBaseRepository
@@ -127,14 +139,24 @@ from uno.database.repository import UnoBaseRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
 
-class CustomerRepository(UnoBaseRepository[CustomerModel]):
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, CustomerModel)
-    
-    async def get_by_email(self, email: str) -> Optional[CustomerModel]:
-        stmt = select(self.model_class).where(self.model_class.email == email)
-        result = await self.session.execute(stmt)
-        return result.scalars().first()
+class CustomerRepository(UnoBaseRepository[CustomerModel]):```
+
+def __init__(self, session: AsyncSession):```
+
+super().__init__(session, CustomerModel)
+```
+``````
+
+```
+```
+
+async def get_by_email(self, email: str) -> Optional[CustomerModel]:```
+
+stmt = select(self.model_class).where(self.model_class.email == email)
+result = await self.session.execute(stmt)
+return result.scalars().first()
+```
+```
 ```
 
 ### DBManager
@@ -152,11 +174,13 @@ db_manager = DBManager(get_connection)
 db_manager.execute_ddl("CREATE TABLE customers (id SERIAL PRIMARY KEY, name TEXT)")
 
 # Execute DDL through an emitter
-function_emitter = FunctionEmitter(
-    name="update_customer",
-    params=[{"name": "id", "type": "INTEGER"}, {"name": "name", "type": "TEXT"}],
-    return_type="VOID",
-    body="UPDATE customers SET name = $2 WHERE id = $1;"
+function_emitter = FunctionEmitter(```
+
+name="update_customer",
+params=[{"name": "id", "type": "INTEGER"}, {"name": "name", "type": "TEXT"}],
+return_type="VOID",
+body="UPDATE customers SET name = $2 WHERE id = $1;"
+```
 )
 db_manager.execute_from_emitter(function_emitter)
 ```
@@ -165,14 +189,18 @@ db_manager.execute_from_emitter(function_emitter)
 
 1. **Use Context Managers**: Always use the provided context managers for database connections to ensure proper resource cleanup.
    ```python
-   async with async_session() as session:
-       # Use session here
+   async with async_session() as session:```
+
+   # Use session here
+```
    ```
 
 2. **Leverage Type Annotations**: Use proper type annotations for better IDE support and type checking.
    ```python
-   async def get_user(user_id: str) -> Optional[UserModel]:
-       # Implementation
+   async def get_user(user_id: str) -> Optional[UserModel]:```
+
+   # Implementation
+```
    ```
 
 3. **Follow SQLAlchemy Patterns**: Adhere to SQLAlchemy's recommended patterns and practices for query building and execution.
@@ -182,6 +210,52 @@ db_manager.execute_from_emitter(function_emitter)
 5. **Manage Resources**: Properly dispose of connections and sessions to prevent resource leaks.
 
 6. **Prefer Repositories**: For complex domain logic, use the repository pattern to encapsulate database access.
+
+7. **Test Integration Points**: Use integration tests to verify database components work correctly together.
+
+## Testing Database Components
+
+The database layer includes comprehensive integration tests to ensure all components work correctly together:
+
+### Connection Pool Tests
+
+Tests verify that connection pooling works correctly with proper connection reuse, overflow handling, and circuit breaking for error conditions.
+
+```bash
+pytest tests/integration/test_connection_pool.py --run-integration
+```
+
+### Transaction Management Tests
+
+Tests for transaction isolation, nested transactions, multi-table operations, and proper cleanup.
+
+```bash
+pytest tests/integration/database/test_transaction.py --run-integration
+```
+
+### Query Optimizer Tests
+
+Tests for query plan analysis, automatic query optimization, and query caching.
+
+```bash
+pytest tests/integration/test_query_optimizer.py --run-integration
+```
+
+### Database Migration Tests
+
+Tests for schema migration and version management.
+
+```bash
+pytest tests/integration/test_migrations.py --run-integration
+```
+
+### Batch Operations Tests
+
+Tests for efficient batch processing with different execution strategies.
+
+```bash
+pytest tests/integration/test_batch_operations.py --run-integration
+```
 
 ## Choosing an Approach
 
@@ -200,6 +274,6 @@ db_manager.execute_from_emitter(function_emitter)
 
 ## Related Sections
 
-- [Models Layer](../models/overview.md) - Model definition and mapping
-- [SQL Generation](../sql_generation/overview.md) - SQL emitters and statement building
-- [Dependency Injection](../dependency_injection/overview.md) - Integration with the dependency injection system
+- [Models Layer](/docs/models/overview.md) - Model definition and mapping
+- [SQL Generation](/docs/sql_generation/overview.md) - SQL emitters and statement building
+- [Dependency Injection](/docs/dependency_injection/overview.md) - Integration with the dependency injection system

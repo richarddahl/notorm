@@ -34,43 +34,75 @@ Access to the workflow designer should be restricted to authorized administrator
 ### Implementation Example
 
 ```python
-async def update_workflow(
-    workflow: WorkflowDefinitionSchema,
-    workflow_id: str,
-    current_user: UserContext,
-    workflow_service: WorkflowService,
-):
-    """Update a workflow with proper authorization checks."""
-    # Check permissions
-    if not current_user.has_permission("workflow:edit"):
-        raise InsufficientPermissionsError("You do not have permission to edit workflows")
-    
-    # Retrieve existing workflow to check ownership
-    existing_workflow = await workflow_service.get_workflow_by_id(workflow_id)
-    if existing_workflow.is_failure:
-        raise NotFoundError(f"Workflow with ID {workflow_id} not found")
-    
-    # Check tenant ownership
-    if existing_workflow.value.tenant_id != current_user.tenant_id:
-        raise InsufficientPermissionsError("You do not have permission to edit this workflow")
-    
-    # Proceed with update
-    result = await workflow_service.update_workflow(workflow_def)
-    
-    # Log the update for audit purposes
-    await audit_logger.log_event(
-        actor=current_user.id,
-        action="workflow.update",
-        resource_type="workflow",
-        resource_id=workflow_id,
-        details={
-            "workflow_name": workflow.name,
-            "previous_version": existing_workflow.value.version,
-            "new_version": workflow.version
-        }
-    )
-    
-    return result
+async def update_workflow(```
+
+workflow: WorkflowDefinitionSchema,
+workflow_id: str,
+current_user: UserContext,
+workflow_service: WorkflowService,
+```
+):```
+
+"""Update a workflow with proper authorization checks."""
+# Check permissions
+if not current_user.has_permission("workflow:edit"):```
+
+raise InsufficientPermissionsError("You do not have permission to edit workflows")
+```
+``````
+
+```
+```
+
+# Retrieve existing workflow to check ownership
+existing_workflow = await workflow_service.get_workflow_by_id(workflow_id)
+if existing_workflow.is_failure:```
+
+raise NotFoundError(f"Workflow with ID {workflow_id} not found")
+```
+``````
+
+```
+```
+
+# Check tenant ownership
+if existing_workflow.value.tenant_id != current_user.tenant_id:```
+
+raise InsufficientPermissionsError("You do not have permission to edit this workflow")
+```
+``````
+
+```
+```
+
+# Proceed with update
+result = await workflow_service.update_workflow(workflow_def)
+``````
+
+```
+```
+
+# Log the update for audit purposes
+await audit_logger.log_event(```
+
+actor=current_user.id,
+action="workflow.update",
+resource_type="workflow",
+resource_id=workflow_id,
+details={
+    "workflow_name": workflow.name,
+    "previous_version": existing_workflow.value.version,
+    "new_version": workflow.version
+}
+```
+)
+``````
+
+```
+```
+
+return result
+```
 ```
 
 ## Data Security
@@ -83,11 +115,13 @@ async def update_workflow(
 
 2. **Data Masking**
    - Mask sensitive fields (e.g., showing only last 4 digits of credit card numbers)
-   - Provide masking filters for template variables:
-     ```
-     Credit Card: {{credit_card_number | mask_card}}
-     SSN: {{ssn | mask_ssn}}
-     ```
+   - Provide masking filters for template variables:```
+
+ ```
+ Credit Card: {{credit_card_number | mask_card}}
+ SSN: {{ssn | mask_ssn}}
+ ```
+```
 
 3. **Data Retention**
    - Define retention policies for workflow execution logs
@@ -97,46 +131,78 @@ async def update_workflow(
 ### Implementation Example
 
 ```python
-class SensitiveDataProtection:
-    """Utility for protecting sensitive data in workflows."""
-    
-    # Fields that are considered sensitive
-    SENSITIVE_FIELDS = {
-        "credit_card", "ssn", "password", "secret", "key", 
-        "token", "auth", "credentials"
-    }
-    
-    @classmethod
-    def has_sensitive_fields(cls, template: str) -> bool:
-        """Check if a template contains references to sensitive fields."""
-        pattern = r"{{\s*([a-zA-Z0-9_\.]+)\s*}}"
-        matches = re.findall(pattern, template)
+class SensitiveDataProtection:```
+
+"""Utility for protecting sensitive data in workflows."""
+``````
+
+```
+```
+
+# Fields that are considered sensitive
+SENSITIVE_FIELDS = {```
+
+"credit_card", "ssn", "password", "secret", "key", 
+"token", "auth", "credentials"
+```
+}
+``````
+
+```
+```
+
+@classmethod
+def has_sensitive_fields(cls, template: str) -> bool:```
+
+"""Check if a template contains references to sensitive fields."""
+pattern = r"{{\s*([a-zA-Z0-9_\.]+)\s*}}"
+matches = re.findall(pattern, template)
+``````
+
+```
+```
+
+for match in matches:
+    field_name = match.lower()
+    if any(sensitive in field_name for sensitive in cls.SENSITIVE_FIELDS):
+        return True
+``````
+
+```
+```
+
+return False
+```
+``````
+
+```
+```
+
+@classmethod
+def mask_sensitive_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:```
+
+"""Create a copy of the data with sensitive fields masked."""
+masked_data = copy.deepcopy(data)
+``````
+
+```
+```
+
+for key, value in masked_data.items():
+    if isinstance(value, str) and any(sensitive in key.lower() for sensitive in cls.SENSITIVE_FIELDS):
+        if key.lower().endswith("card") and len(value) > 4:
+            # Mask all but last 4 digits for card numbers
+            masked_data[key] = "*" * (len(value) - 4) + value[-4:]
+        else:
+            # Complete masking for other sensitive fields
+            masked_data[key] = "*" * len(value)
+    elif isinstance(value, dict):
+        # Recursively mask nested dictionaries
+        masked_data[key] = cls.mask_sensitive_data(value)
         
-        for match in matches:
-            field_name = match.lower()
-            if any(sensitive in field_name for sensitive in cls.SENSITIVE_FIELDS):
-                return True
-        
-        return False
-    
-    @classmethod
-    def mask_sensitive_data(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a copy of the data with sensitive fields masked."""
-        masked_data = copy.deepcopy(data)
-        
-        for key, value in masked_data.items():
-            if isinstance(value, str) and any(sensitive in key.lower() for sensitive in cls.SENSITIVE_FIELDS):
-                if key.lower().endswith("card") and len(value) > 4:
-                    # Mask all but last 4 digits for card numbers
-                    masked_data[key] = "*" * (len(value) - 4) + value[-4:]
-                else:
-                    # Complete masking for other sensitive fields
-                    masked_data[key] = "*" * len(value)
-            elif isinstance(value, dict):
-                # Recursively mask nested dictionaries
-                masked_data[key] = cls.mask_sensitive_data(value)
-                
-        return masked_data
+return masked_data
+```
+```
 ```
 
 ## Code Injection Prevention
@@ -172,46 +238,66 @@ class SensitiveDataProtection:
 ### Implementation Example
 
 ```python
-class TemplateSandbox:
-    """Sandbox for securely executing workflow templates."""
+class TemplateSandbox:```
+
+"""Sandbox for securely executing workflow templates."""
+``````
+
+```
+```
+
+# Whitelist of allowed functions
+ALLOWED_FUNCTIONS = {```
+
+"date": datetime.strftime,
+"format_number": format_number,
+"upper": str.upper,
+"lower": str.lower,
+"title": str.title
+```
+}
+``````
+
+```
+```
+
+# Whitelist of allowed filters
+ALLOWED_FILTERS = {```
+
+"date", "number", "currency", "upper", "lower",
+"title", "mask_card", "mask_ssn", "truncate"
+```
+}
+``````
+
+```
+```
+
+@classmethod
+def render_template(cls, template: str, context: Dict[str, Any]) -> str:```
+
+"""Render a template in a secure sandbox environment."""
+try:
+    # Create a secure environment with limited functionality
+    env = SandboxedEnvironment(autoescape=True)
     
-    # Whitelist of allowed functions
-    ALLOWED_FUNCTIONS = {
-        "date": datetime.strftime,
-        "format_number": format_number,
-        "upper": str.upper,
-        "lower": str.lower,
-        "title": str.title
-    }
+    # Register only allowed filters
+    for filter_name in cls.ALLOWED_FILTERS:
+        if hasattr(filters, filter_name):
+            env.filters[filter_name] = getattr(filters, filter_name)
     
-    # Whitelist of allowed filters
-    ALLOWED_FILTERS = {
-        "date", "number", "currency", "upper", "lower",
-        "title", "mask_card", "mask_ssn", "truncate"
-    }
+    # Compile and render the template
+    template_obj = env.from_string(template)
+    result = template_obj.render(**context)
     
-    @classmethod
-    def render_template(cls, template: str, context: Dict[str, Any]) -> str:
-        """Render a template in a secure sandbox environment."""
-        try:
-            # Create a secure environment with limited functionality
-            env = SandboxedEnvironment(autoescape=True)
-            
-            # Register only allowed filters
-            for filter_name in cls.ALLOWED_FILTERS:
-                if hasattr(filters, filter_name):
-                    env.filters[filter_name] = getattr(filters, filter_name)
-            
-            # Compile and render the template
-            template_obj = env.from_string(template)
-            result = template_obj.render(**context)
-            
-            return result
-            
-        except Exception as e:
-            # Log the error but don't expose details to the caller
-            logger.error(f"Template rendering error: {str(e)}")
-            return f"Error rendering template: {type(e).__name__}"
+    return result
+    
+except Exception as e:
+    # Log the error but don't expose details to the caller
+    logger.error(f"Template rendering error: {str(e)}")
+    return f"Error rendering template: {type(e).__name__}"
+```
+```
 ```
 
 ## Webhook Security
@@ -236,59 +322,79 @@ class TemplateSandbox:
 ### Implementation Example
 
 ```python
-class WebhookSecurityValidator:
-    """Security validator for webhook URLs and configurations."""
+class WebhookSecurityValidator:```
+
+"""Security validator for webhook URLs and configurations."""
+``````
+
+```
+```
+
+# List of allowed domains for webhooks
+ALLOWED_DOMAINS = [```
+
+"api.example.com",
+"hooks.slack.com",
+"api.github.com"
+```
+]
+``````
+
+```
+```
+
+# IP ranges that should be blocked (private networks)
+BLOCKED_IP_RANGES = [```
+
+"10.0.0.0/8",
+"172.16.0.0/12",
+"192.168.0.0/16",
+"127.0.0.0/8"
+```
+]
+``````
+
+```
+```
+
+@classmethod
+def validate_webhook_url(cls, url: str) -> bool:```
+
+"""Validate that a webhook URL is allowed and secure."""
+try:
+    # Check for HTTPS
+    if not url.lower().startswith("https://"):
+        logger.warning(f"Webhook URL rejected: HTTPS required - {url}")
+        return False
+        
+    # Parse the URL
+    parsed_url = urllib.parse.urlparse(url)
+    domain = parsed_url.netloc.lower()
     
-    # List of allowed domains for webhooks
-    ALLOWED_DOMAINS = [
-        "api.example.com",
-        "hooks.slack.com",
-        "api.github.com"
-    ]
+    # Check domain against whitelist
+    if domain not in cls.ALLOWED_DOMAINS and not any(
+        domain.endswith(f".{allowed}") for allowed in cls.ALLOWED_DOMAINS
+    ):
+        logger.warning(f"Webhook URL rejected: Domain not in whitelist - {domain}")
+        return False
+        
+    # Resolve domain to IP
+    ip_address = socket.gethostbyname(domain)
     
-    # IP ranges that should be blocked (private networks)
-    BLOCKED_IP_RANGES = [
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "192.168.0.0/16",
-        "127.0.0.0/8"
-    ]
-    
-    @classmethod
-    def validate_webhook_url(cls, url: str) -> bool:
-        """Validate that a webhook URL is allowed and secure."""
-        try:
-            # Check for HTTPS
-            if not url.lower().startswith("https://"):
-                logger.warning(f"Webhook URL rejected: HTTPS required - {url}")
-                return False
-                
-            # Parse the URL
-            parsed_url = urllib.parse.urlparse(url)
-            domain = parsed_url.netloc.lower()
-            
-            # Check domain against whitelist
-            if domain not in cls.ALLOWED_DOMAINS and not any(
-                domain.endswith(f".{allowed}") for allowed in cls.ALLOWED_DOMAINS
-            ):
-                logger.warning(f"Webhook URL rejected: Domain not in whitelist - {domain}")
-                return False
-                
-            # Resolve domain to IP
-            ip_address = socket.gethostbyname(domain)
-            
-            # Check against blocked IP ranges
-            ip_obj = ipaddress.ip_address(ip_address)
-            for blocked_range in cls.BLOCKED_IP_RANGES:
-                if ip_obj in ipaddress.ip_network(blocked_range):
-                    logger.warning(f"Webhook URL rejected: IP in blocked range - {ip_address}")
-                    return False
-                    
-            return True
-            
-        except Exception as e:
-            logger.error(f"Webhook validation error: {str(e)}")
+    # Check against blocked IP ranges
+    ip_obj = ipaddress.ip_address(ip_address)
+    for blocked_range in cls.BLOCKED_IP_RANGES:
+        if ip_obj in ipaddress.ip_network(blocked_range):
+            logger.warning(f"Webhook URL rejected: IP in blocked range - {ip_address}")
             return False
+            
+    return True
+    
+except Exception as e:
+    logger.error(f"Webhook validation error: {str(e)}")
+    return False
+```
+```
 ```
 
 ## Rate Limiting and Abuse Prevention
@@ -313,71 +419,103 @@ class WebhookSecurityValidator:
 ### Implementation Example
 
 ```python
-class ActionRateLimiter:
-    """Rate limiter for workflow actions."""
+class ActionRateLimiter:```
+
+"""Rate limiter for workflow actions."""
+``````
+
+```
+```
+
+def __init__(self, redis_client):```
+
+"""Initialize with a Redis client for state tracking."""
+self.redis = redis_client
+``````
+
+```
+```
+
+# Default limits per tenant per hour
+self.default_limits = {
+    "email": 1000,
+    "notification": 5000,
+    "webhook": 2000,
+    "database": 10000
+}
+```
+``````
+
+```
+```
+
+async def check_and_increment(```
+
+self, 
+tenant_id: str, 
+action_type: str, 
+count: int = 1
+```
+) -> bool:```
+
+"""
+Check if an action is allowed under rate limits.
+``````
+
+```
+```
+
+Args:
+    tenant_id: The tenant ID
+    action_type: The type of action being performed
+    count: The number of actions to add (for bulk operations)
     
-    def __init__(self, redis_client):
-        """Initialize with a Redis client for state tracking."""
-        self.redis = redis_client
-        
-        # Default limits per tenant per hour
-        self.default_limits = {
-            "email": 1000,
-            "notification": 5000,
-            "webhook": 2000,
-            "database": 10000
-        }
+Returns:
+    True if allowed, False if rate limited
+"""
+# Get the appropriate limit
+limit = self.default_limits.get(action_type, 1000)
+``````
+
+```
+```
+
+# Create Redis keys for tracking
+hourly_key = f"rate_limit:{tenant_id}:{action_type}:hourly:{datetime.now().strftime('%Y-%m-%d-%H')}"
+daily_key = f"rate_limit:{tenant_id}:{action_type}:daily:{datetime.now().strftime('%Y-%m-%d')}"
+``````
+
+```
+```
+
+# Use Redis pipeline for atomicity
+async with self.redis.pipeline() as pipe:
+    # Get current counts
+    await pipe.get(hourly_key)
+    await pipe.get(daily_key)
+    hourly_count, daily_count = await pipe.execute()
     
-    async def check_and_increment(
-        self, 
-        tenant_id: str, 
-        action_type: str, 
-        count: int = 1
-    ) -> bool:
-        """
-        Check if an action is allowed under rate limits.
-        
-        Args:
-            tenant_id: The tenant ID
-            action_type: The type of action being performed
-            count: The number of actions to add (for bulk operations)
-            
-        Returns:
-            True if allowed, False if rate limited
-        """
-        # Get the appropriate limit
-        limit = self.default_limits.get(action_type, 1000)
-        
-        # Create Redis keys for tracking
-        hourly_key = f"rate_limit:{tenant_id}:{action_type}:hourly:{datetime.now().strftime('%Y-%m-%d-%H')}"
-        daily_key = f"rate_limit:{tenant_id}:{action_type}:daily:{datetime.now().strftime('%Y-%m-%d')}"
-        
-        # Use Redis pipeline for atomicity
-        async with self.redis.pipeline() as pipe:
-            # Get current counts
-            await pipe.get(hourly_key)
-            await pipe.get(daily_key)
-            hourly_count, daily_count = await pipe.execute()
-            
-            # Convert to integers with default of 0
-            hourly_count = int(hourly_count or 0)
-            daily_count = int(daily_count or 0)
-            
-            # Check if adding count would exceed limits
-            if hourly_count + count > limit:
-                return False
-            
-            # Increment counters
-            await pipe.incrby(hourly_key, count)
-            await pipe.incrby(daily_key, count)
-            
-            # Set expirations if they don't exist
-            await pipe.expire(hourly_key, 3600)  # 1 hour
-            await pipe.expire(daily_key, 86400)  # 1 day
-            
-            await pipe.execute()
-            
-            return True
+    # Convert to integers with default of 0
+    hourly_count = int(hourly_count or 0)
+    daily_count = int(daily_count or 0)
+    
+    # Check if adding count would exceed limits
+    if hourly_count + count > limit:
+        return False
+    
+    # Increment counters
+    await pipe.incrby(hourly_key, count)
+    await pipe.incrby(daily_key, count)
+    
+    # Set expirations if they don't exist
+    await pipe.expire(hourly_key, 3600)  # 1 hour
+    await pipe.expire(daily_key, 86400)  # 1 day
+    
+    await pipe.execute()
+    
+    return True
+```
+```
 ```
 
 ## Execution Monitoring and Alerting
@@ -404,49 +542,83 @@ class ActionRateLimiter:
 ### Implementation Example
 
 ```python
-class WorkflowSecurityMonitor:
-    """Monitor for workflow security events and anomalies."""
-    
-    def __init__(self, alert_service):
-        """Initialize with an alert service."""
-        self.alert_service = alert_service
-    
-    async def check_execution_anomalies(self, execution_logs, threshold=3):
-        """Check for anomalies in recent execution logs."""
-        # Get statistics for the last 24 hours
-        stats = await self._compute_execution_statistics(execution_logs)
-        
-        alerts = []
-        
-        # Check for volume anomalies (3x normal volume)
-        if stats["current_hour_count"] > stats["average_hourly_count"] * threshold:
-            alerts.append({
-                "level": "warning",
-                "title": "Unusual workflow execution volume detected",
-                "message": f"Current executions: {stats['current_hour_count']}, average: {stats['average_hourly_count']}",
-                "metadata": {
-                    "ratio": stats["current_hour_count"] / stats["average_hourly_count"],
-                    "tenant_id": stats["tenant_id"]
-                }
-            })
-        
-        # Check for failure rate anomalies
-        if stats["current_failure_rate"] > 0.3 and stats["current_failure_rate"] > stats["average_failure_rate"] * threshold:
-            alerts.append({
-                "level": "error",
-                "title": "High workflow failure rate detected",
-                "message": f"Current failure rate: {stats['current_failure_rate']:.2f}, average: {stats['average_failure_rate']:.2f}",
-                "metadata": {
-                    "ratio": stats["current_failure_rate"] / stats["average_failure_rate"],
-                    "tenant_id": stats["tenant_id"]
-                }
-            })
-        
-        # Send alerts if any were generated
-        for alert in alerts:
-            await self.alert_service.send_alert(alert)
-        
-        return alerts
+class WorkflowSecurityMonitor:```
+
+"""Monitor for workflow security events and anomalies."""
+``````
+
+```
+```
+
+def __init__(self, alert_service):```
+
+"""Initialize with an alert service."""
+self.alert_service = alert_service
+```
+``````
+
+```
+```
+
+async def check_execution_anomalies(self, execution_logs, threshold=3):```
+
+"""Check for anomalies in recent execution logs."""
+# Get statistics for the last 24 hours
+stats = await self._compute_execution_statistics(execution_logs)
+``````
+
+```
+```
+
+alerts = []
+``````
+
+```
+```
+
+# Check for volume anomalies (3x normal volume)
+if stats["current_hour_count"] > stats["average_hourly_count"] * threshold:
+    alerts.append({
+        "level": "warning",
+        "title": "Unusual workflow execution volume detected",
+        "message": f"Current executions: {stats['current_hour_count']}, average: {stats['average_hourly_count']}",
+        "metadata": {
+            "ratio": stats["current_hour_count"] / stats["average_hourly_count"],
+            "tenant_id": stats["tenant_id"]
+        }
+    })
+``````
+
+```
+```
+
+# Check for failure rate anomalies
+if stats["current_failure_rate"] > 0.3 and stats["current_failure_rate"] > stats["average_failure_rate"] * threshold:
+    alerts.append({
+        "level": "error",
+        "title": "High workflow failure rate detected",
+        "message": f"Current failure rate: {stats['current_failure_rate']:.2f}, average: {stats['average_failure_rate']:.2f}",
+        "metadata": {
+            "ratio": stats["current_failure_rate"] / stats["average_failure_rate"],
+            "tenant_id": stats["tenant_id"]
+        }
+    })
+``````
+
+```
+```
+
+# Send alerts if any were generated
+for alert in alerts:
+    await self.alert_service.send_alert(alert)
+``````
+
+```
+```
+
+return alerts
+```
+```
 ```
 
 ## Testing and Validation
@@ -474,64 +646,108 @@ class WorkflowSecurityMonitor:
 ### Implementation Example
 
 ```python
-class WorkflowSecurityValidator:
-    """Security validator for workflow definitions."""
-    
-    async def validate_workflow(self, workflow_def):
-        """
-        Perform security validation on a workflow definition.
+class WorkflowSecurityValidator:```
+
+"""Security validator for workflow definitions."""
+``````
+
+```
+```
+
+async def validate_workflow(self, workflow_def):```
+
+"""
+Perform security validation on a workflow definition.
+``````
+
+```
+```
+
+Returns:
+    A list of security issues found
+"""
+issues = []
+``````
+
+```
+```
+
+# Check for sensitive data in templates
+issues.extend(await self._check_template_data_exposure(workflow_def))
+``````
+
+```
+```
+
+# Check webhook security
+issues.extend(await self._check_webhook_security(workflow_def))
+``````
+
+```
+```
+
+# Check database action permissions
+issues.extend(await self._check_database_action_permissions(workflow_def))
+``````
+
+```
+```
+
+# Check template injection vulnerabilities
+issues.extend(await self._check_template_injection(workflow_def))
+``````
+
+```
+```
+
+return issues
+```
+``````
+
+```
+```
+
+async def _check_template_data_exposure(self, workflow_def):```
+
+"""Check for sensitive data exposure in templates."""
+issues = []
+sensitive_patterns = [
+    r"password", r"secret", r"key", r"token", r"credential",
+    r"ssn", r"social.*security", r"credit.*card"
+]
+```
+    ```
+
+# Check all notification and email actions
+for action in workflow_def.actions:
+    if action.type in ["notification", "email"]:
+        # Check title
+        if hasattr(action, "title") and action.title:
+            for pattern in sensitive_patterns:
+                if re.search(pattern, action.title, re.IGNORECASE):
+                    issues.append({
+                        "severity": "high",
+                        "message": f"Potential sensitive data in title: matched pattern '{pattern}'",
+                        "location": f"actions[{workflow_def.actions.index(action)}].title"
+                    })
         
-        Returns:
-            A list of security issues found
-        """
-        issues = []
-        
-        # Check for sensitive data in templates
-        issues.extend(await self._check_template_data_exposure(workflow_def))
-        
-        # Check webhook security
-        issues.extend(await self._check_webhook_security(workflow_def))
-        
-        # Check database action permissions
-        issues.extend(await self._check_database_action_permissions(workflow_def))
-        
-        # Check template injection vulnerabilities
-        issues.extend(await self._check_template_injection(workflow_def))
-        
-        return issues
-    
-    async def _check_template_data_exposure(self, workflow_def):
-        """Check for sensitive data exposure in templates."""
-        issues = []
-        sensitive_patterns = [
-            r"password", r"secret", r"key", r"token", r"credential",
-            r"ssn", r"social.*security", r"credit.*card"
-        ]
-        
-        # Check all notification and email actions
-        for action in workflow_def.actions:
-            if action.type in ["notification", "email"]:
-                # Check title
-                if hasattr(action, "title") and action.title:
-                    for pattern in sensitive_patterns:
-                        if re.search(pattern, action.title, re.IGNORECASE):
-                            issues.append({
-                                "severity": "high",
-                                "message": f"Potential sensitive data in title: matched pattern '{pattern}'",
-                                "location": f"actions[{workflow_def.actions.index(action)}].title"
-                            })
-                
-                # Check body
-                if hasattr(action, "body") and action.body:
-                    for pattern in sensitive_patterns:
-                        if re.search(pattern, action.body, re.IGNORECASE):
-                            issues.append({
-                                "severity": "high",
-                                "message": f"Potential sensitive data in body: matched pattern '{pattern}'",
-                                "location": f"actions[{workflow_def.actions.index(action)}].body"
-                            })
-        
-        return issues
+        # Check body
+        if hasattr(action, "body") and action.body:
+            for pattern in sensitive_patterns:
+                if re.search(pattern, action.body, re.IGNORECASE):
+                    issues.append({
+                        "severity": "high",
+                        "message": f"Potential sensitive data in body: matched pattern '{pattern}'",
+                        "location": f"actions[{workflow_def.actions.index(action)}].body"
+                    })
+``````
+
+```
+```
+
+return issues
+```
+```
 ```
 
 ## Compliance Considerations

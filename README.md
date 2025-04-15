@@ -742,6 +742,22 @@ src/uno/
   - All PostgreSQL dependencies are handled by Docker
   - No local PostgreSQL installation needed
 
+### Documentation
+
+Comprehensive documentation is available in the `/docs` directory and can be built using MkDocs:
+
+```console
+# Build documentation
+python src/scripts/generate_docs.py --mkdocs
+
+# Serve documentation locally
+python src/scripts/generate_docs.py --mkdocs --serve
+```
+
+For more information on the documentation, see:
+- [Documentation Guide](docs/developer_docs_guide.md)
+- [Documentation Generation](docs/documentation_generation/overview.md)
+
 ### Testing
 
 ```console
@@ -757,9 +773,27 @@ hatch run test:test
 # Run tests with more details
 hatch run test:testvv
 
+# Run integration tests
+hatch run test:integration
+
+# Run integration tests with vector search components
+hatch run test:integration-vector
+
+# Run performance benchmarks for integration tests
+hatch run test:benchmarks
+
 # Type checking
 hatch run types:check
 ```
+
+The test suite includes comprehensive integration tests that verify component interactions in a real-world environment. These tests cover:
+
+- Core infrastructure components (migrations, connection pooling, transactions)
+- Authentication and authorization (JWT, RBAC, permissions)
+- Data processing features (vector search, batch operations, query optimization)
+- Distributed systems features (caching, error handling)
+
+Each test verifies that components work together correctly with real infrastructure (PostgreSQL, Redis) through Docker.
 
 ### Performance Benchmarks
 
@@ -770,13 +804,26 @@ hatch run test:benchmark
 # Run specific module benchmarks
 hatch run test:benchmark tests/benchmarks/test_database_performance.py
 
-# View benchmark results
+# Run integration test benchmarks
+cd tests/integration
+./run_benchmarks.py --output benchmark_results.json --csv
+
+# Compare benchmark results with previous run
+./run_benchmarks.py --compare previous_results.json
+
+# View dashboard for all benchmark results
 cd benchmarks/dashboard
 ./run_dashboard.sh
 ```
 
-The benchmark dashboard provides visualization and analysis of benchmark results across all modules.
-It includes performance comparison, trend analysis, and scaling visualization. See [docs/benchmarks/dashboard.md](docs/benchmarks/dashboard.md) for more details.
+The benchmark infrastructure includes:
+
+1. **Comprehensive Benchmarks**: Performance tests for all critical components
+2. **Integration Test Benchmarks**: Performance tests for component interactions
+3. **Benchmark Runner**: Tools for running benchmarks and comparing results
+4. **Dashboard**: Visualization and analysis of benchmark results
+
+The dashboard provides performance comparison, trend analysis, and scaling visualization. It integrates results from both unit-level and integration-level benchmarks. See [docs/benchmarks/dashboard.md](docs/benchmarks/dashboard.md) for more details.
 
 ### Documentation
 

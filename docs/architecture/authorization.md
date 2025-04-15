@@ -32,18 +32,34 @@ The framework includes several built-in policy types:
 Policies are implemented as classes that inherit from `AuthorizationPolicy`:
 
 ```python
-class CustomPolicy(AuthorizationPolicy[Product]):
-    async def _authorize_internal(self, context: ServiceContext, target: Optional[Product] = None) -> bool:
-        # Custom authorization logic
-        if not target:
-            return False
-        
-        # Check if the product is active
-        if not target.active:
-            return False
-        
-        # Only allow access to products with price < 1000
-        return target.price < 1000
+class CustomPolicy(AuthorizationPolicy[Product]):```
+
+async def _authorize_internal(self, context: ServiceContext, target: Optional[Product] = None) -> bool:```
+
+# Custom authorization logic
+if not target:```
+
+return False
+```
+``````
+
+```
+```
+
+# Check if the product is active
+if not target.active:```
+
+return False
+```
+``````
+
+```
+```
+
+# Only allow access to products with price < 1000
+return target.price < 1000
+```
+```
 ```
 
 ### Using Policies
@@ -57,18 +73,22 @@ auth_service.register_policy(SimplePolicy("products", "read"))
 auth_service.register_policy(OwnershipPolicy("products", "write", "owner_id"))
 
 # Create a service context
-context = ServiceContext(
-    user_id="user1",
-    is_authenticated=True,
-    permissions=["products:read", "products:write"]
+context = ServiceContext(```
+
+user_id="user1",
+is_authenticated=True,
+permissions=["products:read", "products:write"]
+```
 )
 
 # Create a product
-product = Product(
-    id="prod-1",
-    name="Sample Product",
-    price=99.99,
-    owner_id="user1"
+product = Product(```
+
+id="prod-1",
+name="Sample Product",
+price=99.99,
+owner_id="user1"
+```
 )
 
 # Check authorization
@@ -103,14 +123,18 @@ Permissions follow a `resource:action` format with support for wildcards:
 rbac_service = get_rbac_service()
 
 # Create roles
-admin_role = rbac_service.create_role("admin", [
-    "products:read", "products:write", "products:delete",
-    "orders:read", "orders:write", "orders:delete"
+admin_role = rbac_service.create_role("admin", [```
+
+"products:read", "products:write", "products:delete",
+"orders:read", "orders:write", "orders:delete"
+```
 ])
 
-user_role = rbac_service.create_role("user", [
-    "products:read",
-    "orders:read"
+user_role = rbac_service.create_role("user", [```
+
+"products:read",
+"orders:read"
+```
 ])
 
 # Create users
@@ -148,18 +172,24 @@ tenant1 = tenant_rbac.create_tenant("tenant1", "Tenant 1")
 tenant2 = tenant_rbac.create_tenant("tenant2", "Tenant 2")
 
 # Create global roles
-tenant_rbac.create_role("global_admin", [
-    "products:read", "products:write", "products:delete",
-    "tenants:read", "tenants:write", "users:*"
+tenant_rbac.create_role("global_admin", [```
+
+"products:read", "products:write", "products:delete",
+"tenants:read", "tenants:write", "users:*"
+```
 ])
 
 # Create tenant-specific roles
-tenant_rbac.create_role("tenant_admin", [
-    "products:read", "products:write", "products:delete"
+tenant_rbac.create_role("tenant_admin", [```
+
+"products:read", "products:write", "products:delete"
+```
 ], "tenant1")
 
-tenant_rbac.create_role("tenant_user", [
-    "products:read"
+tenant_rbac.create_role("tenant_user", [```
+
+"products:read"
+```
 ], "tenant1")
 
 # Create global user (system admin)
@@ -188,55 +218,87 @@ The authorization system integrates with the service context to provide authoriz
 ### Service Context Integration
 
 ```python
-class ProductService(EntityService[Product]):
-    def authorize_command(self, command: Command, context: ServiceContext) -> None:
-        """Authorize commands."""
-        # Require authentication
-        context.require_authentication()
-        
-        # Require permission
-        if isinstance(command, CreateEntityCommand):
-            context.require_permission("products:write")
-        elif isinstance(command, UpdateEntityCommand):
-            context.require_permission("products:write")
-        elif isinstance(command, DeleteEntityCommand):
-            context.require_permission("products:delete")
+class ProductService(EntityService[Product]):```
+
+def authorize_command(self, command: Command, context: ServiceContext) -> None:```
+
+"""Authorize commands."""
+# Require authentication
+context.require_authentication()
+``````
+
+```
+```
+
+# Require permission
+if isinstance(command, CreateEntityCommand):
+    context.require_permission("products:write")
+elif isinstance(command, UpdateEntityCommand):
+    context.require_permission("products:write")
+elif isinstance(command, DeleteEntityCommand):
+    context.require_permission("products:delete")
+```
+``````
+
+```
+```
+
+def authorize_query(self, query: Query, context: ServiceContext) -> None:```
+
+"""Authorize queries."""
+# Require authentication for all queries
+context.require_authentication()
+``````
+
+```
+```
+
+# Require permission
+if isinstance(query, EntityByIdQuery) or isinstance(query, EntityListQuery):
+    context.require_permission("products:read")
+```
+``````
+
+```
+```
+
+async def get_by_id(self, id: str, context: ServiceContext) -> QueryResult:```
+
+"""Get a product by ID with authorization."""
+# Execute the query
+result = await super().get_by_id(id, context)
+``````
+
+```
+```
+
+# Check object-level permissions if result is successful
+if result.is_success and result.output is not None:
+    product = result.output
     
-    def authorize_query(self, query: Query, context: ServiceContext) -> None:
-        """Authorize queries."""
-        # Require authentication for all queries
-        context.require_authentication()
-        
-        # Require permission
-        if isinstance(query, EntityByIdQuery) or isinstance(query, EntityListQuery):
-            context.require_permission("products:read")
+    # Get the authorization service
+    auth_service = get_authorization_service()
     
-    async def get_by_id(self, id: str, context: ServiceContext) -> QueryResult:
-        """Get a product by ID with authorization."""
-        # Execute the query
-        result = await super().get_by_id(id, context)
-        
-        # Check object-level permissions if result is successful
-        if result.is_success and result.output is not None:
-            product = result.output
-            
-            # Get the authorization service
-            auth_service = get_authorization_service()
-            
-            # Check if user can read this specific product
-            authorized = await auth_service.authorize(
-                context, "products", "read", product
-            )
-            
-            if not authorized:
-                return QueryResult.failure(
-                    query_id=str(uuid4()),
-                    query_type="EntityByIdQuery",
-                    error="Not authorized to read this product",
-                    error_code="AUTHORIZATION_ERROR"
-                )
-        
-        return result
+    # Check if user can read this specific product
+    authorized = await auth_service.authorize(
+        context, "products", "read", product
+    )
+    
+    if not authorized:
+        return QueryResult.failure(
+            query_id=str(uuid4()),
+            query_type="EntityByIdQuery",
+            error="Not authorized to read this product",
+            error_code="AUTHORIZATION_ERROR"
+        )
+``````
+
+```
+```
+
+return result
+```
+```
 ```
 
 ### Custom Context Provider
@@ -244,25 +306,45 @@ class ProductService(EntityService[Product]):
 The service context can be populated with authorization information from RBAC:
 
 ```python
-class RbacContextProvider(ContextProvider):
-    def __init__(self, rbac_service: RbacService):
-        self.rbac_service = rbac_service
-    
-    def _get_user_id(self, request: Request) -> Optional[str]:
-        # Extract user ID from request (e.g., from token)
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if token:
-            return decode_jwt(token).get("sub")
-        return None
-    
-    def _get_permissions(self, request: Request) -> List[str]:
-        # Get user ID
-        user_id = self._get_user_id(request)
-        if not user_id:
-            return []
-        
-        # Get permissions from RBAC
-        return self.rbac_service.get_user_permissions(user_id)
+class RbacContextProvider(ContextProvider):```
+
+def __init__(self, rbac_service: RbacService):```
+
+self.rbac_service = rbac_service
+```
+``````
+
+```
+```
+
+def _get_user_id(self, request: Request) -> Optional[str]:```
+
+# Extract user ID from request (e.g., from token)
+token = request.headers.get("Authorization", "").replace("Bearer ", "")
+if token:
+    return decode_jwt(token).get("sub")
+return None
+```
+``````
+
+```
+```
+
+def _get_permissions(self, request: Request) -> List[str]:```
+
+# Get user ID
+user_id = self._get_user_id(request)
+if not user_id:
+    return []
+``````
+
+```
+```
+
+# Get permissions from RBAC
+return self.rbac_service.get_user_permissions(user_id)
+```
+```
 ```
 
 ## Advanced Usage
@@ -272,31 +354,49 @@ class RbacContextProvider(ContextProvider):
 You can create policies dynamically based on configuration:
 
 ```python
-def create_policy_from_config(config: Dict[str, Any]) -> AuthorizationPolicy:
-    policy_type = config["type"]
-    resource = config["resource"]
-    action = config["action"]
-    
-    if policy_type == "simple":
-        return SimplePolicy(resource, action)
-    elif policy_type == "ownership":
-        return OwnershipPolicy(resource, action, config.get("owner_field", "owner_id"))
-    elif policy_type == "tenant":
-        return TenantPolicy(resource, action, config.get("tenant_field", "tenant_id"))
-    elif policy_type == "function":
-        # Load function from module
-        module_name, func_name = config["function"].rsplit(".", 1)
-        module = importlib.import_module(module_name)
-        func = getattr(module, func_name)
-        return FunctionPolicy(resource, action, func)
-    elif policy_type == "composite":
-        sub_policies = [create_policy_from_config(p) for p in config["policies"]]
-        mode = CompositePolicy.CombinationMode.ALL
-        if config.get("mode") == "any":
-            mode = CompositePolicy.CombinationMode.ANY
-        return CompositePolicy(resource, action, sub_policies, mode)
-    else:
-        raise ValueError(f"Unknown policy type: {policy_type}")
+def create_policy_from_config(config: Dict[str, Any]) -> AuthorizationPolicy:```
+
+policy_type = config["type"]
+resource = config["resource"]
+action = config["action"]
+``````
+
+```
+```
+
+if policy_type == "simple":```
+
+return SimplePolicy(resource, action)
+```
+elif policy_type == "ownership":```
+
+return OwnershipPolicy(resource, action, config.get("owner_field", "owner_id"))
+```
+elif policy_type == "tenant":```
+
+return TenantPolicy(resource, action, config.get("tenant_field", "tenant_id"))
+```
+elif policy_type == "function":```
+
+# Load function from module
+module_name, func_name = config["function"].rsplit(".", 1)
+module = importlib.import_module(module_name)
+func = getattr(module, func_name)
+return FunctionPolicy(resource, action, func)
+```
+elif policy_type == "composite":```
+
+sub_policies = [create_policy_from_config(p) for p in config["policies"]]
+mode = CompositePolicy.CombinationMode.ALL
+if config.get("mode") == "any":
+    mode = CompositePolicy.CombinationMode.ANY
+return CompositePolicy(resource, action, sub_policies, mode)
+```
+else:```
+
+raise ValueError(f"Unknown policy type: {policy_type}")
+```
+```
 ```
 
 ### Custom Permission Evaluators
@@ -304,29 +404,51 @@ def create_policy_from_config(config: Dict[str, Any]) -> AuthorizationPolicy:
 You can create custom permission evaluators for complex permission schemes:
 
 ```python
-class RegexPermissionEvaluator:
-    """Permission evaluator that supports regex patterns."""
-    
-    def has_permission(self, required_permission: str, user_permissions: List[str]) -> bool:
-        """Check if the user has the required permission."""
-        # Check for direct match
-        if required_permission in user_permissions:
-            return True
-        
-        # Check for wildcard matches
-        for user_permission in user_permissions:
-            if self._matches_pattern(user_permission, required_permission):
-                return True
-        
-        return False
-    
-    def _matches_pattern(self, pattern: str, permission: str) -> bool:
-        """Check if a permission matches a pattern."""
-        # Convert wildcard pattern to regex
-        if "*" in pattern:
-            regex_pattern = pattern.replace(".", "\\.").replace("*", ".*")
-            return bool(re.match(f"^{regex_pattern}$", permission))
-        return False
+class RegexPermissionEvaluator:```
+
+"""Permission evaluator that supports regex patterns."""
+``````
+
+```
+```
+
+def has_permission(self, required_permission: str, user_permissions: List[str]) -> bool:```
+
+"""Check if the user has the required permission."""
+# Check for direct match
+if required_permission in user_permissions:
+    return True
+``````
+
+```
+```
+
+# Check for wildcard matches
+for user_permission in user_permissions:
+    if self._matches_pattern(user_permission, required_permission):
+        return True
+``````
+
+```
+```
+
+return False
+```
+``````
+
+```
+```
+
+def _matches_pattern(self, pattern: str, permission: str) -> bool:
+    """Check if a permission matches a pattern."""
+    # Convert wildcard pattern to regex
+    if "*" in pattern:
+        regex_pattern = pattern.replace(".", "\\.").replace("*", ".*")
+        return bool(re.match(f"^{regex_pattern}$", permission))```
+
+return False
+```
+```
 ```
 
 ### Hierarchical RBAC
@@ -334,25 +456,45 @@ class RegexPermissionEvaluator:
 You can implement hierarchical roles where roles inherit permissions from parent roles:
 
 ```python
-class HierarchicalRole(Role):
-    """Role with hierarchical inheritance."""
-    
-    def __init__(self, name: str, permissions: Optional[List[Permission]] = None, parent_roles: Optional[List['HierarchicalRole']] = None):
-        super().__init__(name, permissions)
-        self._parent_roles = parent_roles or []
-    
-    def has_permission(self, permission: Permission) -> bool:
-        """Check if this role has a permission, including inherited permissions."""
-        # Check own permissions
-        if super().has_permission(permission):
-            return True
-        
-        # Check parent roles' permissions
-        for parent in self._parent_roles:
-            if parent.has_permission(permission):
-                return True
-        
-        return False
+class HierarchicalRole(Role):```
+
+"""Role with hierarchical inheritance."""
+``````
+
+```
+```
+
+def __init__(self, name: str, permissions: Optional[List[Permission]] = None, parent_roles: Optional[List['HierarchicalRole']] = None):```
+
+super().__init__(name, permissions)
+self._parent_roles = parent_roles or []
+```
+``````
+
+```
+```
+
+def has_permission(self, permission: Permission) -> bool:```
+
+"""Check if this role has a permission, including inherited permissions."""
+# Check own permissions
+if super().has_permission(permission):
+    return True
+```
+    ```
+
+# Check parent roles' permissions
+for parent in self._parent_roles:
+    if parent.has_permission(permission):
+        return True
+``````
+
+```
+```
+
+return False
+```
+```
 ```
 
 ## Best Practices

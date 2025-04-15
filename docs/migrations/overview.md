@@ -11,6 +11,9 @@ The migration system allows you to:
 - Revert migrations when needed
 - Track which migrations have been applied
 - Manage dependencies between migrations
+- Create migrations from templates for consistency
+- Securely execute SQL with parameterized queries
+- Integrate with Uno's dependency injection system
 
 Migrations can be defined using SQL or Python, providing flexibility for both simple and complex schema changes.
 
@@ -45,6 +48,30 @@ The tracker keeps track of which migrations have been applied to the database:
 
 The migrator is responsible for applying and reverting migrations in the correct order, handling dependencies and transactions.
 
+### Migration Templates
+
+The system includes templates for creating consistent migrations:
+
+- SQL migration templates with clear UP/DOWN sections
+- Python migration templates with function-based and class-based options
+- Custom templates can be provided for specialized migrations
+
+### Security Features
+
+The migration system includes important security features:
+
+- **Parameterized Queries**: All SQL execution uses parameterized queries to prevent SQL injection vulnerabilities
+- **Transaction Management**: Migrations are executed within transactions to ensure atomicity
+- **Error Handling**: Comprehensive error handling with detailed logging and context information
+
+### Dependency Injection Integration
+
+The migration system integrates with Uno's dependency injection framework:
+
+- **MigrationServiceProvider**: Provides migration-related services to the DI container
+- **Scoped Configuration**: Migration configuration can be scoped to different environments
+- **Service Resolution**: Migration dependencies can be resolved from the DI container
+
 ## Creating Migrations
 
 ### SQL Migrations
@@ -53,11 +80,13 @@ SQL migrations are simple text files with SQL statements for applying and revert
 
 ```sql
 -- Create users table
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE users (```
+
+id SERIAL PRIMARY KEY,
+username VARCHAR(255) NOT NULL UNIQUE,
+email VARCHAR(255) NOT NULL UNIQUE,
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+```
 );
 
 -- DOWN
@@ -72,20 +101,26 @@ The `-- DOWN` marker separates the "up" SQL (for applying the migration) from th
 Python migrations are Python modules with functions for applying and reverting changes:
 
 ```python
-async def up(context):
-    """Apply the migration."""
-    await context.execute_sql('''
-        CREATE TABLE user_settings (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL REFERENCES users(id),
-            theme VARCHAR(50) DEFAULT 'light',
-            notifications_enabled BOOLEAN DEFAULT TRUE
-        );
-    ''')
+async def up(context):```
 
-async def down(context):
-    """Revert the migration."""
-    await context.execute_sql('DROP TABLE IF EXISTS user_settings;')
+"""Apply the migration."""
+await context.execute_sql('''```
+
+CREATE TABLE user_settings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    theme VARCHAR(50) DEFAULT 'light',
+    notifications_enabled BOOLEAN DEFAULT TRUE
+);
+```
+''')
+```
+
+async def down(context):```
+
+"""Revert the migration."""
+await context.execute_sql('DROP TABLE IF EXISTS user_settings;')
+```
 ```
 
 ## Running Migrations
@@ -97,10 +132,12 @@ from uno.core.migrations.migrator import migrate, MigrationConfig, MigrationDire
 from uno.core.migrations.providers import register_provider, DirectoryMigrationProvider
 
 # Configure migration system
-config = MigrationConfig(
-    schema_name="public",
-    migration_table="uno_migrations",
-    migration_paths=["/path/to/migrations"]
+config = MigrationConfig(```
+
+schema_name="public",
+migration_table="uno_migrations",
+migration_paths=["/path/to/migrations"]
+```
 )
 
 # Register migration provider
@@ -108,29 +145,58 @@ provider = DirectoryMigrationProvider(["/path/to/migrations"])
 register_provider("my_app", provider)
 
 # Apply migrations
-count, applied = await migrate(
-    connection=database_connection,
-    config=config,
-    direction=MigrationDirection.UP
+count, applied = await migrate(```
+
+connection=database_connection,
+config=config,
+direction=MigrationDirection.UP
+```
 )
 ```
 
 ### Using the CLI
 
-The migration system includes a command-line interface for managing migrations:
+The migration system includes a command-line interface for managing migrations, supporting both the Core Migration System and Alembic:
+
+#### Core Migration Commands
 
 ```bash
 # Apply all pending migrations
-python -m uno.core.migrations.cli migrate --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
+python -m src.scripts.migrations migrate --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
 
 # Revert the last migration
-python -m uno.core.migrations.cli rollback --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
+python -m src.scripts.migrations rollback --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
 
-# Create a new migration
-python -m uno.core.migrations.cli create "add users table" --type sql --directory ./migrations
+# Create a new migration with a template
+python -m src.scripts.migrations create "add users table" --type sql --directory ./migrations
+
+# Create a migration with a custom template
+python -m src.scripts.migrations create "add users table" --type sql --template ./my_template.sql --directory ./migrations
 
 # Show migration status
-python -m uno.core.migrations.cli status --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
+python -m src.scripts.migrations status --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
+
+# Get detailed information about migrations
+python -m src.scripts.migrations info --database-url "postgresql://user:pass@localhost/mydb" --directory ./migrations
+```
+
+#### Legacy Alembic Commands
+
+```bash
+# Initialize Alembic migration environment
+python -m src.scripts.migrations alembic:init
+
+# Generate a new Alembic migration
+python -m src.scripts.migrations alembic:generate "add users table"
+
+# Upgrade database to the latest revision
+python -m src.scripts.migrations alembic:upgrade
+
+# Downgrade database to a specific revision
+python -m src.scripts.migrations alembic:downgrade base
+
+# Show migration history
+python -m src.scripts.migrations alembic:history
 ```
 
 ## Migration Naming and Organization
@@ -158,8 +224,10 @@ migrations/
 ├── content/
 │   ├── 1616725789_create_posts_table.sql
 │   └── 1616728901_add_categories.sql
-└── core/
-    └── 1616720000_initial_schema.sql
+└── core/```
+
+└── 1616720000_initial_schema.sql
+```
 ```
 
 ## Best Practices
@@ -171,10 +239,23 @@ migrations/
 5. **Document complex migrations**: Add comments explaining complex schema changes
 6. **Handle data migrations carefully**: Be cautious when migrating existing data
 7. **Consider dependencies**: Specify dependencies between migrations when necessary
+8. **Use parameterized queries**: Always use parameter binding for dynamic values to prevent SQL injection
+9. **Follow naming conventions**: Use consistent naming patterns for migrations
+10. **Prefer templates**: Use the provided templates for consistent migration structure
 
 ## Next Steps
 
 - Learn how to create [SQL migrations](sql_migrations.md)
 - Explore [Python migrations](python_migrations.md) for complex changes
-- Understand [migration dependencies](dependencies.md)
-- Discover [migration hooks and extensions](hooks.md)
+- Understand how to integrate migrations with dependency injection
+- Use migration CLI tools to manage database schemas
+
+## Security Considerations
+
+The Uno migration system is designed with security in mind:
+
+1. **SQL Injection Prevention**: All SQL execution uses parameterized queries to prevent SQL injection vulnerabilities
+2. **Secure Parameter Handling**: Parameters are passed separately from SQL statements
+3. **Isolated Execution**: Migrations run in isolated transactions
+4. **Validation**: Migration checksums ensure the integrity of migration files
+5. **Access Control**: Migrations run with the proper database role permissions

@@ -27,8 +27,10 @@ print(f"Plan type: {plan.plan_type}")
 print(f"Estimated cost: {plan.estimated_cost}")
 print(f"Query complexity: {plan.complexity}")
 
-if plan.has_sequential_scans:
-    print("Sequential scans detected on tables:", plan.table_scans)
+if plan.has_sequential_scans:```
+
+print("Sequential scans detected on tables:", plan.table_scans)
+```
 ```
 
 ### IndexRecommendation
@@ -37,9 +39,11 @@ Recommendation for a database index to improve query performance. Includes table
 
 ```python
 recommendations = optimizer.recommend_indexes(plan)
-for rec in recommendations:
-    print(f"Recommended index: {rec.get_creation_sql()}")
-    print(f"Estimated improvement: {rec.estimated_improvement * 100:.1f}%")
+for rec in recommendations:```
+
+print(f"Recommended index: {rec.get_creation_sql()}")
+print(f"Estimated improvement: {rec.estimated_improvement * 100:.1f}%")
+```
 ```
 
 ### QueryRewrite
@@ -48,10 +52,12 @@ Represents a rewritten query for better performance. Contains both the original 
 
 ```python
 result = await optimizer.rewrite_query("SELECT DISTINCT id, name FROM users")
-if result.is_ok():
-    rewrite = result.unwrap()
-    print(f"Rewritten query: {rewrite.rewritten_query}")
-    print(f"Reason: {rewrite.reason}")
+if result.is_ok():```
+
+rewrite = result.unwrap()
+print(f"Rewritten query: {rewrite.rewritten_query}")
+print(f"Reason: {rewrite.reason}")
+```
 ```
 
 ### QueryStatistics
@@ -60,10 +66,12 @@ Tracks performance statistics for queries, including execution counts, times, an
 
 ```python
 stats = optimizer.get_statistics()
-for query_hash, query_stats in stats.items():
-    print(f"Query: {query_stats.query_text}")
-    print(f"Execution count: {query_stats.execution_count}")
-    print(f"Avg execution time: {query_stats.avg_execution_time:.2f}s")
+for query_hash, query_stats in stats.items():```
+
+print(f"Query: {query_stats.query_text}")
+print(f"Execution count: {query_stats.execution_count}")
+print(f"Avg execution time: {query_stats.avg_execution_time:.2f}s")
+```
 ```
 
 ### OptimizationConfig
@@ -71,12 +79,14 @@ for query_hash, query_stats in stats.items():
 Configuration for the query optimizer, controlling behavior and optimization settings.
 
 ```python
-config = OptimizationConfig(
-    optimization_level=OptimizationLevel.AGGRESSIVE,
-    rewrite_queries=True,
-    recommend_indexes=True,
-    auto_implement_indexes=False,
-    slow_query_threshold=1.0,  # 1 second
+config = OptimizationConfig(```
+
+optimization_level=OptimizationLevel.AGGRESSIVE,
+rewrite_queries=True,
+recommend_indexes=True,
+auto_implement_indexes=False,
+slow_query_threshold=1.0,  # 1 second
+```
 )
 optimizer = QueryOptimizer(session=session, config=config)
 ```
@@ -96,10 +106,12 @@ from uno.database.query_optimizer import QueryOptimizer, OptimizationConfig
 optimizer = QueryOptimizer(session=session)
 
 # Or with custom configuration
-config = OptimizationConfig(
-    optimization_level=OptimizationLevel.STANDARD,
-    recommend_indexes=True,
-    rewrite_queries=True,
+config = OptimizationConfig(```
+
+optimization_level=OptimizationLevel.STANDARD,
+recommend_indexes=True,
+rewrite_queries=True,
+```
 )
 optimizer = QueryOptimizer(session=session, config=config)
 ```
@@ -119,11 +131,15 @@ print(f"Estimated cost: {plan.estimated_cost}")
 print(f"Execution time: {plan.execution_time:.2f}s")
 print(f"Query complexity: {plan.complexity}")
 
-if plan.has_sequential_scans:
-    print("Sequential scans detected on:", plan.table_scans)
+if plan.has_sequential_scans:```
+
+print("Sequential scans detected on:", plan.table_scans)
+```
     
-if plan.has_nested_loops:
-    print("Nested loops detected in the execution plan")
+if plan.has_nested_loops:```
+
+print("Nested loops detected in the execution plan")
+```
 ```
 
 ### Getting Index Recommendations
@@ -138,36 +154,50 @@ plan = await optimizer.analyze_query("SELECT * FROM users WHERE email LIKE '%exa
 # Get index recommendations
 recommendations = optimizer.recommend_indexes(plan)
 
-for rec in recommendations:
-    print(f"Recommendation: {rec.get_creation_sql()}")
-    print(f"Estimated improvement: {rec.estimated_improvement * 100:.1f}%")
-    
-    # Implement the index if desired
-    if rec.estimated_improvement > 0.5:  # 50% improvement
-        await optimizer.implement_index(rec)
+for rec in recommendations:```
+
+print(f"Recommendation: {rec.get_creation_sql()}")
+print(f"Estimated improvement: {rec.estimated_improvement * 100:.1f}%")
+``````
+
+```
+```
+
+# Implement the index if desired
+if rec.estimated_improvement > 0.5:  # 50% improvement```
+
+await optimizer.implement_index(rec)
+```
+```
 ```
 
 ### Rewriting Queries
 
 ```python
 # Rewrite a query for better performance
-result = await optimizer.rewrite_query(
-    "SELECT DISTINCT * FROM users WHERE id < 1000"
+result = await optimizer.rewrite_query(```
+
+"SELECT DISTINCT * FROM users WHERE id < 1000"
+```
 )
 
-if result.is_ok():
-    rewrite = result.unwrap()
-    print(f"Original: {rewrite.original_query}")
-    print(f"Rewritten: {rewrite.rewritten_query}")
-    print(f"Reason: {rewrite.reason}")
+if result.is_ok():```
+
+rewrite = result.unwrap()
+print(f"Original: {rewrite.original_query}")
+print(f"Rewritten: {rewrite.rewritten_query}")
+print(f"Reason: {rewrite.reason}")
+```
 ```
 
 ### Executing Optimized Queries
 
 ```python
 # Execute a query with automatic optimization
-result = await optimizer.execute_optimized_query(
-    "SELECT * FROM users WHERE status = 'active'"
+result = await optimizer.execute_optimized_query(```
+
+"SELECT * FROM users WHERE status = 'active'"
+```
 )
 
 # Works with SQLAlchemy queries too
@@ -181,10 +211,14 @@ result = await optimizer.execute_optimized_query(query)
 from uno.database.query_optimizer import optimized_query
 
 @optimized_query()
-async def get_active_users(session):
-    return await session.execute(
-        select(User).where(User.status == 'active')
-    )
+async def get_active_users(session):```
+
+return await session.execute(```
+
+select(User).where(User.status == 'active')
+```
+)
+```
 ```
 
 ### Monitoring Query Performance
@@ -195,9 +229,11 @@ stats = optimizer.get_statistics()
 
 # Get slow queries
 slow_queries = optimizer.get_slow_queries(threshold=1.0)  # 1 second
-for query in slow_queries:
-    print(f"Slow query: {query.query_text}")
-    print(f"Avg time: {query.avg_execution_time:.2f}s")
+for query in slow_queries:```
+
+print(f"Slow query: {query.query_text}")
+print(f"Avg time: {query.avg_execution_time:.2f}s")
+```
     
 # Get frequent queries
 frequent_queries = optimizer.get_frequent_queries(min_frequency=10.0)  # 10 per hour
@@ -215,8 +251,10 @@ The optimizer supports different optimization levels:
 ```python
 from uno.database.query_optimizer import OptimizationLevel
 
-config = OptimizationConfig(
-    optimization_level=OptimizationLevel.AGGRESSIVE
+config = OptimizationConfig(```
+
+optimization_level=OptimizationLevel.AGGRESSIVE
+```
 )
 ```
 
@@ -243,10 +281,12 @@ The optimizer supports different index types:
 ```python
 from uno.database.query_optimizer import IndexType
 
-rec = IndexRecommendation(
-    table_name="products",
-    column_names=["description"],
-    index_type=IndexType.GIN
+rec = IndexRecommendation(```
+
+table_name="products",
+column_names=["description"],
+index_type=IndexType.GIN
+```
 )
 ```
 
@@ -268,49 +308,81 @@ The optimizer integrates with the monitoring system to track query performance m
 metrics = optimizer.get_statistics()
 
 # Push metrics to monitoring system
-for query_hash, stats in metrics.items():
-    monitoring.track_metric(
-        name="query.execution_time",
-        value=stats.avg_execution_time,
-        tags={"query_hash": query_hash}
-    )
-    
-    monitoring.track_metric(
-        name="query.execution_count",
-        value=stats.execution_count,
-        tags={"query_hash": query_hash}
-    )
+for query_hash, stats in metrics.items():```
+
+monitoring.track_metric(```
+
+name="query.execution_time",
+value=stats.avg_execution_time,
+tags={"query_hash": query_hash}
+```
+)
+``````
+
+```
+```
+
+monitoring.track_metric(```
+
+name="query.execution_count",
+value=stats.execution_count,
+tags={"query_hash": query_hash}
+```
+)
+```
 ```
 
 ## Advanced Configuration
 
 ```python
-config = OptimizationConfig(
-    # General settings
-    enabled=True,
-    optimization_level=OptimizationLevel.STANDARD,
-    
-    # Analysis settings
-    analyze_queries=True,
-    collect_statistics=True,
-    
-    # Rewrite settings
-    rewrite_queries=True,
-    safe_rewrites_only=True,
-    
-    # Index settings
-    recommend_indexes=True,
-    auto_implement_indexes=False,
-    index_creation_threshold=0.5,  # 50% estimated improvement
-    
-    # Performance thresholds
-    slow_query_threshold=1.0,  # 1 second
-    very_slow_query_threshold=5.0,  # 5 seconds
-    
-    # Logging
-    log_recommendations=True,
-    log_rewrites=True,
-    log_slow_queries=True,
+config = OptimizationConfig(```
+
+# General settings
+enabled=True,
+optimization_level=OptimizationLevel.STANDARD,
+``````
+
+```
+```
+
+# Analysis settings
+analyze_queries=True,
+collect_statistics=True,
+``````
+
+```
+```
+
+# Rewrite settings
+rewrite_queries=True,
+safe_rewrites_only=True,
+``````
+
+```
+```
+
+# Index settings
+recommend_indexes=True,
+auto_implement_indexes=False,
+index_creation_threshold=0.5,  # 50% estimated improvement
+``````
+
+```
+```
+
+# Performance thresholds
+slow_query_threshold=1.0,  # 1 second
+very_slow_query_threshold=5.0,  # 5 seconds
+``````
+
+```
+```
+
+# Logging
+log_recommendations=True,
+log_rewrites=True,
+log_slow_queries=True,
+```
 )
 ```
 
@@ -323,9 +395,11 @@ A helper function to optimize a query and get index recommendations in one call:
 ```python
 from uno.database.query_optimizer import optimize_query
 
-optimized_query, recommendations = await optimize_query(
-    query="SELECT * FROM users WHERE status = 'active'",
-    session=session
+optimized_query, recommendations = await optimize_query(```
+
+query="SELECT * FROM users WHERE status = 'active'",
+session=session
+```
 )
 ```
 
@@ -337,10 +411,14 @@ A decorator to automatically optimize functions that execute queries:
 from uno.database.query_optimizer import optimized_query
 
 @optimized_query()
-async def get_user_by_id(session, user_id):
-    return await session.execute(
-        select(User).where(User.id == user_id)
-    )
+async def get_user_by_id(session, user_id):```
+
+return await session.execute(```
+
+select(User).where(User.id == user_id)
+```
+)
+```
 ```
 
 ## Performance Impact
@@ -355,11 +433,79 @@ The query optimizer itself has minimal overhead for most operations:
 For production environments, consider using:
 
 ```python
-config = OptimizationConfig(
-    optimization_level=OptimizationLevel.STANDARD,
-    analyze_queries=False,  # Disable expensive EXPLAIN analysis
-    collect_statistics=True,  # Keep tracking statistics
-    rewrite_queries=True,    # Keep rewriting queries
-    recommend_indexes=False, # Disable index recommendations
+config = OptimizationConfig(```
+
+optimization_level=OptimizationLevel.STANDARD,
+analyze_queries=False,  # Disable expensive EXPLAIN analysis
+collect_statistics=True,  # Keep tracking statistics
+rewrite_queries=True,    # Keep rewriting queries
+recommend_indexes=False, # Disable index recommendations
+```
 )
+```
+
+## Testing
+
+The query optimizer includes comprehensive integration tests to ensure it works correctly with the database and query cache:
+
+### Running Tests
+
+```bash
+# Run query optimizer integration tests
+pytest tests/integration/test_query_optimizer.py --run-integration
+
+# Run all integration tests including query optimizer
+hatch run test:integration
+```
+
+### Test Coverage
+
+Integration tests for the query optimizer cover:
+
+1. **Query Plan Analysis**: Verify accurate extraction and analysis of execution plans
+2. **Index Recommendations**: Test accuracy and usefulness of index recommendations
+3. **Query Rewrite**: Validate that query rewrites improve performance and maintain correctness
+4. **Slow Query Detection**: Ensure slow queries are properly identified and logged
+5. **Query Cache Integration**: Verify seamless integration with the query cache system
+6. **Performance Benchmarks**: Measure and compare performance impact of optimizations
+
+### Example Test
+
+```python
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_query_rewrite(query_optimizer):```
+
+"""Test query rewrite functionality."""
+# Define a query that can be rewritten
+query = "SELECT COUNT(*) FROM test_optimizer_products"
+``````
+
+```
+```
+
+# Try to rewrite the query
+rewrite_result = await query_optimizer.rewrite_query(query)
+``````
+
+```
+```
+
+# Check the result
+assert rewrite_result is not None
+``````
+
+```
+```
+
+# If a rewrite was found, check its properties
+if rewrite_result.is_success:```
+
+rewrite = rewrite_result.value
+assert rewrite.original_query == query
+assert rewrite.rewritten_query is not None
+assert rewrite.rewrite_type is not None
+assert rewrite.estimated_improvement is not None
+```
+```
 ```

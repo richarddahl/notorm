@@ -20,18 +20,20 @@ from uno.core.errors import configure_logging, LogConfig
 configure_logging()
 
 # Custom configuration
-configure_logging(LogConfig(
-    level="INFO",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    date_format="%Y-%m-%d %H:%M:%S",
-    json_format=True,
-    console_output=True,
-    file_output=True,
-    file_path="/var/log/myapp.log",
-    backup_count=5,
-    max_bytes=10 * 1024 * 1024,  # 10 MB
-    include_logger_context=True,
-    include_exception_traceback=True
+configure_logging(LogConfig(```
+
+level="INFO",
+format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+date_format="%Y-%m-%d %H:%M:%S",
+json_format=True,
+console_output=True,
+file_output=True,
+file_path="/var/log/myapp.log",
+backup_count=5,
+max_bytes=10 * 1024 * 1024,  # 10 MB
+include_logger_context=True,
+include_exception_traceback=True
+```
 ))
 ```
 
@@ -77,10 +79,12 @@ clear_logging_context()
 from uno.core.errors import with_logging_context
 
 @with_logging_context
-def process_user(user_id, action):
-    # The decorator adds user_id and action to the logging context
-    logger.info("Processing user")
-    # ...
+def process_user(user_id, action):```
+
+# The decorator adds user_id and action to the logging context
+logger.info("Processing user")
+# ...
+```
 
 # When called, the function parameters will be added to the context
 process_user("user123", "update")
@@ -90,12 +94,16 @@ process_user("user123", "update")
 ### Logging Exceptions
 
 ```python
-try:
-    # Some operation that might fail
-    result = some_function()
-except Exception as e:
-    # The error will be logged with the full context and traceback
-    logger.exception("Failed to execute operation", exc_info=e)
+try:```
+
+# Some operation that might fail
+result = some_function()
+```
+except Exception as e:```
+
+# The error will be logged with the full context and traceback
+logger.exception("Failed to execute operation", exc_info=e)
+```
 ```
 
 ### Structured JSON Logging
@@ -107,10 +115,14 @@ configure_logging(LogConfig(json_format=True))
 logger = get_logger(__name__)
 add_logging_context(user_id="user123")
 
-try:
-    1 / 0
-except Exception as e:
-    logger.exception("Error", exc_info=e)
+try:```
+
+1 / 0
+```
+except Exception as e:```
+
+logger.exception("Error", exc_info=e)
+```
 ```
 
 Will produce a log entry like:
@@ -124,13 +136,17 @@ Will produce a log entry like:
   "module": "my_module",
   "function": "some_function",
   "line": 42,
-  "context": {
-    "user_id": "user123"
+  "context": {```
+
+"user_id": "user123"
+```
   },
-  "exception": {
-    "type": "ZeroDivisionError",
-    "message": "division by zero",
-    "traceback": "Traceback (most recent call last):\n  File \"app.py\", line 42, in some_function\n    1 / 0\nZeroDivisionError: division by zero"
+  "exception": {```
+
+"type": "ZeroDivisionError",
+"message": "division by zero",
+"traceback": "Traceback (most recent call last):\n  File \"app.py\", line 42, in some_function\n    1 / 0\nZeroDivisionError: division by zero"
+```
   }
 }
 ```
@@ -144,12 +160,16 @@ from uno.core.errors import UnoError, ErrorCode, get_logger
 
 logger = get_logger(__name__)
 
-try:
-    # Some operation that might fail
-    raise UnoError("User not found", ErrorCode.RESOURCE_NOT_FOUND, user_id="123")
-except UnoError as e:
-    # The error code, message, and context will be included in the log
-    logger.error(f"Operation failed: {e.message}", exc_info=e)
+try:```
+
+# Some operation that might fail
+raise UnoError("User not found", ErrorCode.RESOURCE_NOT_FOUND, user_id="123")
+```
+except UnoError as e:```
+
+# The error code, message, and context will be included in the log
+logger.error(f"Operation failed: {e.message}", exc_info=e)
+```
 ```
 
 ## Using Both Context Systems
@@ -161,24 +181,42 @@ from uno.core.errors import add_error_context, add_logging_context, with_error_c
 
 @with_error_context
 @with_logging_context
-def process_user(user_id, action):
-    # Both decorators add context from parameters
-    
-    # Add more context
-    add_error_context(process_id="proc123")
-    add_logging_context(operation="update")
-    
-    # Both error and logging contexts are now available
-    logger.info("Processing user")
-    
-    try:
-        # Some operation
-        if not user_exists(user_id):
-            raise UnoError("User not found", "USER-0001", user_id=user_id)
-    except UnoError as e:
-        # Error will include both contexts
-        logger.error(f"Failed to {action} user", exc_info=e)
-        raise
+def process_user(user_id, action):```
+
+# Both decorators add context from parameters
+``````
+
+```
+```
+
+# Add more context
+add_error_context(process_id="proc123")
+add_logging_context(operation="update")
+``````
+
+```
+```
+
+# Both error and logging contexts are now available
+logger.info("Processing user")
+``````
+
+```
+```
+
+try:```
+
+# Some operation
+if not user_exists(user_id):
+    raise UnoError("User not found", "USER-0001", user_id=user_id)
+```
+except UnoError as e:```
+
+# Error will include both contexts
+logger.error(f"Failed to {action} user", exc_info=e)
+raise
+```
+```
 ```
 
 ## Best Practices

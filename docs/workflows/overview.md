@@ -106,19 +106,23 @@ The workflow system uses a modular architecture with dependency injection:
 While the visual designer is recommended for most users, workflows can also be created programmatically:
 
 ```python
-from uno.workflows.objs import (
-    WorkflowDef,
-    WorkflowTrigger,
-    WorkflowCondition,
-    WorkflowAction,
-    WorkflowRecipient,
+from uno.workflows.objs import (```
+
+WorkflowDef,
+WorkflowTrigger,
+WorkflowCondition,
+WorkflowAction,
+WorkflowRecipient,
+```
 )
 from uno.workflows.provider import WorkflowService
-from uno.workflows.models import (
-    WorkflowStatus,
-    WorkflowActionType,
-    WorkflowRecipientType,
-    WorkflowConditionType,
+from uno.workflows.models import (```
+
+WorkflowStatus,
+WorkflowActionType,
+WorkflowRecipientType,
+WorkflowConditionType,
+```
 )
 import inject
 
@@ -126,53 +130,69 @@ import inject
 workflow_service = inject.instance(WorkflowService)
 
 # Create a workflow definition
-workflow = WorkflowDef(
-    name="New Order Notification",
-    description="Send notifications when new orders are created",
-    status="active",
-    version=1,
+workflow = WorkflowDef(```
+
+name="New Order Notification",
+description="Send notifications when new orders are created",
+status="active",
+version=1,
+```
 )
 
 # Add a trigger
-trigger = WorkflowTrigger(
-    entity_type="order",
-    operations=["create"],
+trigger = WorkflowTrigger(```
+
+entity_type="order",
+operations=["create"],
+```
 )
 workflow.triggers.append(trigger)
 
 # Add a condition
-condition = WorkflowCondition(
-    type="field",
-    field="total",
-    operator="gt",
-    value="100",
+condition = WorkflowCondition(```
+
+type="field",
+field="total",
+operator="gt",
+value="100",
+```
 )
 workflow.conditions.append(condition)
 
 # Add an action
-action = WorkflowAction(
-    type="notification",
-    title="New Order",
-    body="A new order #{{order_number}} has been created.",
-    priority="normal",
+action = WorkflowAction(```
+
+type="notification",
+title="New Order",
+body="A new order #{{order_number}} has been created.",
+priority="normal",
+```
 )
 workflow.actions.append(action)
 
 # Add a recipient
-recipient = WorkflowRecipient(
-    type="role",
-    value="sales_manager",
+recipient = WorkflowRecipient(```
+
+type="role",
+value="sales_manager",
+```
 )
 action.recipients.append(recipient)
 
 # Save the workflow
-async def create_workflow():
-    result = await workflow_service.create_workflow(workflow)
-    if result.is_success:
-        workflow_id = result.value
-        print(f"Created workflow with ID: {workflow_id}")
-    else:
-        print(f"Error creating workflow: {result.error}")
+async def create_workflow():```
+
+result = await workflow_service.create_workflow(workflow)
+if result.is_success:```
+
+workflow_id = result.value
+print(f"Created workflow with ID: {workflow_id}")
+```
+else:```
+
+print(f"Error creating workflow: {result.error}")
+```
+```
 
 # Run the example
 import asyncio
@@ -188,12 +208,20 @@ The workflow system can be extended with custom components:
 ```python
 from uno.workflows.executor import ActionExecutorBase, register_executor
 
-class CustomExecutor(ActionExecutorBase):
-    """Custom action executor for specialized integrations."""
-    
-    async def execute(self, action, context):
-        # Custom execution logic
-        return {"status": "success", "details": "Custom action executed"}
+class CustomExecutor(ActionExecutorBase):```
+
+"""Custom action executor for specialized integrations."""
+``````
+
+```
+```
+
+async def execute(self, action, context):```
+
+# Custom execution logic
+return {"status": "success", "details": "Custom action executed"}
+```
+```
 
 # Register the executor
 register_executor("custom", CustomExecutor())
@@ -204,12 +232,20 @@ register_executor("custom", CustomExecutor())
 ```python
 from uno.workflows.conditions import ConditionEvaluatorBase, register_evaluator
 
-class CustomEvaluator(ConditionEvaluatorBase):
-    """Custom condition evaluator for specialized logic."""
-    
-    async def evaluate(self, condition, context):
-        # Custom evaluation logic
-        return True
+class CustomEvaluator(ConditionEvaluatorBase):```
+
+"""Custom condition evaluator for specialized logic."""
+``````
+
+```
+```
+
+async def evaluate(self, condition, context):```
+
+# Custom evaluation logic
+return True
+```
+```
 
 # Register the evaluator
 register_evaluator("custom", CustomEvaluator())
@@ -220,12 +256,20 @@ register_evaluator("custom", CustomEvaluator())
 ```python
 from uno.workflows.recipients import RecipientResolverBase, register_resolver
 
-class CustomResolver(RecipientResolverBase):
-    """Custom recipient resolver for specialized targeting."""
-    
-    async def resolve(self, recipient, context):
-        # Custom resolution logic
-        return ["user1", "user2"]
+class CustomResolver(RecipientResolverBase):```
+
+"""Custom recipient resolver for specialized targeting."""
+``````
+
+```
+```
+
+async def resolve(self, recipient, context):```
+
+# Custom resolution logic
+return ["user1", "user2"]
+```
+```
 
 # Register the resolver
 register_resolver("custom", CustomResolver())
@@ -247,7 +291,8 @@ The workflow system provides a comprehensive REST API:
 - `GET /api/workflows/{id}/executions/{execution_id}`: Get execution details
 - `POST /api/workflows/{id}/simulate`: Simulate workflow execution
 
-For complete API documentation, refer to the [API Reference](/docs/api/workflows.md).
+<!-- TODO: Create API Reference documentation -->
+For complete API documentation, refer to the API Reference (coming soon).
 
 ## Troubleshooting
 
@@ -263,16 +308,20 @@ If workflows are not executing as expected, check:
 ## Documentation Resources
 
 ### Getting Started
-- [Quick Start Guide](/docs/workflows/quick-start.md): Create your first workflow in 5 minutes
-- [Comprehensive Tutorial](/docs/workflows/tutorial.md): Step-by-step guide with practical examples
+- [Quick Start Guide](quick-start.md): Create your first workflow in 5 minutes
+- [Comprehensive Tutorial](tutorial.md): Step-by-step guide with practical examples
 
 ### Technical Documentation
-- [API Reference](/docs/api/workflows.md): Complete REST API documentation
-- [Advanced Workflow Patterns](/docs/workflows/advanced-patterns.md): Sophisticated techniques for complex workflows
-- [Custom Extensions](/docs/workflows/custom-extensions.md): Extend the system with custom components
-- [Security Considerations](/docs/workflows/security.md): Security best practices and implementation guidelines
-- [Troubleshooting Guide](/docs/workflows/troubleshooting.md): Diagnose and resolve common workflow issues
-- [Performance Optimization](/docs/workflows/performance.md): Strategies for scaling and optimizing workflows
+<!-- TODO: Create API Reference documentation -->
+<!-- - [API Reference](/docs/api/workflows.md): Complete REST API documentation -->
+<!-- TODO: Create advanced patterns documentation -->
+<!-- - [Advanced Workflow Patterns](advanced-patterns.md): Sophisticated techniques for complex workflows -->
+<!-- TODO: Create custom extensions documentation -->
+<!-- - [Custom Extensions](custom-extensions.md): Extend the system with custom components -->
+<!-- TODO: Create security considerations documentation -->
+<!-- - [Security Considerations](security.md): Security best practices and implementation guidelines -->
+- [Troubleshooting Guide](troubleshooting.md): Diagnose and resolve common workflow issues
+- [Performance Optimization](performance.md): Strategies for scaling and optimizing workflows
 
 ### Adoption & Migration
-- [Migration Guide](/docs/workflows/migration-guide.md): Transition from legacy notification systems
+- [Migration Guide](migration-guide.md): Transition from legacy notification systems

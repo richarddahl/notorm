@@ -206,11 +206,13 @@ The migration utilities can be integrated with your CI/CD pipeline to automate s
 ```yaml
 # In your GitHub Actions workflow
 - name: Check schema differences
-  run: |
-    uno-dev migrations diff-schema \
-      --connection ${{ secrets.DATABASE_URL }} \
-      --models your_project.models \
-      --output schema_diff.md
+  run: |```
+
+uno-dev migrations diff-schema \
+  --connection ${{ secrets.DATABASE_URL }} \
+  --models your_project.models \
+  --output schema_diff.md
+```
 ```
 
 Or generate and apply migrations automatically:
@@ -218,19 +220,25 @@ Or generate and apply migrations automatically:
 ```yaml
 # In your deployment workflow
 - name: Apply database migrations
-  run: |
-    # Generate migration
-    uno-dev migrations generate-migration \
-      --connection ${{ secrets.DATABASE_URL }} \
-      --models your_project.models \
-      --output-dir migrations \
-      --message "Automatic migration"
-    
-    # Apply the most recent migration
-    MIGRATION=$(ls -t migrations/*.py | head -1)
-    uno-dev migrations apply-migration \
-      $MIGRATION \
-      --connection ${{ secrets.DATABASE_URL }}
+  run: |```
+
+# Generate migration
+uno-dev migrations generate-migration \
+  --connection ${{ secrets.DATABASE_URL }} \
+  --models your_project.models \
+  --output-dir migrations \
+  --message "Automatic migration"
+``````
+
+```
+```
+
+# Apply the most recent migration
+MIGRATION=$(ls -t migrations/*.py | head -1)
+uno-dev migrations apply-migration \
+  $MIGRATION \
+  --connection ${{ secrets.DATABASE_URL }}
+```
 ```
 
 ## Best Practices

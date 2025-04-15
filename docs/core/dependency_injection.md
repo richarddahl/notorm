@@ -56,10 +56,12 @@ Scopes manage the lifecycle of scoped services:
 
 ```python
 # Creating a scope
-with container.create_scope() as scope:
-    # Get a service from the scope
-    session = scope.resolve(DbSession)
-    # ...
+with container.create_scope() as scope:```
+
+# Get a service from the scope
+session = scope.resolve(DbSession)
+# ...
+```
 # Session is disposed when scope ends
 ```
 
@@ -69,10 +71,12 @@ The DI system fully supports async initialization and disposal:
 
 ```python
 # Creating an async scope
-async with container.create_async_scope() as scope:
-    # Get a service from the scope
-    session = scope.resolve(DbSession)
-    # ... do async work ...
+async with container.create_async_scope() as scope:```
+
+# Get a service from the scope
+session = scope.resolve(DbSession)
+# ...
+``` do async work ...
 # Session is disposed asynchronously when scope ends
 ```
 
@@ -87,18 +91,22 @@ from uno.core.di import get_service, create_scope, create_async_scope
 logger = get_service(Logger)
 
 # Create a scope
-with create_scope() as scope:
-    # Get a scoped service
-    session = scope.resolve(DbSession)
-    # Use the service
-    result = session.query(...)
+with create_scope() as scope:```
+
+# Get a scoped service
+session = scope.resolve(DbSession)
+# Use the service
+result = session.query(...)
+```
 
 # With async
-async with create_async_scope() as scope:
-    # Get a scoped service
-    session = scope.resolve(AsyncDbSession)
-    # Use the service
-    result = await session.query(...)
+async with create_async_scope() as scope:```
+
+# Get a scoped service
+session = scope.resolve(AsyncDbSession)
+# Use the service
+result = await session.query(...)
+```
 ```
 
 ## Service Registration
@@ -123,11 +131,15 @@ container.register_singleton(ConsoleLogger)
 
 ```python
 # Register with a factory function
-container.register_singleton(
-    DbConnection,
-    lambda c: DbConnection(
-        get_service(ConnectionConfig).connection_string
-    )
+container.register_singleton(```
+
+DbConnection,
+lambda c: DbConnection(```
+
+get_service(ConnectionConfig).connection_string
+```
+)
+```
 )
 ```
 
@@ -135,12 +147,16 @@ container.register_singleton(
 
 ```python
 # Register with explicit parameters
-container.register_singleton(
-    UserService,
-    parameters={
-        "strict_mode": True,
-        "max_retries": 3
-    }
+container.register_singleton(```
+
+UserService,
+parameters={```
+
+"strict_mode": True,
+"max_retries": 3
+```
+}
+```
 )
 ```
 
@@ -156,11 +172,15 @@ app = FastAPI()
 
 # Use the DI system with FastAPI
 @app.get("/users/{user_id}")
-async def get_user(
-    user_id: int,
-    user_service: UserService = Depends(FromDI(UserService))
-):
-    return await user_service.get_user(user_id)
+async def get_user(```
+
+user_id: int,
+user_service: UserService = Depends(FromDI(UserService))
+```
+):```
+
+return await user_service.get_user(user_id)
+```
 ```
 
 ### Request Scopes
@@ -177,11 +197,15 @@ configure_di_middleware(app)
 
 # Now each request gets its own DI scope
 @app.get("/data")
-async def get_data(
-    session: DbSession = Depends(FromDI(DbSession))
-):
-    # This session is scoped to this request
-    return await session.query(...)
+async def get_data(```
+
+session: DbSession = Depends(FromDI(DbSession))
+```
+):```
+
+# This session is scoped to this request
+return await session.query(...)
+```
 ```
 
 ## Testing with DI
@@ -192,20 +216,24 @@ The DI system provides special utilities for testing:
 from uno.core.di_testing import test_container, inject_mock
 
 # Create a test-specific container
-with test_container() as container:
-    # Register test versions of services
-    container.register_singleton(Logger, TestLogger)
-    # Run tests...
+with test_container() as container:```
+
+# Register test versions of services
+container.register_singleton(Logger, TestLogger)
+# Run tests...
+```
 
 # Temporarily inject a mock
 user_repo_mock = Mock(spec=UserRepository)
 user_repo_mock.get_user.return_value = User(id=1, name="Test")
 
-with inject_mock(UserRepository, user_repo_mock):
-    # Code using get_service(UserRepository) will get the mock
-    service = UserService(get_service(UserRepository))
-    user = service.get_user(1)
-    assert user.name == "Test"
+with inject_mock(UserRepository, user_repo_mock):```
+
+# Code using get_service(UserRepository) will get the mock
+service = UserService(get_service(UserRepository))
+user = service.get_user(1)
+assert user.name == "Test"
+```
 ```
 
 ## Best Practices
@@ -216,10 +244,14 @@ Always prefer constructor injection over service location:
 
 ```python
 # Good: Dependencies are explicit
-class UserService:
-    def __init__(self, user_repo: UserRepository, logger: Logger):
-        self.user_repo = user_repo
-        self.logger = logger
+class UserService:```
+
+def __init__(self, user_repo: UserRepository, logger: Logger):```
+
+self.user_repo = user_repo
+self.logger = logger
+```
+```
 
 # Usage
 service = UserService(get_service(UserRepository), get_service(Logger))
@@ -232,17 +264,29 @@ Define service interfaces using protocols:
 ```python
 from typing import Protocol
 
-class UserRepository(Protocol):
-    async def get_user(self, user_id: int) -> User: ...
-    async def save_user(self, user: User) -> None: ...
+class UserRepository(Protocol):```
+
+async def get_user(self, user_id: int) -> User: ...
+async def save_user(self, user: User) -> None: ...
+```
 
 # Implementation
-class PostgresUserRepository:
-    async def get_user(self, user_id: int) -> User:
-        # Implementation...
-    
-    async def save_user(self, user: User) -> None:
-        # Implementation...
+class PostgresUserRepository:```
+
+async def get_user(self, user_id: int) -> User:```
+
+# Implementation...
+```
+``````
+
+```
+```
+
+async def save_user(self, user: User) -> None:```
+
+# Implementation...
+```
+```
 
 # Registration
 container.register_singleton(UserRepository, PostgresUserRepository)
@@ -262,14 +306,18 @@ Always dispose scopes when done:
 
 ```python
 # Good: Scope is properly disposed
-with create_scope() as scope:
-    service = scope.resolve(SomeService)
-    # Use service...
+with create_scope() as scope:```
+
+service = scope.resolve(SomeService)
+# Use service...
+```
 
 # Good: Async scope is properly disposed
-async with create_async_scope() as scope:
-    service = scope.resolve(AsyncService)
-    # Use service...
+async with create_async_scope() as scope:```
+
+service = scope.resolve(AsyncService)
+# Use service...
+```
 ```
 
 ## Example: Complete Service Setup
@@ -277,45 +325,81 @@ async with create_async_scope() as scope:
 Here's a complete example of setting up and using the DI system:
 
 ```python
-from uno.core.di import (
-    DIContainer, ServiceCollection, 
-    get_container, initialize_container,
-    get_service, create_scope, create_async_scope
+from uno.core.di import (```
+
+DIContainer, ServiceCollection, 
+get_container, initialize_container,
+get_service, create_scope, create_async_scope
+```
 )
 
 # Define services
-class Logger:
-    def log(self, message: str): ...
+class Logger:```
 
-class ConsoleLogger(Logger):
-    def log(self, message: str):
-        print(f"[LOG] {message}")
+def log(self, message: str): ...
+```
 
-class DbConnection:
-    def __init__(self, connection_string: str):
-        self.connection_string = connection_string
-    
-    async def connect(self): ...
-    async def disconnect(self): ...
+class ConsoleLogger(Logger):```
 
-class UserRepository:
-    def __init__(self, db_connection: DbConnection):
-        self.db_connection = db_connection
-    
-    async def get_user(self, user_id: int): ...
+def log(self, message: str):```
 
-class UserService:
-    def __init__(
-        self, 
-        user_repository: UserRepository,
-        logger: Logger
-    ):
-        self.user_repository = user_repository
-        self.logger = logger
-    
-    async def get_user(self, user_id: int):
-        self.logger.log(f"Getting user {user_id}")
-        return await self.user_repository.get_user(user_id)
+print(f"[LOG] {message}")
+```
+```
+
+class DbConnection:```
+
+def __init__(self, connection_string: str):```
+
+self.connection_string = connection_string
+```
+``````
+
+```
+```
+
+async def connect(self): ...
+async def disconnect(self): ...
+```
+
+class UserRepository:```
+
+def __init__(self, db_connection: DbConnection):```
+
+self.db_connection = db_connection
+```
+``````
+
+```
+```
+
+async def get_user(self, user_id: int): ...
+```
+
+class UserService:```
+
+def __init__(```
+
+self, 
+user_repository: UserRepository,
+logger: Logger
+```
+):```
+
+self.user_repository = user_repository
+self.logger = logger
+```
+``````
+
+```
+```
+
+async def get_user(self, user_id: int):```
+
+self.logger.log(f"Getting user {user_id}")
+return await self.user_repository.get_user(user_id)
+```
+```
 
 # Set up services
 services = ServiceCollection()
@@ -330,23 +414,35 @@ services.add_scoped(UserService)
 initialize_container(services)
 
 # Application code
-async def main():
-    # Create a scope for the operation
-    async with create_async_scope() as scope:
-        # Get the service from the scope
-        user_service = scope.resolve(UserService)
-        
-        # Use the service
-        user = await user_service.get_user(123)
-        
-        # Work with the user
-        print(f"Found user: {user.name}")
-        
-        # Scope automatically disposes when exiting
+async def main():```
+
+# Create a scope for the operation
+async with create_async_scope() as scope:```
+
+# Get the service from the scope
+user_service = scope.resolve(UserService)
+```
+    ```
+
+# Use the service
+user = await user_service.get_user(123)
+```
+    ```
+
+# Work with the user
+print(f"Found user: {user.name}")
+```
+    ```
+
+# Scope automatically disposes when exiting
+```
+```
 ```
 
 ## Additional Resources
 
-- [Example: DI with FastAPI](../core/examples/di_fastapi_example.py)
-- [Testing with DI](../testing/dependency_injection.md)
-- [Advanced DI Patterns](../advanced/di_patterns.md)
+- [Example: DI with FastAPI](/src/uno/core/examples/di_fastapi_example.py)
+<!-- TODO: Create testing with DI documentation -->
+<!-- - [Testing with DI](../testing/dependency_injection.md) -->
+<!-- TODO: Create advanced DI patterns documentation -->
+<!-- - [Advanced DI Patterns](../advanced/di_patterns.md) -->

@@ -15,25 +15,31 @@ Uno offers multiple real-time update mechanisms that can be used independently o
 
 The real-time update system is built as an independent module that integrates with the core Uno framework. It follows the same principles of loose coupling and protocol-based design as the rest of the framework.
 
+``````
 ```
-                  ┌─────────────────────┐
-                  │   Domain Events     │
-                  └──────────┬──────────┘
-                             │
-                             ▼
+
+          ┌─────────────────────┐
+          │   Domain Events     │
+          └──────────┬──────────┘
+                     │
+                     ▼
+```
+```
 ┌─────────────┐     ┌─────────────────────┐     ┌─────────────────┐
 │  WebSocket  │     │  Notification Hub   │     │       SSE       │
 │   Server    │◄────┤                     ├────►│     Server      │
-└─────┬───────┘     │                     │     └────────┬────────┘
-      │             └─────────────────────┘              │
-      │                        ▲                         │
-      │                        │                         │
-      │                        │                         │
-      │             ┌──────────┴──────────┐              │
-      │             │  Subscription Mgr   │              │
-      │             └─────────────────────┘              │
-      │                                                  │
-      ▼                                                  ▼
+└─────┬───────┘     │                     │     └────────┬────────┘```
+
+  │             └─────────────────────┘              │
+  │                        ▲                         │
+  │                        │                         │
+  │                        │                         │
+  │             ┌──────────┴──────────┐              │
+  │             │  Subscription Mgr   │              │
+  │             └─────────────────────┘              │
+  │                                                  │
+  ▼                                                  ▼
+```
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Connected Clients                         │
 └─────────────────────────────────────────────────────────────────┘

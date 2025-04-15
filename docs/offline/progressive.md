@@ -18,15 +18,23 @@ The Progressive Enhancement system consists of several key components:
 ```
 ┌───────────────────────────┐      ┌─────────────────────────┐
 │  Connectivity Detector    │      │  Capability Detector    │
-└──────────────┬────────────┘      └────────────┬────────────┘
-               │                                │
-               │                                │
-               ▼                                ▼
+└──────────────┬────────────┘      └────────────┬────────────┘```
+```
+
+       │                                │
+       │                                │
+       ▼                                ▼
+```
+```
 ┌──────────────────────────────────────────────────────────────┐
 │                   Progressive Enhancer                        │
-└──────────┬───────────────────────────────────────┬───────────┘
-           │                                       │
-           ▼                                       ▼
+└──────────┬───────────────────────────────────────┬───────────┘```
+```
+
+   │                                       │
+   ▼                                       ▼
+```
+```
 ┌──────────────────────┐                ┌──────────────────────┐
 │ Enhancement Strategy │                │    Feature Config    │
 └──────────────────────┘                └──────────────────────┘
@@ -54,39 +62,45 @@ The system defines four connectivity levels:
 ### Basic Setup
 
 ```python
-from uno.offline.progressive import (
-    ProgressiveEnhancer,
-    ProgressiveConfig,
-    FeatureConfig,
-    FeatureLevel
+from uno.offline.progressive import (```
+
+ProgressiveEnhancer,
+ProgressiveConfig,
+FeatureConfig,
+FeatureLevel
+```
 )
 
 # Create a configuration
 config = ProgressiveConfig()
 
 # Define a feature
-sync_feature = FeatureConfig(
-    name="synchronization",
-    default_level="good",
-    priority=100,
-    levels={
-        "offline": FeatureLevel(
-            enabled=False,
-            config={"mode": "offline-only"}
-        ),
-        "poor": FeatureLevel(
-            enabled=True,
-            config={"mode": "essential-only", "interval": 300}
-        ),
-        "good": FeatureLevel(
-            enabled=True,
-            config={"mode": "background", "interval": 60}
-        ),
-        "excellent": FeatureLevel(
-            enabled=True,
-            config={"mode": "realtime", "interval": 10}
-        )
-    }
+sync_feature = FeatureConfig(```
+
+name="synchronization",
+default_level="good",
+priority=100,
+levels={```
+
+"offline": FeatureLevel(
+    enabled=False,
+    config={"mode": "offline-only"}
+),
+"poor": FeatureLevel(
+    enabled=True,
+    config={"mode": "essential-only", "interval": 300}
+),
+"good": FeatureLevel(
+    enabled=True,
+    config={"mode": "background", "interval": 60}
+),
+"excellent": FeatureLevel(
+    enabled=True,
+    config={"mode": "realtime", "interval": 10}
+)
+```
+}
+```
 )
 config.add_feature(sync_feature)
 
@@ -103,25 +117,35 @@ Register functions to handle feature enhancements:
 
 ```python
 # Define an enhancer function
-def sync_enhancer(config):
-    if config.get("mode") == "offline-only":
-        # Disable synchronization
-        sync_manager.pause()
-    elif config.get("mode") == "essential-only":
-        # Only sync essential data
-        sync_manager.set_mode("essential")
-        sync_manager.set_interval(config.get("interval", 300))
-        sync_manager.resume()
-    elif config.get("mode") == "background":
-        # Background synchronization
-        sync_manager.set_mode("background")
-        sync_manager.set_interval(config.get("interval", 60))
-        sync_manager.resume()
-    elif config.get("mode") == "realtime":
-        # Real-time synchronization
-        sync_manager.set_mode("realtime")
-        sync_manager.set_interval(config.get("interval", 10))
-        sync_manager.resume()
+def sync_enhancer(config):```
+
+if config.get("mode") == "offline-only":```
+
+# Disable synchronization
+sync_manager.pause()
+```
+elif config.get("mode") == "essential-only":```
+
+# Only sync essential data
+sync_manager.set_mode("essential")
+sync_manager.set_interval(config.get("interval", 300))
+sync_manager.resume()
+```
+elif config.get("mode") == "background":```
+
+# Background synchronization
+sync_manager.set_mode("background")
+sync_manager.set_interval(config.get("interval", 60))
+sync_manager.resume()
+```
+elif config.get("mode") == "realtime":```
+
+# Real-time synchronization
+sync_manager.set_mode("realtime")
+sync_manager.set_interval(config.get("interval", 10))
+sync_manager.resume()
+```
+```
 
 # Register the enhancer
 enhancer.register_feature_enhancer("synchronization", sync_enhancer)
@@ -132,34 +156,48 @@ enhancer.register_feature_enhancer("synchronization", sync_enhancer)
 Create custom strategies for determining enhancement levels:
 
 ```python
-from uno.offline.progressive import (
-    DefaultStrategy,
-    BatteryAwareStrategy,
-    BandwidthAwareStrategy
+from uno.offline.progressive import (```
+
+DefaultStrategy,
+BatteryAwareStrategy,
+BandwidthAwareStrategy
+```
 )
 
 # Use a built-in strategy
-enhancer = ProgressiveEnhancer(
-    config=config,
-    strategy=BatteryAwareStrategy()
+enhancer = ProgressiveEnhancer(```
+
+config=config,
+strategy=BatteryAwareStrategy()
+```
 )
 
 # Or create a custom strategy
-class MyCustomStrategy(DefaultStrategy):
-    def determine_level(self, feature, connectivity, capabilities):
-        # Custom logic to determine the enhancement level
-        level = super().determine_level(feature, connectivity, capabilities)
-        
-        # Custom rules
-        if feature.name == "video-player" and capabilities.get("device_memory", 0) < 2.0:
-            # For video player, if device has limited memory, degrade
-            return "poor"
-            
-        return level
+class MyCustomStrategy(DefaultStrategy):```
 
-enhancer = ProgressiveEnhancer(
-    config=config,
-    strategy=MyCustomStrategy()
+def determine_level(self, feature, connectivity, capabilities):```
+
+# Custom logic to determine the enhancement level
+level = super().determine_level(feature, connectivity, capabilities)
+``````
+
+```
+```
+
+# Custom rules
+if feature.name == "video-player" and capabilities.get("device_memory", 0) < 2.0:
+    # For video player, if device has limited memory, degrade
+    return "poor"
+    
+return level
+```
+```
+
+enhancer = ProgressiveEnhancer(```
+
+config=config,
+strategy=MyCustomStrategy()
+```
 )
 ```
 
@@ -169,21 +207,25 @@ The Progressive Enhancement module integrates with the Offline Store and Synchro
 
 ```python
 from uno.offline import OfflineStore
-from uno.offline.sync import (
-    SynchronizationEngine,
-    SyncOptions,
-    RestAdapter
+from uno.offline.sync import (```
+
+SynchronizationEngine,
+SyncOptions,
+RestAdapter
+```
 )
 from uno.offline.progressive import ProgressiveEnhancer
 
 # Create store and sync components
 store = OfflineStore(name="my-app-data")
 adapter = RestAdapter(base_url="https://api.example.com")
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    strategy="two-way",
-    network_adapter=adapter,
-    conflict_strategy="server-wins"
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+strategy="two-way",
+network_adapter=adapter,
+conflict_strategy="server-wins"
+```
 )
 sync_engine = SynchronizationEngine(store, sync_options)
 
@@ -191,24 +233,38 @@ sync_engine = SynchronizationEngine(store, sync_options)
 enhancer = ProgressiveEnhancer()
 
 # Register sync enhancer
-def sync_enhancer(config):
-    mode = config.get("mode", "background")
-    interval = config.get("interval", 60)
-    
-    if mode == "offline-only":
-        # No synchronization
-        pass
-    elif mode == "essential-only":
-        # Sync only essential collections
-        asyncio.create_task(
-            sync_engine.sync(collections=["users"])
-        )
-    elif mode == "background":
-        # Regular background sync
-        asyncio.create_task(sync_engine.sync())
-    elif mode == "realtime":
-        # More frequent sync
-        asyncio.create_task(sync_engine.sync())
+def sync_enhancer(config):```
+
+mode = config.get("mode", "background")
+interval = config.get("interval", 60)
+``````
+
+```
+```
+
+if mode == "offline-only":```
+
+# No synchronization
+pass
+```
+elif mode == "essential-only":```
+
+# Sync only essential collections
+asyncio.create_task(
+    sync_engine.sync(collections=["users"])
+)
+```
+elif mode == "background":```
+
+# Regular background sync
+asyncio.create_task(sync_engine.sync())
+```
+elif mode == "realtime":```
+
+# More frequent sync
+asyncio.create_task(sync_engine.sync())
+```
+```
 
 enhancer.register_feature_enhancer("synchronization", sync_enhancer)
 
@@ -224,52 +280,68 @@ Features can be configured with different behavior at each enhancement level:
 ### Offline Level
 
 ```python
-offline_level = FeatureLevel(
-    enabled=True,  # Feature is enabled in offline mode
-    config={
-        "caching": "aggressive",
-        "prefetch": False,
-        "assets": "minimal"
-    }
+offline_level = FeatureLevel(```
+
+enabled=True,  # Feature is enabled in offline mode
+config={```
+
+"caching": "aggressive",
+"prefetch": False,
+"assets": "minimal"
+```
+}
+```
 )
 ```
 
 ### Poor Connectivity Level
 
 ```python
-poor_level = FeatureLevel(
-    enabled=True,
-    config={
-        "caching": "normal",
-        "prefetch": False,
-        "assets": "low-res"
-    }
+poor_level = FeatureLevel(```
+
+enabled=True,
+config={```
+
+"caching": "normal",
+"prefetch": False,
+"assets": "low-res"
+```
+}
+```
 )
 ```
 
 ### Good Connectivity Level
 
 ```python
-good_level = FeatureLevel(
-    enabled=True,
-    config={
-        "caching": "selective",
-        "prefetch": True,
-        "assets": "medium-res"
-    }
+good_level = FeatureLevel(```
+
+enabled=True,
+config={```
+
+"caching": "selective",
+"prefetch": True,
+"assets": "medium-res"
+```
+}
+```
 )
 ```
 
 ### Excellent Connectivity Level
 
 ```python
-excellent_level = FeatureLevel(
-    enabled=True,
-    config={
-        "caching": "minimal",
-        "prefetch": True,
-        "assets": "high-res"
-    }
+excellent_level = FeatureLevel(```
+
+enabled=True,
+config={```
+
+"caching": "minimal",
+"prefetch": True,
+"assets": "high-res"
+```
+}
+```
 )
 ```
 
@@ -298,17 +370,23 @@ Configure how connectivity is detected:
 from uno.offline.progressive import ConnectivityDetector
 
 # Custom endpoints for connectivity checks
-detector = ConnectivityDetector(
-    check_interval=10.0,  # Check every 10 seconds
-    endpoints=[
-        "https://api.mycompany.com/health",
-        "https://cdn.mycompany.com/ping"
-    ],
-    timeout=2.0  # 2 second timeout
+detector = ConnectivityDetector(```
+
+check_interval=10.0,  # Check every 10 seconds
+endpoints=[```
+
+"https://api.mycompany.com/health",
+"https://cdn.mycompany.com/ping"
+```
+],
+timeout=2.0  # 2 second timeout
+```
 )
 
-enhancer = ProgressiveEnhancer(
-    connectivity_detector=detector
+enhancer = ProgressiveEnhancer(```
+
+connectivity_detector=detector
+```
 )
 ```
 
@@ -325,8 +403,10 @@ print(f"Sync enabled: {sync_status['enabled']}")
 
 # Get status of all features
 all_status = enhancer.get_all_feature_status()
-for feature_name, status in all_status.items():
-    print(f"{feature_name}: {status['level']} (enabled: {status['enabled']})")
+for feature_name, status in all_status.items():```
+
+print(f"{feature_name}: {status['level']} (enabled: {status['enabled']})")
+```
 ```
 
 ## Best Practices

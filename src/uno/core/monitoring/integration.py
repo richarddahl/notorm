@@ -31,6 +31,9 @@ from uno.core.monitoring.events import (
     EventLogger, EventLevel, EventType,
     get_event_logger
 )
+from uno.core.monitoring.dashboard import (
+    MonitoringDashboard, DashboardConfig, setup_monitoring_dashboard
+)
 from uno.core.resource_monitor import get_resource_monitor
 
 
@@ -132,6 +135,7 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
 def setup_monitoring(
     app: FastAPI,
     config: Optional[MonitoringConfig] = None,
+    dashboard_config: Optional[DashboardConfig] = None,
 ) -> None:
     """
     Set up monitoring for a FastAPI application.
@@ -142,10 +146,12 @@ def setup_monitoring(
     3. Adds health check endpoints
     4. Configures structured logging
     5. Sets up event logging
+    6. Sets up the monitoring dashboard
     
     Args:
         app: FastAPI application
         config: Monitoring configuration
+        dashboard_config: Dashboard configuration
     """
     # Get configuration
     config = config or get_monitoring_config()
@@ -239,6 +245,14 @@ def setup_monitoring(
     
     # Add monitoring middleware
     app.add_middleware(MonitoringMiddleware, config=config)
+    
+    # Set up monitoring dashboard
+    if dashboard_config is None:
+        # Default to enabled dashboard
+        dashboard_config = DashboardConfig(enabled=True)
+    
+    if dashboard_config.enabled:
+        setup_monitoring_dashboard(app, dashboard_config, config)
 
 
 def create_monitoring_endpoints(

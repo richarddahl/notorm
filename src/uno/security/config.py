@@ -297,6 +297,30 @@ class AuthenticationConfig(BaseModel):
         7,
         description="Refresh token expiration in days"
     )
+    jwt_secret_key: str = Field(
+        "",
+        description="Secret key for signing JWTs"
+    )
+    jwt_algorithm: str = Field(
+        "HS256",
+        description="Algorithm for signing JWTs"
+    )
+    jwt_issuer: Optional[str] = Field(
+        None,
+        description="Issuer claim for the JWT"
+    )
+    jwt_audience: Optional[str] = Field(
+        None,
+        description="Audience claim for the JWT"
+    )
+    enable_jwt_middleware: bool = Field(
+        True,
+        description="Enable JWT middleware for FastAPI"
+    )
+    jwt_exclude_paths: List[str] = Field(
+        default_factory=lambda: ["/auth/login", "/auth/register", "/auth/refresh", "/docs", "/openapi.json"],
+        description="Paths to exclude from JWT authentication"
+    )
     password_policy: PasswordPolicyConfig = Field(
         default_factory=PasswordPolicyConfig,
         description="Password policy"

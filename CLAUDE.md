@@ -94,6 +94,9 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Rebuild Docker: `./scripts/rebuild_docker.sh`
 - Run app: `hatch run dev:app` (sets up Docker and runs the app)
 - Test with Docker: `hatch run test:all` (sets up Docker and runs tests)
+- Run integration tests: `hatch run test:integration`
+- Run vector tests: `hatch run test:integration-vector`
+- Run benchmarks: `./tests/integration/run_benchmarks.py`
 - Individual tests: `hatch run test:test tests/path/to/test_file.py::TestClass::test_method`
 - Test (verbose): `hatch run test:testvv`
 - Type check: `hatch run types:check`
@@ -128,6 +131,8 @@ This project uses a Docker-first approach for all database interactions. We neve
 - `src/scripts/validate_reports.py`: Validates report generation
 - `src/scripts/validate_workflows.py`: Validates workflow definitions
 - `src/scripts/test_merge_function.py`: Tests merge function
+- `tests/integration/run_benchmarks.py`: Runs integration test benchmarks and generates reports
+- `benchmarks/dashboard/run_dashboard.sh`: Launches the benchmark visualization dashboard
 
 ### CI/CD Scripts
 - `scripts/ci/build.sh`: Builds project for CI

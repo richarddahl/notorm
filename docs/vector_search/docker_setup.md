@@ -50,8 +50,10 @@ FROM postgres:16-alpine
 RUN apk add --no-cache unzip make gcc g++ musl-dev postgresql16-dev ...
 
 # Clone and build extensions from source
-RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git && \
-    cd pgvector && make && make install
+RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git && \```
+
+cd pgvector && make && make install
+```
 
 # Configure symbolic links for extensions
 RUN mkdir -p /usr/local/lib/postgresql/plugins

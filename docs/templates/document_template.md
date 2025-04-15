@@ -30,9 +30,11 @@ Practical examples demonstrating the concepts discussed in this document.
 
 ```python
 # Example code
-def example_function():
-    """Example docstring."""
-    return "Example result"
+def example_function():```
+
+"""Example docstring."""
+return "Example result"
+```
 ```
 
 ## Best Practices

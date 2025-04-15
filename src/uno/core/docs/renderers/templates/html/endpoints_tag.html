@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tag }} Endpoints - {{ schema.title }}{% endblock %}
+
+{% block content %}
+<div class="content-section">
+    <h1>{{ tag }} Endpoints</h1>
+    
+    {% set tag_obj = tags_by_name.get(tag) %}
+    {% if tag_obj and tag_obj.description %}
+    <div class="description">
+        {{ tag_obj.description|md_to_html }}
+    </div>
+    {% endif %}
+    
+    <div class="endpoint-list">
+        {% for endpoint in endpoints %}
+        <div class="endpoint-card" id="{{ endpoint.method|lower }}_{{ endpoint.path|slugify }}">
+            <div class="endpoint-header">
+                <div class="endpoint-method {{ endpoint.method|method_class }}">{{ endpoint.method }}</div>
+                <div class="endpoint-path">{{ endpoint.path }}</div>
+                
+                <div class="endpoint-badges">
+                    {% if endpoint.deprecated %}
+                    <span class="badge badge-deprecated">Deprecated</span>
+                    {% endif %}
+                    <span class="badge {{ endpoint.status|status_class }}">{{ endpoint.status.name|title }}</span>
+                </div>
+            </div>
+            
+            <div class="endpoint-summary">
+                <h2>{{ endpoint.summary }}</h2>
+                <div class="endpoint-description">
+                    {{ endpoint.description|md_to_html }}
+                </div>
+                
+                {% if endpoint.operation_id %}
+                <div class="operation-id">
+                    <strong>Operation ID:</strong> {{ endpoint.operation_id }}
+                </div>
+                {% endif %}
+                
+                {% if endpoint.source_file and config.include_source_links %}
+                <div class="source-link">
+                    <strong>Source:</strong> <a href="{{ config.url_base }}/{{ endpoint.source_file }}" target="_blank">{{ endpoint.source_file.split('/')[-1] }}</a>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if endpoint.parameters %}
+            <div class="endpoint-section">
+                <h3>Parameters</h3>
+                <table class="params-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Location</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param in endpoint.parameters %}
+                        <tr>
+                            <td><code>{{ param.name }}</code></td>
+                            <td><code>{{ param.type }}</code></td>
+                            <td>{{ param.location_icon|safe }} {{ param.location.name }}</td>
+                            <td>{% if param.required %}✓{% else %}✗{% endif %}</td>
+                            <td>{{ param.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            {% if endpoint.responses %}
+            <div class="endpoint-section">
+                <h3>Responses</h3>
+                <table class="response-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Content Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status, response in endpoint.responses.items() %}
+                        <tr>
+                            <td>
+                                <code class="status-code status-{{ status // 100 }}xx">{{ status }}</code>
+                            </td>
+                            <td>{{ response.description }}</td>
+                            <td><code>{{ response.content_type }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            {% if endpoint.examples %}
+            <div class="endpoint-section">
+                <h3>Examples</h3>
+                {% for example in endpoint.examples %}
+                <div class="example">
+                    <h4>{{ example.name }}</h4>
+                    <p>{{ example.description }}</p>
+                    <pre><code class="language-json">{{ example.value|json_pretty }}</code></pre>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

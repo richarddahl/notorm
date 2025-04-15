@@ -26,9 +26,11 @@ from uno.jobs.scheduler import Scheduler, CronSchedule
 scheduler = Scheduler()
 
 # Add a task that runs at 2:30 AM every day
-scheduler.schedule(
-    task="maintenance.clean_old_data",
-    schedule=CronSchedule("30 2 * * *")
+scheduler.schedule(```
+
+task="maintenance.clean_old_data",
+schedule=CronSchedule("30 2 * * *")
+```
 )
 ```
 
@@ -41,9 +43,11 @@ from uno.jobs.scheduler import IntervalSchedule
 from datetime import timedelta
 
 # Run every 5 minutes
-scheduler.schedule(
-    task="monitor.check_system_health",
-    schedule=IntervalSchedule(timedelta(minutes=5))
+scheduler.schedule(```
+
+task="monitor.check_system_health",
+schedule=IntervalSchedule(timedelta(minutes=5))
+```
 )
 ```
 
@@ -57,9 +61,11 @@ from datetime import datetime, timezone
 
 # Run at a specific future time
 future_time = datetime.now(timezone.utc) + timedelta(hours=24)
-scheduler.schedule(
-    task="notifications.send_reminder",
-    schedule=OneTimeSchedule(future_time)
+scheduler.schedule(```
+
+task="notifications.send_reminder",
+schedule=OneTimeSchedule(future_time)
+```
 )
 ```
 
@@ -71,9 +77,11 @@ Runs a task at specific times each day:
 from uno.jobs.scheduler import DailySchedule
 
 # Run at 9:00 AM, 1:00 PM, and 5:00 PM every day
-scheduler.schedule(
-    task="reports.generate_status_report",
-    schedule=DailySchedule(["09:00", "13:00", "17:00"])
+scheduler.schedule(```
+
+task="reports.generate_status_report",
+schedule=DailySchedule(["09:00", "13:00", "17:00"])
+```
 )
 ```
 
@@ -85,12 +93,16 @@ Runs a task on specific days of the week:
 from uno.jobs.scheduler import WeeklySchedule
 
 # Run every Monday and Thursday at 10:00 AM
-scheduler.schedule(
-    task="reports.generate_weekly_report",
-    schedule=WeeklySchedule(
-        days=["monday", "thursday"],
-        time="10:00"
-    )
+scheduler.schedule(```
+
+task="reports.generate_weekly_report",
+schedule=WeeklySchedule(```
+
+days=["monday", "thursday"],
+time="10:00"
+```
+)
+```
 )
 ```
 
@@ -102,12 +114,16 @@ Runs a task on specific days of the month:
 from uno.jobs.scheduler import MonthlySchedule
 
 # Run on the 1st and 15th of each month at noon
-scheduler.schedule(
-    task="accounting.process_invoices",
-    schedule=MonthlySchedule(
-        days=[1, 15],
-        time="12:00"
-    )
+scheduler.schedule(```
+
+task="accounting.process_invoices",
+schedule=MonthlySchedule(```
+
+days=[1, 15],
+time="12:00"
+```
+)
+```
 )
 ```
 
@@ -118,25 +134,47 @@ The scheduler offers many configuration options:
 ```python
 from uno.jobs.scheduler import Scheduler
 
-scheduler = Scheduler(
-    # Queue configuration
-    queue_name="scheduled",          # Queue for scheduled jobs
-    
-    # Execution settings
-    timezone="UTC",                  # Timezone for schedules
-    check_interval=60,               # Scheduler tick interval in seconds
-    
-    # Reliability settings
-    missed_threshold=300,            # Seconds after which a job is considered missed
-    
-    # Fault tolerance
-    lock_timeout=300,                # Seconds until a scheduler lock expires
-    
-    # Observability
-    metrics_enabled=True,            # Whether to collect metrics
-    
-    # Storage
-    storage=scheduler_storage        # Storage backend
+scheduler = Scheduler(```
+
+# Queue configuration
+queue_name="scheduled",          # Queue for scheduled jobs
+``````
+
+```
+```
+
+# Execution settings
+timezone="UTC",                  # Timezone for schedules
+check_interval=60,               # Scheduler tick interval in seconds
+``````
+
+```
+```
+
+# Reliability settings
+missed_threshold=300,            # Seconds after which a job is considered missed
+``````
+
+```
+```
+
+# Fault tolerance
+lock_timeout=300,                # Seconds until a scheduler lock expires
+``````
+
+```
+```
+
+# Observability
+metrics_enabled=True,            # Whether to collect metrics
+``````
+
+```
+```
+
+# Storage
+storage=scheduler_storage        # Storage backend
+```
 )
 ```
 
@@ -148,38 +186,68 @@ Each schedule can be configured with additional options:
 from uno.jobs.scheduler import CronSchedule
 
 # Configure a scheduled task
-scheduler.schedule(
-    # Basic task information
-    task="reports.generate_report",                  # Task to execute
-    schedule=CronSchedule("0 9 * * 1-5"),           # Schedule definition
-    
-    # Task parameters
-    args=["daily", "pdf"],                          # Positional arguments
-    kwargs={"detailed": True},                      # Keyword arguments
-    
-    # Execution settings
-    queue="reports",                                # Specific queue for this task
-    priority="high",                                # Priority level
-    
-    # Time constraints
-    start_date=datetime(2023, 4, 1),               # When to start scheduling
-    end_date=datetime(2023, 12, 31),               # When to stop scheduling
-    timezone="America/New_York",                    # Timezone for this schedule
-    
-    # Retry settings
-    max_retries=3,                                  # Maximum retry attempts
-    retry_delay=60,                                 # Seconds between retries
-    
-    # Identification
-    tags=["report", "daily"],                       # Tags for filtering
-    metadata={"department": "finance"},             # Custom metadata
-    
-    # Execution constraints
-    timeout=300,                                    # Timeout in seconds
-    unique=True,                                    # Only one instance at a time
-    
-    # Naming
-    name="daily-finance-report"                     # Unique name for this schedule
+scheduler.schedule(```
+
+# Basic task information
+task="reports.generate_report",                  # Task to execute
+schedule=CronSchedule("0 9 * * 1-5"),           # Schedule definition
+``````
+
+```
+```
+
+# Task parameters
+args=["daily", "pdf"],                          # Positional arguments
+kwargs={"detailed": True},                      # Keyword arguments
+``````
+
+```
+```
+
+# Execution settings
+queue="reports",                                # Specific queue for this task
+priority="high",                                # Priority level
+``````
+
+```
+```
+
+# Time constraints
+start_date=datetime(2023, 4, 1),               # When to start scheduling
+end_date=datetime(2023, 12, 31),               # When to stop scheduling
+timezone="America/New_York",                    # Timezone for this schedule
+``````
+
+```
+```
+
+# Retry settings
+max_retries=3,                                  # Maximum retry attempts
+retry_delay=60,                                 # Seconds between retries
+``````
+
+```
+```
+
+# Identification
+tags=["report", "daily"],                       # Tags for filtering
+metadata={"department": "finance"},             # Custom metadata
+``````
+
+```
+```
+
+# Execution constraints
+timeout=300,                                    # Timeout in seconds
+unique=True,                                    # Only one instance at a time
+``````
+
+```
+```
+
+# Naming
+name="daily-finance-report"                     # Unique name for this schedule
+```
 )
 ```
 
@@ -191,9 +259,11 @@ The scheduler provides methods for managing schedules:
 
 ```python
 # Add a new schedule
-schedule_id = await scheduler.schedule(
-    task="maintenance.cleanup",
-    schedule=CronSchedule("0 0 * * *")
+schedule_id = await scheduler.schedule(```
+
+task="maintenance.cleanup",
+schedule=CronSchedule("0 0 * * *")
+```
 )
 ```
 
@@ -211,11 +281,13 @@ schedule = await scheduler.get_schedule_by_name("daily-finance-report")
 
 ```python
 # Update a schedule's settings
-await scheduler.update_schedule(
-    schedule_id,
-    schedule=CronSchedule("0 1 * * *"),  # New schedule
-    args=["daily", "html"],              # New arguments
-    priority="normal"                     # New priority
+await scheduler.update_schedule(```
+
+schedule_id,
+schedule=CronSchedule("0 1 * * *"),  # New schedule
+args=["daily", "html"],              # New arguments
+priority="normal"                     # New priority
+```
 )
 ```
 
@@ -247,9 +319,11 @@ await scheduler.delete_schedule(schedule_id)
 schedules = await scheduler.list_schedules()
 
 # List with filtering
-schedules = await scheduler.list_schedules(
-    status="active",
-    tags=["report"]
+schedules = await scheduler.list_schedules(```
+
+status="active",
+tags=["report"]
+```
 )
 ```
 
@@ -287,10 +361,12 @@ Trigger schedules immediately, regardless of their next scheduled time:
 await scheduler.trigger_now(schedule_id)
 
 # Trigger with specific parameters
-await scheduler.trigger_now(
-    schedule_id,
-    args=["special-report"],
-    kwargs={"urgent": True}
+await scheduler.trigger_now(```
+
+schedule_id,
+args=["special-report"],
+kwargs={"urgent": True}
+```
 )
 ```
 
@@ -302,17 +378,21 @@ The scheduler provides detailed insights into its operation:
 
 ```python
 # Get the next N run times for a schedule
-next_runs = await scheduler.get_next_run_times(
-    schedule_id,
-    count=5
+next_runs = await scheduler.get_next_run_times(```
+
+schedule_id,
+count=5
+```
 )
 """
-[
-    "2023-04-13T02:30:00Z",
-    "2023-04-14T02:30:00Z",
-    "2023-04-15T02:30:00Z",
-    "2023-04-16T02:30:00Z",
-    "2023-04-17T02:30:00Z"
+[```
+
+"2023-04-13T02:30:00Z",
+"2023-04-14T02:30:00Z",
+"2023-04-15T02:30:00Z",
+"2023-04-16T02:30:00Z",
+"2023-04-17T02:30:00Z"
+```
 ]
 """
 ```
@@ -323,16 +403,18 @@ next_runs = await scheduler.get_next_run_times(
 # Get detailed schedule status
 status = await scheduler.get_schedule_status(schedule_id)
 """
-{
-    "name": "daily-finance-report",
-    "status": "active",
-    "last_run": "2023-04-12T09:00:00Z",
-    "last_result": "success",
-    "next_run": "2023-04-13T09:00:00Z",
-    "run_count": 42,
-    "success_count": 40,
-    "error_count": 2,
-    "average_duration": 15.3
+{```
+
+"name": "daily-finance-report",
+"status": "active",
+"last_run": "2023-04-12T09:00:00Z",
+"last_result": "success",
+"next_run": "2023-04-13T09:00:00Z",
+"run_count": 42,
+"success_count": 40,
+"error_count": 2,
+"average_duration": 15.3
+```
 }
 """
 ```
@@ -343,15 +425,17 @@ status = await scheduler.get_schedule_status(schedule_id)
 # Get overall scheduler statistics
 stats = await scheduler.get_statistics()
 """
-{
-    "schedules_total": 25,
-    "schedules_active": 23,
-    "schedules_paused": 2,
-    "jobs_triggered_total": 1050,
-    "jobs_triggered_last_24h": 120,
-    "success_rate": 0.98,
-    "scheduler_uptime": 604800,
-    "missed_schedules": 0
+{```
+
+"schedules_total": 25,
+"schedules_active": 23,
+"schedules_paused": 2,
+"jobs_triggered_total": 1050,
+"jobs_triggered_last_24h": 120,
+"success_rate": 0.98,
+"scheduler_uptime": 604800,
+"missed_schedules": 0
+```
 }
 """
 ```
@@ -370,10 +454,12 @@ from uno.jobs.storage import RedisStorage
 from uno.jobs.scheduler import Scheduler
 
 storage = RedisStorage(redis_url="redis://localhost:6379/0")
-scheduler = Scheduler(
-    storage=storage,
-    lock_timeout=300,
-    instance_id="scheduler-1"
+scheduler = Scheduler(```
+
+storage=storage,
+lock_timeout=300,
+instance_id="scheduler-1"
+```
 )
 ```
 
@@ -383,10 +469,12 @@ Handles missed schedules due to downtime:
 
 ```python
 # Configure missed schedule handling
-scheduler = Scheduler(
-    missed_threshold=300,                # Consider missed after 5 minutes
-    missed_schedule_handling="trigger",  # Trigger missed schedules
-    max_missed_schedules=10              # Maximum missed schedules to trigger
+scheduler = Scheduler(```
+
+missed_threshold=300,                # Consider missed after 5 minutes
+missed_schedule_handling="trigger",  # Trigger missed schedules
+max_missed_schedules=10              # Maximum missed schedules to trigger
+```
 )
 ```
 
@@ -397,8 +485,10 @@ Handles schedule execution errors:
 ```python
 # Register error handlers
 @scheduler.on_schedule_error
-async def handle_schedule_error(schedule_id, exception):
-    print(f"Error executing schedule {schedule_id}: {exception}")
+async def handle_schedule_error(schedule_id, exception):```
+
+print(f"Error executing schedule {schedule_id}: {exception}")
+```
 ```
 
 ## Advanced Features
@@ -411,18 +501,22 @@ Create schedule templates for reuse:
 from uno.jobs.scheduler import ScheduleTemplate
 
 # Create a template
-daily_morning_template = ScheduleTemplate(
-    schedule=CronSchedule("0 9 * * *"),
-    timezone="America/New_York",
-    max_retries=3,
-    retry_delay=60
+daily_morning_template = ScheduleTemplate(```
+
+schedule=CronSchedule("0 9 * * *"),
+timezone="America/New_York",
+max_retries=3,
+retry_delay=60
+```
 )
 
 # Use the template
-scheduler.schedule(
-    task="reports.generate_daily_report",
-    template=daily_morning_template,
-    kwargs={"department": "sales"}
+scheduler.schedule(```
+
+task="reports.generate_daily_report",
+template=daily_morning_template,
+kwargs={"department": "sales"}
+```
 )
 ```
 
@@ -434,10 +528,12 @@ Trigger schedules based on events:
 from uno.jobs.scheduler import EventTrigger
 
 # Create an event-triggered schedule
-scheduler.schedule(
-    task="inventory.reorder_products",
-    schedule=EventTrigger("inventory.low_stock"),
-    kwargs={"threshold": 10}
+scheduler.schedule(```
+
+task="inventory.reorder_products",
+schedule=EventTrigger("inventory.low_stock"),
+kwargs={"threshold": 10}
+```
 )
 
 # Trigger the schedule via an event
@@ -450,11 +546,13 @@ Track changes to schedules:
 
 ```python
 # Update a schedule with versioning
-await scheduler.update_schedule(
-    schedule_id,
-    schedule=new_schedule,
-    version=2,  # Current version
-    changelog="Updated schedule to run at 1 AM instead of midnight"
+await scheduler.update_schedule(```
+
+schedule_id,
+schedule=new_schedule,
+version=2,  # Current version
+changelog="Updated schedule to run at 1 AM instead of midnight"
+```
 )
 
 # Get schedule history

@@ -149,32 +149,64 @@ class DatabaseMigrationTracker(MigrationTracker):
         
         # Prepare JSON data
         import json
-        tags = "{" + ",".join(f'"{tag}"' for tag in migration.tags) + "}" if migration.tags else "{}"
+        
+        # Safe handling of tags and metadata
+        if migration.tags:
+            tags = "{" + ",".join(f'"{tag.replace("\"", "")}"' for tag in migration.tags) + "}"
+        else:
+            tags = "{}"
+            
         metadata = json.dumps({})
         
-        # Create insert query
-        query = f"""
-        INSERT INTO {full_table_name} (
-            id, name, applied_at, version, checksum, description, tags, metadata
-        ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8
-        )
-        """
+        # Determine connection type and use appropriate parameter binding
+        if hasattr(self.connection, 'execute'):
+            # SQLAlchemy-like connection
+            query = f"""
+            INSERT INTO {full_table_name} (
+                id, name, applied_at, version, checksum, description, tags, metadata
+            ) VALUES (
+                :id, :name, :applied_at, :version, :checksum, :description, :tags, :metadata
+            )
+            """
+            
+            params = {
+                "id": migration.id,
+                "name": migration.name,
+                "applied_at": migration.applied_at.isoformat(),
+                "version": migration.version,
+                "checksum": migration.get_checksum(),
+                "description": migration.description,
+                "tags": tags,
+                "metadata": metadata
+            }
+            
+            await self.connection.execute(query, params)
+        else:
+            # Database-api or asyncpg-like connection
+            query = f"""
+            INSERT INTO {full_table_name} (
+                id, name, applied_at, version, checksum, description, tags, metadata
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8
+            )
+            """
+            
+            # Create parameters list
+            params = [
+                migration.id,
+                migration.name,
+                migration.applied_at.isoformat(),
+                migration.version,
+                migration.get_checksum(),
+                migration.description,
+                tags,
+                metadata
+            ]
+            
+            # Execute with parameters
+            cursor = await self.connection.cursor()
+            await cursor.execute(query, params)
         
-        # Simple parameter substitution (for demonstration)
-        query = (
-            query
-            .replace("$1", f"'{migration.id}'")
-            .replace("$2", f"'{migration.name}'")
-            .replace("$3", f"'{migration.applied_at.isoformat()}'")
-            .replace("$4", f"'{migration.version}'" if migration.version else "NULL")
-            .replace("$5", f"'{migration.get_checksum()}'")
-            .replace("$6", f"'{migration.description}'")
-            .replace("$7", f"'{tags}'")
-            .replace("$8", f"'{metadata}'")
-        )
-        
-        await self._execute_sql(query)
         self.logger.info(f"Recorded migration: {migration.id}")
     
     async def remove_migration(self, migration_id: str) -> None:
@@ -187,8 +219,17 @@ class DatabaseMigrationTracker(MigrationTracker):
         schema_prefix = f"{self.schema_name}." if self.schema_name != "public" else ""
         full_table_name = f"{schema_prefix}{self.table_name}"
         
-        query = f"DELETE FROM {full_table_name} WHERE id = $1"
-        await self._execute_sql(query.replace("$1", f"'{migration_id}'"))
+        # Determine connection type and use appropriate parameter binding
+        if hasattr(self.connection, 'execute'):
+            # SQLAlchemy-like connection
+            query = f"DELETE FROM {full_table_name} WHERE id = :id"
+            await self.connection.execute(query, {"id": migration_id})
+        else:
+            # Database-api or asyncpg-like connection
+            query = f"DELETE FROM {full_table_name} WHERE id = $1"
+            cursor = await self.connection.cursor()
+            await cursor.execute(query, [migration_id])
+            
         self.logger.info(f"Removed migration: {migration_id}")
     
     async def get_migration_history(self) -> List[Dict[str, Any]]:

@@ -25,13 +25,17 @@ from uno.security.audit import AuditLogger, SecurityEvent
 audit_logger = AuditLogger.get_instance()
 
 # Log a security event
-audit_logger.log(
-    event_type=SecurityEvent.LOGIN_SUCCESS,
-    user_id="user123",
-    metadata={
-        "ip_address": "192.168.1.1",
-        "user_agent": "Mozilla/5.0...",
-    }
+audit_logger.log(```
+
+event_type=SecurityEvent.LOGIN_SUCCESS,
+user_id="user123",
+metadata={```
+
+"ip_address": "192.168.1.1",
+"user_agent": "Mozilla/5.0...",
+```
+}
+```
 )
 ```
 
@@ -82,17 +86,21 @@ from uno.security.audit import AuditLogManager
 log_manager = AuditLogManager()
 
 # Search for specific events
-results = log_manager.search(
-    event_types=[SecurityEvent.LOGIN_FAILURE],
-    user_id="user123",
-    time_range=(start_time, end_time)
+results = log_manager.search(```
+
+event_types=[SecurityEvent.LOGIN_FAILURE],
+user_id="user123",
+time_range=(start_time, end_time)
+```
 )
 
 # Export logs for compliance reporting
-log_manager.export(
-    format="csv",
-    time_range=(start_time, end_time),
-    destination="/path/to/export.csv"
+log_manager.export(```
+
+format="csv",
+time_range=(start_time, end_time),
+destination="/path/to/export.csv"
+```
 )
 
 # Verify log integrity
@@ -106,24 +114,28 @@ Configure audit logging through the `SecurityConfig`:
 ```python
 from uno.security.config import SecurityConfig
 
-config = SecurityConfig(
-    audit={
-        "enabled": True,
-        "storage": {
-            "type": "database",  # Options: "database", "file", "cloud"
-            "connection": "postgresql://user:pass@localhost/db",
-            "table_name": "audit_logs",
-        },
-        "retention_period": 365,  # Days to retain logs
-        "integrity_check": {
-            "enabled": True,
-            "algorithm": "sha256",
-        },
-        "events": {
-            "include": ["*"],  # All events
-            "exclude": [],  # No exclusions
-        }
-    }
+config = SecurityConfig(```
+
+audit={```
+
+"enabled": True,
+"storage": {
+    "type": "database",  # Options: "database", "file", "cloud"
+    "connection": "postgresql://user:pass@localhost/db",
+    "table_name": "audit_logs",
+},
+"retention_period": 365,  # Days to retain logs
+"integrity_check": {
+    "enabled": True,
+    "algorithm": "sha256",
+},
+"events": {
+    "include": ["*"],  # All events
+    "exclude": [],  # No exclusions
+}
+```
+}
+```
 )
 ```
 
@@ -135,14 +147,18 @@ Store audit logs directly in your application database:
 
 ```python
 # Configure for database storage
-config = SecurityConfig(
-    audit={
-        "storage": {
-            "type": "database",
-            "connection": "postgresql://user:pass@localhost/db",
-            "table_name": "audit_logs",
-        }
-    }
+config = SecurityConfig(```
+
+audit={```
+
+"storage": {
+    "type": "database",
+    "connection": "postgresql://user:pass@localhost/db",
+    "table_name": "audit_logs",
+}
+```
+}
+```
 )
 ```
 
@@ -152,17 +168,21 @@ Write audit logs to the file system:
 
 ```python
 # Configure for file storage
-config = SecurityConfig(
-    audit={
-        "storage": {
-            "type": "file",
-            "path": "/var/log/myapp/audit.log",
-            "rotation": {
-                "size": "100MB",
-                "backup_count": 10,
-            }
-        }
+config = SecurityConfig(```
+
+audit={```
+
+"storage": {
+    "type": "file",
+    "path": "/var/log/myapp/audit.log",
+    "rotation": {
+        "size": "100MB",
+        "backup_count": 10,
     }
+}
+```
+}
+```
 )
 ```
 
@@ -172,15 +192,19 @@ Send audit logs to cloud logging services:
 
 ```python
 # Configure for cloud storage (AWS CloudWatch example)
-config = SecurityConfig(
-    audit={
-        "storage": {
-            "type": "cloud",
-            "provider": "aws",
-            "log_group": "/myapp/audit",
-            "region": "us-west-2",
-        }
-    }
+config = SecurityConfig(```
+
+audit={```
+
+"storage": {
+    "type": "cloud",
+    "provider": "aws",
+    "log_group": "/myapp/audit",
+    "region": "us-west-2",
+}
+```
+}
+```
 )
 ```
 
@@ -212,13 +236,17 @@ from uno.security.audit import SecurityEvent
 security = SecurityManager.get_instance()
 
 # Log authentication event
-security.audit.log(
-    event_type=SecurityEvent.LOGIN_SUCCESS,
-    user_id="user123",
-    metadata={
-        "ip_address": "192.168.1.1",
-        "session_id": "sess_12345",
-    }
+security.audit.log(```
+
+event_type=SecurityEvent.LOGIN_SUCCESS,
+user_id="user123",
+metadata={```
+
+"ip_address": "192.168.1.1",
+"session_id": "sess_12345",
+```
+}
+```
 )
 ```
 
@@ -233,13 +261,17 @@ from uno.security.audit import SecurityEvent, AuditLogger
 CUSTOM_EVENT = "ACCOUNT_LOCKOUT"
 
 # Log custom event
-AuditLogger.get_instance().log(
-    event_type=CUSTOM_EVENT,
-    user_id="user123",
-    metadata={
-        "reason": "too_many_attempts",
-        "lockout_duration": 30,  # minutes
-    }
+AuditLogger.get_instance().log(```
+
+event_type=CUSTOM_EVENT,
+user_id="user123",
+metadata={```
+
+"reason": "too_many_attempts",
+"lockout_duration": 30,  # minutes
+```
+}
+```
 )
 ```
 
@@ -252,37 +284,49 @@ from uno.security import SecurityManager
 
 # In FastAPI example
 @app.post("/login")
-async def login(credentials: LoginCredentials):
-    try:
-        # Authenticate user
-        user = authenticate(credentials.username, credentials.password)
-        
-        # Log successful login
-        SecurityManager.get_instance().audit.log(
-            event_type=SecurityEvent.LOGIN_SUCCESS,
-            user_id=user.id,
-            metadata={
-                "ip": request.client.host,
-                "user_agent": request.headers.get("User-Agent"),
-            }
-        )
-        
-        # Return token
-        return {"token": create_token(user)}
-        
-    except AuthenticationError as e:
-        # Log failed login
-        SecurityManager.get_instance().audit.log(
-            event_type=SecurityEvent.LOGIN_FAILURE,
-            user_id=credentials.username,  # Using username since user ID unknown
-            metadata={
-                "ip": request.client.host,
-                "reason": str(e),
-            }
-        )
-        
-        # Return error
-        raise HTTPException(status_code=401, detail="Authentication failed")
+async def login(credentials: LoginCredentials):```
+
+try:```
+
+# Authenticate user
+user = authenticate(credentials.username, credentials.password)
+```
+    ```
+
+# Log successful login
+SecurityManager.get_instance().audit.log(
+    event_type=SecurityEvent.LOGIN_SUCCESS,
+    user_id=user.id,
+    metadata={
+        "ip": request.client.host,
+        "user_agent": request.headers.get("User-Agent"),
+    }
+)
+```
+    ```
+
+# Return token
+return {"token": create_token(user)}
+```
+    
+except AuthenticationError as e:```
+
+# Log failed login
+SecurityManager.get_instance().audit.log(
+    event_type=SecurityEvent.LOGIN_FAILURE,
+    user_id=credentials.username,  # Using username since user ID unknown
+    metadata={
+        "ip": request.client.host,
+        "reason": str(e),
+    }
+)
+```
+    ```
+
+# Return error
+raise HTTPException(status_code=401, detail="Authentication failed")
+```
+```
 ```
 
 ## Troubleshooting

@@ -60,52 +60,92 @@ Plugins go through several states during their lifecycle:
 ```python
 from uno.core.plugins.plugin import Plugin, PluginInfo, PluginConfig, PluginType
 
-class MyPlugin(Plugin):
-    """A simple example plugin."""
-    
-    def __init__(self):
-        """Initialize the plugin."""
-        info = PluginInfo(
-            id="my_plugin",
-            name="My Plugin",
-            version="1.0.0",
-            description="An example plugin",
-            author="Your Name",
-            plugin_type=PluginType.UTILITY
-        )
-        
-        config = PluginConfig(
-            schema={
-                "option1": {
-                    "type": "string",
-                    "description": "An example option",
-                    "default": "default value"
-                }
-            },
-            defaults={
-                "option1": "default value"
-            }
-        )
-        
-        super().__init__(info, config)
-    
-    async def load(self) -> None:
-        """Load the plugin."""
-        self.logger.info(f"Loading {self.name}...")
-    
-    async def unload(self) -> None:
-        """Unload the plugin."""
-        self.logger.info(f"Unloading {self.name}...")
-    
-    async def enable(self) -> None:
-        """Enable the plugin."""
-        self.logger.info(f"Enabling {self.name}...")
-        # Register extensions, hooks, etc.
-    
-    async def disable(self) -> None:
-        """Disable the plugin."""
-        self.logger.info(f"Disabling {self.name}...")
-        # Unregister extensions, hooks, etc.
+class MyPlugin(Plugin):```
+
+"""A simple example plugin."""
+``````
+
+```
+```
+
+def __init__(self):```
+
+"""Initialize the plugin."""
+info = PluginInfo(
+    id="my_plugin",
+    name="My Plugin",
+    version="1.0.0",
+    description="An example plugin",
+    author="Your Name",
+    plugin_type=PluginType.UTILITY
+)
+``````
+
+```
+```
+
+config = PluginConfig(
+    schema={
+        "option1": {
+            "type": "string",
+            "description": "An example option",
+            "default": "default value"
+        }
+    },
+    defaults={
+        "option1": "default value"
+    }
+)
+``````
+
+```
+```
+
+super().__init__(info, config)
+```
+``````
+
+```
+```
+
+async def load(self) -> None:```
+
+"""Load the plugin."""
+self.logger.info(f"Loading {self.name}...")
+```
+``````
+
+```
+```
+
+async def unload(self) -> None:```
+
+"""Unload the plugin."""
+self.logger.info(f"Unloading {self.name}...")
+```
+``````
+
+```
+```
+
+async def enable(self) -> None:```
+
+"""Enable the plugin."""
+self.logger.info(f"Enabling {self.name}...")
+# Register extensions, hooks, etc.
+```
+``````
+
+```
+```
+
+async def disable(self) -> None:```
+
+"""Disable the plugin."""
+self.logger.info(f"Disabling {self.name}...")
+# Unregister extensions, hooks, etc.
+```
+```
 ```
 
 ### Providing Extensions
@@ -116,14 +156,18 @@ To extend a specific part of the framework, plugins can provide extensions:
 from uno.core.plugins.extension import register_extension
 
 # In your plugin's enable method
-async def enable(self) -> None:
-    # Create and register an extension
-    register_extension(
-        extension_point_id="authentication_provider",
-        extension_id="my_auth_provider",
-        extension=MyAuthProvider(),
-        config={"priority": 100}
-    )
+async def enable(self) -> None:```
+
+# Create and register an extension
+register_extension(```
+
+extension_point_id="authentication_provider",
+extension_id="my_auth_provider",
+extension=MyAuthProvider(),
+config={"priority": 100}
+```
+)
+```
 ```
 
 ### Registering Hooks
@@ -134,16 +178,22 @@ Plugins can register hooks to be notified of framework events:
 from uno.core.plugins.hooks import register_hook
 
 # In your plugin's enable method
-async def enable(self) -> None:
-    # Register a hook
-    register_hook(
-        hook_type="request_started",
-        callback=self.on_request_started,
-        priority=100
-    )
+async def enable(self) -> None:```
 
-async def on_request_started(self, request):
-    self.logger.info(f"Request started: {request.url}")
+# Register a hook
+register_hook(```
+
+hook_type="request_started",
+callback=self.on_request_started,
+priority=100
+```
+)
+```
+
+async def on_request_started(self, request):```
+
+self.logger.info(f"Request started: {request.url}")
+```
 ```
 
 ## Using Plugins
@@ -170,9 +220,11 @@ from uno.core.plugins.extension import get_extensions
 auth_providers = get_extensions("authentication_provider")
 
 # Use extensions
-for provider_id, provider_data in auth_providers.items():
-    provider = provider_data["extension"]
-    result = provider.authenticate(username, password)
+for provider_id, provider_data in auth_providers.items():```
+
+provider = provider_data["extension"]
+result = provider.authenticate(username, password)
+```
 ```
 
 ### Calling Hooks
@@ -197,9 +249,11 @@ await plugin.update_config({"option1": "new value"})
 
 # Validating configuration
 errors = await plugin.validate_config({"option1": "new value"})
-if not errors:
-    # Configuration is valid
-    pass
+if not errors:```
+
+# Configuration is valid
+pass
+```
 ```
 
 ## Plugin Dependencies
@@ -209,16 +263,20 @@ Plugins can specify dependencies on other plugins:
 ```python
 from uno.core.plugins.plugin import PluginInfo, PluginDependency
 
-info = PluginInfo(
-    id="my_plugin",
-    name="My Plugin",
-    version="1.0.0",
-    description="An example plugin",
-    author="Your Name",
-    dependencies=[
-        PluginDependency(plugin_id="other_plugin", min_version="1.0.0"),
-        PluginDependency(plugin_id="optional_plugin", optional=True)
-    ]
+info = PluginInfo(```
+
+id="my_plugin",
+name="My Plugin",
+version="1.0.0",
+description="An example plugin",
+author="Your Name",
+dependencies=[```
+
+PluginDependency(plugin_id="other_plugin", min_version="1.0.0"),
+PluginDependency(plugin_id="optional_plugin", optional=True)
+```
+]
+```
 )
 ```
 
@@ -236,20 +294,38 @@ Core plugins have additional responsibilities and capabilities, such as register
 ```python
 from uno.core.plugins.plugin import CorePlugin
 
-class MyCorePlugin(CorePlugin):
-    """A core plugin that extends framework functionality."""
-    
-    # ...
-    
-    async def register_components(self) -> None:
-        """Register components with the framework."""
-        # Register components
-        pass
-    
-    async def unregister_components(self) -> None:
-        """Unregister components from the framework."""
-        # Unregister components
-        pass
+class MyCorePlugin(CorePlugin):```
+
+"""A core plugin that extends framework functionality."""
+``````
+
+```
+```
+
+# ...
+``````
+
+```
+```
+
+async def register_components(self) -> None:```
+
+"""Register components with the framework."""
+# Register components
+pass
+```
+``````
+
+```
+```
+
+async def unregister_components(self) -> None:```
+
+"""Unregister components from the framework."""
+# Unregister components
+pass
+```
+```
 ```
 
 ## Best Practices

@@ -6,6 +6,7 @@ This document outlines the plan to standardize all tests to use pytest style, fo
 
 - 7 unittest-style test files in `tests/unit_unittest/database/`
 - 95+ pytest-style test files throughout the codebase
+- 12 comprehensive integration test files in `tests/integration/`
 - Multiple conftest.py files with fixtures in various directories
 
 ## Standardization Steps
@@ -45,15 +46,18 @@ Convert all unittest-style tests following these patterns:
    - Add appropriate fixtures to `/tests/unit/database/conftest.py`
    - Use consistent fixture patterns across all test modules
 
-### 3. Update Test Structure in database directory
+### 3. Update Test Structure
 
 1. **File Organization**:
    - Ensure tests follow repository structure
    - Keep test files organized by component they test  
+   - Maintain separate directories for unit tests and integration tests
 
 2. **Testing Approach**:
    - Synchronous testing for DDL-emitting classes
    - Asynchronous testing for everything else (unless inherently synchronous)
+   - Integration tests using real infrastructure through Docker
+   - Performance benchmarks for critical operations
 
 ### 4. Detailed Conversion Plan for `unit_unittest/database` Files:
 
@@ -96,4 +100,34 @@ Standardization will be complete when:
 2. Tests are located in the correct directories
 3. Common fixtures are used consistently
 4. Test organization follows the repository structure
-5. All tests pass with the standardized approach
+5. Integration tests follow the same patterns as unit tests
+6. Performance benchmarks follow standardized reporting format
+7. All tests pass with the standardized approach
+
+## Integration Tests
+
+The integration test suite follows the standardized pytest approach and includes:
+
+1. **Core Infrastructure Tests**:
+   - Database migrations
+   - Connection pooling
+   - Transaction management
+   - Error handling
+
+2. **Authentication and Authorization Tests**:
+   - JWT authentication
+   - Role-based access control
+   - Token caching
+   - Session variables and RLS
+   - Database-level permissions
+
+3. **Data Processing Tests**:
+   - Vector search
+   - Batch operations
+   - Query optimization
+   - Distributed caching
+
+4. **Performance Benchmarks**:
+   - Benchmark runner script
+   - Result comparison tools
+   - Integration with dashboard

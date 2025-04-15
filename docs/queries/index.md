@@ -11,17 +11,20 @@ The queries module is designed to provide efficient database access with a clean
 ### Filtering System
 
 - [Overview](overview.md) - Overview of the queries module
-- [Filter Manager](filter-manager.md) - Managing complex query filters
+<!-- TODO: Create filter manager documentation -->
+<!-- - [Filter Manager](filter-manager.md) - Managing complex query filters -->
 
 ### Query Optimization
 
-- [Optimized Queries](optimized_queries.md) - Building and executing optimized queries
-- [Common Query Patterns](common_patterns.md) - Pre-built implementations of common query patterns
+<!-- TODO: Create optimized queries documentation -->
+<!-- - [Optimized Queries](optimized_queries.md) - Building and executing optimized queries -->
+<!-- TODO: Create common query patterns documentation -->
+<!-- - [Common Query Patterns](common_patterns.md) - Pre-built implementations of common query patterns -->
 
 ### Batch Operations
 
 - [Batch Operations](batch_operations.md) - Efficient processing of large datasets
-- [Performance Optimization](../performance/batch_operations.md) - Performance tips for batch operations
+- [Performance Optimization](/docs/performance/batch_operations.md) - Performance tips for batch operations
 
 ## Key Features
 
@@ -45,18 +48,32 @@ The queries module is designed to provide efficient database access with a clean
 To start using the queries module, import the necessary components from `uno.queries`:
 
 ```python
-from uno.queries import (
-    # Filtering
-    Filter, FilterItem, FilterManager, FilterConnection,
-    
-    # Query Execution
-    QueryExecutor, OptimizedQuery, OptimizedModelQuery, QueryHints,
-    
-    # Common Patterns
-    CommonQueryPatterns, QueryPattern,
-    
-    # Batch Operations
-    BatchOperations, BatchConfig, BatchExecutionStrategy, BatchSize,
+from uno.queries import (```
+
+# Filtering
+Filter, FilterItem, FilterManager, FilterConnection,
+``````
+
+```
+```
+
+# Query Execution
+QueryExecutor, OptimizedQuery, OptimizedModelQuery, QueryHints,
+``````
+
+```
+```
+
+# Common Patterns
+CommonQueryPatterns, QueryPattern,
+``````
+
+```
+```
+
+# Batch Operations
+BatchOperations, BatchConfig, BatchExecutionStrategy, BatchSize,
+```
 )
 ```
 
@@ -75,47 +92,61 @@ products = await product_repository.list(filter=filter)
 ### Using Common Query Patterns
 
 ```python
-patterns = CommonQueryPatterns(
-    model_class=Product,
-    use_cache=True,
+patterns = CommonQueryPatterns(```
+
+model_class=Product,
+use_cache=True,
+```
 )
 
 # Find products by category
-products = await patterns.find_by_field(
-    field_name="category",
-    field_value="Electronics",
+products = await patterns.find_by_field(```
+
+field_name="category",
+field_value="Electronics",
+```
 )
 
 # Paginate products
-products, total_count, total_pages = await patterns.paginate(
-    page=2,
-    page_size=20,
-    order_by=[Product.created_at.desc()],
+products, total_count, total_pages = await patterns.paginate(```
+
+page=2,
+page_size=20,
+order_by=[Product.created_at.desc()],
+```
 )
 ```
 
 ### Batch Processing
 
 ```python
-batch_ops = BatchOperations(
-    model_class=Product,
-    batch_config=BatchConfig(
-        batch_size=500,
-        execution_strategy=BatchExecutionStrategy.CHUNKED,
-    ),
+batch_ops = BatchOperations(```
+
+model_class=Product,
+batch_config=BatchConfig(```
+
+batch_size=500,
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+```
+),
+```
 )
 
 # Batch insert
-products = [
-    {"name": f"Product {i}", "price": i * 10} 
-    for i in range(1, 1001)
+products = [```
+
+{"name": f"Product {i}", "price": i * 10} 
+for i in range(1, 1001)
+```
 ]
 inserted = await batch_ops.batch_insert(products)
 
 # Batch update
-updates = [
-    {"id": i, "price": i * 12}
-    for i in range(1, 501)
+updates = [```
+
+{"id": i, "price": i * 12}
+for i in range(1, 501)
+```
 ]
 updated = await batch_ops.batch_update(updates)
 ```
@@ -123,9 +154,11 @@ updated = await batch_ops.batch_update(updates)
 ### Using Repository Batch Operations
 
 ```python
-repo = UnoDBRepository(
-    entity_type=Product,
-    use_batch_operations=True,
+repo = UnoDBRepository(```
+
+entity_type=Product,
+use_batch_operations=True,
+```
 )
 
 # Batch add products
@@ -133,8 +166,10 @@ products = [Product(...), Product(...), ...]
 added_products = await repo.batch_add(products)
 
 # Batch update products
-for product in products:
-    product.price *= 1.1  # 10% price increase
+for product in products:```
+
+product.price *= 1.1  # 10% price increase
+```
     
 updated_count = await repo.batch_update(products)
 ```
@@ -143,4 +178,4 @@ updated_count = await repo.batch_update(products)
 
 - Read the [Overview](overview.md) to understand the queries module architecture
 - Learn about [Batch Operations](batch_operations.md) for efficient data processing
-- Explore [Performance Optimization](../performance/batch_operations.md) for best practices
+- Explore [Performance Optimization](/docs/performance/batch_operations.md) for best practices

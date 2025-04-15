@@ -46,8 +46,12 @@ reports_cli.py templates create "Customer List" "List of all customers" customer
 
 # Create a template with more options
 reports_cli.py templates create "Sales Report" "Monthly sales summary" order \
-  --config='{"format_config": {"title_format": "{name} - {date}", "show_footer": true}, 
-             "parameter_definitions": {"start_date": {"type": "date", "required": true}}}'
+  --config='{"format_config": {"title_format": "{name} - {date}", "show_footer": true}, ```
+```
+
+     "parameter_definitions": {"start_date": {"type": "date", "required": true}}}'
+```
+```
 ```
 
 ### Using the API
@@ -56,44 +60,58 @@ reports_cli.py templates create "Sales Report" "Monthly sales summary" order \
 import requests
 import json
 
-template_data = {
-    "name": "Inventory Report",
-    "description": "Current inventory levels for all products",
-    "base_object_type": "product",
-    "format_config": {
-        "title_format": "{name} - Generated on {date}",
-        "show_footer": True
-    },
-    "parameter_definitions": {
-        "min_stock": {
-            "type": "number",
-            "required": False,
-            "default": 0
-        },
-        "category": {
-            "type": "string",
-            "required": False,
-            "choices": ["electronics", "clothing", "food"]
-        }
-    },
-    "cache_policy": {
-        "ttl_seconds": 3600,  # 1 hour
-        "invalidate_on_event": "product_updated"
-    },
-    "version": "1.0.0"
+template_data = {```
+
+"name": "Inventory Report",
+"description": "Current inventory levels for all products",
+"base_object_type": "product",
+"format_config": {```
+
+"title_format": "{name} - Generated on {date}",
+"show_footer": True
+```
+},
+"parameter_definitions": {```
+
+"min_stock": {
+    "type": "number",
+    "required": False,
+    "default": 0
+},
+"category": {
+    "type": "string",
+    "required": False,
+    "choices": ["electronics", "clothing", "food"]
+}
+```
+},
+"cache_policy": {```
+
+"ttl_seconds": 3600,  # 1 hour
+"invalidate_on_event": "product_updated"
+```
+},
+"version": "1.0.0"
+```
 }
 
-response = requests.post(
-    "http://your-api-host/api/reports/templates/",
-    json=template_data,
-    headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+response = requests.post(```
+
+"http://your-api-host/api/reports/templates/",
+json=template_data,
+headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+```
 )
 
-if response.status_code == 201:
-    new_template = response.json()
-    print(f"Template created with ID: {new_template['id']}")
-else:
-    print(f"Error: {response.status_code}, {response.text}")
+if response.status_code == 201:```
+
+new_template = response.json()
+print(f"Template created with ID: {new_template['id']}")
+```
+else:```
+
+print(f"Error: {response.status_code}, {response.text}")
+```
 ```
 
 ## Managing Templates

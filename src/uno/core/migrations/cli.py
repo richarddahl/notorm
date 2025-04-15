@@ -215,17 +215,28 @@ async def create_migration_file(args: argparse.Namespace) -> None:
     # Create migration name
     name = args.name.replace(" ", "_").lower()
     
-    if args.type == "sql":
-        # Create SQL migration file
-        filename = f"{timestamp}_{name}.sql"
-        filepath = os.path.join(args.directory, filename)
+    # Import the template module
+    try:
+        from uno.core.migrations.templates import create_migration_content
         
-        # Generate SQL content
-        if args.template and os.path.exists(args.template):
-            with open(args.template, 'r') as f:
-                content = f.read()
-        else:
-            content = """-- Migration: {name}
+        # Get the template content
+        content = create_migration_content(
+            name=args.name,
+            template_path=args.template if args.template and os.path.exists(args.template) else None,
+            template_type=args.type,
+            description=getattr(args, "description", "")
+        )
+    except ImportError:
+        # Fallback to inline templates if template module is not available
+        logger.warning("Migration templates module not found, using inline templates")
+        
+        if args.type == "sql":
+            # Generate SQL content
+            if args.template and os.path.exists(args.template):
+                with open(args.template, 'r') as f:
+                    content = f.read()
+            else:
+                content = """-- Migration: {name}
 -- Created at: {created_at}
 
 -- Write your UP SQL here
@@ -234,27 +245,16 @@ async def create_migration_file(args: argparse.Namespace) -> None:
 
 -- Write your DOWN SQL here
 """.format(
-    name=args.name,
-    created_at=datetime.datetime.now().isoformat()
-)
-        
-        # Write the file
-        with open(filepath, 'w') as f:
-            f.write(content)
-        
-        logger.info(f"Created SQL migration: {filepath}")
-    
-    elif args.type == "python":
-        # Create Python migration file
-        filename = f"{timestamp}_{name}.py"
-        filepath = os.path.join(args.directory, filename)
-        
-        # Generate Python content
-        if args.template and os.path.exists(args.template):
-            with open(args.template, 'r') as f:
-                content = f.read()
-        else:
-            content = """# Migration: {name}
+        name=args.name,
+        created_at=datetime.datetime.now().isoformat()
+    )
+        else:  # Python migration
+            # Generate Python content
+            if args.template and os.path.exists(args.template):
+                with open(args.template, 'r') as f:
+                    content = f.read()
+            else:
+                content = """# Migration: {name}
 # Created at: {created_at}
 
 from typing import Any
@@ -305,16 +305,24 @@ async def down(context: Any) -> None:
 #         import hashlib
 #         return hashlib.md5(b"{name}").hexdigest()
 """.format(
-    name=args.name,
-    class_name=''.join(word.title() for word in args.name.split()),
-    created_at=datetime.datetime.now().isoformat()
-)
-        
-        # Write the file
-        with open(filepath, 'w') as f:
-            f.write(content)
-        
-        logger.info(f"Created Python migration: {filepath}")
+        name=args.name,
+        class_name=''.join(word.title() for word in args.name.split()),
+        created_at=datetime.datetime.now().isoformat()
+    )
+    
+    # Create the filename with timestamp
+    if args.type == "sql":
+        filename = f"{timestamp}_{name}.sql"
+    else:
+        filename = f"{timestamp}_{name}.py"
+    
+    filepath = os.path.join(args.directory, filename)
+    
+    # Write the file
+    with open(filepath, 'w') as f:
+        f.write(content)
+    
+    logger.info(f"Created {args.type.upper()} migration: {filepath}")
 
 
 async def show_migration_status(args: argparse.Namespace) -> None:

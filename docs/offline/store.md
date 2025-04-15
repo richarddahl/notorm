@@ -20,25 +20,39 @@ The Offline Store is built as a layered system:
 ```
 ┌───────────────────────────────────────────────────────────┐
 │                   Offline Store API                        │
-└───────────┬───────────────────────────────┬───────────────┘
-            │                               │
+└───────────┬───────────────────────────────┬───────────────┘```
+```
+
+    │                               │
+```
+```
 ┌───────────▼───────────┐       ┌───────────▼───────────┐
 │   Data Access Layer    │       │  Storage Engine Layer │
-└───────────┬───────────┘       └───────────┬───────────┘
-            │                               │
+└───────────┬───────────┘       └───────────┬───────────┘```
+```
+
+    │                               │
+```
+```
 ┌───────────▼───────────┐       ┌───────────▼───────────┐
 │   Change Tracking      │       │   Storage Adapters    │
-└───────────┬───────────┘       └───────────┬───────────┘
-            │                               │
-            └───────────────┬───────────────┘
-                            │
-                  ┌─────────▼─────────┐
-                  │ Encryption Layer  │
-                  └─────────┬─────────┘
-                            │
-               ┌────────────▼────────────┐
-               │     Storage Backends    │
-               └─────────────────────────┘
+└───────────┬───────────┘       └───────────┬───────────┘```
+```
+
+    │                               │
+```
+``````
+
+        └───────────────┬───────────────┘
+                        │
+              ┌─────────▼─────────┐
+              │ Encryption Layer  │
+              └─────────┬─────────┘
+                        │
+           ┌────────────▼────────────┐
+           │     Storage Backends    │
+           └─────────────────────────┘
+```
 ```
 
 ### Components
@@ -59,35 +73,41 @@ The Offline Store is built as a layered system:
 from uno.offline import OfflineStore, StorageOptions, EncryptionOptions
 
 # Configure the offline store
-options = StorageOptions(
-    storage_backend="indexeddb",  # Or "websql", "localstorage", etc.
-    database_name="my_app_db",
-    version=1,
-    size_limit=100_000_000,  # 100MB
-    eviction_strategy="lru",  # Least Recently Used
-    encryption=EncryptionOptions(
-        enabled=True,
-        sensitive_fields=["password", "credit_card", "ssn"],
-        encryption_key_provider="user_passphrase"
-    ),
-    storage_schema=[
-        {
-            "name": "users",
-            "key_path": "id",
-            "indexes": [
-                {"name": "email", "key_path": "email", "unique": True},
-                {"name": "name", "key_path": "name"}
-            ]
-        },
-        {
-            "name": "orders",
-            "key_path": "id",
-            "indexes": [
-                {"name": "user_id", "key_path": "user_id"},
-                {"name": "date", "key_path": "date"}
-            ]
-        }
+options = StorageOptions(```
+
+storage_backend="indexeddb",  # Or "websql", "localstorage", etc.
+database_name="my_app_db",
+version=1,
+size_limit=100_000_000,  # 100MB
+eviction_strategy="lru",  # Least Recently Used
+encryption=EncryptionOptions(```
+
+enabled=True,
+sensitive_fields=["password", "credit_card", "ssn"],
+encryption_key_provider="user_passphrase"
+```
+),
+storage_schema=[```
+
+{
+    "name": "users",
+    "key_path": "id",
+    "indexes": [
+        {"name": "email", "key_path": "email", "unique": True},
+        {"name": "name", "key_path": "name"}
     ]
+},
+{
+    "name": "orders",
+    "key_path": "id",
+    "indexes": [
+        {"name": "user_id", "key_path": "user_id"},
+        {"name": "date", "key_path": "date"}
+    ]
+}
+```
+]
+```
 )
 
 # Create the offline store
@@ -101,11 +121,13 @@ await store.initialize()
 
 ```python
 # Create a record
-user = {
-    "id": "user123",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "role": "customer"
+user = {```
+
+"id": "user123",
+"name": "John Doe",
+"email": "john@example.com",
+"role": "customer"
+```
 }
 await store.create("users", user)
 
@@ -124,31 +146,43 @@ await store.delete("users", "user123")
 
 ```python
 # Simple query with filtering
-users = await store.query("users", {
-    "filters": {
-        "role": "admin"
-    }
+users = await store.query("users", {```
+
+"filters": {```
+
+"role": "admin"
+```
+}
+```
 })
 
 # More complex query with operators
-users = await store.query("users", {
-    "filters": {
-        "role": "admin",
-        "created_at": {"$gt": "2023-01-01"}
-    },
-    "sort": [{"field": "name", "direction": "asc"}],
-    "limit": 10,
-    "offset": 0
+users = await store.query("users", {```
+
+"filters": {```
+
+"role": "admin"
+```,
+    "created_at": {"$gt": "2023-01-01"}
+},
+"sort": [{"field": "name", "direction": "asc"}],
+"limit": 10,
+"offset": 0
+```
 })
 
 # Query with relationships
-orders = await store.query("orders", {
-    "filters": {
-        "user_id": "user123",
-        "status": "pending"
-    },
-    "include": ["user", "items"],
-    "sort": [{"field": "date", "direction": "desc"}]
+orders = await store.query("orders", {```
+
+"filters": {```
+
+"user_id": "user123",
+"status": "pending"
+```
+},
+"include": ["user", "items"],
+"sort": [{"field": "date", "direction": "desc"}]
+```
 })
 ```
 
@@ -156,18 +190,22 @@ orders = await store.query("orders", {
 
 ```python
 # Batch create
-users = [
-    {"id": "user1", "name": "Alice", "email": "alice@example.com"},
-    {"id": "user2", "name": "Bob", "email": "bob@example.com"},
-    {"id": "user3", "name": "Charlie", "email": "charlie@example.com"}
+users = [```
+
+{"id": "user1", "name": "Alice", "email": "alice@example.com"},
+{"id": "user2", "name": "Bob", "email": "bob@example.com"},
+{"id": "user3", "name": "Charlie", "email": "charlie@example.com"}
+```
 ]
 await store.create_batch("users", users)
 
 # Batch update
-updates = [
-    {"id": "user1", "role": "admin"},
-    {"id": "user2", "role": "editor"},
-    {"id": "user3", "role": "viewer"}
+updates = [```
+
+{"id": "user1", "role": "admin"},
+{"id": "user2", "role": "editor"},
+{"id": "user3", "role": "viewer"}
+```
 ]
 await store.update_batch("users", updates)
 
@@ -181,20 +219,32 @@ await store.delete_batch("users", ["user1", "user2", "user3"])
 # Start a transaction
 transaction = await store.begin_transaction(["users", "orders"])
 
-try:
-    # Perform operations within the transaction
-    user = {"id": "user123", "name": "John Doe", "email": "john@example.com"}
-    await transaction.create("users", user)
-    
-    order = {"id": "order456", "user_id": "user123", "total": 99.99}
-    await transaction.create("orders", order)
-    
-    # Commit the transaction
-    await transaction.commit()
-except Exception as e:
-    # Rollback on error
-    await transaction.rollback()
-    print(f"Transaction failed: {e}")
+try:```
+
+# Perform operations within the transaction
+user = {"id": "user123", "name": "John Doe", "email": "john@example.com"}
+await transaction.create("users", user)
+``````
+
+```
+```
+
+order = {"id": "order456", "user_id": "user123", "total": 99.99}
+await transaction.create("orders", order)
+``````
+
+```
+```
+
+# Commit the transaction
+await transaction.commit()
+```
+except Exception as e:```
+
+# Rollback on error
+await transaction.rollback()
+print(f"Transaction failed: {e}")
+```
 ```
 
 ### Change Tracking
@@ -255,16 +305,30 @@ Support for custom storage implementations:
 ```python
 from uno.offline import StorageBackend
 
-class MyCustomStorage(StorageBackend):
-    async def initialize(self, options):
-        # Initialize storage
-        pass
-    
-    async def create(self, collection, data):
-        # Create implementation
-        pass
-    
-    # Implement other required methods
+class MyCustomStorage(StorageBackend):```
+
+async def initialize(self, options):```
+
+# Initialize storage
+pass
+```
+``````
+
+```
+```
+
+async def create(self, collection, data):```
+
+# Create implementation
+pass
+```
+``````
+
+```
+```
+
+# Implement other required methods
+```
 
 # Use custom storage
 options = StorageOptions(storage_backend=MyCustomStorage(), ...)
@@ -277,11 +341,13 @@ options = StorageOptions(storage_backend=MyCustomStorage(), ...)
 The Offline Store provides optional encryption for sensitive data:
 
 ```python
-encryption_options = EncryptionOptions(
-    enabled=True,
-    sensitive_fields=["password", "ssn", "credit_card"],
-    encryption_key_provider="user_passphrase",
-    encryption_algorithm="AES-GCM"
+encryption_options = EncryptionOptions(```
+
+enabled=True,
+sensitive_fields=["password", "ssn", "credit_card"],
+encryption_key_provider="user_passphrase",
+encryption_algorithm="AES-GCM"
+```
 )
 ```
 
@@ -291,37 +357,43 @@ Define and query relationships between collections:
 
 ```python
 # Define relationships in schema
-schema = [
-    {
-        "name": "users",
-        "key_path": "id",
-        "relationships": [
-            {
-                "name": "orders",
-                "collection": "orders",
-                "type": "one-to-many",
-                "foreign_key": "user_id"
-            }
-        ]
-    },
+schema = [```
+
+{```
+
+"name": "users",
+"key_path": "id",
+"relationships": [
     {
         "name": "orders",
-        "key_path": "id",
-        "relationships": [
-            {
-                "name": "user",
-                "collection": "users",
-                "type": "many-to-one",
-                "foreign_key": "user_id"
-            },
-            {
-                "name": "items",
-                "collection": "order_items",
-                "type": "one-to-many",
-                "foreign_key": "order_id"
-            }
-        ]
+        "collection": "orders",
+        "type": "one-to-many",
+        "foreign_key": "user_id"
     }
+]
+```
+},
+{```
+
+"name": "orders",
+"key_path": "id",
+"relationships": [
+    {
+        "name": "user",
+        "collection": "users",
+        "type": "many-to-one",
+        "foreign_key": "user_id"
+    },
+    {
+        "name": "items",
+        "collection": "order_items",
+        "type": "one-to-many",
+        "foreign_key": "order_id"
+    }
+]
+```
+}
+```
 ]
 
 # Query with relationships
@@ -344,14 +416,18 @@ print(f"Usage by collection: {usage.collection_usage}")
 await store.clear(["temp_data", "cache"])
 
 # Set collection-specific eviction policies
-await store.set_eviction_policy("logs", {
-    "strategy": "max-age",
-    "max_age_days": 7
+await store.set_eviction_policy("logs", {```
+
+"strategy": "max-age",
+"max_age_days": 7
+```
 })
 
-await store.set_eviction_policy("cache", {
-    "strategy": "max-size",
-    "max_size_bytes": 10_000_000  # 10MB
+await store.set_eviction_policy("cache", {```
+
+"strategy": "max-size",
+"max_size_bytes": 10_000_000  # 10MB
+```
 })
 
 # Compact storage
@@ -366,36 +442,54 @@ The Offline Store supports schema migrations for evolving data structures:
 from uno.offline import Migration, MigrationManager
 
 # Define a migration
-class AddUserPreferencesMigration(Migration):
-    version = 2
-    
-    async def up(self, store):
-        # Update schema with new preferences field
-        users = await store.query("users")
-        for user in users:
-            if "preferences" not in user:
-                user["preferences"] = {"theme": "light", "notifications": True}
-                await store.update("users", user)
-    
-    async def down(self, store):
-        # Remove preferences field
-        users = await store.query("users")
-        for user in users:
-            if "preferences" in user:
-                del user["preferences"]
-                await store.update("users", user)
+class AddUserPreferencesMigration(Migration):```
+
+version = 2
+``````
+
+```
+```
+
+async def up(self, store):```
+
+# Update schema with new preferences field
+users = await store.query("users")
+for user in users:
+    if "preferences" not in user:
+        user["preferences"] = {"theme": "light", "notifications": True}
+        await store.update("users", user)
+```
+``````
+
+```
+```
+
+async def down(self, store):```
+
+# Remove preferences field
+users = await store.query("users")
+for user in users:
+    if "preferences" in user:
+        del user["preferences"]
+        await store.update("users", user)
+```
+```
 
 # Register migrations
-migration_manager = MigrationManager([
-    AddUserPreferencesMigration()
+migration_manager = MigrationManager([```
+
+AddUserPreferencesMigration()
+```
 ])
 
 # Configure store with migration manager
-options = StorageOptions(
-    storage_backend="indexeddb",
-    database_name="my_app_db",
-    version=2,  # Increment version for migration
-    migration_manager=migration_manager
+options = StorageOptions(```
+
+storage_backend="indexeddb",
+database_name="my_app_db",
+version=2,  # Increment version for migration
+migration_manager=migration_manager
+```
 )
 
 # Migrations will run automatically during initialization
@@ -414,11 +508,13 @@ from uno.offline import OfflineStore, SynchronizationEngine, SyncOptions
 store = OfflineStore(store_options)
 
 # Create sync engine with the store
-sync_options = SyncOptions(
-    server_url="https://api.example.com",
-    sync_collections=["users", "orders", "products"],
-    sync_interval=300,  # 5 minutes
-    conflict_strategy="server-wins"
+sync_options = SyncOptions(```
+
+server_url="https://api.example.com",
+sync_collections=["users", "orders", "products"],
+sync_interval=300,  # 5 minutes
+conflict_strategy="server-wins"
+```
 )
 sync_engine = SynchronizationEngine(store, sync_options)
 

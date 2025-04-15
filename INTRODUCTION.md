@@ -140,6 +140,16 @@ Uno provides comprehensive security features:
 - **Authentication Integration**: Flexible auth system with MFA support
 - **Authorization Framework**: Fine-grained permission control
 
+### 6. Comprehensive Testing Framework
+
+Uno includes an extensive testing infrastructure:
+
+- **Integration Tests**: Verify that components work correctly together in real environments
+- **Performance Benchmarks**: Measure and monitor system performance
+- **Vector Search Testing**: Specialized tests for similarity search capabilities
+- **Authorization Testing**: Verify proper enforcement of access controls
+- **Distributed Cache Testing**: Validate cross-process cache behavior
+
 ## Getting Started
 
 Uno is designed to be approachable while providing advanced capabilities as your application grows. The recommended way to start is with Docker:
@@ -153,6 +163,28 @@ hatch run dev:docker-setup
 ```
 
 This creates a PostgreSQL 16 container with all required extensions, including pgvector for vector search and Apache AGE for graph database capabilities.
+
+### Running Tests
+
+Uno comes with a comprehensive test suite that verifies all components work correctly:
+
+```bash
+# Run all tests
+hatch run test:all
+
+# Run integration tests only
+hatch run test:integration
+
+# Run integration tests with vector search components
+hatch run test:integration-vector
+
+# Run performance benchmarks
+hatch run test:benchmarks
+```
+
+Integration tests verify that components work together correctly in a realistic environment with actual PostgreSQL and Redis instances (provided through Docker).
+
+### Defining Your Domain Model
 
 From there, you can start defining your domain model:
 
@@ -206,6 +238,8 @@ class User(AggregateEntity[str]):
 
 Uno provides a comprehensive, integrated approach to building modern applications with PostgreSQL and Python. It combines the best practices of domain-driven design, clean architecture, and modern async programming while leveraging PostgreSQL's powerful features.
 
+The framework is built on a foundation of reliability, with extensive integration tests verifying that all components work correctly together. This testing infrastructure ensures that as your application grows, you can be confident in its stability and performance.
+
 Whether you're building a small API or a complex application with advanced querying needs, Uno provides the tools and structure to make your development process more efficient and your code more maintainable.
 
-By unifying your database, domain logic, and API into a cohesive system, Uno enables you to build applications that are robust, performant, and a joy to develop and maintain.
+By unifying your database, domain logic, and API into a cohesive system, Uno enables you to build applications that are robust, performant, and a joy to develop and maintain. The comprehensive test suite and benchmarking tools help you maintain this quality as your application evolves.

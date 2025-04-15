@@ -66,8 +66,10 @@ from uno.dependencies.testing import configure_test_container
 container = configure_test_container()
 
 # Configure with custom mocks
-container = configure_test_container({
-    CustomInterface: custom_mock
+container = configure_test_container({```
+
+CustomInterface: custom_mock
+```
 })
 ```
 
@@ -80,30 +82,42 @@ import pytest
 from uno.dependencies.testing import configure_test_container, MockRepository
 
 @pytest.fixture
-def test_container():
-    """Fixture for a test container."""
-    container = configure_test_container()
-    yield container
-    container.restore()
+def test_container():```
+
+"""Fixture for a test container."""
+container = configure_test_container()
+yield container
+container.restore()
+```
 
 @pytest.fixture
-def mock_repository():
-    """Fixture for a mock repository with test data."""
-    items = [
-        {'id': '1', 'name': 'Item 1'},
-        {'id': '2', 'name': 'Item 2'}
-    ]
-    return MockRepository.with_items(items)
+def mock_repository():```
 
-def test_service(test_container, mock_repository):
-    """Test a service with the mock repository."""
-    # Configure the container to use our specific repository
-    inject.instance(UnoRepositoryProtocol, mock_repository)
-    
-    # Create and test a service that uses the repository
-    service = MyService()
-    result = service.get_item('1')
-    assert result['name'] == 'Item 1'
+"""Fixture for a mock repository with test data."""
+items = [```
+
+{'id': '1', 'name': 'Item 1'},
+{'id': '2', 'name': 'Item 2'}
+```
+]
+return MockRepository.with_items(items)
+```
+
+def test_service(test_container, mock_repository):```
+
+"""Test a service with the mock repository."""
+# Configure the container to use our specific repository
+inject.instance(UnoRepositoryProtocol, mock_repository)
+``````
+
+```
+```
+
+# Create and test a service that uses the repository
+service = MyService()
+result = service.get_item('1')
+assert result['name'] == 'Item 1'
+```
 ```
 
 ### Testing Async Code
@@ -114,18 +128,28 @@ When testing async code that uses dependency injection, use pytest-asyncio:
 import pytest
 
 @pytest.mark.asyncio
-async def test_async_service(test_container):
-    # Configure mock repository to return specific items
-    items = [{'id': '1', 'name': 'Test Item'}]
-    repo = MockRepository.with_items(items)
-    
-    # Override default mock
-    inject.instance(UnoRepositoryProtocol, repo)
-    
-    # Test the async service
-    service = AsyncItemService()
-    result = await service.get_items()
-    assert result == items
+async def test_async_service(test_container):```
+
+# Configure mock repository to return specific items
+items = [{'id': '1', 'name': 'Test Item'}]
+repo = MockRepository.with_items(items)
+``````
+
+```
+```
+
+# Override default mock
+inject.instance(UnoRepositoryProtocol, repo)
+``````
+
+```
+```
+
+# Test the async service
+service = AsyncItemService()
+result = await service.get_items()
+assert result == items
+```
 ```
 
 ### Integration with FastAPI Tests
@@ -137,10 +161,14 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 # Override FastAPI dependencies
-def override_get_repository():
-    return MockRepository.with_items([
-        {'id': '1', 'name': 'Test Item'}
-    ])
+def override_get_repository():```
+
+return MockRepository.with_items([```
+
+{'id': '1', 'name': 'Test Item'}
+```
+])
+```
 
 app.dependency_overrides[get_repository] = override_get_repository
 

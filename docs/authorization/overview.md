@@ -13,16 +13,20 @@ from uno.authorization.models import User, Role, Permission
 from uno.authorization.objs import UserObj, RoleObj, PermissionObj
 
 # Create a role
-role = RoleObj(
-    name="Admin",
-    description="Administrator role with full access"
+role = RoleObj(```
+
+name="Admin",
+description="Administrator role with full access"
+```
 )
 await role.save()
 
 # Create a permission
-permission = PermissionObj(
-    name="user:create",
-    description="Can create users"
+permission = PermissionObj(```
+
+name="user:create",
+description="Can create users"
+```
 )
 await permission.save()
 
@@ -31,10 +35,12 @@ role.permissions.append(permission)
 await role.save()
 
 # Create a user
-user = UserObj(
-    username="admin",
-    email="admin@example.com",
-    password="securepassword"  # Will be hashed automatically
+user = UserObj(```
+
+username="admin",
+email="admin@example.com",
+password="securepassword"  # Will be hashed automatically
+```
 )
 await user.save()
 
@@ -54,11 +60,15 @@ from uno.authorization.objs import UserObj
 user = await UserObj.get(username="admin")
 
 # Check permissions
-if await user.has_permission("user:create"):
-    # Create a user...
-    pass
-else:
-    raise PermissionError("User does not have permission to create users")
+if await user.has_permission("user:create"):```
+
+# Create a user...
+pass
+```
+else:```
+
+raise PermissionError("User does not have permission to create users")
+```
 ```
 
 ### Row-Level Security
@@ -70,11 +80,13 @@ from uno.authorization.rlssql import RLSPolicy
 from uno.sql.emitters.security import SecurityEmitter
 
 # Define a row-level security policy
-policy = RLSPolicy(
-    table="customer",
-    policy_name="customer_access_policy",
-    using_expr="(user_id = current_user_id() OR is_public = true)",
-    check_expr="(user_id = current_user_id())"
+policy = RLSPolicy(```
+
+table="customer",
+policy_name="customer_access_policy",
+using_expr="(user_id = current_user_id() OR is_public = true)",
+check_expr="(user_id = current_user_id())"
+```
 )
 
 # Generate SQL for the policy
@@ -101,37 +113,47 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Dependency to get the current user
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """Get the current user from the token."""
-    # Validate token and get user
-    # (Implementation depends on your token system)
-    user = await UserObj.get_by_token(token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
+async def get_current_user(token: str = Depends(oauth2_scheme)):```
+
+"""Get the current user from the token."""
+# Validate token and get user
+# (Implementation depends on your token system)
+user = await UserObj.get_by_token(token)
+if not user:```
+
+raise HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid authentication credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+```
+return user
+```
 
 # Dependency to check permissions
-def require_permission(permission: str):
-    """Require a specific permission."""
-    async def check_permission(user: UserObj = Depends(get_current_user)):
-        if not await user.has_permission(permission):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Permission denied: {permission}"
-            )
-        return user
-    return check_permission
+def require_permission(permission: str):```
+
+"""Require a specific permission."""
+async def check_permission(user: UserObj = Depends(get_current_user)):```
+
+if not await user.has_permission(permission):
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=f"Permission denied: {permission}"
+    )
+return user
+```
+return check_permission
+```
 
 # Example protected endpoint
 @app.get("/api/v1/users")
-async def list_users(user: UserObj = Depends(require_permission("user:list"))):
-    """List all users (requires permission)."""
-    # Implementation...
-    return []
+async def list_users(user: UserObj = Depends(require_permission("user:list"))):```
+
+"""List all users (requires permission)."""
+# Implementation...
+return []
+```
 ```
 
 ## Best Practices

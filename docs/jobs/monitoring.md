@@ -138,11 +138,13 @@ from uno.jobs.monitoring.health import JobSystemHealthChecker
 alert_manager = AlertManager()
 
 # Add alert for unhealthy job system
-alert_manager.add_alert(
-    name="job_system_unhealthy",
-    condition=lambda: health_checker.get_system_health().status != "healthy",
-    message="Job system is not healthy",
-    severity="critical",
+alert_manager.add_alert(```
+
+name="job_system_unhealthy",
+condition=lambda: health_checker.get_system_health().status != "healthy",
+message="Job system is not healthy",
+severity="critical",
+```
 )
 
 # Start alert monitoring
@@ -175,9 +177,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("uno.jobs")
 
 # Create job manager with logger
-job_manager = JobManager(
-    storage=storage,
-    logger=logger,
+job_manager = JobManager(```
+
+storage=storage,
+logger=logger,
+```
 )
 ```
 

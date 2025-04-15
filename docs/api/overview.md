@@ -74,11 +74,13 @@ from uno.dependencies.fastapi import get_db_session
 app = FastAPI()
 
 # Create endpoints for Customer model
-customer_router = EndpointFactory.create_endpoints(
-    obj_class=Customer,
-    prefix="/customers",
-    tag="Customers",
-    session_dependency=get_db_session
+customer_router = EndpointFactory.create_endpoints(```
+
+obj_class=Customer,
+prefix="/customers",
+tag="Customers",
+session_dependency=get_db_session
+```
 )
 
 # Register the router with the app
@@ -97,11 +99,13 @@ from uno.queries.filter import FilterParam
 filter_manager = FilterManager()
 
 # Create filter parameters from query parameters
-filter_params = FilterParam(
-    limit=10,
-    offset=0,
-    name__contains="John",
-    status__in=["active", "pending"]
+filter_params = FilterParam(```
+
+limit=10,
+offset=0,
+name__contains="John",
+status__in=["active", "pending"]
+```
 )
 
 # Apply filters to a query
@@ -124,9 +128,11 @@ When you register endpoints for a business object, the following endpoints are c
 You can customize which endpoints are created by setting the `endpoints` class variable in your `UnoObj` subclass:
 
 ```python
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    endpoints = ["Create", "View", "List"]  # Only these endpoints will be created
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+endpoints = ["Create", "View", "List"]  # Only these endpoints will be created
+```
 ```
 
 ## Advanced Features
@@ -193,8 +199,10 @@ The API layer provides standardized error responses:
 {
   "error": "NOT_FOUND",
   "message": "Customer with ID 'abc123' not found",
-  "detail": {
-    "id": "abc123"
+  "detail": {```
+
+"id": "abc123"
+```
   }
 }
 ```
@@ -208,18 +216,30 @@ from uno.api.endpoint import UnoEndpoint
 from fastapi import FastAPI, Depends
 from uno.dependencies.fastapi import get_db_session
 
-class CustomUserEndpoint(UnoEndpoint):
-    """Custom endpoint for user statistics."""
-    
-    def register_endpoints(self):
-        """Register custom endpoints."""
-        super().register_endpoints()  # Register standard endpoints
-        
-        @self.app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
-        async def stats(session = Depends(get_db_session)):
-            """Get user statistics."""
-            result = await self.db.get_statistics(session)
-            return result
+class CustomUserEndpoint(UnoEndpoint):```
+
+"""Custom endpoint for user statistics."""
+``````
+
+```
+```
+
+def register_endpoints(self):```
+
+"""Register custom endpoints."""
+super().register_endpoints()  # Register standard endpoints
+``````
+
+```
+```
+
+@self.app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
+async def stats(session = Depends(get_db_session)):
+    """Get user statistics."""
+    result = await self.db.get_statistics(session)
+    return result
+```
+```
 ```
 
 Alternatively, you can use FastAPI's router directly:
@@ -234,19 +254,31 @@ router = APIRouter(prefix="/customers", tags=["Customers"])
 
 # Define a custom endpoint
 @router.get("/stats")
-async def customer_stats(session = Depends(get_db_session)):
-    # Create a repository
-    repo = UnoBaseRepository(session, CustomerModel)
-    
-    # Get statistics
-    total = await repo.count()
-    active = await repo.count(CustomerModel.is_active == True)
-    
-    return {
-        "total": total,
-        "active": active,
-        "inactive": total - active
-    }
+async def customer_stats(session = Depends(get_db_session)):```
+
+# Create a repository
+repo = UnoBaseRepository(session, CustomerModel)
+``````
+
+```
+```
+
+# Get statistics
+total = await repo.count()
+active = await repo.count(CustomerModel.is_active == True)
+``````
+
+```
+```
+
+return {```
+
+"total": total,
+"active": active,
+"inactive": total - active
+```
+}
+```
 
 # Add the router to your app
 app.include_router(router)
@@ -265,25 +297,39 @@ router = APIRouter(prefix="/customers", tags=["Customers"])
 
 # Create endpoints with dependency injection
 @router.get("/{customer_id}")
-async def get_customer(
-    customer_id: str,
-    customer_repo = Depends(get_repository(CustomerRepository))
-):
-    customer = await customer_repo.get_by_id(customer_id)
-    if not customer:
-        raise HTTPException(status_code=404, detail="Customer not found")
-    return customer
+async def get_customer(```
+
+customer_id: str,
+customer_repo = Depends(get_repository(CustomerRepository))
+```
+):```
+
+customer = await customer_repo.get_by_id(customer_id)
+if not customer:```
+
+raise HTTPException(status_code=404, detail="Customer not found")
+```
+return customer
+```
 
 @router.post("/")
-async def create_customer(
-    customer_data: CustomerCreateSchema,
-    customer_service = Depends(get_service(CustomerService))
-):
-    try:
-        customer = await customer_service.create_customer(customer_data)
-        return customer
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+async def create_customer(```
+
+customer_data: CustomerCreateSchema,
+customer_service = Depends(get_service(CustomerService))
+```
+):```
+
+try:```
+
+customer = await customer_service.create_customer(customer_data)
+return customer
+```
+except ValidationError as e:```
+
+raise HTTPException(status_code=400, detail=str(e))
+```
+```
 ```
 
 ## Best Practices
@@ -303,21 +349,27 @@ async def create_customer(
 2. **Implement Filtering**: Use the FilterManager to handle query parameters.
    ```python
    @router.get("/")
-   async def list_customers(
-       filter_params: FilterParams = Depends(),
-       repo = Depends(get_repository(CustomerRepository))
-   ):
-       filter_manager = FilterManager()
-       return await repo.filter(filter_manager.build_filters(filter_params))
+   async def list_customers(```
+
+   filter_params: FilterParams = Depends(),
+   repo = Depends(get_repository(CustomerRepository))
+```
+   ):```
+
+   filter_manager = FilterManager()
+   return await repo.filter(filter_manager.build_filters(filter_params))
+```
    ```
 
 3. **Document Endpoints**: Use FastAPI's documentation features to document your endpoints.
    ```python
-   @router.get(
-       "/{id}", 
-       response_model=CustomerSchema,
-       summary="Get customer by ID",
-       description="Retrieves a customer by their unique identifier"
+   @router.get(```
+
+   "/{id}", 
+   response_model=CustomerSchema,
+   summary="Get customer by ID",
+   description="Retrieves a customer by their unique identifier"
+```
    )
    async def get_customer(id: str):
        """
@@ -326,42 +378,54 @@ async def create_customer(
        - **id**: The customer ID
        
        Returns the customer details if found, or 404 if not found.
-       """
-       # Implementation
+       """```
+
+   # Implementation
+```
    ```
 
 4. **Use Appropriate Status Codes**: Return appropriate HTTP status codes for different scenarios.
    ```python
    @router.post("/", status_code=201)  # Created
-   async def create_customer(customer: CustomerCreateSchema):
-       # Implementation
-       
+   async def create_customer(customer: CustomerCreateSchema):```
+
+   # Implementation
+   
+```
    @router.delete("/{id}", status_code=204)  # No Content
-   async def delete_customer(id: str):
-       # Implementation
+   async def delete_customer(id: str):```
+
+   # Implementation
+```
    ```
 
 5. **Implement Pagination**: Always paginate large result sets.
    ```python
    @router.get("/")
-   async def list_customers(
-       limit: int = 10,
-       offset: int = 0,
-       repo = Depends(get_repository(CustomerRepository))
-   ):
-       results = await repo.get_all(limit=limit, offset=offset)
-       count = await repo.count()
-       return {
-           "data": results,
-           "total_count": count,
-           "limit": limit,
-           "offset": offset
-       }
+   async def list_customers(```
+
+   limit: int = 10,
+   offset: int = 0,
+   repo = Depends(get_repository(CustomerRepository))
+```
+   ):```
+
+   results = await repo.get_all(limit=limit, offset=offset)
+   count = await repo.count()
+   return {```
+
+   "data": results,
+   "total_count": count,
+   "limit": limit,
+   "offset": offset
+```
+   }
+```
    ```
 
 ## Related Sections
 
-- [Business Logic](../business_logic/overview.md) - UnoObj implementation for business logic
-- [Filter Manager](../queries/filter_manager.md) - Advanced filtering and query building
-- [Authorization](../authorization/overview.md) - Authentication and authorization
-- [Dependency Injection](../dependency_injection/overview.md) - Modern DI architecture
+- [Business Logic](/docs/business_logic/overview.md) - UnoObj implementation for business logic
+- [Filter Manager](/docs/queries/filter_manager.md) - Advanced filtering and query building
+- [Authorization](/docs/authorization/overview.md) - Authentication and authorization
+- [Dependency Injection](/docs/dependency_injection/overview.md) - Modern DI architecture

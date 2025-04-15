@@ -26,15 +26,21 @@ The repository pattern is a key component of the new database architecture, desi
 from uno.database.repository import UnoBaseRepository
 from myapp.models import UserModel
 
-class UserRepository(UnoBaseRepository[UserModel]):
-    def __init__(self, session):
-        super().__init__(session, UserModel)
-        
-    # Add custom methods as needed
-    async def find_by_email(self, email: str):
-        stmt = select(self.model_class).where(self.model_class.email == email)
-        result = await self.session.execute(stmt)
-        return result.scalars().first()
+class UserRepository(UnoBaseRepository[UserModel]):```
+
+def __init__(self, session):```
+
+super().__init__(session, UserModel)
+```
+    
+# Add custom methods as needed
+async def find_by_email(self, email: str):```
+
+stmt = select(self.model_class).where(self.model_class.email == email)
+result = await self.session.execute(stmt)
+return result.scalars().first()
+```
+```
 ```
 
 ### Using a Repository with FastAPI
@@ -47,14 +53,20 @@ from myapp.repositories import UserRepository
 router = APIRouter()
 
 @router.get("/users/{user_id}")
-async def get_user(
-    user_id: str,
-    repo: UserRepository = Depends(get_repository(UserRepository))
-):
-    user = await repo.get(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+async def get_user(```
+
+user_id: str,
+repo: UserRepository = Depends(get_repository(UserRepository))
+```
+):```
+
+user = await repo.get(user_id)
+if not user:```
+
+raise HTTPException(status_code=404, detail="User not found")
+```
+return user
+```
 ```
 
 ## Standard Repository Methods
@@ -83,17 +95,25 @@ async def get_user(
 Repositories can implement custom query methods for domain-specific operations:
 
 ```python
-class ProductRepository(UnoBaseRepository[ProductModel]):
-    async def find_by_category(self, category_id: str, in_stock_only: bool = False):
-        stmt = select(self.model_class).where(
-            self.model_class.category_id == category_id
-        )
-        
-        if in_stock_only:
-            stmt = stmt.where(self.model_class.stock_count > 0)
-            
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+class ProductRepository(UnoBaseRepository[ProductModel]):```
+
+async def find_by_category(self, category_id: str, in_stock_only: bool = False):```
+
+stmt = select(self.model_class).where(
+    self.model_class.category_id == category_id
+)
+``````
+
+```
+```
+
+if in_stock_only:
+    stmt = stmt.where(self.model_class.stock_count > 0)
+    
+result = await self.session.execute(stmt)
+return list(result.scalars().all())
+```
+```
 ```
 
 ### Integration with UnoObj
@@ -103,10 +123,14 @@ The repository can work with UnoObj instances:
 ```python
 from myapp.objs import UserObj
 
-class UserRepository(UnoBaseRepository[UserModel]):
-    async def create_from_obj(self, user_obj: UserObj):
-        """Create a user from a UnoObj instance."""
-        return await self.save(user_obj)
+class UserRepository(UnoBaseRepository[UserModel]):```
+
+async def create_from_obj(self, user_obj: UserObj):```
+
+"""Create a user from a UnoObj instance."""
+return await self.save(user_obj)
+```
+```
 
 # Usage
 user_obj = UserObj(name="John Doe", email="john@example.com")
@@ -118,18 +142,26 @@ user_model = await user_repo.create_from_obj(user_obj)
 Repositories automatically work with SQLAlchemy's transaction management:
 
 ```python
-async with db_provider.async_session() as session:
-    async with session.begin():
-        user_repo = UserRepository(session)
-        order_repo = OrderRepository(session)
-        
-        # Both operations will be in the same transaction
-        user = await user_repo.get(user_id)
-        await order_repo.create({
-            "user_id": user.id,
-            "amount": 100.00
-        })
-        # Transaction is committed if no exceptions are raised
+async with db_provider.async_session() as session:```
+
+async with session.begin():```
+
+user_repo = UserRepository(session)
+order_repo = OrderRepository(session)
+``````
+
+```
+```
+
+# Both operations will be in the same transaction
+user = await user_repo.get(user_id)
+await order_repo.create({
+    "user_id": user.id,
+    "amount": 100.00
+})
+# Transaction is committed if no exceptions are raised
+```
+```
 ```
 
 ## Best Practices
@@ -151,23 +183,37 @@ from myapp.repositories import UserRepository
 from uno.dependencies.testing import MockRepository, TestSession
 
 @pytest.fixture
-def user_repo():
-    session = TestSession.create()
-    return UserRepository(session)
+def user_repo():```
 
-def test_find_by_email(user_repo):
-    # Configure the mock session
-    user_repo.session.execute.return_value.scalars.return_value.first.return_value = {
-        "id": "123",
-        "email": "test@example.com"
-    }
-    
-    # Test the repository method
-    user = await user_repo.find_by_email("test@example.com")
-    assert user.id == "123"
-    
-    # Verify the query was correct
-    user_repo.session.execute.assert_called_once()
+session = TestSession.create()
+return UserRepository(session)
+```
+
+def test_find_by_email(user_repo):```
+
+# Configure the mock session
+user_repo.session.execute.return_value.scalars.return_value.first.return_value = {```
+
+"id": "123",
+"email": "test@example.com"
+```
+}
+``````
+
+```
+```
+
+# Test the repository method
+user = await user_repo.find_by_email("test@example.com")
+assert user.id == "123"
+``````
+
+```
+```
+
+# Verify the query was correct
+user_repo.session.execute.assert_called_once()
+```
 ```
 
 ### When to Use Raw SQL
@@ -175,22 +221,26 @@ def test_find_by_email(user_repo):
 While the repository pattern encourages using SQLAlchemy's ORM, sometimes raw SQL is more appropriate:
 
 ```python
-class ReportRepository(UnoBaseRepository[ReportModel]):
-    async def get_sales_summary(self, start_date, end_date):
-        """Get sales summary using raw SQL for better performance."""
-        query = """
-            SELECT 
-                DATE_TRUNC('day', created_at) as date,
-                SUM(amount) as total,
-                COUNT(*) as count
-            FROM orders
-            WHERE created_at BETWEEN :start_date AND :end_date
-            GROUP BY DATE_TRUNC('day', created_at)
-            ORDER BY date
-        """
-        result = await self.execute_query(
-            query, 
-            {"start_date": start_date, "end_date": end_date}
-        )
-        return [dict(row) for row in result]
+class ReportRepository(UnoBaseRepository[ReportModel]):```
+
+async def get_sales_summary(self, start_date, end_date):```
+
+"""Get sales summary using raw SQL for better performance."""
+query = """
+    SELECT 
+        DATE_TRUNC('day', created_at) as date,
+        SUM(amount) as total,
+        COUNT(*) as count
+    FROM orders
+    WHERE created_at BETWEEN :start_date AND :end_date
+    GROUP BY DATE_TRUNC('day', created_at)
+    ORDER BY date
+"""
+result = await self.execute_query(
+    query, 
+    {"start_date": start_date, "end_date": end_date}
+)
+return [dict(row) for row in result]
+```
+```
 ```

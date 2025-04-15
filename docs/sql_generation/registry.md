@@ -85,13 +85,23 @@ from uno.sql.registry import EmissionRegistry
 from uno.sql.emitter import BaseEmitter
 
 # Create a custom emitter
-class CustomEmitter(BaseEmitter):
-    def __init__(self, custom_param):
-        super().__init__()
-        self.custom_param = custom_param
-    
-    def emit(self):
-        return f"-- Custom SQL with {self.custom_param}"
+class CustomEmitter(BaseEmitter):```
+
+def __init__(self, custom_param):```
+
+super().__init__()
+self.custom_param = custom_param
+```
+``````
+
+```
+```
+
+def emit(self):```
+
+return f"-- Custom SQL with {self.custom_param}"
+```
+```
 
 # Register the custom emitter
 registry = EmissionRegistry()
@@ -108,9 +118,11 @@ sql = custom_emitter.emit()
 from uno.sql.registry import EmissionRegistry
 
 # Create a registry with configuration
-registry = EmissionRegistry(
-    default_schema="app",
-    default_owner="app_user"
+registry = EmissionRegistry(```
+
+default_schema="app",
+default_owner="app_user"
+```
 )
 
 # Retrieve configuration
@@ -139,18 +151,22 @@ registry.register_emitter("trigger", TriggerEmitter)
 sql_statements = []
 
 # Generate table SQL for multiple models
-for model in [CustomerModel, OrderModel, ProductModel]:
-    emitter = registry.create_emitter("table", model=model)
-    sql_statements.append(emitter.emit())
+for model in [CustomerModel, OrderModel, ProductModel]:```
+
+emitter = registry.create_emitter("table", model=model)
+sql_statements.append(emitter.emit())
+```
 
 # Generate function SQL
-function_emitter = registry.create_emitter(
-    "function",
-    name="update_customer_status",
-    params=[{"name": "customer_id", "type": "TEXT"}, {"name": "new_status", "type": "TEXT"}],
-    return_type="INTEGER",
-    body="UPDATE customer SET status = new_status WHERE id = customer_id; RETURN 1;",
-    language="plpgsql"
+function_emitter = registry.create_emitter(```
+
+"function",
+name="update_customer_status",
+params=[{"name": "customer_id", "type": "TEXT"}, {"name": "new_status", "type": "TEXT"}],
+return_type="INTEGER",
+body="UPDATE customer SET status = new_status WHERE id = customer_id; RETURN 1;",
+language="plpgsql"
+```
 )
 sql_statements.append(function_emitter.emit())
 
@@ -168,22 +184,38 @@ from uno.sql.emitters.table import TableEmitter
 from uno.sql.builders.function import FunctionEmitter
 from uno.sql.emitters.security import SecurityEmitter
 
-def initialize_emission_registry():
-    """Initialize the emission registry for the application."""
-    registry = EmissionRegistry(
-        default_schema="app",
-        default_owner="app_user"
-    )
-    
-    # Register standard emitters
-    registry.register_emitter("table", TableEmitter)
-    registry.register_emitter("function", FunctionEmitter)
-    registry.register_emitter("security", SecurityEmitter)
-    
-    # Register custom emitters
-    registry.register_emitter("custom", CustomEmitter)
-    
-    return registry
+def initialize_emission_registry():```
+
+"""Initialize the emission registry for the application."""
+registry = EmissionRegistry(```
+
+default_schema="app",
+default_owner="app_user"
+```
+)
+``````
+
+```
+```
+
+# Register standard emitters
+registry.register_emitter("table", TableEmitter)
+registry.register_emitter("function", FunctionEmitter)
+registry.register_emitter("security", SecurityEmitter)
+``````
+
+```
+```
+
+# Register custom emitters
+registry.register_emitter("custom", CustomEmitter)
+``````
+
+```
+```
+
+return registry
+```
 
 # Initialize registry at application startup
 app_registry = initialize_emission_registry()
@@ -194,20 +226,36 @@ app_registry = initialize_emission_registry()
 ```python
 from uno.sql.registry import EmissionRegistry
 
-async def generate_schema_sql(models, registry):
-    """Generate SQL for creating a database schema."""
-    sql_statements = []
-    
-    # Generate SQL for each model
-    for model in models:
-        emitter = registry.create_emitter("table", model=model)
-        sql_statements.append(emitter.emit())
-    
-    # Add custom SQL
-    sql_statements.append("-- Custom SQL goes here")
-    
-    # Combine all SQL
-    return "\n\n".join(sql_statements)
+async def generate_schema_sql(models, registry):```
+
+"""Generate SQL for creating a database schema."""
+sql_statements = []
+``````
+
+```
+```
+
+# Generate SQL for each model
+for model in models:```
+
+emitter = registry.create_emitter("table", model=model)
+sql_statements.append(emitter.emit())
+```
+``````
+
+```
+```
+
+# Add custom SQL
+sql_statements.append("-- Custom SQL goes here")
+``````
+
+```
+```
+
+# Combine all SQL
+return "\n\n".join(sql_statements)
+```
 ```
 
 ### Migration Generation
@@ -215,30 +263,54 @@ async def generate_schema_sql(models, registry):
 ```python
 from uno.sql.registry import EmissionRegistry
 
-async def generate_migration(old_models, new_models, registry):
-    """Generate a migration between old and new models."""
-    sql_statements = []
-    
-    # Generate drop statements for removed models
-    for model in old_models:
-        if model not in new_models:
-            emitter = registry.create_emitter("drop_table", model=model)
-            sql_statements.append(emitter.emit())
-    
-    # Generate create statements for new models
-    for model in new_models:
-        if model not in old_models:
-            emitter = registry.create_emitter("table", model=model)
-            sql_statements.append(emitter.emit())
-    
-    # Generate alter statements for modified models
-    for model in new_models:
-        if model in old_models:
-            emitter = registry.create_emitter("alter_table", old_model=old_models[model], new_model=model)
-            sql_statements.append(emitter.emit())
-    
-    # Combine all SQL
-    return "\n\n".join(sql_statements)
+async def generate_migration(old_models, new_models, registry):```
+
+"""Generate a migration between old and new models."""
+sql_statements = []
+``````
+
+```
+```
+
+# Generate drop statements for removed models
+for model in old_models:```
+
+if model not in new_models:
+    emitter = registry.create_emitter("drop_table", model=model)
+    sql_statements.append(emitter.emit())
+```
+``````
+
+```
+```
+
+# Generate create statements for new models
+for model in new_models:```
+
+if model not in old_models:
+    emitter = registry.create_emitter("table", model=model)
+    sql_statements.append(emitter.emit())
+```
+``````
+
+```
+```
+
+# Generate alter statements for modified models
+for model in new_models:```
+
+if model in old_models:
+    emitter = registry.create_emitter("alter_table", old_model=old_models[model], new_model=model)
+    sql_statements.append(emitter.emit())
+```
+``````
+
+```
+```
+
+# Combine all SQL
+return "\n\n".join(sql_statements)
+```
 ```
 
 ## Best Practices

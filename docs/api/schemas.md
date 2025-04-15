@@ -12,23 +12,25 @@ In the Uno framework, schemas are used to control how model data is serialized a
 When you create an instance of a `UnoObj` subclass, the schemas are automatically initialized in the `__init__` method:
 
 ```python
-def __init__(self, **data: Any):
-    """
-    Initialize a UnoObj instance.
-    """
-    super().__init__(**data)
+def __init__(self, **data: Any):```
 
-    # Initialize the db factory
-    self.db = UnoDBFactory(obj=self.__class__)
+"""
+Initialize a UnoObj instance.
+"""
+super().__init__(**data)
 
-    # Get the registry instance
-    self.registry = UnoRegistry.get_instance()
+# Initialize the db factory
+self.db = UnoDBFactory(obj=self.__class__)
 
-    # Initialize the schema manager
-    self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
+# Get the registry instance
+self.registry = UnoRegistry.get_instance()
 
-    # Initialize the filter manager
-    self.filter_manager = UnoFilterManager()
+# Initialize the schema manager
+self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
+
+# Initialize the filter manager
+self.filter_manager = UnoFilterManager()
+```
 ```
 
 The key part is `self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)`, which creates a schema manager with the class's schema configurations.
@@ -45,12 +47,16 @@ Once an instance is created, you can access schemas in two ways:
 Before using schemas, you should ensure they're created. The `UnoObj` class includes a helper method for this:
 
 ```python
-def _ensure_schemas_created(self):
-    """
-    Ensure that schemas have been created.
-    """
-    if not self.schema_manager.schemas:
-        self.schema_manager.create_all_schemas(self.__class__)
+def _ensure_schemas_created(self):```
+
+"""
+Ensure that schemas have been created.
+"""
+if not self.schema_manager.schemas:```
+
+self.schema_manager.create_all_schemas(self.__class__)
+```
+```
 ```
 
 This method is called by various operations like `to_model()` and `merge()`.
@@ -60,18 +66,22 @@ This method is called by various operations like `to_model()` and `merge()`.
 To customize schemas for your `UnoObj` subclass, define the `schema_configs` class variable:
 
 ```python
-class MyObj(UnoObj[MyModel]):
-    model = MyModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            include={"id", "name", "description"},
-            exclude={"created_by", "modified_by"}
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include={"name", "description"},
-            exclude={"id", "created_at", "modified_at"}
-        )
-    }
+class MyObj(UnoObj[MyModel]):```
+
+model = MyModel
+schema_configs = {```
+
+"view_schema": UnoSchemaConfig(
+    include={"id", "name", "description"},
+    exclude={"created_by", "modified_by"}
+),
+"edit_schema": UnoSchemaConfig(
+    include={"name", "description"},
+    exclude={"id", "created_at", "modified_at"}
+)
+```
+}
+```
 ```
 
 ## Example Usage
@@ -83,18 +93,22 @@ from uno.obj import UnoObj
 from uno.schema import UnoSchemaConfig
 from myapp.models import MyModel
 
-class MyObj(UnoObj[MyModel]):
-    model = MyModel
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(
-            include={"id", "name", "description"},
-            exclude={"created_by", "modified_by"}
-        ),
-        "edit_schema": UnoSchemaConfig(
-            include={"name", "description"},
-            exclude={"id", "created_at", "modified_at"}
-        )
-    }
+class MyObj(UnoObj[MyModel]):```
+
+model = MyModel
+schema_configs = {```
+
+"view_schema": UnoSchemaConfig(
+    include={"id", "name", "description"},
+    exclude={"created_by", "modified_by"}
+),
+"edit_schema": UnoSchemaConfig(
+    include={"name", "description"},
+    exclude={"id", "created_at", "modified_at"}
+)
+```
+}
+```
 
 # Create an instance
 obj = MyObj(name="Test", description="A test object")

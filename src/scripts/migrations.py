@@ -3,16 +3,28 @@
 #
 # SPDX-License-Identifier: MIT
 """
-Uno database migration script that provides a CLI for managing Alembic migrations.
+Uno database migration script that provides a CLI for managing migrations.
 
-Commands:
-    init: Initialize the migration environment (run after createdb)
-    generate <message>: Generate a new migration
-    upgrade [revision]: Upgrade the database to the latest or specified revision
-    downgrade [revision]: Downgrade the database to the specified revision
-    history: Show migration history
-    current: Show current migration version
-    revision: Show available revisions
+This script supports two migration systems:
+1. Alembic: Traditional schema-migration tool (legacy support)
+2. Uno Core Migrations: New lightweight, flexible migration system
+
+Alembic Commands:
+    alembic:init: Initialize the Alembic migration environment
+    alembic:generate <message>: Generate a new Alembic migration
+    alembic:upgrade [revision]: Upgrade the database to the latest or specified revision
+    alembic:downgrade [revision]: Downgrade the database to the specified revision
+    alembic:history: Show Alembic migration history
+    alembic:current: Show current Alembic migration version
+    alembic:revision: Show available Alembic revisions
+
+Uno Migration Commands:
+    create <name> [--type=sql|python]: Create a new migration file
+    migrate [--target=ID] [--steps=N]: Apply pending migrations
+    rollback [--target=ID] [--steps=N] [--all]: Revert applied migrations
+    status: Show migration status
+    info [migration_id]: Show detailed information about migrations
+    check [--repair]: Check migrations for consistency issues
 """
 
 import os
@@ -467,56 +479,257 @@ def show_revisions() -> None:
                 print(f"  {revision_id}: {file.stem}")
 
 
+def get_database_url() -> str:
+    """
+    Get the database URL from settings.
+    
+    Returns:
+        Database URL string
+    """
+    # Use connection config to build URL
+    conn_config = ConnectionConfig(
+        db_role=f"{uno_settings.DB_NAME}_login",  # Login role
+        db_name=uno_settings.DB_NAME,
+        db_host=uno_settings.DB_HOST,
+        db_port=uno_settings.DB_PORT,
+        db_user_pw=uno_settings.DB_USER_PW,
+        db_driver=uno_settings.DB_SYNC_DRIVER,
+        db_schema=uno_settings.DB_SCHEMA,
+    )
+    
+    return conn_config.get_uri()
+
+
+def get_default_migration_dirs() -> list:
+    """
+    Get the default migration directories.
+    
+    Returns:
+        List of migration directory paths
+    """
+    # Default directories for migrations
+    migrations_dir = os.path.join(os.getcwd(), "migrations")
+    
+    # Create directory if it doesn't exist
+    if not os.path.exists(migrations_dir):
+        os.makedirs(migrations_dir, exist_ok=True)
+    
+    return [migrations_dir]
+
+
+# Import Uno Core Migration system
+try:
+    from uno.core.migrations.cli import main as core_migrations_main
+except ImportError:
+    logger.warning("Uno Core Migration system not available. "
+                  "Only Alembic migrations will be available.")
+    core_migrations_main = None
+
+
+def run_core_migrations(args_list: list) -> int:
+    """
+    Run Uno Core Migration system commands.
+    
+    Args:
+        args_list: Command-line arguments
+    
+    Returns:
+        Exit code (0 for success, non-zero for errors)
+    """
+    if core_migrations_main is None:
+        logger.error("Uno Core Migration system is not available.")
+        return 1
+    
+    try:
+        return core_migrations_main(args_list)
+    except Exception as e:
+        logger.error(f"Error running core migrations: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
 def main() -> None:
     """Main entry point for the script."""
     parser = argparse.ArgumentParser(description="Uno database migration tool")
     subparsers = parser.add_subparsers(dest="command", help="Migration command")
     
-    # Init command
-    init_parser = subparsers.add_parser("init", help="Initialize migration environment")
+    # =====================================================
+    # Alembic Migration Commands
+    # =====================================================
     
-    # Generate command
-    generate_parser = subparsers.add_parser("generate", help="Generate a new migration")
+    # Alembic Init command
+    init_parser = subparsers.add_parser("alembic:init", help="Initialize Alembic migration environment")
+    
+    # Alembic Generate command
+    generate_parser = subparsers.add_parser("alembic:generate", help="Generate a new Alembic migration")
     generate_parser.add_argument("message", help="Migration message/description")
     
-    # Upgrade command
-    upgrade_parser = subparsers.add_parser("upgrade", help="Upgrade database")
+    # Alembic Upgrade command
+    upgrade_parser = subparsers.add_parser("alembic:upgrade", help="Upgrade database using Alembic")
     upgrade_parser.add_argument("revision", nargs="?", default="head", 
                               help="Target revision (default: 'head' for latest)")
     
-    # Downgrade command
-    downgrade_parser = subparsers.add_parser("downgrade", help="Downgrade database")
+    # Alembic Downgrade command
+    downgrade_parser = subparsers.add_parser("alembic:downgrade", help="Downgrade database using Alembic")
     downgrade_parser.add_argument("revision", help="Target revision")
     
-    # History command
-    history_parser = subparsers.add_parser("history", help="Show migration history")
+    # Alembic History command
+    history_parser = subparsers.add_parser("alembic:history", help="Show Alembic migration history")
     
-    # Current command
-    current_parser = subparsers.add_parser("current", help="Show current migration version")
+    # Alembic Current command
+    current_parser = subparsers.add_parser("alembic:current", help="Show current Alembic migration version")
     
-    # Revisions command
-    revisions_parser = subparsers.add_parser("revisions", help="Show available revisions")
+    # Alembic Revisions command
+    revisions_parser = subparsers.add_parser("alembic:revisions", help="Show available Alembic revisions")
+    
+    # =====================================================
+    # Uno Core Migration Commands
+    # =====================================================
+    
+    if core_migrations_main is not None:
+        # Create command
+        create_parser = subparsers.add_parser("create", help="Create a new migration file")
+        create_parser.add_argument("name", help="Name of the migration")
+        create_parser.add_argument("--type", choices=["sql", "python"], default="sql",
+                                help="Type of migration to create (default: sql)")
+        create_parser.add_argument("--directory", "-d", help="Directory to create the migration in")
+        create_parser.add_argument("--template", "-t", help="Template file to use for the migration")
+        create_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+        
+        # Migrate command
+        migrate_parser = subparsers.add_parser("migrate", help="Apply pending migrations")
+        migrate_parser.add_argument("--database-url", help="Database connection URL")
+        migrate_parser.add_argument("--schema", default=uno_settings.DB_SCHEMA,
+                                   help=f"Database schema name (default: {uno_settings.DB_SCHEMA})")
+        migrate_parser.add_argument("--table", default="uno_migrations",
+                                   help="Migration tracking table name (default: uno_migrations)")
+        migrate_parser.add_argument("--directory", "-d", action="append", dest="directories", default=[],
+                                   help="Directory containing migration files")
+        migrate_parser.add_argument("--module", "-m", action="append", dest="modules", default=[],
+                                   help="Python module containing migrations")
+        migrate_parser.add_argument("--target", help="Target migration ID to migrate to")
+        migrate_parser.add_argument("--steps", type=int, default=0,
+                                   help="Number of migrations to apply (0 for all)")
+        migrate_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+        
+        # Rollback command
+        rollback_parser = subparsers.add_parser("rollback", help="Revert applied migrations")
+        rollback_parser.add_argument("--database-url", help="Database connection URL")
+        rollback_parser.add_argument("--schema", default=uno_settings.DB_SCHEMA,
+                                    help=f"Database schema name (default: {uno_settings.DB_SCHEMA})")
+        rollback_parser.add_argument("--table", default="uno_migrations",
+                                    help="Migration tracking table name (default: uno_migrations)")
+        rollback_parser.add_argument("--directory", "-d", action="append", dest="directories", default=[],
+                                    help="Directory containing migration files")
+        rollback_parser.add_argument("--module", "-m", action="append", dest="modules", default=[],
+                                    help="Python module containing migrations")
+        rollback_parser.add_argument("--target", help="Target migration ID to rollback to")
+        rollback_parser.add_argument("--steps", type=int, default=1,
+                                    help="Number of migrations to revert (default: 1)")
+        rollback_parser.add_argument("--all", action="store_true", help="Revert all applied migrations")
+        rollback_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+        
+        # Status command
+        status_parser = subparsers.add_parser("status", help="Show migration status")
+        status_parser.add_argument("--database-url", help="Database connection URL")
+        status_parser.add_argument("--schema", default=uno_settings.DB_SCHEMA,
+                                 help=f"Database schema name (default: {uno_settings.DB_SCHEMA})")
+        status_parser.add_argument("--table", default="uno_migrations",
+                                 help="Migration tracking table name (default: uno_migrations)")
+        status_parser.add_argument("--directory", "-d", action="append", dest="directories", default=[],
+                                 help="Directory containing migration files")
+        status_parser.add_argument("--module", "-m", action="append", dest="modules", default=[],
+                                 help="Python module containing migrations")
+        status_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+        
+        # Info command
+        info_parser = subparsers.add_parser("info", help="Show detailed information about migrations")
+        info_parser.add_argument("migration_id", nargs="?", help="Optional migration ID to show information for")
+        info_parser.add_argument("--database-url", help="Database connection URL")
+        info_parser.add_argument("--schema", default=uno_settings.DB_SCHEMA,
+                               help=f"Database schema name (default: {uno_settings.DB_SCHEMA})")
+        info_parser.add_argument("--table", default="uno_migrations",
+                               help="Migration tracking table name (default: uno_migrations)")
+        info_parser.add_argument("--directory", "-d", action="append", dest="directories", default=[],
+                               help="Directory containing migration files")
+        info_parser.add_argument("--module", "-m", action="append", dest="modules", default=[],
+                               help="Python module containing migrations")
+        info_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+        
+        # Check command
+        check_parser = subparsers.add_parser("check", help="Check migrations for consistency issues")
+        check_parser.add_argument("--database-url", help="Database connection URL")
+        check_parser.add_argument("--schema", default=uno_settings.DB_SCHEMA,
+                                help=f"Database schema name (default: {uno_settings.DB_SCHEMA})")
+        check_parser.add_argument("--table", default="uno_migrations",
+                                help="Migration tracking table name (default: uno_migrations)")
+        check_parser.add_argument("--directory", "-d", action="append", dest="directories", default=[],
+                                help="Directory containing migration files")
+        check_parser.add_argument("--module", "-m", action="append", dest="modules", default=[],
+                                help="Python module containing migrations")
+        check_parser.add_argument("--repair", action="store_true", help="Attempt to repair issues automatically")
+        check_parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
     
     # Parse arguments
     args = parser.parse_args()
     
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    
     # Execute command
-    if args.command == "init":
+    if args.command == "alembic:init":
         init_migrations()
-    elif args.command == "generate":
+    elif args.command == "alembic:generate":
         generate_migration(args.message)
-    elif args.command == "upgrade":
+    elif args.command == "alembic:upgrade":
         upgrade_database(args.revision)
-    elif args.command == "downgrade":
+    elif args.command == "alembic:downgrade":
         downgrade_database(args.revision)
-    elif args.command == "history":
+    elif args.command == "alembic:history":
         show_history()
-    elif args.command == "current":
+    elif args.command == "alembic:current":
         show_current()
-    elif args.command == "revisions":
+    elif args.command == "alembic:revisions":
         show_revisions()
+    elif core_migrations_main is not None and args.command in [
+        "create", "migrate", "rollback", "status", "info", "check"
+    ]:
+        # Handle core migration commands
+        
+        # Initialize additional parameters if needed
+        if args.command in ["migrate", "rollback", "status", "info", "check"]:
+            # Set database URL if not provided
+            if not getattr(args, "database_url", None):
+                args.database_url = get_database_url()
+            
+            # Add default directories if none provided
+            if not args.directories:
+                args.directories = get_default_migration_dirs()
+        
+        # Convert namespace to args list
+        args_dict = vars(args)
+        args_list = [args.command]
+        
+        # Add all other arguments
+        for key, value in args_dict.items():
+            if key != "command" and value is not None:
+                if isinstance(value, bool) and value:
+                    args_list.append(f"--{key}")
+                elif isinstance(value, list):
+                    for item in value:
+                        args_list.append(f"--{key}")
+                        args_list.append(str(item))
+                elif not isinstance(value, bool) or value:
+                    args_list.append(f"--{key}")
+                    args_list.append(str(value))
+        
+        # Run core migrations and exit with its return code
+        sys.exit(run_core_migrations(args_list))
     else:
         parser.print_help()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

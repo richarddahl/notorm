@@ -20,9 +20,11 @@ The simplest way to create spans is using the `trace` decorator:
 from uno.core.monitoring import trace, SpanKind
 
 @trace(name="my_operation", kind=SpanKind.INTERNAL)
-async def my_function(arg1, arg2):
-    # Function to trace
-    return arg1 + arg2
+async def my_function(arg1, arg2):```
+
+# Function to trace
+return arg1 + arg2
+```
 ```
 
 You can also create spans manually using the `Tracer` class:
@@ -30,19 +32,33 @@ You can also create spans manually using the `Tracer` class:
 ```python
 from uno.core.monitoring import get_tracer
 
-async def my_function():
-    tracer = get_tracer()
-    
-    async with await tracer.create_span(
-        name="my_operation",
-        attributes={"key": "value"},
-        kind=SpanKind.INTERNAL
-    ) as span:
-        # Code to trace
-        span.add_event("interesting_event", {"some_data": 123})
-        
-        # Set status based on result
-        span.set_status("ok")
+async def my_function():```
+
+tracer = get_tracer()
+``````
+
+```
+```
+
+async with await tracer.create_span(```
+
+name="my_operation",
+attributes={"key": "value"},
+kind=SpanKind.INTERNAL
+```
+) as span:```
+
+# Code to trace
+span.add_event("interesting_event", {"some_data": 123})
+``````
+
+```
+```
+
+# Set status based on result
+span.set_status("ok")
+```
+```
 ```
 
 ### Adding Context to Spans
@@ -50,19 +66,31 @@ async def my_function():
 You can add attributes and events to spans:
 
 ```python
-async with await tracer.create_span("my_operation") as span:
-    # Add attributes
-    span.attributes["customer_id"] = "123"
-    span.attributes["product_id"] = "456"
-    
-    # Add events
-    span.add_event(
-        name="cache_miss",
-        attributes={"key": "user:123"}
-    )
-    
-    # Set status based on result
-    span.set_status("error", "Database connection failed")
+async with await tracer.create_span("my_operation") as span:```
+
+# Add attributes
+span.attributes["customer_id"] = "123"
+span.attributes["product_id"] = "456"
+``````
+
+```
+```
+
+# Add events
+span.add_event(```
+
+name="cache_miss",
+attributes={"key": "user:123"}
+```
+)
+``````
+
+```
+```
+
+# Set status based on result
+span.set_status("error", "Database connection failed")
+```
 ```
 
 ### Accessing Current Span
@@ -72,17 +100,29 @@ You can access the current span from anywhere in your code:
 ```python
 from uno.core.monitoring import get_current_span, get_current_trace_id, get_current_span_id
 
-def some_function():
-    # Get current span
-    span = get_current_span()
-    if span:
-        span.add_event("something_happened")
-    
-    # Get current trace ID and span ID
-    trace_id = get_current_trace_id()
-    span_id = get_current_span_id()
-    
-    print(f"Trace ID: {trace_id}, Span ID: {span_id}")
+def some_function():```
+
+# Get current span
+span = get_current_span()
+if span:```
+
+span.add_event("something_happened")
+```
+``````
+
+```
+```
+
+# Get current trace ID and span ID
+trace_id = get_current_trace_id()
+span_id = get_current_span_id()
+``````
+
+```
+```
+
+print(f"Trace ID: {trace_id}, Span ID: {span_id}")
+```
 ```
 
 ## Propagating Context Between Services
@@ -97,24 +137,42 @@ For HTTP requests, you can use the `inject_context` and `extract_context` functi
 from uno.core.monitoring import inject_context, extract_context
 import aiohttp
 
-async def make_request(url):
-    # Create headers
-    headers = {"Content-Type": "application/json"}
-    
-    # Inject tracing context
-    inject_context(headers)
-    
-    # Make request with propagated context
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            return await response.json()
+async def make_request(url):```
+
+# Create headers
+headers = {"Content-Type": "application/json"}
+``````
+
+```
+```
+
+# Inject tracing context
+inject_context(headers)
+``````
+
+```
+```
+
+# Make request with propagated context
+async with aiohttp.ClientSession() as session:```
+
+async with session.get(url, headers=headers) as response:
+    return await response.json()
+```
+```
 
 # On the receiving end
-def handle_request(headers):
-    # Extract context
-    context = extract_context(headers)
-    
-    # Use the extracted context (implementation depends on framework)
+def handle_request(headers):```
+
+# Extract context
+context = extract_context(headers)
+``````
+
+```
+```
+
+# Use the extracted context (implementation depends on framework)
+```
 ```
 
 The `TracingMiddleware` handles this automatically for FastAPI applications.
@@ -130,10 +188,12 @@ from uno.core.monitoring import TracingMiddleware, get_tracer
 app = FastAPI()
 
 # Add tracing middleware
-app.add_middleware(
-    TracingMiddleware,
-    tracer=get_tracer(),
-    excluded_paths=["/health", "/metrics"]
+app.add_middleware(```
+
+TracingMiddleware,
+tracer=get_tracer(),
+excluded_paths=["/health", "/metrics"]
+```
 )
 ```
 
@@ -153,12 +213,16 @@ tracer = get_tracer()
 tracer.add_processor(LoggingSpanProcessor())
 
 # Add a batch processor with an exporter
-tracer.add_processor(
-    BatchSpanProcessor(
-        exporter=LoggingSpanExporter(),
-        max_batch_size=100,
-        export_interval=5.0
-    )
+tracer.add_processor(```
+
+BatchSpanProcessor(```
+
+exporter=LoggingSpanExporter(),
+max_batch_size=100,
+export_interval=5.0
+```
+)
+```
 )
 ```
 
@@ -173,14 +237,22 @@ from uno.core.monitoring import get_tracer
 tracer = get_tracer()
 
 # Set a sampler function
-def my_sampler(trace_id, parent_id, name):
-    # Always sample if parent is sampled
-    if parent_id is not None:
-        return True
-    
-    # Sample 10% of traces
-    import random
-    return random.random() < 0.1
+def my_sampler(trace_id, parent_id, name):```
+
+# Always sample if parent is sampled
+if parent_id is not None:```
+
+return True
+```
+``````
+
+```
+```
+
+# Sample 10% of traces
+import random
+return random.random() < 0.1
+```
 
 tracer.set_sampler(my_sampler)
 ```
@@ -202,14 +274,22 @@ tracer.set_sampler(my_sampler)
 You can create child spans for nested operations:
 
 ```python
-async def parent_operation():
-    tracer = get_tracer()
-    
-    async with await tracer.create_span("parent") as parent_span:
-        # The child span will automatically be linked to the parent
-        async with await tracer.create_span("child") as child_span:
-            # Child operation
-            pass
+async def parent_operation():```
+
+tracer = get_tracer()
+``````
+
+```
+```
+
+async with await tracer.create_span("parent") as parent_span:```
+
+# The child span will automatically be linked to the parent
+async with await tracer.create_span("child") as child_span:
+    # Child operation
+    pass
+```
+```
 ```
 
 ### Linking Spans
@@ -217,19 +297,29 @@ async def parent_operation():
 You can link related spans that aren't in a parent-child relationship:
 
 ```python
-async def operation():
-    tracer = get_tracer()
-    
-    async with await tracer.create_span(
-        name="operation",
-        links=[
-            {
-                "trace_id": "trace-id-1",
-                "span_id": "span-id-1",
-                "attributes": {"reason": "related-work"}
-            }
-        ]
-    ) as span:
-        # Operation
-        pass
+async def operation():```
+
+tracer = get_tracer()
+``````
+
+```
+```
+
+async with await tracer.create_span(```
+
+name="operation",
+links=[
+    {
+        "trace_id": "trace-id-1",
+        "span_id": "span-id-1",
+        "attributes": {"reason": "related-work"}
+    }
+]
+```
+) as span:```
+
+# Operation
+pass
+```
+```
 ```

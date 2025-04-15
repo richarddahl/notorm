@@ -76,18 +76,24 @@ For detailed instructions on using the Reports module, see the following guides:
 
 - [Creating Report Templates](templates.md)
 - [Configuring Report Fields](fields.md)
-- [Setting Up Report Triggers](triggers.md)
-- [Managing Report Outputs](outputs.md)
-- [Executing and Monitoring Reports](execution.md)
-- [Integrating with Events](events.md)
-- [Automating with CLI](cli.md)
+<!-- TODO: Create report triggers documentation -->
+<!-- - [Setting Up Report Triggers](triggers.md) -->
+<!-- TODO: Create report outputs documentation -->
+<!-- - [Managing Report Outputs](outputs.md) -->
+<!-- TODO: Create report execution documentation -->
+<!-- - [Executing and Monitoring Reports](execution.md) -->
+<!-- TODO: Create report events documentation -->
+<!-- - [Integrating with Events](events.md) -->
+<!-- TODO: Create report CLI documentation -->
+<!-- - [Automating with CLI](cli.md) -->
 
 ## API Reference
 
 The Reports module exposes a comprehensive API for integration with other systems:
 
-- [Report Templates API](api/templates.md)
-- [Report Fields API](api/fields.md)
-- [Report Triggers API](api/triggers.md)
-- [Report Outputs API](api/outputs.md)
-- [Report Executions API](api/executions.md)
+<!-- TODO: Create report API documentation -->
+<!-- - [Report Templates API](api/templates.md) -->
+<!-- - [Report Fields API](api/fields.md) -->
+<!-- - [Report Triggers API](api/triggers.md) -->
+<!-- - [Report Outputs API](api/outputs.md) -->
+<!-- - [Report Executions API](api/executions.md) -->

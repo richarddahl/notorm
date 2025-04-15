@@ -44,13 +44,17 @@ Context managers for safely obtaining and disposing of database connections:
 ```python
 from uno.database.engine import sync_connection
 
-with sync_connection(
-    db_role="my_role",
-    db_name="my_database", 
-    db_driver="postgresql+psycopg2"
-) as conn:
-    # Use the connection
-    result = conn.execute(query)
+with sync_connection(```
+
+db_role="my_role",
+db_name="my_database", 
+db_driver="postgresql+psycopg2"
+```
+) as conn:```
+
+# Use the connection
+result = conn.execute(query)
+```
 ```
 
 #### Asynchronous Operations
@@ -58,13 +62,17 @@ with sync_connection(
 ```python
 from uno.database.engine import async_connection
 
-async with async_connection(
-    db_role="my_role",
-    db_name="my_database",
-    db_driver="postgresql+asyncpg"
-) as conn:
-    # Use the connection asynchronously
-    result = await conn.execute(query)
+async with async_connection(```
+
+db_role="my_role",
+db_name="my_database",
+db_driver="postgresql+asyncpg"
+```
+) as conn:```
+
+# Use the connection asynchronously
+result = await conn.execute(query)
+```
 ```
 
 ### 3. Session Management
@@ -74,13 +82,17 @@ For ORM operations, the framework provides session context managers:
 ```python
 from uno.database.session import async_session
 
-async with async_session(
-    db_role="my_role",
-    db_name="my_database"
-) as session:
-    # Use the ORM session
-    result = await session.execute(query)
-    await session.commit()
+async with async_session(```
+
+db_role="my_role",
+db_name="my_database"
+```
+) as session:```
+
+# Use the ORM session
+result = await session.execute(query)
+await session.commit()
+```
 ```
 
 ### 4. Configuration Management
@@ -91,20 +103,26 @@ Database connections are configured using the `ConnectionConfig` model:
 from uno.database.config import ConnectionConfig
 
 # Create a connection configuration
-config = ConnectionConfig(
-    db_role="my_role",
-    db_name="my_database",
-    db_host="localhost",
-    db_port=5432,
-    db_driver="postgresql+asyncpg",
-    pool_size=10,
-    max_overflow=20
+config = ConnectionConfig(```
+
+db_role="my_role",
+db_name="my_database"
+```,```
+
+db_host="localhost",
+db_port=5432,
+db_driver="postgresql+asyncpg",
+pool_size=10,
+max_overflow=20
+```
 )
 
 # Use with connection context managers
-async with async_connection(config=config) as conn:
-    # Use the connection
-    pass
+async with async_connection(config=config) as conn:```
+
+# Use the connection
+pass
+```
 ```
 
 ## Implementation Details
@@ -201,24 +219,42 @@ async_service = MyAsyncDatabaseService(engine_factory=mock_async_factory)
 import pytest
 
 @pytest.mark.asyncio
-async def test_async_database_operation():
-    # Setup async mocks
-    mock_factory = AsyncMock()
-    mock_engine = AsyncMock(spec=AsyncEngine)
-    mock_conn = AsyncMock(spec=AsyncConnection)
-    
-    # Configure mock chain
-    mock_factory.create_engine.return_value = mock_engine
-    mock_engine.connect.return_value = mock_conn
-    mock_conn.__aenter__.return_value = mock_conn
-    
-    # Setup your test service with the mock
-    service = MyService(engine_factory=mock_factory)
-    
-    # Run the test
-    result = await service.fetch_data()
-    
-    # Assert expectations
-    assert result is not None
-    mock_conn.execute.assert_called_once()
+async def test_async_database_operation():```
+
+# Setup async mocks
+mock_factory = AsyncMock()
+mock_engine = AsyncMock(spec=AsyncEngine)
+mock_conn = AsyncMock(spec=AsyncConnection)
+``````
+
+```
+```
+
+# Configure mock chain
+mock_factory.create_engine.return_value = mock_engine
+mock_engine.connect.return_value = mock_conn
+mock_conn.__aenter__.return_value = mock_conn
+``````
+
+```
+```
+
+# Setup your test service with the mock
+service = MyService(engine_factory=mock_factory)
+``````
+
+```
+```
+
+# Run the test
+result = await service.fetch_data()
+``````
+
+```
+```
+
+# Assert expectations
+assert result is not None
+mock_conn.execute.assert_called_once()
+```
 ```

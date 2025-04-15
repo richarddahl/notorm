@@ -63,10 +63,14 @@ uno provides both explicit and implicit transaction support:
 
 1. For explicit transactions, use the SQLAlchemy session transaction context:
    ```python
-   async with AsyncSession() as session:
-       async with session.begin():
-           # Operations inside this block are in a transaction
-           # ...
+   async with AsyncSession() as session:```
+
+   async with session.begin():```
+
+   # Operations inside this block are in a transaction
+   # ...
+```
+```
    ```
 
 2. Many uno operations use transactions automatically (like `save()` and `delete()`).

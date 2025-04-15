@@ -47,13 +47,17 @@ For each resource, the system collects relevant metrics:
 
 ```python
 # Database connection metrics example
-resource_monitor.add_metric(
-    resource_id="main-db",
-    metric=Gauge(
-        name="connection_pool_usage",
-        description="Current usage of the database connection pool",
-        labels=["database_name", "pool_id"]
-    )
+resource_monitor.add_metric(```
+
+resource_id="main-db",
+metric=Gauge(```
+
+name="connection_pool_usage",
+description="Current usage of the database connection pool",
+labels=["database_name", "pool_id"]
+```
+)
+```
 )
 ```
 
@@ -90,14 +94,18 @@ Configure thresholds for resource metrics:
 from uno.core.monitoring.resources import Threshold, AlertLevel
 
 # Set a threshold for connection pool usage
-resource_monitor.set_threshold(
-    resource_id="main-db",
-    metric_name="connection_pool_usage",
-    threshold=Threshold(
-        warning=0.7,  # 70% usage triggers warning
-        critical=0.9,  # 90% usage triggers critical alert
-        alert_message="Database connection pool utilization high"
-    )
+resource_monitor.set_threshold(```
+
+resource_id="main-db",
+metric_name="connection_pool_usage",
+threshold=Threshold(```
+
+warning=0.7,  # 70% usage triggers warning
+critical=0.9,  # 90% usage triggers critical alert
+alert_message="Database connection pool utilization high"
+```
+)
+```
 )
 ```
 
@@ -111,9 +119,11 @@ report = resource_monitor.generate_report(resource_type="database")
 
 # Get a report for a specific time range
 import datetime
-report = resource_monitor.generate_report(
-    start_time=datetime.datetime.now() - datetime.timedelta(hours=24),
-    end_time=datetime.datetime.now()
+report = resource_monitor.generate_report(```
+
+start_time=datetime.datetime.now() - datetime.timedelta(hours=24),
+end_time=datetime.datetime.now()
+```
 )
 
 # Export the report
@@ -128,11 +138,13 @@ The resource monitor integrates with monitoring dashboards:
 from uno.core.monitoring.integration import setup_monitoring
 
 app = FastAPI()
-setup_monitoring(
-    app, 
-    resource_monitor=resource_monitor,
-    enable_dashboard=True,
-    dashboard_path="/monitoring/dashboard"
+setup_monitoring(```
+
+app, 
+resource_monitor=resource_monitor,
+enable_dashboard=True,
+dashboard_path="/monitoring/dashboard"
+```
 )
 ```
 
@@ -165,11 +177,13 @@ detector = AnomalyDetector()
 resource_monitor.set_anomaly_detector(detector)
 
 # Configure anomaly detection for a specific resource
-resource_monitor.configure_anomaly_detection(
-    resource_id="main-db",
-    metric_name="query_duration",
-    sensitivity=0.8,  # Higher values detect more subtle anomalies
-    training_period=datetime.timedelta(days=7)  # Use 7 days of data for training
+resource_monitor.configure_anomaly_detection(```
+
+resource_id="main-db",
+metric_name="query_duration",
+sensitivity=0.8,  # Higher values detect more subtle anomalies
+training_period=datetime.timedelta(days=7)  # Use 7 days of data for training
+```
 )
 ```
 
@@ -193,40 +207,52 @@ Create custom monitors for specific resource types:
 ```python
 from uno.core.monitoring.resources import ResourceTypeMonitor
 
-class DatabaseMonitor(ResourceTypeMonitor):
-    """Custom monitor for database connections"""
+class DatabaseMonitor(ResourceTypeMonitor):```
+
+"""Custom monitor for database connections"""
+``````
+
+```
+```
+
+def __init__(self, resource_manager):```
+
+super().__init__(resource_manager, resource_type="database")
+```
     
-    def __init__(self, resource_manager):
-        super().__init__(resource_manager, resource_type="database")
-        
-    def setup_metrics(self):
-        """Setup database-specific metrics"""
-        self.add_metric(
-            name="query_count",
-            description="Number of queries executed",
-            metric_type="counter",
-            labels=["query_type", "database_name"]
-        )
-        self.add_metric(
-            name="slow_queries",
-            description="Number of slow queries",
-            metric_type="counter",
-            labels=["database_name"]
-        )
-        
-    async def collect_metrics(self, resource):
-        """Collect metrics for a specific database resource"""
-        stats = await resource.get_statistics()
-        self.update_metric(
-            "query_count", 
-            stats["total_queries"],
-            labels={"database_name": resource.name, "query_type": "all"}
-        )
-        self.update_metric(
-            "slow_queries",
-            stats["slow_queries"],
-            labels={"database_name": resource.name}
-        )
+def setup_metrics(self):```
+
+"""Setup database-specific metrics"""
+self.add_metric(
+    name="query_count",
+    description="Number of queries executed",
+    metric_type="counter",
+    labels=["query_type", "database_name"]
+)
+self.add_metric(
+    name="slow_queries",
+    description="Number of slow queries",
+    metric_type="counter",
+    labels=["database_name"]
+)
+```
+    
+async def collect_metrics(self, resource):```
+
+"""Collect metrics for a specific database resource"""
+stats = await resource.get_statistics()
+self.update_metric(
+    "query_count", 
+    stats["total_queries"],
+    labels={"database_name": resource.name, "query_type": "all"}
+)
+self.update_metric(
+    "slow_queries",
+    stats["slow_queries"],
+    labels={"database_name": resource.name}
+)
+```
+```
 
 # Register the custom monitor
 db_monitor = DatabaseMonitor(resource_manager)

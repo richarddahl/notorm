@@ -38,13 +38,15 @@ resource_manager = ResourceManager()
 resource_monitor = ResourceMonitor(resource_manager)
 
 # Setup monitoring
-setup_monitoring(
-    app,
-    metrics_registry=metrics_registry,
-    health_registry=health_registry,
-    tracer=tracer,
-    event_logger=event_logger,
-    resource_monitor=resource_monitor
+setup_monitoring(```
+
+app,
+metrics_registry=metrics_registry,
+health_registry=health_registry,
+tracer=tracer,
+event_logger=event_logger,
+resource_monitor=resource_monitor
+```
 )
 ```
 
@@ -59,10 +61,12 @@ Tracks request counts, durations, and status codes:
 ```python
 from uno.core.monitoring.integration import MetricsMiddleware
 
-app.add_middleware(
-    MetricsMiddleware,
-    metrics_registry=metrics_registry,
-    exclude_paths=["/metrics", "/health"]
+app.add_middleware(```
+
+MetricsMiddleware,
+metrics_registry=metrics_registry,
+exclude_paths=["/metrics", "/health"]
+```
 )
 ```
 
@@ -73,10 +77,12 @@ Adds distributed tracing to all requests:
 ```python
 from uno.core.monitoring.integration import TracingMiddleware
 
-app.add_middleware(
-    TracingMiddleware,
-    tracer=tracer,
-    exclude_paths=["/metrics"]
+app.add_middleware(```
+
+TracingMiddleware,
+tracer=tracer,
+exclude_paths=["/metrics"]
+```
 )
 ```
 
@@ -87,11 +93,13 @@ Logs request and response information:
 ```python
 from uno.core.monitoring.integration import EventLoggingMiddleware
 
-app.add_middleware(
-    EventLoggingMiddleware,
-    event_logger=event_logger,
-    log_request_body=False,
-    log_response_body=False
+app.add_middleware(```
+
+EventLoggingMiddleware,
+event_logger=event_logger,
+log_request_body=False,
+log_response_body=False
+```
 )
 ```
 
@@ -128,11 +136,13 @@ GET /resources/{resource_id}/metrics
 Customize the endpoint paths:
 
 ```python
-setup_monitoring(
-    app,
-    health_endpoint_path="/api/health",
-    metrics_endpoint_path="/api/metrics",
-    resources_endpoint_path="/api/resources"
+setup_monitoring(```
+
+app,
+health_endpoint_path="/api/health",
+metrics_endpoint_path="/api/metrics",
+resources_endpoint_path="/api/resources"
+```
 )
 ```
 
@@ -143,10 +153,12 @@ Track exceptions and error responses:
 ```python
 from uno.core.monitoring.integration import setup_error_handling
 
-setup_error_handling(
-    app,
-    event_logger=event_logger,
-    metrics_registry=metrics_registry
+setup_error_handling(```
+
+app,
+event_logger=event_logger,
+metrics_registry=metrics_registry
+```
 )
 ```
 
@@ -162,12 +174,14 @@ Add a monitoring dashboard to your application:
 ```python
 from uno.core.monitoring.integration import setup_dashboard
 
-setup_dashboard(
-    app,
-    dashboard_path="/monitoring",
-    metrics_registry=metrics_registry,
-    health_registry=health_registry,
-    resource_monitor=resource_monitor
+setup_dashboard(```
+
+app,
+dashboard_path="/monitoring",
+metrics_registry=metrics_registry,
+health_registry=health_registry,
+resource_monitor=resource_monitor
+```
 )
 ```
 
@@ -180,26 +194,44 @@ from fastapi import Request, Depends
 from uno.core.monitoring.integration import get_monitoring_context
 
 @app.get("/api/data")
-async def get_data(
-    request: Request,
-    monitoring: dict = Depends(get_monitoring_context)
-):
-    # Access the current span
-    span = monitoring["span"]
-    
-    # Add custom attributes to the span
-    span.set_attribute("custom.attribute", "value")
-    
-    # Use the event logger
-    event_logger = monitoring["event_logger"]
-    event_logger.log_event(
-        event_type="DATA_ACCESS",
-        severity="INFO",
-        message="Accessing data endpoint"
-    )
-    
-    # Return data
-    return {"data": "value"}
+async def get_data(```
+
+request: Request,
+monitoring: dict = Depends(get_monitoring_context)
+```
+):```
+
+# Access the current span
+span = monitoring["span"]
+``````
+
+```
+```
+
+# Add custom attributes to the span
+span.set_attribute("custom.attribute", "value")
+``````
+
+```
+```
+
+# Use the event logger
+event_logger = monitoring["event_logger"]
+event_logger.log_event(```
+
+event_type="DATA_ACCESS",
+severity="INFO",
+message="Accessing data endpoint"
+```
+)
+``````
+
+```
+```
+
+# Return data
+return {"data": "value"}
+```
 ```
 
 ## Application Lifecycle Integration
@@ -209,11 +241,13 @@ Integrate with application startup and shutdown:
 ```python
 from uno.core.monitoring.integration import register_lifecycle_handlers
 
-register_lifecycle_handlers(
-    app,
-    metrics_registry=metrics_registry,
-    tracer=tracer,
-    resource_monitor=resource_monitor
+register_lifecycle_handlers(```
+
+app,
+metrics_registry=metrics_registry,
+tracer=tracer,
+resource_monitor=resource_monitor
+```
 )
 ```
 
@@ -229,12 +263,14 @@ The monitoring framework integrates with OpenTelemetry:
 ```python
 from uno.core.monitoring.integration import setup_opentelemetry
 
-setup_opentelemetry(
-    service_name="my-service",
-    app=app,
-    tracer=tracer,
-    metrics_registry=metrics_registry,
-    otlp_endpoint="http://otel-collector:4317"
+setup_opentelemetry(```
+
+service_name="my-service",
+app=app,
+tracer=tracer,
+metrics_registry=metrics_registry,
+otlp_endpoint="http://otel-collector:4317"
+```
 )
 ```
 
@@ -271,15 +307,21 @@ from uno.core.monitoring.integration import setup_monitoring
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
-async def verify_api_key(api_key: str = Security(api_key_header)):
-    if api_key != "your-secret-key":
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    return api_key
+async def verify_api_key(api_key: str = Security(api_key_header)):```
 
-setup_monitoring(
-    app,
-    security_dependency=verify_api_key,
-    secure_paths=["/metrics", "/health/detailed", "/resources"]
+if api_key != "your-secret-key":```
+
+raise HTTPException(status_code=403, detail="Invalid API Key")
+```
+return api_key
+```
+
+setup_monitoring(```
+
+app,
+security_dependency=verify_api_key,
+secure_paths=["/metrics", "/health/detailed", "/resources"]
+```
 )
 ```
 

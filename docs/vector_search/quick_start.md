@@ -4,7 +4,7 @@ This guide will help you get started with vector search functionality in Uno.
 
 ## Prerequisites
 
-- Docker environment set up (see [Docker First](/DOCKER_FIRST.md))
+- Docker environment set up (see Docker First documentation in the project root)
 - Uno installed and configured
 
 ## Step 1: Start the Docker Environment
@@ -68,11 +68,13 @@ curl -X POST "http://localhost:8000/api/vector/embed" \
 ```bash
 curl -X POST "http://localhost:8000/api/vector/rag/prompt" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "How do I use FastAPI with dependency injection?",
-    "system_prompt": "You are a helpful programming assistant.",
-    "limit": 3,
-    "threshold": 0.6
+  -d '{```
+
+"query": "How do I use FastAPI with dependency injection?",
+"system_prompt": "You are a helpful programming assistant.",
+"limit": 3,
+"threshold": 0.6
+```
   }'
 ```
 

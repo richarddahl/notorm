@@ -97,38 +97,54 @@ from uno.dependencies import get_service_provider
 provider = get_service_provider()
 
 # Get vector search service for documents
-document_search = provider.get_vector_search_service(
-    entity_type="document",
-    table_name="documents"
+document_search = provider.get_vector_search_service(```
+
+entity_type="document",
+table_name="documents"
+```
 )
 
 # Define a query
-class SearchQuery:
-    def __init__(self, query_text, limit=5, threshold=0.7):
-        self.query_text = query_text
-        self.limit = limit
-        self.threshold = threshold
-        self.metric = "cosine"
-    
-    def model_dump(self):
-        return {
-            "query_text": self.query_text,
-            "limit": self.limit,
-            "threshold": self.threshold,
-            "metric": self.metric
-        }
+class SearchQuery:```
+
+def __init__(self, query_text, limit=5, threshold=0.7):```
+
+self.query_text = query_text
+self.limit = limit
+self.threshold = threshold
+self.metric = "cosine"
+```
+``````
+
+```
+```
+
+def model_dump(self):```
+
+return {
+    "query_text": self.query_text,
+    "limit": self.limit,
+    "threshold": self.threshold,
+    "metric": self.metric
+}
+```
+```
 
 # Perform a search
 query = SearchQuery("How do I use vector search?")
 results = await document_search.search(query)
 
 # Process results
-for result in results:
-    print(f"ID: {result.id}, Similarity: {result.similarity}")
-    if result.entity:
-        print(f"Title: {result.entity.title}")
-        print(f"Content: {result.entity.content[:100]}...")
-    print()
+for result in results:```
+
+print(f"ID: {result.id}, Similarity: {result.similarity}")
+if result.entity:```
+
+print(f"Title: {result.entity.title}")
+print(f"Content: {result.entity.content[:100]}...")
+```
+print()
+```
 ```
 
 ### FastAPI Integration
@@ -152,17 +168,23 @@ The default embedding dimension is 1536 (OpenAI Ada 2), but you can configure di
 ```python
 # In uno_settings.py
 VECTOR_DIMENSIONS = 1536
-VECTOR_ENTITIES = {
-    "document": {
-        "fields": ["title", "content"],
-        "dimensions": 1536,
-        "index_type": "hnsw"
-    },
-    "product": {
-        "fields": ["name", "description"],
-        "dimensions": 384,
-        "index_type": "ivfflat"
-    }
+VECTOR_ENTITIES = {```
+
+"document": {```
+
+"fields": ["title", "content"],
+"dimensions": 1536,
+"index_type": "hnsw"
+```
+},
+"product": {```
+
+"fields": ["name", "description"],
+"dimensions": 384,
+"index_type": "ivfflat"
+```
+}
+```
 }
 ```
 
@@ -186,12 +208,73 @@ VECTOR_UPDATE_INTERVAL = 1.0  # Update interval in seconds
 VECTOR_AUTO_START = True    # Auto-start the update service
 ```
 
+## Testing Vector Search
+
+Uno includes comprehensive integration tests for vector search capabilities to ensure all components work correctly together:
+
+### Running Vector Search Tests
+
+```bash
+# Run vector search integration tests
+pytest tests/integration/test_vector_search.py --run-integration --run-pgvector
+
+# Run vector search performance benchmarks
+cd tests/integration
+./run_benchmarks.py --csv
+```
+
+### Test Coverage
+
+The integration tests for vector search cover:
+
+1. **Basic Similarity Search**: Tests for different similarity metrics (cosine, L2, inner product)
+2. **Hybrid Search**: Tests combining vector similarity with keyword filtering
+3. **Search with Metadata Filters**: Tests filtering vectors by associated metadata
+4. **Strongly-Typed Results**: Tests for type-safe search results
+5. **RAG Integration**: Tests for retrieval-augmented generation
+6. **Performance Benchmarks**: Measures and compares performance for various search operations
+
+### Example Test
+
+```python
+@pytest.mark.asyncio
+async def test_search_with_cosine_metric(vector_search_service, update_embeddings):```
+
+"""Test vector search with cosine similarity metric."""
+# Define query with explicit cosine metric
+query = VectorQuery(```
+
+query_text="neural networks embedding generation",
+limit=5,
+threshold=0.5,
+metric=VectorMetric.COSINE
+```
+)
+``````
+
+```
+```
+
+# Execute search
+results = await vector_search_service.search(query)
+``````
+
+```
+```
+
+# Validate results
+assert len(results) > 0
+assert all(r.similarity >= 0.5 for r in results)
+assert results[0].similarity <= 1.0
+```
+```
+
 ## Further Reading
 
 - [pgvector Integration](./pgvector_integration.md) - Detailed explanation of the PostgreSQL pgvector integration
 - [Docker Setup](./docker_setup.md) - Setting up Docker with pgvector for development
 - [API Usage](./api_usage.md) - How to use the vector search APIs in your application
 - [Dependency Injection](./dependency_injection.md) - How to use vector search with the DI system
-- [Hybrid Search](./hybrid_search.md) - Combining graph traversal with vector similarity
+- [Hybrid Queries](./hybrid_queries.md) - Combining graph traversal with vector similarity
 - [RAG Implementation](./rag.md) - Using Retrieval-Augmented Generation
-- [Event-Driven Architecture](./events.md) - How vector updates are processed
+- [Event-Driven Architecture](./event_driven.md) - How vector updates are processed

@@ -75,19 +75,31 @@ A key architectural pattern in the Uno framework is the use of protocols to defi
 ┌───────────────────────┐   
 │  API Layer            │   
 │  (Controllers)        │   
-└───────────┬───────────┘   
-            │ Depends on   
+└───────────┬───────────┘   ```
+```
+
+    │ Depends on   
+```
+```
 ┌───────────▼───────────┐   
 │  Application Layer    │   
 │  (Use Cases)          │   
-└───────────┬───────────┘   
-            │ Depends on   
+└───────────┬───────────┘   ```
+```
+
+    │ Depends on   
+```
+```
 ┌───────────▼───────────┐ ◄─── Domain protocols define
 │  Domain Layer         │      the core business model  
 │  (Entities, Value     │      and operations
 │   Objects, etc.)      │   
-└───────────┬───────────┘   
-            │ Uses via protocols   
+└───────────┬───────────┘   ```
+```
+
+    │ Uses via protocols   
+```
+```
 ┌───────────▼───────────┐   
 │  Infrastructure Layer │   
 │  (Repositories, etc.) │   
@@ -112,16 +124,30 @@ from typing import Protocol, TypeVar, Optional
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')
 
-class Repository(Protocol[T, KeyT]):
-    """Protocol for repositories."""
-    
-    async def get(self, id: KeyT) -> Optional[T]:
-        """Get an entity by its ID."""
-        ...
-    
-    async def save(self, entity: T) -> None:
-        """Save an entity."""
-        ...
+class Repository(Protocol[T, KeyT]):```
+
+"""Protocol for repositories."""
+``````
+
+```
+```
+
+async def get(self, id: KeyT) -> Optional[T]:```
+
+"""Get an entity by its ID."""
+...
+```
+``````
+
+```
+```
+
+async def save(self, entity: T) -> None:```
+
+"""Save an entity."""
+...
+```
+```
 ```
 
 ### Implementing Protocols
@@ -130,16 +156,30 @@ class Repository(Protocol[T, KeyT]):
 from uuid import UUID
 from domain.models import User
 
-class PostgresUserRepository:
-    """Postgres implementation of the user repository."""
-    
-    async def get(self, id: UUID) -> Optional[User]:
-        # Implementation using PostgreSQL
-        ...
-    
-    async def save(self, user: User) -> None:
-        # Implementation using PostgreSQL
-        ...
+class PostgresUserRepository:```
+
+"""Postgres implementation of the user repository."""
+``````
+
+```
+```
+
+async def get(self, id: UUID) -> Optional[User]:```
+
+# Implementation using PostgreSQL
+...
+```
+``````
+
+```
+```
+
+async def save(self, user: User) -> None:```
+
+# Implementation using PostgreSQL
+...
+```
+```
 ```
 
 ### Depending on Protocols
@@ -147,14 +187,28 @@ class PostgresUserRepository:
 ```python
 from domain.repositories import UserRepository
 
-class UserService:
-    """Service for user operations."""
-    
-    def __init__(self, user_repository: UserRepository):
-        self.user_repository = user_repository
-    
-    async def get_user(self, id: UUID) -> Optional[User]:
-        return await self.user_repository.get(id)
+class UserService:```
+
+"""Service for user operations."""
+``````
+
+```
+```
+
+def __init__(self, user_repository: UserRepository):```
+
+self.user_repository = user_repository
+```
+``````
+
+```
+```
+
+async def get_user(self, id: UUID) -> Optional[User]:```
+
+return await self.user_repository.get(id)
+```
+```
 ```
 
 ## Protocol Validation

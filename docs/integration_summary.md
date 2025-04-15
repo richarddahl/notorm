@@ -78,8 +78,12 @@ The integration between these components follows a well-defined pattern that ens
 ### Complete Roundtrip Flow
 
 ```
-HTTP Request → UnoEndpoint → UnoObj → Schema → UnoModel → UnoDB → Database
-                                                                    ↓
+HTTP Request → UnoEndpoint → UnoObj → Schema → UnoModel → UnoDB → Database```
+```
+
+                                                            ↓
+```
+```
 HTTP Response ← UnoEndpoint ← UnoObj ← Schema ← UnoModel ← UnoDB ←
 ```
 
@@ -136,26 +140,42 @@ When testing this integration, focus on:
 For testing the integration between individual components:
 
 ```python
-class TestUserIntegration(IsolatedAsyncioTestCase):
-    async def test_create_superuser_obj_model_conversion(self):
-        # Create a superuser UnoObj instance
-        superuser = User(
-            email="test@example.com",
-            handle="test",
-            full_name="Test User",
-            is_superuser=True
-        )
-        
-        # Ensure schemas are created
-        superuser._ensure_schemas_created()
-        
-        # Convert to UnoModel using the schema
-        db_model = superuser.to_model(schema_name="edit_schema")
-        
-        # Verify UnoModel instance
-        assert isinstance(db_model, UserModel)
-        assert db_model.email == "test@example.com"
-        assert db_model.is_superuser is True
+class TestUserIntegration(IsolatedAsyncioTestCase):```
+
+async def test_create_superuser_obj_model_conversion(self):```
+
+# Create a superuser UnoObj instance
+superuser = User(
+    email="test@example.com",
+    handle="test",
+    full_name="Test User",
+    is_superuser=True
+)
+``````
+
+```
+```
+
+# Ensure schemas are created
+superuser._ensure_schemas_created()
+``````
+
+```
+```
+
+# Convert to UnoModel using the schema
+db_model = superuser.to_model(schema_name="edit_schema")
+``````
+
+```
+```
+
+# Verify UnoModel instance
+assert isinstance(db_model, UserModel)
+assert db_model.email == "test@example.com"
+assert db_model.is_superuser is True
+```
+```
 ```
 
 ### Endpoint Integration Testing
@@ -163,32 +183,50 @@ class TestUserIntegration(IsolatedAsyncioTestCase):
 For testing endpoint integration with mocks:
 
 ```python
-class TestEndpointIntegration(IsolatedAsyncioTestCase):
-    def setUp(self):
-        # Create FastAPI app and test client
-        self.app = FastAPI()
-        self.client = TestClient(self.app)
-        
-        # Create endpoints for User model
-        factory = UnoEndpointFactory()
-        factory.create_endpoints(
-            app=self.app,
-            model_obj=User,
-            endpoints=["View", "List"]
-        )
-    
-    @patch("uno.authorization.objs.User.get")
-    async def test_view_endpoint(self, mock_get):
-        # Mock the User.get method to return test data
-        user_data = {"id": "123", "email": "test@example.com"}
-        mock_get.return_value = user_data
-        
-        # Make a request to the endpoint
-        response = self.client.get("/api/v1/user/123")
-        
-        # Verify the response
-        assert response.status_code == 200
-        assert response.json() == user_data
+class TestEndpointIntegration(IsolatedAsyncioTestCase):```
+
+def setUp(self):```
+
+# Create FastAPI app and test client
+self.app = FastAPI()
+self.client = TestClient(self.app)
+``````
+
+```
+```
+
+# Create endpoints for User model
+factory = UnoEndpointFactory()
+factory.create_endpoints(
+    app=self.app,
+    model_obj=User,
+    endpoints=["View", "List"]
+)
+```
+``````
+
+```
+```
+
+@patch("uno.authorization.objs.User.get")
+async def test_view_endpoint(self, mock_get):```
+
+# Mock the User.get method to return test data
+user_data = {"id": "123", "email": "test@example.com"}
+mock_get.return_value = user_data
+```
+    ```
+
+# Make a request to the endpoint
+response = self.client.get("/api/v1/user/123")
+```
+    ```
+
+# Verify the response
+assert response.status_code == 200
+assert response.json() == user_data
+```
+```
 ```
 
 ### Concept-Based Integration Testing
@@ -196,29 +234,43 @@ class TestEndpointIntegration(IsolatedAsyncioTestCase):
 When complex component interactions make direct testing challenging, you can use concept-based tests that focus on verifying the integration patterns without being tied to specific implementation details:
 
 ```python
-class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
-    async def test_view_endpoint_concept(self):
-        """
-        Test the concept of the View endpoint.
-        
-        This test demonstrates how data flows through a View endpoint
-        from database to API.
-        """
-        # 1. Client requests an object by ID
-        object_id = "test123"
-        
-        # 2. UnoObj.get() method is called with the ID
-        db_result = await MockUser.get(object_id)
-        
-        # 3. Result is converted to a schema for response
-        response_schema = UserViewSchema(**db_result)
-        
-        # 4. Schema is returned to the client as JSON
-        response_data = response_schema.model_dump()
-        
-        # Verify response
-        assert response_data["id"] == object_id
-        assert response_data["email"] == "test@example.com"
+class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):```
+
+async def test_view_endpoint_concept(self):```
+
+"""
+Test the concept of the View endpoint.
+```
+    ```
+
+This test demonstrates how data flows through a View endpoint
+from database to API.
+"""
+# 1. Client requests an object by ID
+object_id = "test123"
+```
+    ```
+
+# 2. UnoObj.get() method is called with the ID
+db_result = await MockUser.get(object_id)
+```
+    ```
+
+# 3. Result is converted to a schema for response
+response_schema = UserViewSchema(**db_result)
+```
+    ```
+
+# 4. Schema is returned to the client as JSON
+response_data = response_schema.model_dump()
+```
+    ```
+
+# Verify response
+assert response_data["id"] == object_id
+assert response_data["email"] == "test@example.com"
+```
+```
 ```
 
 This approach allows you to verify integration patterns without getting entangled in complex mocking or actual database/network operations. It's especially valuable when:

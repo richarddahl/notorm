@@ -73,13 +73,15 @@ from uno.devtools.profiler.middleware.profiling_middleware import ProfilerMiddle
 app = FastAPI()
 
 # Add profiling middleware
-app.add_middleware(
-    ProfilerMiddleware,
-    enabled=True,  # Only enable in development
-    collect_sql=True,
-    collect_resources=True,
-    slow_request_threshold=1.0,  # 1 second
-    slow_query_threshold=0.5,    # 0.5 seconds
+app.add_middleware(```
+
+ProfilerMiddleware,
+enabled=True,  # Only enable in development
+collect_sql=True,
+collect_resources=True,
+slow_request_threshold=1.0,  # 1 second
+slow_query_threshold=0.5,    # 0.5 seconds
+```
 )
 ```
 
@@ -134,9 +136,11 @@ from uno.devtools.profiler.core.collector import FunctionCollector
 profiler = FunctionCollector()
 
 @profiler.profile_function
-def my_function():
-    # Function code
-    pass
+def my_function():```
+
+# Function code
+pass
+```
 ```
 
 ### Context Manager
@@ -146,9 +150,11 @@ For profiling specific blocks of code:
 ```python
 from uno.devtools.profiling.profiler import Profiler
 
-with Profiler("operation_name") as profiler:
-    # Code to profile
-    result = perform_operation()
+with Profiler("operation_name") as profiler:```
+
+# Code to profile
+result = perform_operation()
+```
 ```
 
 ### Memory Tracking
@@ -158,9 +164,11 @@ For tracking memory usage:
 ```python
 from uno.devtools.profiling.memory import MemoryProfiler
 
-with MemoryProfiler() as profiler:
-    # Code to track memory usage
-    result = process_large_dataset()
+with MemoryProfiler() as profiler:```
+
+# Code to track memory usage
+result = process_large_dataset()
+```
 ```
 
 ## Best Practices

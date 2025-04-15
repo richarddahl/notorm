@@ -39,38 +39,64 @@ For advanced monitoring, implement custom performance logging:
 
 ```python
 # In your workflow service implementation
-async def execute_workflow(workflow_id, context):
-    start_time = time.time()
-    
-    # Record start of condition evaluation
-    condition_start = time.time()
-    condition_result = await evaluate_conditions(workflow_id, context)
-    condition_time = time.time() - condition_start
-    
-    # Record action execution times
-    action_times = []
-    for action in workflow.actions:
-        action_start = time.time()
-        action_result = await execute_action(action, context)
-        action_times.append({
-            "action_id": action.id,
-            "type": action.type,
-            "execution_time": time.time() - action_start
-        })
-    
-    total_time = time.time() - start_time
-    
-    # Log detailed performance metrics
-    metrics.log_workflow_performance(
-        workflow_id=workflow_id,
-        total_execution_time=total_time,
-        condition_evaluation_time=condition_time,
-        action_execution_times=action_times,
-        entity_type=context.entity_type,
-        operation=context.operation
-    )
-    
-    return result
+async def execute_workflow(workflow_id, context):```
+
+start_time = time.time()
+``````
+
+```
+```
+
+# Record start of condition evaluation
+condition_start = time.time()
+condition_result = await evaluate_conditions(workflow_id, context)
+condition_time = time.time() - condition_start
+``````
+
+```
+```
+
+# Record action execution times
+action_times = []
+for action in workflow.actions:```
+
+action_start = time.time()
+action_result = await execute_action(action, context)
+action_times.append({
+    "action_id": action.id,
+    "type": action.type,
+    "execution_time": time.time() - action_start
+})
+```
+``````
+
+```
+```
+
+total_time = time.time() - start_time
+``````
+
+```
+```
+
+# Log detailed performance metrics
+metrics.log_workflow_performance(```
+
+workflow_id=workflow_id,
+total_execution_time=total_time,
+condition_evaluation_time=condition_time,
+action_execution_times=action_times,
+entity_type=context.entity_type,
+operation=context.operation
+```
+)
+``````
+
+```
+```
+
+return result
+```
 ```
 
 ## Optimizing Workflow Triggers
@@ -87,10 +113,12 @@ async def execute_workflow(workflow_id, context):
    - **Bad**: Triggering on any field update
    - **Good**:
    ```json
-   {
-     "entity_type": "order",
-     "operations": ["update"],
-     "field_triggers": ["status", "payment_state"]
+   {```
+
+ "entity_type": "order",
+ "operations": ["update"],
+ "field_triggers": ["status", "payment_state"]
+```
    }
    ```
 
@@ -117,20 +145,24 @@ async def execute_workflow(workflow_id, context):
    - Place most restrictive or fastest conditions first
    - **Bad**:
    ```json
-   {
-     "conditions": [
-       { "type": "complex_database_query", "...": "..." },
-       { "type": "field", "field": "status", "operator": "eq", "value": "active" }
-     ]
+   {```
+
+ "conditions": [
+   { "type": "complex_database_query", "...": "..." },
+   { "type": "field", "field": "status", "operator": "eq", "value": "active" }
+ ]
+```
    }
    ```
    - **Good**:
    ```json
-   {
-     "conditions": [
-       { "type": "field", "field": "status", "operator": "eq", "value": "active" },
-       { "type": "complex_database_query", "...": "..." }
-     ]
+   {```
+
+ "conditions": [
+   { "type": "field", "field": "status", "operator": "eq", "value": "active" },
+   { "type": "complex_database_query", "...": "..." }
+ ]
+```
    }
    ```
 
@@ -155,34 +187,66 @@ async def execute_workflow(workflow_id, context):
    - Use time-based or entity-based cache invalidation
 
 ```python
-class CachedConditionEvaluator(ConditionEvaluatorBase):
-    """Condition evaluator with result caching."""
+class CachedConditionEvaluator(ConditionEvaluatorBase):```
+
+"""Condition evaluator with result caching."""
+``````
+
+```
+```
+
+def __init__(self):```
+
+self.cache = {}
+self.cache_ttl = 60  # seconds
+```
+``````
+
+```
+```
+
+async def evaluate(self, condition, context):```
+
+# Create a cache key from condition and relevant context data
+cache_key = self._create_cache_key(condition, context)
+``````
+
+```
+```
+
+# Check cache first
+cached_result = self._get_cached_result(cache_key)
+if cached_result is not None:
+    return cached_result
+``````
+
+```
+```
+
+# Evaluate condition if not in cache
+result = await self._evaluate_condition(condition, context)
+``````
+
+```
+```
+
+# Store in cache
+self._cache_result(cache_key, result)
+``````
+
+```
+```
+
+return result
+```
     
-    def __init__(self):
-        self.cache = {}
-        self.cache_ttl = 60  # seconds
-    
-    async def evaluate(self, condition, context):
-        # Create a cache key from condition and relevant context data
-        cache_key = self._create_cache_key(condition, context)
-        
-        # Check cache first
-        cached_result = self._get_cached_result(cache_key)
-        if cached_result is not None:
-            return cached_result
-        
-        # Evaluate condition if not in cache
-        result = await self._evaluate_condition(condition, context)
-        
-        # Store in cache
-        self._cache_result(cache_key, result)
-        
-        return result
-        
-    def _create_cache_key(self, condition, context):
-        # Create a cache key based on condition and entity data
-        # Include only fields that affect the condition
-        # ...
+def _create_cache_key(self, condition, context):```
+
+# Create a cache key based on condition and entity data
+# Include only fields that affect the condition
+# ...
+```
+```
 ```
 
 ## Optimizing Action Execution
@@ -210,11 +274,13 @@ class CachedConditionEvaluator(ConditionEvaluatorBase):
    - Configure independent actions to execute in parallel
    - Use the `"execution_strategy"` setting:
    ```json
-   {
-     "workflow_settings": {
-       "action_execution_strategy": "parallel",
-       "max_parallel_actions": 5
-     }
+   {```
+
+ "workflow_settings": {
+   "action_execution_strategy": "parallel",
+   "max_parallel_actions": 5
+ }
+```
    }
    ```
 
@@ -224,25 +290,27 @@ class CachedConditionEvaluator(ConditionEvaluatorBase):
 
 ```json
 {
-  "actions": [
-    {
-      "id": "action1",
-      "type": "database",
-      "operation": "query",
-      "result_variable": "data"
-    },
-    {
-      "id": "action2",
-      "type": "notification",
-      "dependencies": ["action1"],
-      "body": "Results: {{data.length}} items found"
-    },
-    {
-      "id": "action3",
-      "type": "webhook",
-      "dependencies": ["action1"],
-      "body": {"result_count": "{{data.length}}"}
-    }
+  "actions": [```
+
+{
+  "id": "action1",
+  "type": "database",
+  "operation": "query",
+  "result_variable": "data"
+},
+{
+  "id": "action2",
+  "type": "notification",
+  "dependencies": ["action1"],
+  "body": "Results: {{data.length}} items found"
+},
+{
+  "id": "action3",
+  "type": "webhook",
+  "dependencies": ["action1"],
+  "body": {"result_count": "{{data.length}}"}
+}
+```
   ]
 }
 ```
@@ -304,27 +372,55 @@ class CachedConditionEvaluator(ConditionEvaluatorBase):
    - Cache compiled templates for reuse
 
 ```python
-class OptimizedTemplateRenderer:
-    """Renderer with template compilation caching."""
-    
-    def __init__(self):
-        self.template_cache = {}
-    
-    def render(self, template_string, context):
-        # Get compiled template from cache or compile new
-        compiled_template = self._get_compiled_template(template_string)
-        
-        # Render with context
-        return compiled_template.render(context)
-    
-    def _get_compiled_template(self, template_string):
-        if template_string in self.template_cache:
-            return self.template_cache[template_string]
-        
-        # Compile template
-        compiled = self.environment.from_string(template_string)
-        self.template_cache[template_string] = compiled
-        return compiled
+class OptimizedTemplateRenderer:```
+
+"""Renderer with template compilation caching."""
+``````
+
+```
+```
+
+def __init__(self):```
+
+self.template_cache = {}
+```
+``````
+
+```
+```
+
+def render(self, template_string, context):```
+
+# Get compiled template from cache or compile new
+compiled_template = self._get_compiled_template(template_string)
+``````
+
+```
+```
+
+# Render with context
+return compiled_template.render(context)
+```
+``````
+
+```
+```
+
+def _get_compiled_template(self, template_string):```
+
+if template_string in self.template_cache:
+    return self.template_cache[template_string]
+``````
+
+```
+```
+
+# Compile template
+compiled = self.environment.from_string(template_string)
+self.template_cache[template_string] = compiled
+return compiled
+```
+```
 ```
 
 ### Reduce Template Context Size
@@ -379,40 +475,72 @@ For entities with very high update frequency (e.g., IoT data, stock prices):
    - Use time-based triggers instead of per-update triggers
 
 ```python
-class SampledEventProcessor:
-    """Process only a sample of high-frequency events."""
+class SampledEventProcessor:```
+
+"""Process only a sample of high-frequency events."""
+``````
+
+```
+```
+
+def __init__(self, sampling_rate=0.1, min_interval_seconds=60):```
+
+self.sampling_rate = sampling_rate
+self.min_interval_seconds = min_interval_seconds
+self.last_processed = {}
+```
+``````
+
+```
+```
+
+def should_process(self, entity_id, entity_type):```
+
+current_time = time.time()
+``````
+
+```
+```
+
+# Check if we've processed this entity recently
+key = f"{entity_type}:{entity_id}"
+last_time = self.last_processed.get(key, 0)
+``````
+
+```
+```
+
+# Enforce minimum interval
+if current_time - last_time < self.min_interval_seconds:
+    # If change is significant, process anyway
+    if self._is_significant_change(entity_id, entity_type):
+        self.last_processed[key] = current_time
+        return True
+    return False
+``````
+
+```
+```
+
+# Random sampling for high-frequency entities
+if random.random() <= self.sampling_rate:
+    self.last_processed[key] = current_time
+    return True
     
-    def __init__(self, sampling_rate=0.1, min_interval_seconds=60):
-        self.sampling_rate = sampling_rate
-        self.min_interval_seconds = min_interval_seconds
-        self.last_processed = {}
-    
-    def should_process(self, entity_id, entity_type):
-        current_time = time.time()
-        
-        # Check if we've processed this entity recently
-        key = f"{entity_type}:{entity_id}"
-        last_time = self.last_processed.get(key, 0)
-        
-        # Enforce minimum interval
-        if current_time - last_time < self.min_interval_seconds:
-            # If change is significant, process anyway
-            if self._is_significant_change(entity_id, entity_type):
-                self.last_processed[key] = current_time
-                return True
-            return False
-        
-        # Random sampling for high-frequency entities
-        if random.random() <= self.sampling_rate:
-            self.last_processed[key] = current_time
-            return True
-            
-        return False
-    
-    def _is_significant_change(self, entity_id, entity_type):
-        # Custom logic to detect significant changes
-        # that should be processed regardless of sampling
-        # ...
+return False
+```
+``````
+
+```
+```
+
+def _is_significant_change(self, entity_id, entity_type):```
+
+# Custom logic to detect significant changes
+# that should be processed regardless of sampling
+# ...
+```
+```
 ```
 
 ### Batch Processing
@@ -488,58 +616,104 @@ class SampledEventProcessor:
 Implement optimized action executors for performance-critical actions:
 
 ```python
-class OptimizedNotificationExecutor(ActionExecutorBase):
-    """Performance-optimized notification executor with batching."""
+class OptimizedNotificationExecutor(ActionExecutorBase):```
+
+"""Performance-optimized notification executor with batching."""
+``````
+
+```
+```
+
+def __init__(self, batch_size=100, max_delay_ms=500):```
+
+self.batch_size = batch_size
+self.max_delay_ms = max_delay_ms
+self.pending_notifications = []
+self.batch_lock = asyncio.Lock()
+self.batch_task = None
+```
+``````
+
+```
+```
+
+async def execute(self, action, context):```
+
+# Extract notification details
+notification = self._create_notification(action, context)
+``````
+
+```
+```
+
+# For high-priority notifications, send immediately
+if notification.priority == "high":
+    return await self._send_notification_immediately(notification)
+``````
+
+```
+```
+
+# For normal priority, consider batching
+async with self.batch_lock:
+    self.pending_notifications.append(notification)
     
-    def __init__(self, batch_size=100, max_delay_ms=500):
-        self.batch_size = batch_size
-        self.max_delay_ms = max_delay_ms
-        self.pending_notifications = []
-        self.batch_lock = asyncio.Lock()
-        self.batch_task = None
-    
-    async def execute(self, action, context):
-        # Extract notification details
-        notification = self._create_notification(action, context)
-        
-        # For high-priority notifications, send immediately
-        if notification.priority == "high":
-            return await self._send_notification_immediately(notification)
-        
-        # For normal priority, consider batching
-        async with self.batch_lock:
-            self.pending_notifications.append(notification)
-            
-            # If batch is full, process immediately
-            if len(self.pending_notifications) >= self.batch_size:
-                await self._process_batch()
-            elif self.batch_task is None:
-                # Schedule delayed batch processing
-                self.batch_task = asyncio.create_task(self._schedule_batch())
-        
-        return {"status": "queued", "batch_id": notification.batch_id}
-    
-    async def _schedule_batch(self):
-        await asyncio.sleep(self.max_delay_ms / 1000)
-        async with self.batch_lock:
-            await self._process_batch()
-            self.batch_task = None
-    
-    async def _process_batch(self):
-        # Group notifications by recipient for efficiency
-        recipient_groups = {}
-        for notification in self.pending_notifications:
-            for recipient in notification.recipients:
-                if recipient not in recipient_groups:
-                    recipient_groups[recipient] = []
-                recipient_groups[recipient].append(notification)
-        
-        # Send batched notifications to each recipient
-        for recipient, notifications in recipient_groups.items():
-            await self._send_batched_notifications(recipient, notifications)
-        
-        # Clear the batch
-        self.pending_notifications = []
+    # If batch is full, process immediately
+    if len(self.pending_notifications) >= self.batch_size:
+        await self._process_batch()
+    elif self.batch_task is None:
+        # Schedule delayed batch processing
+        self.batch_task = asyncio.create_task(self._schedule_batch())
+``````
+
+```
+```
+
+return {"status": "queued", "batch_id": notification.batch_id}
+```
+``````
+
+```
+```
+
+async def _schedule_batch(self):```
+
+await asyncio.sleep(self.max_delay_ms / 1000)
+async with self.batch_lock:
+    await self._process_batch()
+    self.batch_task = None
+```
+``````
+
+```
+```
+
+async def _process_batch(self):```
+
+# Group notifications by recipient for efficiency
+recipient_groups = {}
+for notification in self.pending_notifications:
+    for recipient in notification.recipients:
+        if recipient not in recipient_groups:
+            recipient_groups[recipient] = []
+        recipient_groups[recipient].append(notification)
+``````
+
+```
+```
+
+# Send batched notifications to each recipient
+for recipient, notifications in recipient_groups.items():
+    await self._send_batched_notifications(recipient, notifications)
+``````
+
+```
+```
+
+# Clear the batch
+self.pending_notifications = []
+```
+```
 ```
 
 ### Memory Usage Optimization
@@ -547,54 +721,98 @@ class OptimizedNotificationExecutor(ActionExecutorBase):
 Optimize memory usage for resource-intensive workflows:
 
 ```python
-class MemoryOptimizedWorkflowService:
-    """Memory-optimized workflow service implementation."""
+class MemoryOptimizedWorkflowService:```
+
+"""Memory-optimized workflow service implementation."""
+``````
+
+```
+```
+
+async def execute_workflow(self, workflow_id, context):```
+
+# Load workflow definition with minimal data
+workflow = await self._load_workflow_minimal(workflow_id)
+``````
+
+```
+```
+
+# Only load necessary entity data
+entity_data = await self._load_entity_data_selective(
+    context.entity_id, 
+    context.entity_type,
+    self._get_required_fields(workflow)
+)
+``````
+
+```
+```
+
+# Update context with selective data
+context.entity_data = entity_data
+``````
+
+```
+```
+
+# Stream processing for large datasets
+if self._is_large_dataset_workflow(workflow):
+    return await self._execute_workflow_streamed(workflow, context)
+``````
+
+```
+```
+
+# Normal execution for standard workflows
+return await self._execute_workflow_standard(workflow, context)
+```
+``````
+
+```
+```
+
+def _get_required_fields(self, workflow):```
+
+"""Extract only the entity fields needed by this workflow."""
+required_fields = set()
+``````
+
+```
+```
+
+# Analyze conditions for field dependencies
+for condition in workflow.conditions:
+    if condition.type == "field":
+        required_fields.add(condition.field)
+``````
+
+```
+```
+
+# Analyze actions for field dependencies
+for action in workflow.actions:
+    # Parse template fields from various action properties
+    if hasattr(action, "body"):
+        template_fields = self._extract_template_fields(action.body)
+        required_fields.update(template_fields)
     
-    async def execute_workflow(self, workflow_id, context):
-        # Load workflow definition with minimal data
-        workflow = await self._load_workflow_minimal(workflow_id)
-        
-        # Only load necessary entity data
-        entity_data = await self._load_entity_data_selective(
-            context.entity_id, 
-            context.entity_type,
-            self._get_required_fields(workflow)
-        )
-        
-        # Update context with selective data
-        context.entity_data = entity_data
-        
-        # Stream processing for large datasets
-        if self._is_large_dataset_workflow(workflow):
-            return await self._execute_workflow_streamed(workflow, context)
-        
-        # Normal execution for standard workflows
-        return await self._execute_workflow_standard(workflow, context)
+    # Add more action-specific field extraction...
     
-    def _get_required_fields(self, workflow):
-        """Extract only the entity fields needed by this workflow."""
-        required_fields = set()
-        
-        # Analyze conditions for field dependencies
-        for condition in workflow.conditions:
-            if condition.type == "field":
-                required_fields.add(condition.field)
-        
-        # Analyze actions for field dependencies
-        for action in workflow.actions:
-            # Parse template fields from various action properties
-            if hasattr(action, "body"):
-                template_fields = self._extract_template_fields(action.body)
-                required_fields.update(template_fields)
-            
-            # Add more action-specific field extraction...
-            
-        return list(required_fields)
-    
-    async def _execute_workflow_streamed(self, workflow, context):
-        """Stream processing for workflows with large data requirements."""
-        # Implementation for processing large datasets in chunks
-        # ...
+return list(required_fields)
+```
+``````
+
+```
+```
+
+async def _execute_workflow_streamed(self, workflow, context):```
+
+"""Stream processing for workflows with large data requirements."""
+# Implementation for processing large datasets in chunks
+# ...
+```
+```
 ```
 
 ## Case Study: Scaling to 1 Million Daily Executions
@@ -647,6 +865,8 @@ Remember that the optimal performance strategy depends on your specific requirem
 
 ## Additional Resources
 
-- [Advanced Workflow Patterns](/docs/workflows/advanced-patterns.md): Sophisticated workflow techniques
-- [Troubleshooting Guide](/docs/workflows/troubleshooting.md): Diagnose and fix workflow issues
-- [API Reference](/docs/api/workflows.md): Complete API documentation
+<!-- TODO: Create advanced patterns documentation -->
+<!-- - [Advanced Workflow Patterns](advanced-patterns.md): Sophisticated workflow techniques -->
+- [Troubleshooting Guide](troubleshooting.md): Diagnose and fix workflow issues
+<!-- TODO: Create API documentation -->
+<!-- - [API Reference](/docs/api/workflows.md): Complete API documentation -->

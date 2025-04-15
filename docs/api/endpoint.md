@@ -35,15 +35,19 @@ from fastapi import FastAPI
 app = FastAPI()
 
 # Create a view endpoint for a Customer model
-view_endpoint = ViewEndpoint(
-    model=Customer,
-    app=app
+view_endpoint = ViewEndpoint(```
+
+model=Customer,
+app=app
+```
 )
 
 # Create a list endpoint for a Customer model
-list_endpoint = ListEndpoint(
-    model=Customer,
-    app=app
+list_endpoint = ListEndpoint(```
+
+model=Customer,
+app=app
+```
 )
 ```
 
@@ -56,22 +60,28 @@ from uno.api.endpoint import CreateEndpoint
 from fastapi import FastAPI, Depends
 
 # Function for authorization
-def get_current_user():
-    # Implementation...
-    return {"id": "user123"}
+def get_current_user():```
+
+# Implementation...
+return {"id": "user123"}
+```
 
 # Create a FastAPI app
 app = FastAPI()
 
 # Create an endpoint with custom configuration
-create_endpoint = CreateEndpoint(
-    model=Customer,
-    app=app,
-    path="/api/customers",  # Custom path
-    tags=["customers"],     # OpenAPI tags
-    dependencies=[Depends(get_current_user)],  # FastAPI dependencies
-    response_model_exclude={"password"},  # Fields to exclude from response
-    status_code=201  # Custom status code
+create_endpoint = CreateEndpoint(```
+
+model=Customer,
+app=app
+```,```
+
+path="/api/customers",  # Custom path
+tags=["customers"],     # OpenAPI tags
+dependencies=[Depends(get_current_user)],  # FastAPI dependencies
+response_model_exclude={"password"},  # Fields to exclude from response
+status_code=201  # Custom status code
+```
 )
 ```
 
@@ -83,35 +93,53 @@ You can create custom endpoint classes by inheriting from `UnoEndpoint`:
 from uno.api.endpoint import UnoEndpoint
 from fastapi import FastAPI, Request, Response
 
-class ExportEndpoint(UnoEndpoint):
-    """Custom endpoint for exporting data."""
+class ExportEndpoint(UnoEndpoint):```
+
+"""Custom endpoint for exporting data."""
+``````
+
+```
+```
+
+def __init__(self, model, app, **kwargs):```
+
+super().__init__(model, app, **kwargs)
+``````
+
+```
+```
+
+# Register the endpoint
+@app.get(f"/api/v1/{self.model_name}/export", tags=self.tags)
+async def export():
+    """Export all data as CSV."""
+    # Implementation...
+    data = await self.model.filter(limit=1000)
     
-    def __init__(self, model, app, **kwargs):
-        super().__init__(model, app, **kwargs)
-        
-        # Register the endpoint
-        @app.get(f"/api/v1/{self.model_name}/export", tags=self.tags)
-        async def export():
-            """Export all data as CSV."""
-            # Implementation...
-            data = await self.model.filter(limit=1000)
-            
-            # Convert to CSV
-            csv_data = self.to_csv(data)
-            
-            # Return as file download
-            return Response(
-                content=csv_data,
-                media_type="text/csv",
-                headers={"Content-Disposition": f"attachment; filename={self.model_name}.csv"}
-            )
+    # Convert to CSV
+    csv_data = self.to_csv(data)
     
-    def to_csv(self, data):
-        """Convert data to CSV format."""
-        # Implementation...
-        return "id,name,email\n" + "\n".join(
-            [f"{item.id},{item.name},{item.email}" for item in data]
-        )
+    # Return as file download
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={self.model_name}.csv"}
+    )
+```
+``````
+
+```
+```
+
+def to_csv(self, data):```
+
+"""Convert data to CSV format."""
+# Implementation...
+return "id,name,email\n" + "\n".join(
+    [f"{item.id},{item.name},{item.email}" for item in data]
+)
+```
+```
 ```
 
 ## Error Handling
@@ -122,30 +150,48 @@ Endpoints include standardized error handling:
 from uno.api.endpoint import UnoEndpoint
 from fastapi import HTTPException, Request
 
-class CustomEndpoint(UnoEndpoint):
-    """Custom endpoint with error handling."""
-    
-    def __init__(self, model, app, **kwargs):
-        super().__init__(model, app, **kwargs)
-        
-        @app.get(f"/api/v1/{self.model_name}/custom")
-        async def custom_endpoint(request: Request):
-            try:
-                # Implementation...
-                result = await self.perform_operation()
-                return result
-            except ValueError as e:
-                # Handle validation errors
-                raise HTTPException(status_code=400, detail=str(e))
-            except Exception as e:
-                # Handle other errors
-                self.logger.error(f"Error in custom endpoint: {str(e)}")
-                raise HTTPException(status_code=500, detail="Internal server error")
-    
-    async def perform_operation(self):
-        """Perform the custom operation."""
+class CustomEndpoint(UnoEndpoint):```
+
+"""Custom endpoint with error handling."""
+``````
+
+```
+```
+
+def __init__(self, model, app, **kwargs):```
+
+super().__init__(model, app, **kwargs)
+``````
+
+```
+```
+
+@app.get(f"/api/v1/{self.model_name}/custom")
+async def custom_endpoint(request: Request):
+    try:
         # Implementation...
-        return {"status": "success"}
+        result = await self.perform_operation()
+        return result
+    except ValueError as e:
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Handle other errors
+        self.logger.error(f"Error in custom endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+```
+``````
+
+```
+```
+
+async def perform_operation(self):```
+
+"""Perform the custom operation."""
+# Implementation...
+return {"status": "success"}
+```
+```
 ```
 
 ## Best Practices

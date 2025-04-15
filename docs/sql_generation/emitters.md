@@ -15,18 +15,22 @@ factory = get_sql_emitter_factory()
 executor = get_sql_execution_service()
 
 # Create an emitter using the factory
-function_emitter = factory.create_emitter_instance(
-    FunctionEmitter,
-    name="update_timestamp",
-    params=[],
-    return_type="TRIGGER",
-    body="""
-    BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-    END;
-    """,
-    language="plpgsql"
+function_emitter = factory.create_emitter_instance(```
+
+FunctionEmitter,
+name="update_timestamp",
+params=[],
+return_type="TRIGGER",
+body="""
+BEGIN```
+
+NEW.updated_at = NOW();
+RETURN NEW;
+```
+END;
+""",
+language="plpgsql"
+```
 )
 
 # Execute it with the execution service
@@ -44,8 +48,10 @@ from uno.dependencies import get_sql_emitter_factory, get_db_manager
 emitter_factory = get_sql_emitter_factory()
 
 # Create an emitter by name
-emitter = emitter_factory.get_emitter(
-    "create_pgulid"  # Pre-registered emitter
+emitter = emitter_factory.get_emitter(```
+
+"create_pgulid"  # Pre-registered emitter
+```
 )
 
 # Execute the emitter
@@ -65,10 +71,12 @@ sql_execution = get_sql_execution_service()
 
 # Execute DDL directly
 sql_execution.execute_ddl("""
-CREATE TABLE test (
-    id SERIAL PRIMARY KEY,
-    name TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE test (```
+
+id SERIAL PRIMARY KEY,
+name TEXT,
+created_at TIMESTAMP DEFAULT NOW()
+```
 );
 """)
 ```
@@ -81,18 +89,26 @@ The SQLEmitter class is the foundation for all SQL emitters. It provides common 
 from uno.sql.emitter import SQLEmitter
 from uno.sql.statement import SQLStatement, SQLStatementType
 
-class CustomEmitter(SQLEmitter):
-    """Custom SQL emitter for a specific purpose."""
-    
-    def generate_sql(self):
-        """Generate SQL statements."""
-        return [
-            SQLStatement(
-                name="custom_statement",
-                type=SQLStatementType.TABLE,
-                sql="CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT)"
-            )
-        ]
+class CustomEmitter(SQLEmitter):```
+
+"""Custom SQL emitter for a specific purpose."""
+``````
+
+```
+```
+
+def generate_sql(self):```
+
+"""Generate SQL statements."""
+return [
+    SQLStatement(
+        name="custom_statement",
+        type=SQLStatementType.TABLE,
+        sql="CREATE TABLE example (id SERIAL PRIMARY KEY, name TEXT)"
+    )
+]
+```
+```
 ```
 
 ## Table Emitter
@@ -105,20 +121,28 @@ from uno.model import UnoModel, PostgresTypes
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Define a model
-class CustomerModel(UnoModel):
-    __tablename__ = "customer"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
-    name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+class CustomerModel(UnoModel):```
+
+__tablename__ = "customer"
+``````
+
+```
+```
+
+id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
+name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+```
 
 # Create a table emitter
 emitter = TableEmitter(model=CustomerModel)
 
 # Generate SQL for the table
 statements = emitter.generate_sql()
-for statement in statements:
-    print(f"{statement.name}: {statement.sql}")
+for statement in statements:```
+
+print(f"{statement.name}: {statement.sql}")
+```
 ```
 
 The generated SQL will include:
@@ -137,9 +161,11 @@ The `FunctionEmitter` generates SQL for creating database functions:
 from uno.sql.builders.function import FunctionEmitter
 
 # Define function parameters
-params = [
-    {"name": "customer_id", "type": "TEXT"},
-    {"name": "new_status", "type": "TEXT"}
+params = [```
+
+{"name": "customer_id", "type": "TEXT"},
+{"name": "new_status", "type": "TEXT"}
+```
 ]
 
 # Define function body
@@ -151,18 +177,22 @@ RETURN 1;
 """
 
 # Create a function emitter
-emitter = FunctionEmitter(
-    name="update_customer_status",
-    params=params,
-    return_type="INTEGER",
-    body=body,
-    language="plpgsql"
+emitter = FunctionEmitter(```
+
+name="update_customer_status",
+params=params,
+return_type="INTEGER",
+body=body,
+language="plpgsql"
+```
 )
 
 # Generate SQL for the function
 statements = emitter.generate_sql()
-for statement in statements:
-    print(f"{statement.name}: {statement.sql}")
+for statement in statements:```
+
+print(f"{statement.name}: {statement.sql}")
+```
 ```
 
 ## Trigger Emitter
@@ -173,19 +203,23 @@ The `TriggerEmitter` generates SQL for creating database triggers:
 from uno.sql.builders.trigger import TriggerEmitter
 
 # Create a trigger emitter
-emitter = TriggerEmitter(
-    name="customer_update_trigger",
-    table="customer",
-    events=["INSERT", "UPDATE"],
-    timing="AFTER",
-    function="log_customer_changes",
-    for_each="ROW"
+emitter = TriggerEmitter(```
+
+name="customer_update_trigger",
+table="customer",
+events=["INSERT", "UPDATE"],
+timing="AFTER",
+function="log_customer_changes",
+for_each="ROW"
+```
 )
 
 # Generate SQL for the trigger
 statements = emitter.generate_sql()
-for statement in statements:
-    print(f"{statement.name}: {statement.sql}")
+for statement in statements:```
+
+print(f"{statement.name}: {statement.sql}")
+```
 ```
 
 ## Security Emitter
@@ -196,17 +230,21 @@ The `SecurityEmitter` generates SQL for security-related operations, such as row
 from uno.sql.emitters.security import SecurityEmitter
 
 # Create a security emitter
-emitter = SecurityEmitter(
-    table="customer",
-    policy_name="customer_access_policy",
-    using_expr="(user_id = current_user_id())",
-    check_expr="(user_id = current_user_id())"
+emitter = SecurityEmitter(```
+
+table="customer",
+policy_name="customer_access_policy",
+using_expr="(user_id = current_user_id())",
+check_expr="(user_id = current_user_id())"
+```
 )
 
 # Generate SQL for the security policy
 statements = emitter.generate_sql()
-for statement in statements:
-    print(f"{statement.name}: {statement.sql}")
+for statement in statements:```
+
+print(f"{statement.name}: {statement.sql}")
+```
 ```
 
 ## Grants Emitter
@@ -217,16 +255,20 @@ The `GrantsEmitter` generates SQL for granting permissions:
 from uno.sql.emitters.grants import GrantsEmitter
 
 # Create a grants emitter
-emitter = GrantsEmitter(
-    table="customer",
-    privileges=["SELECT", "INSERT", "UPDATE"],
-    roles=["app_user", "app_admin"]
+emitter = GrantsEmitter(```
+
+table="customer",
+privileges=["SELECT", "INSERT", "UPDATE"],
+roles=["app_user", "app_admin"]
+```
 )
 
 # Generate SQL for granting permissions
 statements = emitter.generate_sql()
-for statement in statements:
-    print(f"{statement.name}: {statement.sql}")
+for statement in statements:```
+
+print(f"{statement.name}: {statement.sql}")
+```
 ```
 
 ## Using Emitters Together
@@ -250,26 +292,34 @@ executor = get_sql_execution_service()
 # Create emitters using the factory
 table_emitter = factory.create_emitter_instance(TableEmitter, model=CustomerModel)
 
-function_emitter = factory.create_emitter_instance(
-    FunctionEmitter,
-    name="update_customer_status",
-    params=[
-        {"name": "customer_id", "type": "TEXT"},
-        {"name": "new_status", "type": "TEXT"}
-    ],
-    return_type="INTEGER",
-    body="UPDATE customer SET status = new_status WHERE id = customer_id; RETURN 1;",
-    language="plpgsql"
+function_emitter = factory.create_emitter_instance(```
+
+FunctionEmitter,
+name="update_customer_status",
+params=[```
+
+{"name": "customer_id", "type": "TEXT"},
+{"name": "new_status", "type": "TEXT"}
+```
+],
+return_type="INTEGER",
+body="UPDATE customer SET status = new_status WHERE id = customer_id; RETURN 1;",
+language="plpgsql"
+```
 )
 
-trigger_emitter = factory.create_emitter_instance(
-    TriggerEmitter,
-    name="customer_update_trigger",
-    table="customer",
-    events=["INSERT", "UPDATE"],
-    timing="AFTER",
-    function="log_customer_changes",
-    for_each="ROW"
+trigger_emitter = factory.create_emitter_instance(```
+
+TriggerEmitter,```
+```
+
+name="customer_update_trigger",
+table="customer",
+events=["INSERT", "UPDATE"],
+timing="AFTER",
+function="log_customer_changes",
+for_each="ROW"
+```
 )
 
 # Execute them in sequence
@@ -283,15 +333,19 @@ factory.register_emitter("customer_function", lambda: FunctionEmitter(...))
 factory.register_emitter("customer_trigger", lambda: TriggerEmitter(...))
 
 # And then create and execute them by name
-emitters = [
-    factory.get_emitter("customer_table"),
-    factory.get_emitter("customer_function"),
-    factory.get_emitter("customer_trigger")
+emitters = [```
+
+factory.get_emitter("customer_table"),
+factory.get_emitter("customer_function"),
+factory.get_emitter("customer_trigger")
+```
 ]
 
 # Execute all emitters in a batch
-for emitter in emitters:
-    executor.execute_emitter(emitter)
+for emitter in emitters:```
+
+executor.execute_emitter(emitter)
+```
 ```
 
 ## Table Merge Function Emitter

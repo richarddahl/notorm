@@ -36,6 +36,81 @@ class VectorSearchResult(BaseModel):
     similarity: float
     entity: Optional[Any] = None
     metadata: Dict[str, Any] = {}
+    
+    def get_metadata_value(self, key: str, default: Any = None) -> Any:
+        """
+        Get a value from metadata with default fallback.
+        
+        Args:
+            key: Metadata key to retrieve
+            default: Default value if key is not found
+            
+        Returns:
+            Value from metadata or default
+        """
+        return self.metadata.get(key, default)
+
+
+class TypedVectorSearchResult(Generic[T]):
+    """
+    Typed wrapper for vector search results.
+    
+    This class provides a generic wrapper for vector search results,
+    allowing results to be typed to a specific model type.
+    """
+    
+    def __init__(
+        self,
+        id: str,
+        entity: T,
+        similarity: float,
+        metadata: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Initialize the typed vector search result.
+        
+        Args:
+            id: Entity ID
+            entity: Typed entity object
+            similarity: Similarity score (0-1 where 1 is most similar)
+            metadata: Additional metadata about the search result
+        """
+        self.id = id
+        self.entity = entity
+        self.similarity = similarity
+        self.metadata = metadata or {}
+    
+    def get_metadata_value(self, key: str, default: Any = None) -> Any:
+        """
+        Get a value from metadata with default fallback.
+        
+        Args:
+            key: Metadata key to retrieve
+            default: Default value if key is not found
+            
+        Returns:
+            Value from metadata or default
+        """
+        return self.metadata.get(key, default)
+    
+    @classmethod
+    def from_result(cls, result: VectorSearchResult, entity: T) -> 'TypedVectorSearchResult[T]':
+        """
+        Create a typed result from a regular search result.
+        
+        Args:
+            result: Regular vector search result
+            entity: Typed entity object
+            
+        Returns:
+            Typed vector search result
+        """
+        return cls(
+            id=result.id,
+            entity=entity,
+            similarity=result.similarity,
+            metadata=result.metadata
+        )
 
 
 class VectorQuery(BaseModel):
@@ -251,6 +326,197 @@ class VectorSearchService(Generic[T]):
         except Exception as e:
             self.logger.error(f"Embedding generation error: {e}")
             raise
+            
+    async def search_typed(
+        self, 
+        query: Union[VectorQuery, HybridQuery]
+    ) -> TypedVectorSearchResponse[T]:
+        """
+        Perform a vector search with typed results.
+        
+        This method performs a vector search and returns the results wrapped
+        in a typed response container for better type safety and utility.
+        
+        Args:
+            query: Vector query or hybrid query parameters
+            
+        Returns:
+            Typed response container with strongly-typed entity objects
+        """
+        import time
+        start_time = time.time()
+        
+        # Execute the appropriate search based on query type
+        if isinstance(query, HybridQuery):
+            results = await self.hybrid_search(query)
+        else:
+            results = await self.search(query)
+        
+        # Calculate execution time
+        execution_time_ms = (time.time() - start_time) * 1000
+        
+        # Define an entity loader function for lazy loading
+        async def entity_loader(entity_id: str) -> Optional[T]:
+            if self.repository:
+                return await self.repository.get(entity_id)
+            return None
+        
+        # Create typed results
+        typed_results = []
+        for result in results:
+            # Use existing entity if available, otherwise it will be None
+            entity = result.entity
+            if entity:
+                typed_result = TypedVectorSearchResult(
+                    id=result.id,
+                    entity=entity,
+                    similarity=result.similarity,
+                    metadata=result.metadata
+                )
+                typed_results.append(typed_result)
+        
+        # Create response container
+        return TypedVectorSearchResponse(
+            results=typed_results,
+            query=query.query_text,
+            total_found=len(results),
+            execution_time_ms=execution_time_ms,
+            metadata={"query_type": type(query).__name__}
+        )
+
+
+class TypedVectorSearchResponse(Generic[T]):
+    """
+    Typed response container for vector search results.
+    
+    This class provides a generic container for vector search results,
+    with typed entity objects for better type safety.
+    """
+    
+    def __init__(
+        self,
+        results: List[TypedVectorSearchResult[T]],
+        query: str,
+        total_found: int,
+        execution_time_ms: float = 0.0,
+        metadata: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Initialize the typed vector search response.
+        
+        Args:
+            results: List of typed search results
+            query: Original search query
+            total_found: Total number of matching results
+            execution_time_ms: Execution time in milliseconds
+            metadata: Additional metadata about the search
+        """
+        self.results = results
+        self.query = query
+        self.total_found = total_found
+        self.execution_time_ms = execution_time_ms
+        self.metadata = metadata or {}
+    
+    def get_best_match(self) -> Optional[TypedVectorSearchResult[T]]:
+        """
+        Get the highest-scoring result.
+        
+        Returns:
+            Highest-scoring result or None if no results
+        """
+        if not self.results:
+            return None
+        return max(self.results, key=lambda x: x.similarity)
+    
+    def get_result_by_id(self, id: str) -> Optional[TypedVectorSearchResult[T]]:
+        """
+        Find a result by its ID.
+        
+        Args:
+            id: Result ID to find
+            
+        Returns:
+            Matching result or None if not found
+        """
+        for result in self.results:
+            if result.id == id:
+                return result
+        return None
+    
+    def filter_by_similarity(self, min_similarity: float) -> List[TypedVectorSearchResult[T]]:
+        """
+        Filter results by minimum similarity score.
+        
+        Args:
+            min_similarity: Minimum similarity threshold
+            
+        Returns:
+            List of results with similarity >= min_similarity
+        """
+        return [r for r in self.results if r.similarity >= min_similarity]
+    
+    def filter_by_metadata(self, key: str, value: Any) -> List[TypedVectorSearchResult[T]]:
+        """
+        Filter results by metadata value.
+        
+        Args:
+            key: Metadata key to check
+            value: Value to match
+            
+        Returns:
+            List of results with matching metadata
+        """
+        return [r for r in self.results if r.get_metadata_value(key) == value]
+    
+    def get_entities(self) -> List[T]:
+        """
+        Get all typed entities from results.
+        
+        Returns:
+            List of typed entities
+        """
+        return [r.entity for r in self.results]
+    
+    @classmethod
+    def from_results(
+        cls,
+        results: List[VectorSearchResult],
+        query: str,
+        entity_loader: callable,
+        total_found: Optional[int] = None,
+        execution_time_ms: float = 0.0,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> 'TypedVectorSearchResponse[T]':
+        """
+        Create a typed response from regular search results.
+        
+        Args:
+            results: List of regular search results
+            query: Original search query
+            entity_loader: Function to load entity by ID
+            total_found: Total number of matching results
+            execution_time_ms: Execution time in milliseconds
+            metadata: Additional metadata about the search
+            
+        Returns:
+            Typed vector search response
+        """
+        typed_results = []
+        
+        for result in results:
+            # Use existing entity if available, otherwise load it
+            entity = result.entity or entity_loader(result.id)
+            if entity:
+                typed_result = TypedVectorSearchResult.from_result(result, entity)
+                typed_results.append(typed_result)
+        
+        return cls(
+            results=typed_results,
+            query=query,
+            total_found=total_found or len(typed_results),
+            execution_time_ms=execution_time_ms,
+            metadata=metadata
+        )
 
 
 class RAGService(Generic[T]):

@@ -95,17 +95,29 @@ After successful migration:
 
 ```python
 # In UserService.py
-def create_user(user_data):
-    # Create user in database
-    user = db.create_user(user_data)
-    
-    # Send welcome email
-    if user.status == 'active':
-        subject = "Welcome to Our Platform"
-        body = f"Hello {user.name},\n\nWelcome to our platform!"
-        email_service.send_email(user.email, subject, body)
-    
-    return user
+def create_user(user_data):```
+
+# Create user in database
+user = db.create_user(user_data)
+``````
+
+```
+```
+
+# Send welcome email
+if user.status == 'active':```
+
+subject = "Welcome to Our Platform"
+body = f"Hello {user.name},\n\nWelcome to our platform!"
+email_service.send_email(user.email, subject, body)
+```
+``````
+
+```
+```
+
+return user
+```
 ```
 
 #### Workflow Implementation
@@ -113,30 +125,38 @@ def create_user(user_data):
 ```json
 {
   "name": "New User Welcome",
-  "trigger": {
-    "entity_type": "user",
-    "operations": ["create"]
+  "trigger": {```
+
+"entity_type": "user",
+"operations": ["create"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "status",
-      "operator": "equals",
-      "value": "active"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "status",
+  "operator": "equals",
+  "value": "active"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "email",
-      "subject": "Welcome to Our Platform",
-      "body": "Hello {{name}},\n\nWelcome to our platform!",
-      "recipients": [
-        {
-          "type": "field",
-          "value": "email"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "email",
+  "subject": "Welcome to Our Platform",
+  "body": "Hello {{name}},\n\nWelcome to our platform!",
+  "recipients": [```
+
+{
+  "type": "field",
+  "value": "email"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -148,28 +168,40 @@ def create_user(user_data):
 ```python
 # In OrderEventListener.py
 @event_handler("order.status_changed")
-def handle_order_status_change(event):
-    order = event.data
-    customer = db.get_user(order.customer_id)
-    
-    if order.status == "shipped":
+def handle_order_status_change(event):```
+
+order = event.data
+customer = db.get_user(order.customer_id)
+``````
+
+```
+```
+
+if order.status == "shipped":```
+
+notification_service.send_notification(
+    customer.id,
+    "Order Shipped",
+    f"Your order #{order.number} has been shipped.",
+    "medium"
+)
+``````
+
+```
+```
+
+# Also notify internal team
+if order.total > 1000:
+    team_ids = db.get_users_by_role("fulfillment_manager")
+    for team_id in team_ids:
         notification_service.send_notification(
-            customer.id,
-            "Order Shipped",
-            f"Your order #{order.number} has been shipped.",
-            "medium"
+            team_id,
+            "High-value Order Shipped",
+            f"Order #{order.number} (${order.total}) has been shipped.",
+            "high"
         )
-        
-        # Also notify internal team
-        if order.total > 1000:
-            team_ids = db.get_users_by_role("fulfillment_manager")
-            for team_id in team_ids:
-                notification_service.send_notification(
-                    team_id,
-                    "High-value Order Shipped",
-                    f"Order #{order.number} (${order.total}) has been shipped.",
-                    "high"
-                )
+```
+```
 ```
 
 #### Workflow Implementation
@@ -177,51 +209,63 @@ def handle_order_status_change(event):
 ```json
 {
   "name": "Order Shipped Notification",
-  "trigger": {
-    "entity_type": "order",
-    "operations": ["update"]
+  "trigger": {```
+
+"entity_type": "order",
+"operations": ["update"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "status",
-      "operator": "equals",
-      "value": "shipped"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "status",
+  "operator": "equals",
+  "value": "shipped"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "Order Shipped",
-      "body": "Your order #{{order_number}} has been shipped.",
-      "priority": "medium",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{customer_id}}"
-        }
-      ]
-    },
-    {
-      "type": "notification",
-      "title": "High-value Order Shipped",
-      "body": "Order #{{order_number}} (${{total}}) has been shipped.",
-      "priority": "high",
-      "conditions": [
-        {
-          "type": "field",
-          "field": "total",
-          "operator": "greater_than",
-          "value": "1000"
-        }
-      ],
-      "recipients": [
-        {
-          "type": "role",
-          "value": "fulfillment_manager"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "Order Shipped",
+  "body": "Your order #{{order_number}} has been shipped.",
+  "priority": "medium",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{customer_id}}"
+}
+```
+  ]
+},
+{
+  "type": "notification",
+  "title": "High-value Order Shipped",
+  "body": "Order #{{order_number}} (${{total}}) has been shipped.",
+  "priority": "high",
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "total",
+  "operator": "greater_than",
+  "value": "1000"
+}
+```
+  ],
+  "recipients": [```
+
+{
+  "type": "role",
+  "value": "fulfillment_manager"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -233,29 +277,51 @@ def handle_order_status_change(event):
 ```python
 # In scheduled_tasks.py
 @scheduled_task("0 9 * * *")  # Run at 9 AM daily
-def send_daily_sales_report():
-    yesterday = date.today() - timedelta(days=1)
-    
-    # Get sales data
-    sales = db.query("""
-        SELECT COUNT(*) as count, SUM(total) as total 
-        FROM orders 
-        WHERE DATE(created_at) = %s AND status = 'completed'
-    """, yesterday)
-    
-    # Generate report
-    subject = f"Daily Sales Report - {yesterday.strftime('%Y-%m-%d')}"
-    body = f"""
-    Daily Sales Report for {yesterday.strftime('%Y-%m-%d')}:
-    
-    Orders Completed: {sales['count']}
-    Total Revenue: ${sales['total']}
-    """
-    
-    # Send to management team
-    managers = db.get_users_by_role("sales_manager")
-    for manager in managers:
-        email_service.send_email(manager.email, subject, body)
+def send_daily_sales_report():```
+
+yesterday = date.today() - timedelta(days=1)
+``````
+
+```
+```
+
+# Get sales data
+sales = db.query("""```
+
+SELECT COUNT(*) as count, SUM(total) as total 
+FROM orders 
+WHERE DATE(created_at) = %s AND status = 'completed'
+```
+""", yesterday)
+``````
+
+```
+```
+
+# Generate report
+subject = f"Daily Sales Report - {yesterday.strftime('%Y-%m-%d')}"
+body = f"""
+Daily Sales Report for {yesterday.strftime('%Y-%m-%d')}:
+``````
+
+```
+```
+
+Orders Completed: {sales['count']}
+Total Revenue: ${sales['total']}
+"""
+``````
+
+```
+```
+
+# Send to management team
+managers = db.get_users_by_role("sales_manager")
+for manager in managers:```
+
+email_service.send_email(manager.email, subject, body)
+```
+```
 ```
 
 #### Workflow Implementation
@@ -263,43 +329,53 @@ def send_daily_sales_report():
 ```json
 {
   "name": "Daily Sales Report",
-  "trigger": {
-    "entity_type": "scheduler",
-    "operations": ["tick"],
-    "schedule": {
-      "type": "cron",
-      "expression": "0 9 * * *"
-    }
+  "trigger": {```
+
+"entity_type": "scheduler",
+"operations": ["tick"],
+"schedule": {
+  "type": "cron",
+  "expression": "0 9 * * *"
+}
+```
   },
-  "actions": [
-    {
-      "type": "database",
-      "operation": "query",
-      "target_entity": "order",
-      "query": {
-        "status": "completed",
-        "created_at": {
-          "operator": "date_equals",
-          "value": "{{now() - interval '1 day'}}"
-        }
-      },
-      "aggregate": {
-        "count": {"function": "count", "field": "id"},
-        "total": {"function": "sum", "field": "total"}
-      },
-      "result_variable": "yesterday_sales"
-    },
-    {
-      "type": "email",
-      "subject": "Daily Sales Report - {{(now() - interval '1 day') | date('%Y-%m-%d')}}",
-      "body": "Daily Sales Report for {{(now() - interval '1 day') | date('%Y-%m-%d')}}:\n\nOrders Completed: {{yesterday_sales.count}}\nTotal Revenue: ${{yesterday_sales.total | number(2)}}",
-      "recipients": [
-        {
-          "type": "role",
-          "value": "sales_manager"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "database",
+  "operation": "query",
+  "target_entity": "order",
+  "query": {```
+
+"status": "completed",
+"created_at": {
+  "operator": "date_equals",
+  "value": "{{now() - interval '1 day'}}"
+}
+```
+  },
+  "aggregate": {```
+
+"count": {"function": "count", "field": "id"},
+"total": {"function": "sum", "field": "total"}
+```
+  },
+  "result_variable": "yesterday_sales"
+},
+{
+  "type": "email",
+  "subject": "Daily Sales Report - {{(now() - interval '1 day') | date('%Y-%m-%d')}}",
+  "body": "Daily Sales Report for {{(now() - interval '1 day') | date('%Y-%m-%d')}}:\n\nOrders Completed: {{yesterday_sales.count}}\nTotal Revenue: ${{yesterday_sales.total | number(2)}}",
+  "recipients": [```
+
+{
+  "type": "role",
+  "value": "sales_manager"
+}
+```
+  ]
+}
+```
   ]
 }
 ```

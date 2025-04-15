@@ -36,13 +36,15 @@ Here's a basic configuration example:
 ```python
 from uno.core.docs.generator import DocGeneratorConfig, DocFormat
 
-config = DocGeneratorConfig(
-    title="My API Documentation",
-    description="Documentation for my API",
-    version="1.0.0",
-    formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
-    output_dir="docs/api",
-    modules_to_document=["my_app.api", "my_app.models"]
+config = DocGeneratorConfig(```
+
+title="My API Documentation",
+description="Documentation for my API",
+version="1.0.0",
+formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
+output_dir="docs/api",
+modules_to_document=["my_app.api", "my_app.models"]
+```
 )
 ```
 
@@ -54,11 +56,13 @@ The documentation generator supports multiple output formats:
 from uno.core.docs.generator import DocFormat
 
 # Generate all supported formats
-formats = [
-    DocFormat.MARKDOWN,  # Markdown documentation
-    DocFormat.OPENAPI,   # OpenAPI (Swagger) specification
-    DocFormat.HTML,      # HTML documentation
-    DocFormat.ASCIIDOC   # AsciiDoc documentation
+formats = [```
+
+DocFormat.MARKDOWN,  # Markdown documentation
+DocFormat.OPENAPI,   # OpenAPI (Swagger) specification
+DocFormat.HTML,      # HTML documentation
+DocFormat.ASCIIDOC   # AsciiDoc documentation
+```
 ]
 ```
 
@@ -67,17 +71,27 @@ formats = [
 You can control which components are included in the documentation:
 
 ```python
-config = DocGeneratorConfig(
-    # Include internal components (prefixed with underscore)
-    include_internal=True,
-    
-    # Skip deprecated components
-    include_deprecated=False,
-    
-    # Only include stable components
-    include_beta=False,
-    include_alpha=False,
-    include_experimental=False
+config = DocGeneratorConfig(```
+
+# Include internal components (prefixed with underscore)
+include_internal=True,
+``````
+
+```
+```
+
+# Skip deprecated components
+include_deprecated=False,
+``````
+
+```
+```
+
+# Only include stable components
+include_beta=False,
+include_alpha=False,
+include_experimental=False
+```
 )
 ```
 
@@ -86,12 +100,18 @@ config = DocGeneratorConfig(
 Control how examples are included in the documentation:
 
 ```python
-config = DocGeneratorConfig(
-    # Include examples
-    include_examples=True,
-    
-    # Set the depth for nested examples
-    example_depth=3
+config = DocGeneratorConfig(```
+
+# Include examples
+include_examples=True,
+``````
+
+```
+```
+
+# Set the depth for nested examples
+example_depth=3
+```
 )
 ```
 
@@ -100,22 +120,36 @@ config = DocGeneratorConfig(
 For HTML documentation, you can customize the appearance:
 
 ```python
-config = DocGeneratorConfig(
-    # Set base URL for documentation
-    url_base="https://docs.example.com/api",
-    
-    # Add logo
-    logo_url="https://example.com/logo.png",
-    
-    # Add custom CSS and JavaScript
-    css_urls=[
-        "https://cdn.example.com/styles.css",
-        "/custom/styles.css"
-    ],
-    js_urls=[
-        "https://cdn.example.com/scripts.js",
-        "/custom/scripts.js"
-    ]
+config = DocGeneratorConfig(```
+
+# Set base URL for documentation
+url_base="https://docs.example.com/api",
+``````
+
+```
+```
+
+# Add logo
+logo_url="https://example.com/logo.png",
+``````
+
+```
+```
+
+# Add custom CSS and JavaScript
+css_urls=[```
+
+"https://cdn.example.com/styles.css",
+"/custom/styles.css"
+```
+],
+js_urls=[```
+
+"https://cdn.example.com/scripts.js",
+"/custom/scripts.js"
+```
+]
+```
 )
 ```
 
@@ -124,11 +158,15 @@ config = DocGeneratorConfig(
 You can provide custom templates for rendering:
 
 ```python
-config = DocGeneratorConfig(
-    extra_templates={
-        "markdown/model.md": "path/to/custom/model_template.md",
-        "html/index.html": "path/to/custom/index_template.html"
-    }
+config = DocGeneratorConfig(```
+
+extra_templates={```
+
+"markdown/model.md": "path/to/custom/model_template.md",
+"html/index.html": "path/to/custom/index_template.html"
+```
+}
+```
 )
 ```
 
@@ -137,13 +175,17 @@ config = DocGeneratorConfig(
 Add additional metadata to the documentation:
 
 ```python
-config = DocGeneratorConfig(
-    metadata={
-        "organization": "Example Corp",
-        "contact_email": "api@example.com",
-        "license": "MIT",
-        "repository": "https://github.com/example/myapi"
-    }
+config = DocGeneratorConfig(```
+
+metadata={```
+
+"organization": "Example Corp",
+"contact_email": "api@example.com",
+"license": "MIT",
+"repository": "https://github.com/example/myapi"
+```
+}
+```
 )
 ```
 
@@ -152,18 +194,20 @@ config = DocGeneratorConfig(
 When using the command-line interface, the same configuration options are available as command-line arguments:
 
 ```bash
-python -m uno.core.docs.cli \
-    --title "My API Documentation" \
-    --description "Documentation for my API" \
-    --version "1.0.0" \
-    --formats markdown openapi \
-    --output-dir docs/api \
-    --include-source-links \
-    --include-examples \
-    --example-depth 2 \
-    --modules my_app.api my_app.models \
-    --url-base https://docs.example.com/api \
-    --logo-url https://example.com/logo.png
+python -m uno.core.docs.cli \```
+
+--title "My API Documentation" \
+--description "Documentation for my API" \
+--version "1.0.0" \
+--formats markdown openapi \
+--output-dir docs/api \
+--include-source-links \
+--include-examples \
+--example-depth 2 \
+--modules my_app.api my_app.models \
+--url-base https://docs.example.com/api \
+--logo-url https://example.com/logo.png
+```
 ```
 
 ## Environment Variables
@@ -195,47 +239,77 @@ Here's a complete configuration example:
 ```python
 from uno.core.docs.generator import DocGeneratorConfig, DocFormat, generate_docs
 
-config = DocGeneratorConfig(
-    # Basic information
-    title="My API Documentation",
-    description="Comprehensive documentation for my API",
-    version="1.0.0",
-    
-    # Output configuration
-    formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI, DocFormat.HTML],
-    output_dir="docs/api",
-    
-    # Component filtering
-    include_internal=False,
-    include_deprecated=True,
-    include_beta=True,
-    include_alpha=False,
-    include_experimental=False,
-    
-    # Source and examples configuration
-    include_source_links=True,
-    include_examples=True,
-    example_depth=2,
-    
-    # Modules to document
-    modules_to_document=[
-        "my_app.api.v1",
-        "my_app.api.v2",
-        "my_app.models"
-    ],
-    
-    # HTML customization
-    url_base="https://docs.example.com/api",
-    logo_url="https://example.com/logo.png",
-    css_urls=["https://cdn.example.com/styles.css"],
-    js_urls=["https://cdn.example.com/scripts.js"],
-    
-    # Additional metadata
-    metadata={
-        "organization": "Example Corp",
-        "contact_email": "api@example.com",
-        "license": "MIT"
-    }
+config = DocGeneratorConfig(```
+
+# Basic information
+title="My API Documentation",
+description="Comprehensive documentation for my API",
+version="1.0.0",
+``````
+
+```
+```
+
+# Output configuration
+formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI, DocFormat.HTML],
+output_dir="docs/api",
+``````
+
+```
+```
+
+# Component filtering
+include_internal=False,
+include_deprecated=True,
+include_beta=True,
+include_alpha=False,
+include_experimental=False,
+``````
+
+```
+```
+
+# Source and examples configuration
+include_source_links=True,
+include_examples=True,
+example_depth=2,
+``````
+
+```
+```
+
+# Modules to document
+modules_to_document=[```
+
+"my_app.api.v1",
+"my_app.api.v2",
+"my_app.models"
+```
+],
+``````
+
+```
+```
+
+# HTML customization
+url_base="https://docs.example.com/api",
+logo_url="https://example.com/logo.png",
+css_urls=["https://cdn.example.com/styles.css"],
+js_urls=["https://cdn.example.com/scripts.js"],
+``````
+
+```
+```
+
+# Additional metadata
+metadata={```
+
+"organization": "Example Corp",
+"contact_email": "api@example.com",
+"license": "MIT"
+```
+}
+```
 )
 
 # Generate documentation

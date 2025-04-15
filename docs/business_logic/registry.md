@@ -32,13 +32,17 @@ When you define a UnoObj subclass, it automatically registers with the registry:
 from uno.obj import UnoObj
 from uno.model import UnoModel
 
-class CustomerModel(UnoModel):
-    __tablename__ = "customer"
-    # Fields...
+class CustomerModel(UnoModel):```
 
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    # No explicit registration needed!
+__tablename__ = "customer"
+# Fields...
+```
+
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+# No explicit registration needed!
+```
 ```
 
 The registration happens in the `__init_subclass__` method of UnoObj, which is called when a subclass is defined.
@@ -55,9 +59,11 @@ registry = UnoRegistry.get_instance()
 customer_class = registry.get("customer")
 
 # Check if a class is registered
-if customer_class:
-    # Create an instance
-    customer = customer_class(name="John Doe")
+if customer_class:```
+
+# Create an instance
+customer = customer_class(name="John Doe")
+```
 ```
 
 ## API Reference
@@ -77,17 +83,21 @@ if customer_class:
 The registry is implemented as a Python class with a class variable to store the singleton instance:
 
 ```python
-class UnoRegistry:
-    _instance: Optional["UnoRegistry"] = None
-    _models: Dict[str, Type[BaseModel]] = {}
+class UnoRegistry:```
 
-    @classmethod
-    def get_instance(cls) -> "UnoRegistry":
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
-        
-    # Other methods...
+_instance: Optional["UnoRegistry"] = None
+_models: Dict[str, Type[BaseModel]] = {}
+
+@classmethod
+def get_instance(cls) -> "UnoRegistry":```
+
+if cls._instance is None:
+    cls._instance = cls()
+return cls._instance
+```
+    
+# Other methods...
+```
 ```
 
 ## Usage Examples
@@ -102,12 +112,18 @@ registry = UnoRegistry.get_instance()
 
 # Get a class by table name
 customer_class = registry.get("customer")
-if customer_class:
-    # Create an instance
-    customer = customer_class(name="John Doe")
-    
-    # Use the instance
-    await customer.save()
+if customer_class:```
+
+# Create an instance
+customer = customer_class(name="John Doe")
+``````
+
+```
+```
+
+# Use the instance
+await customer.save()
+```
 ```
 
 ### Manual Registration
@@ -129,13 +145,17 @@ registry.register(Customer, "customer")
 The registry enables dynamic object creation based on table names:
 
 ```python
-def create_object(table_name: str, **kwargs: Any) -> Optional[UnoObj]:
-    """Create a business object by table name."""
-    registry = UnoRegistry.get_instance()
-    cls = registry.get(table_name)
-    if cls:
-        return cls(**kwargs)
-    return None
+def create_object(table_name: str, **kwargs: Any) -> Optional[UnoObj]:```
+
+"""Create a business object by table name."""
+registry = UnoRegistry.get_instance()
+cls = registry.get(table_name)
+if cls:```
+
+return cls(**kwargs)
+```
+return None
+```
 
 # Create objects dynamically
 customer = create_object("customer", name="John Doe")
@@ -147,20 +167,26 @@ product = create_object("product", name="Widget")
 You can register multiple classes at once using a dictionary:
 
 ```python
-def register_all_models(models_dict: Dict[str, Type[UnoObj]]) -> None:
-    """Register multiple models at once."""
-    registry = UnoRegistry.get_instance()
-    for table_name, model_class in models_dict.items():
-        try:
-            registry.register(model_class, table_name)
-        except UnoRegistryError as e:
-            print(f"Registration error: {e}")
+def register_all_models(models_dict: Dict[str, Type[UnoObj]]) -> None:```
+
+"""Register multiple models at once."""
+registry = UnoRegistry.get_instance()
+for table_name, model_class in models_dict.items():```
+
+try:
+    registry.register(model_class, table_name)
+except UnoRegistryError as e:
+    print(f"Registration error: {e}")
+```
+```
 
 # Register multiple models
-register_all_models({
-    "customer": Customer,
-    "product": Product,
-    "order": Order
+register_all_models({```
+
+"customer": Customer,
+"product": Product,
+"order": Order
+```
 })
 ```
 
@@ -173,16 +199,22 @@ register_all_models({
 3. **Handle Missing Classes**: Always check if a class was found before using it:
    ```python
    cls = registry.get("customer")
-   if cls:
-       # Use the class
-   else:
-       # Handle the case where the class wasn't found
+   if cls:```
+
+   # Use the class
+```
+   else:```
+
+   # Handle the case where the class wasn't found
+```
    ```
 
 4. **Clear the Registry in Tests**: When testing, clear the registry between tests to ensure isolation:
    ```python
-   def setUp(self):
-       UnoRegistry.get_instance().clear()
+   def setUp(self):```
+
+   UnoRegistry.get_instance().clear()
+```
    ```
 
 5. **Avoid Circular Dependencies**: Be careful when creating classes that depend on each other through the registry.
@@ -190,5 +222,5 @@ register_all_models({
 ## Related Topics
 
 - [UnoObj](unoobj.md) - Learn how business objects automatically register with the registry
-- [API Integration](../api/overview.md) - See how the registry enables automatic API endpoint creation
-- [Dependency Injection](../dependency_injection/overview.md) - Learn how the registry works with the dependency injection system
+- [API Integration](/docs/api/overview.md) - See how the registry enables automatic API endpoint creation
+- [Dependency Injection](/docs/dependency_injection/overview.md) - Learn how the registry works with the dependency injection system

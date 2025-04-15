@@ -13,13 +13,15 @@ Create a new SQL migration file with the following format:
 -- Description: Creates the initial users table with basic fields
 
 -- Write your UP SQL here
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE users (```
+
+id SERIAL PRIMARY KEY,
+username VARCHAR(255) NOT NULL UNIQUE,
+email VARCHAR(255) NOT NULL UNIQUE,
+password_hash VARCHAR(255) NOT NULL,
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+```
 );
 
 -- Create indexes
@@ -85,13 +87,15 @@ The "up" SQL contains statements for applying the migration, such as:
 Example:
 
 ```sql
-CREATE TABLE categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    slug VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    parent_id INTEGER REFERENCES categories(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE categories (```
+
+id SERIAL PRIMARY KEY,
+name VARCHAR(100) NOT NULL UNIQUE,
+slug VARCHAR(100) NOT NULL UNIQUE,
+description TEXT,
+parent_id INTEGER REFERENCES categories(id),
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+```
 );
 
 CREATE INDEX idx_categories_slug ON categories(slug);
@@ -157,10 +161,12 @@ If a migration depends on another migration, make sure to specify the dependenci
 ```sql
 -- Dependencies: 1616720000_create_users_table
 -- Create user profiles table that references the users table
-CREATE TABLE user_profiles (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    ...
+CREATE TABLE user_profiles (```
+
+id SERIAL PRIMARY KEY,
+user_id INTEGER NOT NULL REFERENCES users(id),
+...
+```
 );
 ```
 
@@ -214,16 +220,18 @@ The migration system recognizes special comments in SQL migrations:
 -- Migration: Create products table
 -- Description: Creates the products table for e-commerce functionality
 
-CREATE TABLE products (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    stock INTEGER NOT NULL DEFAULT 0,
-    category_id INTEGER REFERENCES categories(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE products (```
+
+id SERIAL PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+slug VARCHAR(255) NOT NULL UNIQUE,
+description TEXT,
+price DECIMAL(10, 2) NOT NULL,
+stock INTEGER NOT NULL DEFAULT 0,
+category_id INTEGER REFERENCES categories(id),
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+```
 );
 
 CREATE INDEX idx_products_slug ON products(slug);
@@ -242,13 +250,15 @@ DROP TABLE IF EXISTS products;
 -- Migration: Add product images
 -- Description: Add support for multiple product images
 
-CREATE TABLE product_images (
-    id SERIAL PRIMARY KEY,
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    url VARCHAR(255) NOT NULL,
-    alt_text VARCHAR(255),
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE product_images (```
+
+id SERIAL PRIMARY KEY,
+product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+url VARCHAR(255) NOT NULL,
+alt_text VARCHAR(255),
+sort_order INTEGER NOT NULL DEFAULT 0,
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+```
 );
 
 CREATE INDEX idx_product_images_product_id ON product_images(product_id);
@@ -273,8 +283,10 @@ INSERT INTO categories (name, slug, description) VALUES
 
 -- DOWN
 
-DELETE FROM categories WHERE slug IN (
-    'electronics', 'clothing', 'books', 'home-kitchen'
+DELETE FROM categories WHERE slug IN (```
+
+'electronics', 'clothing', 'books', 'home-kitchen'
+```
 );
 ```
 

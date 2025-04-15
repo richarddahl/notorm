@@ -4,7 +4,8 @@
 
 The Uno Framework Benchmark Dashboard provides a comprehensive visualization and analysis tool for monitoring performance across all framework modules. It allows developers and stakeholders to track performance trends, identify bottlenecks, and measure the impact of optimizations.
 
-![Dashboard Overview](../assets/images/benchmark_dashboard_overview.png)
+<!-- TODO: Add benchmark dashboard screenshot -->
+<!-- ![Dashboard Overview](../assets/images/benchmark_dashboard_overview.png) -->
 
 ## Installation
 
@@ -31,6 +32,7 @@ Located in the sidebar, these allow you to customize the dashboard view:
 
 - **Module Selection**: Filter results by a specific module or view all modules
 - **Benchmark Type**: Focus on operation speed, scaling behavior, or resource usage
+- **Test Type**: Filter by unit benchmarks, integration benchmarks, or both
 - **Date Range**: Filter results within a specific timeframe
 - **Update Button**: Refresh the dashboard with the selected filters
 
@@ -42,6 +44,7 @@ At the top of the main panel, displays key performance indicators:
 - **Maximum Time**: Slowest execution time in the selection
 - **Minimum Time**: Fastest execution time in the selection
 - **Success Rate**: Percentage of successful benchmark runs
+- **Integration Score**: Performance rating based on integration test benchmarks
 
 ### 3. Module Comparison Chart
 
@@ -117,7 +120,9 @@ This helps identify exactly which operations are underperforming.
 
 ## Adding New Benchmark Data
 
-The dashboard automatically processes benchmark results from pytest-benchmark. To add new data:
+The dashboard automatically processes benchmark results from both dedicated benchmark tests and integration test benchmarks. To add new data:
+
+### From Dedicated Benchmark Tests
 
 1. Run benchmarks with the JSON output flag:
 
@@ -132,7 +137,29 @@ cd benchmarks/dashboard
 python process_results.py
 ```
 
-3. Restart or refresh the dashboard to see the new data.
+### From Integration Test Benchmarks
+
+1. Run the integration test benchmark script:
+
+```bash
+cd tests/integration
+./run_benchmarks.py --output benchmark_results.json --csv
+```
+
+2. Copy the results to the benchmarks directory:
+
+```bash
+cp benchmark_results.json ../../benchmarks/dashboard/data/integration_$(date +%Y%m%d).json
+```
+
+3. Process the results:
+
+```bash
+cd ../../benchmarks/dashboard
+python process_results.py
+```
+
+4. Restart or refresh the dashboard to see the new data.
 
 ## Configuration
 

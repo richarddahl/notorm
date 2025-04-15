@@ -47,39 +47,63 @@ from uuid import UUID
 from uno.domain.core import Entity, AggregateRoot, ValueObject, DomainEvent
 
 @dataclass(frozen=True)
-class Address(ValueObject):
-    street: str
-    city: str
-    state: str
-    zip_code: str
-    country: str
-    
-    def validate(self) -> None:
-        if not self.zip_code:
-            raise ValueError("Zip code is required")
+class Address(ValueObject):```
+
+street: str
+city: str
+state: str
+zip_code: str
+country: str
+``````
+
+```
+```
+
+def validate(self) -> None:```
+
+if not self.zip_code:
+    raise ValueError("Zip code is required")
+```
+```
 
 @dataclass
-class User(AggregateRoot):
-    username: str
-    email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    addresses: List[Address] = field(default_factory=list)
-    
-    def add_address(self, address: Address) -> None:
-        address.validate()
-        self.addresses.append(address)
-        self.register_event(UserAddressAddedEvent(self.id, address))
-    
-    def check_invariants(self) -> None:
-        if not self.username:
-            raise ValueError("Username is required")
-        if not self.email:
-            raise ValueError("Email is required")
+class User(AggregateRoot):```
 
-class UserAddressAddedEvent(DomainEvent):
-    user_id: UUID
-    address: Address
+username: str
+email: str
+first_name: Optional[str] = None
+last_name: Optional[str] = None
+addresses: List[Address] = field(default_factory=list)
+``````
+
+```
+```
+
+def add_address(self, address: Address) -> None:```
+
+address.validate()
+self.addresses.append(address)
+self.register_event(UserAddressAddedEvent(self.id, address))
+```
+``````
+
+```
+```
+
+def check_invariants(self) -> None:```
+
+if not self.username:
+    raise ValueError("Username is required")
+if not self.email:
+    raise ValueError("Email is required")
+```
+```
+
+class UserAddressAddedEvent(DomainEvent):```
+
+user_id: UUID
+address: Address
+```
 ```
 
 ### Repositories
@@ -93,18 +117,34 @@ from uuid import UUID
 from uno.domain.model import User
 from uno.domain.repository import Repository, AggregateRepository
 
-class UserRepository(AggregateRepository[User, UUID]):
-    async def get(self, id: UUID) -> Optional[User]:
-        # Implementation details...
-        pass
-    
-    async def save(self, user: User) -> None:
-        # Implementation details...
-        pass
-    
-    async def find_by_username(self, username: str) -> Optional[User]:
-        # Implementation details...
-        pass
+class UserRepository(AggregateRepository[User, UUID]):```
+
+async def get(self, id: UUID) -> Optional[User]:```
+
+# Implementation details...
+pass
+```
+``````
+
+```
+```
+
+async def save(self, user: User) -> None:```
+
+# Implementation details...
+pass
+```
+``````
+
+```
+```
+
+async def find_by_username(self, username: str) -> Optional[User]:```
+
+# Implementation details...
+pass
+```
+```
 ```
 
 ### Domain Services
@@ -116,21 +156,35 @@ from uno.domain.service import DomainService
 from uno.domain.repository import UserRepository
 from uno.domain.model import User, Address
 
-class UserService(DomainService):
-    def __init__(self, user_repository: UserRepository):
-        self.user_repository = user_repository
-    
-    async def change_user_primary_address(self, user_id: UUID, address: Address) -> User:
-        user = await self.user_repository.get(user_id)
-        if not user:
-            raise EntityNotFoundError("User", user_id)
-        
-        # Domain logic...
-        user.addresses.insert(0, address)
-        user.register_event(UserPrimaryAddressChangedEvent(user_id, address))
-        
-        await self.user_repository.save(user)
-        return user
+class UserService(DomainService):```
+
+def __init__(self, user_repository: UserRepository):```
+
+self.user_repository = user_repository
+```
+``````
+
+```
+```
+
+async def change_user_primary_address(self, user_id: UUID, address: Address) -> User:```
+
+user = await self.user_repository.get(user_id)
+if not user:
+    raise EntityNotFoundError("User", user_id)
+```
+    ```
+
+# Domain logic...
+user.addresses.insert(0, address)
+user.register_event(UserPrimaryAddressChangedEvent(user_id, address))
+```
+    ```
+
+await self.user_repository.save(user)
+return user
+```
+```
 ```
 
 ### Unit of Work
@@ -141,12 +195,14 @@ The Unit of Work pattern coordinates operations and transaction management:
 from uno.domain.unit_of_work import UnitOfWork
 from uno.domain.repository import UserRepository
 
-async with UnitOfWork() as uow:
-    user_repo = uow.get_repository(UserRepository)
-    user = await user_repo.get(user_id)
-    user.update_email(new_email)
-    await user_repo.save(user)
-    # Transaction is committed on successful exit
+async with UnitOfWork() as uow:```
+
+user_repo = uow.get_repository(UserRepository)
+user = await user_repo.get(user_id)
+user.update_email(new_email)
+await user_repo.save(user)
+# Transaction is committed on successful exit
+```
 ```
 
 ### Bounded Contexts

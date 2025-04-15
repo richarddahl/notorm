@@ -22,13 +22,21 @@ Entities are objects defined by their identity, which persists across different 
 ```python
 from uno.domain.core import Entity
 
-class User(Entity):
-    username: str
-    email: str
-    is_active: bool = True
-    
-    def deactivate(self):
-        self.is_active = False
+class User(Entity):```
+
+username: str
+email: str
+is_active: bool = True
+``````
+
+```
+```
+
+def deactivate(self):```
+
+self.is_active = False
+```
+```
 ```
 
 ### Value Objects
@@ -38,11 +46,13 @@ Value objects are immutable objects defined by their attributes, with no identit
 ```python
 from uno.domain.core import ValueObject
 
-class Address(ValueObject):
-    street: str
-    city: str
-    state: str
-    zip_code: str
+class Address(ValueObject):```
+
+street: str
+city: str
+state: str
+zip_code: str
+```
 ```
 
 ### Aggregates
@@ -53,14 +63,22 @@ Aggregates are clusters of entities and value objects that are treated as a sing
 from uno.domain.core import AggregateRoot
 from typing import List
 
-class Order(AggregateRoot):
-    customer_id: str
-    shipping_address: Address
-    order_items: List[OrderItem] = []
-    
-    def add_item(self, item: OrderItem):
-        self.order_items.append(item)
-        self.register_child_entity(item)
+class Order(AggregateRoot):```
+
+customer_id: str
+shipping_address: Address
+order_items: List[OrderItem] = []
+``````
+
+```
+```
+
+def add_item(self, item: OrderItem):```
+
+self.order_items.append(item)
+self.register_child_entity(item)
+```
+```
 ```
 
 ### Domain Events
@@ -70,10 +88,12 @@ Domain events represent significant occurrences within the domain:
 ```python
 from uno.domain.core import DomainEvent
 
-class OrderPlacedEvent(DomainEvent):
-    order_id: str
-    customer_id: str
-    total_amount: float
+class OrderPlacedEvent(DomainEvent):```
+
+order_id: str
+customer_id: str
+total_amount: float
+```
 ```
 
 ## Repositories and Services
@@ -133,8 +153,10 @@ from uno.dependencies import get_event_bus
 from my_app.domain.events import UserCreatedEvent
 
 # Define an event handler
-async def notify_user_creation(event: UserCreatedEvent):
-    print(f"User created: {event.username}")
+async def notify_user_creation(event: UserCreatedEvent):```
+
+print(f"User created: {event.username}")
+```
 
 # Get the event bus
 event_bus = get_event_bus()
@@ -155,12 +177,16 @@ from my_app.domain.models import User
 router = APIRouter()
 
 @router.get("/users/{user_id}")
-async def get_user(user_id: str):
-    user_service = get_domain_service(User)
-    user = await user_service.get_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+async def get_user(user_id: str):```
+
+user_service = get_domain_service(User)
+user = await user_service.get_by_id(user_id)
+if not user:```
+
+raise HTTPException(status_code=404, detail="User not found")
+```
+return user
+```
 ```
 
 ## Best Practices

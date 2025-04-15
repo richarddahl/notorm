@@ -25,35 +25,63 @@ from sqlalchemy.orm import Mapped, mapped_column
 from uno.schema import UnoSchemaConfig
 
 # Define your SQLAlchemy model
-class CustomerModel(UnoModel):
-    __tablename__ = "customer"
-    
-    name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
-    phone: Mapped[PostgresTypes.String64] = mapped_column(nullable=True)
+class CustomerModel(UnoModel):```
+
+__tablename__ = "customer"
+``````
+
+```
+```
+
+name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+phone: Mapped[PostgresTypes.String64] = mapped_column(nullable=True)
+```
     
 # Define your business object
-class Customer(UnoObj[CustomerModel]):
-    # The model is automatically set from the type parameter
-    # No need to set model = CustomerModel
-    
-    display_name = "Customer"
-    display_name_plural = "Customers"
-    
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),  # All fields
-        "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
-    }
-    
-    # Add business logic methods
-    async def send_welcome_email(self):
-        """Send a welcome email to the customer."""
-        if not self.email:
-            raise ValueError("Customer has no email address")
-        
-        # Email sending logic here
-        print(f"Sending welcome email to {self.email}")
-        return True
+class Customer(UnoObj[CustomerModel]):```
+
+# The model is automatically set from the type parameter
+# No need to set model = CustomerModel
+``````
+
+```
+```
+
+display_name = "Customer"
+display_name_plural = "Customers"
+``````
+
+```
+```
+
+schema_configs = {```
+
+"view_schema": UnoSchemaConfig(),  # All fields
+"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
+```
+}
+``````
+
+```
+```
+
+# Add business logic methods
+async def send_welcome_email(self):```
+
+"""Send a welcome email to the customer."""
+if not self.email:
+    raise ValueError("Customer has no email address")
+``````
+
+```
+```
+
+# Email sending logic here
+print(f"Sending welcome email to {self.email}")
+return True
+```
+```
 ```
 
 The model class is automatically set from the type parameter `UnoObj[CustomerModel]`, eliminating the need to set it explicitly with `model = CustomerModel`.
@@ -62,10 +90,12 @@ The model class is automatically set from the type parameter `UnoObj[CustomerMod
 
 ```python
 # Create a new customer
-new_customer = Customer(
-    name="John Doe",
-    email="john@example.com",
-    phone="555-123-4567"
+new_customer = Customer(```
+
+name="John Doe",
+email="john@example.com",
+phone="555-123-4567"
+```
 )
 
 # Save to database
@@ -85,10 +115,12 @@ customer = await Customer.get(email="john@example.com")
 from uno.database.db import FilterParam
 
 # Create filter parameters
-filter_params = FilterParam(
-    limit=10,
-    offset=0,
-    name__contains="John"
+filter_params = FilterParam(```
+
+limit=10,
+offset=0,
+name__contains="John"
+```
 )
 
 # Get filtered customers
@@ -114,11 +146,13 @@ await customer.save()
 The merge operation performs an upsert (insert or update) based on the primary key:
 
 ```python
-customer = Customer(
-    id="abc123",  # Existing ID
-    name="John Smith",
-    email="john@example.com",
-    phone="555-555-5555"
+customer = Customer(```
+
+id="abc123",  # Existing ID
+name="John Smith",
+email="john@example.com",
+phone="555-555-5555"
+```
 )
 
 # Merge will update if ID exists, or create if it doesn't
@@ -173,30 +207,32 @@ This roundtrip flow ensures that:
 ```
 ┌─────────┐         ┌─────────┐         ┌─────────┐
 │  UnoObj  │         │ UnoModel │         │  UnoDB  │
-└────┬────┘         └────┬────┘         └────┬────┘
-     │                    │                   │
-     │ create             │                   │
-     ├───────────────────►│                   │
-     │                    │                   │
-     │ to_model()         │                   │
-     ├───────────────────►│                   │
-     │                    │                   │
-     │                    │ save()            │
-     │                    ├──────────────────►│
-     │                    │                   │
-     │                    │                   │ DB operation
-     │                    │                   │◄─────────┐
-     │                    │                   │          │
-     │                    │ DB result         │          │
-     │                    │◄──────────────────┤          │
-     │                    │                   │          │
-     │ convert to UnoObj  │                   │          │
-     │◄───────────────────┤                   │          │
-     │                    │                   │          │
-     │ business logic     │                   │          │
-     │◄─────────┐         │                   │          │
-     │          │         │                   │          │
-     │          │         │                   │          │
+└────┬────┘         └────┬────┘         └────┬────┘```
+
+ │                    │                   │
+ │ create             │                   │
+ ├───────────────────►│                   │
+ │                    │                   │
+ │ to_model()         │                   │
+ ├───────────────────►│                   │
+ │                    │                   │
+ │                    │ save()            │
+ │                    ├──────────────────►│
+ │                    │                   │
+ │                    │                   │ DB operation
+ │                    │                   │◄─────────┐
+ │                    │                   │          │
+ │                    │ DB result         │          │
+ │                    │◄──────────────────┤          │
+ │                    │                   │          │
+ │ convert to UnoObj  │                   │          │
+ │◄───────────────────┤                   │          │
+ │                    │                   │          │
+ │ business logic     │                   │          │
+ │◄─────────┐         │                   │          │
+ │          │         │                   │          │
+ │          │         │                   │          │
+```
 ```
 
 ## Web Application Integration
@@ -227,18 +263,32 @@ This will create the following endpoints:
 You can define custom schemas beyond the default `view_schema` and `edit_schema`:
 
 ```python
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    
-    schema_configs = {
-        "view_schema": UnoSchemaConfig(),
-        "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
-        "summary_schema": UnoSchemaConfig(include_fields={"id", "name", "email"}),
-    }
-    
-    # Later use:
-    def get_summary(self):
-        return self.to_model(schema_name="summary_schema")
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+``````
+
+```
+```
+
+schema_configs = {```
+
+"view_schema": UnoSchemaConfig(),
+"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
+"summary_schema": UnoSchemaConfig(include_fields={"id", "name", "email"}),
+```
+}
+``````
+
+```
+```
+
+# Later use:
+def get_summary(self):```
+
+return self.to_model(schema_name="summary_schema")
+```
+```
 ```
 
 ### Custom Endpoints
@@ -246,9 +296,13 @@ class Customer(UnoObj[CustomerModel]):
 You can customize which endpoints are created:
 
 ```python
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    endpoints = ["Create", "View", "List"]  # Only these endpoints will be created
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+``````
+
+endpoints = ["Create", "View", "List"]  # Only these endpoints will be created
+```
 ```
 
 ### Filter Customization
@@ -256,17 +310,25 @@ class Customer(UnoObj[CustomerModel]):
 You can exclude specific fields from filtering:
 
 ```python
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    terminate_field_filters = ["created_at", "modified_at"]  # These fields won't be filterable
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+``````
+
+terminate_field_filters = ["created_at", "modified_at"]  # These fields won't be filterable
+```
 ```
 
 Or exclude the entire model from filters:
 
 ```python
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    exclude_from_filters = True  # This model won't generate any filters
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+``````
+
+exclude_from_filters = True  # This model won't generate any filters
+```
 ```
 
 ## Testing
@@ -279,26 +341,34 @@ When testing `UnoObj` classes, it's recommended to create unit tests that verify
 ### Example Test for UnoObj -> UnoModel Conversion:
 
 ```python
-class TestUserIntegration(IsolatedAsyncioTestCase):
-    async def test_create_superuser_obj_model_conversion(self):
-        # Create a superuser UnoObj instance
-        superuser = User(
-            email="test_integration@notorm.tech",
-            handle="test_integration",
-            full_name="Test Integration User",
-            is_superuser=True
-        )
-        
-        # Convert to UnoModel using the schema
-        superuser._ensure_schemas_created()
-        model = superuser.to_model(schema_name="edit_schema")
-        
-        # Verify model instance
-        assert isinstance(model, UserModel)
-        assert model.email == "test_integration@notorm.tech"
-        assert model.handle == "test_integration"
-        assert model.full_name == "Test Integration User"
-        assert model.is_superuser is True
+class TestUserIntegration(IsolatedAsyncioTestCase):```
+
+async def test_create_superuser_obj_model_conversion(self):```
+
+# Create a superuser UnoObj instance
+superuser = User(
+    email="test_integration@notorm.tech",
+    handle="test_integration",
+    full_name="Test Integration User",
+    is_superuser=True
+)
+```
+    ```
+
+# Convert to UnoModel using the schema
+superuser._ensure_schemas_created()
+model = superuser.to_model(schema_name="edit_schema")
+```
+    ```
+
+# Verify model instance
+assert isinstance(model, UserModel)
+assert model.email == "test_integration@notorm.tech"
+assert model.handle == "test_integration"
+assert model.full_name == "Test Integration User"
+assert model.is_superuser is True
+```
+```
 ```
 
 ### Mocking Database Access:
@@ -308,21 +378,31 @@ import pytest
 from unittest.mock import AsyncMock, patch
 
 @pytest.mark.asyncio
-async def test_customer_save():
-    # Setup - mock the database access
-    with patch('uno.database.db.UnoDBFactory') as mock_db_factory:
-        mock_db = AsyncMock()
-        mock_db_factory.return_value = mock_db
-        mock_db.create.return_value = (CustomerModel(id="test123", name="Test"), True)
-        
-        # Create a customer
-        customer = Customer(name="Test", email="test@example.com")
-        
-        # Save it
-        await customer.save()
-        
-        # Verify
-        mock_db.create.assert_called_once()
+async def test_customer_save():```
+
+# Setup - mock the database access
+with patch('uno.database.db.UnoDBFactory') as mock_db_factory:```
+
+mock_db = AsyncMock()
+mock_db_factory.return_value = mock_db
+mock_db.create.return_value = (CustomerModel(id="test123", name="Test"), True)
+```
+    ```
+
+# Create a customer
+customer = Customer(name="Test", email="test@example.com")
+```
+    ```
+
+# Save it
+await customer.save()
+```
+    ```
+
+# Verify
+mock_db.create.assert_called_once()
+```
+```
 ```
 
 ## Best Practices

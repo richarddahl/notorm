@@ -59,30 +59,38 @@ That's it! You've created your first workflow. When new users are created, they'
 ```json
 {
   "name": "Order Confirmation",
-  "trigger": {
-    "entity_type": "order",
-    "operations": ["create"]
+  "trigger": {```
+
+"entity_type": "order",
+"operations": ["create"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "status",
-      "operator": "equals",
-      "value": "confirmed"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "status",
+  "operator": "equals",
+  "value": "confirmed"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "Order Confirmed",
-      "body": "Your order #{{order_number}} for ${{total}} has been confirmed.",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{customer_id}}"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "Order Confirmed",
+  "body": "Your order #{{order_number}} for ${{total}} has been confirmed.",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{customer_id}}"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -92,29 +100,37 @@ That's it! You've created your first workflow. When new users are created, they'
 ```json
 {
   "name": "Task Assignment",
-  "trigger": {
-    "entity_type": "task",
-    "operations": ["update"]
+  "trigger": {```
+
+"entity_type": "task",
+"operations": ["update"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "assignee_id",
-      "operator": "changed"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "assignee_id",
+  "operator": "changed"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "New Task Assigned",
-      "body": "You have been assigned to: {{title}}",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{assignee_id}}"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "New Task Assigned",
+  "body": "You have been assigned to: {{title}}",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{assignee_id}}"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -124,38 +140,46 @@ That's it! You've created your first workflow. When new users are created, they'
 ```json
 {
   "name": "Weekly Activity Report",
-  "trigger": {
-    "entity_type": "scheduler",
-    "operations": ["tick"],
-    "schedule": {
-      "type": "cron",
-      "expression": "0 9 * * 1"  // 9 AM every Monday
-    }
+  "trigger": {```
+
+"entity_type": "scheduler",
+"operations": ["tick"],
+"schedule": {
+  "type": "cron",
+  "expression": "0 9 * * 1"  // 9 AM every Monday
+}
+```
   },
-  "actions": [
-    {
-      "type": "database",
-      "operation": "query",
-      "target_entity": "activity",
-      "query": {
-        "created_at": {
-          "operator": "between",
-          "value": ["{{now() - interval '7 days'}}", "{{now()}}"]
-        }
-      },
-      "result_variable": "weekly_activities"
-    },
-    {
-      "type": "email",
-      "subject": "Weekly Activity Report",
-      "body": "Activity summary for the past week: {{weekly_activities.length}} new activities.",
-      "recipients": [
-        {
-          "type": "role",
-          "value": "manager"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "database",
+  "operation": "query",
+  "target_entity": "activity",
+  "query": {```
+
+"created_at": {
+  "operator": "between",
+  "value": ["{{now() - interval '7 days'}}", "{{now()}}"]
+}
+```
+  },
+  "result_variable": "weekly_activities"
+},
+{
+  "type": "email",
+  "subject": "Weekly Activity Report",
+  "body": "Activity summary for the past week: {{weekly_activities.length}} new activities.",
+  "recipients": [```
+
+{
+  "type": "role",
+  "value": "manager"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -211,10 +235,13 @@ Use these in notification and email bodies:
 
 Now that you've created your first workflow, explore these resources:
 
-- [Comprehensive Tutorial](/docs/workflows/tutorial.md): Step-by-step guide with a complete example
-- [API Reference](/docs/api/workflows.md): Programmatically create and manage workflows
-- [Advanced Patterns](/docs/workflows/advanced-patterns.md): Sophisticated workflow techniques
-- [Custom Extensions](/docs/workflows/custom-extensions.md): Extend the system with custom components
+- [Comprehensive Tutorial](tutorial.md): Step-by-step guide with a complete example
+<!-- TODO: Create API documentation -->
+<!-- - [API Reference](/docs/api/workflows.md): Programmatically create and manage workflows -->
+<!-- TODO: Create advanced patterns documentation -->
+<!-- - [Advanced Patterns](advanced-patterns.md): Sophisticated workflow techniques -->
+<!-- TODO: Create custom extensions documentation -->
+<!-- - [Custom Extensions](custom-extensions.md): Extend the system with custom components -->
 
 ## Quick Tips
 

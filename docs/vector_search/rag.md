@@ -32,21 +32,25 @@ Here's how to use the RAG service:
 from uno.domain.vector_search import RAGService, VectorSearchService
 
 # Set up vector search
-vector_search = VectorSearchService(
-    entity_type=Document,
-    table_name="document",
-    repository=document_repository
+vector_search = VectorSearchService(```
+
+entity_type=Document,
+table_name="document",
+repository=document_repository
+```
 )
 
 # Create RAG service
 rag_service = RAGService(vector_search=vector_search)
 
 # Get a complete RAG prompt
-rag_prompt = await rag_service.create_rag_prompt(
-    query="How do I implement pagination in REST APIs?",
-    system_prompt="You are a helpful technical assistant...",
-    limit=5,
-    threshold=0.7
+rag_prompt = await rag_service.create_rag_prompt(```
+
+query="How do I implement pagination in REST APIs?",
+system_prompt="You are a helpful technical assistant...",
+limit=5,
+threshold=0.7
+```
 )
 
 # Use with your LLM integration
@@ -62,16 +66,20 @@ To retrieve context without generating a prompt:
 
 ```python
 # Get entities for context
-entities, search_results = await rag_service.retrieve_context(
-    query="Explain vector search in databases",
-    limit=5,
-    threshold=0.7
+entities, search_results = await rag_service.retrieve_context(```
+
+query="Explain vector search in databases",
+limit=5,
+threshold=0.7
+```
 )
 
 # Use entities directly
-for entity in entities:
-    print(f"Title: {entity.title}")
-    print(f"Relevance: {search_results[i].similarity}")
+for entity in entities:```
+
+print(f"Title: {entity.title}")
+print(f"Relevance: {search_results[i].similarity}")
+```
 ```
 
 ## Customizing Context Formatting
@@ -79,22 +87,30 @@ for entity in entities:
 You can customize how entities are formatted by subclassing `RAGService`:
 
 ```python
-class DocumentRAG(RAGService[Document]):
-    def format_context_for_prompt(self, entities: List[Document]) -> str:
-        context_parts = []
+class DocumentRAG(RAGService[Document]):```
+
+def format_context_for_prompt(self, entities: List[Document]) -> str:```
+
+context_parts = []
+```
+    ```
+
+for i, doc in enumerate(entities):
+    context_text = f"[Document {i+1}]\n"
+    context_text += f"Title: {doc.title}\n"
+    context_text += f"Summary: {doc.summary}\n"
+    context_text += f"Content: {doc.content[:300]}...\n"
+    
+    if doc.source_url:
+        context_text += f"Source: {doc.source_url}\n"
         
-        for i, doc in enumerate(entities):
-            context_text = f"[Document {i+1}]\n"
-            context_text += f"Title: {doc.title}\n"
-            context_text += f"Summary: {doc.summary}\n"
-            context_text += f"Content: {doc.content[:300]}...\n"
-            
-            if doc.source_url:
-                context_text += f"Source: {doc.source_url}\n"
-                
-            context_parts.append(context_text)
-        
-        return "\n---\n".join(context_parts)
+    context_parts.append(context_text)
+```
+    ```
+
+return "\n---\n".join(context_parts)
+```
+```
 ```
 
 ## Advanced RAG Patterns
@@ -107,10 +123,12 @@ Combine graph traversal with vector search for more contextual retrieval:
 from uno.domain.vector_search import HybridQuery
 
 # Create a hybrid query
-hybrid_query = HybridQuery(
-    query_text="PostgreSQL performance tuning",
-    start_node_type="Document",
-    path_pattern="(n:Document)-[:TAGGED_WITH]->(:Tag {name: 'Database'})"
+hybrid_query = HybridQuery(```
+
+query_text="PostgreSQL performance tuning",
+start_node_type="Document",
+path_pattern="(n:Document)-[:TAGGED_WITH]->(:Tag {name: 'Database'})"
+```
 )
 
 # Get results

@@ -21,24 +21,32 @@ from uno.core.monitoring.events import EventLogger, EventType, EventSeverity
 logger = EventLogger()
 
 # Log a simple event
-logger.log_event(
-    event_type=EventType.USER_ACTIVITY,
-    severity=EventSeverity.INFO,
-    message="User logged in",
-    context={"user_id": "12345", "ip_address": "192.168.1.1"}
+logger.log_event(```
+
+event_type=EventType.USER_ACTIVITY,
+severity=EventSeverity.INFO,
+message="User logged in",
+context={"user_id": "12345", "ip_address": "192.168.1.1"}
+```
 )
 
 # Log an error event
-try:
-    # Some operation that might fail
-    result = perform_operation()
-except Exception as e:
-    logger.log_exception(
-        exception=e,
-        event_type=EventType.SYSTEM_ERROR,
-        message="Operation failed",
-        context={"operation": "perform_operation", "params": {"id": "12345"}}
-    )
+try:```
+
+# Some operation that might fail
+result = perform_operation()
+```
+except Exception as e:```
+
+logger.log_exception(```
+
+exception=e,
+event_type=EventType.SYSTEM_ERROR,
+message="Operation failed",
+context={"operation": "perform_operation", "params": {"id": "12345"}}
+```
+)
+```
 ```
 
 ## Event Types
@@ -74,21 +82,35 @@ Events include context information to provide a complete picture:
 
 ```python
 # Creating a context
-with EventContext(operation="user_registration", user_id="12345"):
-    # All events logged within this context will include the context data
-    logger.log_event(
-        event_type=EventType.USER_ACTIVITY,
-        severity=EventSeverity.INFO,
-        message="Started user registration"
-    )
-    
-    # Perform registration steps...
-    
-    logger.log_event(
-        event_type=EventType.RESOURCE_CREATED,
-        severity=EventSeverity.INFO,
-        message="User registered successfully"
-    )
+with EventContext(operation="user_registration", user_id="12345"):```
+
+# All events logged within this context will include the context data
+logger.log_event(```
+
+event_type=EventType.USER_ACTIVITY,
+severity=EventSeverity.INFO,
+message="Started user registration"
+```
+)
+``````
+
+```
+```
+
+# Perform registration steps...
+``````
+
+```
+```
+
+logger.log_event(```
+
+event_type=EventType.RESOURCE_CREATED,
+severity=EventSeverity.INFO,
+message="User registered successfully"
+```
+)
+```
 ```
 
 ## Tracing Integration
@@ -99,15 +121,19 @@ The event logging system integrates with distributed tracing:
 from uno.core.monitoring.tracing import tracer
 
 # Create a span
-with tracer.start_span("register_user") as span:
-    # Events logged will be associated with this span
-    logger.log_event(
-        event_type=EventType.USER_ACTIVITY,
-        severity=EventSeverity.INFO,
-        message="Processing user registration",
-        trace_id=span.trace_id,
-        span_id=span.span_id
-    )
+with tracer.start_span("register_user") as span:```
+
+# Events logged will be associated with this span
+logger.log_event(```
+
+event_type=EventType.USER_ACTIVITY,
+severity=EventSeverity.INFO,
+message="Processing user registration",
+trace_id=span.trace_id,
+span_id=span.span_id
+```
+)
+```
 ```
 
 ## Event Processors
@@ -123,15 +149,21 @@ Events can be processed by various processors:
 Configure multiple processors:
 
 ```python
-from uno.core.monitoring.events import (
-    EventLogger, ConsoleEventProcessor, JSONFileEventProcessor
+from uno.core.monitoring.events import (```
+
+EventLogger, ConsoleEventProcessor, JSONFileEventProcessor
+```
 )
 
-logger = EventLogger(
-    processors=[
-        ConsoleEventProcessor(),
-        JSONFileEventProcessor("/var/log/application/events.log")
-    ]
+logger = EventLogger(```
+
+processors=[```
+
+ConsoleEventProcessor(),
+JSONFileEventProcessor("/var/log/application/events.log")
+```
+]
+```
 )
 ```
 
@@ -149,27 +181,45 @@ event_logger = EventLogger()
 setup_monitoring(app, event_logger=event_logger)
 
 @app.middleware("http")
-async def log_request_events(request: Request, call_next):
-    # Log request start
-    event_logger.log_event(
-        event_type=EventType.USER_ACTIVITY,
-        severity=EventSeverity.INFO,
-        message=f"Request started: {request.method} {request.url.path}",
-        context={"client_ip": request.client.host}
-    )
-    
-    # Process request
-    response = await call_next(request)
-    
-    # Log request completion
-    event_logger.log_event(
-        event_type=EventType.USER_ACTIVITY,
-        severity=EventSeverity.INFO,
-        message=f"Request completed: {request.method} {request.url.path}",
-        context={"status_code": response.status_code}
-    )
-    
-    return response
+async def log_request_events(request: Request, call_next):```
+
+# Log request start
+event_logger.log_event(```
+
+event_type=EventType.USER_ACTIVITY,
+severity=EventSeverity.INFO,
+message=f"Request started: {request.method} {request.url.path}",
+context={"client_ip": request.client.host}
+```
+)
+``````
+
+```
+```
+
+# Process request
+response = await call_next(request)
+``````
+
+```
+```
+
+# Log request completion
+event_logger.log_event(```
+
+event_type=EventType.USER_ACTIVITY,
+severity=EventSeverity.INFO,
+message=f"Request completed: {request.method} {request.url.path}",
+context={"status_code": response.status_code}
+```
+)
+``````
+
+```
+```
+
+return response
+```
 ```
 
 ## Filtering and Sampling
@@ -183,14 +233,18 @@ from uno.core.monitoring.events import EventFilter, SamplingStrategy
 debug_filter = EventFilter(min_severity=EventSeverity.INFO)
 
 # Sample performance events at 10% rate
-sampling_strategy = SamplingStrategy(
-    event_types=[EventType.PERFORMANCE_EVENT],
-    sample_rate=0.1
+sampling_strategy = SamplingStrategy(```
+
+event_types=[EventType.PERFORMANCE_EVENT],
+sample_rate=0.1
+```
 )
 
-logger = EventLogger(
-    filters=[debug_filter],
-    sampling_strategies=[sampling_strategy]
+logger = EventLogger(```
+
+filters=[debug_filter],
+sampling_strategies=[sampling_strategy]
+```
 )
 ```
 
@@ -201,9 +255,11 @@ Connect events to alerting systems:
 ```python
 from uno.core.monitoring.events import AlertingEventProcessor
 
-alerting_processor = AlertingEventProcessor(
-    min_severity=EventSeverity.ERROR,
-    alert_endpoint="https://alerts.example.com/api/v1/events"
+alerting_processor = AlertingEventProcessor(```
+
+min_severity=EventSeverity.ERROR,
+alert_endpoint="https://alerts.example.com/api/v1/events"
+```
 )
 
 logger = EventLogger(processors=[alerting_processor])

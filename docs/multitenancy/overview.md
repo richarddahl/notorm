@@ -50,10 +50,12 @@ Tenant-aware models inherit from the `TenantAwareModel` base class, which includ
 ```python
 from uno.core.multitenancy import TenantAwareModel
 
-class Product(TenantAwareModel):
-    name: str
-    price: float
-    description: str
+class Product(TenantAwareModel):```
+
+name: str
+price: float
+description: str
+```
 ```
 
 ### Tenant-Aware Repositories
@@ -63,9 +65,11 @@ The `TenantAwareRepository` class automatically filters queries by the current t
 ```python
 from uno.core.multitenancy import TenantAwareRepository
 
-class ProductRepository(TenantAwareRepository):
-    # All methods inherit tenant filtering behavior
-    pass
+class ProductRepository(TenantAwareRepository):```
+
+# All methods inherit tenant filtering behavior
+pass
+```
 ```
 
 ## Getting Started
@@ -80,13 +84,15 @@ from uno.core.multitenancy import TenantIdentificationMiddleware, TenantService
 app = FastAPI()
 
 # Add the middleware
-app.add_middleware(
-    TenantIdentificationMiddleware,
-    tenant_service=TenantService(),
-    header_name="X-Tenant-ID",
-    subdomain_pattern=r"(.+)\.example\.com",
-    path_prefix=True,
-    exclude_paths=["/api/docs", "/api/auth"]
+app.add_middleware(```
+
+TenantIdentificationMiddleware,
+tenant_service=TenantService(),
+header_name="X-Tenant-ID",
+subdomain_pattern=r"(.+)\.example\.com",
+path_prefix=True,
+exclude_paths=["/api/docs", "/api/auth"]
+```
 )
 ```
 
@@ -97,10 +103,12 @@ Define your tenant-aware models by inheriting from `TenantAwareModel`:
 ```python
 from uno.core.multitenancy import TenantAwareModel
 
-class Customer(TenantAwareModel):
-    name: str
-    email: str
-    status: str = "active"
+class Customer(TenantAwareModel):```
+
+name: str
+email: str
+status: str = "active"
+```
 ```
 
 ### 3. Use Tenant-Aware Repositories
@@ -111,13 +119,23 @@ Create repositories for your tenant-aware models:
 from uno.core.multitenancy import TenantAwareRepository
 from .models import Customer
 
-class CustomerRepository(TenantAwareRepository):
-    def __init__(self, session):
-        super().__init__(session, Customer)
-    
-    # Add custom query methods as needed
-    async def find_active_customers(self):
-        return await self.find_by(status="active")
+class CustomerRepository(TenantAwareRepository):```
+
+def __init__(self, session):```
+
+super().__init__(session, Customer)
+```
+``````
+
+```
+```
+
+# Add custom query methods as needed
+async def find_active_customers(self):```
+
+return await self.find_by(status="active")
+```
+```
 ```
 
 ### 4. Protect Routes with Tenant Validation
@@ -131,14 +149,18 @@ from uno.core.multitenancy import tenant_required, TenantService
 router = APIRouter()
 
 @router.get("/customers")
-async def list_customers(
-    tenant_id: str = Depends(tenant_required()),
-    customer_repo: CustomerRepository = Depends()
-):
-    # tenant_id parameter ensures tenant access is validated
-    # and sets the current tenant context
-    customers = await customer_repo.list()
-    return customers
+async def list_customers(```
+
+tenant_id: str = Depends(tenant_required()),
+customer_repo: CustomerRepository = Depends()
+```
+):```
+
+# tenant_id parameter ensures tenant access is validated
+# and sets the current tenant context
+customers = await customer_repo.list()
+return customers
+```
 ```
 
 ## Tenant Identification Strategies
@@ -161,14 +183,18 @@ The `TenantService` provides methods for managing tenants:
 ```python
 from uno.core.multitenancy import TenantService
 
-async def create_new_tenant(tenant_data):
-    tenant_service = TenantService()
-    tenant = await tenant_service.create_tenant(
-        name=tenant_data.name,
-        slug=tenant_data.slug,
-        settings=tenant_data.settings
-    )
-    return tenant
+async def create_new_tenant(tenant_data):```
+
+tenant_service = TenantService()
+tenant = await tenant_service.create_tenant(```
+
+name=tenant_data.name,
+slug=tenant_data.slug,
+settings=tenant_data.settings
+```
+)
+return tenant
+```
 ```
 
 ### Cross-Tenant Operations
@@ -178,24 +204,38 @@ For administrative purposes, you might need to perform operations across tenants
 ```python
 from uno.core.multitenancy import AdminTenantMixin
 
-class AdminService(AdminTenantMixin):
-    def __init__(self, session):
-        super().__init__(session)
+class AdminService(AdminTenantMixin):```
+
+def __init__(self, session):```
+
+super().__init__(session)
+```
+``````
+
+```
+```
+
+async def count_users_across_tenants(self, tenant_ids):```
+
+results = {}
+for tenant_id in tenant_ids:
+    # Switch to tenant context
+    await self.switch_tenant(tenant_id)
     
-    async def count_users_across_tenants(self, tenant_ids):
-        results = {}
-        for tenant_id in tenant_ids:
-            # Switch to tenant context
-            await self.switch_tenant(tenant_id)
-            
-            # Run tenant-scoped query
-            user_count = await user_repository.count()
-            results[tenant_id] = user_count
-            
-            # Restore original tenant context
-            await self.restore_tenant()
-        
-        return results
+    # Run tenant-scoped query
+    user_count = await user_repository.count()
+    results[tenant_id] = user_count
+    
+    # Restore original tenant context
+    await self.restore_tenant()
+``````
+
+```
+```
+
+return results
+```
+```
 ```
 
 ### Superuser Access
@@ -205,16 +245,26 @@ The `SuperuserBypassMixin` allows database superusers to bypass tenant isolation
 ```python
 from uno.core.multitenancy import SuperuserBypassMixin
 
-class MaintenanceService(SuperuserBypassMixin):
-    def __init__(self, session):
-        super().__init__(session)
-    
-    async def perform_maintenance(self):
-        # Temporarily bypass RLS (only works for database superusers)
-        async with self:
-            # Run queries without tenant filtering
-            results = await session.execute("SELECT * FROM user_data")
-            return results.fetchall()
+class MaintenanceService(SuperuserBypassMixin):```
+
+def __init__(self, session):```
+
+super().__init__(session)
+```
+``````
+
+```
+```
+
+async def perform_maintenance(self):```
+
+# Temporarily bypass RLS (only works for database superusers)
+async with self:
+    # Run queries without tenant filtering
+    results = await session.execute("SELECT * FROM user_data")
+    return results.fetchall()
+```
+```
 ```
 
 ## Security Considerations

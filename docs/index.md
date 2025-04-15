@@ -2,8 +2,19 @@
 
 Welcome to the Uno Framework documentation. Uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI.
 
-!!! note "Documentation Reorganization"
-    We are currently reorganizing our documentation to make it more accessible and consistent. Some sections may be in the process of being updated.
+!!! note "Documentation Updates"```
+
+The documentation has been completely reorganized and standardized for consistency and accuracy. Key changes include:
+- Merged duplicate documentation (e.g., JWT authentication)
+- Fixed formatting across all documentation files
+- Added detailed examples and cross-references
+- Created comprehensive documentation planning resources
+
+For more information, see:
+- [Documentation Index](./DOCUMENTATION_INDEX.md) - Central index of all documentation resources
+- [Documentation Status Visualization](./DOCUMENTATION_STATUS_VISUALIZATION.md) - Visual overview of documentation coverage
+- [Documentation Development Plan](./DOCUMENTATION_DEVELOPMENT_PLAN.md) - Plan for ongoing documentation improvement
+```
 
 ## What is Uno?
 
@@ -35,12 +46,14 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - [**Data Layer**](database/overview.md): Database integration and management
 - [**Business Logic**](business_logic/overview.md): Business logic implementation
 - [**API Layer**](api/overview.md): API definition and integration
+- [**Security**](security/overview.md): Authentication, authorization, and security features
 - [**Vector Search**](vector_search/overview.md): Semantic search capabilities
 - [**Error Handling**](error_handling/overview.md): Error management and reporting
 - [**Type Safety**](type_safety/overview.md): Type hinting and protocol validation
 - [**Dependency Injection**](dependency_injection/overview.md): Service location and dependency management
 - [**Async Utilities**](async/overview.md): Asynchronous programming utilities
 - [**Developer Tools**](developer_tools.md): Tools for development and debugging
+- [**Documentation**](documentation_generation/overview.md): Documentation generation and standards
 
 ## Layered Architecture
 

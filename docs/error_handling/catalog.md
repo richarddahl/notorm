@@ -55,14 +55,16 @@ You can register custom error codes for your application using the `register_err
 ```python
 from uno.core.errors import register_error, ErrorCategory, ErrorSeverity
 
-register_error(
-    code="USER-0001",
-    message_template="User validation error: {message}",
-    category=ErrorCategory.VALIDATION,
-    severity=ErrorSeverity.ERROR,
-    description="Error validating user data",
-    http_status_code=400,
-    retry_allowed=True
+register_error(```
+
+code="USER-0001",
+message_template="User validation error: {message}",
+category=ErrorCategory.VALIDATION,
+severity=ErrorSeverity.ERROR,
+description="Error validating user data",
+http_status_code=400,
+retry_allowed=True
+```
 )
 ```
 
@@ -73,8 +75,10 @@ register_error(
 ```python
 from uno.core.errors import ErrorCode
 
-if ErrorCode.is_valid("DB-0001"):
-    print("Valid error code")
+if ErrorCode.is_valid("DB-0001"):```
+
+print("Valid error code")
+```
 ```
 
 ### Getting HTTP Status Code for an Error Code
@@ -92,11 +96,13 @@ print(f"HTTP status code: {status_code}")  # HTTP status code: 503
 from uno.core.errors import get_error_code_info
 
 info = get_error_code_info("DB-0001")
-if info:
-    print(f"Message template: {info.message_template}")
-    print(f"Category: {info.category}")
-    print(f"Severity: {info.severity}")
-    print(f"HTTP status code: {info.http_status_code}")
+if info:```
+
+print(f"Message template: {info.message_template}")
+print(f"Category: {info.category}")
+print(f"Severity: {info.severity}")
+print(f"HTTP status code: {info.http_status_code}")
+```
 ```
 
 ### Getting All Error Codes
@@ -105,8 +111,10 @@ if info:
 from uno.core.errors import get_all_error_codes
 
 all_codes = get_all_error_codes()
-for info in all_codes:
-    print(f"{info.code}: {info.description}")
+for info in all_codes:```
+
+print(f"{info.code}: {info.description}")
+```
 ```
 
 ## Best Practices

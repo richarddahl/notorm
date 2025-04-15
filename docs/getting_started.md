@@ -69,40 +69,62 @@ from uno.obj import UnoObj
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Define a model
-class User(UnoModel):
-    __tablename__ = "user"
-    
-    id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
-    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
-    handle: Mapped[PostgresTypes.String100] = mapped_column(nullable=False)
-    full_name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+class User(UnoModel):```
+
+__tablename__ = "user"
+``````
+
+```
+```
+
+id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
+email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+handle: Mapped[PostgresTypes.String100] = mapped_column(nullable=False)
+full_name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+```
     
 # Define business logic
-class UserObj(UnoObj):
-    model = User  # Link to the model class
-    
-    id: str
-    email: str
-    handle: str
-    full_name: str
-    
-    def validate_email(self):
-        if "@" not in self.email:
-            raise ValueError("Invalid email format")
+class UserObj(UnoObj):```
+
+model = User  # Link to the model class
+``````
+
+```
+```
+
+id: str
+email: str
+handle: str
+full_name: str
+``````
+
+```
+```
+
+def validate_email(self):```
+
+if "@" not in self.email:
+    raise ValueError("Invalid email format")
+```
+```
 
 # Create a database interface
 from uno.database.db import UnoDBFactory
 db = UnoDBFactory(obj=UserObj)
 
 # Create a new user
-async def create_user():
-    user_data = {
-        "email": "user@example.com",
-        "handle": "user123",
-        "full_name": "Example User"
-    }
-    user, created = await db.create(schema=user_data)
-    return user
+async def create_user():```
+
+user_data = {```
+
+"email": "user@example.com",
+"handle": "user123",
+"full_name": "Example User"
+```
+}
+user, created = await db.create(schema=user_data)
+return user
+```
 ```
 
 ## Creating an API
@@ -117,11 +139,13 @@ from uno.dependencies.fastapi import get_db_session
 app = FastAPI()
 
 # Create API endpoints for the User model
-user_endpoints = EndpointFactory.create_endpoints(
-    obj_class=UserObj,
-    prefix="/users",
-    tag="Users",
-    session_dependency=get_db_session
+user_endpoints = EndpointFactory.create_endpoints(```
+
+obj_class=UserObj,
+prefix="/users",
+tag="Users",
+session_dependency=get_db_session
+```
 )
 
 # Add the endpoints to the app
@@ -129,17 +153,29 @@ app.include_router(user_endpoints)
 
 # Define a custom endpoint
 @app.get("/users/by-email/{email}")
-async def get_user_by_email(email: str, session = Depends(get_db_session)):
-    # Create a repository
-    from uno.database.repository import UnoBaseRepository
-    repo = UnoBaseRepository(session, User)
-    
-    # Query the database
-    user = await repo.get_by(User.email == email)
-    if not user:
-        return {"error": "User not found"}
-    
-    return user
+async def get_user_by_email(email: str, session = Depends(get_db_session)):```
+
+# Create a repository
+from uno.database.repository import UnoBaseRepository
+repo = UnoBaseRepository(session, User)
+``````
+
+```
+```
+
+# Query the database
+user = await repo.get_by(User.email == email)
+if not user:```
+
+return {"error": "User not found"}
+```
+``````
+
+```
+```
+
+return user
+```
 ```
 
 ## Development Environment

@@ -29,9 +29,11 @@ db_manager = get_db_manager()
 db_manager.execute_ddl("""
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
+BEGIN```
+
+NEW.updated_at = NOW();
+RETURN NEW;
+```
 END;
 $$ LANGUAGE plpgsql;
 """)
@@ -47,17 +49,21 @@ from uno.sql.emitters.function import FunctionEmitter
 db_manager = get_db_manager()
 
 # Create a function emitter
-function_emitter = FunctionEmitter(
-    name="update_timestamp",
-    params=[],
-    return_type="TRIGGER",
-    body="""
-    BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-    END;
-    """,
-    language="plpgsql"
+function_emitter = FunctionEmitter(```
+
+name="update_timestamp",
+params=[],
+return_type="TRIGGER",
+body="""
+BEGIN```
+
+NEW.updated_at = NOW();
+RETURN NEW;
+```
+END;
+""",
+language="plpgsql"
+```
 )
 
 # Execute the emitter
@@ -73,17 +79,21 @@ from uno.dependencies import get_db_manager
 db_manager = get_db_manager()
 
 # Check if a function exists
-if not db_manager.function_exists("update_timestamp", schema="public"):
-    # Create the function if it doesn't exist
-    db_manager.execute_ddl("""
-    CREATE OR REPLACE FUNCTION public.update_timestamp() 
-    RETURNS TRIGGER AS $$
-    BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-    """)
+if not db_manager.function_exists("update_timestamp", schema="public"):```
+
+# Create the function if it doesn't exist
+db_manager.execute_ddl("""
+CREATE OR REPLACE FUNCTION public.update_timestamp() 
+RETURNS TRIGGER AS $$
+BEGIN```
+
+NEW.updated_at = NOW();
+RETURN NEW;
+```
+END;
+$$ LANGUAGE plpgsql;
+""")
+```
 ```
 
 ### Managing Schemas and Extensions
@@ -115,27 +125,33 @@ from uno.sql.emitters.trigger import TriggerEmitter
 db_manager = get_db_manager()
 
 # Create function emitter
-function_emitter = FunctionEmitter(
-    name="update_timestamp",
-    params=[],
-    return_type="TRIGGER",
-    body="""
-    BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-    END;
-    """,
-    language="plpgsql"
+function_emitter = FunctionEmitter(```
+
+name="update_timestamp",
+params=[],
+return_type="TRIGGER",
+body="""
+BEGIN```
+
+NEW.updated_at = NOW();
+RETURN NEW;
+```
+END;
+""",
+language="plpgsql"
+```
 )
 
 # Create trigger emitter
-trigger_emitter = TriggerEmitter(
-    name="user_timestamp_trigger",
-    table="users",
-    events=["INSERT", "UPDATE"],
-    timing="BEFORE",
-    function="update_timestamp",
-    for_each="ROW"
+trigger_emitter = TriggerEmitter(```
+
+name="user_timestamp_trigger",
+table="users",
+events=["INSERT", "UPDATE"],
+timing="BEFORE",
+function="update_timestamp",
+for_each="ROW"
+```
 )
 
 # Execute both emitters
@@ -156,20 +172,24 @@ db_manager.create_role("readonly")
 db_manager.create_role("readwrite", granted_roles=["readonly"])
 
 # Grant privileges
-db_manager.grant_privileges(
-    privileges=["SELECT"],
-    on_object="users",
-    to_role="readonly",
-    object_type="TABLE",
-    schema="public"
+db_manager.grant_privileges(```
+
+privileges=["SELECT"],
+on_object="users",
+to_role="readonly",
+object_type="TABLE",
+schema="public"
+```
 )
 
-db_manager.grant_privileges(
-    privileges=["INSERT", "UPDATE", "DELETE"],
-    on_object="users",
-    to_role="readwrite",
-    object_type="TABLE",
-    schema="public"
+db_manager.grant_privileges(```
+
+privileges=["INSERT", "UPDATE", "DELETE"],
+on_object="users",
+to_role="readwrite",
+object_type="TABLE",
+schema="public"
+```
 )
 ```
 
@@ -183,14 +203,16 @@ from uno.database.config import ConnectionConfig
 db_manager = get_db_manager()
 
 # Create database configuration
-config = ConnectionConfig(
-    db_role="postgres",
-    db_user_pw="password",
-    db_host="localhost",
-    db_port=5432,
-    db_name="new_database",
-    db_driver="postgresql+asyncpg",
-    db_schema="public"
+config = ConnectionConfig(```
+
+db_role="postgres",
+db_user_pw="password",
+db_host="localhost",
+db_port=5432,
+db_name="new_database",
+db_driver="postgresql+asyncpg",
+db_schema="public"
+```
 )
 
 # Initialize a new database
@@ -214,23 +236,29 @@ registry.register_emitter("function", FunctionEmitter)
 registry.register_emitter("trigger", TriggerEmitter)
 
 # Create emitters from registry
-function_emitter = registry.create_emitter(
-    "function",
-    name="update_timestamp",
-    params=[],
-    return_type="TRIGGER",
-    body="BEGIN NEW.updated_at = NOW(); RETURN NEW; END;",
-    language="plpgsql"
+function_emitter = registry.create_emitter(```
+
+"function",
+name="update_timestamp",
+params=[],
+return_type="TRIGGER",
+body="BEGIN NEW.updated_at = NOW(); RETURN NEW; END;",
+language="plpgsql"
+```
 )
 
-trigger_emitter = registry.create_emitter(
-    "trigger",
-    name="user_timestamp_trigger",
-    table="users",
-    events=["INSERT", "UPDATE"],
-    timing="BEFORE",
-    function="update_timestamp",
-    for_each="ROW"
+trigger_emitter = registry.create_emitter(```
+
+"trigger",```
+```
+
+name="user_timestamp_trigger",
+table="users",
+events=["INSERT", "UPDATE"],
+timing="BEFORE",
+function="update_timestamp",
+for_each="ROW"
+```
 )
 
 # Execute the emitters
@@ -282,18 +310,26 @@ from uno.dependencies import get_db_manager
 db_manager = get_db_manager()
 
 # This will raise a ValueError
-try:
-    # Attempting to drop a production database is blocked
-    db_manager.execute_ddl("DROP DATABASE PRODUCTION;")
-except ValueError as e:
-    print(f"Error: {e}")  # Error: Disallowed operation in DDL statement...
+try:```
+
+# Attempting to drop a production database is blocked
+db_manager.execute_ddl("DROP DATABASE PRODUCTION;")
+```
+except ValueError as e:```
+
+print(f"Error: {e}")  # Error: Disallowed operation in DDL statement...
+```
 
 # This will also raise a ValueError
-try:
-    # Attempting to grant all privileges to PUBLIC is blocked
-    db_manager.execute_ddl("GRANT ALL ON ALL TABLES IN SCHEMA public TO PUBLIC;")
-except ValueError as e:
-    print(f"Error: {e}")
+try:```
+
+# Attempting to grant all privileges to PUBLIC is blocked
+db_manager.execute_ddl("GRANT ALL ON ALL TABLES IN SCHEMA public TO PUBLIC;")
+```
+except ValueError as e:```
+
+print(f"Error: {e}")
+```
 ```
 
 ### Protected Operations

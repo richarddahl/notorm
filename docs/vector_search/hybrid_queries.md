@@ -43,13 +43,15 @@ Here's how a hybrid query executes:
 ### Finding Similar Documents in a Category
 
 ```python
-hybrid_query = HybridQuery(
-    query_text="machine learning algorithms comparison",
-    limit=10,
-    threshold=0.7,
-    start_node_type="Document",
-    start_filters={"category": "technical"},
-    path_pattern="(n:Document)-[:HAS_CATEGORY]->(:Category {name: 'AI'})"
+hybrid_query = HybridQuery(```
+
+query_text="machine learning algorithms comparison",
+limit=10,
+threshold=0.7,
+start_node_type="Document",
+start_filters={"category": "technical"},
+path_pattern="(n:Document)-[:HAS_CATEGORY]->(:Category {name: 'AI'})"
+```
 )
 ```
 
@@ -61,13 +63,15 @@ This finds documents:
 ### Multi-hop Graph Traversal with Similarity
 
 ```python
-complex_query = HybridQuery(
-    query_text="encryption best practices",
-    start_node_type="Document",
-    path_pattern="(n:Document)-[:AUTHORED_BY]->(:Author)-[:WORKS_AT]->(:Organization {name: 'Security Experts Inc.'})-[:PUBLISHED]->(end_node:Document)",
-    combine_method="weighted",
-    graph_weight=0.3,
-    vector_weight=0.7
+complex_query = HybridQuery(```
+
+query_text="encryption best practices",
+start_node_type="Document",
+path_pattern="(n:Document)-[:AUTHORED_BY]->(:Author)-[:WORKS_AT]->(:Organization {name: 'Security Experts Inc.'})-[:PUBLISHED]->(end_node:Document)",
+combine_method="weighted",
+graph_weight=0.3,
+vector_weight=0.7
+```
 )
 ```
 
@@ -84,10 +88,12 @@ This finds documents:
 The system creates a special function to use vector search within Cypher:
 
 ```sql
-SELECT * FROM cypher('graph', $$
-    MATCH (doc:Document)
-    WHERE doc.id IN $${schema}.cypher_vector_search('encryption algorithms')$$
-    RETURN doc
+SELECT * FROM cypher('graph', $$```
+
+MATCH (doc:Document)
+WHERE doc.id IN $${schema}.cypher_vector_search('encryption algorithms')$$
+RETURN doc
+```
 $$) AS (result agtype);
 ```
 

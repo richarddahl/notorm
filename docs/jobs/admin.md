@@ -51,22 +51,28 @@ Returns detailed health check information for all components of the job system.
 {
   "status": "healthy",
   "message": "Job system is healthy",
-  "checks": {
-    "worker_worker1": {
-      "status": "healthy",
-      "message": "Worker is healthy",
-      "details": {
-        "jobs_processed": 45,
-        "uptime_seconds": 3600
-      }
-    },
-    "scheduler": {
-      "status": "healthy",
-      "message": "Scheduler is healthy",
-      "details": {
-        "schedules_processed": 12
-      }
-    }
+  "checks": {```
+
+"worker_worker1": {
+  "status": "healthy",
+  "message": "Worker is healthy",
+  "details": {```
+
+"jobs_processed": 45,
+"uptime_seconds": 3600
+```
+  }
+},
+"scheduler": {
+  "status": "healthy",
+  "message": "Scheduler is healthy",
+  "details": {```
+
+"schedules_processed": 12
+```
+  }
+}
+```
   },
   "timestamp": "2025-04-12T10:15:30.123456"
 }
@@ -77,25 +83,31 @@ Returns collected metrics for the job system.
 
 ```json
 {
-  "metrics": {
-    "uno_jobs.job_enqueued": {
-      "type": "counter",
-      "values": [
-        {
-          "labels": {"queue": "default", "task": "email", "priority": "HIGH"},
-          "value": 56
-        }
-      ]
-    },
-    "uno_jobs.queue_length": {
-      "type": "gauge",
-      "values": [
-        {
-          "labels": {"queue": "default", "status": "pending"},
-          "value": 12
-        }
-      ]
-    }
+  "metrics": {```
+
+"uno_jobs.job_enqueued": {
+  "type": "counter",
+  "values": [```
+
+{
+  "labels": {"queue": "default", "task": "email", "priority": "HIGH"},
+  "value": 56
+}
+```
+  ]
+},
+"uno_jobs.queue_length": {
+  "type": "gauge",
+  "values": [```
+
+{
+  "labels": {"queue": "default", "status": "pending"},
+  "value": 12
+}
+```
+  ]
+}
+```
   },
   "timestamp": "2025-04-12T10:15:30.123456"
 }
@@ -108,15 +120,17 @@ Returns a list of all queues with their status and job counts.
 
 ```json
 [
-  {
-    "name": "default",
-    "length": 5,
-    "jobs_by_status": [
-      {"status": "PENDING", "count": 5},
-      {"status": "RUNNING", "count": 2},
-      {"status": "COMPLETED", "count": 45},
-      {"status": "FAILED", "count": 3}
-    ]
+  {```
+
+"name": "default",
+"length": 5,
+"jobs_by_status": [
+  {"status": "PENDING", "count": 5},
+  {"status": "RUNNING", "count": 2},
+  {"status": "COMPLETED", "count": 45},
+  {"status": "FAILED", "count": 3}
+]
+```
   }
 ]
 ```
@@ -170,23 +184,25 @@ Query parameters:
 
 ```json
 [
-  {
-    "id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "queue_name": "default",
-    "status": "COMPLETED",
-    "task_name": "send_email",
-    "priority": "HIGH",
-    "created_at": "2025-04-12T10:00:00",
-    "updated_at": "2025-04-12T10:00:05",
-    "started_at": "2025-04-12T10:00:02",
-    "completed_at": "2025-04-12T10:00:05",
-    "retries": 0,
-    "max_retries": 3,
-    "is_scheduled": false,
-    "result": {"success": true, "message_id": "123456"},
-    "error": null,
-    "metadata": {"user_id": "123", "email_type": "welcome"},
-    "tags": ["user", "email", "onboarding"]
+  {```
+
+"id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+"queue_name": "default",
+"status": "COMPLETED",
+"task_name": "send_email",
+"priority": "HIGH",
+"created_at": "2025-04-12T10:00:00",
+"updated_at": "2025-04-12T10:00:05",
+"started_at": "2025-04-12T10:00:02",
+"completed_at": "2025-04-12T10:00:05",
+"retries": 0,
+"max_retries": 3,
+"is_scheduled": false,
+"result": {"success": true, "message_id": "123456"},
+"error": null,
+"metadata": {"user_id": "123", "email_type": "welcome"},
+"tags": ["user", "email", "onboarding"]
+```
   }
 ]
 ```
@@ -251,17 +267,19 @@ Returns a list of all workers with their status.
 
 ```json
 [
-  {
-    "name": "AsyncWorker-1",
-    "status": "running",
-    "queue_names": ["default", "emails"],
-    "current_job_id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "jobs_processed": 45,
-    "is_healthy": true,
-    "details": {
-      "concurrency": 5,
-      "uptime_seconds": 3600
-    }
+  {```
+
+"name": "AsyncWorker-1",
+"status": "running",
+"queue_names": ["default", "emails"],
+"current_job_id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+"jobs_processed": 45,
+"is_healthy": true,
+"details": {
+  "concurrency": 5,
+  "uptime_seconds": 3600
+}
+```
   }
 ]
 ```
@@ -276,17 +294,19 @@ Returns a list of all schedules.
 
 ```json
 [
-  {
-    "id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "name": "daily_report",
-    "task_name": "generate_report",
-    "queue_name": "reports",
-    "schedule_type": "cron",
-    "next_run_at": "2025-04-13T00:00:00",
-    "last_run_at": "2025-04-12T00:00:00",
-    "enabled": true,
-    "created_at": "2025-04-01T00:00:00",
-    "updated_at": "2025-04-12T00:00:05"
+  {```
+
+"id": "e3b1c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+"name": "daily_report",
+"task_name": "generate_report",
+"queue_name": "reports",
+"schedule_type": "cron",
+"next_run_at": "2025-04-13T00:00:00",
+"last_run_at": "2025-04-12T00:00:00",
+"enabled": true,
+"created_at": "2025-04-01T00:00:00",
+"updated_at": "2025-04-12T00:00:05"
+```
   }
 ]
 ```
@@ -382,15 +402,21 @@ from fastapi.security import APIKeyHeader
 # Create security dependency
 api_key_header = APIKeyHeader(name="X-API-Key")
 
-def get_api_key(api_key: str = Security(api_key_header)):
-    if api_key != "your-secret-key":
-        raise HTTPException(status_code=403, detail="Invalid API key")
-    return api_key
+def get_api_key(api_key: str = Security(api_key_header)):```
+
+if api_key != "your-secret-key":```
+
+raise HTTPException(status_code=403, detail="Invalid API key")
+```
+return api_key
+```
 
 # Secure the router
-app.include_router(
-    jobs_router,
-    dependencies=[Depends(get_api_key)]
+app.include_router(```
+
+jobs_router,
+dependencies=[Depends(get_api_key)]
+```
 )
 ```
 
@@ -417,20 +443,28 @@ import click
 import httpx
 
 @click.group()
-def cli():
-    """Command-line interface for Uno Jobs."""
-    pass
+def cli():```
+
+"""Command-line interface for Uno Jobs."""
+pass
+```
 
 @cli.command()
-def list_jobs():
-    """List all jobs."""
-    response = httpx.get("http://localhost:8000/jobs/jobs")
-    jobs = response.json()
-    for job in jobs:
-        click.echo(f"{job['id']} - {job['task_name']} - {job['status']}")
+def list_jobs():```
 
-if __name__ == "__main__":
-    cli()
+"""List all jobs."""
+response = httpx.get("http://localhost:8000/jobs/jobs")
+jobs = response.json()
+for job in jobs:```
+
+click.echo(f"{job['id']} - {job['task_name']} - {job['status']}")
+```
+```
+
+if __name__ == "__main__":```
+
+cli()
+```
 ```
 
 ## Best Practices

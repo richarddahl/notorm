@@ -36,23 +36,37 @@ To use the Uno Caching Framework, you'll first need to create a cache manager in
 from uno.caching import CacheManager, CacheConfig
 
 # Create a cache configuration
-config = CacheConfig(
-    # Enable multi-level caching
-    use_multi_level=True,
-    
-    # Configure local cache
-    local=LocalCacheConfig(
-        type="memory",
-        max_size=10000,  # Maximum number of items
-        ttl=3600,  # Default TTL in seconds
-    ),
-    
-    # Configure distributed cache (optional)
-    distributed=DistributedCacheConfig(
-        enabled=True,
-        type="redis",
-        connection_string="redis://localhost:6379/0",
-    )
+config = CacheConfig(```
+
+# Enable multi-level caching
+use_multi_level=True,
+``````
+
+```
+```
+
+# Configure local cache
+local=LocalCacheConfig(```
+
+type="memory",
+max_size=10000,  # Maximum number of items
+ttl=3600,  # Default TTL in seconds
+```
+),
+``````
+
+```
+```
+
+# Configure distributed cache (optional)
+distributed=DistributedCacheConfig(```
+
+enabled=True,
+type="redis",
+connection_string="redis://localhost:6379/0",
+```
+)
+```
 )
 
 # Create the cache manager
@@ -93,15 +107,19 @@ from uno.caching.decorators import cached, async_cached
 
 # Cache a synchronous function
 @cached(ttl=3600)
-def get_user(user_id: str) -> dict:
-    # Expensive operation to get user data
-    return {"id": user_id, "name": "John Doe"}
+def get_user(user_id: str) -> dict:```
+
+# Expensive operation to get user data
+return {"id": user_id, "name": "John Doe"}
+```
 
 # Cache an asynchronous function
 @async_cached(ttl=3600)
-async def get_user_async(user_id: str) -> dict:
-    # Expensive async operation to get user data
-    return {"id": user_id, "name": "John Doe"}
+async def get_user_async(user_id: str) -> dict:```
+
+# Expensive async operation to get user data
+return {"id": user_id, "name": "John Doe"}
+```
 ```
 
 ### Cache Invalidation
@@ -133,19 +151,25 @@ When multi-level caching is enabled:
 Example configuration:
 
 ```python
-config = CacheConfig(
-    use_multi_level=True,
-    local=LocalCacheConfig(
-        type="memory",
-        max_size=10000,
-        ttl=600,  # Local cache has shorter TTL (10 minutes)
-    ),
-    distributed=DistributedCacheConfig(
-        enabled=True,
-        type="redis",
-        connection_string="redis://localhost:6379/0",
-        ttl=3600,  # Distributed cache has longer TTL (1 hour)
-    )
+config = CacheConfig(```
+
+use_multi_level=True,
+local=LocalCacheConfig(```
+
+type="memory",
+max_size=10000,
+ttl=600,  # Local cache has shorter TTL (10 minutes)
+```
+),
+distributed=DistributedCacheConfig(```
+
+enabled=True,
+type="redis",
+connection_string="redis://localhost:6379/0",
+```
+    ttl=3600,  # Distributed cache has longer TTL (1 hour)
+)
+```
 )
 ```
 
@@ -161,9 +185,11 @@ Time-based invalidation uses a time-to-live (TTL) to automatically expire cache 
 from uno.caching.invalidation import TimeBasedInvalidation
 
 # Create a time-based invalidation strategy
-strategy = TimeBasedInvalidation(
-    default_ttl=300,  # Default TTL in seconds
-    ttl_jitter=0.1,   # Add randomness to prevent cache stampede
+strategy = TimeBasedInvalidation(```
+
+default_ttl=300,  # Default TTL in seconds
+ttl_jitter=0.1,   # Add randomness to prevent cache stampede
+```
 )
 
 # Use the strategy
@@ -178,9 +204,11 @@ Event-based invalidation triggers cache invalidation based on domain events:
 from uno.caching.invalidation import EventBasedInvalidation
 
 # Define event handlers
-event_handlers = {
-    "user.updated": ["user:{id}*", "profile:{id}*"],
-    "user.deleted": ["user:{id}*", "profile:{id}*", "friends:{id}*"],
+event_handlers = {```
+
+"user.updated": ["user:{id}*", "profile:{id}*"],
+"user.deleted": ["user:{id}*", "profile:{id}*", "friends:{id}*"],
+```
 }
 
 # Create an event-based invalidation strategy
@@ -189,8 +217,10 @@ strategy = EventBasedInvalidation(event_handlers)
 # When a user is updated, trigger invalidation
 user_id = "123"
 patterns = strategy.handle_event("user.updated", {"id": user_id})
-for pattern in patterns:
-    cache_manager.invalidate_pattern(pattern)
+for pattern in patterns:```
+
+cache_manager.invalidate_pattern(pattern)
+```
 ```
 
 ### Pattern-Based Invalidation
@@ -201,9 +231,11 @@ Pattern-based invalidation associates entity types with cache key patterns:
 from uno.caching.invalidation import PatternBasedInvalidation
 
 # Define patterns for entity types
-patterns = {
-    "user": ["user:{id}*", "profile:{id}*"],
-    "post": ["post:{id}*", "timeline:*"],
+patterns = {```
+
+"user": ["user:{id}*", "profile:{id}*"],
+"post": ["post:{id}*", "timeline:*"],
+```
 }
 
 # Create a pattern-based invalidation strategy
@@ -212,8 +244,10 @@ strategy = PatternBasedInvalidation(patterns)
 # When a user is updated, invalidate related cache entries
 user_id = "123"
 patterns = strategy.invalidate_entity("user", user_id)
-for pattern in patterns:
-    cache_manager.invalidate_pattern(pattern)
+for pattern in patterns:```
+
+cache_manager.invalidate_pattern(pattern)
+```
 ```
 
 ## Monitoring Tools
@@ -238,11 +272,15 @@ print(f"P95 latency: {analysis['latency_stats']['local']['p95']:.2f} ms")
 
 # Check health
 health = monitor.check_health()
-if not health["overall"]:
-    print("Cache health check failed!")
-    for component, status in health.items():
-        if not status:
-            print(f"Unhealthy component: {component}")
+if not health["overall"]:```
+
+print("Cache health check failed!")
+for component, status in health.items():```
+
+if not status:
+    print(f"Unhealthy component: {component}")
+```
+```
 ```
 
 ## Async API
@@ -273,41 +311,55 @@ stats = await cache_manager.monitor.get_stats_async()
 Cache regions allow you to define different caching configurations for different types of data:
 
 ```python
-config = CacheConfig(
-    # Default configuration
-    local=LocalCacheConfig(
+config = CacheConfig(```
+
+# Default configuration
+local=LocalCacheConfig(```
+
+type="memory",
+max_size=10000,
+ttl=3600,
+```
+),
+``````
+
+```
+```
+
+# Region-specific configurations
+regions={```
+
+"short_lived": {
+    "local": LocalCacheConfig(
         type="memory",
-        max_size=10000,
-        ttl=3600,
+        max_size=1000,
+        ttl=60,  # Short TTL for frequently changing data
     ),
-    
-    # Region-specific configurations
-    regions={
-        "short_lived": {
-            "local": LocalCacheConfig(
-                type="memory",
-                max_size=1000,
-                ttl=60,  # Short TTL for frequently changing data
-            ),
-        },
-        "persistent": {
-            "local": LocalCacheConfig(
-                type="file",
-                directory="/tmp/cache",
-                max_size=100,  # MB
-                ttl=86400,  # 1 day
-            ),
-        },
-    }
+},
+"persistent": {
+    "local": LocalCacheConfig(
+        type="file",
+        directory="/tmp/cache",
+        max_size=100,  # MB
+        ttl=86400,  # 1 day
+    ),
+},
+```
+}
+```
 )
 
 # Use a specific region
-with cache_manager.cache_context("short_lived"):
-    cache_manager.set("frequent:123", data)
+with cache_manager.cache_context("short_lived"):```
+
+cache_manager.set("frequent:123", data)
+```
 
 # Async version
-async with cache_manager.cache_context_async("persistent"):
-    await cache_manager.set_async("persistent:123", data)
+async with cache_manager.cache_context_async("persistent"):```
+
+await cache_manager.set_async("persistent:123", data)
+```
 ```
 
 ### Custom Serialization
@@ -317,15 +369,21 @@ You can customize how values are serialized for storage in the cache:
 ```python
 from uno.caching.serialization import JsonSerializer, PickleSerializer, ProtobufSerializer
 
-config = CacheConfig(
-    local=LocalCacheConfig(
-        type="memory",
-        serializer="pickle",  # Default serializer
-    ),
-    distributed=DistributedCacheConfig(
-        type="redis",
-        serializer="json",  # Use JSON for distributed cache
-    )
+config = CacheConfig(```
+
+local=LocalCacheConfig(```
+
+type="memory",
+serializer="pickle",  # Default serializer
+```
+),
+distributed=DistributedCacheConfig(```
+
+type="redis",
+serializer="json",  # Use JSON for distributed cache
+```
+)
+```
 )
 ```
 
@@ -338,16 +396,22 @@ The caching framework includes several features for performance optimization:
 ```python
 from uno.caching.decorators import cache_aside
 
-def get_from_database(user_id):
-    # Expensive database query
-    return {"id": user_id, "name": "John Doe"}
+def get_from_database(user_id):```
 
-@cache_aside(
-    get_from_cache=lambda user_id: cache_manager.get(f"user:{user_id}"),
-    save_to_cache=lambda user_id, data: cache_manager.set(f"user:{user_id}", data)
+# Expensive database query
+return {"id": user_id, "name": "John Doe"}
+```
+
+@cache_aside(```
+
+get_from_cache=lambda user_id: cache_manager.get(f"user:{user_id}"),
+save_to_cache=lambda user_id, data: cache_manager.set(f"user:{user_id}", data)
+```
 )
-def get_user(user_id):
-    return get_from_database(user_id)
+def get_user(user_id):```
+
+return get_from_database(user_id)
+```
 ```
 
 2. **Batch operations**: Efficiently get or set multiple values at once
@@ -357,10 +421,12 @@ def get_user(user_id):
 users = cache_manager.multi_get(["user:123", "user:456", "user:789"])
 
 # Set multiple values
-cache_manager.multi_set({
-    "user:123": user1_data,
-    "user:456": user2_data,
-    "user:789": user3_data,
+cache_manager.multi_set({```
+
+"user:123": user1_data,
+"user:456": user2_data,
+"user:789": user3_data,
+```
 }, ttl=3600)
 ```
 
@@ -369,9 +435,11 @@ cache_manager.multi_set({
 ```python
 from uno.caching.invalidation import TimeBasedInvalidation
 
-strategy = TimeBasedInvalidation(
-    default_ttl=300,
-    ttl_jitter=0.1,  # 10% randomness
+strategy = TimeBasedInvalidation(```
+
+default_ttl=300,
+ttl_jitter=0.1,  # 10% randomness
+```
 )
 
 # TTL will be between 270 and 330 seconds
@@ -383,12 +451,16 @@ ttl = strategy.apply_jitter(300)
 The caching framework can export metrics to Prometheus for monitoring:
 
 ```python
-config = CacheConfig(
-    monitoring=MonitoringConfig(
-        enabled=True,
-        prometheus_export=True,
-        export_port=9090,
-    )
+config = CacheConfig(```
+
+monitoring=MonitoringConfig(```
+
+enabled=True,
+prometheus_export=True,
+export_port=9090,
+```
+)
+```
 )
 ```
 

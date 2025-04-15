@@ -20,35 +20,45 @@ The Synchronization Engine is built as a layered system:
 ```
 ┌───────────────────────────────────────────────────────────┐
 │                 SynchronizationEngine                      │
-└───────────┬───────────────────────────────┬───────────────┘
-            │                               │
-            │                               │
+└───────────┬───────────────────────────────┬───────────────┘```
+```
+
+    │                               │
+    │                               │
+```
+```
 ┌───────────▼───────────┐       ┌───────────▼───────────┐
 │   Sync Strategies     │       │   Network Adapters    │
 │                       │       │                       │
 │ - Two-way             │       │ - RestAdapter        │
 │ - Pull-only           │       │ - GraphQLAdapter     │
 │ - Push-only           │       │                      │
-└───────────┬───────────┘       └───────────┬──────────┘
-            │                               │
-            │                               │
-            └───────────────┬───────────────┘
-                            │
-                            │
-                  ┌─────────▼─────────┐
-                  │   ChangeTracker   │
-                  └─────────┬─────────┘
-                            │
-                            │
-               ┌────────────▼────────────┐
-               │   Conflict Resolution   │
-               │                         │
-               │ - ServerWinsResolver    │
-               │ - ClientWinsResolver    │
-               │ - TimestampBasedResolver│
-               │ - MergeFieldsResolver   │
-               │ - Custom resolvers      │
-               └─────────────────────────┘
+└───────────┬───────────┘       └───────────┬──────────┘```
+```
+
+    │                               │
+    │                               │
+```
+``````
+
+        └───────────────┬───────────────┘
+                        │
+                        │
+              ┌─────────▼─────────┐
+              │   ChangeTracker   │
+              └─────────┬─────────┘
+                        │
+                        │
+           ┌────────────▼────────────┐
+           │   Conflict Resolution   │
+           │                         │
+           │ - ServerWinsResolver    │
+           │ - ClientWinsResolver    │
+           │ - TimestampBasedResolver│
+           │ - MergeFieldsResolver   │
+           │ - Custom resolvers      │
+           └─────────────────────────┘
+```
 ```
 
 ### Components
@@ -129,37 +139,45 @@ Several conflict resolution strategies have been implemented:
 
 ```python
 from uno.offline import OfflineStore
-from uno.offline.sync import (
-    SynchronizationEngine,
-    SyncOptions,
-    RestAdapter,
-    ServerWinsResolver
+from uno.offline.sync import (```
+
+SynchronizationEngine,
+SyncOptions,
+RestAdapter,
+ServerWinsResolver
+```
 )
 
 # Create offline store
 store = OfflineStore(name="my-app-data")
 
 # Create network adapter for server communication
-adapter = RestAdapter(
-    base_url="https://api.example.com/v1",
-    headers={"Accept": "application/json"},
-    auth_token="my-auth-token"
+adapter = RestAdapter(```
+
+base_url="https://api.example.com/v1",
+headers={"Accept": "application/json"},
+auth_token="my-auth-token"
+```
 )
 
 # Configure synchronization
-sync_options = SyncOptions(
-    collections=["users", "orders", "products"],
-    strategy="two-way",  # or "pull-only", "push-only"
-    network_adapter=adapter,
-    conflict_strategy="server-wins"  # simple string option
+sync_options = SyncOptions(```
+
+collections=["users", "orders", "products"],
+strategy="two-way",  # or "pull-only", "push-only"
+network_adapter=adapter,
+conflict_strategy="server-wins"  # simple string option
+```
 )
 
 # Alternatively, use a more advanced conflict resolution strategy
-sync_options = SyncOptions(
-    collections=["users", "orders", "products"],
-    strategy="two-way",
-    network_adapter=adapter,
-    conflict_strategy=ServerWinsResolver()  # explicit resolver instance
+sync_options = SyncOptions(```
+
+collections=["users", "orders", "products"],
+strategy="two-way",
+network_adapter=adapter,
+conflict_strategy=ServerWinsResolver()  # explicit resolver instance
+```
 )
 
 # Create sync engine
@@ -170,18 +188,30 @@ sync_engine = SynchronizationEngine(store, sync_options)
 
 ```python
 # Synchronize all configured collections
-try:
-    result = await sync_engine.sync()
-    print(f"Uploaded: {result['uploaded']}, Downloaded: {result['downloaded']}")
+try:```
+
+result = await sync_engine.sync()
+print(f"Uploaded: {result['uploaded']}, Downloaded: {result['downloaded']}")
+``````
+
+```
+```
+
+if result["conflicts"] > 0:```
+
+print(f"Resolved {result['conflicts']} conflicts")
+```
     
-    if result["conflicts"] > 0:
-        print(f"Resolved {result['conflicts']} conflicts")
-        
-    if result["errors"]:
-        print(f"Encountered errors: {result['errors']}")
-        
-except Exception as e:
-    print(f"Synchronization failed: {e}")
+if result["errors"]:```
+
+print(f"Encountered errors: {result['errors']}")
+```
+    
+```
+except Exception as e:```
+
+print(f"Synchronization failed: {e}")
+```
 
 # Synchronize specific collections
 result = await sync_engine.sync(collections=["users", "orders"])
@@ -193,17 +223,21 @@ result = await sync_engine.sync(collections=["users", "orders"])
 from uno.offline.sync import MergeFieldsResolver
 
 # Create a custom conflict resolution strategy
-resolver = MergeFieldsResolver(
-    client_fields=["name", "description"],  # Fields to take from client
-    server_fields=["price", "inventory"]     # Fields to take from server
+resolver = MergeFieldsResolver(```
+
+client_fields=["name", "description"],  # Fields to take from client
+server_fields=["price", "inventory"]     # Fields to take from server
+```
 )
 
 # Use the resolver in sync options
-sync_options = SyncOptions(
-    collections=["products"],
-    strategy="two-way",
-    network_adapter=adapter,
-    conflict_strategy=resolver
+sync_options = SyncOptions(```
+
+collections=["products"],
+strategy="two-way",
+network_adapter=adapter,
+conflict_strategy=resolver
+```
 )
 ```
 
@@ -213,25 +247,33 @@ sync_options = SyncOptions(
 from uno.offline.sync import ConflictResolver
 
 # Define a custom conflict resolution function
-def my_resolver(collection, local_data, server_data):
-    if collection == "users":
-        # For users, merge data selectively
-        result = server_data.copy()
-        # Keep the user's local profile changes
-        if "profile" in local_data:
-            result["profile"] = local_data["profile"]
-        return result
-    else:
-        # For other collections, use server data
-        return server_data
+def my_resolver(collection, local_data, server_data):```
+
+if collection == "users":```
+
+# For users, merge data selectively
+result = server_data.copy()
+# Keep the user's local profile changes
+if "profile" in local_data:
+    result["profile"] = local_data["profile"]
+return result
+```
+else:```
+
+# For other collections, use server data
+return server_data
+```
+```
 
 # Create a resolver with the custom function
 resolver = ConflictResolver(my_resolver)
 
 # Use in sync options
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=resolver
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=resolver
+```
 )
 ```
 
@@ -247,10 +289,14 @@ sync_task = asyncio.create_task(sync_engine.sync())
 sync_engine.cancel()
 
 # Wait for the task to complete (will raise SyncCancelledError)
-try:
-    await sync_task
-except SyncCancelledError:
-    print("Synchronization was cancelled")
+try:```
+
+await sync_task
+```
+except SyncCancelledError:```
+
+print("Synchronization was cancelled")
+```
 ```
 
 ## Synchronization Strategies
@@ -264,11 +310,13 @@ Synchronizes changes in both directions (default):
 ```python
 from uno.offline.sync import SyncOptions
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    strategy="two-way",
-    network_adapter=adapter,
-    conflict_strategy="server-wins"
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+strategy="two-way",
+network_adapter=adapter,
+conflict_strategy="server-wins"
+```
 )
 ```
 
@@ -284,11 +332,13 @@ Only pulls changes from the server:
 ```python
 from uno.offline.sync import SyncOptions
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    strategy="pull-only",
-    network_adapter=adapter,
-    conflict_strategy="server-wins"
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+strategy="pull-only",
+network_adapter=adapter,
+conflict_strategy="server-wins"
+```
 )
 ```
 
@@ -304,11 +354,13 @@ Only pushes local changes to the server:
 ```python
 from uno.offline.sync import SyncOptions
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    strategy="push-only",
-    network_adapter=adapter,
-    conflict_strategy="server-wins"
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+strategy="push-only",
+network_adapter=adapter,
+conflict_strategy="server-wins"
+```
 )
 ```
 
@@ -326,13 +378,17 @@ Network adapters handle communication with the server based on different protoco
 ```python
 from uno.offline.sync import RestAdapter
 
-adapter = RestAdapter(
-    base_url="https://api.example.com/v1",
-    headers={"Accept": "application/json"},
-    auth_token="my-auth-token",
-    timeout=30.0,
-    retry_count=3,
-    retry_delay=1.0
+adapter = RestAdapter(```
+
+base_url="https://api.example.com/v1",
+headers={"Accept": "application/json"},
+auth_token="my-auth-token"
+```,```
+
+timeout=30.0,
+retry_count=3,
+retry_delay=1.0
+```
 )
 ```
 
@@ -350,26 +406,36 @@ You can create custom adapters by implementing the `NetworkAdapter` interface:
 ```python
 from uno.offline.sync import NetworkAdapter
 
-class MyCustomAdapter(NetworkAdapter):
-    async def fetch_changes(self, collection, query_params=None):
-        """Fetch changes from the server."""
-        # Custom implementation
-        pass
-        
-    async def send_change(self, collection, data):
-        """Send a change to the server."""
-        # Custom implementation
-        pass
-        
-    async def is_online(self):
-        """Check if the server is reachable."""
-        # Custom implementation
-        pass
-        
-    def get_server_timestamp(self):
-        """Get the server's timestamp."""
-        # Custom implementation
-        pass
+class MyCustomAdapter(NetworkAdapter):```
+
+async def fetch_changes(self, collection, query_params=None):```
+
+"""Fetch changes from the server."""
+# Custom implementation
+pass
+```
+    
+async def send_change(self, collection, data):```
+
+"""Send a change to the server."""
+# Custom implementation
+pass
+```
+    
+async def is_online(self):```
+
+"""Check if the server is reachable."""
+# Custom implementation
+pass
+```
+    
+def get_server_timestamp(self):```
+
+"""Get the server's timestamp."""
+# Custom implementation
+pass
+```
+```
 
 # Create and use the adapter
 adapter = MyCustomAdapter()
@@ -382,18 +448,28 @@ For additional efficiency, you can implement the `BatchSupportMixin` to add batc
 ```python
 from uno.offline.sync import NetworkAdapter, BatchSupportMixin
 
-class MyBatchAdapter(NetworkAdapter, BatchSupportMixin):
-    # Implement required NetworkAdapter methods
+class MyBatchAdapter(NetworkAdapter, BatchSupportMixin):```
+
+# Implement required NetworkAdapter methods
+``````
+
+```
+```
+
+async def send_batch(self, collection, batch):```
+
+"""Send a batch of changes to the server."""
+# Custom implementation for efficient batch sending
+pass
+```
     
-    async def send_batch(self, collection, batch):
-        """Send a batch of changes to the server."""
-        # Custom implementation for efficient batch sending
-        pass
-        
-    async def fetch_batch(self, collection, ids, query_params=None):
-        """Fetch a batch of records from the server."""
-        # Custom implementation for efficient batch fetching
-        pass
+async def fetch_batch(self, collection, ids, query_params=None):```
+
+"""Fetch a batch of records from the server."""
+# Custom implementation for efficient batch fetching
+pass
+```
+```
 ```
 
 ## Conflict Resolution
@@ -408,15 +484,19 @@ Always chooses the server's version of the data:
 from uno.offline.sync import ServerWinsResolver
 
 # Simple string shorthand
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy="server-wins"  # String shorthand
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy="server-wins"  # String shorthand
+```
 )
 
 # Or explicitly
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=ServerWinsResolver()
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=ServerWinsResolver()
+```
 )
 ```
 
@@ -427,9 +507,11 @@ Always chooses the client's version of the data:
 ```python
 from uno.offline.sync import ClientWinsResolver
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=ClientWinsResolver()
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=ClientWinsResolver()
+```
 )
 ```
 
@@ -440,9 +522,11 @@ Chooses the most recently updated version:
 ```python
 from uno.offline.sync import TimestampBasedResolver
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=TimestampBasedResolver(timestamp_field="updated_at")
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=TimestampBasedResolver(timestamp_field="updated_at")
+```
 )
 ```
 
@@ -453,12 +537,16 @@ Selectively merges fields from both versions:
 ```python
 from uno.offline.sync import MergeFieldsResolver
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=MergeFieldsResolver(
-        client_fields=["name", "description"],
-        server_fields=["price", "inventory"]
-    )
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=MergeFieldsResolver(```
+
+client_fields=["name", "description"],
+server_fields=["price", "inventory"]
+```
+)
+```
 )
 ```
 
@@ -469,20 +557,28 @@ You can also provide a custom conflict resolution function:
 ```python
 from uno.offline.sync import ConflictResolver
 
-def my_resolver(collection, local_data, server_data):
-    # Custom logic to resolve conflicts
-    if collection == "users":
-        # For users, prefer local profile changes but server permission changes
-        result = server_data.copy()
-        result["profile"] = local_data.get("profile", {})
-        return result
-    else:
-        # For other collections, use server data
-        return server_data
+def my_resolver(collection, local_data, server_data):```
 
-sync_options = SyncOptions(
-    collections=["users", "products"],
-    conflict_strategy=ConflictResolver(my_resolver)
+# Custom logic to resolve conflicts
+if collection == "users":```
+
+# For users, prefer local profile changes but server permission changes
+result = server_data.copy()
+result["profile"] = local_data.get("profile", {})
+return result
+```
+else:```
+
+# For other collections, use server data
+return server_data
+```
+```
+
+sync_options = SyncOptions(```
+
+collections=["users", "products"],
+conflict_strategy=ConflictResolver(my_resolver)
+```
 )
 ```
 
@@ -493,11 +589,15 @@ sync_options = SyncOptions(
 Configure which collections and records sync first:
 
 ```python
-sync_options = SyncOptions(
-    sync_order=["users", "products", "orders"],
-    priority_records={
-        "orders": lambda record: record.get("status") == "pending"
-    }
+sync_options = SyncOptions(```
+
+sync_order=["users", "products", "orders"],
+priority_records={```
+
+"orders": lambda record: record.get("status") == "pending"
+```
+}
+```
 )
 ```
 
@@ -506,11 +606,15 @@ sync_options = SyncOptions(
 Sync only specific records matching certain criteria:
 
 ```python
-sync_options = SyncOptions(
-    sync_filters={
-        "orders": {"status": {"$in": ["pending", "processing"]}},
-        "products": {"active": True}
-    }
+sync_options = SyncOptions(```
+
+sync_filters={```
+
+"orders": {"status": {"$in": ["pending", "processing"]}},
+"products": {"active": True}
+```
+}
+```
 )
 ```
 
@@ -519,11 +623,13 @@ sync_options = SyncOptions(
 Configure background sync behavior:
 
 ```python
-sync_options = SyncOptions(
-    auto_sync_interval=300,  # 5 minutes
-    sync_on_connect=True,
-    sync_on_background=True,
-    background_sync_mode="low-priority"  # or "normal" or "high-priority"
+sync_options = SyncOptions(```
+
+auto_sync_interval=300,  # 5 minutes
+sync_on_connect=True,
+sync_on_background=True,
+background_sync_mode="low-priority"  # or "normal" or "high-priority"
+```
 )
 ```
 
@@ -534,10 +640,14 @@ sync_options = SyncOptions(
 sync_engine.on_network_status_changed(lambda status: print(f"Network status changed: {status}"))
 
 # Manually check network status
-if sync_engine.is_online():
-    print("Network is available")
-else:
-    print("Offline mode")
+if sync_engine.is_online():```
+
+print("Network is available")
+```
+else:```
+
+print("Offline mode")
+```
 
 # Manually set network status (e.g., from app's network monitor)
 sync_engine.set_network_status(True)  # Online
@@ -549,11 +659,15 @@ sync_engine.set_network_status(False) # Offline
 Sync only certain fields to reduce data transfer:
 
 ```python
-sync_options = SyncOptions(
-    field_inclusion={
-        "users": ["id", "name", "email", "updated_at"],
-        "products": ["id", "name", "price", "updated_at"]
-    }
+sync_options = SyncOptions(```
+
+field_inclusion={```
+
+"users": ["id", "name", "email", "updated_at"],
+"products": ["id", "name", "price", "updated_at"]
+```
+}
+```
 )
 ```
 
@@ -562,51 +676,73 @@ sync_options = SyncOptions(
 The Synchronization Engine provides comprehensive error handling with a hierarchy of error types:
 
 ```python
-from uno.offline.sync import (
-    SyncError,          # Base class for all sync errors
-    NetworkError,       # Network connectivity issues
-    ConflictError,      # Conflict between local and remote data
-    SyncCancelledError, # Synchronization was cancelled
-    ConfigurationError, # Invalid configuration
-    AdapterError,       # Network adapter issues
-    ChangeTrackingError # Issues with change tracking
+from uno.offline.sync import (```
+
+SyncError,          # Base class for all sync errors
+NetworkError,       # Network connectivity issues
+ConflictError,      # Conflict between local and remote data
+SyncCancelledError, # Synchronization was cancelled
+ConfigurationError, # Invalid configuration
+AdapterError,       # Network adapter issues
+ChangeTrackingError # Issues with change tracking
+```
 )
 
 # Handle different error types
-try:
-    result = await sync_engine.sync()
-    # Process result
-except NetworkError as e:
-    print(f"Network error: {e}")
-    # Handle network issues (retry later, etc.)
-except ConflictError as e:
-    print(f"Conflict: {e}")
-    print(f"Local data: {e.local_data}")
-    print(f"Server data: {e.server_data}")
-    # Handle conflict (maybe manual resolution)
-except SyncCancelledError:
-    print("Synchronization was cancelled")
-    # Handle cancellation (cleanup, etc.)
-except SyncError as e:
-    print(f"Synchronization error: {e}")
-    # Handle other sync errors
+try:```
+
+result = await sync_engine.sync()
+# Process result
+```
+except NetworkError as e:```
+
+print(f"Network error: {e}")
+# Handle network issues (retry later, etc.)
+```
+except ConflictError as e:```
+
+print(f"Conflict: {e}")
+print(f"Local data: {e.local_data}")
+print(f"Server data: {e.server_data}")
+# Handle conflict (maybe manual resolution)
+```
+except SyncCancelledError:```
+
+print("Synchronization was cancelled")
+``````
+
+# Handle cancellation (cleanup, etc.)
+```
+except SyncError as e:```
+
+print(f"Synchronization error: {e}")
+# Handle other sync errors
+```
 ```
 
 Error details are included in the sync results:
 
 ```python
 result = await sync_engine.sync()
-if result["errors"]:
-    print("Errors occurred during synchronization:")
-    for error in result["errors"]:
-        print(f"- {error}")
+if result["errors"]:```
+
+print("Errors occurred during synchronization:")
+for error in result["errors"]:```
+
+print(f"- {error}")
+```
+```
 
 # Check for collection-specific errors
-for collection, details in result["details"].items():
-    if details.get("errors"):
-        print(f"Errors in collection {collection}:")
-        for error in details["errors"]:
-            print(f"- {error}")
+for collection, details in result["details"].items():```
+
+if details.get("errors"):```
+
+print(f"Errors in collection {collection}:")
+for error in details["errors"]:
+    print(f"- {error}")
+```
+```
 ```
 
 ## Debugging and Monitoring
@@ -625,8 +761,10 @@ print(f"Data transferred: {stats.total_bytes_transferred} bytes")
 
 # Export sync logs
 logs = sync_engine.export_sync_logs()
-with open("sync_logs.json", "w") as f:
-    json.dump(logs, f, indent=2)
+with open("sync_logs.json", "w") as f:```
+
+json.dump(logs, f, indent=2)
+```
 ```
 
 ## Best Practices

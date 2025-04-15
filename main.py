@@ -53,6 +53,9 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# Import error handling utilities
+from uno.core.fastapi_error_handlers import setup_error_handlers, ErrorHandlingMiddleware
+
 from uno.settings import uno_settings
 
 # Import the service provider, but don't use it yet
@@ -190,6 +193,19 @@ async def lifespan(app: FastAPI):
         # except ImportError:
         #     logger.debug("Example domain router not available")
         
+        # Include error handling example endpoints
+        try:
+            from uno.core.errors.examples import router as error_examples_router
+            api_app.include_router(error_examples_router)
+            logger.info("Error examples router included")
+        except ImportError:
+            logger.debug("Error examples router not available")
+        
+        # Set up error handlers for FastAPI
+        logger.info("Setting up error handlers")
+        setup_error_handlers(api_app, include_tracebacks=uno_settings.debug)
+        logger.info("Error handlers setup complete")
+        
         logger.info("API routers setup complete")
         logger.info("Application startup complete")
         
@@ -228,6 +244,13 @@ if "/static" not in [route.path for route in api_app.routes]:
 # Configure the modern dependency injection system with FastAPI
 from uno.dependencies.fastapi_integration import configure_fastapi
 configure_fastapi(api_app)
+
+# Add middleware for error handling (can be used instead of or in addition to exception handlers)
+# Uncomment if you prefer middleware approach for error handling
+# api_app.add_middleware(
+#     ErrorHandlingMiddleware,
+#     include_tracebacks=uno_settings.debug
+# )
 
 # Example of an endpoint using the new dependency injection system
 from uno.dependencies.decorators import inject_params

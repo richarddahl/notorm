@@ -23,10 +23,14 @@ The workflow template is located at `src/uno/deployment/templates/github_actions
 name: Uno CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  push:```
+
+branches: [ main ]
+```
+  pull_request:```
+
+branches: [ main ]
+```
   workflow_dispatch:
     inputs:
       environment:
@@ -41,21 +45,29 @@ on:
           - production
 
 jobs:
-  build-and-test:
-    # Build and run tests
-    ...
+  build-and-test:```
 
-  security-scan:
-    # Run security scans
-    ...
+# Build and run tests
+...
+```
 
-  build-docker:
-    # Build and push Docker image
-    ...
+  security-scan:```
 
-  deploy:
-    # Deploy to environment
-    ...
+# Run security scans
+...
+```
+
+  build-docker:```
+
+# Build and push Docker image
+...
+```
+
+  deploy:```
+
+# Deploy to environment
+...
+```
 ```
 
 ### Usage
@@ -162,18 +174,26 @@ Use different environments (dev, test, staging, production) to isolate deploymen
 
 ```yaml
 deployment:
-  dev:
-    url: https://dev.example.com
-    replicas: 1
-  test:
-    url: https://test.example.com
-    replicas: 1
-  staging:
-    url: https://staging.example.com
-    replicas: 2
-  production:
-    url: https://example.com
-    replicas: 3
+  dev:```
+
+url: https://dev.example.com
+replicas: 1
+```
+  test:```
+
+url: https://test.example.com
+replicas: 1
+```
+  staging:```
+
+url: https://staging.example.com
+replicas: 2
+```
+  production:```
+
+url: https://example.com
+replicas: 3
+```
 ```
 
 ### Branch Strategy

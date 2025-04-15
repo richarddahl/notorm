@@ -24,18 +24,28 @@ import pytest
 from uno.testing.integration import IntegrationTestHarness
 
 @pytest.fixture(scope="session")
-def test_harness():
-    """Set up the test environment."""
-    harness = IntegrationTestHarness(
-        services=[
-            IntegrationTestHarness.get_postgres_config(),
-            IntegrationTestHarness.get_redis_config()
-        ]
-    )
-    
-    # Start services and yield the harness
-    with harness.start_services():
-        yield harness
+def test_harness():```
+
+"""Set up the test environment."""
+harness = IntegrationTestHarness(```
+
+services=[
+    IntegrationTestHarness.get_postgres_config(),
+    IntegrationTestHarness.get_redis_config()
+]
+```
+)
+``````
+
+```
+```
+
+# Start services and yield the harness
+with harness.start_services():```
+
+yield harness
+```
+```
 ```
 
 ### Using Docker Compose
@@ -44,14 +54,24 @@ For more complex environments, you can use Docker Compose:
 
 ```python
 @pytest.fixture(scope="session")
-def test_harness():
-    """Set up the test environment with Docker Compose."""
-    harness = IntegrationTestHarness(
-        docker_compose_file="path/to/docker-compose.yaml"
-    )
-    
-    with harness.start_services():
-        yield harness
+def test_harness():```
+
+"""Set up the test environment with Docker Compose."""
+harness = IntegrationTestHarness(```
+
+docker_compose_file="path/to/docker-compose.yaml"
+```
+)
+``````
+
+```
+```
+
+with harness.start_services():```
+
+yield harness
+```
+```
 ```
 
 ### Command-Line Options
@@ -70,10 +90,14 @@ The `TestEnvironment` class provides a unified interface for accessing test comp
 
 ```python
 @pytest_asyncio.fixture
-async def test_environment(test_harness):
-    """Create a test environment."""
-    async with test_harness.create_test_environment() as env:
-        yield env
+async def test_environment(test_harness):```
+
+"""Create a test environment."""
+async with test_harness.create_test_environment() as env:```
+
+yield env
+```
+```
 ```
 
 This provides access to:
@@ -90,17 +114,25 @@ This provides access to:
 Insert test data:
 
 ```python
-async def test_database_operations(test_environment):
-    """Test database operations."""
-    # Insert test data
-    user_id = await test_environment.db.insert_test_data(
-        "users",
-        {"username": "testuser", "email": "test@example.com"}
-    )
-    
-    # Verify the data
-    user = await test_environment.db.get_by_id("users", user_id)
-    assert user["username"] == "testuser"
+async def test_database_operations(test_environment):```
+
+"""Test database operations."""
+# Insert test data
+user_id = await test_environment.db.insert_test_data(```
+
+"users",
+{"username": "testuser", "email": "test@example.com"}
+```
+)
+``````
+
+```
+```
+
+# Verify the data
+user = await test_environment.db.get_by_id("users", user_id)
+assert user["username"] == "testuser"
+```
 ```
 
 ### Bulk Data Operations
@@ -108,22 +140,34 @@ async def test_database_operations(test_environment):
 Load multiple rows of test data:
 
 ```python
-async def test_with_bulk_data(test_environment):
-    """Test with bulk data."""
-    # Define test data
-    test_data = {
-        "users": [
-            {"username": "user1", "email": "user1@example.com"},
-            {"username": "user2", "email": "user2@example.com"}
-        ]
-    }
-    
-    # Set up test data with the environment
-    await test_environment.setup_test_data(test_data_file)
-    
-    # Verify data loaded correctly
-    count = await test_environment.db.count_rows("users")
-    assert count == 2
+async def test_with_bulk_data(test_environment):```
+
+"""Test with bulk data."""
+# Define test data
+test_data = {```
+
+"users": [
+    {"username": "user1", "email": "user1@example.com"},
+    {"username": "user2", "email": "user2@example.com"}
+]
+```
+}
+``````
+
+```
+```
+
+# Set up test data with the environment
+await test_environment.setup_test_data(test_data_file)
+``````
+
+```
+```
+
+# Verify data loaded correctly
+count = await test_environment.db.count_rows("users")
+assert count == 2
+```
 ```
 
 ### Raw SQL Execution
@@ -131,17 +175,25 @@ async def test_with_bulk_data(test_environment):
 Execute raw SQL for test setup and verification:
 
 ```python
-async def test_with_sql(test_environment):
-    """Test with raw SQL."""
-    # Execute SQL query
-    result = await test_environment.db.execute_sql(
-        "SELECT * FROM users WHERE username = :username",
-        username="testuser"
-    )
-    
-    # Process results
-    user = result.mappings().first()
-    assert user is not None
+async def test_with_sql(test_environment):```
+
+"""Test with raw SQL."""
+# Execute SQL query
+result = await test_environment.db.execute_sql(```
+
+"SELECT * FROM users WHERE username = :username",
+username="testuser"
+```
+)
+``````
+
+```
+```
+
+# Process results
+user = result.mappings().first()
+assert user is not None
+```
 ```
 
 ## Working with Repositories and Services
@@ -151,14 +203,20 @@ async def test_with_sql(test_environment):
 Get repository instances from the test environment:
 
 ```python
-async def test_user_repository(test_environment):
-    """Test the user repository."""
-    # Get repository from the environment
-    repo = test_environment.get_repository(UserRepository)
-    
-    # Use the repository
-    user = await repo.get_by_id(1)
-    assert user is not None
+async def test_user_repository(test_environment):```
+
+"""Test the user repository."""
+# Get repository from the environment
+repo = test_environment.get_repository(UserRepository)
+``````
+
+```
+```
+
+# Use the repository
+user = await repo.get_by_id(1)
+assert user is not None
+```
 ```
 
 ### Testing Services
@@ -166,14 +224,20 @@ async def test_user_repository(test_environment):
 Get service instances with dependencies automatically resolved:
 
 ```python
-async def test_user_service(test_environment):
-    """Test the user service."""
-    # Get service with dependencies automatically resolved
-    service = test_environment.get_service(UserService)
-    
-    # Use the service
-    user = await service.get_user(1)
-    assert user is not None
+async def test_user_service(test_environment):```
+
+"""Test the user service."""
+# Get service with dependencies automatically resolved
+service = test_environment.get_service(UserService)
+``````
+
+```
+```
+
+# Use the service
+user = await service.get_user(1)
+assert user is not None
+```
 ```
 
 ## API Testing
@@ -181,27 +245,45 @@ async def test_user_service(test_environment):
 The `ApiTestService` provides utilities for testing API endpoints:
 
 ```python
-async def test_api_endpoints(test_environment):
-    """Test API endpoints."""
-    # Get data from an endpoint
-    users = test_environment.api.get("/users/")
-    assert len(users) > 0
-    
-    # Create a new resource
-    new_user = test_environment.api.post("/users/", {
-        "username": "apiuser",
-        "email": "api@example.com"
-    })
-    assert new_user["id"] is not None
-    
-    # Update a resource
-    updated = test_environment.api.put(f"/users/{new_user['id']}", {
-        "username": "updateduser"
-    })
-    assert updated["username"] == "updateduser"
-    
-    # Delete a resource
-    test_environment.api.delete(f"/users/{new_user['id']}")
+async def test_api_endpoints(test_environment):```
+
+"""Test API endpoints."""
+# Get data from an endpoint
+users = test_environment.api.get("/users/")
+assert len(users) > 0
+``````
+
+```
+```
+
+# Create a new resource
+new_user = test_environment.api.post("/users/", {```
+
+"username": "apiuser",
+"email": "api@example.com"
+```
+})
+assert new_user["id"] is not None
+``````
+
+```
+```
+
+# Update a resource
+updated = test_environment.api.put(f"/users/{new_user['id']}", {```
+
+"username": "updateduser"
+```
+})
+assert updated["username"] == "updateduser"
+``````
+
+```
+```
+
+# Delete a resource
+test_environment.api.delete(f"/users/{new_user['id']}")
+```
 ```
 
 ## Advanced Techniques
@@ -212,22 +294,38 @@ Create an isolated environment for each test:
 
 ```python
 @pytest_asyncio.fixture
-async def isolated_test(test_harness):
-    """Create an isolated test environment."""
-    # Create a unique schema name
-    import uuid
-    schema = f"test_{uuid.uuid4().hex[:8]}"
-    
-    # Create a test environment
-    async with test_harness.create_test_environment() as env:
-        # Create the schema and set it as the search path
-        await env.db.execute_sql(f"CREATE SCHEMA {schema}")
-        await env.db.execute_sql(f"SET search_path TO {schema}")
-        
-        yield env
-        
-        # Clean up
-        await env.db.execute_sql(f"DROP SCHEMA {schema} CASCADE")
+async def isolated_test(test_harness):```
+
+"""Create an isolated test environment."""
+# Create a unique schema name
+import uuid
+schema = f"test_{uuid.uuid4().hex[:8]}"
+``````
+
+```
+```
+
+# Create a test environment
+async with test_harness.create_test_environment() as env:```
+
+# Create the schema and set it as the search path
+await env.db.execute_sql(f"CREATE SCHEMA {schema}")
+await env.db.execute_sql(f"SET search_path TO {schema}")
+``````
+
+```
+```
+
+yield env
+``````
+
+```
+```
+
+# Clean up
+await env.db.execute_sql(f"DROP SCHEMA {schema} CASCADE")
+```
+```
 ```
 
 ### Transactions and Savepoints
@@ -235,26 +333,38 @@ async def isolated_test(test_harness):
 Use transactions to isolate test changes:
 
 ```python
-async def test_with_transaction(test_environment):
-    """Test with transaction isolation."""
-    with test_environment.db.transaction():
-        # Make changes that will be rolled back
-        await test_environment.db.insert_test_data(
-            "users", 
-            {"username": "tempuser", "email": "temp@example.com"}
-        )
-        
-        # Verify the data exists within the transaction
-        user = await test_environment.db.execute_sql(
-            "SELECT * FROM users WHERE username = 'tempuser'"
-        )
-        assert user.mappings().first() is not None
-        
-    # After the transaction, the data should be rolled back
-    user = await test_environment.db.execute_sql(
-        "SELECT * FROM users WHERE username = 'tempuser'"
-    )
-    assert user.mappings().first() is None
+async def test_with_transaction(test_environment):```
+
+"""Test with transaction isolation."""
+with test_environment.db.transaction():```
+
+# Make changes that will be rolled back
+await test_environment.db.insert_test_data(
+    "users", 
+    {"username": "tempuser", "email": "temp@example.com"}
+)
+``````
+
+```
+```
+
+# Verify the data exists within the transaction
+user = await test_environment.db.execute_sql(```
+
+"SELECT * FROM users WHERE username = 'tempuser'"
+```
+)
+assert user.mappings().first() is not None
+```
+    
+# After the transaction, the data should be rolled back
+user = await test_environment.db.execute_sql(```
+
+"SELECT * FROM users WHERE username = 'tempuser'"
+```
+)
+assert user.mappings().first() is None
+```
 ```
 
 ## Integration with Mock Data Generation
@@ -264,21 +374,35 @@ Use the mock data generators with integration tests:
 ```python
 from uno.testing.mock_data.generators import ModelDataGenerator
 
-async def test_with_mock_data(test_environment):
-    """Test with generated mock data."""
-    # Create a mock data generator
-    generator = ModelDataGenerator(seed=42)
-    
-    # Generate data for a model
-    user_data = generator.generate_for_model(UserModel)
-    
-    # Use the generated data
-    repo = test_environment.get_repository(UserRepository)
-    user_id = await repo.create(user_data)
-    
-    # Verify the data
-    user = await repo.get_by_id(user_id)
-    assert user is not None
+async def test_with_mock_data(test_environment):```
+
+"""Test with generated mock data."""
+# Create a mock data generator
+generator = ModelDataGenerator(seed=42)
+``````
+
+```
+```
+
+# Generate data for a model
+user_data = generator.generate_for_model(UserModel)
+``````
+
+```
+```
+
+# Use the generated data
+repo = test_environment.get_repository(UserRepository)
+user_id = await repo.create(user_data)
+``````
+
+```
+```
+
+# Verify the data
+user = await repo.get_by_id(user_id)
+assert user is not None
+```
 ```
 
 ## Best Practices
@@ -314,42 +438,68 @@ from uno.testing.integration import IntegrationTestHarness
 
 # Fixtures
 @pytest.fixture(scope="session")
-def test_harness():
-    """Create a test harness."""
-    harness = IntegrationTestHarness(
-        services=[IntegrationTestHarness.get_postgres_config()]
-    )
-    with harness.start_services():
-        yield harness
+def test_harness():```
+
+"""Create a test harness."""
+harness = IntegrationTestHarness(
+    services=[IntegrationTestHarness.get_postgres_config()]
+)```
+```
+
+with harness.start_services():```
+
+yield harness
+```
+```
 
 @pytest_asyncio.fixture
-async def test_environment(test_harness):
-    """Create a test environment."""
-    async with test_harness.create_test_environment() as env:
-        yield env
+async def test_environment(test_harness):```
+
+"""Create a test environment."""
+async with test_harness.create_test_environment() as env:```
+
+yield env
+```
+```
 
 # Test cases
-async def test_user_service(test_environment):
-    """Test the user service."""
-    # Get services and repositories
-    user_repo = test_environment.get_repository(UserRepository)
-    user_service = test_environment.get_service(UserService)
-    
-    # Create test data
-    user_data = {
-        "username": "testuser",
-        "email": "test@example.com",
-        "bio": "This is a test user"
-    }
-    
-    # Use the service
-    user = await user_service.create_user(user_data)
-    assert user["id"] is not None
-    
-    # Verify with the repository
-    saved_user = await user_repo.get_by_id(user["id"])
-    assert saved_user["username"] == "testuser"
-    assert saved_user["email"] == "test@example.com"
+async def test_user_service(test_environment):```
+
+"""Test the user service."""
+# Get services and repositories
+user_repo = test_environment.get_repository(UserRepository)
+user_service = test_environment.get_service(UserService)
+``````
+
+```
+```
+
+# Create test data
+user_data = {```
+
+"username": "testuser",
+"email": "test@example.com",
+"bio": "This is a test user"
+```
+}
+``````
+
+```
+```
+
+# Use the service
+user = await user_service.create_user(user_data)
+assert user["id"] is not None
+``````
+
+```
+```
+
+# Verify with the repository
+saved_user = await user_repo.get_by_id(user["id"])
+assert saved_user["username"] == "testuser"
+assert saved_user["email"] == "test@example.com"
+```
 ```
 
 ## Running Integration Tests

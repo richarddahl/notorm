@@ -359,8 +359,10 @@ Use these patterns to solve common template challenges:
 {% if items.length > 0 %}
   <h3>Order Items</h3>
   <ul>
-  {% for item in items %}
-    <li>{{ item.name }}</li>
+  {% for item in items %}```
+
+<li>{{ item.name }}</li>
+```
   {% endfor %}
   </ul>
 {% else %}
@@ -417,66 +419,98 @@ Use these commands to debug workflow issues:
 ### View Recent Workflow Executions
 
 ```sql
-SELECT 
-    w.name AS workflow_name,
-    e.status,
-    e.started_at,
-    e.completed_at,
-    e.duration_ms,
-    e.entity_id,
-    e.entity_type,
-    e.operation
-FROM 
-    workflow_executions e
-JOIN 
-    workflows w ON e.workflow_id = w.id
-ORDER BY 
-    e.started_at DESC
+SELECT ```
+
+w.name AS workflow_name,
+e.status,
+e.started_at,
+e.completed_at,
+e.duration_ms,
+e.entity_id,
+e.entity_type,
+e.operation
+```
+FROM ```
+
+workflow_executions e
+```
+JOIN ```
+
+workflows w ON e.workflow_id = w.id
+```
+ORDER BY ```
+
+e.started_at DESC
+```
 LIMIT 100;
 ```
 
 ### Find Failed Actions
 
 ```sql
-SELECT 
-    w.name AS workflow_name,
-    e.entity_id,
-    a.type AS action_type,
-    a.status AS action_status,
-    a.error,
-    a.started_at
-FROM 
-    workflow_action_results a
-JOIN 
-    workflow_executions e ON a.execution_id = e.id
-JOIN 
-    workflows w ON e.workflow_id = w.id
-WHERE 
-    a.status = 'failure'
-ORDER BY 
-    a.started_at DESC
+SELECT ```
+
+w.name AS workflow_name,
+e.entity_id,
+a.type AS action_type,
+a.status AS action_status,
+a.error,
+a.started_at
+```
+FROM ```
+
+workflow_action_results a
+```
+JOIN ```
+
+workflow_executions e
+``` ON a.execution_id = e.id
+JOIN ```
+
+workflows w ON e.workflow_id = w.id
+```
+WHERE ```
+
+a.status = 'failure'
+```
+ORDER BY ```
+
+a.started_at DESC
+```
 LIMIT 100;
 ```
 
 ### Check Workflow Trigger Counts
 
 ```sql
-SELECT 
-    w.name AS workflow_name,
-    COUNT(e.id) AS execution_count,
-    SUM(CASE WHEN e.conditions_result THEN 1 ELSE 0 END) AS conditions_met_count,
-    SUM(CASE WHEN e.status = 'success' THEN 1 ELSE 0 END) AS success_count,
-    SUM(CASE WHEN e.status = 'failure' THEN 1 ELSE 0 END) AS failure_count
-FROM 
-    workflows w
-LEFT JOIN 
-    workflow_executions e ON w.id = e.workflow_id
-WHERE 
-    e.started_at > NOW() - INTERVAL '24 HOURS'
-GROUP BY 
-    w.id, w.name
-ORDER BY 
-    execution_count DESC;
+SELECT ```
+
+w.name AS workflow_name,
+COUNT(e.id) AS execution_count,
+SUM(CASE WHEN e.conditions_result THEN 1 ELSE 0 END) AS conditions_met_count,
+SUM(CASE WHEN e.status = 'success' THEN 1 ELSE 0 END) AS success_count,
+SUM(CASE WHEN e.status = 'failure' THEN 1 ELSE 0 END) AS failure_count
+```
+FROM ```
+
+workflows w
+```
+LEFT JOIN ```
+
+workflow_executions e
+``` ON w.id = e.workflow_id
+WHERE ```
+
+e.started_at > NOW() - INTERVAL '24 HOURS'
+```
+GROUP BY ```
+
+w.id, w.name
+```
+ORDER BY ```
+
+execution_count DESC;
+```
 ```
 
 ## Getting Further Help
@@ -484,8 +518,10 @@ ORDER BY
 If you've followed the troubleshooting steps above and still encounter issues:
 
 1. **Check Documentation**:
-   - Review the [API Reference](/docs/api/workflows.md)
-   - See [Advanced Patterns](/docs/workflows/advanced-patterns.md) for complex workflow solutions
+   <!-- TODO: Create API documentation -->
+   <!-- - Review the [API Reference](/docs/api/workflows.md) -->
+   <!-- TODO: Create advanced patterns documentation -->
+   <!-- - See [Advanced Patterns](advanced-patterns.md) for complex workflow solutions -->
 
 2. **System Logs**:
    - Check application logs for detailed error information

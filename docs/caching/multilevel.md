@@ -48,27 +48,45 @@ Multi-level caching is configured through the `CacheConfig`:
 ```python
 from uno.caching import CacheConfig, LocalCacheConfig, DistributedCacheConfig
 
-config = CacheConfig(
-    # Enable multi-level caching
-    use_multi_level=True,
-    
-    # Enable fallback on errors
-    fallback_on_error=True,
-    
-    # Configure local cache
-    local=LocalCacheConfig(
-        type="memory",  # or "file" for persistent storage
-        max_size=10000,  # Maximum items for memory, MB for file
-        ttl=600,        # Default TTL in seconds (10 minutes)
-    ),
-    
-    # Configure distributed cache
-    distributed=DistributedCacheConfig(
-        enabled=True,
-        type="redis",   # or "memcached"
-        hosts=["redis:6379"],
-        ttl=3600,       # Default TTL in seconds (1 hour)
-    )
+config = CacheConfig(```
+
+# Enable multi-level caching
+use_multi_level=True,
+``````
+
+```
+```
+
+# Enable fallback on errors
+fallback_on_error=True,
+``````
+
+```
+```
+
+# Configure local cache
+local=LocalCacheConfig(```
+
+type="memory",  # or "file" for persistent storage
+max_size=10000,  # Maximum items for memory, MB for file
+ttl=600,        # Default TTL in seconds (10 minutes)
+```
+),
+``````
+
+```
+```
+
+# Configure distributed cache
+distributed=DistributedCacheConfig(```
+
+enabled=True,
+type="redis",   # or "memcached"
+hosts=["redis:6379"],
+ttl=3600,       # Default TTL in seconds (1 hour)
+```
+)
+```
 )
 ```
 
@@ -141,10 +159,12 @@ await cache_manager.delete_async("user:123")
 results = cache_manager.multi_get(["user:123", "user:456", "user:789"])
 
 # Set multiple values at once
-cache_manager.multi_set({
-    "user:123": user1_data,
-    "user:456": user2_data,
-    "user:789": user3_data,
+cache_manager.multi_set({```
+
+"user:123": user1_data,
+"user:456": user2_data,
+"user:789": user3_data,
+```
 }, ttl=3600)
 ```
 

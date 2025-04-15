@@ -17,17 +17,21 @@ The `SQLStatement` class encapsulates:
 from uno.sql.statement import SQLStatement
 
 # Create a SQL statement
-statement = SQLStatement(
-    text="SELECT * FROM customer WHERE id = :id",
-    params={"id": "abc123"}
+statement = SQLStatement(```
+
+text="SELECT * FROM customer WHERE id = :id",
+params={"id": "abc123"}
+```
 )
 
 # Execute the statement
 result = await statement.execute(connection)
 
 # Process the result
-for row in result:
-    print(row)
+for row in result:```
+
+print(row)
+```
 ```
 
 ## Creating Statements
@@ -38,27 +42,35 @@ for row in result:
 from uno.sql.statement import SQLStatement
 
 # Select statement
-select_statement = SQLStatement(
-    text="SELECT id, name, email FROM customer WHERE status = :status",
-    params={"status": "active"}
+select_statement = SQLStatement(```
+
+text="SELECT id, name, email FROM customer WHERE status = :status",
+params={"status": "active"}
+```
 )
 
 # Insert statement
-insert_statement = SQLStatement(
-    text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email)",
-    params={"id": "abc123", "name": "John Doe", "email": "john@example.com"}
+insert_statement = SQLStatement(```
+
+text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email)",
+params={"id": "abc123", "name": "John Doe", "email": "john@example.com"}
+```
 )
 
 # Update statement
-update_statement = SQLStatement(
-    text="UPDATE customer SET name = :name WHERE id = :id",
-    params={"id": "abc123", "name": "John Smith"}
+update_statement = SQLStatement(```
+
+text="UPDATE customer SET name = :name WHERE id = :id",
+params={"id": "abc123", "name": "John Smith"}
+```
 )
 
 # Delete statement
-delete_statement = SQLStatement(
-    text="DELETE FROM customer WHERE id = :id",
-    params={"id": "abc123"}
+delete_statement = SQLStatement(```
+
+text="DELETE FROM customer WHERE id = :id",
+params={"id": "abc123"}
+```
 )
 ```
 
@@ -68,37 +80,45 @@ delete_statement = SQLStatement(
 from uno.sql.statement import SQLStatement
 
 # Join with parameters
-join_statement = SQLStatement(
-    text="""
-    SELECT c.id, c.name, o.id as order_id, o.total
-    FROM customer c
-    JOIN order o ON c.id = o.customer_id
-    WHERE c.status = :status
-    AND o.created_at > :date
-    ORDER BY o.created_at DESC
-    LIMIT :limit
-    OFFSET :offset
-    """,
-    params={
-        "status": "active",
-        "date": "2023-01-01",
-        "limit": 10,
-        "offset": 0
-    }
+join_statement = SQLStatement(```
+
+text="""
+SELECT c.id, c.name, o.id as order_id, o.total
+FROM customer c
+JOIN order o ON c.id = o.customer_id
+WHERE c.status = :status
+AND o.created_at > :date
+ORDER BY o.created_at DESC
+LIMIT :limit
+OFFSET :offset
+""",
+params={```
+
+"status": "active",
+"date": "2023-01-01",
+"limit": 10,
+"offset": 0
+```
+}
+```
 )
 
 # With subquery
-subquery_statement = SQLStatement(
-    text="""
-    SELECT c.id, c.name, (
-        SELECT COUNT(*)
-        FROM order o
-        WHERE o.customer_id = c.id
-    ) as order_count
-    FROM customer c
-    WHERE c.status = :status
-    """,
-    params={"status": "active"}
+subquery_statement = SQLStatement(```
+
+text="""
+SELECT c.id, c.name, (```
+
+SELECT COUNT(*)
+FROM order o
+WHERE o.customer_id = c.id
+```
+) as order_count
+FROM customer c
+WHERE c.status = :status
+""",
+params={"status": "active"}
+```
 )
 ```
 
@@ -111,28 +131,48 @@ from uno.sql.statement import SQLStatement
 from uno.database.engine import sync_connection, async_connection
 
 # Synchronous execution
-with sync_connection(db_role="app_user", db_name="my_database") as conn:
-    statement = SQLStatement(
-        text="SELECT * FROM customer WHERE id = :id",
-        params={"id": "abc123"}
-    )
-    result = statement.execute_sync(conn)
-    
-    # Process the result
-    for row in result:
-        print(row)
+with sync_connection(db_role="app_user", db_name="my_database") as conn:```
+
+statement = SQLStatement(```
+
+text="SELECT * FROM customer WHERE id = :id",
+params={"id": "abc123"}
+```
+)
+result = statement.execute_sync(conn)
+``````
+
+```
+```
+
+# Process the result
+for row in result:```
+
+print(row)
+```
+```
 
 # Asynchronous execution
-async with async_connection(db_role="app_user", db_name="my_database") as conn:
-    statement = SQLStatement(
-        text="SELECT * FROM customer WHERE id = :id",
-        params={"id": "abc123"}
-    )
-    result = await statement.execute(conn)
-    
-    # Process the result
-    async for row in result:
-        print(row)
+async with async_connection(db_role="app_user", db_name="my_database") as conn:```
+
+statement = SQLStatement(```
+
+text="SELECT * FROM customer WHERE id = :id",
+params={"id": "abc123"}
+```
+)
+result = await statement.execute(conn)
+``````
+
+```
+```
+
+# Process the result
+async for row in result:```
+
+print(row)
+```
+```
 ```
 
 ### With Custom Executor
@@ -141,19 +181,25 @@ async with async_connection(db_role="app_user", db_name="my_database") as conn:
 from uno.sql.statement import SQLStatement
 
 # Define a custom executor function
-async def custom_executor(conn, sql_text, params):
-    """Custom executor for specific result handling."""
-    result = await conn.execute(sql_text, params)
-    return await result.mappings().all()
+async def custom_executor(conn, sql_text, params):```
+
+"""Custom executor for specific result handling."""
+result = await conn.execute(sql_text, params)
+return await result.mappings().all()
+```
 
 # Create and execute the statement with the custom executor
-statement = SQLStatement(
-    text="SELECT * FROM customer WHERE status = :status",
-    params={"status": "active"}
+statement = SQLStatement(```
+
+text="SELECT * FROM customer WHERE status = :status",
+params={"status": "active"}
+```
 )
 
-async with async_connection(db_role="app_user", db_name="my_database") as conn:
-    result = await statement.execute(conn, executor=custom_executor)
+async with async_connection(db_role="app_user", db_name="my_database") as conn:```
+
+result = await statement.execute(conn, executor=custom_executor)
+```
 ```
 
 ## Batch Operations
@@ -165,32 +211,36 @@ from uno.sql.statement import SQLStatement
 from uno.database.engine import async_connection
 from sqlalchemy.ext.asyncio import AsyncSession
 
-async def create_customer_with_orders(customer_data, orders_data):
-    """Create a customer and their orders in a transaction."""
-    async with AsyncSession() as session:
-        async with session.begin():
-            # Create customer
-            customer_statement = SQLStatement(
-                text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email) RETURNING id",
-                params=customer_data
-            )
-            result = await customer_statement.execute(session.connection())
-            customer_id = result.scalar_one()
-            
-            # Create orders
-            for order_data in orders_data:
-                order_data["customer_id"] = customer_id
-                order_statement = SQLStatement(
-                    text="""
-                    INSERT INTO order (id, customer_id, product_id, quantity, price)
-                    VALUES (:id, :customer_id, :product_id, :quantity, :price)
-                    """,
-                    params=order_data
-                )
-                await order_statement.execute(session.connection())
-            
-            # The transaction will be committed if no exceptions are raised
-            return customer_id
+async def create_customer_with_orders(customer_data, orders_data):```
+
+"""Create a customer and their orders in a transaction."""
+async with AsyncSession() as session:```
+
+async with session.begin():
+    # Create customer
+    customer_statement = SQLStatement(
+        text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email) RETURNING id",
+        params=customer_data
+    )
+    result = await customer_statement.execute(session.connection())
+    customer_id = result.scalar_one()
+    
+    # Create orders
+    for order_data in orders_data:
+        order_data["customer_id"] = customer_id
+        order_statement = SQLStatement(
+            text="""
+            INSERT INTO order (id, customer_id, product_id, quantity, price)
+            VALUES (:id, :customer_id, :product_id, :quantity, :price)
+            """,
+            params=order_data
+        )
+        await order_statement.execute(session.connection())
+    
+    # The transaction will be committed if no exceptions are raised
+    return customer_id
+```
+```
 ```
 
 ## Statement Composition
@@ -200,31 +250,59 @@ You can compose statements from parts:
 ```python
 from uno.sql.statement import SQLStatement
 
-def build_search_query(filters):
-    """Build a search query dynamically."""
-    base_sql = "SELECT id, name, email FROM customer WHERE 1=1"
-    params = {}
-    
-    # Add filters dynamically
-    if "name" in filters:
-        base_sql += " AND name ILIKE :name"
-        params["name"] = f"%{filters['name']}%"
-    
-    if "email" in filters:
-        base_sql += " AND email ILIKE :email"
-        params["email"] = f"%{filters['email']}%"
-    
-    if "status" in filters:
-        base_sql += " AND status = :status"
-        params["status"] = filters["status"]
-    
-    # Add pagination
-    base_sql += " LIMIT :limit OFFSET :offset"
-    params["limit"] = filters.get("limit", 10)
-    params["offset"] = filters.get("offset", 0)
-    
-    # Create the statement
-    return SQLStatement(text=base_sql, params=params)
+def build_search_query(filters):```
+
+"""Build a search query dynamically."""
+base_sql = "SELECT id, name, email FROM customer WHERE 1=1"
+params = {}
+``````
+
+```
+```
+
+# Add filters dynamically
+if "name" in filters:```
+
+base_sql += " AND name ILIKE :name"
+params["name"] = f"%{filters['name']}%"
+```
+``````
+
+```
+```
+
+if "email" in filters:```
+
+base_sql += " AND email ILIKE :email"
+params["email"] = f"%{filters['email']}%"
+```
+``````
+
+```
+```
+
+if "status" in filters:```
+
+base_sql += " AND status = :status"
+params["status"] = filters["status"]
+```
+``````
+
+```
+```
+
+# Add pagination
+base_sql += " LIMIT :limit OFFSET :offset"
+params["limit"] = filters.get("limit", 10)
+params["offset"] = filters.get("offset", 0)
+``````
+
+```
+```
+
+# Create the statement
+return SQLStatement(text=base_sql, params=params)
+```
 ```
 
 ## Best Practices

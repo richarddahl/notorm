@@ -98,25 +98,41 @@ Many utilities are designed to optimize performance through batching, caching, a
 ```python
 from uno.core.async import TaskGroup
 
-async def process_items(items):
-    results = []
-    
-    async with TaskGroup(name="process_items") as group:
-        # Create a task for each item
-        tasks = [
-            group.create_task(process_item(item), name=f"process_{i}")
-            for i, item in enumerate(items)
-        ]
-        
-        # Process results as they complete
-        for task in tasks:
-            try:
-                result = await task
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Error processing item: {e}")
-    
-    return results
+async def process_items(items):```
+
+results = []
+``````
+
+```
+```
+
+async with TaskGroup(name="process_items") as group:```
+
+# Create a task for each item
+tasks = [
+    group.create_task(process_item(item), name=f"process_{i}")
+    for i, item in enumerate(items)
+]
+``````
+
+```
+```
+
+# Process results as they complete
+for task in tasks:
+    try:
+        result = await task
+        results.append(result)
+    except Exception as e:
+        logger.error(f"Error processing item: {e}")
+```
+``````
+
+```
+```
+
+return results
+```
 ```
 
 ### Enhanced Concurrency Primitives
@@ -124,13 +140,17 @@ async def process_items(items):
 ```python
 from uno.core.async import AsyncLock, timeout
 
-async def update_resource(resource_id, data):
-    # Use an enhanced lock with timeout
-    async with AsyncLock(name=f"resource_{resource_id}"):
-        # Use timeout for the operation
-        async with timeout(5.0, f"Timeout updating resource {resource_id}"):
-            # Perform the update
-            return await perform_update(resource_id, data)
+async def update_resource(resource_id, data):```
+
+# Use an enhanced lock with timeout
+async with AsyncLock(name=f"resource_{resource_id}"):```
+
+# Use timeout for the operation
+async with timeout(5.0, f"Timeout updating resource {resource_id}"):
+    # Perform the update
+    return await perform_update(resource_id, data)
+```
+```
 ```
 
 ### Integration with Decorators
@@ -141,12 +161,14 @@ from uno.core.async_integration import cancellable, retry, timeout_handler
 @cancellable
 @retry(max_attempts=3)
 @timeout_handler(timeout_seconds=5.0)
-async def fetch_data(data_id):
-    # This function now has:
-    # - Proper cancellation handling
-    # - Automatic retry on failure
-    # - Timeout after 5 seconds
-    return await api_client.get(f"/data/{data_id}")
+async def fetch_data(data_id):```
+
+# This function now has:
+# - Proper cancellation handling
+# - Automatic retry on failure
+# - Timeout after 5 seconds
+return await api_client.get(f"/data/{data_id}")
+```
 ```
 
 ### Application Lifecycle
@@ -154,24 +176,36 @@ async def fetch_data(data_id):
 ```python
 from uno.core.async_manager import run_application, get_async_manager
 
-async def startup():
-    # Initialize application resources
-    manager = get_async_manager()
+async def startup():```
+
+# Initialize application resources
+manager = get_async_manager()
+``````
+
+```
+```
+
+# Start background tasks
+manager.create_task(background_task(), name="background")
+```
     
-    # Start background tasks
-    manager.create_task(background_task(), name="background")
-    
-async def cleanup():
-    # Clean up resources
-    pass
+async def cleanup():```
+
+# Clean up resources
+pass
+```
 
 # Run the application
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(run_application(
-        startup_func=startup,
-        cleanup_func=cleanup
-    ))
+if __name__ == "__main__":```
+
+import asyncio
+asyncio.run(run_application(```
+
+startup_func=startup,
+cleanup_func=cleanup
+```
+))
+```
 ```
 
 ## Integration with Other Components

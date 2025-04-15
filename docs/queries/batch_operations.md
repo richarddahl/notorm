@@ -41,17 +41,21 @@ The batch operations system is fully integrated with Uno's repository pattern. T
 
 ```python
 # Initialize repository with batch operations enabled
-repo = UnoDBRepository(
-    entity_type=MyEntity,
-    use_batch_operations=True,
-    batch_size=500,  # Default batch size
+repo = UnoDBRepository(```
+
+entity_type=MyEntity,
+use_batch_operations=True,
+batch_size=500,  # Default batch size
+```
 )
 
 # Batch get entities
-entities = await repo.batch_get(
-    ids=["1", "2", "3", "4", "5"],
-    load_relations=["related_items"],
-    parallel=True,
+entities = await repo.batch_get(```
+
+ids=["1", "2", "3", "4", "5"],
+load_relations=["related_items"],
+parallel=True,
+```
 )
 
 # Batch add entities
@@ -59,8 +63,10 @@ new_entities = [MyEntity(...), MyEntity(...), MyEntity(...)]
 added_entities = await repo.batch_add(new_entities)
 
 # Batch update entities
-for entity in entities:
-    entity.name = f"Updated {entity.name}"
+for entity in entities:```
+
+entity.name = f"Updated {entity.name}"
+```
 updated_count = await repo.batch_update(entities, fields=["name"])
 
 # Batch remove entities
@@ -75,22 +81,28 @@ For more control, you can use the `BatchOperations` class directly:
 from uno.queries.batch_operations import BatchOperations, BatchConfig, BatchExecutionStrategy
 
 # Create batch operations instance
-batch_ops = BatchOperations(
-    model_class=MyModel,
-    session=session,
-    batch_config=BatchConfig(
-        batch_size=1000,
-        execution_strategy=BatchExecutionStrategy.PARALLEL,
-        max_workers=4,
-        collect_metrics=True,
-    ),
+batch_ops = BatchOperations(```
+
+model_class=MyModel,
+session=session,
+batch_config=BatchConfig(```
+
+batch_size=1000,
+execution_strategy=BatchExecutionStrategy.PARALLEL,
+max_workers=4,
+collect_metrics=True,
+```
+),
+```
 )
 
 # Perform batch operations
-result = await batch_ops.batch_upsert(
-    records=[{'id': 1, 'name': 'Record 1'}, {'id': 2, 'name': 'Record 2'}],
-    constraint_columns=['id'],
-    return_models=True,
+result = await batch_ops.batch_upsert(```
+
+records=[{'id': 1, 'name': 'Record 1'}, {'id': 2, 'name': 'Record 2'}],
+constraint_columns=['id'],
+return_models=True,
+```
 )
 
 # Get metrics
@@ -105,40 +117,82 @@ Batch operations can be configured using the `BatchConfig` class:
 from uno.queries.batch_operations import BatchConfig, BatchExecutionStrategy, BatchSize
 
 # Configure batch operations
-config = BatchConfig(
-    # Size of each batch
-    batch_size=BatchSize.MEDIUM.value,  # Or use explicit value like 500
-    
-    # Maximum number of parallel workers
-    max_workers=4,
-    
-    # Whether to collect metrics
-    collect_metrics=True,
-    
-    # Whether to log progress
-    log_progress=True,
-    
-    # Timeout for operations in seconds
-    timeout=60.0,
-    
-    # Retry count for failed operations
-    retry_count=3,
-    
-    # Delay between retries in seconds
-    retry_delay=0.5,
-    
-    # Execution strategy
-    execution_strategy=BatchExecutionStrategy.CHUNKED,
-    
-    # Functions for pre/post-processing
-    pre_process_fn=None,
-    post_process_fn=None,
-    
-    # Error callback function
-    error_callback=None,
-    
-    # Automatically optimize batch size based on record size
-    optimize_for_size=True,
+config = BatchConfig(```
+
+# Size of each batch
+batch_size=BatchSize.MEDIUM.value,  # Or use explicit value like 500
+``````
+
+```
+```
+
+# Maximum number of parallel workers
+max_workers=4,
+``````
+
+```
+```
+
+# Whether to collect metrics
+collect_metrics=True,
+``````
+
+```
+```
+
+# Whether to log progress
+log_progress=True,
+``````
+
+```
+```
+
+# Timeout for operations in seconds
+timeout=60.0,
+``````
+
+```
+```
+
+# Retry count for failed operations
+retry_count=3,
+``````
+
+```
+```
+
+# Delay between retries in seconds
+retry_delay=0.5,
+``````
+
+```
+```
+
+# Execution strategy
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+``````
+
+```
+```
+
+# Functions for pre/post-processing
+pre_process_fn=None,
+post_process_fn=None,
+``````
+
+```
+```
+
+# Error callback function
+error_callback=None,
+``````
+
+```
+```
+
+# Automatically optimize batch size based on record size
+optimize_for_size=True,
+```
 )
 ```
 
@@ -186,34 +240,48 @@ Here's an example of importing a large dataset efficiently:
 from uno.queries.batch_operations import BatchOperations, BatchConfig, BatchExecutionStrategy
 
 # Configure batch operations for import
-batch_ops = BatchOperations(
-    model_class=Product,
-    batch_config=BatchConfig(
-        batch_size=1000,
-        execution_strategy=BatchExecutionStrategy.CHUNKED,
-        max_workers=4,
-        optimize_for_size=True,
-    ),
+batch_ops = BatchOperations(```
+
+model_class=Product,
+batch_config=BatchConfig(```
+
+batch_size=1000,
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+max_workers=4,
+optimize_for_size=True,
+```
+),
+```
 )
 
 # Define preprocessing function
-def preprocess_product(record):
-    # Clean and validate data
-    if not record.get('name'):
-        return None  # Skip invalid records
-    
-    # Transform data as needed
-    record['name'] = record['name'].strip()
-    record['price'] = float(record['price'])
-    return record
+def preprocess_product(record):```
+
+# Clean and validate data
+if not record.get('name'):```
+
+return None  # Skip invalid records
+```
+``````
+
+```
+```
+
+# Transform data as needed
+record['name'] = record['name'].strip()
+record['price'] = float(record['price'])
+return record
+```
 
 # Import products
-import_stats = await batch_ops.batch_import(
-    records=product_data,  # Large list of product records
-    unique_fields=['sku'],
-    update_on_conflict=True,
-    pre_process_fn=preprocess_product,
-    return_stats=True,
+import_stats = await batch_ops.batch_import(```
+
+records=product_data,  # Large list of product records
+unique_fields=['sku'],
+update_on_conflict=True,
+pre_process_fn=preprocess_product,
+return_stats=True,
+```
 )
 
 print(f"Imported {import_stats['inserted']} products, updated {import_stats['updated']}")
@@ -227,22 +295,28 @@ Here's an example of using batch operations through the repository pattern:
 from uno.domain.repository import UnoDBRepository
 
 # Create repository with batch operations enabled
-repo = UnoDBRepository(
-    entity_type=Order,
-    use_batch_operations=True,
-    batch_size=500,
+repo = UnoDBRepository(```
+
+entity_type=Order,
+use_batch_operations=True,
+batch_size=500,
+```
 )
 
 # Get orders that need processing
-pending_orders = await repo.list(
-    filters={'status': 'pending'},
-    limit=1000,
+pending_orders = await repo.list(```
+
+filters={'status': 'pending'},
+limit=1000,
+```
 )
 
 # Process orders in batch
-for order in pending_orders:
-    order.status = 'processing'
-    order.updated_at = datetime.utcnow()
+for order in pending_orders:```
+
+order.status = 'processing'
+order.updated_at = datetime.utcnow()
+```
 
 # Update all orders in a single batch operation
 updated = await repo.batch_update(pending_orders)

@@ -23,9 +23,11 @@ from uno.core.monitoring import setup_monitoring, MonitoringConfig
 app = FastAPI()
 
 # Configure and set up monitoring
-config = MonitoringConfig(
-    service_name="my-service",
-    environment="production"
+config = MonitoringConfig(```
+
+service_name="my-service",
+environment="production"
+```
 )
 setup_monitoring(app, config)
 ```
@@ -43,53 +45,87 @@ This will:
 The `MonitoringConfig` class allows you to configure all aspects of the monitoring system:
 
 ```python
-from uno.core.monitoring import (
-    MonitoringConfig, MetricsConfig, TracingConfig,
-    LoggingConfig, HealthConfig, EventsConfig
+from uno.core.monitoring import (```
+
+MonitoringConfig, MetricsConfig, TracingConfig,
+LoggingConfig, HealthConfig, EventsConfig
+```
 )
 
-config = MonitoringConfig(
-    service_name="my-service",
-    environment="production",
-    
-    # Metrics configuration
-    metrics=MetricsConfig(
-        enabled=True,
-        export_interval=60.0,
-        prometheus_enabled=True,
-        metrics_path="/metrics",
-    ),
-    
-    # Tracing configuration
-    tracing=TracingConfig(
-        enabled=True,
-        service_name="my-service",
-        sampling_rate=0.1,  # Sample 10% of requests
-        log_spans=False,
-    ),
-    
-    # Health check configuration
-    health=HealthConfig(
-        enabled=True,
-        include_details=True,
-        path_prefix="/health",
-    ),
-    
-    # Event logging configuration
-    events=EventsConfig(
-        enabled=True,
-        min_level="INFO",
-        log_events=True,
-    ),
-    
-    # Logging configuration
-    logging=LoggingConfig(
-        level="INFO",
-        json_format=True,
-        log_to_console=True,
-        include_context=True,
-        include_trace_info=True,
-    ),
+config = MonitoringConfig(```
+
+service_name="my-service",
+environment="production"
+```,```
+
+```
+```
+
+# Metrics configuration
+metrics=MetricsConfig(```
+
+enabled=True,
+export_interval=60.0,
+prometheus_enabled=True,
+metrics_path="/metrics",
+```
+),
+``````
+
+```
+```
+
+# Tracing configuration
+tracing=TracingConfig(```
+
+enabled=True,
+service_name="my-service",
+sampling_rate=0.1,  # Sample 10% of requests
+log_spans=False,
+```
+),
+``````
+
+```
+```
+
+# Health check configuration
+health=HealthConfig(```
+
+enabled=True,
+include_details=True,
+path_prefix="/health",
+```
+),
+``````
+
+```
+```
+
+# Event logging configuration
+events=EventsConfig(```
+
+enabled=True,
+min_level="INFO",
+log_events=True,
+```
+),
+``````
+
+```
+```
+
+# Logging configuration
+logging=LoggingConfig(```
+
+level="INFO",
+json_format=True,
+log_to_console=True,
+include_context=True,
+include_trace_info=True,
+```
+),
+```
 )
 ```
 
@@ -100,10 +136,12 @@ To add more monitoring endpoints, use the `create_monitoring_endpoints` function
 ```python
 from uno.core.monitoring import create_monitoring_endpoints
 
-create_monitoring_endpoints(
-    app,
-    prefix="/management",
-    tags=["management"]
+create_monitoring_endpoints(```
+
+app,
+prefix="/management",
+tags=["management"]
+```
 )
 ```
 
@@ -135,3 +173,4 @@ For more details on each component, see the specific documentation:
 - [Health Checking](health.md)
 - [Structured Event Logging](events.md)
 - [Resource Monitoring](resources.md)
+- [Monitoring Dashboard](dashboard.md)

@@ -39,23 +39,33 @@ cache_key = QueryCacheKey.from_text(query, {"status": "active"}, ["users"])
 # Try to get from cache first
 cached_result = await cache.get(cache_key)
 
-if cached_result.is_ok():
-    # Use cached result
-    users = cached_result.unwrap()
-    print(f"Found {len(users)} users in cache")
-else:
-    # Cache miss, fetch from database
-    async with db_connection() as conn:
-        result = await conn.execute(query)
-        users = await result.fetchall()
-        
-        # Cache the result
-        await cache.set(
-            cache_key,
-            users,
-            ttl=60.0,  # Cache for 1 minute
-            dependencies=["users"],  # Track dependency on users table
-        )
+if cached_result.is_ok():```
+
+# Use cached result
+users = cached_result.unwrap()
+print(f"Found {len(users)} users in cache")
+```
+else:```
+
+# Cache miss, fetch from database
+async with db_connection() as conn:```
+
+result = await conn.execute(query)
+users = await result.fetchall()
+``````
+
+```
+```
+
+# Cache the result
+await cache.set(
+    cache_key,
+    users,
+    ttl=60.0,  # Cache for 1 minute
+    dependencies=["users"],  # Track dependency on users table
+)
+```
+```
 ```
 
 ### Caching Function Results
@@ -67,10 +77,14 @@ from uno.database.query_cache import cached
 
 # Cache the function result for 5 minutes
 @cached(ttl=300.0, dependencies=["users"])
-async def get_active_users():
-    async with db_connection() as conn:
-        result = await conn.execute("SELECT * FROM users WHERE status = 'active'")
-        return await result.fetchall()
+async def get_active_users():```
+
+async with db_connection() as conn:```
+
+result = await conn.execute("SELECT * FROM users WHERE status = 'active'")
+return await result.fetchall()
+```
+```
 
 # First call fetches from database
 users = await get_active_users()
@@ -89,19 +103,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uno.database.query_cache import cached_query
 
 @cached_query(ttl=60.0, dependencies=["users", "orders"])
-async def get_user_with_orders(session: AsyncSession, user_id: int):
-    # This query will be cached based on user_id parameter
-    query = select(User).options(joinedload(User.orders)).where(User.id == user_id)
-    result = await session.execute(query)
-    return result.scalars().first()
+async def get_user_with_orders(session: AsyncSession, user_id: int):```
+
+# This query will be cached based on user_id parameter
+query = select(User).options(joinedload(User.orders)).where(User.id == user_id)
+result = await session.execute(query)
+return result.scalars().first()
+```
 
 # Usage with session
-async with async_session() as session:
-    # First call executes the query
-    user = await get_user_with_orders(session, 123)
-    
-    # Second call uses cached result
-    user_again = await get_user_with_orders(session, 123)
+async with async_session() as session:```
+
+# First call executes the query
+user = await get_user_with_orders(session, 123)
+``````
+
+```
+```
+
+# Second call uses cached result
+user_again = await get_user_with_orders(session, 123)
+```
 ```
 
 ### Using Named Caches
@@ -113,31 +135,55 @@ from uno.database.query_cache import get_named_cache, QueryCacheConfig, CacheStr
 
 # Get a named cache with specific configuration
 user_cache = get_named_cache("user_cache")
-user_cache_config = QueryCacheConfig(
-    strategy=CacheStrategy.DEPENDENCY,
-    default_ttl=300.0,  # 5 minutes default TTL
+user_cache_config = QueryCacheConfig(```
+
+strategy=CacheStrategy.DEPENDENCY,
+default_ttl=300.0,  # 5 minutes default TTL
+```
 )
 
 # Use the cache
-async def get_user(user_id: int):
-    cache_key = f"user:{user_id}"
-    
-    # Try cache first
-    cached_result = await user_cache.get(cache_key)
-    if cached_result.is_ok():
-        return cached_result.unwrap()
-    
-    # Cache miss, fetch from database
-    user = await fetch_user_from_db(user_id)
-    
-    # Cache the result
-    await user_cache.set(
-        cache_key,
-        user,
-        dependencies=["users"],
-    )
-    
-    return user
+async def get_user(user_id: int):```
+
+cache_key = f"user:{user_id}"
+``````
+
+```
+```
+
+# Try cache first
+cached_result = await user_cache.get(cache_key)
+if cached_result.is_ok():```
+
+return cached_result.unwrap()
+```
+``````
+
+```
+```
+
+# Cache miss, fetch from database
+user = await fetch_user_from_db(user_id)
+``````
+
+```
+```
+
+# Cache the result
+await user_cache.set(```
+
+cache_key,
+user,
+dependencies=["users"],
+```
+)
+``````
+
+```
+```
+
+return user
+```
 ```
 
 ### Invalidating Cache Entries
@@ -171,30 +217,48 @@ The Query Cache system offers extensive configuration options:
 from uno.database.query_cache import QueryCacheConfig, CacheBackend, CacheStrategy
 
 # Create a configuration
-config = QueryCacheConfig(
-    # Cache behavior
-    enabled=True,
-    strategy=CacheStrategy.SMART,
-    backend=CacheBackend.HYBRID,
-    
-    # Cache sizing and expiration
-    default_ttl=300.0,  # 5 minutes
-    max_entries=10000,
-    
-    # Advanced settings
-    track_dependencies=True,
-    auto_invalidate=True,
-    log_hits=True,
-    log_misses=True,
-    
-    # Smart caching settings
-    adaptive_ttl=True,
-    min_ttl=10.0,
-    max_ttl=3600.0,  # 1 hour
-    
-    # Redis settings (when using REDIS or HYBRID backend)
-    redis_url="redis://localhost:6379/0",
-    redis_prefix="my_app_cache:",
+config = QueryCacheConfig(```
+
+# Cache behavior
+enabled=True,
+strategy=CacheStrategy.SMART,
+backend=CacheBackend.HYBRID,
+``````
+
+```
+```
+
+# Cache sizing and expiration
+default_ttl=300.0,  # 5 minutes
+max_entries=10000,
+``````
+
+```
+```
+
+# Advanced settings
+track_dependencies=True,
+auto_invalidate=True,
+log_hits=True,
+log_misses=True,
+``````
+
+```
+```
+
+# Smart caching settings
+adaptive_ttl=True,
+min_ttl=10.0,
+max_ttl=3600.0,  # 1 hour
+``````
+
+```
+```
+
+# Redis settings (when using REDIS or HYBRID backend)
+redis_url="redis://localhost:6379/0",
+redis_prefix="my_app_cache:",
+```
 )
 
 # Create a cache with this configuration
@@ -251,17 +315,21 @@ from uno.database.query_cache import QueryCacheConfig, CacheBackend
 memory_config = QueryCacheConfig(backend=CacheBackend.MEMORY)
 
 # Redis cache (distributed, shared between processes)
-redis_config = QueryCacheConfig(
-    backend=CacheBackend.REDIS,
-    redis_url="redis://localhost:6379/0",
-    redis_prefix="app_cache:",
+redis_config = QueryCacheConfig(```
+
+backend=CacheBackend.REDIS,
+redis_url="redis://localhost:6379/0",
+redis_prefix="app_cache:",
+```
 )
 
 # Hybrid cache (best of both worlds)
-hybrid_config = QueryCacheConfig(
-    backend=CacheBackend.HYBRID,
-    redis_url="redis://localhost:6379/0",
-    redis_prefix="app_cache:",
+hybrid_config = QueryCacheConfig(```
+
+backend=CacheBackend.HYBRID,
+redis_url="redis://localhost:6379/0",
+redis_prefix="app_cache:",
+```
 )
 ```
 
@@ -279,25 +347,31 @@ Each strategy optimizes for different access patterns:
 from uno.database.query_cache import QueryCacheConfig, CacheStrategy
 
 # Simple time-based caching
-simple_config = QueryCacheConfig(
-    strategy=CacheStrategy.SIMPLE,
-    default_ttl=300.0,  # 5 minutes
+simple_config = QueryCacheConfig(```
+
+strategy=CacheStrategy.SIMPLE,
+default_ttl=300.0,  # 5 minutes
+```
 )
 
 # Smart adaptive caching
-smart_config = QueryCacheConfig(
-    strategy=CacheStrategy.SMART,
-    adaptive_ttl=True,
-    min_ttl=10.0,
-    max_ttl=3600.0,  # 1 hour
-    analyze_complexity=True,
+smart_config = QueryCacheConfig(```
+
+strategy=CacheStrategy.SMART,
+adaptive_ttl=True,
+min_ttl=10.0,
+max_ttl=3600.0,  # 1 hour
+analyze_complexity=True,
+```
 )
 
 # Dependency-based caching
-dependency_config = QueryCacheConfig(
-    strategy=CacheStrategy.DEPENDENCY,
-    track_dependencies=True,
-    auto_invalidate=True,
+dependency_config = QueryCacheConfig(```
+
+strategy=CacheStrategy.DEPENDENCY,
+track_dependencies=True,
+auto_invalidate=True,
+```
 )
 ```
 
@@ -310,6 +384,90 @@ dependency_config = QueryCacheConfig(
 5. **Monitor cache performance**: Regularly check the hit rate and adjust TTLs accordingly
 6. **Invalidate appropriately**: Call `invalidate_by_table()` when data changes
 7. **Use decorators**: The `@cached_query` decorator makes integration seamless
+8. **Test with real infrastructure**: Use integration tests to verify cache behavior in real environments
+
+## Testing the Query Cache
+
+The framework includes comprehensive integration tests for the query cache system, ensuring it works correctly with both memory and Redis backends:
+
+### Running Tests
+
+```bash
+# Run query cache integration tests with the distributed cache tests
+pytest tests/integration/test_distributed_cache.py --run-integration
+
+# Run all integration tests including cache tests
+hatch run test:integration
+```
+
+### Test Coverage
+
+The integration tests for query caching cover:
+
+1. **Basic Cache Operations**: Verify cache get/set/delete operations
+2. **Cache Expiration**: Test TTL and automatic expiration
+3. **Dependency Tracking**: Verify dependency-based invalidation
+4. **Cross-Process Synchronization**: Test that multiple processes share cache state correctly
+5. **High-Concurrency Access**: Test behavior under concurrent load
+6. **Integration with Query Optimizer**: Verify that the cache works correctly with query optimization
+
+### Example Test
+
+```python
+@pytest.mark.integration
+@pytest.mark.asyncio
+async def test_query_cache_dependencies(query_cache):```
+
+"""Test cache dependency tracking."""
+# Set values with dependencies
+await query_cache.set(```
+
+"query1", 
+"result1", 
+dependencies=["products", "customers"]
+```
+)
+await query_cache.set(```
+
+"query2", 
+"result2", 
+dependencies=["products"]
+```
+)
+await query_cache.set(```
+
+"query3", 
+"result3", 
+dependencies=["orders"]
+```
+)
+``````
+
+```
+```
+
+# Verify values are cached
+assert (await query_cache.get("query1")).is_success
+assert (await query_cache.get("query2")).is_success
+assert (await query_cache.get("query3")).is_success
+``````
+
+```
+```
+
+# Invalidate by table dependency
+await query_cache.invalidate_by_table("products")
+``````
+
+```
+```
+
+# Check invalidation
+assert (await query_cache.get("query1")).is_error
+assert (await query_cache.get("query2")).is_error
+assert (await query_cache.get("query3")).is_success
+```
+```
 
 ## Advanced Features
 
@@ -320,14 +478,18 @@ Create custom cache key builders for complex scenarios:
 ```python
 from uno.database.query_cache import cached
 
-def my_key_builder(user_id, filter_params):
-    """Build a custom cache key."""
-    return f"users:{user_id}:{hash(frozenset(filter_params.items()))}"
+def my_key_builder(user_id, filter_params):```
+
+"""Build a custom cache key."""
+return f"users:{user_id}:{hash(frozenset(filter_params.items()))}"
+```
 
 @cached(key_builder=my_key_builder)
-async def get_filtered_user_data(user_id, filter_params):
-    # Function implementation
-    pass
+async def get_filtered_user_data(user_id, filter_params):```
+
+# Function implementation
+pass
+```
 ```
 
 ### Query Dependency Analysis
@@ -339,16 +501,20 @@ from uno.database.query_cache import cached_query
 
 # Dependencies will be automatically extracted from the query
 @cached_query(ttl=60.0)
-async def get_user_orders(session, user_id):
-    result = await session.execute(
-        """
-        SELECT o.* FROM orders o
-        JOIN users u ON o.user_id = u.id
-        WHERE u.id = :user_id
-        """,
-        {"user_id": user_id}
-    )
-    return await result.fetchall()
+async def get_user_orders(session, user_id):```
+
+result = await session.execute(```
+
+"""
+SELECT o.* FROM orders o
+JOIN users u ON o.user_id = u.id
+WHERE u.id = :user_id
+""",
+{"user_id": user_id}
+```
+)
+return await result.fetchall()
+```
 ```
 
 ### Redis Connection Customization
@@ -359,10 +525,12 @@ Fine-tune Redis connection settings:
 from uno.database.query_cache import QueryCacheConfig, CacheBackend
 
 # Customize Redis connection
-redis_config = QueryCacheConfig(
-    backend=CacheBackend.REDIS,
-    redis_url="redis://:password@redis.example.com:6379/1",
-    redis_prefix="app:cache:",
+redis_config = QueryCacheConfig(```
+
+backend=CacheBackend.REDIS,
+redis_url="redis://:password@redis.example.com:6379/1",
+redis_prefix="app:cache:",
+```
 )
 ```
 

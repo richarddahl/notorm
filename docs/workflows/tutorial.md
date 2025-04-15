@@ -115,21 +115,25 @@ Now, let's add actions to perform when the conditions are met:
    - **Type**: "Database"
    - **Operation**: "update"
    - **Target Entity**: "inventory"
-   - **Field Mapping**:
-     ```json
-     {
-       "status": "reserved",
-       "reserved_quantity": "{{item_quantity}}",
-       "reserved_at": "{{now()}}",
-       "order_id": "{{id}}"
-     }
-     ```
-   - **Filter**: 
-     ```json
-     {
-       "product_id": "{{product_id}}"
-     }
-     ```
+   - **Field Mapping**:```
+
+ ```json
+ {
+   "status": "reserved",
+   "reserved_quantity": "{{item_quantity}}",
+   "reserved_at": "{{now()}}",
+   "order_id": "{{id}}"
+ }
+ ```
+```
+   - **Filter**: ```
+
+ ```json
+ {
+   "product_id": "{{product_id}}"
+ }
+ ```
+```
 
 ### Action 4: External System Integration
 
@@ -138,23 +142,27 @@ Now, let's add actions to perform when the conditions are met:
    - **Type**: "Webhook"
    - **URL**: "https://api.shipping-partner.com/orders"
    - **Method**: "POST"
-   - **Headers**:
-     ```json
-     {
-       "Content-Type": "application/json",
-       "Authorization": "Bearer {{env.SHIPPING_API_KEY}}"
-     }
-     ```
-   - **Body**:
-     ```json
-     {
-       "order_id": "{{id}}",
-       "customer_name": "{{customer.name}}",
-       "shipping_address": "{{shipping_address}}",
-       "items": "{{items}}",
-       "priority": "{{is_priority}}"
-     }
-     ```
+   - **Headers**:```
+
+ ```json
+ {
+   "Content-Type": "application/json",
+   "Authorization": "Bearer {{env.SHIPPING_API_KEY}}"
+ }
+ ```
+```
+   - **Body**:```
+
+ ```json
+ {
+   "order_id": "{{id}}",
+   "customer_name": "{{customer.name}}",
+   "shipping_address": "{{shipping_address}}",
+   "items": "{{items}}",
+   "priority": "{{is_priority}}"
+ }
+ ```
+```
 
 Click "Next" to proceed to the Review tab.
 
@@ -176,26 +184,30 @@ Before activating the workflow in production, let's test it:
 2. Select "create" as the operation
 3. Enter test order data:
    ```json
-   {
-     "id": "test-order-123",
-     "order_number": "ORD-123456",
-     "status": "confirmed",
-     "total": 750,
-     "is_priority": false,
-     "customer_id": "CUST-001",
-     "customer": {
-       "name": "John Doe"
-     },
-     "shipping_address": "123 Main St, Anytown, US 12345",
-     "items": [
-       {
-         "product_id": "PROD-001",
-         "name": "Premium Widget",
-         "quantity": 3,
-         "price": 250
-       }
-     ],
-     "created_at": "2023-11-15T10:30:00Z"
+   {```
+
+ "id": "test-order-123",
+ "order_number": "ORD-123456",
+ "status": "confirmed",
+ "total": 750,
+ "is_priority": false,
+ "customer_id": "CUST-001",
+ "customer": {
+   "name": "John Doe"
+ },
+ "shipping_address": "123 Main St, Anytown, US 12345",
+ "items": [
+   {```
+
+ "product_id": "PROD-001",
+ "name": "Premium Widget",
+ "quantity": 3,
+ "price": 250
+```
+   }
+ ],
+ "created_at": "2023-11-15T10:30:00Z"
+```
    }
    ```
 
@@ -310,7 +322,7 @@ As you become more familiar with the workflow system, you can create increasingl
 
 To continue learning about workflows:
 
-1. Explore the [API Documentation](/docs/api/workflows.md) to programmatically create and manage workflows
-2. Learn about [Advanced Patterns](/docs/workflows/advanced-patterns.md) for complex workflow scenarios
-3. Discover how to extend the system with [Custom Extensions](/docs/workflows/custom-extensions.md)
-4. Review [Security Considerations](/docs/workflows/security.md) for production workflows
+1. <!-- TODO: Create API documentation -->Explore the API Documentation to programmatically create and manage workflows (coming soon)
+2. <!-- TODO: Create advanced patterns guide -->Learn about Advanced Patterns for complex workflow scenarios (coming soon)
+3. <!-- TODO: Create custom extensions guide -->Discover how to extend the system with Custom Extensions (coming soon)
+4. <!-- TODO: Create security considerations guide -->Review Security Considerations for production workflows (coming soon)

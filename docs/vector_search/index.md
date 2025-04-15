@@ -41,16 +41,20 @@ Welcome to the vector search documentation for the Uno Framework. This section c
    provider = get_service_provider()
    
    # Get vector search service
-   document_search = provider.get_vector_search_service(
-       entity_type="document",
-       table_name="documents"
+   document_search = provider.get_vector_search_service(```
+
+   entity_type="document",
+   table_name="documents"
+```
    )
    
    # Search for similar documents
-   results = await document_search.search({
-       "query_text": "How do I use vector search?",
-       "limit": 10,
-       "threshold": 0.7
+   results = await document_search.search({```
+
+   "query_text": "How do I use vector search?",
+   "limit": 10,
+   "threshold": 0.7
+```
    })
    ```
 

@@ -49,9 +49,13 @@ A report definition consists of several components:
 ```
 +----------------+     +------------------+     +--------------------+
 | Trigger Event  |---->| Report Execution |---->| Data Acquisition   |
-+----------------+     +------------------+     +--------------------+
-                                |                         |
-                                v                         v
++----------------+     +------------------+     +--------------------+```
+```
+
+                        |                         |
+                        v                         v
+```
+```
 +----------------+     +------------------+     +--------------------+
 | Delivery       |<----| Formatting       |<----| Data Transformation|
 +----------------+     +------------------+     +--------------------+
@@ -112,157 +116,275 @@ Handles output distribution:
 #### `ReportTemplate`
 
 ```python
-class ReportTemplateModel(DefaultModelMixin, UnoModel):
-    """Defines the structure and behavior of a report."""
-    
-    # Basic information
-    name: Mapped[PostgresTypes.String255]
-    description: Mapped[str]
-    
-    # Configuration
-    base_object_type: Mapped[str]  # What type of entity this report is based on
-    format_config: Mapped[Dict[str, Any]]  # JSON configuration for output format
-    parameter_definitions: Mapped[Dict[str, Any]]  # User parameters the report accepts
-    cache_policy: Mapped[Dict[str, Any]]  # How report results are cached
-    version: Mapped[str]  # For template versioning
-    
-    # Relations to other components
-    fields: Mapped[List["ReportFieldDefinitionModel"]]
-    triggers: Mapped[List["ReportTriggerModel"]]
-    outputs: Mapped[List["ReportOutputModel"]]
+class ReportTemplateModel(DefaultModelMixin, UnoModel):```
+
+"""Defines the structure and behavior of a report."""
+``````
+
+```
+```
+
+# Basic information
+name: Mapped[PostgresTypes.String255]
+description: Mapped[str]
+``````
+
+```
+```
+
+# Configuration
+base_object_type: Mapped[str]  # What type of entity this report is based on
+format_config: Mapped[Dict[str, Any]]  # JSON configuration for output format
+parameter_definitions: Mapped[Dict[str, Any]]  # User parameters the report accepts
+cache_policy: Mapped[Dict[str, Any]]  # How report results are cached
+version: Mapped[str]  # For template versioning
+``````
+
+```
+```
+
+# Relations to other components
+fields: Mapped[List["ReportFieldDefinitionModel"]]
+triggers: Mapped[List["ReportTriggerModel"]]
+outputs: Mapped[List["ReportOutputModel"]]
+```
 ```
 
 #### `ReportFieldDefinition`
 
 ```python
-class ReportFieldDefinitionModel(DefaultModelMixin, UnoModel):
-    """Defines a field within a report template."""
-    
-    # Field identification
-    name: Mapped[PostgresTypes.String255]
-    display_name: Mapped[str]
-    description: Mapped[Optional[str]]
-    
-    # Field configuration
-    report_template_id: Mapped[PostgresTypes.String26]
-    field_type: Mapped[str]  # db_column, attribute, method, query, aggregate
-    field_config: Mapped[Dict[str, Any]]  # Configuration specific to field_type
-    
-    # Presentation
-    order: Mapped[int]
-    format_string: Mapped[Optional[str]]
-    conditional_formats: Mapped[Optional[Dict[str, Any]]]
-    is_visible: Mapped[bool]
-    
-    # Relations
-    report_template: Mapped["ReportTemplateModel"]
-    parent_field: Mapped[Optional["ReportFieldDefinitionModel"]]
-    child_fields: Mapped[List["ReportFieldDefinitionModel"]]
+class ReportFieldDefinitionModel(DefaultModelMixin, UnoModel):```
+
+"""Defines a field within a report template."""
+``````
+
+```
+```
+
+# Field identification
+name: Mapped[PostgresTypes.String255]
+display_name: Mapped[str]
+description: Mapped[Optional[str]]
+``````
+
+```
+```
+
+# Field configuration
+report_template_id: Mapped[PostgresTypes.String26]
+field_type: Mapped[str]  # db_column, attribute, method, query, aggregate
+field_config: Mapped[Dict[str, Any]]  # Configuration specific to field_type
+``````
+
+```
+```
+
+# Presentation
+order: Mapped[int]
+format_string: Mapped[Optional[str]]
+conditional_formats: Mapped[Optional[Dict[str, Any]]]
+is_visible: Mapped[bool]
+``````
+
+```
+```
+
+# Relations
+report_template: Mapped["ReportTemplateModel"]
+parent_field: Mapped[Optional["ReportFieldDefinitionModel"]]
+child_fields: Mapped[List["ReportFieldDefinitionModel"]]
+```
 ```
 
 #### `ReportTrigger`
 
 ```python
-class ReportTriggerModel(DefaultModelMixin, UnoModel):
-    """Defines when a report should be generated."""
-    
-    # Trigger configuration
-    report_template_id: Mapped[PostgresTypes.String26]
-    trigger_type: Mapped[str]  # manual, scheduled, event, query
-    trigger_config: Mapped[Dict[str, Any]]  # Configuration specific to trigger_type
-    
-    # For scheduled triggers
-    schedule: Mapped[Optional[str]]  # Cron-style expression
-    
-    # For event triggers
-    event_type: Mapped[Optional[str]]
-    entity_type: Mapped[Optional[str]]
-    
-    # For query triggers
-    query_id: Mapped[Optional[PostgresTypes.String26]]
-    
-    # Status
-    is_active: Mapped[bool]
-    last_triggered: Mapped[Optional[datetime]]
-    
-    # Relations
-    report_template: Mapped["ReportTemplateModel"]
+class ReportTriggerModel(DefaultModelMixin, UnoModel):```
+
+"""Defines when a report should be generated."""
+``````
+
+```
+```
+
+# Trigger configuration
+report_template_id: Mapped[PostgresTypes.String26]
+trigger_type: Mapped[str]  # manual, scheduled, event, query
+trigger_config: Mapped[Dict[str, Any]]  # Configuration specific to trigger_type
+``````
+
+```
+```
+
+# For scheduled triggers
+schedule: Mapped[Optional[str]]  # Cron-style expression
+``````
+
+```
+```
+
+# For event triggers
+event_type: Mapped[Optional[str]]
+entity_type: Mapped[Optional[str]]
+``````
+
+```
+```
+
+# For query triggers
+query_id: Mapped[Optional[PostgresTypes.String26]]
+``````
+
+```
+```
+
+# Status
+is_active: Mapped[bool]
+last_triggered: Mapped[Optional[datetime]]
+``````
+
+```
+```
+
+# Relations
+report_template: Mapped["ReportTemplateModel"]
+```
 ```
 
 #### `ReportOutput`
 
 ```python
-class ReportOutputModel(DefaultModelMixin, UnoModel):
-    """Defines how report results should be delivered."""
-    
-    # Output configuration
-    report_template_id: Mapped[PostgresTypes.String26]
-    output_type: Mapped[str]  # file, email, webhook, notification
-    output_config: Mapped[Dict[str, Any]]  # Configuration specific to output_type
-    
-    # Format
-    format: Mapped[str]  # csv, pdf, json, html, etc.
-    format_config: Mapped[Dict[str, Any]]
-    
-    # Status
-    is_active: Mapped[bool]
-    
-    # Relations
-    report_template: Mapped["ReportTemplateModel"]
+class ReportOutputModel(DefaultModelMixin, UnoModel):```
+
+"""Defines how report results should be delivered."""
+``````
+
+```
+```
+
+# Output configuration
+report_template_id: Mapped[PostgresTypes.String26]
+output_type: Mapped[str]  # file, email, webhook, notification
+output_config: Mapped[Dict[str, Any]]  # Configuration specific to output_type
+``````
+
+```
+```
+
+# Format
+format: Mapped[str]  # csv, pdf, json, html, etc.
+format_config: Mapped[Dict[str, Any]]
+``````
+
+```
+```
+
+# Status
+is_active: Mapped[bool]
+``````
+
+```
+```
+
+# Relations
+report_template: Mapped["ReportTemplateModel"]
+```
 ```
 
 #### `ReportExecution`
 
 ```python
-class ReportExecutionModel(DefaultModelMixin, UnoModel):
-    """Records of report generation executions."""
-    
-    # Execution details
-    report_template_id: Mapped[PostgresTypes.String26]
-    triggered_by: Mapped[str]  # trigger ID or user ID
-    trigger_type: Mapped[str]  # manual, scheduled, event, query
-    
-    # Parameters provided
-    parameters: Mapped[Dict[str, Any]]
-    
-    # Execution status
-    status: Mapped[str]  # pending, running, completed, failed
-    started_at: Mapped[datetime]
-    completed_at: Mapped[Optional[datetime]]
-    error_details: Mapped[Optional[str]]
-    
-    # Result
-    row_count: Mapped[Optional[int]]
-    execution_time_ms: Mapped[Optional[int]]
-    result_hash: Mapped[Optional[str]]
-    
-    # Relations
-    report_template: Mapped["ReportTemplateModel"]
-    report_outputs: Mapped[List["ReportOutputExecutionModel"]]
+class ReportExecutionModel(DefaultModelMixin, UnoModel):```
+
+"""Records of report generation executions."""
+``````
+
+```
+```
+
+# Execution details
+report_template_id: Mapped[PostgresTypes.String26]
+triggered_by: Mapped[str]  # trigger ID or user ID
+trigger_type: Mapped[str]  # manual, scheduled, event, query
+``````
+
+```
+```
+
+# Parameters provided
+parameters: Mapped[Dict[str, Any]]
+``````
+
+```
+```
+
+# Execution status
+status: Mapped[str]  # pending, running, completed, failed
+started_at: Mapped[datetime]
+completed_at: Mapped[Optional[datetime]]
+error_details: Mapped[Optional[str]]
+``````
+
+```
+```
+
+# Result
+row_count: Mapped[Optional[int]]
+execution_time_ms: Mapped[Optional[int]]
+result_hash: Mapped[Optional[str]]
+``````
+
+```
+```
+
+# Relations
+report_template: Mapped["ReportTemplateModel"]
+``````
+
+report_outputs: Mapped[List["ReportOutputExecutionModel"]]
+```
 ```
 
 #### `ReportOutputExecution`
 
 ```python
-class ReportOutputExecutionModel(DefaultModelMixin, UnoModel):
-    """Records of report output delivery."""
-    
-    # Execution reference
-    report_execution_id: Mapped[PostgresTypes.String26]
-    report_output_id: Mapped[PostgresTypes.String26]
-    
-    # Output status
-    status: Mapped[str]  # pending, completed, failed
-    completed_at: Mapped[Optional[datetime]]
-    error_details: Mapped[Optional[str]]
-    
-    # Result details
-    output_location: Mapped[Optional[str]]  # URL, file path, etc.
-    output_size_bytes: Mapped[Optional[int]]
-    
-    # Relations
-    report_execution: Mapped["ReportExecutionModel"]
-    report_output: Mapped["ReportOutputModel"]
+class ReportOutputExecutionModel(DefaultModelMixin, UnoModel):```
+
+"""Records of report output delivery."""
+``````
+
+```
+```
+
+# Execution reference
+report_execution_id: Mapped[PostgresTypes.String26]
+report_output_id: Mapped[PostgresTypes.String26]
+``````
+
+```
+```
+
+# Output status
+status: Mapped[str]  # pending, completed, failed
+completed_at: Mapped[Optional[datetime]]
+error_details: Mapped[Optional[str]]
+``````
+
+```
+```
+
+# Result details
+output_location: Mapped[Optional[str]]  # URL, file path, etc.
+output_size_bytes: Mapped[Optional[int]]
+``````
+
+```
+```
+
+# Relations
+report_execution: Mapped["ReportExecutionModel"]
+report_output: Mapped["ReportOutputModel"]
+```
 ```
 
 ## Service Layer
@@ -272,26 +394,44 @@ class ReportOutputExecutionModel(DefaultModelMixin, UnoModel):
 Central service for managing report templates:
 
 ```python
-class ReportTemplateService:
-    """Service for managing report templates."""
+class ReportTemplateService:```
+
+"""Service for managing report templates."""
+``````
+
+```
+```
+
+async def create_template(self, template_data: dict) -> Result[ReportTemplate, ReportError]:```
+
+"""Create a new report template."""
+```
     
-    async def create_template(self, template_data: dict) -> Result[ReportTemplate, ReportError]:
-        """Create a new report template."""
-        
-    async def update_template(self, template_id: str, template_data: dict) -> Result[ReportTemplate, ReportError]:
-        """Update an existing report template."""
-        
-    async def delete_template(self, template_id: str) -> Result[bool, ReportError]:
-        """Delete a report template."""
-        
-    async def get_template(self, template_id: str) -> Result[Optional[ReportTemplate], ReportError]:
-        """Get a report template by ID."""
-        
-    async def list_templates(self, filters: dict = None) -> Result[List[ReportTemplate], ReportError]:
-        """List report templates, optionally filtered."""
-        
-    async def clone_template(self, template_id: str, new_name: str) -> Result[ReportTemplate, ReportError]:
-        """Clone an existing template with a new name."""
+async def update_template(self, template_id: str, template_data: dict) -> Result[ReportTemplate, ReportError]:```
+
+"""Update an existing report template."""
+```
+    
+async def delete_template(self, template_id: str) -> Result[bool, ReportError]:```
+
+"""Delete a report template."""
+```
+    
+async def get_template(self, template_id: str) -> Result[Optional[ReportTemplate], ReportError]:```
+
+"""Get a report template by ID."""
+```
+    
+async def list_templates(self, filters: dict = None) -> Result[List[ReportTemplate], ReportError]:```
+
+"""List report templates, optionally filtered."""
+```
+    
+async def clone_template(self, template_id: str, new_name: str) -> Result[ReportTemplate, ReportError]:```
+
+"""Clone an existing template with a new name."""
+```
+```
 ```
 
 ### ReportFieldService
@@ -299,23 +439,39 @@ class ReportTemplateService:
 Manages report field definitions:
 
 ```python
-class ReportFieldService:
-    """Service for managing report field definitions."""
+class ReportFieldService:```
+
+"""Service for managing report field definitions."""
+``````
+
+```
+```
+
+async def add_field(self, template_id: str, field_data: dict) -> Result[ReportFieldDefinition, ReportError]:```
+
+"""Add a field to a report template."""
+```
     
-    async def add_field(self, template_id: str, field_data: dict) -> Result[ReportFieldDefinition, ReportError]:
-        """Add a field to a report template."""
-        
-    async def update_field(self, field_id: str, field_data: dict) -> Result[ReportFieldDefinition, ReportError]:
-        """Update a field definition."""
-        
-    async def delete_field(self, field_id: str) -> Result[bool, ReportError]:
-        """Delete a field from a report template."""
-        
-    async def get_available_fields(self, base_object_type: str) -> Result[List[Dict[str, Any]], ReportError]:
-        """Get available fields for a specific object type."""
-        
-    async def validate_field_config(self, field_type: str, field_config: dict) -> Result[bool, ReportError]:
-        """Validate a field configuration."""
+async def update_field(self, field_id: str, field_data: dict) -> Result[ReportFieldDefinition, ReportError]:```
+
+"""Update a field definition."""
+```
+    
+async def delete_field(self, field_id: str) -> Result[bool, ReportError]:```
+
+"""Delete a field from a report template."""
+```
+    
+async def get_available_fields(self, base_object_type: str) -> Result[List[Dict[str, Any]], ReportError]:```
+
+"""Get available fields for a specific object type."""
+```
+    
+async def validate_field_config(self, field_type: str, field_config: dict) -> Result[bool, ReportError]:```
+
+"""Validate a field configuration."""
+```
+```
 ```
 
 ### ReportExecutionService
@@ -323,34 +479,54 @@ class ReportFieldService:
 Handles report execution and data retrieval:
 
 ```python
-class ReportExecutionService:
-    """Service for executing reports and retrieving data."""
+class ReportExecutionService:```
+
+"""Service for executing reports and retrieving data."""
+``````
+
+```
+```
+
+async def execute_report(```
+
+self, 
+template_id: str, 
+parameters: dict = None,
+trigger_type: str = "manual",
+user_id: str = None
+```
+) -> Result[ReportExecution, ReportError]:```
+
+"""Execute a report with optional parameters."""
+```
     
-    async def execute_report(
-        self, 
-        template_id: str, 
-        parameters: dict = None,
-        trigger_type: str = "manual",
-        user_id: str = None
-    ) -> Result[ReportExecution, ReportError]:
-        """Execute a report with optional parameters."""
-        
-    async def get_execution_status(self, execution_id: str) -> Result[dict, ReportError]:
-        """Get the status of a report execution."""
-        
-    async def cancel_execution(self, execution_id: str) -> Result[bool, ReportError]:
-        """Cancel a running report execution."""
-        
-    async def get_execution_result(self, execution_id: str) -> Result[Any, ReportError]:
-        """Get the result of a completed report execution."""
-        
-    async def list_executions(
-        self, 
-        template_id: str = None, 
-        status: str = None,
-        date_range: Tuple[datetime, datetime] = None
-    ) -> Result[List[ReportExecution], ReportError]:
-        """List report executions, optionally filtered."""
+async def get_execution_status(self, execution_id: str) -> Result[dict, ReportError]:```
+
+"""Get the status of a report execution."""
+```
+    
+async def cancel_execution(self, execution_id: str) -> Result[bool, ReportError]:```
+
+"""Cancel a running report execution."""
+```
+    
+async def get_execution_result(self, execution_id: str) -> Result[Any, ReportError]:```
+
+"""Get the result of a completed report execution."""
+```
+    
+async def list_executions(```
+
+self, 
+template_id: str = None, 
+status: str = None,
+date_range: Tuple[datetime, datetime] = None
+```
+) -> Result[List[ReportExecution], ReportError]:```
+
+"""List report executions, optionally filtered."""
+```
+```
 ```
 
 ### ReportTriggerService
@@ -358,29 +534,49 @@ class ReportExecutionService:
 Manages automated report triggers:
 
 ```python
-class ReportTriggerService:
-    """Service for managing report triggers."""
+class ReportTriggerService:```
+
+"""Service for managing report triggers."""
+``````
+
+```
+```
+
+async def create_trigger(self, template_id: str, trigger_data: dict) -> Result[ReportTrigger, ReportError]:```
+
+"""Create a new trigger for a report template."""
+```
     
-    async def create_trigger(self, template_id: str, trigger_data: dict) -> Result[ReportTrigger, ReportError]:
-        """Create a new trigger for a report template."""
-        
-    async def update_trigger(self, trigger_id: str, trigger_data: dict) -> Result[ReportTrigger, ReportError]:
-        """Update an existing trigger."""
-        
-    async def delete_trigger(self, trigger_id: str) -> Result[bool, ReportError]:
-        """Delete a trigger."""
-        
-    async def enable_trigger(self, trigger_id: str) -> Result[bool, ReportError]:
-        """Enable a trigger."""
-        
-    async def disable_trigger(self, trigger_id: str) -> Result[bool, ReportError]:
-        """Disable a trigger."""
-        
-    async def handle_event(self, event_type: str, event_data: dict) -> Result[List[str], ReportError]:
-        """Handle an event that might trigger reports (returns execution IDs)."""
-        
-    async def check_query_triggers(self) -> Result[List[str], ReportError]:
-        """Check query-based triggers and execute reports if conditions are met."""
+async def update_trigger(self, trigger_id: str, trigger_data: dict) -> Result[ReportTrigger, ReportError]:```
+
+"""Update an existing trigger."""
+```
+    
+async def delete_trigger(self, trigger_id: str) -> Result[bool, ReportError]:```
+
+"""Delete a trigger."""
+```
+    
+async def enable_trigger(self, trigger_id: str) -> Result[bool, ReportError]:```
+
+"""Enable a trigger."""
+```
+    
+async def disable_trigger(self, trigger_id: str) -> Result[bool, ReportError]:```
+
+"""Disable a trigger."""
+```
+    
+async def handle_event(self, event_type: str, event_data: dict) -> Result[List[str], ReportError]:```
+
+"""Handle an event that might trigger reports (returns execution IDs)."""
+```
+    
+async def check_query_triggers(self) -> Result[List[str], ReportError]:```
+
+"""Check query-based triggers and execute reports if conditions are met."""
+```
+```
 ```
 
 ### ReportOutputService
@@ -388,23 +584,39 @@ class ReportTriggerService:
 Manages report output formatting and delivery:
 
 ```python
-class ReportOutputService:
-    """Service for handling report output and delivery."""
+class ReportOutputService:```
+
+"""Service for handling report output and delivery."""
+``````
+
+```
+```
+
+async def create_output_config(self, template_id: str, output_data: dict) -> Result[ReportOutput, ReportError]:```
+
+"""Create a new output configuration for a report template."""
+```
     
-    async def create_output_config(self, template_id: str, output_data: dict) -> Result[ReportOutput, ReportError]:
-        """Create a new output configuration for a report template."""
-        
-    async def update_output_config(self, output_id: str, output_data: dict) -> Result[ReportOutput, ReportError]:
-        """Update an existing output configuration."""
-        
-    async def delete_output_config(self, output_id: str) -> Result[bool, ReportError]:
-        """Delete an output configuration."""
-        
-    async def format_report(self, execution_id: str, format: str) -> Result[bytes, ReportError]:
-        """Format a report result in the specified format."""
-        
-    async def deliver_report(self, execution_id: str, output_id: str) -> Result[bool, ReportError]:
-        """Deliver a report according to an output configuration."""
+async def update_output_config(self, output_id: str, output_data: dict) -> Result[ReportOutput, ReportError]:```
+
+"""Update an existing output configuration."""
+```
+    
+async def delete_output_config(self, output_id: str) -> Result[bool, ReportError]:```
+
+"""Delete an output configuration."""
+```
+    
+async def format_report(self, execution_id: str, format: str) -> Result[bytes, ReportError]:```
+
+"""Format a report result in the specified format."""
+```
+    
+async def deliver_report(self, execution_id: str, output_id: str) -> Result[bool, ReportError]:```
+
+"""Deliver a report according to an output configuration."""
+```
+```
 ```
 
 ## Integration with Other Modules
@@ -412,53 +624,93 @@ class ReportOutputService:
 ### Attributes System Integration
 
 ```python
-class AttributeReportFieldHandler:
-    """Handler for attribute-based report fields."""
+class AttributeReportFieldHandler:```
+
+"""Handler for attribute-based report fields."""
+``````
+
+```
+```
+
+async def get_available_attributes(self, object_type: str) -> List[Dict[str, Any]]:```
+
+"""Get attributes available for a specific object type."""
+```
     
-    async def get_available_attributes(self, object_type: str) -> List[Dict[str, Any]]:
-        """Get attributes available for a specific object type."""
-        
-    async def resolve_attribute_value(self, entity_id: str, attribute_id: str) -> Any:
-        """Resolve the value of an attribute for an entity."""
+async def resolve_attribute_value(self, entity_id: str, attribute_id: str) -> Any:```
+
+"""Resolve the value of an attribute for an entity."""
+```
+```
 ```
 
 ### Query System Integration
 
 ```python
-class QueryReportFieldHandler:
-    """Handler for query-based report fields."""
+class QueryReportFieldHandler:```
+
+"""Handler for query-based report fields."""
+``````
+
+```
+```
+
+async def get_available_queries(self, object_type: str) -> List[Dict[str, Any]]:```
+
+"""Get queries available for a specific object type."""
+```
     
-    async def get_available_queries(self, object_type: str) -> List[Dict[str, Any]]:
-        """Get queries available for a specific object type."""
-        
-    async def execute_query_for_field(self, query_id: str, parameters: dict) -> List[Any]:
-        """Execute a query and return results for a report field."""
+async def execute_query_for_field(self, query_id: str, parameters: dict) -> List[Any]:```
+
+"""Execute a query and return results for a report field."""
+```
+```
 ```
 
 ### Workflow System Integration
 
 ```python
-class WorkflowReportIntegration:
-    """Integration between reports and workflows."""
+class WorkflowReportIntegration:```
+
+"""Integration between reports and workflows."""
+``````
+
+```
+```
+
+async def attach_report_to_workflow(self, workflow_id: str, report_id: str, config: dict) -> bool:```
+
+"""Attach a report generation step to a workflow."""
+```
     
-    async def attach_report_to_workflow(self, workflow_id: str, report_id: str, config: dict) -> bool:
-        """Attach a report generation step to a workflow."""
-        
-    async def trigger_report_from_workflow(self, workflow_id: str, execution_id: str, report_id: str) -> str:
-        """Trigger a report as part of a workflow execution."""
+async def trigger_report_from_workflow(self, workflow_id: str, execution_id: str, report_id: str) -> str:```
+
+"""Trigger a report as part of a workflow execution."""
+```
+```
 ```
 
 ### Event System Integration
 
 ```python
-class EventReportIntegration:
-    """Integration between events and reports."""
+class EventReportIntegration:```
+
+"""Integration between events and reports."""
+``````
+
+```
+```
+
+async def register_event_handlers(self):```
+
+"""Register event handlers for report triggers."""
+```
     
-    async def register_event_handlers(self):
-        """Register event handlers for report triggers."""
-        
-    async def handle_event(self, event_type: str, event_data: dict):
-        """Handle an event and trigger reports if configured."""
+async def handle_event(self, event_type: str, event_data: dict):```
+
+"""Handle an event and trigger reports if configured."""
+```
+```
 ```
 
 ## Implementation Approach
@@ -545,70 +797,92 @@ The Reports API will provide endpoints for:
 
 ```python
 # Creating a report template
-template = await report_service.create_template({
-    "name": "Monthly Sales Report",
-    "description": "Summarizes sales by product category",
-    "base_object_type": "order",
-    "format_config": {
-        "default_format": "pdf",
-        "layout": "portrait",
-        "grouping": ["category"]
-    },
-    "parameter_definitions": {
-        "start_date": {"type": "date", "required": True},
-        "end_date": {"type": "date", "required": True},
-        "include_canceled": {"type": "boolean", "default": False}
-    }
+template = await report_service.create_template({```
+
+"name": "Monthly Sales Report",
+"description": "Summarizes sales by product category",
+"base_object_type": "order",
+"format_config": {```
+
+"default_format": "pdf",
+"layout": "portrait",
+"grouping": ["category"]
+```
+},
+"parameter_definitions": {```
+
+"start_date": {"type": "date", "required": True},
+"end_date": {"type": "date", "required": True},
+"include_canceled": {"type": "boolean", "default": False}
+```
+}
+```
 })
 
 # Adding fields to the report
-await field_service.add_field(template.id, {
-    "name": "category",
-    "display_name": "Product Category",
-    "field_type": "db_column",
-    "field_config": {
-        "table": "products",
-        "column": "category",
-        "join_path": ["order_items", "products"]
-    },
-    "order": 1
+await field_service.add_field(template.id, {```
+
+"name": "category",
+"display_name": "Product Category",
+"field_type": "db_column",
+"field_config": {```
+
+"table": "products",
+"column": "category",
+"join_path": ["order_items", "products"]
+```
+},
+"order": 1
+```
 })
 
-await field_service.add_field(template.id, {
-    "name": "total_sales",
-    "display_name": "Total Sales",
-    "field_type": "aggregate",
-    "field_config": {
-        "function": "sum",
-        "field": "price",
-        "group_by": ["category"]
-    },
-    "format_string": "${:,.2f}",
-    "order": 2
+await field_service.add_field(template.id, {```
+
+"name": "total_sales",
+"display_name": "Total Sales",
+"field_type": "aggregate",
+"field_config": {```
+
+"function": "sum",
+"field": "price",
+"group_by": ["category"]
+```
+},
+"format_string": "${:,.2f}",
+"order": 2
+```
 })
 
 # Setting up a scheduled trigger
-await trigger_service.create_trigger(template.id, {
-    "trigger_type": "scheduled",
-    "schedule": "0 0 1 * *",  # First day of month at midnight
-    "trigger_config": {
-        "parameters": {
-            "start_date": {"relative": "first_day_last_month"},
-            "end_date": {"relative": "last_day_last_month"},
-            "include_canceled": False
-        }
-    }
+await trigger_service.create_trigger(template.id, {```
+
+"trigger_type": "scheduled",
+"schedule": "0 0 1 * *",  # First day of month at midnight
+"trigger_config": {```
+
+"parameters": {
+    "start_date": {"relative": "first_day_last_month"},
+    "end_date": {"relative": "last_day_last_month"},
+    "include_canceled": False
+}
+```
+}
+```
 })
 
 # Configuring output delivery
-await output_service.create_output_config(template.id, {
-    "output_type": "email",
-    "format": "pdf",
-    "output_config": {
-        "recipients": ["sales@example.com", "management@example.com"],
-        "subject": "Monthly Sales Report - {start_date:%B %Y}",
-        "body": "Attached is the monthly sales report for {start_date:%B %Y}."
-    }
+await output_service.create_output_config(template.id, {```
+
+"output_type": "email",
+"format": "pdf",
+"output_config": {```
+
+"recipients": ["sales@example.com", "management@example.com"],
+"subject": "Monthly Sales Report - {start_date:%B %Y}",
+"body": "Attached is the monthly sales report for {start_date:%B %Y}."
+```
+}
+```
 })
 ```
 
@@ -616,70 +890,94 @@ await output_service.create_output_config(template.id, {
 
 ```python
 # Creating a report that includes attribute data
-template = await report_service.create_template({
-    "name": "Customer Activity Report",
-    "description": "Customer engagement with custom attributes",
-    "base_object_type": "customer",
-    "format_config": {
-        "default_format": "csv"
-    }
+template = await report_service.create_template({```
+
+"name": "Customer Activity Report",
+"description": "Customer engagement with custom attributes",
+"base_object_type": "customer",
+"format_config": {```
+
+"default_format": "csv"
+```
+}
+```
 })
 
 # Database column field
-await field_service.add_field(template.id, {
-    "name": "customer_name",
-    "display_name": "Customer",
-    "field_type": "db_column",
-    "field_config": {
-        "table": "customers",
-        "column": "name"
-    },
-    "order": 1
+await field_service.add_field(template.id, {```
+
+"name": "customer_name",
+"display_name": "Customer",
+"field_type": "db_column",
+"field_config": {```
+
+"table": "customers",
+"column": "name"
+```
+},
+"order": 1
+```
 })
 
 # Attribute-based field
-await field_service.add_field(template.id, {
-    "name": "customer_segment",
-    "display_name": "Segment",
-    "field_type": "attribute",
-    "field_config": {
-        "attribute_type_id": "segment_attribute_id"
-    },
-    "order": 2
+await field_service.add_field(template.id, {```
+
+"name": "customer_segment",
+"display_name": "Segment",
+"field_type": "attribute",
+"field_config": {```
+
+"attribute_type_id": "segment_attribute_id"
+```
+},
+"order": 2
+```
 })
 
 # Method-based field
-await field_service.add_field(template.id, {
-    "name": "days_since_last_order",
-    "display_name": "Days Since Last Order",
-    "field_type": "method",
-    "field_config": {
-        "method": "calculate_days_since_last_order",
-        "module": "customer_analytics"
-    },
-    "order": 3
+await field_service.add_field(template.id, {```
+
+"name": "days_since_last_order",
+"display_name": "Days Since Last Order",
+"field_type": "method",
+"field_config": {```
+
+"method": "calculate_days_since_last_order",
+"module": "customer_analytics"
+```
+},
+"order": 3
+```
 })
 
 # Query-based field
-await field_service.add_field(template.id, {
-    "name": "open_support_tickets",
-    "display_name": "Open Support Tickets",
-    "field_type": "query",
-    "field_config": {
-        "query_id": "customer_open_tickets_query_id",
-        "value_field": "count"
-    },
-    "order": 4
+await field_service.add_field(template.id, {```
+
+"name": "open_support_tickets",
+"display_name": "Open Support Tickets",
+"field_type": "query",
+"field_config": {```
+
+"query_id": "customer_open_tickets_query_id",
+"value_field": "count"
+```
+},
+"order": 4
+```
 })
 
 # Event trigger for report generation
-await trigger_service.create_trigger(template.id, {
-    "trigger_type": "event",
-    "event_type": "customer_segment_change",
-    "entity_type": "customer",
-    "trigger_config": {
-        "parameters": {}
-    }
+await trigger_service.create_trigger(template.id, {```
+
+"trigger_type": "event",
+"event_type": "customer_segment_change",
+"entity_type": "customer",
+"trigger_config": {```
+
+"parameters": {}
+```
+}
+```
 })
 ```
 

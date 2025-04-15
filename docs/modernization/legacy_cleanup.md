@@ -37,17 +37,25 @@ The codebase previously used the `inject` library for dependency injection, whic
 ```python
 # Old pattern
 @inject.params(db_manager=DBManager)
-def __init__(self, db_manager: DBManager):
-    self.db_manager = db_manager
+def __init__(self, db_manager: DBManager):```
 
-def some_method(self):
-    registry = inject.instance(UnoRegistry)
-    # ...
+self.db_manager = db_manager
+```
+
+def some_method(self):```
+
+registry = inject.instance(UnoRegistry)
+# ...
+```
 
 # New pattern
-def __init__(self, db_manager: DBManager, registry: UnoRegistry):
-    self.db_manager = db_manager
-    self.registry = registry
+def __init__(self, db_manager: DBManager, registry: UnoRegistry):```
+
+self.db_manager = db_manager
+``````
+
+self.registry = registry
+```
 
 # Used with:
 service = ServiceClass(get_service(DBManager), get_service(UnoRegistry))
@@ -58,14 +66,22 @@ service = ServiceClass(get_service(DBManager), get_service(UnoRegistry))
 Many classes implemented a singleton pattern using a class method `get_instance()`:
 
 ```python
-class SomeManager:
-    _instance = None
-    
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+class SomeManager:```
+
+_instance = None
+``````
+
+```
+```
+
+@classmethod
+def get_instance(cls):```
+
+if cls._instance is None:
+    cls._instance = cls()
+return cls._instance
+```
+```
 ```
 
 **Problems**:
@@ -82,14 +98,22 @@ class SomeManager:
 **Example**:
 ```python
 # Old pattern
-class QueryCacheManager:
-    _instance = None
-    
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+class QueryCacheManager:```
+
+_instance = None
+``````
+
+```
+```
+
+@classmethod
+def get_instance(cls):```
+
+if cls._instance is None:
+    cls._instance = cls()
+return cls._instance
+```
+```
 
 # Usage
 cache = QueryCacheManager.get_instance()
@@ -120,17 +144,25 @@ The codebase used a Result pattern with methods like `unwrap()`, `is_ok()`, and 
 ```python
 # Old pattern
 result = some_operation()
-if result.is_ok():
-    value = result.unwrap()
-else:
-    error = result.unwrap_err()
+if result.is_ok():```
+
+value = result.unwrap()
+```
+else:```
+
+error = result.unwrap_err()
+```
 
 # New pattern
 result = some_operation()
-if result.is_success:
-    value = result.value
-else:
-    error = result.error
+if result.is_success:```
+
+value = result.value
+```
+else:```
+
+error = result.error
+```
 ```
 
 ### 4. Circular Import Problems

@@ -37,28 +37,36 @@ from uno.values import BooleanValue, TextValue, IntegerValue
 from uno.values.services import ValueService
 
 # Using the value service
-text_result = await value_service.create_value(
-    value_type=TextValue,
-    value="High",
-    name="High Priority"
+text_result = await value_service.create_value(```
+
+value_type=TextValue,
+value="High",
+name="High Priority"
+```
 )
 
-bool_result = await value_service.create_value(
-    value_type=BooleanValue,
-    value=True,
-    name="Yes"
+bool_result = await value_service.create_value(```
+
+value_type=BooleanValue,
+value=True,
+name="Yes"
+```
 )
 
-int_result = await value_service.create_value(
-    value_type=IntegerValue,
-    value=100,
-    name="Maximum Score"
+int_result = await value_service.create_value(```
+
+value_type=IntegerValue,
+value=100,
+name="Maximum Score"
+```
 )
 
 # Creating an attachment
-attachment_result = await value_service.create_attachment(
-    file_path="/path/to/file.pdf",
-    name="Project Proposal"
+attachment_result = await value_service.create_attachment(```
+
+file_path="/path/to/file.pdf",
+name="Project Proposal"
+```
 )
 ```
 
@@ -67,15 +75,19 @@ attachment_result = await value_service.create_attachment(
 If you want to get an existing value or create it if it doesn't exist:
 
 ```python
-result = await value_service.get_or_create_value(
-    value_type=TextValue,
-    value="Medium",
-    name="Medium Priority"
+result = await value_service.get_or_create_value(```
+
+value_type=TextValue,
+value="Medium",
+name="Medium Priority"
+```
 )
 
-if result.is_ok():
-    text_value = result.unwrap()
-    print(f"Value ID: {text_value.id}")
+if result.is_ok():```
+
+text_value = result.unwrap()
+print(f"Value ID: {text_value.id}")
+```
 ```
 
 ### Value Validation and Conversion
@@ -84,19 +96,25 @@ The values module provides utilities for validating and converting values:
 
 ```python
 # Validate a value
-validation_result = await value_service.validate_value(
-    value_type=IntegerValue,
-    value=42
+validation_result = await value_service.validate_value(```
+
+value_type=IntegerValue,
+value=42
+```
 )
 
 # Convert a value to the appropriate type
-conversion_result = await value_service.convert_value(
-    value="42",
-    target_type=IntegerValue
+conversion_result = await value_service.convert_value(```
+
+value="42",
+target_type=IntegerValue
+```
 )
 
-if conversion_result.is_ok():
-    converted_value = conversion_result.unwrap()  # Will be an int: 42
+if conversion_result.is_ok():```
+
+converted_value = conversion_result.unwrap()  # Will be an int: 42
+```
 ```
 
 ## Using Values with Attributes
@@ -108,18 +126,22 @@ from uno.attributes import Attribute
 from uno.values import TextValue
 
 # Create a priority value
-priority_result = await value_service.create_value(
-    value_type=TextValue,
-    value="Critical",
-    name="Critical Priority"
+priority_result = await value_service.create_value(```
+
+value_type=TextValue,
+value="Critical",
+name="Critical Priority"
+```
 )
 
 priority_value = priority_result.unwrap()
 
 # Create an attribute with the value
-attribute = Attribute(
-    attribute_type_id=priority_type_id,
-    comment="Set by project manager"
+attribute = Attribute(```
+
+attribute_type_id=priority_type_id,
+comment="Set by project manager"
+```
 )
 
 # Associate the value with the attribute
@@ -160,12 +182,16 @@ All operations return a `Result` type for consistent error handling:
 ```python
 result = await value_service.create_value(TextValue, "Test")
 
-if result.is_ok():
-    value = result.unwrap()
-    print(f"Created value with ID: {value.id}")
-else:
-    error = result.unwrap_err()
-    print(f"Error: {error}")
+if result.is_ok():```
+
+value = result.unwrap()
+print(f"Created value with ID: {value.id}")
+```
+else:```
+
+error = result.unwrap_err()
+print(f"Error: {error}")
+```
 ```
 
 ## Best Practices

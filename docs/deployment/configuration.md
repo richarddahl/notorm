@@ -52,8 +52,10 @@ network:
   domain: myapp.example.com
   use_https: true
   use_hsts: true
-  ingress_annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  ingress_annotations:```
+
+nginx.ingress.kubernetes.io/proxy-body-size: 10m
+```
   cors_allowed_origins:
     - https://example.com
     - https://api.example.com
@@ -100,11 +102,13 @@ secrets:
   - JWT_SECRET
 
 custom_settings:
-  kubernetes:
-    service_account: my-app-sa
-    namespace: my-app-prod
-    node_selector:
-      disk-type: ssd
+  kubernetes:```
+
+service_account: my-app-sa
+namespace: my-app-prod
+node_selector:
+  disk-type: ssd
+```
 ```
 
 ## Environment-Specific Configuration

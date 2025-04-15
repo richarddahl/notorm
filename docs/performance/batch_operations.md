@@ -57,8 +57,10 @@ The `SINGLE_QUERY` strategy executes all operations in a single query. This is b
 ```python
 from uno.queries.batch_operations import BatchConfig, BatchExecutionStrategy
 
-config = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.SINGLE_QUERY,
+config = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.SINGLE_QUERY,
+```
 )
 ```
 
@@ -71,9 +73,11 @@ The `CHUNKED` strategy breaks operations into smaller chunks and processes them 
 - When you need progress tracking for long-running operations
 
 ```python
-config = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.CHUNKED,
-    batch_size=500,  # Process in chunks of 500
+config = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.CHUNKED,
+batch_size=500,  # Process in chunks of 500
+```
 )
 ```
 
@@ -86,10 +90,12 @@ The `PARALLEL` strategy processes chunks in parallel. This is best for:
 - When maximum throughput is needed
 
 ```python
-config = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.PARALLEL,
-    batch_size=500,
-    max_workers=4,  # Process up to 4 chunks in parallel
+config = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.PARALLEL,
+batch_size=500,
+max_workers=4,  # Process up to 4 chunks in parallel
+```
 )
 ```
 
@@ -102,10 +108,12 @@ The `PIPELINED` strategy processes records through preprocessing, execution, and
 - When you need to filter or transform records before database operations
 
 ```python
-config = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.PIPELINED,
-    pre_process_fn=validate_and_transform,
-    post_process_fn=enrich_results,
+config = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.PIPELINED,
+pre_process_fn=validate_and_transform,
+post_process_fn=enrich_results,
+```
 )
 ```
 
@@ -118,9 +126,11 @@ The `OPTIMISTIC` strategy attempts a single query first, falling back to chunked
 - When you want to balance simplicity with robustness
 
 ```python
-config = BatchConfig(
-    execution_strategy=BatchExecutionStrategy.OPTIMISTIC,
-    batch_size=500,  # Used if falling back to chunked
+config = BatchConfig(```
+
+execution_strategy=BatchExecutionStrategy.OPTIMISTIC,
+batch_size=500,  # Used if falling back to chunked
+```
 )
 ```
 
@@ -148,8 +158,10 @@ xlarge_batch = BatchSize.XLARGE.value  # 5000 records
 You can also use automatic batch size optimization based on record characteristics:
 
 ```python
-config = BatchConfig(
-    optimize_for_size=True,  # Automatically adjust batch size
+config = BatchConfig(```
+
+optimize_for_size=True,  # Automatically adjust batch size
+```
 )
 ```
 
@@ -161,14 +173,18 @@ To optimize batch operations, use the built-in metrics collection:
 from uno.queries.batch_operations import BatchOperations, BatchConfig
 
 # Enable metrics collection
-config = BatchConfig(
-    collect_metrics=True,
+config = BatchConfig(```
+
+collect_metrics=True,
+```
 )
 
 # Create batch operations
-batch_ops = BatchOperations(
-    model_class=MyModel,
-    batch_config=config,
+batch_ops = BatchOperations(```
+
+model_class=MyModel,
+batch_config=config,
+```
 )
 
 # Perform operations
@@ -189,24 +205,34 @@ print(f"Failed: {metrics['last_batch']['failed_records']}")
 Batch operations include built-in retry and error handling:
 
 ```python
-config = BatchConfig(
-    retry_count=3,  # Retry failed operations up to 3 times
-    retry_delay=0.5,  # Wait 0.5 seconds between retries
-    error_callback=log_error,  # Custom error handler
+config = BatchConfig(```
+
+retry_count=3,  # Retry failed operations up to 3 times
+retry_delay=0.5,  # Wait 0.5 seconds between retries
+error_callback=log_error,  # Custom error handler
+```
 )
 ```
 
 You can also define a custom error callback:
 
 ```python
-def log_error(error, error_info):
-    """Log errors during batch processing."""
-    logger.error(f"Batch operation error: {error}")
-    logger.error(f"Error context: {error_info}")
-    
-    # Custom error handling, e.g., send alert
-    if "unique constraint" in str(error).lower():
-        alert_service.send_alert("Duplicate data detected in batch operation")
+def log_error(error, error_info):```
+
+"""Log errors during batch processing."""
+logger.error(f"Batch operation error: {error}")
+logger.error(f"Error context: {error_info}")
+``````
+
+```
+```
+
+# Custom error handling, e.g., send alert
+if "unique constraint" in str(error).lower():```
+
+alert_service.send_alert("Duplicate data detected in batch operation")
+```
+```
 ```
 
 ## Integration with Repository Pattern
@@ -215,10 +241,12 @@ The batch operations system is fully integrated with Uno's Repository pattern:
 
 ```python
 # Repository with batch operations
-repo = UnoDBRepository(
-    entity_type=Product,
-    use_batch_operations=True,
-    batch_size=500,
+repo = UnoDBRepository(```
+
+entity_type=Product,
+use_batch_operations=True,
+batch_size=500,
+```
 )
 
 # Batch add
@@ -226,8 +254,10 @@ new_products = [Product(...), Product(...), ...]
 added_products = await repo.batch_add(new_products)
 
 # Batch update
-for product in products:
-    product.price *= 1.1  # 10% price increase
+for product in products:```
+
+product.price *= 1.1  # 10% price increase
+```
     
 updated_count = await repo.batch_update(products, fields=["price"])
 
@@ -269,28 +299,42 @@ CREATE UNLOGGED TABLE batch_tmp AS SELECT * FROM original_table WHERE 1=0;
 ```python
 from uno.queries.batch_operations import BatchOperations, BatchConfig, BatchExecutionStrategy
 
-async def import_products(products_data):
-    """Import products with high performance."""
-    # Configure batch operations for optimal import
-    batch_ops = BatchOperations(
-        model_class=Product,
-        batch_config=BatchConfig(
-            batch_size=1000,
-            execution_strategy=BatchExecutionStrategy.CHUNKED,
-            max_workers=4,
-            log_progress=True,
-        ),
-    )
-    
-    # Import with statistics
-    import_result = await batch_ops.batch_import(
-        records=products_data,
-        unique_fields=["sku"],
-        update_on_conflict=True,
-        return_stats=True,
-    )
-    
-    return import_result
+async def import_products(products_data):```
+
+"""Import products with high performance."""
+# Configure batch operations for optimal import
+batch_ops = BatchOperations(```
+
+model_class=Product,
+batch_config=BatchConfig(
+    batch_size=1000,
+    execution_strategy=BatchExecutionStrategy.CHUNKED,
+    max_workers=4,
+    log_progress=True,
+),
+```
+)
+``````
+
+```
+```
+
+# Import with statistics
+import_result = await batch_ops.batch_import(```
+
+records=products_data,
+unique_fields=["sku"],
+update_on_conflict=True,
+return_stats=True,
+```
+)
+``````
+
+```
+```
+
+return import_result
+```
 ```
 
 ### Parallel Processing of Large Datasets
@@ -298,36 +342,56 @@ async def import_products(products_data):
 ```python
 from uno.queries.batch_operations import BatchOperations, BatchConfig, BatchExecutionStrategy
 
-async def process_large_dataset(record_ids):
-    """Process a large dataset in parallel."""
-    # Configure batch operations for parallel processing
-    batch_ops = BatchOperations(
-        model_class=Record,
-        batch_config=BatchConfig(
-            batch_size=500,
-            execution_strategy=BatchExecutionStrategy.PARALLEL,
-            max_workers=8,
-        ),
-    )
-    
-    # Define compute function
-    def process_record(record):
-        # Complex processing logic
-        result = {
-            "id": record.id,
-            "processed_value": complex_calculation(record.value),
-            "status": "PROCESSED",
-        }
-        return result
-    
-    # Process records in parallel
-    results = await batch_ops.batch_compute(
-        id_values=record_ids,
-        compute_fn=process_record,
-        parallel=True,
-    )
-    
-    return results
+async def process_large_dataset(record_ids):```
+
+"""Process a large dataset in parallel."""
+# Configure batch operations for parallel processing
+batch_ops = BatchOperations(```
+
+model_class=Record,
+batch_config=BatchConfig(
+    batch_size=500,
+    execution_strategy=BatchExecutionStrategy.PARALLEL,
+    max_workers=8,
+),
+```
+)
+``````
+
+```
+```
+
+# Define compute function
+def process_record(record):```
+
+# Complex processing logic
+result = {
+    "id": record.id,
+    "processed_value": complex_calculation(record.value),
+    "status": "PROCESSED",
+}
+return result
+```
+``````
+
+```
+```
+
+# Process records in parallel
+results = await batch_ops.batch_compute(```
+
+id_values=record_ids,
+compute_fn=process_record,
+parallel=True,
+```
+)
+``````
+
+```
+```
+
+return results
+```
 ```
 
 ### Efficient Bulk Updates with Repository
@@ -335,32 +399,58 @@ async def process_large_dataset(record_ids):
 ```python
 from uno.domain.repository import UnoDBRepository
 
-async def apply_price_changes(price_changes_data):
-    """Apply price changes efficiently."""
-    # Create repository with batch operations
-    repo = UnoDBRepository(
-        entity_type=Product,
-        use_batch_operations=True,
-        batch_size=1000,
-    )
-    
-    # Get products to update
-    product_ids = [item["product_id"] for item in price_changes_data]
-    products = await repo.batch_get(product_ids)
-    
-    # Product ID to price change mapping
-    price_map = {item["product_id"]: item["new_price"] for item in price_changes_data}
-    
-    # Update products
-    for product in products:
-        if product.id in price_map:
-            product.price = price_map[product.id]
-            product.updated_at = datetime.utcnow()
-    
-    # Batch update
-    updated_count = await repo.batch_update(products, fields=["price", "updated_at"])
-    
-    return updated_count
+async def apply_price_changes(price_changes_data):```
+
+"""Apply price changes efficiently."""
+# Create repository with batch operations
+repo = UnoDBRepository(```
+
+entity_type=Product,
+use_batch_operations=True,
+batch_size=1000,
+```
+)
+``````
+
+```
+```
+
+# Get products to update
+product_ids = [item["product_id"] for item in price_changes_data]
+products = await repo.batch_get(product_ids)
+``````
+
+```
+```
+
+# Product ID to price change mapping
+price_map = {item["product_id"]: item["new_price"] for item in price_changes_data}
+``````
+
+```
+```
+
+# Update products
+for product in products:```
+
+if product.id in price_map:
+    product.price = price_map[product.id]
+    product.updated_at = datetime.utcnow()
+```
+``````
+
+```
+```
+
+# Batch update
+updated_count = await repo.batch_update(products, fields=["price", "updated_at"])
+``````
+
+```
+```
+
+return updated_count
+```
 ```
 
 ## Conclusion

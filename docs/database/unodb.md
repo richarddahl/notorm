@@ -22,14 +22,18 @@ The `UnoDB` class is typically created automatically by the `UnoObj` class:
 from uno.obj import UnoObj
 from uno.model import UnoModel
 
-class CustomerModel(UnoModel):
-    # Model definition...
-    pass
+class CustomerModel(UnoModel):```
 
-class Customer(UnoObj[CustomerModel]):
-    model = CustomerModel
-    # The UnoObj.__init__ method will create a UnoDB instance
-    # self.db = UnoDBFactory(obj=self.__class__)
+# Model definition...
+pass
+```
+
+class Customer(UnoObj[CustomerModel]):```
+
+model = CustomerModel
+# The UnoObj.__init__ method will create a UnoDB instance
+# self.db = UnoDBFactory(obj=self.__class__)
+```
 ```
 
 However, you can also create it manually:
@@ -51,9 +55,11 @@ schema_config = UnoSchemaConfig()
 schema = schema_config.create_schema("create_schema", Customer)
 
 # Create a new customer instance
-new_customer = schema(
-    name="John Doe",
-    email="john@example.com"
+new_customer = schema(```
+
+name="John Doe",
+email="john@example.com"
+```
 )
 
 # Save to database
@@ -99,10 +105,12 @@ await customer_db.delete(customer)
 from uno.database.db import FilterParam
 
 # Create filter parameters
-filter_params = FilterParam(
-    limit=10,
-    offset=0,
-    name__contains="John"
+filter_params = FilterParam(```
+
+limit=10,
+offset=0,
+name__contains="John"
+```
 )
 
 # Get filtered customers
@@ -115,10 +123,12 @@ The merge operation performs an upsert (insert or update) based on the primary k
 
 ```python
 # Create a customer that may already exist
-customer_data = {
-    "id": "abc123",  # May or may not exist
-    "name": "John Smith",
-    "email": "john@example.com"
+customer_data = {```
+
+"id": "abc123",  # May or may not exist
+"name": "John Smith",
+"email": "john@example.com"
+```
 }
 
 # Merge will update if ID exists, or create if it doesn't
@@ -147,15 +157,19 @@ You can execute custom SQL:
 
 ```python
 # Define a custom executor function
-async def custom_executor(conn, sql_text):
-    result = await conn.execute(sql_text)
-    return result.fetchall()
+async def custom_executor(conn, sql_text):```
+
+result = await conn.execute(sql_text)
+return result.fetchall()
+```
 
 # Execute custom SQL
-result = await customer_db.execute_sql(
-    "SELECT * FROM customer WHERE name LIKE :name",
-    params={"name": "%John%"},
-    executor=custom_executor
+result = await customer_db.execute_sql(```
+
+"SELECT * FROM customer WHERE name LIKE :name",
+params={"name": "%John%"},
+executor=custom_executor
+```
 )
 ```
 
@@ -166,28 +180,32 @@ You can manage transactions explicitly:
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
 
-async def transfer_funds(from_account_id: str, to_account_id: str, amount: float):
-    async with AsyncSession() as session:
-        # Start a transaction
-        async with session.begin():
-            # Get accounts
-            from_account = await account_db.get(id=from_account_id, session=session)
-            to_account = await account_db.get(id=to_account_id, session=session)
-            
-            # Check balance
-            if from_account.balance < amount:
-                raise ValueError("Insufficient funds")
-                
-            # Update balances
-            from_account.balance -= amount
-            to_account.balance += amount
-            
-            # Save changes
-            await account_db.update(to_db_model=from_account, session=session)
-            await account_db.update(to_db_model=to_account, session=session)
-            
-            # The transaction will be committed if no exceptions are raised
-            # or rolled back if an exception occurs
+async def transfer_funds(from_account_id: str, to_account_id: str, amount: float):```
+
+async with AsyncSession() as session:```
+
+# Start a transaction
+async with session.begin():
+    # Get accounts
+    from_account = await account_db.get(id=from_account_id, session=session)
+    to_account = await account_db.get(id=to_account_id, session=session)
+    
+    # Check balance
+    if from_account.balance < amount:
+        raise ValueError("Insufficient funds")
+        
+    # Update balances
+    from_account.balance -= amount
+    to_account.balance += amount
+    
+    # Save changes
+    await account_db.update(to_db_model=from_account, session=session)
+    await account_db.update(to_db_model=to_account, session=session)
+    
+    # The transaction will be committed if no exceptions are raised
+    # or rolled back if an exception occurs
+```
+```
 ```
 
 ## Error Handling
@@ -197,18 +215,26 @@ The `UnoDB` class provides specific exceptions for different error scenarios:
 ```python
 from uno.database.db import IntegrityConflictException, NotFoundException
 
-try:
-    # Try to get a record
-    customer = await customer_db.get(id="nonexistent")
-except NotFoundException as e:
-    # Handle not found
-    print(f"Customer not found: {e}")
-except IntegrityConflictException as e:
-    # Handle integrity conflict (e.g., duplicate keys)
-    print(f"Integrity conflict: {e}")
-except Exception as e:
-    # Handle other errors
-    print(f"Unknown error: {e}")
+try:```
+
+# Try to get a record
+customer = await customer_db.get(id="nonexistent")
+```
+except NotFoundException as e:```
+
+# Handle not found
+print(f"Customer not found: {e}")
+```
+except IntegrityConflictException as e:```
+
+# Handle integrity conflict (e.g., duplicate keys)
+print(f"Integrity conflict: {e}")
+```
+except Exception as e:```
+
+# Handle other errors
+print(f"Unknown error: {e}")
+```
 ```
 
 ## Common Patterns
@@ -218,21 +244,29 @@ except Exception as e:
 Perform batch operations for better performance:
 
 ```python
-async def batch_create_customers(customers: list):
-    """Create multiple customers in a single transaction."""
-    from sqlalchemy.ext.asyncio import AsyncSession
+async def batch_create_customers(customers: list):```
+
+"""Create multiple customers in a single transaction."""
+from sqlalchemy.ext.asyncio import AsyncSession
+``````
+
+```
+```
+
+async with AsyncSession() as session:```
+
+async with session.begin():
+    # Add all customers to the session
+    for customer_data in customers:
+        customer = CustomerModel(**customer_data)
+        session.add(customer)
     
-    async with AsyncSession() as session:
-        async with session.begin():
-            # Add all customers to the session
-            for customer_data in customers:
-                customer = CustomerModel(**customer_data)
-                session.add(customer)
-            
-            # Commit the transaction
-            await session.commit()
-            
-            return len(customers)
+    # Commit the transaction
+    await session.commit()
+    
+    return len(customers)
+```
+```
 ```
 
 ### Pagination
@@ -240,49 +274,83 @@ async def batch_create_customers(customers: list):
 Implement pagination for large result sets:
 
 ```python
-async def get_paginated_customers(page: int = 1, page_size: int = 10):
-    """Get paginated customers."""
-    # Calculate offset
-    offset = (page - 1) * page_size
-    
-    # Create filter parameters
-    filter_params = FilterParam(
-        limit=page_size,
-        offset=offset,
-        order_by="name"  # Sort by name
-    )
-    
-    # Get filtered customers
-    customers = await customer_db.filter(filters=filter_params)
-    
-    # Count total (would need a separate query)
-    total_count = await count_customers()
-    
-    # Calculate total pages
-    total_pages = (total_count + page_size - 1) // page_size
-    
-    return {
-        "data": customers,
-        "page": page,
-        "page_size": page_size,
-        "total_items": total_count,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_prev": page > 1
-    }
+async def get_paginated_customers(page: int = 1, page_size: int = 10):```
 
-async def count_customers():
-    """Count total customers."""
-    # This would need a custom query
-    # This is a simplified example
-    from sqlalchemy import func, select
-    from sqlalchemy.ext.asyncio import AsyncSession
-    
-    async with AsyncSession() as session:
-        result = await session.execute(
-            select(func.count()).select_from(CustomerModel)
-        )
-        return result.scalar_one()
+"""Get paginated customers."""
+# Calculate offset
+offset = (page - 1) * page_size
+``````
+
+```
+```
+
+# Create filter parameters
+filter_params = FilterParam(```
+
+limit=page_size,
+offset=offset,
+order_by="name"  # Sort by name
+```
+)
+``````
+
+```
+```
+
+# Get filtered customers
+customers = await customer_db.filter(filters=filter_params)
+``````
+
+```
+```
+
+# Count total (would need a separate query)
+total_count = await count_customers()
+``````
+
+```
+```
+
+# Calculate total pages
+total_pages = (total_count + page_size - 1) // page_size
+``````
+
+```
+```
+
+return {```
+
+"data": customers,
+"page": page,
+"page_size": page_size,
+"total_items": total_count,
+"total_pages": total_pages,
+"has_next": page < total_pages,
+"has_prev": page > 1
+```
+}
+```
+
+async def count_customers():```
+
+"""Count total customers."""
+# This would need a custom query
+# This is a simplified example
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+``````
+
+```
+```
+
+async with AsyncSession() as session:```
+
+result = await session.execute(
+    select(func.count()).select_from(CustomerModel)
+)
+return result.scalar_one()
+```
+```
 ```
 
 ## Best Practices

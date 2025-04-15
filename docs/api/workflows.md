@@ -27,40 +27,46 @@ Retrieves a list of all workflows, optionally filtered by status.
 **Response:** Array of workflow definitions
 ```json
 [
+  {```
+
+"id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"name": "New Product Notification",
+"description": "Notifies sales team when new products are added",
+"status": "active",
+"version": 1,
+"trigger": {
+  "entity_type": "product",
+  "operations": ["create"]
+},
+"conditions": [
+  {```
+
+"type": "field",
+"field": "category",
+"operator": "eq",
+"value": "electronics"
+```
+  }
+],
+"actions": [
+  {```
+
+"type": "notification",
+"title": "New Electronics Product",
+"body": "A new product has been added: {{name}}",
+"priority": "normal",
+"recipients": [
   {
-    "id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-    "name": "New Product Notification",
-    "description": "Notifies sales team when new products are added",
-    "status": "active",
-    "version": 1,
-    "trigger": {
-      "entity_type": "product",
-      "operations": ["create"]
-    },
-    "conditions": [
-      {
-        "type": "field",
-        "field": "category",
-        "operator": "eq",
-        "value": "electronics"
-      }
-    ],
-    "actions": [
-      {
-        "type": "notification",
-        "title": "New Electronics Product",
-        "body": "A new product has been added: {{name}}",
-        "priority": "normal",
-        "recipients": [
-          {
-            "type": "role",
-            "value": "sales_manager"
-          }
-        ]
-      }
-    ],
-    "created_at": "2023-11-15T14:30:22.123Z",
-    "updated_at": "2023-11-15T14:30:22.123Z"
+    "type": "role",
+    "value": "sales_manager"
+  }
+]
+```
+  }
+],
+"created_at": "2023-11-15T14:30:22.123Z",
+"updated_at": "2023-11-15T14:30:22.123Z"
+```
   }
 ]
 ```
@@ -81,31 +87,39 @@ Retrieves a single workflow by ID.
   "description": "Notifies sales team when new products are added",
   "status": "active",
   "version": 1,
-  "trigger": {
-    "entity_type": "product",
-    "operations": ["create"]
+  "trigger": {```
+
+"entity_type": "product",
+"operations": ["create"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "category",
-      "operator": "eq",
-      "value": "electronics"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "category",
+  "operator": "eq",
+  "value": "electronics"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "New Electronics Product",
-      "body": "A new product has been added: {{name}}",
-      "priority": "normal",
-      "recipients": [
-        {
-          "type": "role",
-          "value": "sales_manager"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "New Electronics Product",
+  "body": "A new product has been added: {{name}}",
+  "priority": "normal",
+  "recipients": [```
+
+{
+  "type": "role",
+  "value": "sales_manager"
+}
+```
+  ]
+}
+```
   ],
   "created_at": "2023-11-15T14:30:22.123Z",
   "updated_at": "2023-11-15T14:30:22.123Z"
@@ -123,29 +137,37 @@ Creates a new workflow.
   "name": "Price Change Alert",
   "description": "Notifies customers when product prices decrease",
   "status": "active",
-  "trigger": {
-    "entity_type": "product",
-    "operations": ["update"]
+  "trigger": {```
+
+"entity_type": "product",
+"operations": ["update"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "price",
-      "operator": "decreased"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "price",
+  "operator": "decreased"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "email",
-      "subject": "Price Drop Alert",
-      "body": "Good news! The price of {{name}} has dropped to {{price}}.",
-      "recipients": [
-        {
-          "type": "dynamic",
-          "value": "product.interested_customers"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "email",
+  "subject": "Price Drop Alert",
+  "body": "Good news! The price of {{name}} has dropped to {{price}}.",
+  "recipients": [```
+
+{
+  "type": "dynamic",
+  "value": "product.interested_customers"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -227,33 +249,37 @@ Retrieves a list of workflow execution logs, optionally filtered.
 **Response:** Array of workflow execution logs
 ```json
 [
-  {
-    "id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-    "workflow_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-    "workflow_name": "New Product Notification",
-    "status": "success",
-    "entity_type": "product",
-    "entity_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-    "operation": "create",
-    "started_at": "2023-11-15T14:30:22.123Z",
-    "completed_at": "2023-11-15T14:30:23.456Z",
-    "duration_ms": 1333,
-    "conditions_result": true,
-    "actions_total": 1,
-    "actions_success": 1,
-    "actions_failed": 0,
-    "action_results": [
-      {
-        "action_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-        "type": "notification",
-        "status": "success",
-        "started_at": "2023-11-15T14:30:22.789Z",
-        "completed_at": "2023-11-15T14:30:23.123Z",
-        "duration_ms": 334,
-        "recipients_count": 3,
-        "details": "Notification sent to 3 recipients"
-      }
-    ]
+  {```
+
+"id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"workflow_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"workflow_name": "New Product Notification",
+"status": "success",
+"entity_type": "product",
+"entity_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"operation": "create",
+"started_at": "2023-11-15T14:30:22.123Z",
+"completed_at": "2023-11-15T14:30:23.456Z",
+"duration_ms": 1333,
+"conditions_result": true,
+"actions_total": 1,
+"actions_success": 1,
+"actions_failed": 0,
+"action_results": [
+  {```
+
+"action_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"type": "notification",
+"status": "success",
+"started_at": "2023-11-15T14:30:22.789Z",
+"completed_at": "2023-11-15T14:30:23.123Z",
+"duration_ms": 334,
+"recipients_count": 3,
+"details": "Notification sent to 3 recipients"
+```
+  }
+]
+```
   }
 ]
 ```
@@ -300,12 +326,14 @@ Simulates a workflow execution with test data.
 ```json
 {
   "operation": "create",
-  "entity_data": {
-    "id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
-    "name": "Smartphone XYZ",
-    "category": "electronics",
-    "price": 799.99,
-    "description": "Latest smartphone with advanced features"
+  "entity_data": {```
+
+"id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
+"name": "Smartphone XYZ",
+"category": "electronics",
+"price": 799.99,
+"description": "Latest smartphone with advanced features"
+```
   }
 }
 ```
@@ -316,41 +344,53 @@ Simulates a workflow execution with test data.
   "workflow_id": "01HFGB2D5NSJWZ3K4P6Q7R8T9M",
   "workflow_name": "New Product Notification",
   "status": "success",
-  "trigger": {
-    "entity_type": "product",
-    "operations": ["create"]
+  "trigger": {```
+
+"entity_type": "product",
+"operations": ["create"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "category",
-      "operator": "eq",
-      "value": "electronics",
-      "result": true,
-      "description": "Field 'category' equals 'electronics'"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "category",
+  "operator": "eq",
+  "value": "electronics",
+  "result": true,
+  "description": "Field 'category' equals 'electronics'"
+}
+```
   ],
   "conditions_result": true,
-  "actions": [
-    {
-      "type": "notification",
-      "status": "success",
-      "config": {
-        "title": "New Electronics Product",
-        "body": "A new product has been added: Smartphone XYZ"
-      },
-      "recipients": [
-        {
-          "type": "role",
-          "value": "sales_manager",
-          "resolved_users": ["user1", "user2", "user3"]
-        }
-      ],
-      "result": {
-        "recipients_count": 3,
-        "details": "Notification would be sent to 3 recipients"
-      }
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "status": "success",
+  "config": {```
+
+"title": "New Electronics Product",
+"body": "A new product has been added: Smartphone XYZ"
+```
+  },
+  "recipients": [```
+
+{
+  "type": "role",
+  "value": "sales_manager",
+  "resolved_users": ["user1", "user2", "user3"]
+}
+```
+  ],
+  "result": {```
+
+"recipients_count": 3,
+"details": "Notification would be sent to 3 recipients"
+```
+  }
+}
+```
   ],
   "simulation_time": "2023-11-15T14:30:22.123Z"
 }
@@ -383,23 +423,29 @@ Retrieves a list of fields for a specific entity type.
 **Response:** Array of entity fields
 ```json
 [
-  {
-    "id": "name",
-    "label": "Name",
-    "type": "string",
-    "required": true
+  {```
+
+"id": "name",
+"label": "Name",
+"type": "string",
+"required": true
+```
   },
-  {
-    "id": "category",
-    "label": "Category",
-    "type": "string",
-    "required": true
+  {```
+
+"id": "category",
+"label": "Category",
+"type": "string",
+"required": true
+```
   },
-  {
-    "id": "price",
-    "label": "Price",
-    "type": "number",
-    "required": true
+  {```
+
+"id": "price",
+"label": "Price",
+"type": "number",
+"required": true
+```
   }
 ]
 ```
@@ -412,34 +458,40 @@ Retrieves a list of available action types.
 **Response:** Array of action types
 ```json
 [
-  {
-    "id": "notification",
-    "label": "In-App Notification",
-    "config_schema": {
-      "title": { "type": "string", "required": true },
-      "body": { "type": "string", "required": true },
-      "priority": { "type": "string", "required": false, "default": "normal" }
-    },
-    "requires_recipients": true
+  {```
+
+"id": "notification",
+"label": "In-App Notification",
+"config_schema": {
+  "title": { "type": "string", "required": true },
+  "body": { "type": "string", "required": true },
+  "priority": { "type": "string", "required": false, "default": "normal" }
+},
+"requires_recipients": true
+```
   },
-  {
-    "id": "email",
-    "label": "Email Notification",
-    "config_schema": {
-      "subject": { "type": "string", "required": true },
-      "body": { "type": "string", "required": true },
-      "template": { "type": "string", "required": false }
-    },
-    "requires_recipients": true
+  {```
+
+"id": "email",
+"label": "Email Notification",
+"config_schema": {
+  "subject": { "type": "string", "required": true },
+  "body": { "type": "string", "required": true },
+  "template": { "type": "string", "required": false }
+},
+"requires_recipients": true
+```
   },
-  {
-    "id": "webhook",
-    "label": "Webhook",
-    "config_schema": {
-      "url": { "type": "string", "required": true },
-      "method": { "type": "string", "required": false, "default": "POST" }
-    },
-    "requires_recipients": false
+  {```
+
+"id": "webhook",
+"label": "Webhook",
+"config_schema": {
+  "url": { "type": "string", "required": true },
+  "method": { "type": "string", "required": false, "default": "POST" }
+},
+"requires_recipients": false
+```
   }
 ]
 ```
@@ -452,30 +504,36 @@ Retrieves a list of available condition types.
 **Response:** Array of condition types
 ```json
 [
-  {
-    "id": "field",
-    "label": "Field Condition",
-    "config_schema": {
-      "field": { "type": "string", "required": true },
-      "operator": { "type": "string", "required": true },
-      "value": { "type": "string", "required": false }
-    }
+  {```
+
+"id": "field",
+"label": "Field Condition",
+"config_schema": {
+  "field": { "type": "string", "required": true },
+  "operator": { "type": "string", "required": true },
+  "value": { "type": "string", "required": false }
+}
+```
   },
-  {
-    "id": "time",
-    "label": "Time Condition",
-    "config_schema": {
-      "days": { "type": "array", "required": false },
-      "start_time": { "type": "string", "required": false },
-      "end_time": { "type": "string", "required": false }
-    }
+  {```
+
+"id": "time",
+"label": "Time Condition",
+"config_schema": {
+  "days": { "type": "array", "required": false },
+  "start_time": { "type": "string", "required": false },
+  "end_time": { "type": "string", "required": false }
+}
+```
   },
-  {
-    "id": "role",
-    "label": "Role Condition",
-    "config_schema": {
-      "role": { "type": "string", "required": true }
-    }
+  {```
+
+"id": "role",
+"label": "Role Condition",
+"config_schema": {
+  "role": { "type": "string", "required": true }
+}
+```
   }
 ]
 ```
@@ -488,33 +546,41 @@ Retrieves a list of available recipient types.
 **Response:** Array of recipient types
 ```json
 [
-  {
-    "id": "user",
-    "label": "Specific User",
-    "config_schema": {
-      "value": { "type": "string", "required": true }
-    }
+  {```
+
+"id": "user",
+"label": "Specific User",
+"config_schema": {
+  "value": { "type": "string", "required": true }
+}
+```
   },
-  {
-    "id": "role",
-    "label": "User Role",
-    "config_schema": {
-      "value": { "type": "string", "required": true }
-    }
+  {```
+
+"id": "role",
+"label": "User Role",
+"config_schema": {
+  "value": { "type": "string", "required": true }
+}
+```
   },
-  {
-    "id": "department",
-    "label": "Department",
-    "config_schema": {
-      "value": { "type": "string", "required": true }
-    }
+  {```
+
+"id": "department",
+"label": "Department",
+"config_schema": {
+  "value": { "type": "string", "required": true }
+}
+```
   },
-  {
-    "id": "dynamic",
-    "label": "Dynamic Recipients",
-    "config_schema": {
-      "value": { "type": "string", "required": true }
-    }
+  {```
+
+"id": "dynamic",
+"label": "Dynamic Recipients",
+"config_schema": {
+  "value": { "type": "string", "required": true }
+}
+```
   }
 ]
 ```

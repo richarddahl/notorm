@@ -18,13 +18,15 @@ Attribute types define the structure and constraints of attributes that can be a
 from uno.attributes import AttributeType
 
 # Create an attribute type
-attribute_type = AttributeType(
-    name="Priority",
-    text="Task priority level",
-    required=True,
-    multiple_allowed=False,
-    comment_required=False,
-    display_with_objects=True
+attribute_type = AttributeType(```
+
+name="Priority",
+text="Task priority level",
+required=True,
+multiple_allowed=False,
+comment_required=False,
+display_with_objects=True
+```
 )
 
 # Specify which meta types this attribute applies to
@@ -45,9 +47,11 @@ Attributes are instances of attribute types that are associated with specific ob
 from uno.attributes import Attribute
 
 # Create an attribute
-attribute = Attribute(
-    attribute_type_id=priority_type.id,
-    comment="Set during initial planning"
+attribute = Attribute(```
+
+attribute_type_id=priority_type.id,
+comment="Set during initial planning"
+```
 )
 
 # Associate values with the attribute
@@ -69,32 +73,42 @@ The attributes module provides services for working with attributes and attribut
 from uno.attributes.services import AttributeService, AttributeTypeService
 
 # Create an attribute with values
-result = await attribute_service.create_attribute(
-    attribute=new_attribute,
-    values=[value1, value2]
+result = await attribute_service.create_attribute(```
+
+attribute=new_attribute,
+values=[value1, value2]
+```
 )
 
 # Add values to an existing attribute
-result = await attribute_service.add_values(
-    attribute_id="attr123",
-    values=[value3, value4]
+result = await attribute_service.add_values(```
+
+attribute_id="attr123",
+values=[value3, value4]
+```
 )
 
 # Remove values from an attribute
-result = await attribute_service.remove_values(
-    attribute_id="attr123",
-    value_ids=["val1", "val2"]
+result = await attribute_service.remove_values(```
+
+attribute_id="attr123",
+value_ids=["val1", "val2"]
+```
 )
 
 # Validate an attribute against its type constraints
-result = await attribute_service.validate_attribute(
-    attribute=attribute,
-    values=[value1, value2]
+result = await attribute_service.validate_attribute(```
+
+attribute=attribute,
+values=[value1, value2]
+```
 )
 
 # Get all attributes for a record
-result = await attribute_service.get_attributes_for_record(
-    record_id="record123"
+result = await attribute_service.get_attributes_for_record(```
+
+record_id="record123"
+```
 )
 ```
 
@@ -105,8 +119,10 @@ The attributes module is fully integrated with the graph database, enabling comp
 ```python
 # Graph query to find all tasks with high priority
 query = """
-MATCH (t:Task)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),
-      (a)-[:HAS_VALUE]->(v:Value)
+MATCH (t:Task)-[:HAS_ATTRIBUTE]->(a:Attribute)-[:ATTRIBUTE_TYPE]->(at:AttributeType),```
+
+  (a)-[:HAS_VALUE]->(v:Value)
+```
 WHERE at.name = 'Priority' AND v.name = 'High'
 RETURN t
 """
@@ -142,12 +158,16 @@ All operations return a `Result` type for consistent error handling:
 ```python
 result = await attribute_service.create_attribute(attribute, values)
 
-if result.is_ok():
-    attribute = result.unwrap()
-    print(f"Created attribute: {attribute.id}")
-else:
-    error = result.unwrap_err()
-    print(f"Error: {error}")
+if result.is_ok():```
+
+attribute = result.unwrap()
+print(f"Created attribute: {attribute.id}")
+```
+else:```
+
+error = result.unwrap_err()
+print(f"Error: {error}")
+```
 ```
 
 ## Best Practices

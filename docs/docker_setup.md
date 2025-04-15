@@ -39,8 +39,10 @@ We use Docker named volumes (not bind mounts) to avoid permission issues, partic
 
 ```yaml
 volumes:
-  pg_data:  # Named volume for PostgreSQL data
-    driver: local
+  pg_data:  # Named volume for PostgreSQL data```
+
+driver: local
+```
 ```
 
 And then used in the services with specific user settings:

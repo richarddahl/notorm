@@ -26,10 +26,12 @@ Chained workflows allow you to create a sequence of interconnected workflows whe
   "type": "database",
   "operation": "create",
   "target_entity": "workflow_transition",
-  "field_mapping": {
-    "source_workflow_id": "{{workflow_id}}",
-    "entity_id": "{{entity_id}}",
-    "status": "ready_for_next_step"
+  "field_mapping": {```
+
+"source_workflow_id": "{{workflow_id}}",
+"entity_id": "{{entity_id}}",
+"status": "ready_for_next_step"
+```
   }
 }
 ```
@@ -82,31 +84,35 @@ Use the composite condition type with nested conditions:
 {
   "type": "composite",
   "operator": "and",
-  "conditions": [
-    {
-      "type": "field",
-      "field": "total",
-      "operator": "gt",
-      "value": "100"
-    },
-    {
-      "type": "composite",
-      "operator": "or",
-      "conditions": [
-        {
-          "type": "field",
-          "field": "customer_type",
-          "operator": "eq",
-          "value": "vip"
-        },
-        {
-          "type": "field",
-          "field": "is_first_purchase",
-          "operator": "eq",
-          "value": "true"
-        }
-      ]
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "total",
+  "operator": "gt",
+  "value": "100"
+},
+{
+  "type": "composite",
+  "operator": "or",
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "customer_type",
+  "operator": "eq",
+  "value": "vip"
+},
+{
+  "type": "field",
+  "field": "is_first_purchase",
+  "operator": "eq",
+  "value": "true"
+}
+```
+  ]
+}
+```
   ]
 }
 ```
@@ -115,58 +121,68 @@ Use the composite condition type with nested conditions:
 
 1. **Inclusion/Exclusion Logic**:
    ```json
-   {
-     "type": "composite",
-     "operator": "and",
-     "conditions": [
-       { "include condition" },
-       {
-         "type": "composite",
-         "operator": "not",
-         "conditions": [
-           { "exclude condition" }
-         ]
-       }
-     ]
+   {```
+
+ "type": "composite",
+ "operator": "and",
+ "conditions": [
+   { "include condition" },
+   {```
+
+ "type": "composite",
+ "operator": "not",
+ "conditions": [
+   { "exclude condition" }
+ ]
+```
+   }
+ ]
+```
    }
    ```
 
 2. **Multiple Criteria Matching**:
    ```json
-   {
-     "type": "composite",
-     "operator": "or",
-     "conditions": [
-       { "criteria 1" },
-       { "criteria 2" },
-       { "criteria 3" }
-     ]
+   {```
+
+ "type": "composite",
+ "operator": "or",
+ "conditions": [
+   { "criteria 1" },
+   { "criteria 2" },
+   { "criteria 3" }
+ ]
+```
    }
    ```
 
 3. **Complex Business Rules**:
    ```json
+   {```
+
+ "type": "composite",
+ "operator": "and",
+ "conditions": [
+   { "primary condition" },
+   {```
+
+ "type": "composite",
+ "operator": "or",
+ "conditions": [
+   { "secondary condition A" },
    {
      "type": "composite",
      "operator": "and",
      "conditions": [
-       { "primary condition" },
-       {
-         "type": "composite",
-         "operator": "or",
-         "conditions": [
-           { "secondary condition A" },
-           {
-             "type": "composite",
-             "operator": "and",
-             "conditions": [
-               { "secondary condition B1" },
-               { "secondary condition B2" }
-             ]
-           }
-         ]
-       }
+       { "secondary condition B1" },
+       { "secondary condition B2" }
      ]
+   }
+ ]
+```
+   }
+ ]
+```
    }
    ```
 
@@ -294,23 +310,27 @@ Scheduled workflows execute based on time patterns rather than immediate databas
 
 1. **Time-Based Trigger**:
    ```json
-   {
-     "entity_type": "scheduler",
-     "operations": ["tick"],
-     "schedule": {
-       "type": "cron",
-       "expression": "0 9 * * 1-5"
-     }
+   {```
+
+ "entity_type": "scheduler",
+ "operations": ["tick"],
+ "schedule": {
+   "type": "cron",
+   "expression": "0 9 * * 1-5"
+ }
+```
    }
    ```
 
 2. **Relative Time Conditions**:
    ```json
-   {
-     "type": "time",
-     "operator": "before",
-     "field": "due_date",
-     "value": "3d"
+   {```
+
+ "type": "time",
+ "operator": "before",
+ "field": "due_date",
+ "value": "3d"
+```
    }
    ```
 
@@ -325,56 +345,68 @@ A workflow that sends follow-up reminders for incomplete tasks:
 ```json
 {
   "name": "Task Follow-up Reminder",
-  "trigger": {
-    "entity_type": "scheduler",
-    "operations": ["tick"],
-    "schedule": {
-      "type": "cron",
-      "expression": "0 9 * * 1-5"
-    }
+  "trigger": {```
+
+"entity_type": "scheduler",
+"operations": ["tick"],
+"schedule": {
+  "type": "cron",
+  "expression": "0 9 * * 1-5"
+}
+```
   },
-  "actions": [
-    {
-      "type": "database",
-      "operation": "query",
-      "target_entity": "task",
-      "query": {
-        "status": "in_progress",
-        "due_date": {
-          "operator": "lt",
-          "value": "now() + interval '2 day'"
-        },
-        "reminder_sent": {
-          "operator": "is",
-          "value": "null"
-        }
-      },
-      "result_variable": "tasks_due_soon"
-    },
-    {
-      "type": "notification",
-      "title": "Tasks Due Soon",
-      "body": "You have {{tasks_due_soon.length}} tasks due within 2 days.",
-      "for_each": "tasks_due_soon",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{item.assignee_id}}"
-        }
-      ]
-    },
-    {
-      "type": "database",
-      "operation": "update",
-      "target_entity": "task",
-      "for_each": "tasks_due_soon",
-      "field_mapping": {
-        "reminder_sent": "{{now()}}"
-      },
-      "filter": {
-        "id": "{{item.id}}"
-      }
-    }
+  "actions": [```
+
+{
+  "type": "database",
+  "operation": "query",
+  "target_entity": "task",
+  "query": {```
+
+"status": "in_progress",
+"due_date": {
+  "operator": "lt",
+  "value": "now() + interval '2 day'"
+},
+"reminder_sent": {
+  "operator": "is",
+  "value": "null"
+}
+```
+  },
+  "result_variable": "tasks_due_soon"
+},
+{
+  "type": "notification",
+  "title": "Tasks Due Soon",
+  "body": "You have {{tasks_due_soon.length}} tasks due within 2 days.",
+  "for_each": "tasks_due_soon",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{item.assignee_id}}"
+}
+```
+  ]
+},
+{
+  "type": "database",
+  "operation": "update",
+  "target_entity": "task",
+  "for_each": "tasks_due_soon",
+  "field_mapping": {```
+
+"reminder_sent": "{{now()}}"
+```
+  },
+  "filter": {```
+
+"id": "{{item.id}}"
+```
+  }
+}
+```
   ]
 }
 ```
@@ -419,70 +451,80 @@ Workflow templates allow administrators to create predefined workflow configurat
 {
   "name": "New {{entity_type}} Announcement",
   "description": "Announces new {{entity_type}} to relevant stakeholders",
-  "trigger": {
-    "entity_type": "{{entity_type}}",
-    "operations": ["create"]
+  "trigger": {```
+
+"entity_type": "{{entity_type}}",
+"operations": ["create"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "{{status_field}}",
-      "operator": "eq",
-      "value": "{{active_status}}"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "{{status_field}}",
+  "operator": "eq",
+  "value": "{{active_status}}"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "New {{entity_type}}: {{name_template}}",
-      "body": "{{description_template}}",
-      "recipients": [
-        {
-          "type": "{{recipient_type}}",
-          "value": "{{recipient_value}}"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "New {{entity_type}}: {{name_template}}",
+  "body": "{{description_template}}",
+  "recipients": [```
+
+{
+  "type": "{{recipient_type}}",
+  "value": "{{recipient_value}}"
+}
+```
+  ]
+}
+```
   ],
-  "parameters": {
-    "entity_type": {
-      "label": "Entity Type",
-      "type": "string",
-      "required": true
-    },
-    "status_field": {
-      "label": "Status Field",
-      "type": "string",
-      "required": true
-    },
-    "active_status": {
-      "label": "Active Status Value",
-      "type": "string",
-      "required": true
-    },
-    "name_template": {
-      "label": "Name Template",
-      "type": "string",
-      "required": true,
-      "default": "{{name}}"
-    },
-    "description_template": {
-      "label": "Description Template",
-      "type": "text",
-      "required": true,
-      "default": "A new {{entity_type}} '{{name}}' has been created."
-    },
-    "recipient_type": {
-      "label": "Recipient Type",
-      "type": "string",
-      "required": true,
-      "options": ["user", "role", "department", "dynamic"]
-    },
-    "recipient_value": {
-      "label": "Recipient Value",
-      "type": "string",
-      "required": true
-    }
+  "parameters": {```
+
+"entity_type": {
+  "label": "Entity Type",
+  "type": "string",
+  "required": true
+},
+"status_field": {
+  "label": "Status Field",
+  "type": "string",
+  "required": true
+},
+"active_status": {
+  "label": "Active Status Value",
+  "type": "string",
+  "required": true
+},
+"name_template": {
+  "label": "Name Template",
+  "type": "string",
+  "required": true,
+  "default": "{{name}}"
+},
+"description_template": {
+  "label": "Description Template",
+  "type": "text",
+  "required": true,
+  "default": "A new {{entity_type}} '{{name}}' has been created."
+},
+"recipient_type": {
+  "label": "Recipient Type",
+  "type": "string",
+  "required": true,
+  "options": ["user", "role", "department", "dynamic"]
+},
+"recipient_value": {
+  "label": "Recipient Value",
+  "type": "string",
+  "required": true
+}
+```
   }
 }
 ```
@@ -518,53 +560,67 @@ Bulk notifications allow efficient processing of multiple notifications in a sin
 ```json
 {
   "name": "Daily Task Summary",
-  "trigger": {
-    "entity_type": "scheduler",
-    "operations": ["tick"],
-    "schedule": {
-      "type": "cron",
-      "expression": "0 17 * * 1-5"
-    }
+  "trigger": {```
+
+"entity_type": "scheduler",
+"operations": ["tick"],
+"schedule": {
+  "type": "cron",
+  "expression": "0 17 * * 1-5"
+}
+```
   },
-  "actions": [
-    {
-      "type": "database",
-      "operation": "query",
-      "target_entity": "user",
-      "query": {
-        "is_active": true
-      },
-      "result_variable": "active_users"
-    },
-    {
-      "type": "notification",
-      "title": "Daily Task Summary",
-      "body": "# Task Summary for {{today | date('MMM D')}}\n\n{% set completed = get_tasks(user_id, 'completed', today) %}\n{% set pending = get_tasks(user_id, 'pending') %}\n\n{% if completed.length > 0 %}## Completed Today ({{completed.length}})\n{% for task in completed %}- {{task.title}}\n{% endfor %}{% endif %}\n\n{% if pending.length > 0 %}## Pending ({{pending.length}})\n{% for task in pending %}- {{task.title}} {% if task.due_date %}(Due: {{task.due_date | date('MMM D')}}){% endif %}\n{% endfor %}{% endif %}\n\n{% if pending.length == 0 and completed.length == 0 %}You have no tasks.{% endif %}",
-      "for_each": "active_users",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{item.id}}"
-        }
-      ],
-      "context_enrichment": {
-        "user_id": "{{item.id}}",
-        "today": "{{now()}}"
-      }
-    }
+  "actions": [```
+
+{
+  "type": "database",
+  "operation": "query",
+  "target_entity": "user",
+  "query": {```
+
+"is_active": true
+```
+  },
+  "result_variable": "active_users"
+},
+{
+  "type": "notification",
+  "title": "Daily Task Summary",
+  "body": "# Task Summary for {{today | date('MMM D')}}\n\n{% set completed = get_tasks(user_id, 'completed', today) %}\n{% set pending = get_tasks(user_id, 'pending') %}\n\n{% if completed.length > 0 %}## Completed Today ({{completed.length}})\n{% for task in completed %}- {{task.title}}\n{% endfor %}{% endif %}\n\n{% if pending.length > 0 %}## Pending ({{pending.length}})\n{% for task in pending %}- {{task.title}} {% if task.due_date %}(Due: {{task.due_date | date('MMM D')}}){% endif %}\n{% endfor %}{% endif %}\n\n{% if pending.length == 0 and completed.length == 0 %}You have no tasks.{% endif %}",
+  "for_each": "active_users",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{item.id}}"
+}
+```
   ],
-  "functions": {
-    "get_tasks": {
-      "query": {
-        "assignee_id": "{{params.0}}",
-        "status": "{{params.1}}",
-        "where_date": {
-          "field": "{{params.1 == 'completed' ? 'completed_at' : 'created_at'}}",
-          "operator": "{{params.length > 2 ? 'date_equals' : 'before'}}",
-          "value": "{{params.length > 2 ? params.2 : 'now() + interval \\'1 day\\''}}"
-        }
-      }
-    }
+  "context_enrichment": {```
+
+"user_id": "{{item.id}}",
+"today": "{{now()}}"
+```
+  }
+}
+```
+  ],
+  "functions": {```
+
+"get_tasks": {
+  "query": {```
+
+"assignee_id": "{{params.0}}",
+"status": "{{params.1}}",
+"where_date": {
+  "field": "{{params.1 == 'completed' ? 'completed_at' : 'created_at'}}",
+  "operator": "{{params.length > 2 ? 'date_equals' : 'before'}}",
+  "value": "{{params.length > 2 ? params.2 : 'now() + interval \\'1 day\\''}}"
+}
+```
+  }
+}
+```
   }
 }
 ```
@@ -610,45 +666,55 @@ Optimize workflows for performance, especially when dealing with high-volume eve
 ```json
 {
   "name": "Optimized Order Notification",
-  "trigger": {
-    "entity_type": "order",
-    "operations": ["create"],
-    "field_triggers": ["status"]
+  "trigger": {```
+
+"entity_type": "order",
+"operations": ["create"],
+"field_triggers": ["status"]
+```
   },
-  "conditions": [
-    {
-      "type": "field",
-      "field": "status",
-      "operator": "eq",
-      "value": "completed"
-    },
-    {
-      "type": "field",
-      "field": "total",
-      "operator": "gt",
-      "value": "0"
-    }
+  "conditions": [```
+
+{
+  "type": "field",
+  "field": "status",
+  "operator": "eq",
+  "value": "completed"
+},
+{
+  "type": "field",
+  "field": "total",
+  "operator": "gt",
+  "value": "0"
+}
+```
   ],
-  "actions": [
-    {
-      "type": "notification",
-      "title": "Order Completed",
-      "body": "Your order #{{order_number}} has been completed.",
-      "priority": "normal",
-      "delivery_strategy": "deferred",
-      "recipients": [
-        {
-          "type": "user",
-          "value": "{{customer_id}}"
-        }
-      ]
-    }
+  "actions": [```
+
+{
+  "type": "notification",
+  "title": "Order Completed",
+  "body": "Your order #{{order_number}} has been completed.",
+  "priority": "normal",
+  "delivery_strategy": "deferred",
+  "recipients": [```
+
+{
+  "type": "user",
+  "value": "{{customer_id}}"
+}
+```
+  ]
+}
+```
   ],
-  "optimization": {
-    "condition_evaluation_strategy": "short_circuit",
-    "action_execution_strategy": "parallel",
-    "max_execution_time_ms": 5000,
-    "deferred_execution_interval_ms": 60000
+  "optimization": {```
+
+"condition_evaluation_strategy": "short_circuit",
+"action_execution_strategy": "parallel",
+"max_execution_time_ms": 5000,
+"deferred_execution_interval_ms": 60000
+```
   }
 }
 ```

@@ -105,30 +105,40 @@ reports_cli.py fields add <template_id> "total_orders" "Total Orders" aggregate 
 ```python
 import requests
 
-field_data = {
-    "name": "email",
-    "display_name": "Email Address",
-    "description": "Customer email address",
-    "field_type": "db_column",
-    "field_config": {
-        "table": "customer",
-        "column": "email"
-    },
-    "order": 2,
-    "is_visible": True
+field_data = {```
+
+"name": "email",
+"display_name": "Email Address",
+"description": "Customer email address",
+"field_type": "db_column",
+"field_config": {```
+
+"table": "customer",
+"column": "email"
+```
+},
+"order": 2,
+"is_visible": True
+```
 }
 
-response = requests.post(
-    f"http://your-api-host/api/reports/templates/{template_id}/fields",
-    json=field_data,
-    headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+response = requests.post(```
+
+f"http://your-api-host/api/reports/templates/{template_id}/fields",
+json=field_data,
+headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+```
 )
 
-if response.status_code == 201:
-    new_field = response.json()
-    print(f"Field created with ID: {new_field['id']}")
-else:
-    print(f"Error: {response.status_code}, {response.text}")
+if response.status_code == 201:```
+
+new_field = response.json()
+print(f"Field created with ID: {new_field['id']}")
+```
+else:```
+
+print(f"Error: {response.status_code}, {response.text}")
+```
 ```
 
 ## Field Formatting
@@ -146,15 +156,17 @@ You can apply conditional formatting to highlight important values:
 
 ```json
 {
-  "conditional_formats": {
-    "highlight_overdue": {
-      "condition": "value < today() and status != 'paid'",
-      "style": "background-color: #ffeeee; color: #cc0000;"
-    },
-    "highlight_large": {
-      "condition": "value > 1000",
-      "style": "font-weight: bold; color: #006600;"
-    }
+  "conditional_formats": {```
+
+"highlight_overdue": {
+  "condition": "value < today() and status != 'paid'",
+  "style": "background-color: #ffeeee; color: #cc0000;"
+},
+"highlight_large": {
+  "condition": "value > 1000",
+  "style": "font-weight: bold; color: #006600;"
+}
+```
   }
 }
 ```
@@ -165,38 +177,48 @@ You can create hierarchical fields by setting a parent field:
 
 ```python
 # First create the parent field
-parent_field = {
-    "name": "address",
-    "display_name": "Address",
-    "field_type": "custom",
-    "is_visible": True
+parent_field = {```
+
+"name": "address",
+"display_name": "Address",
+"field_type": "custom",
+"is_visible": True
+```
 }
 
-parent_response = requests.post(
-    f"http://your-api-host/api/reports/templates/{template_id}/fields",
-    json=parent_field,
-    headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+parent_response = requests.post(```
+
+f"http://your-api-host/api/reports/templates/{template_id}/fields",
+json=parent_field,
+headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+```
 )
 
 parent_id = parent_response.json()["id"]
 
 # Then create child fields
-child_field = {
-    "name": "address_city",
-    "display_name": "City",
-    "field_type": "db_column",
-    "field_config": {
-        "table": "customer_address",
-        "column": "city"
-    },
-    "parent_field_id": parent_id,
-    "is_visible": True
+child_field = {```
+
+"name": "address_city",
+"display_name": "City",
+"field_type": "db_column",
+"field_config": {```
+
+"table": "customer_address",
+"column": "city"
+```
+},
+"parent_field_id": parent_id,
+"is_visible": True
+```
 }
 
-requests.post(
-    f"http://your-api-host/api/reports/templates/{template_id}/fields",
-    json=child_field,
-    headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+requests.post(```
+
+f"http://your-api-host/api/reports/templates/{template_id}/fields",
+json=child_field,
+headers={"Authorization": "Bearer YOUR_API_TOKEN"}
+```
 )
 ```
 

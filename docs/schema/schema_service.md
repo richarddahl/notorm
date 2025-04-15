@@ -30,12 +30,14 @@ from uno.dependencies import get_schema_manager
 from typing import Optional
 
 # Define your model
-class UserModel(BaseModel):
-    id: str = Field(default="")
-    username: str
-    email: str
-    created_at: Optional[str] = None
-    is_active: bool = True
+class UserModel(BaseModel):```
+
+id: str = Field(default="")
+username: str
+email: str
+created_at: Optional[str] = None
+is_active: bool = True
+```
 
 # Get the schema manager
 schema_manager = get_schema_manager()
@@ -67,10 +69,12 @@ view_schema = schemas["view"]
 edit_schema = schemas["edit"]
 
 # Create a model instance from input data (with validation)
-user_data = {
-    "username": "johndoe",
-    "email": "john@example.com",
-    "is_active": True
+user_data = {```
+
+"username": "johndoe",
+"email": "john@example.com",
+"is_active": True
+```
 }
 user = api_schema(**user_data)
 
@@ -108,9 +112,11 @@ from uno.dependencies import get_schema_manager
 schema_manager = get_schema_manager()
 
 # Create a custom schema configuration
-admin_config = UnoSchemaConfig(
-    include_only=False,
-    exclude_fields={"deleted_at", "is_deleted"}
+admin_config = UnoSchemaConfig(```
+
+include_only=False,
+exclude_fields={"deleted_at", "is_deleted"}
+```
 )
 
 # Add the custom configuration
@@ -131,20 +137,36 @@ from uno.dependencies import get_schema_manager
 router = APIRouter()
 
 @router.post("/users/")
-async def create_user(
-    user_data: dict,
-    schema_manager = Depends(get_schema_manager)
-):
-    # Get the API schema
-    user_schema = schema_manager.get_schema("api")
-    
-    # Validate the input data
-    validated_user = user_schema(**user_data)
-    
-    # Create the user
-    user_obj = await user_service.create_user(validated_user.dict())
-    
-    # Return the created user using the view schema
-    view_schema = schema_manager.get_schema("view")
-    return view_schema.from_orm(user_obj).dict()
+async def create_user(```
+
+user_data: dict,
+schema_manager = Depends(get_schema_manager)
+```
+):```
+
+# Get the API schema
+user_schema = schema_manager.get_schema("api")
+``````
+
+```
+```
+
+# Validate the input data
+validated_user = user_schema(**user_data)
+``````
+
+```
+```
+
+# Create the user
+user_obj = await user_service.create_user(validated_user.dict())
+``````
+
+```
+```
+
+# Return the created user using the view schema
+view_schema = schema_manager.get_schema("view")
+return view_schema.from_orm(user_obj).dict()
+```
 ```

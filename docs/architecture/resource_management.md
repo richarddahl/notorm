@@ -35,14 +35,16 @@ The `ConnectionPool` provides efficient resource pooling with health checking:
 from uno.core.resources import ConnectionPool
 
 # Create a pool
-pool = ConnectionPool(
-    name="db_pool",
-    factory=create_connection,  # async function that creates a connection
-    close_func=close_connection,  # async function that closes a connection
-    validate_func=validate_connection,  # async function that validates a connection
-    max_size=10,  # maximum pool size
-    min_size=2,   # minimum pool size (maintain this many)
-    max_idle=5,   # maximum idle connections
+pool = ConnectionPool(```
+
+name="db_pool",
+factory=create_connection,  # async function that creates a connection
+close_func=close_connection,  # async function that closes a connection
+validate_func=validate_connection,  # async function that validates a connection
+max_size=10,  # maximum pool size
+min_size=2,   # minimum pool size (maintain this many)
+max_idle=5,   # maximum idle connections
+```
 )
 
 # Start the pool
@@ -69,23 +71,31 @@ The `CircuitBreaker` prevents cascading failures when external services fail:
 from uno.core.resources import CircuitBreaker
 
 # Create a circuit breaker
-circuit = CircuitBreaker(
-    name="api_circuit",
-    failure_threshold=5,  # open after 5 failures
-    recovery_timeout=30.0,  # wait 30 seconds before trying again
+circuit = CircuitBreaker(```
+
+name="api_circuit",
+failure_threshold=5,  # open after 5 failures
+recovery_timeout=30.0,  # wait 30 seconds before trying again
+```
 )
 
 # Use the circuit breaker
-async def call_api():
-    # The actual API call
-    return await api_client.get("/endpoint")
+async def call_api():```
+
+# The actual API call
+return await api_client.get("/endpoint")
+```
 
 # Call through the circuit breaker
-try:
-    result = await circuit(call_api)
-except CircuitBreakerOpenError:
-    # Circuit is open, handle accordingly
-    result = fallback_value()
+try:```
+
+result = await circuit(call_api)
+```
+except CircuitBreakerOpenError:```
+
+# Circuit is open, handle accordingly
+result = fallback_value()
+```
 ```
 
 ### Resource Monitor
@@ -140,25 +150,33 @@ session_factory = await manager.create_session_factory()
 The framework provides several context managers for safe resource handling:
 
 ```python
-from uno.core.resource_management import (
-    managed_connection_pool, 
-    managed_background_task
+from uno.core.resource_management import (```
+
+managed_connection_pool, 
+managed_background_task
+```
 )
 
 # Managed connection pool
-async with managed_connection_pool("api_pool", create_pool) as pool:
-    # Pool is automatically registered and started
-    # Use the pool...
-    # It will be automatically closed and unregistered
+async with managed_connection_pool("api_pool", create_pool) as pool:```
+
+# Pool is automatically registered and started
+# Use the pool...
+# It will be automatically closed and unregistered
+```
 
 # Managed background task
-async with managed_background_task(
-    "monitor_task", 
-    monitoring_function,
-    restart_on_failure=True
-) as task:
-    # Task is automatically registered and started
-    # It will be automatically stopped and unregistered
+async with managed_background_task(```
+
+"monitor_task", 
+monitoring_function,
+restart_on_failure=True
+```
+) as task:```
+
+# Task is automatically registered and started
+# It will be automatically stopped and unregistered
+```
 ```
 
 ## Database Integration
@@ -169,10 +187,12 @@ Resource management is deeply integrated with the database layer:
 from uno.database.pooled_session import pooled_async_session
 
 # Use a pooled database session
-async with pooled_async_session() as session:
-    # Session uses a connection from the pool
-    # with circuit breaker protection
-    result = await session.execute("SELECT 1")
+async with pooled_async_session() as session:```
+
+# Session uses a connection from the pool
+# with circuit breaker protection
+result = await session.execute("SELECT 1")
+```
     
 # Session and connection automatically cleaned up
 ```
@@ -183,21 +203,37 @@ Advanced transaction coordination:
 from uno.database.pooled_session import PooledSessionOperationGroup
 
 # Coordinate multiple database operations
-async with PooledSessionOperationGroup() as op_group:
-    # Create a session
-    session = await op_group.create_session()
-    
-    # Run operations in a transaction
-    results = await op_group.run_in_transaction(
-        session,
-        [operation1, operation2, operation3]
-    )
-    
-    # Run operations concurrently
-    task1 = await op_group.run_operation(session, operation1)
-    task2 = await op_group.run_operation(session, operation2)
-    
-    # All sessions are automatically closed
+async with PooledSessionOperationGroup() as op_group:```
+
+# Create a session
+session = await op_group.create_session()
+``````
+
+```
+```
+
+# Run operations in a transaction
+results = await op_group.run_in_transaction(```
+
+session,
+[operation1, operation2, operation3]
+```
+)
+``````
+
+```
+```
+
+# Run operations concurrently
+task1 = await op_group.run_operation(session, operation1)
+task2 = await op_group.run_operation(session, operation2)
+``````
+
+```
+```
+
+# All sessions are automatically closed
+```
 ```
 
 ## FastAPI Integration
@@ -206,11 +242,13 @@ Integration with FastAPI for resource management:
 
 ```python
 from fastapi import FastAPI
-from uno.core.fastapi_integration import (
-    setup_resource_management,
-    create_health_endpoint,
-    create_resource_monitoring_endpoints,
-    db_session_dependency,
+from uno.core.fastapi_integration import (```
+
+setup_resource_management,
+create_health_endpoint,
+create_resource_monitoring_endpoints,
+db_session_dependency,
+```
 )
 
 # Create app
@@ -227,10 +265,12 @@ create_resource_monitoring_endpoints(app)
 
 # Use session dependency
 @app.get("/data")
-async def get_data(session = Depends(db_session_dependency)):
-    # Session uses a connection from the pool
-    result = await session.execute("SELECT * FROM data")
-    return {"data": result.fetchall()}
+async def get_data(session = Depends(db_session_dependency)):```
+
+# Session uses a connection from the pool
+result = await session.execute("SELECT * FROM data")
+return {"data": result.fetchall()}
+```
 ```
 
 ## Key Features
@@ -288,15 +328,21 @@ Use the highest-level API for your use case:
 
 1. For most cases, use the session context manager:
    ```python
-   async with pooled_async_session() as session:
-       # Use session
+   async with pooled_async_session() as session:```
+
+   # Use session
+```
    ```
 
 2. For advanced cases with multiple operations, use the operation group:
    ```python
-   async with PooledSessionOperationGroup() as group:
-       session = await group.create_session()
-       # Use session with coordinated operations
+   async with PooledSessionOperationGroup() as group:```
+
+   session = await group.create_session()```
+```
+
+   # Use session
+``` with coordinated operations
    ```
 
 3. Manual pool management is also available:
@@ -314,8 +360,10 @@ Follow proper resource lifecycle patterns:
 
 1. Use context managers to ensure proper cleanup:
    ```python
-   async with managed_connection_pool("name", factory) as pool:
-       # Use pool
+   async with managed_connection_pool("name", factory) as pool:```
+
+   # Use pool
+```
    ```
 
 2. Register long-lived resources with the registry:
@@ -345,17 +393,21 @@ Implement proper health checks:
 
 2. Register custom health checks:
    ```python
-   await monitor.register_health_check(
-       "my_resource", 
-       lambda: check_resource_health()
+   await monitor.register_health_check(```
+
+   "my_resource", 
+   lambda: check_resource_health()
+```
    )
    ```
 
 3. Check health in your application:
    ```python
    health = await monitor.get_health_summary()
-   if health["overall_health"] != "HEALTHY":
-       # Handle degraded or unhealthy status
+   if health["overall_health"] != "HEALTHY":```
+
+   # Handle degraded or unhealthy status
+```
    ```
 
 ### Circuit Breaking
@@ -364,10 +416,12 @@ Use circuit breakers for external services:
 
 1. Create a circuit breaker:
    ```python
-   circuit = CircuitBreaker(
-       name="service_circuit",
-       failure_threshold=5,
-       recovery_timeout=30.0,
+   circuit = CircuitBreaker(```
+
+   name="service_circuit",
+   failure_threshold=5,
+   recovery_timeout=30.0,
+```
    )
    ```
 
@@ -378,11 +432,15 @@ Use circuit breakers for external services:
 
 3. Use the circuit breaker:
    ```python
-   try:
-       result = await circuit(call_service)
-   except CircuitBreakerOpenError:
-       # Handle open circuit case
-       result = fallback_value()
+   try:```
+
+   result = await circuit(call_service)
+```
+   except CircuitBreakerOpenError:```
+
+   # Handle open circuit case
+   result = fallback_value()
+```
    ```
 
 ## Integration with Other Components

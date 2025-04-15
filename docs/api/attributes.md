@@ -175,12 +175,14 @@ To integrate the Attributes API into your FastAPI application:
 ```python
 from fastapi import FastAPI, APIRouter
 from uno.database.db_manager import DBManager
-from uno.attributes import (
-    AttributeRepository,
-    AttributeTypeRepository,
-    AttributeService,
-    AttributeTypeService,
-    register_attribute_endpoints,
+from uno.attributes import (```
+
+AttributeRepository,
+AttributeTypeRepository,
+AttributeService,
+AttributeTypeService,
+register_attribute_endpoints,
+```
 )
 
 # Create FastAPI app
@@ -197,14 +199,16 @@ attribute_service = AttributeService(attribute_repository, attribute_type_reposi
 attribute_type_service = AttributeTypeService(attribute_type_repository, db_manager)
 
 # Register endpoints
-register_attribute_endpoints(
-    router=router,
-    attribute_service=attribute_service,
-    attribute_type_service=attribute_type_service,
-    attribute_prefix="/attributes",
-    attribute_type_prefix="/attribute-types",
-    attribute_tags=["Attributes"],
-    attribute_type_tags=["Attribute Types"]
+register_attribute_endpoints(```
+
+router=router,
+attribute_service=attribute_service,
+attribute_type_service=attribute_type_service,
+attribute_prefix="/attributes",
+attribute_type_prefix="/attribute-types",
+attribute_tags=["Attributes"],
+attribute_type_tags=["Attribute Types"]
+```
 )
 
 # Include router in app

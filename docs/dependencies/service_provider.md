@@ -20,11 +20,17 @@ Initialize all services at your application's entry point:
 ```python
 from uno.dependencies import initialize_services
 
-def main():
-    # Initialize all services
-    initialize_services()
-    
-    # Rest of your application code...
+def main():```
+
+# Initialize all services
+initialize_services()
+``````
+
+```
+```
+
+# Rest of your application code...
+```
 ```
 
 ### Accessing Services
@@ -98,21 +104,37 @@ The Service Provider pattern makes testing easier by providing a consistent way 
 from unittest.mock import MagicMock, patch
 from uno.dependencies import get_service_provider
 
-def test_user_service():
-    # Create a mock schema manager
-    mock_schema_manager = MagicMock()
-    
-    # Create a mock service provider
-    with patch('my_app.get_service_provider') as mock_get_provider:
-        mock_provider = MagicMock()
-        mock_provider.get_schema_manager.return_value = mock_schema_manager
-        mock_get_provider.return_value = mock_provider
-        
-        # Test your code that uses the service provider
-        result = my_function_that_uses_services()
-        
-        # Assert that the mock was used correctly
-        mock_provider.get_schema_manager.assert_called_once()
+def test_user_service():```
+
+# Create a mock schema manager
+mock_schema_manager = MagicMock()
+``````
+
+```
+```
+
+# Create a mock service provider
+with patch('my_app.get_service_provider') as mock_get_provider:```
+
+mock_provider = MagicMock()
+mock_provider.get_schema_manager.return_value = mock_schema_manager
+mock_get_provider.return_value = mock_provider
+``````
+
+```
+```
+
+# Test your code that uses the service provider
+result = my_function_that_uses_services()
+``````
+
+```
+```
+
+# Assert that the mock was used correctly
+mock_provider.get_schema_manager.assert_called_once()
+```
+```
 ```
 
 ## Extending the Service Provider
@@ -123,17 +145,27 @@ You can extend the service provider to include your own application-specific ser
 from uno.dependencies.provider import ServiceProvider
 from my_app.interfaces import UserServiceProtocol
 
-class MyServiceProvider(ServiceProvider):
-    """Custom service provider with application-specific services."""
-    
-    def get_user_service(self) -> UserServiceProtocol:
-        """
-        Get the user service.
-        
-        Returns:
-            The user service
-        """
-        return self.get_service(UserServiceProtocol)
+class MyServiceProvider(ServiceProvider):```
+
+"""Custom service provider with application-specific services."""
+``````
+
+```
+```
+
+def get_user_service(self) -> UserServiceProtocol:```
+
+"""
+Get the user service.
+```
+    ```
+
+Returns:
+    The user service
+"""
+return self.get_service(UserServiceProtocol)
+```
+```
 
 # Override the global provider
 from uno.dependencies.provider import _service_provider

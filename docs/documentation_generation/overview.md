@@ -29,13 +29,15 @@ To generate documentation for your application:
 from uno.core.docs.generator import DocGeneratorConfig, DocFormat, generate_docs
 
 # Configure the documentation generator
-config = DocGeneratorConfig(
-    title="My API Documentation",
-    description="Documentation for my API",
-    version="1.0.0",
-    formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
-    output_dir="docs/api",
-    modules_to_document=["my_app.api", "my_app.models"]
+config = DocGeneratorConfig(```
+
+title="My API Documentation",
+description="Documentation for my API",
+version="1.0.0",
+formats=[DocFormat.MARKDOWN, DocFormat.OPENAPI],
+output_dir="docs/api",
+modules_to_document=["my_app.api", "my_app.models"]
+```
 )
 
 # Generate documentation
@@ -75,54 +77,88 @@ The documentation generator extracts information from:
 ### Class and Function Docstrings
 
 ```python
-def get_user(user_id: str) -> Dict[str, Any]:
-    """
-    Retrieve a user by ID.
-    
-    This endpoint returns the user information for the specified user ID.
-    
-    :param user_id: The ID of the user to retrieve
-    :return: User information
-    :raises UserNotFoundError: If the user does not exist
-    """
-    # Implementation
+def get_user(user_id: str) -> Dict[str, Any]:```
+
+"""
+Retrieve a user by ID.
+``````
+
+```
+```
+
+This endpoint returns the user information for the specified user ID.
+``````
+
+```
+```
+
+:param user_id: The ID of the user to retrieve
+:return: User information
+:raises UserNotFoundError: If the user does not exist
+"""
+# Implementation
+```
 ```
 
 ### Type Annotations
 
 ```python
-def create_user(
-    name: str,
-    email: str,
-    roles: List[str] = [],
-    is_active: bool = True
-) -> Dict[str, Any]:
-    # Implementation
+def create_user(```
+
+name: str,
+email: str,
+roles: List[str] = [],
+is_active: bool = True
+```
+) -> Dict[str, Any]:```
+
+# Implementation
+```
 ```
 
 ### Special Attributes
 
 ```python
-class UserModel:
-    # Field documentation
-    __email_description__ = "Email address of the user"
-    
-    # Field examples
-    __email_example__ = "user@example.com"
-    
-    # Field choices
-    __roles_choices__ = ["admin", "user", "guest"]
-    
-    # Model status
-    __status__ = "beta"
-    
-    # Model examples
-    __examples__ = [
-        {
-            "name": "Example User",
-            "value": {"id": "usr_123", "name": "Test User"}
-        }
-    ]
+class UserModel:```
+
+# Field documentation
+__email_description__ = "Email address of the user"
+``````
+
+```
+```
+
+# Field examples
+__email_example__ = "user@example.com"
+``````
+
+```
+```
+
+# Field choices
+__roles_choices__ = ["admin", "user", "guest"]
+``````
+
+```
+```
+
+# Model status
+__status__ = "beta"
+``````
+
+```
+```
+
+# Model examples
+__examples__ = [```
+
+{
+    "name": "Example User",
+    "value": {"id": "usr_123", "name": "Test User"}
+}
+```
+]
+```
 ```
 
 ## Component Discovery
@@ -146,5 +182,5 @@ The generated documentation is organized as follows:
 
 - Learn how to [configure the documentation generator](configuration.md)
 - Explore documentation [extractors](extractors.md) for customized information extraction
-- Customize documentation with different [renderers](renderers.md)
-- See practical [examples](examples.md) of documentation generation
+- Customize documentation with different output formats
+- See practical examples of documentation generation in the codebase

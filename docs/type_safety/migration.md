@@ -13,10 +13,12 @@ Start by adding type annotations to function parameters and return values:
 #### Before:
 
 ```python
-def get_user(user_id):
-    # Get user from database
-    user = User.get(id=user_id)
-    return user
+def get_user(user_id):```
+
+# Get user from database
+user = User.get(id=user_id)
+return user
+```
 ```
 
 #### After:
@@ -25,10 +27,12 @@ def get_user(user_id):
 from typing import Optional
 from myapp.models import User
 
-def get_user(user_id: str) -> Optional[User]:
-    # Get user from database
-    user = User.get(id=user_id)
-    return user
+def get_user(user_id: str) -> Optional[User]:```
+
+# Get user from database
+user = User.get(id=user_id)
+return user
+```
 ```
 
 ### 2. Replace Generic Types with Specific Types
@@ -38,12 +42,16 @@ Replace generic collections with typed collections:
 #### Before:
 
 ```python
-def get_users():
-    users = User.filter()
-    return {
-        "items": users,
-        "total": len(users)
-    }
+def get_users():```
+
+users = User.filter()
+return {```
+
+"items": users,
+"total": len(users)
+```
+}
+```
 ```
 
 #### After:
@@ -53,15 +61,19 @@ from typing import List, Dict, Any
 from myapp.models import User
 from uno.schema.schema import PaginatedList
 
-def get_users() -> PaginatedList[User]:
-    users = User.filter()
-    return PaginatedList(
-        items=users,
-        total=len(users),
-        page=1,
-        page_size=len(users),
-        pages=1
-    )
+def get_users() -> PaginatedList[User]:```
+
+users = User.filter()
+return PaginatedList(```
+
+items=users,
+total=len(users),
+page=1,
+page_size=len(users),
+pages=1
+```
+)
+```
 ```
 
 ### 3. Replace Class Inheritance with Protocols
@@ -73,23 +85,43 @@ Replace abstract base classes with protocols:
 ```python
 from abc import ABC, abstractmethod
 
-class Repository(ABC):
-    @abstractmethod
-    def get(self, id):
-        pass
-    
-    @abstractmethod
-    def save(self, entity):
-        pass
+class Repository(ABC):```
 
-class UserRepository(Repository):
-    def get(self, id):
-        # Implementation
-        pass
-    
-    def save(self, entity):
-        # Implementation
-        pass
+@abstractmethod
+def get(self, id):```
+
+pass
+```
+``````
+
+```
+```
+
+@abstractmethod
+def save(self, entity):```
+
+pass
+```
+```
+
+class UserRepository(Repository):```
+
+def get(self, id):
+    # Implementation```
+
+pass
+```
+``````
+
+```
+```
+
+def save(self, entity):
+    # Implementation```
+
+pass
+```
+```
 ```
 
 #### After:
@@ -100,21 +132,41 @@ from typing import Protocol, TypeVar, Any, Optional, runtime_checkable
 T = TypeVar('T')
 
 @runtime_checkable
-class RepositoryProtocol(Protocol[T]):
-    def get(self, id: str) -> Optional[T]:
-        ...
-    
-    def save(self, entity: T) -> T:
-        ...
+class RepositoryProtocol(Protocol[T]):```
 
-class UserRepository:
-    def get(self, id: str) -> Optional[User]:
-        # Implementation
-        pass
-    
-    def save(self, entity: User) -> User:
-        # Implementation
-        pass
+def get(self, id: str) -> Optional[T]:```
+
+...
+```
+``````
+
+```
+```
+
+def save(self, entity: T) -> T:```
+
+...
+```
+```
+
+class UserRepository:```
+
+def get(self, id: str) -> Optional[User]:
+    # Implementation```
+
+pass
+```
+``````
+
+```
+```
+
+def save(self, entity: User) -> User:
+    # Implementation```
+
+pass
+```
+```
 
 # Type checking will verify that UserRepository implements RepositoryProtocol
 repo: RepositoryProtocol[User] = UserRepository()
@@ -127,19 +179,27 @@ Replace generic exceptions with structured error classes:
 #### Before:
 
 ```python
-def create_user(user_data):
-    try:
-        # Validate user data
-        if not user_data.get("email"):
-            raise Exception("Email is required")
-        
-        # Create user
-        user = User(**user_data)
-        user.save()
-        return user
-    except Exception as e:
-        # Handle error
-        return {"error": str(e)}
+def create_user(user_data):```
+
+try:
+    # Validate user data
+    if not user_data.get("email"):
+        raise Exception("Email is required")```
+
+```
+```
+
+# Create user
+user = User(**user_data)
+user.save()
+return user
+```
+except Exception as e:```
+
+# Handle error
+return {"error": str(e)}
+```
+```
 ```
 
 #### After:
@@ -147,22 +207,40 @@ def create_user(user_data):
 ```python
 from uno.errors import ValidationContext, ValidationError
 
-def create_user(user_data: Dict[str, Any]) -> Union[User, Dict[str, Any]]:
-    # Create validation context
-    context = ValidationContext("User")
-    
-    # Validate user data
-    if not user_data.get("email"):
-        context.add_error("email", "Email is required", "REQUIRED_FIELD")
-    
-    # Check for validation errors
-    if context.has_errors():
-        return {"errors": context.errors}
-    
-    # Create user
-    user = User(**user_data)
-    user.save()
-    return user
+def create_user(user_data: Dict[str, Any]) -> Union[User, Dict[str, Any]]:```
+
+# Create validation context
+context = ValidationContext("User")
+``````
+
+```
+```
+
+# Validate user data
+if not user_data.get("email"):```
+
+context.add_error("email", "Email is required", "REQUIRED_FIELD")
+```
+``````
+
+```
+```
+
+# Check for validation errors
+if context.has_errors():```
+
+return {"errors": context.errors}
+```
+``````
+
+```
+```
+
+# Create user
+user = User(**user_data)
+user.save()
+return user
+```
 ```
 
 ### 5. Update Schema Definitions
@@ -174,11 +252,13 @@ Update schema definitions to use the enhanced schema classes:
 ```python
 from pydantic import BaseModel
 
-class UserSchema(BaseModel):
-    id: str
-    name: str
-    email: str
-    age: int
+class UserSchema(BaseModel):```
+
+id: str
+name: str
+email: str
+age: int
+```
 ```
 
 #### After:
@@ -186,19 +266,27 @@ class UserSchema(BaseModel):
 ```python
 from uno.schema.schema import UnoSchema
 
-class UserSchema(UnoSchema):
-    id: str
-    name: str
-    email: str
-    age: int
-    
-    # Now you can use the enhanced schema methods
-    @classmethod
-    def get_required_fields(cls) -> Set[str]:
-        return {
-            name for name, field in cls.model_fields.items() 
-            if field.is_required()
-        }
+class UserSchema(UnoSchema):```
+
+id: str
+name: str
+email: str
+age: int
+``````
+
+```
+```
+
+# Now you can use the enhanced schema methods
+@classmethod
+def get_required_fields(cls) -> Set[str]:```
+
+return {
+    name for name, field in cls.model_fields.items() 
+    if field.is_required()
+}
+```
+```
 ```
 
 ### 6. Convert to Type-Safe Query Methods
@@ -208,13 +296,25 @@ Update query methods to use type-safe filters and return types:
 #### Before:
 
 ```python
-def search_users(filters):
-    query = User.objects.all()
-    
-    if "name" in filters:
-        query = query.filter(name__contains=filters["name"])
-    
-    return query
+def search_users(filters):```
+
+query = User.objects.all()
+``````
+
+```
+```
+
+if "name" in filters:```
+
+query = query.filter(name__contains=filters["name"])
+```
+``````
+
+```
+```
+
+return query
+```
 ```
 
 #### After:
@@ -224,12 +324,18 @@ from typing import List
 from myapp.models import User
 from myapp.filters import UserFilter
 
-def search_users(filters: UserFilter) -> List[User]:
-    # Validate filters
-    validated_filters = User.validate_filter_params(filters)
-    
-    # Perform query with validated filters
-    return User.filter(filters=validated_filters)
+def search_users(filters: UserFilter) -> List[User]:```
+
+# Validate filters
+validated_filters = User.validate_filter_params(filters)
+``````
+
+```
+```
+
+# Perform query with validated filters
+return User.filter(filters=validated_filters)
+```
 ```
 
 ### 7. Implement Validation Contexts
@@ -239,18 +345,38 @@ Replace ad-hoc validation with structured validation contexts:
 #### Before:
 
 ```python
-def validate_product(product_data):
-    errors = []
-    
-    if not product_data.get("name"):
-        errors.append("Name is required")
-    
-    if not product_data.get("price"):
-        errors.append("Price is required")
-    elif product_data["price"] <= 0:
-        errors.append("Price must be positive")
-    
-    return errors
+def validate_product(product_data):```
+
+errors = []
+``````
+
+```
+```
+
+if not product_data.get("name"):```
+
+errors.append("Name is required")
+```
+``````
+
+```
+```
+
+if not product_data.get("price"):```
+
+errors.append("Price is required")
+```
+elif product_data["price"] <= 0:```
+
+errors.append("Price must be positive")
+```
+``````
+
+```
+```
+
+return errors
+```
 ```
 
 #### After:
@@ -258,24 +384,50 @@ def validate_product(product_data):
 ```python
 from uno.errors import ValidationContext
 
-def validate_product(product_data: Dict[str, Any]) -> ValidationContext:
-    context = ValidationContext("Product")
-    
-    if not product_data.get("name"):
-        context.add_error("name", "Name is required", "REQUIRED_FIELD")
-    
-    if not product_data.get("price"):
-        context.add_error("price", "Price is required", "REQUIRED_FIELD")
-    elif product_data["price"] <= 0:
-        context.add_error("price", "Price must be positive", "INVALID_VALUE", product_data["price"])
-    
-    # Validate nested fields
-    if "category" in product_data:
-        category_context = context.nested("category")
-        if not product_data["category"].get("id"):
-            category_context.add_error("id", "Category ID is required", "REQUIRED_FIELD")
-    
-    return context
+def validate_product(product_data: Dict[str, Any]) -> ValidationContext:```
+
+context = ValidationContext("Product")
+``````
+
+```
+```
+
+if not product_data.get("name"):```
+
+context.add_error("name", "Name is required", "REQUIRED_FIELD")
+```
+``````
+
+```
+```
+
+if not product_data.get("price"):```
+
+context.add_error("price", "Price is required", "REQUIRED_FIELD")
+```
+elif product_data["price"] <= 0:```
+
+context.add_error("price", "Price must be positive", "INVALID_VALUE", product_data["price"])
+```
+``````
+
+```
+```
+
+# Validate nested fields
+if "category" in product_data:```
+
+category_context = context.nested("category")
+if not product_data["category"].get("id"):
+    category_context.add_error("id", "Category ID is required", "REQUIRED_FIELD")
+```
+``````
+
+```
+```
+
+return context
+```
 ```
 
 ## Testing Migration Success
@@ -297,20 +449,30 @@ import pytest
 from typing import get_origin, get_args
 from myapp.schemas import UserSchema, UserListSchema
 
-def test_user_schema_types():
-    """Test that user schemas maintain type information."""
-    
-    # Check field annotations
-    annotations = UserSchema.get_field_annotations()
-    assert annotations["id"] == str
-    assert annotations["name"] == str
-    assert annotations["email"] == str
-    assert annotations["age"] == int
-    
-    # Check list schema
-    items_field = UserListSchema.model_fields["items"]
-    assert get_origin(items_field.annotation) == list
-    assert get_args(items_field.annotation)[0] == UserSchema
+def test_user_schema_types():```
+
+"""Test that user schemas maintain type information."""
+``````
+
+```
+```
+
+# Check field annotations
+annotations = UserSchema.get_field_annotations()
+assert annotations["id"] == str
+assert annotations["name"] == str
+assert annotations["email"] == str
+assert annotations["age"] == int
+``````
+
+```
+```
+
+# Check list schema
+items_field = UserListSchema.model_fields["items"]
+assert get_origin(items_field.annotation) == list
+assert get_args(items_field.annotation)[0] == UserSchema
+```
 ```
 
 ## Migration Checklist

@@ -28,23 +28,29 @@ The integration adds several components to your PostgreSQL database:
 
 ```sql
 -- Generate embeddings from text
-CREATE OR REPLACE FUNCTION uno.generate_embedding(
-    text_content TEXT,
-    dimensions INT DEFAULT 1536
+CREATE OR REPLACE FUNCTION uno.generate_embedding(```
+
+text_content TEXT,
+dimensions INT DEFAULT 1536
+```
 ) RETURNS vector ...
 
 -- Calculate cosine similarity between vectors
-CREATE OR REPLACE FUNCTION uno.cosine_similarity(
-    a vector,
-    b vector
+CREATE OR REPLACE FUNCTION uno.cosine_similarity(```
+
+a vector,
+b vector
+```
 ) RETURNS float8 ...
 
 -- Create embedding triggers on tables
-CREATE OR REPLACE FUNCTION uno.create_embedding_trigger(
-    table_name TEXT,
-    vector_column_name TEXT DEFAULT 'embedding',
-    content_columns TEXT[] DEFAULT '{"content"}',
-    dimensions INT DEFAULT 1536
+CREATE OR REPLACE FUNCTION uno.create_embedding_trigger(```
+
+table_name TEXT,
+vector_column_name TEXT DEFAULT 'embedding',
+content_columns TEXT[] DEFAULT '{"content"}',
+dimensions INT DEFAULT 1536
+```
 ) RETURNS void ...
 ```
 
@@ -52,18 +58,22 @@ CREATE OR REPLACE FUNCTION uno.create_embedding_trigger(
 
 ```sql
 -- Create HNSW index (faster search, higher memory usage)
-CREATE OR REPLACE FUNCTION uno.create_hnsw_index(
-    table_name TEXT,
-    column_name TEXT DEFAULT 'embedding',
-    m INT DEFAULT 16,          
-    ef_construction INT DEFAULT 64
+CREATE OR REPLACE FUNCTION uno.create_hnsw_index(```
+
+table_name TEXT,
+column_name TEXT DEFAULT 'embedding',
+m INT DEFAULT 16,          
+ef_construction INT DEFAULT 64
+```
 ) RETURNS void ...
 
 -- Create IVF-Flat index (balanced approach)
-CREATE OR REPLACE FUNCTION uno.create_ivfflat_index(
-    table_name TEXT,
-    column_name TEXT DEFAULT 'embedding',
-    lists INT DEFAULT 100
+CREATE OR REPLACE FUNCTION uno.create_ivfflat_index(```
+
+table_name TEXT,
+column_name TEXT DEFAULT 'embedding',
+lists INT DEFAULT 100
+```
 ) RETURNS void ...
 ```
 
@@ -71,23 +81,27 @@ CREATE OR REPLACE FUNCTION uno.create_ivfflat_index(
 
 ```sql
 -- Perform vector similarity search
-CREATE OR REPLACE FUNCTION uno.vector_search(
-    table_name TEXT,
-    query_embedding vector,
-    column_name TEXT DEFAULT 'embedding',
-    limit_val INT DEFAULT 10,
-    threshold FLOAT DEFAULT 0.7,
-    where_clause TEXT DEFAULT NULL
+CREATE OR REPLACE FUNCTION uno.vector_search(```
+
+table_name TEXT,
+query_embedding vector,
+column_name TEXT DEFAULT 'embedding',
+limit_val INT DEFAULT 10,
+threshold FLOAT DEFAULT 0.7,
+where_clause TEXT DEFAULT NULL
+```
 ) RETURNS TABLE ...
 
 -- Perform hybrid vector and graph search
-CREATE OR REPLACE FUNCTION uno.hybrid_search(
-    table_name TEXT,
-    query_embedding vector,
-    graph_traversal_query TEXT DEFAULT NULL,
-    column_name TEXT DEFAULT 'embedding',
-    limit_val INT DEFAULT 10,
-    threshold FLOAT DEFAULT 0.7
+CREATE OR REPLACE FUNCTION uno.hybrid_search(```
+
+table_name TEXT,
+query_embedding vector,
+graph_traversal_query TEXT DEFAULT NULL,
+column_name TEXT DEFAULT 'embedding',
+limit_val INT DEFAULT 10,
+threshold FLOAT DEFAULT 0.7
+```
 ) RETURNS TABLE ...
 ```
 
@@ -95,25 +109,29 @@ CREATE OR REPLACE FUNCTION uno.hybrid_search(
 
 ```sql
 -- Documents table for RAG
-CREATE TABLE uno.documents (
-    id TEXT PRIMARY KEY DEFAULT uno.gen_ulid(),
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    embedding vector(1536)
+CREATE TABLE uno.documents (```
+
+id TEXT PRIMARY KEY DEFAULT uno.gen_ulid(),
+title TEXT NOT NULL,
+content TEXT NOT NULL,
+metadata JSONB DEFAULT '{}',
+created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+embedding vector(1536)
+```
 );
 
 -- Vector configuration table
-CREATE TABLE uno.vector_config (
-    entity_type TEXT PRIMARY KEY,
-    dimensions INTEGER NOT NULL DEFAULT 1536,
-    content_fields TEXT[] NOT NULL,
-    index_type TEXT NOT NULL DEFAULT 'hnsw',
-    index_options JSONB DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE uno.vector_config (```
+
+entity_type TEXT PRIMARY KEY,
+dimensions INTEGER NOT NULL DEFAULT 1536,
+content_fields TEXT[] NOT NULL,
+index_type TEXT NOT NULL DEFAULT 'hnsw',
+index_options JSONB DEFAULT '{}',
+created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+```
 );
 ```
 
@@ -129,11 +147,13 @@ The framework uses database triggers to automatically generate and update embedd
 Example:
 ```sql
 -- Add embedding trigger to a table
-SELECT uno.create_embedding_trigger(
-    'my_table',
-    'embedding',
-    ARRAY['title', 'description', 'content'],
-    1536
+SELECT uno.create_embedding_trigger(```
+
+'my_table',
+'embedding',
+ARRAY['title', 'description', 'content'],
+1536
+```
 );
 ```
 
@@ -170,13 +190,15 @@ SELECT uno.create_ivfflat_index('my_table', 'embedding');
 3. Return results with similarity scores
 
 ```sql
-SELECT * FROM uno.vector_search(
-    'my_table',
-    uno.generate_embedding('How do I reset my password?'),
-    'embedding',
-    10,    -- limit
-    0.7,   -- threshold
-    'is_active = true'  -- optional WHERE clause
+SELECT * FROM uno.vector_search(```
+
+'my_table',
+uno.generate_embedding('How do I reset my password?'),
+'embedding',
+10,    -- limit
+0.7,   -- threshold
+'is_active = true'  -- optional WHERE clause
+```
 );
 ```
 
@@ -187,13 +209,15 @@ SELECT * FROM uno.vector_search(
 3. Combine results with weighted ranking
 
 ```sql
-SELECT * FROM uno.hybrid_search(
-    'documents',
-    uno.generate_embedding('How do I use vector search?'),
-    'SELECT id::TEXT, distance FROM graph.shortest_path(...)',
-    'embedding',
-    10,
-    0.7
+SELECT * FROM uno.hybrid_search(```
+
+'documents',
+uno.generate_embedding('How do I use vector search?'),
+'SELECT id::TEXT, distance FROM graph.shortest_path(...)',
+'embedding',
+10,
+0.7
+```
 );
 ```
 

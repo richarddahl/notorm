@@ -352,10 +352,19 @@ def create_migration(
     # Generate a timestamp-based ID if not provided
     if not id:
         timestamp = int(time.time())
+        
+        # Format name for ID (lowercase, replace spaces with underscores)
+        formatted_name = name.lower().replace(' ', '_')
+        
+        # Special characters not allowed in ID
+        for char in r'!@#$%^&*()+={}[]:;"\',.<>?/\\|':
+            formatted_name = formatted_name.replace(char, '_')
+        
+        # Generate ID
         if version:
-            id = f"{version}_{timestamp}_{name.lower().replace(' ', '_')}"
+            id = f"{version}_{timestamp}_{formatted_name}"
         else:
-            id = f"{timestamp}_{name.lower().replace(' ', '_')}"
+            id = f"{timestamp}_{formatted_name}"
     
     return MigrationBase(
         id=id,
