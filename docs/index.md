@@ -1,24 +1,18 @@
 # Uno Framework Documentation
 
-Welcome to the Uno Framework documentation. Uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI.
+Welcome to the Uno Framework documentation. uno is a platform for building data-driven applications with PostgreSQL and FastAPI.
 
-!!! note "Documentation Updates"```
-
-The documentation has been completely reorganized and standardized for consistency and accuracy. Key changes include:
-- Merged duplicate documentation (e.g., JWT authentication)
-- Fixed formatting across all documentation files
-- Added detailed examples and cross-references
-- Created comprehensive documentation planning resources
 
 For more information, see:
-- [Documentation Index](./DOCUMENTATION_INDEX.md) - Central index of all documentation resources
-- [Documentation Status Visualization](./DOCUMENTATION_STATUS_VISUALIZATION.md) - Visual overview of documentation coverage
-- [Documentation Development Plan](./DOCUMENTATION_DEVELOPMENT_PLAN.md) - Plan for ongoing documentation improvement
-```
+
+- [Documentation Index](./index.md) - Central index of all documentation resources  
+- [Documentation Status Visualization](./project/documentation_status.md) - Visual overview of documentation coverage  
+- [Documentation Development Plan](./project/documentation_plan.md) - Plan for ongoing documentation improvement  
+
 
 ## What is Uno?
 
-Despite its name ("uno is not an ORM"), Uno is not just an ORM - it's a complete framework that goes well beyond traditional ORMs to provide a unified approach to database operations, API definition, and business logic.
+Despite its name ("uno is not an ORM"), it's an application platform that goes well beyond traditional web frameworks to provide a unified approach to database operations, API definition, and business logic.
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
 

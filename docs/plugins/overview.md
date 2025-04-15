@@ -341,7 +341,7 @@ pass
 ## Next Steps
 
 - Learn how to [create your first plugin](creating_plugins.md)
-- Explore available [extension points](extension_points.md)
-- Understand the [hook system](hooks.md)
-- Create [configuration schemas](plugin_configuration.md)
-- See [plugin examples](plugin_examples.md)
+- Explore available [extension points](creating_plugins.md)
+- Understand the [hook system](creating_plugins.md)
+- Create [configuration schemas](creating_plugins.md)
+- See [plugin examples](creating_plugins.md)

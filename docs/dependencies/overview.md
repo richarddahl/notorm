@@ -255,7 +255,7 @@ def setup_test_di():```
 """Set up dependency injection for testing."""
 # Create mock repository
 mock_repo = MagicMock(spec=ItemRepository)
-mock_repo.find_by_category.return_value = [{"id": "1", "name": "Test Item"}]
+mock_repo.find_by_category.return_value = [{`id`: "1", `name`: "Test Item"}]
 ``````
 
 ```
@@ -292,8 +292,8 @@ def test_service_get_items(service):```
 """Test the service with the mock repository."""
 result = await service.get_items(category="test")
 assert len(result) == 1
-assert result[0]["id"] == "1"
-assert result[0]["name"] == "Test Item"
+assert result[0][`id`] == "1"
+assert result[0][`name`] == "Test Item"
 ```
 ```
 

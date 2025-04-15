@@ -33,17 +33,15 @@ PostgreSQL offers many advanced optimization features beyond standard SQL. This 
 Enhanced index recommendation for PostgreSQL that supports additional index features.
 
 ```python
-rec = PgIndexRecommendation(```
-
-table_name="users",
-column_names=["email"],
-include_columns=["name", "status"],  # Covering index
-is_partial=True,                     # Partial index
-where_clause="active = true",        # Condition for partial index
-is_unique=True,                      # Unique constraint
-operator_class="text_pattern_ops",   # Operator class for LIKE queries
-index_tablespace="fast_ssd"          # Custom tablespace
-```
+rec = PgIndexRecommendation(
+    table_name="users",
+    column_names=["email"],
+    include_columns=["name", "status"],  # Covering index
+    is_partial=True,                     # Partial index
+    where_clause="active = true",        # Condition for partial index
+    is_unique=True,                      # Unique constraint
+    operator_class="text_pattern_ops",   # Operator class for LIKE queries
+    index_tablespace="fast_ssd"          # Custom tablespace
 )
 
 # Generate SQL
@@ -66,12 +64,10 @@ pg_strategies = add_pg_strategies(optimizer)
 
 # Now you can use PostgreSQL-specific functionality
 stats_result = await pg_strategies.get_table_statistics("users")
-if stats_result.is_ok():```
-
-stats = stats_result.unwrap()
-print(f"Table size: {stats['total_bytes_human']}")
-print(f"Row count: {stats['row_estimate']:,}")
-```
+if stats_result.is_ok():
+    stats = stats_result.unwrap()
+    print(f"Table size: {stats['total_bytes_human']}")
+    print(f"Row count: {stats['row_estimate']:,}")
 ```
 
 ### PgQueryOptimizer
@@ -109,15 +105,11 @@ optimizer = QueryOptimizer(session=session)
 pg_strategies = add_pg_strategies(optimizer)
 
 # Method 2: Create PG-specific optimizer directly
-pg_optimizer = create_pg_optimizer(```
-
-session=session,
-config=OptimizationConfig(```
-
-optimization_level=OptimizationLevel.AGGRESSIVE
-```
-)
-```
+pg_optimizer = create_pg_optimizer(
+    session=session,
+    config=OptimizationConfig(
+        optimization_level=OptimizationLevel.AGGRESSIVE
+    )
 )
 ```
 
@@ -126,41 +118,26 @@ optimization_level=OptimizationLevel.AGGRESSIVE
 ```python
 # Get detailed table statistics
 stats_result = await pg_strategies.get_table_statistics("users")
-if stats_result.is_ok():```
-
-stats = stats_result.unwrap()
-``````
-
-```
-```
-
-# Basic information
-print(f"Table: {stats['table_name']}")
-print(f"Row estimate: {stats['row_estimate']:,}")
-print(f"Total size: {stats['total_bytes_human']}")
-print(f"Table size: {stats['table_bytes_human']}")
-print(f"Index size: {stats['index_bytes_human']}")
-``````
-
-```
-```
-
-# Scan statistics
-print(f"Sequential scans: {stats['seq_scan_count']}")
-print(f"Rows returned: {stats['seq_scan_rows']:,}")
-``````
-
-```
-```
-
-# Column statistics
-for col in stats['columns']:```
-
-print(f"Column: {col['column_name']}")
-print(f"  Distinct values: {col['distinct_values']}")
-print(f"  Null fraction: {col['null_fraction']}")
-print(f"  Correlation: {col['correlation']}")
-```
+if stats_result.is_ok():
+    stats = stats_result.unwrap()
+    
+    # Basic information
+    print(f"Table: {stats['table_name']}")
+    print(f"Row estimate: {stats['row_estimate']:,}")
+    print(f"Total size: {stats['total_bytes_human']}")
+    print(f"Table size: {stats['table_bytes_human']}")
+    print(f"Index size: {stats['index_bytes_human']}")
+    
+    # Scan statistics
+    print(f"Sequential scans: {stats['seq_scan_count']}")
+    print(f"Rows returned: {stats['seq_scan_rows']:,}")
+    
+    # Column statistics
+    for col in stats['columns']:
+        print(f"Column: {col['column_name']}")
+        print(f"  Distinct values: {col['distinct_values']}")
+        print(f"  Null fraction: {col['null_fraction']}")
+        print(f"  Correlation: {col['correlation']}")
 ```
 ```
 
@@ -169,27 +146,16 @@ print(f"  Correlation: {col['correlation']}")
 ```python
 # Get maintenance recommendations for a table
 rec_result = await pg_strategies.recommend_table_maintenance("users")
-if rec_result.is_ok():```
-
-recommendations = rec_result.unwrap()
-``````
-
-```
-```
-
-print(f"Table: {recommendations['table_name']}")
-``````
-
-```
-```
-
-for rec in recommendations['recommendations']:```
-
-print(f"Recommendation type: {rec['type']}")
-print(f"Priority: {rec['priority']}")
-print(f"Reason: {rec['reason']}")
-print(f"SQL: {rec['sql']}")
-```
+if rec_result.is_ok():
+    recommendations = rec_result.unwrap()
+    
+    print(f"Table: {recommendations['table_name']}")
+    
+    for rec in recommendations['recommendations']:
+        print(f"Recommendation type: {rec['type']}")
+        print(f"Priority: {rec['priority']}")
+        print(f"Reason: {rec['reason']}")
+        print(f"SQL: {rec['sql']}")
 ```
 ```
 
@@ -228,20 +194,15 @@ WHERE (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) > 0
 """
 
 rewrite_result = await pg_strategies.rewrite_for_pg_features(query)
-if rewrite_result.is_ok():```
-
-rewrite = rewrite_result.unwrap()
-print(f"Rewrite type: {rewrite.rewrite_type}")
-print(f"Rewritten query: {rewrite.rewritten_query}")
-print(f"Reason: {rewrite.reason}")
-``````
-
-```
-```
-
-# Execute the rewritten query
-result = await session.execute(text(rewrite.rewritten_query))
-rows = result.all()
+if rewrite_result.is_ok():
+    rewrite = rewrite_result.unwrap()
+    print(f"Rewrite type: {rewrite.rewrite_type}")
+    print(f"Rewritten query: {rewrite.rewritten_query}")
+    print(f"Reason: {rewrite.reason}")
+    
+    # Execute the rewritten query
+    result = await session.execute(text(rewrite.rewritten_query))
+    rows = result.all()
 ```
 ```
 
@@ -250,52 +211,33 @@ rows = result.all()
 ```python
 # Run ANALYZE on multiple tables
 analysis_results = await pg_optimizer.analyze_tables(["users", "orders", "products"])
-for table, result in analysis_results.items():```
-
-if result.is_ok():```
-
-print(f"Successfully analyzed table {table}")
-```
-else:```
-
-print(f"Error analyzing table {table}: {result.unwrap_err()}")
-```
-```
+for table, result in analysis_results.items():
+    if result.is_ok():
+        print(f"Successfully analyzed table {table}")
+    else:
+        print(f"Error analyzing table {table}: {result.unwrap_err()}")
 
 # Get maintenance recommendations for multiple tables
-maintenance_recs = await pg_optimizer.get_maintenance_recommendations(```
-
-["users", "orders", "products"]
-```
+maintenance_recs = await pg_optimizer.get_maintenance_recommendations(
+    ["users", "orders", "products"]
 )
 
-for table, recs in maintenance_recs.items():```
-
-if "error" in recs:```
-
-print(f"Error analyzing {table}: {recs['error']}")
-continue
-```
+for table, recs in maintenance_recs.items():
+    if "error" in recs:
+        print(f"Error analyzing {table}: {recs['error']}")
+        continue
     
-print(f"Table: {table}")
-print(f"Size: {recs['statistics']['total_bytes_human']}")
-``````
-
-```
-```
-
-for rec in recs['recommendations']:```
-
-print(f"  {rec['type']} ({rec['priority']} priority): {rec['reason']}")
-```
-    ```
-
-# For high priority recommendations, execute the SQL
-if rec['priority'] == "high":
-    await session.execute(text(rec['sql']))
-    await session.commit()
-    print(f"  Executed: {rec['sql']}")
-```
+    print(f"Table: {table}")
+    print(f"Size: {recs['statistics']['total_bytes_human']}")
+    
+    for rec in recs['recommendations']:
+        print(f"  {rec['type']} ({rec['priority']} priority): {rec['reason']}")
+        
+        # For high priority recommendations, execute the SQL
+        if rec['priority'] == "high":
+            await session.execute(text(rec['sql']))
+            await session.commit()
+            print(f"  Executed: {rec['sql']}")
 ```
 ```
 
@@ -509,25 +451,18 @@ The PostgreSQL optimizer integrates well with monitoring systems:
 ```python
 # Get table statistics for monitoring
 stats_results = {}
-for table in critical_tables:```
-
-result = await pg_strategies.get_table_statistics(table)
-if result.is_ok():```
-
-stats_results[table] = result.unwrap()
-```
-```
+for table in critical_tables:
+    result = await pg_strategies.get_table_statistics(table)
+    if result.is_ok():
+        stats_results[table] = result.unwrap()
 
 # Push metrics to monitoring system
-for table, stats in stats_results.items():```
-
-monitoring.gauge(f"pg.table.size.{table}", stats["total_bytes"])
-monitoring.gauge(f"pg.table.rows.{table}", stats["row_estimate"])
-monitoring.gauge(f"pg.table.bloat.{table}", ```
-
-            (stats["table_bytes"] - (stats["row_estimate"] * stats["avg_row_size"])) 
-             / stats["table_bytes"] * 100)
-```
+for table, stats in stats_results.items():
+    monitoring.gauge(f"pg.table.size.{table}", stats["total_bytes"])
+    monitoring.gauge(f"pg.table.rows.{table}", stats["row_estimate"])
+    monitoring.gauge(f"pg.table.bloat.{table}", 
+                    (stats["table_bytes"] - (stats["row_estimate"] * stats["avg_row_size"])) 
+                     / stats["table_bytes"] * 100)
 ```
 ```
 
@@ -537,40 +472,28 @@ The PostgreSQL optimizer can be further configured to fit specific needs:
 
 ```python
 # Create a customized PostgreSQL optimizer
-pg_optimizer = create_pg_optimizer(```
-
-session=session,
-config=OptimizationConfig(
-    # General settings```
-
-optimization_level=OptimizationLevel.AGGRESSIVE
-```,
-    ```
-
-# Analysis settings
-analyze_queries=True,
-collect_statistics=True,
-```
-    ```
-
-# Rewrite settings
-rewrite_queries=True,
-safe_rewrites_only=False,  # Allow aggressive rewrites
-```
-    ```
-
-# Index settings
-recommend_indexes=True,
-auto_implement_indexes=False,
-```
-    ```
-
-# Logging
-log_recommendations=True,
-log_rewrites=True,
-```
-),
-logger=custom_logger
-```
+pg_optimizer = create_pg_optimizer(
+    session=session,
+    config=OptimizationConfig(
+        # General settings
+        optimization_level=OptimizationLevel.AGGRESSIVE,
+        
+        # Analysis settings
+        analyze_queries=True,
+        collect_statistics=True,
+        
+        # Rewrite settings
+        rewrite_queries=True,
+        safe_rewrites_only=False,  # Allow aggressive rewrites
+        
+        # Index settings
+        recommend_indexes=True,
+        auto_implement_indexes=False,
+        
+        # Logging
+        log_recommendations=True,
+        log_rewrites=True,
+    ),
+    logger=custom_logger
 )
 ```

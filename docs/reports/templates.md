@@ -171,5 +171,5 @@ POST /api/reports/templates/{template_id}/clone
 After creating a template, you'll need to:
 
 1. [Add fields](fields.md) to define what data to include
-2. [Set up triggers](triggers.md) to determine when to run the report
-3. [Configure outputs](outputs.md) to specify how to deliver the results
+2. [Set up triggers](advanced_features.md) to determine when to run the report
+3. [Configure outputs](templates.md) to specify how to deliver the results

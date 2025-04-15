@@ -97,6 +97,7 @@ When writing tests, follow these guidelines:
 ### Common Patterns
 
 1. **Testing SQL Generation**:
+
    ```python
    # Test SQL function generation
    function_sql = some_function_builder.build()
@@ -106,6 +107,7 @@ When writing tests, follow these guidelines:
    ```
 
 2. **Testing Database Operations**:
+
    ```python
    # Mock the database connection
    with patch("uno.database.db.async_connection") as mock_conn:```
@@ -122,26 +124,25 @@ When writing tests, follow these guidelines:
    
    # Verify the result
    assert result.id == "test_id"
-```
    ```
 
 3. **Testing Database Configuration**:
+
    ```python
    # Test ConnectionConfig and URI generation
    from uno.database.config import ConnectionConfig
    
    # Create config with test values
    config = ConnectionConfig(```
+      db_role="test_role",
+      db_name="test_db",
+      db_host="localhost",
+      db_port=5432,
+      db_user_pw="test@password",
+      db_driver="postgresql+psycopg2"
+      ```)
+   `` ` 
 
-   db_role="test_role",
-   db_name="test_db",
-   db_host="localhost",
-   db_port=5432,
-   db_user_pw="test@password",
-   db_driver="postgresql+psycopg2"
-```
-   )
-   
    # Test immutability
    with pytest.raises(Exception) as exc_info:```
 
@@ -160,7 +161,8 @@ When writing tests, follow these guidelines:
    ```
 
 4. **Testing Database Engine Factory**:
-   ```python
+   ```
+   python
    # Test creating an engine with the factory
    from uno.database.engine.async import AsyncEngineFactory
    
@@ -186,6 +188,7 @@ When writing tests, follow these guidelines:
    assert url_arg.drivername == config.db_driver
    assert url_arg.username == config.db_role
    assert url_arg.database == config.db_name
+
 ```
    ```
 

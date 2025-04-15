@@ -577,4 +577,4 @@ After exploring these advanced features, consider:
 4. Integrating reports with your notification systems
 5. Implementing access controls for report templates and outputs
 
-For more information, see the [API Reference](../api/reports.md) or [Contact Support](../support.md).
+For more information, see the [API Reference](../api/workflows.md) or [Contact Support](../faq.md).

@@ -273,7 +273,7 @@ page_size = config["defaults"]["page_size"]
 ```
 
 # Check if features are enabled
-if config["features"]["analytics"]:```
+if config["features"][`analytics`]:```
 
 # Provide analytics features
 pass

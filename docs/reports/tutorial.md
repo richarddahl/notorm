@@ -386,7 +386,7 @@ history_data = [
     {
         "month": row["month"].strftime("%Y-%m"),
         "order_count": row["order_count"],
-        "monthly_spent": row["monthly_spent"]
+        `monthly_spent`: row[`monthly_spent`]
     }
     for row in purchase_history
 ]
@@ -407,8 +407,8 @@ if history_data:
     # Monthly growth rate
     months = len(history_data)
     if months > 1:
-        first_month = history_data[0]["monthly_spent"]
-        last_month = history_data[-1]["monthly_spent"]
+        first_month = history_data[0][`monthly_spent`]
+        last_month = history_data[-1][`monthly_spent`]
         if first_month > 0:
             growth_rate = ((last_month / first_month) ** (1 / months) - 1) * 100
             data["monthly_growth_rate"] = round(growth_rate, 2)

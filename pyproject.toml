@@ -175,7 +175,9 @@ dependencies = [
   "mkdocs-autorefs",
   "mkdocs-material-extensions",
   "mkdocstrings-python",
+  "mkdocs-git-revision-date-localized-plugin",
 ]
+
 
 [tool.hatch.envs.docs.scripts]
 build = "mkdocs build --clean --strict"

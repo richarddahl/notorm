@@ -77,9 +77,9 @@ For detailed instructions on using the Reports module, see the following guides:
 - [Creating Report Templates](templates.md)
 - [Configuring Report Fields](fields.md)
 <!-- TODO: Create report triggers documentation -->
-<!-- - [Setting Up Report Triggers](triggers.md) -->
+<!-- - [Setting Up Report Triggers](advanced_features.md) -->
 <!-- TODO: Create report outputs documentation -->
-<!-- - [Managing Report Outputs](outputs.md) -->
+<!-- - [Managing Report Outputs](templates.md) -->
 <!-- TODO: Create report execution documentation -->
 <!-- - [Executing and Monitoring Reports](execution.md) -->
 <!-- TODO: Create report events documentation -->

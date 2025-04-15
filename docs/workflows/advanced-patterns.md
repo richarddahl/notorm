@@ -13,6 +13,7 @@ This guide covers advanced patterns and techniques for creating powerful, effici
 - [Bulk Notifications](#bulk-notifications)
 - [Performance Optimization](#performance-optimization)
 
+<a id="chained-workflows"></a>
 ## Chained Workflows
 
 Chained workflows allow you to create a sequence of interconnected workflows where one workflow triggers another, creating a multi-step business process.
@@ -72,6 +73,7 @@ A complete order processing workflow chain:
 - Log transition state changes for debugging
 - Consider timeout conditions for long-running workflows
 
+<a id="composite-conditions"></a>
 ## Composite Conditions
 
 Composite conditions allow you to create complex logic by combining multiple conditions with logical operators (AND, OR, NOT).
@@ -193,6 +195,7 @@ Use the composite condition type with nested conditions:
 - Name conditions descriptively in the designer
 - Test complex conditions thoroughly with the simulator
 
+<a id="dynamic-content-generation"></a>
 ## Dynamic Content Generation
 
 Dynamic content allows you to generate personalized notification messages based on entity data and context.
@@ -264,6 +267,7 @@ Thank you for shopping with us!
 - Document available variables and formatting options
 - Handle missing data gracefully
 
+<a id="multi-entity-workflows"></a>
 ## Multi-Entity Workflows
 
 Multi-entity workflows operate across different entity types, allowing for complex business processes.
@@ -302,6 +306,7 @@ Multi-entity workflows operate across different entity types, allowing for compl
 - Consider transaction boundaries carefully
 - Test multi-entity workflows thoroughly
 
+<a id="scheduled-workflows"></a>
 ## Scheduled Workflows
 
 Scheduled workflows execute based on time patterns rather than immediate database events.
@@ -427,6 +432,7 @@ A workflow that sends follow-up reminders for incomplete tasks:
 - Log execution details for monitoring
 - Implement idempotent actions to prevent duplication if a workflow runs twice
 
+<a id="workflow-templates"></a>
 ## Workflow Templates
 
 Workflow templates allow administrators to create predefined workflow configurations that can be quickly applied to specific entities.
@@ -537,6 +543,7 @@ Workflow templates allow administrators to create predefined workflow configurat
 - Create templates for different levels of complexity
 - Allow templates to be versioned
 
+<a id="bulk-notifications"></a>
 ## Bulk Notifications
 
 Bulk notifications allow efficient processing of multiple notifications in a single workflow execution.
@@ -634,6 +641,7 @@ Bulk notifications allow efficient processing of multiple notifications in a sin
 - Include links to more detailed views
 - Implement error recovery for batch processing
 
+<a id="performance-optimization"></a>
 ## Performance Optimization
 
 Optimize workflows for performance, especially when dealing with high-volume events or complex logic.

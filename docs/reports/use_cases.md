@@ -1677,10 +1677,10 @@ return {```
 
 For additional industry-specific report templates, see these resources:
 
-1. [Education Reporting Templates](../examples/education_reports.py)
-2. [Real Estate Analytics](../examples/real_estate_reports.py)
-3. [Energy Consumption Reports](../examples/energy_reports.py)
-4. [Logistics and Shipping Analytics](../examples/logistics_reports.py)
+1. [Education Reporting Templates](../project/examples/education_reports.md)
+2. [Real Estate Analytics](../project/examples/real_estate_reports.md)
+3. [Energy Consumption Reports](../project/examples/energy_reports.md)
+4. [Logistics and Shipping Analytics](../project/examples/logistics_reports.md)
 
 ## Best Practices
 

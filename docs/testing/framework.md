@@ -4,7 +4,7 @@ The Uno Testing Framework provides comprehensive utilities for testing Uno appli
 including integration testing with containerized dependencies, property-based testing,
 snapshot testing for complex objects, and performance regression testing.
 
-All testing follows the standardized approach defined in the [Test Standardization Plan](../tests/TEST_STANDARDIZATION_PLAN.md).
+All testing follows the standardized approach defined in the [Test Standardization Plan](../project/test_standardization_plan.md).
 
 ## Installation
 

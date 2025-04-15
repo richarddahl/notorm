@@ -100,4 +100,4 @@ When developing new admin features:
 2. Add backend API endpoints in `/src/uno/api/admin_ui.py`
 3. Update documentation in `/docs/admin/`
 
-For more information on the component architecture, see the [WebAwesome Components README](../static/components/README.md).
+For more information on the component architecture, see the [WebAwesome Components README](../developer_tools/images/README.md).

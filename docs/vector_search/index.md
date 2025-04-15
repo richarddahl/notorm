@@ -14,9 +14,9 @@ Welcome to the vector search documentation for the Uno Framework. This section c
 - [Dependency Injection](./dependency_injection.md) - DI integration for vector services
 
 ### Advanced Topics
-- [Hybrid Search](./hybrid_search.md) - Combining graph traversal with vector similarity
+- [Hybrid Search](./hybrid_queries.md) - Combining graph traversal with vector similarity
 - [RAG Implementation](./rag.md) - Retrieval-Augmented Generation
-- [Event-Driven Architecture](./events.md) - Event-based embedding updates
+- [Event-Driven Architecture](./event_driven.md) - Event-based embedding updates
 
 ## Quick Start
 

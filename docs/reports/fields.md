@@ -280,5 +280,5 @@ GET /api/reports/available-fields/{object_type}
 
 After configuring fields, you'll want to:
 
-1. [Set up triggers](triggers.md) to determine when to run the report
-2. [Configure outputs](outputs.md) to specify how to deliver the results
+1. [Set up triggers](advanced_features.md) to determine when to run the report
+2. [Configure outputs](templates.md) to specify how to deliver the results

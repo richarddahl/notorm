@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 #
 # SPDX-License-Identifier: MIT
-site_name: NotORM (Uno)
-site_description: A comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI
+site_name: Uno
+site_description: A unified platform for application developement, deployment, maintenance, monitoring, and use.
+repo_url: https://github.com/username/uno
+repo_name: username/uno
+strict: true
 theme:
    name: material
    palette:
@@ -17,6 +20,8 @@ theme:
 plugins:
    - search
    - mkdocstrings
+   - git-revision-date-localized
+site_url: https://example.com/
 nav:
    - Home: index.md
    - Getting Started: getting_started.md
@@ -26,11 +31,26 @@ nav:
       - Async-First Architecture: architecture/async_architecture.md
       - Async Implementation: architecture/async_implementation.md
       - Resource Management: architecture/resource_management.md
+      - Event-Driven Architecture: architecture/event_driven_architecture.md
+      - CQRS: architecture/cqrs.md
+      - Bounded Contexts: architecture/bounded_contexts.md
+      - API Integration: architecture/api_integration.md
+      - Application Services: architecture/application_services.md
+      - Authorization: architecture/authorization.md
+      - Graph Database: architecture/graph_database.md
    - Data Layer:
       - Overview: database/overview.md
       - Database Engine: database/engine.md
       - UnoDB: database/unodb.md
-      - Testing: testing.md
+      - Repository: database/repository.md
+      - Schema Manager: database/schema_manager.md
+      - Query Cache: database/query_cache.md
+      - Query Optimizer: database/query_optimizer.md
+      - Enhanced Connection Pool: database/enhanced_connection_pool.md
+      - DB Manager: database/db_manager.md
+      - Provider: database/provider.md
+      - PG Optimizer: database/pg_optimizer.md
+      - Optimizer Metrics: database/optimizer_metrics.md
    - Models Layer:
       - Overview: models/overview.md
       - UnoModel: models/model.md
@@ -45,6 +65,16 @@ nav:
       - Endpoint Factory: api/endpoint-factory.md
       - Filter Manager: queries/filter_manager.md
       - Schemas: api/schemas.md
+      - Attributes: api/attributes.md
+      - Values: api/values.md
+      - Workflows: api/workflows.md
+      - Schema Manager: api/schema-manager.md
+   - Queries:
+      - Overview: queries/overview.md
+      - Index: queries/index.md
+      - Batch Operations: queries/batch_operations.md
+      - Filter Manager: queries/filter_manager.md
+      - Attribute Integration: queries/attribute_integration.md
    - Error Handling:
       - Overview: error_handling/overview.md
       - Error Catalog: error_handling/catalog.md
@@ -53,13 +83,19 @@ nav:
       - Structured Logging: error_handling/logging.md
    - Vector Search:
       - Overview: vector_search/overview.md
+      - Index: vector_search/index.md
       - pgvector Integration: vector_search/pgvector_integration.md
-      - Docker Setup: vector_search/docker_setup.md
+      - Quick Start: vector_search/quick_start.md
       - API Usage: vector_search/api_usage.md
       - Dependency Injection: vector_search/dependency_injection.md
-      - Hybrid Search: vector_search/hybrid_search.md
+      - Hybrid Queries: vector_search/hybrid_queries.md
+      - Event Driven: vector_search/event_driven.md
       - RAG Implementation: vector_search/rag.md
-      - Event-Driven Architecture: vector_search/events.md
+      - Setup: vector_search/setup.md
+      - Usage: vector_search/usage.md
+      - Triggers: vector_search/triggers.md
+      - Docker Setup: vector_search/docker_setup.md
+      - Installation: pgvector_installation.md
    - SQL Generation:
       - Overview: sql_generation/overview.md
       - Emitters: sql_generation/emitters.md
@@ -73,11 +109,19 @@ nav:
       - Overview: dependency_injection/overview.md
       - Migration: dependency_injection/migration.md
       - Examples: dependency_injection/examples.md
+   - Dependencies:
+      - Overview: dependencies/overview.md
+      - Decision Guide: dependencies/decision_guide.md
+      - Hybrid Approach: dependencies/hybrid_approach.md
+      - Migration: dependencies/migration.md
+      - Service Provider: dependencies/service_provider.md
+      - Testing: dependencies/testing.md
+      - Usage: dependencies/usage.md
    - Protocol System:
       - Overview: protocols/overview.md
-      - Protocol Validation: protocol_validation.md
       - Database Protocols: protocols/database_protocols.md
       - Generic Type Constraints: protocols/generic_type_constraints.md
+      - Protocol Validation: protocol_validation.md
    - Async Utilities:
       - Overview: async/overview.md
       - Task Management: async/task_management.md
@@ -85,28 +129,39 @@ nav:
       - Context Management: async/context.md
       - Integration: async/integration.md
       - Application Lifecycle: async/lifecycle.md
-   - Resource Management:
-      - Overview: resource_management/overview.md
-      - Connection Pooling: resource_management/connection_pooling.md
-      - Circuit Breakers: resource_management/circuit_breakers.md
-      - Resource Monitoring: resource_management/monitoring.md
-   - Performance Optimization:
-      - Overview: performance/overview.md
-      - Query Caching: performance/caching.md
-      - DataLoader Pattern: performance/dataloader.md
-      - Connection Streaming: performance/streaming.md
-      - Query Optimization: performance/optimization.md
+   - Monitoring:
+      - Overview: monitoring/overview.md
+      - Index: monitoring/index.md
+      - Configuration: monitoring/configuration.md
+      - Metrics: monitoring/metrics.md
+      - Tracing: monitoring/tracing.md
+      - Health: monitoring/health.md
+      - Dashboard: monitoring/dashboard.md
+      - Events: monitoring/events.md
+      - Examples: monitoring/examples.md
+      - Integration: monitoring/integration.md
+      - Resources: monitoring/resources.md
+   - Caching:
+      - Overview: caching/overview.md
+      - Multilevel: caching/multilevel.md
+      - Invalidation: caching/invalidation.md
+      - Monitoring: caching/monitoring.md
+   - Performance:
+      - Attributes Values Optimization: performance/attributes_values_optimization.md
+      - Batch Operations: performance/batch_operations.md
    - Modernization:
       - Overview: modernization/overview.md
       - Key Features: modernization/key_features.md
       - Migration Guide: modernization/migration.md
+      - Legacy Cleanup: modernization/legacy_cleanup.md
    - Security:
       - Overview: security/overview.md
       - Encryption: security/encryption.md
       - Authentication: security/authentication.md
       - Audit Logging: security/audit.md
       - Security Testing: security/testing.md
-      - Authorization: authorization/overview.md
+      - Authorization:
+         - Overview: authorization/overview.md
    - Multi-Tenancy:
       - Overview: multitenancy/overview.md
       - Models: multitenancy/models.md 
@@ -114,12 +169,102 @@ nav:
       - Isolation: multitenancy/isolation.md
       - Middleware & Utilities: multitenancy/middleware.md
       - Management Interfaces: multitenancy/management.md
-   - Setup and Deployment:
+   - Workflows:
+      - Overview: workflows/overview.md
+      - Quick Start: workflows/quick-start.md
+      - Tutorial: workflows/tutorial.md
+      - Advanced Patterns: workflows/advanced-patterns.md
+      - Custom Extensions: workflows/custom-extensions.md
+      - Migration Guide: workflows/migration-guide.md
+      - Performance: workflows/performance.md
+      - Query Integration: workflows/query_integration.md
+      - Security: workflows/security.md
+      - Troubleshooting: workflows/troubleshooting.md
+   - Jobs:
+      - Overview: jobs/overview.md
+      - Queue: jobs/queue.md
+      - Scheduler: jobs/scheduler.md
+      - Worker: jobs/worker.md
+      - Admin: jobs/admin.md
+      - Monitoring: jobs/monitoring.md
+      - Storage: jobs/storage.md
+      - Tasks: jobs/tasks.md
+   - Realtime:
+      - Overview: realtime/overview.md
+      - Websocket: realtime/websocket.md
+      - Subscriptions: realtime/subscriptions.md
+      - Notifications: realtime/notifications.md
+      - SSE: realtime/sse.md
+   - Attributes & Values:
+      - Attributes Overview: attributes/overview.md
+      - Values Overview: values/overview.md
+      - CLI Tools: cli/attributes_values.md
+   - Deployment:
+      - Overview: deployment/overview.md
+      - Configuration: deployment/configuration.md
+      - Strategies: deployment/strategies.md
+      - CI/CD: deployment/ci-cd.md
       - Docker Setup: docker_setup.md
-      - pgvector Installation: pgvector_installation.md
-   - Developer Tools: developer_tools.md
+   - Developer Tools: 
+      - Overview: developer_tools.md
+      - Migrations: developer_tools/migrations.md
+      - Profiling: developer_tools/profiling.md
+      - Visual Modeler: developer_tools/visual_modeler.md
+      - Images: developer_tools/images/README.md
+   - Documentation:
+      - Developer Docs Guide: developer_docs_guide.md
+      - Generation:
+         - Overview: documentation_generation/overview.md
+         - Configuration: documentation_generation/configuration.md
+         - Extractors: documentation_generation/extractors.md
+   - Testing:
+      - Overview: testing.md
+      - Framework: testing/framework.md
+      - Integration Testing: testing/integration_testing.md
+   - Migrations:
+      - Overview: migrations/overview.md
+      - Python Migrations: migrations/python_migrations.md
+      - SQL Migrations: migrations/sql_migrations.md
+   - Offline Support:
+      - Overview: offline/overview.md
+      - Progressive: offline/progressive.md
+      - Store: offline/store.md
+      - Sync: offline/sync.md
+   - Plugins:
+      - Overview: plugins/overview.md
+      - Creating Plugins: plugins/creating_plugins.md
+   - Reports:
+      - Overview: reports/overview.md
+      - Advanced Features: reports/advanced_features.md
+      - Enhancement Plan: reports/enhancement_plan.md
+      - Fields: reports/fields.md
+      - Templates: reports/templates.md
+      - Tutorial: reports/tutorial.md
+      - Use Cases: reports/use_cases.md
+   - Admin:
+      - Overview: admin/overview.md
+   - Core:
+      - Dependency Injection: core/dependency_injection.md
+   - Domain:
+      - Guide: domain/guide.md
+   - Schema:
+      - Schema Service: schema/schema_service.md
+   - Benchmarks:
+      - Dashboard: benchmarks/dashboard.md
    - Project:
+      - Overview: project/README.md
       - Roadmap: project/ROADMAP.md
+      - Documentation Status: project/documentation_status.md
+      - Documentation Plan: project/documentation_plan.md
+      - Test Standardization Plan: project/test_standardization_plan.md
+      - Examples:
+         - Education Reports: project/examples/education_reports.md
+         - Energy Reports: project/examples/energy_reports.md
+         - Logistics Reports: project/examples/logistics_reports.md
+         - Real Estate Reports: project/examples/real_estate_reports.md
+   - Integration Summary: integration_summary.md
+   - Filter Manager: filter-manager.md
+   - Roadmap: roadmap.md
    - Command Reference: commands.md
    - FAQ: faq.md
    - License: license.md
@@ -129,5 +274,6 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed
   - pymdownx.details
+  - attr_list
   - toc:
       permalink: true

@@ -123,6 +123,6 @@ See the following guides for detailed implementation instructions:
 
 - [Offline Store Setup](store.md)
 - [Synchronization Configuration](sync.md)
-- [Change Tracking Guide](change-tracking.md)
-- [Conflict Resolution Strategies](conflict-resolution.md)
-- [Progressive Enhancement Patterns](progressive-enhancement.md)
+- [Change Tracking Guide](sync.md)
+- [Conflict Resolution Strategies](sync.md)
+- [Progressive Enhancement Patterns](progressive.md)
