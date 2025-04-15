@@ -1,1 +1,0 @@
-"""Vector search test module."""
