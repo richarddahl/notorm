@@ -18,10 +18,10 @@ The API Layer sits between client applications and the business logic layer, pro
 The API layer integrates with the other components of uno to provide a complete solution:
 
 ```
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
-│  API Client   │      │  UnoEndpoint  │      │    UnoObj     │      │    UnoDB      │
-│  (HTTP/JSON)  │◄────►│  (FastAPI)    │◄────►│ (Business Logic) ◄────►│  (Database)   │
-└───────────────┘      └───────────────┘      └───────────────┘      └───────────────┘
+┌───────────────┐      ┌───────────────┐      ┌─────────────────┐      ┌───────────────┐
+│  API Client   │      │  UnoEndpoint  │      │     UnoObj      │      │    UnoDB      │
+│  (HTTP/JSON)  │◄────►│  (FastAPI)    │◄────►│ (Business Logic)|◄────►│  (Database)   │
+└───────────────┘      └───────────────┘      └─────────────────┘      └───────────────┘
 ```
 
 ### Request Flow (Inbound)

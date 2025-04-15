@@ -81,10 +81,16 @@ This document outlines the absolute minimal features required for uno to be used
 - ✅ Comprehensive documentation of validation options and customization points
 - ✅ Complete examples of custom validators and schema types
 - ✅ Improved guidance for validation error handling and messages
+- ✅ Comprehensive test coverage for complex validation scenarios
+- ✅ Integration tests with endpoints and database
+- ✅ Advanced validation patterns for interdependent fields
+- ✅ Custom error handling and formatting
+- ✅ Contextual validation rules
+- ✅ Recursive schema validation
 
 **Needs:**
-- Expand test coverage for complex validation scenarios
-- Create integration tests with endpoints and database
+- ✅ Expand test coverage for complex validation scenarios
+- ✅ Create integration tests with endpoints and database
 
 ## 6. SQL Generation (SQLEmitter)
 
@@ -102,9 +108,9 @@ This document outlines the absolute minimal features required for uno to be used
 - ✅ Reference implementation of common SQL configuration patterns
 
 **Needs:**
-- Add test cases for complex SQL scenarios
-- Create integration tests with actual database execution
-- Document optimization strategies for generated SQL
+- ✅ Add test cases for complex SQL scenarios
+- ✅ Create integration tests with actual database execution
+- ✅ Document optimization strategies for generated SQL
 
 ## 7. Dependency Injection System
 

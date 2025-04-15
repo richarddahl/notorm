@@ -53,6 +53,7 @@ nav:
       - Provider: database/provider.md
       - PG Optimizer: database/pg_optimizer.md
       - Optimizer Metrics: database/optimizer_metrics.md
+      - SQL Optimization Strategies: database/sql_optimization_strategies.md
    - Models Layer:
       - Overview: models/overview.md
       - UnoModel: models/model.md
@@ -110,6 +111,7 @@ nav:
       - Emitters: sql_generation/emitters.md
       - Statement: sql_generation/statement.md
       - Registry: sql_generation/registry.md
+      - Optimization Strategies: database/sql_optimization_strategies.md
    - Type Safety:
       - Overview: type_safety/overview.md
       - Implementation: type_safety/implementation.md
