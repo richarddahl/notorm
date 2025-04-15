@@ -53,9 +53,7 @@ class WorkflowTriggerSchema(BaseModel):
         ..., description="The operations that will trigger the workflow"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowConditionSchema(BaseModel):
@@ -77,9 +75,7 @@ class WorkflowConditionSchema(BaseModel):
         0, description="The order of evaluation for the condition"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowRecipientSchema(BaseModel):
@@ -94,9 +90,7 @@ class WorkflowRecipientSchema(BaseModel):
         None, description="The action this recipient is associated with"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowActionSchema(BaseModel):
@@ -134,9 +128,7 @@ class WorkflowActionSchema(BaseModel):
         [], description="Recipients for the action"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowDefinitionSchema(BaseModel):
@@ -165,9 +157,7 @@ class WorkflowDefinitionSchema(BaseModel):
         None, description="When the workflow was last updated"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowExecutionStatus(str, Enum):
@@ -202,9 +192,7 @@ class WorkflowActionResultSchema(BaseModel):
         None, description="Additional details about the action execution"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowExecutionLogSchema(BaseModel):
@@ -238,9 +226,7 @@ class WorkflowExecutionLogSchema(BaseModel):
         ..., description="The results of the action executions"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowExecutionSchema(BaseModel):
@@ -256,9 +242,7 @@ class WorkflowExecutionSchema(BaseModel):
     operation: str = Field(..., description="The operation that triggered the workflow")
     data: Dict[str, Any] = Field(..., description="The entity data for the execution")
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowSimulationRequestSchema(BaseModel):
@@ -269,9 +253,7 @@ class WorkflowSimulationRequestSchema(BaseModel):
         ..., description="The entity data for the simulation"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowConditionResultSchema(BaseModel):
@@ -288,9 +270,7 @@ class WorkflowConditionResultSchema(BaseModel):
         None, description="A human-readable description of the condition evaluation"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowSimulationActionResultSchema(BaseModel):
@@ -306,9 +286,7 @@ class WorkflowSimulationActionResultSchema(BaseModel):
         ..., description="The result of the action execution"
     )
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkflowSimulationResultSchema(BaseModel):
@@ -331,9 +309,7 @@ class WorkflowSimulationResultSchema(BaseModel):
     )
     simulation_time: datetime = Field(..., description="When the simulation was run")
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Workflow Step Schemas

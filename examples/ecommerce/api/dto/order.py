@@ -5,7 +5,7 @@ This module contains DTOs for order management and processing.
 """
 
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, fieldvalidator
+from pydantic import BaseModel, Field, fieldvalidator, ConfigDict
 from datetime import datetime
 
 from examples.ecommerce.api.dto.common import AddressDTO, MoneyDTO
@@ -24,13 +24,14 @@ class OrderItemDTO(BaseModel):
             raise ValueError("Quantity must be positive")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "product_id": "123e4567-e89b-12d3-a456-426614174000",
                 "quantity": 2,
             }
         }
+    )
 
 
 class OrderItemResponse(BaseModel):
@@ -43,8 +44,8 @@ class OrderItemResponse(BaseModel):
     quantity: int = Field(..., description="Quantity")
     total_price: MoneyDTO = Field(..., description="Total price for this item")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "product_id": "456e7890-e12d-34d5-a678-426614174000",
@@ -54,6 +55,7 @@ class OrderItemResponse(BaseModel):
                 "total_price": {"amount": 1299.99, "currency": "USD"},
             }
         }
+    )
 
 
 class PaymentDetailsDTO(BaseModel):
@@ -62,8 +64,8 @@ class PaymentDetailsDTO(BaseModel):
     method: str = Field(..., description="Payment method")
     details: Dict[str, Any] = Field(..., description="Payment details")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "method": "credit_card",
                 "details": {
@@ -74,6 +76,7 @@ class PaymentDetailsDTO(BaseModel):
                 },
             }
         }
+    )
 
 
 class PaymentResponse(BaseModel):
@@ -86,8 +89,8 @@ class PaymentResponse(BaseModel):
     transaction_id: Optional[str] = Field(None, description="Transaction ID")
     created_at: str = Field(..., description="Creation timestamp (ISO 8601)")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "amount": {"amount": 1299.99, "currency": "USD"},
@@ -97,6 +100,7 @@ class PaymentResponse(BaseModel):
                 "created_at": "2023-01-01T12:00:00Z",
             }
         }
+    )
 
 
 class CreateOrderRequest(BaseModel):
@@ -107,8 +111,8 @@ class CreateOrderRequest(BaseModel):
     billing_address: AddressDTO = Field(..., description="Billing address")
     notes: Optional[str] = Field(None, description="Order notes")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "items": [
                     {
@@ -135,6 +139,7 @@ class CreateOrderRequest(BaseModel):
                 "notes": "Please leave package at the door",
             }
         }
+    )
 
 
 class OrderResponse(BaseModel):
@@ -158,8 +163,8 @@ class OrderResponse(BaseModel):
     )
     notes: Optional[str] = Field(None, description="Order notes")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "user_id": "456e7890-e12d-34d5-a678-426614174000",
@@ -202,6 +207,7 @@ class OrderResponse(BaseModel):
                 "notes": "Please leave package at the door",
             }
         }
+    )
 
 
 class ProcessPaymentRequest(BaseModel):
@@ -210,8 +216,8 @@ class ProcessPaymentRequest(BaseModel):
     payment_method: str = Field(..., description="Payment method")
     payment_details: Dict[str, Any] = Field(..., description="Payment details")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "payment_method": "credit_card",
                 "payment_details": {
@@ -222,6 +228,7 @@ class ProcessPaymentRequest(BaseModel):
                 },
             }
         }
+    )
 
 
 class UpdateOrderStatusRequest(BaseModel):
@@ -245,13 +252,14 @@ class UpdateOrderStatusRequest(BaseModel):
             raise ValueError(f"Status must be one of: {', '.join(valid_statuses)}")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "shipped",
                 "notes": "Shipped via FedEx, tracking number: 123456789",
             }
         }
+    )
 
 
 class CancelOrderRequest(BaseModel):
@@ -259,5 +267,6 @@ class CancelOrderRequest(BaseModel):
 
     reason: Optional[str] = Field(None, description="Cancellation reason")
 
-    class Config:
-        json_schema_extra = {"example": {"reason": "Customer requested cancellation"}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"reason": "Customer requested cancellation"}}
+    )

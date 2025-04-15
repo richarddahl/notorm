@@ -4,8 +4,8 @@ Common data transfer objects for the API layer.
 This module contains DTOs shared across multiple API endpoints.
 """
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, EmailStr
+from typing import Any, List
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class AddressDTO(BaseModel):
@@ -17,8 +17,8 @@ class AddressDTO(BaseModel):
     postal_code: str = Field(..., description="ZIP or postal code")
     country: str = Field(default="USA", description="Country name")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "street": "123 Main St",
                 "city": "Anytown",
@@ -27,6 +27,7 @@ class AddressDTO(BaseModel):
                 "country": "USA",
             }
         }
+    )
 
 
 class MoneyDTO(BaseModel):
@@ -35,8 +36,9 @@ class MoneyDTO(BaseModel):
     amount: float = Field(..., description="Monetary amount")
     currency: str = Field(default="USD", description="Currency code (ISO 4217)")
 
-    class Config:
-        json_schema_extra = {"example": {"amount": 29.99, "currency": "USD"}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"amount": 29.99, "currency": "USD"}}
+    )
 
 
 class PaginationParams(BaseModel):
@@ -86,7 +88,8 @@ class ErrorResponse(BaseModel):
     detail: str = Field(..., description="Error message")
     code: str = Field(..., description="Error code")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"detail": "Resource not found", "code": "NOT_FOUND"}
         }
+    )

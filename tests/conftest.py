@@ -124,7 +124,7 @@ pytest.helpers = type(
     },
 )
 
-from uno.database.manager import DBManager
+from uno.database.db_manager import DBManager
 from uno.settings import uno_settings
 
 from uno.database.engine import sync_connection
@@ -132,7 +132,6 @@ from uno.database.engine import sync_connection
 from uno.database.session import async_session
 from uno.settings import uno_settings
 from uno.database.engine import SyncEngineFactory
-from uno.database.manager import DBManager
 from uno.sql.emitters.database import (
     DropDatabaseAndRoles,
     CreateRolesAndDatabase,

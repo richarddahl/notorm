@@ -24,25 +24,25 @@ class ConnectionConfig(BaseModel):
     # Additional driver-specific arguments
     connect_args: Optional[dict] = None
 
-    model_config = ConfigDict({"frozen": True})
-    
+    model_config = ConfigDict(frozen=True)
+
     def get_uri(self) -> str:
         """
         Construct a SQLAlchemy database URI from connection config.
-        
+
         Returns:
             str: SQLAlchemy connection URI string
         """
         import urllib.parse
-        
+
         # Determine driver to use - strip any 'postgresql+' prefix to avoid duplication
         driver = self.db_driver
         if driver.startswith("postgresql+"):
             driver = driver.replace("postgresql+", "")
-            
+
         # URL encode the password to handle special characters like %
         encoded_pw = urllib.parse.quote_plus(self.db_user_pw)
-        
+
         # Build the connection string
         if "psycopg" in driver or "postgresql" in driver:
             # PostgreSQL URI format

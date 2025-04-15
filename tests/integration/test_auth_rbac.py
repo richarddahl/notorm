@@ -28,7 +28,7 @@ from uno.domain.authorization import (
     TenantPolicy,
 )
 from uno.database.session import async_session
-from uno.database.schema_manager import SchemaManager
+from uno.database.db_manager import DBManager
 from uno.authorization.rlssql import (
     RowLevelSecurity,
     UserRowLevelSecurity,
@@ -111,7 +111,7 @@ class TestRolePermission(UnoModel):
 @pytest.fixture(scope="module")
 async def schema_manager():
     """Create a schema manager for testing."""
-    return SchemaManager()
+    return DBManager()
 
 
 @pytest.fixture(scope="module")

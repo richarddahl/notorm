@@ -51,6 +51,31 @@ class ReportErrorCode:
     REPORT_PERMISSION_DENIED = "REPORT-0903"
 
 
+# Generic Report Error class
+class ReportError(UnoError):
+    """Generic error for report operations."""
+    
+    def __init__(
+        self,
+        message: str,
+        error_code: str,
+        **context: Any
+    ):
+        """
+        Initialize a Report Error.
+        
+        Args:
+            message: The error message
+            error_code: The specific error code
+            **context: Additional context information
+        """
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            **context
+        )
+
+
 # Template errors
 class ReportTemplateNotFoundError(UnoError):
     """Error raised when a report template is not found."""

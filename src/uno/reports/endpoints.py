@@ -23,7 +23,7 @@ from fastapi import (
     status,
     FastAPI,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.api.endpoint import UnoEndpoint, ListRouter
@@ -99,9 +99,9 @@ class Rejson_schema_extrCreate(BaseModel):
     version: str = "1.0.0"
     fields: List[Dict[str, Any]] = []
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "name": "Customer Report",
                 "description": "Report showing customer information",
@@ -139,7 +139,8 @@ class Rejson_schema_extrCreate(BaseModel):
                     },
                 ],
             }
-        }
+        },
+    )
 
 
 class ReportTemplateUpdate(BaseModel):
@@ -150,8 +151,7 @@ class ReportTemplateUpdate(BaseModel):
     cache_policy: Optional[Dict[str, Any]] = None
     version: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ReportFieldCreate(BaseModel):
@@ -166,9 +166,9 @@ class ReportFieldCreate(BaseModel):
     is_visible: bool = True
     parent_field_id: Optional[str] = None
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "name": "total_value",
                 "display_name": "Total Value",
@@ -184,7 +184,8 @@ class ReportFieldCreate(BaseModel):
                     }
                 },
             }
-        }
+        },
+    )
 
 
 class ReportFieldUpdate(BaseModel):
@@ -199,8 +200,7 @@ class ReportFieldUpdate(BaseModel):
     is_visible: Optional[bool] = None
     parent_field_id: Optional[str] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ReportTriggerCreate(BaseModel):
@@ -212,16 +212,17 @@ class ReportTriggerCreate(BaseModel):
     query_id: Optional[str] = None
     is_active: bool = True
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "trigger_type": "scheduled",
                 "schedule": "interval:24:hours",
                 "trigger_config": {"run_on_holidays": False, "timezone": "UTC"},
                 "is_active": True,
             }
-        }
+        },
+    )
 
 
 class ReportTriggerUpdate(BaseModel):
@@ -233,8 +234,7 @@ class ReportTriggerUpdate(BaseModel):
     query_id: Optional[str] = None
     is_active: Optional[bool] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ReportOutputCreate(BaseModel):
@@ -244,9 +244,9 @@ class ReportOutputCreate(BaseModel):
     format_config: Dict[str, Any] = {}
     is_active: bool = True
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "output_type": "email",
                 "output_config": {
@@ -262,7 +262,8 @@ class ReportOutputCreate(BaseModel):
                 },
                 "is_active": True,
             }
-        }
+        },
+    )
 
 
 class ReportOutputUpdate(BaseModel):
@@ -272,17 +273,16 @@ class ReportOutputUpdate(BaseModel):
     format_config: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
-    class Config:
-        extra = "allow"
+    model_config = ConfigDict(extra="allow")
 
 
 class ReportExecuteRequest(BaseModel):
     parameters: Dict[str, Any] = {}
     user_id: Optional[str] = None
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "parameters": {
                     "start_date": "2023-01-01",
@@ -291,7 +291,8 @@ class ReportExecuteRequest(BaseModel):
                 },
                 "user_id": "user123",
             }
-        }
+        },
+    )
 
 
 class EventData(BaseModel):
@@ -300,9 +301,9 @@ class EventData(BaseModel):
     entity_id: Optional[str] = None
     data: Dict[str, Any] = {}
 
-    class Config:
-        extra = "allow"
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "example": {
                 "event_type": "order_created",
                 "entity_type": "order",
@@ -314,7 +315,8 @@ class EventData(BaseModel):
                     "status": "pending",
                 },
             }
-        }
+        },
+    )
 
 
 # Helper functions for converting between Result and HTTP responses

@@ -6,7 +6,7 @@ Note: Authentication is handled externally via JWT.
 """
 
 from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 
 from examples.ecommerce.api.dto.common import AddressDTO
 
@@ -26,8 +26,8 @@ class UserResponse(BaseModel):
     is_admin: bool = Field(..., description="Whether the user is an administrator")
     created_at: str = Field(..., description="Creation timestamp (ISO 8601)")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "username": "johndoe",
@@ -52,6 +52,7 @@ class UserResponse(BaseModel):
                 "created_at": "2023-01-01T12:00:00Z",
             }
         }
+    )
 
 
 class CreateUserRequest(BaseModel):
@@ -67,9 +68,8 @@ class CreateUserRequest(BaseModel):
     use_billing_for_shipping: bool = Field(
         False, description="Use billing address for shipping"
     )
-json_schema_extra
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "username": "johndoe",
                 "email": "john@example.com",
@@ -85,6 +85,7 @@ json_schema_extra
                 "use_billing_for_shipping": True,
             }
         }
+    )
 
 
 class UpdateUserRequest(BaseModel):
@@ -103,8 +104,8 @@ class UpdateUserRequest(BaseModel):
         None, description="Use billing address for shipping"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "first_name": "Johnny",
                 "phone": "555-987-6543",
@@ -117,3 +118,4 @@ class UpdateUserRequest(BaseModel):
                 "use_billing_for_shipping": True,
             }
         }
+    )

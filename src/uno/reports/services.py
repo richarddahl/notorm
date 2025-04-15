@@ -19,6 +19,7 @@ import re
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.base import ErrorCode
 from uno.dependencies.interfaces import UnoServiceProtocol
 from uno.reports.interfaces import (
     ReportTemplateServiceProtocol,
@@ -29,6 +30,7 @@ from uno.reports.interfaces import (
 )
 from uno.reports.errors import (
     ReportErrorCode,
+    ReportError,
     ReportTemplateNotFoundError,
     ReportFieldNotFoundError,
     ReportExecutionNotFoundError,

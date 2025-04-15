@@ -5,7 +5,7 @@ This module contains DTOs for product management and catalog browsing.
 """
 
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from examples.ecommerce.api.dto.common import MoneyDTO
 
@@ -23,10 +23,11 @@ class RatingDTO(BaseModel):
     score: int = Field(..., ge=1, le=5, description="Rating score (1-5)")
     comment: Optional[str] = Field(None, description="Rating comment")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"score": 5, "comment": "Excellent product, highly recommended!"}
         }
+    )
 
 
 class CreateProductRequest(BaseModel):
@@ -47,11 +48,11 @@ class CreateProductRequest(BaseModel):
             raise ValueError("Price must be positive")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Premium Laptop",
-        json_schema_extracription": "High-end laptop with 16GB RAM and 1TB SSD",
+                "description": "High-end laptop with 16GB RAM and 1TB SSD",
                 "price": 1299.99,
                 "currency": "USD",
                 "category_id": "electronics",
@@ -65,6 +66,7 @@ class CreateProductRequest(BaseModel):
                 },
             }
         }
+    )
 
 
 class UpdateProductRequest(BaseModel):
@@ -83,8 +85,8 @@ class UpdateProductRequest(BaseModel):
     attributes: Optional[Dict[str, str]] = Field(None, description="Product attributes")
     is_active: Optional[bool] = Field(None, description="Whether the product is active")
 
-    clasjson_schema_extra
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Premium Laptop X6",
                 "price": 1399.99,
@@ -92,6 +94,7 @@ class UpdateProductRequest(BaseModel):
                 "is_active": True,
             }
         }
+    )
 
 
 class ProductResponse(BaseModel):
@@ -110,8 +113,8 @@ class ProductResponse(BaseModel):
     ratings_count: int = Field(..., description="Number of ratings")
     created_at: str = Field(..., description="Creation timestamp (ISO 8601)")
 
-    clasjson_schema_extra
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "Premium Laptop",
@@ -133,6 +136,7 @@ class ProductResponse(BaseModel):
                 "created_at": "2023-01-01T12:00:00Z",
             }
         }
+    )
 
 
 class ProductSearchParams(BaseModel):
@@ -148,10 +152,10 @@ class ProductSearchParams(BaseModel):
     page: int = Field(default=1, ge=1, description="Page number")
     page_size: int = Field(default=20, ge=1, le=100, description="Items per page")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
-        json_schema_extrary": "laptop",
+                "description": "laptop",
                 "category_id": "electronics",
                 "min_price": 1000,
                 "max_price": 2000,
@@ -162,6 +166,7 @@ class ProductSearchParams(BaseModel):
                 "page_size": 20,
             }
         }
+    )
 
 
 class InventoryUpdateRequest(BaseModel):
@@ -173,9 +178,9 @@ class InventoryUpdateRequest(BaseModel):
     reason: str = Field(
         ..., min_length=1, description="Reason for the inventory change"
     )
-json_schema_extra
-    class Config:
-        json_schema_extra = {"example": {"change": 5, "reason": "Received new shipment"}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"change": 5, "reason": "Received new shipment"}}
+    )
 
 
 class AddRatingRequest(BaseModel):
@@ -184,8 +189,8 @@ class AddRatingRequest(BaseModel):
     score: int = Field(..., ge=1, le=5, description="Rating score (1-5)")
     comment: Optional[str] = Field(None, description="Rating comment")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"score": 5, "comment": "Excellent product, highly recommended!"}
         }
-json_schema_extra
+    )

@@ -8,6 +8,7 @@ with the recommended structure and boilerplate code.
 import os
 import shutil
 from typing import Dict, List, Optional, Any, Set
+from pydantic import ConfigDict
 
 from uno.devtools.codegen.formatter import format_code
 
@@ -19,11 +20,11 @@ def create_project(
     email: str = "",
     with_docker: bool = True,
     with_github_actions: bool = False,
-    output_dir: Optional[str] = None
+    output_dir: Optional[str] = None,
 ) -> str:
     """
     Create a new Uno project with the recommended structure.
-    
+
     Args:
         name: Project name (should be a valid Python package name)
         description: Project description
@@ -32,24 +33,26 @@ def create_project(
         with_docker: Include Docker configuration
         with_github_actions: Include GitHub Actions workflows
         output_dir: Output directory (defaults to current directory)
-        
+
     Returns:
         Path to the created project
     """
     # Set default output directory to current directory if not provided
     if output_dir is None:
         output_dir = os.getcwd()
-    
+
     # Create project directory
     project_dir = os.path.join(output_dir, name)
     os.makedirs(project_dir, exist_ok=True)
-    
+
     # Create project structure
     create_project_structure(project_dir, name, with_docker, with_github_actions)
-    
+
     # Create project files
-    create_project_files(project_dir, name, description, author, email, with_docker, with_github_actions)
-    
+    create_project_files(
+        project_dir, name, description, author, email, with_docker, with_github_actions
+    )
+
     return project_dir
 
 
@@ -59,11 +62,11 @@ def create_module(
     with_api: bool = True,
     with_models: bool = True,
     with_repositories: bool = True,
-    with_services: bool = True
+    with_services: bool = True,
 ) -> str:
     """
     Create a new module within an existing Uno project.
-    
+
     Args:
         name: Module name (should be a valid Python package name)
         project_dir: Path to the project directory
@@ -71,7 +74,7 @@ def create_module(
         with_models: Include models
         with_repositories: Include repositories
         with_services: Include services
-        
+
     Returns:
         Path to the created module
     """
@@ -80,22 +83,25 @@ def create_module(
     if not os.path.exists(src_dir):
         # Try to find a directory that might contain the source code
         candidates = [
-            os.path.join(project_dir, d) for d in os.listdir(project_dir)
+            os.path.join(project_dir, d)
+            for d in os.listdir(project_dir)
             if os.path.isdir(os.path.join(project_dir, d)) and not d.startswith(".")
         ]
-        
+
         for candidate in candidates:
             if os.path.exists(os.path.join(candidate, "__init__.py")):
                 src_dir = candidate
                 break
-    
+
     # Create module directory
     module_dir = os.path.join(src_dir, name)
     os.makedirs(module_dir, exist_ok=True)
-    
+
     # Create module files
-    create_module_files(module_dir, name, with_api, with_models, with_repositories, with_services)
-    
+    create_module_files(
+        module_dir, name, with_api, with_models, with_repositories, with_services
+    )
+
     return module_dir
 
 
@@ -103,11 +109,11 @@ def create_project_structure(
     project_dir: str,
     name: str,
     with_docker: bool = True,
-    with_github_actions: bool = False
+    with_github_actions: bool = False,
 ) -> None:
     """
     Create the directory structure for a new Uno project.
-    
+
     Args:
         project_dir: Path to the project directory
         name: Project name
@@ -119,7 +125,7 @@ def create_project_structure(
     os.makedirs(os.path.join(project_dir, "tests", "unit"), exist_ok=True)
     os.makedirs(os.path.join(project_dir, "tests", "integration"), exist_ok=True)
     os.makedirs(os.path.join(project_dir, "docs"), exist_ok=True)
-    
+
     # Create source code subdirectories
     src_dir = os.path.join(project_dir, "src", name)
     os.makedirs(os.path.join(src_dir, "api"), exist_ok=True)
@@ -129,11 +135,11 @@ def create_project_structure(
     os.makedirs(os.path.join(src_dir, "repositories"), exist_ok=True)
     os.makedirs(os.path.join(src_dir, "services"), exist_ok=True)
     os.makedirs(os.path.join(src_dir, "utils"), exist_ok=True)
-    
+
     # Create Docker directories if requested
     if with_docker:
         os.makedirs(os.path.join(project_dir, "docker"), exist_ok=True)
-    
+
     # Create GitHub Actions directories if requested
     if with_github_actions:
         os.makedirs(os.path.join(project_dir, ".github", "workflows"), exist_ok=True)
@@ -146,11 +152,11 @@ def create_project_files(
     author: str,
     email: str,
     with_docker: bool = True,
-    with_github_actions: bool = False
+    with_github_actions: bool = False,
 ) -> None:
     """
     Create the boilerplate files for a new Uno project.
-    
+
     Args:
         project_dir: Path to the project directory
         name: Project name
@@ -162,17 +168,20 @@ def create_project_files(
     """
     # Create package __init__ files
     create_file(os.path.join(project_dir, "src", "__init__.py"), "")
-    create_file(os.path.join(project_dir, "src", name, "__init__.py"), f'"""\\n{description}\\n"""\\n\\n__version__ = "0.1.0"\\n')
-    
+    create_file(
+        os.path.join(project_dir, "src", name, "__init__.py"),
+        f'"""\\n{description}\\n"""\\n\\n__version__ = "0.1.0"\\n',
+    )
+
     # Create subdirectory __init__ files
     for subdir in ["api", "core", "db", "models", "repositories", "services", "utils"]:
         create_file(os.path.join(project_dir, "src", name, subdir, "__init__.py"), "")
-    
+
     # Create test __init__ files
     create_file(os.path.join(project_dir, "tests", "__init__.py"), "")
     create_file(os.path.join(project_dir, "tests", "unit", "__init__.py"), "")
     create_file(os.path.join(project_dir, "tests", "integration", "__init__.py"), "")
-    
+
     # Create README.md
     readme_content = f"""# {name}
 
@@ -220,7 +229,7 @@ pytest
 This project is licensed under the terms of the MIT license.
 """
     create_file(os.path.join(project_dir, "README.md"), readme_content)
-    
+
     # Create pyproject.toml
     pyproject_content = f"""[build-system]
 requires = ["hatchling"]
@@ -311,7 +320,7 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 """
     create_file(os.path.join(project_dir, "pyproject.toml"), pyproject_content)
-    
+
     # Create main.py application entry point
     main_content = f"""#!/usr/bin/env python3
 \"\"\"
@@ -364,7 +373,7 @@ if __name__ == "__main__":
     )
 """
     create_file(os.path.join(project_dir, "src", name, "main.py"), main_content)
-    
+
     # Create Docker files if requested
     if with_docker:
         dockerfile_content = """FROM python:3.11-slim
@@ -399,8 +408,10 @@ EXPOSE 8000
 # Run the application
 CMD ["python", "-m", "src.main"]
 """
-        create_file(os.path.join(project_dir, "docker", "Dockerfile"), dockerfile_content)
-        
+        create_file(
+            os.path.join(project_dir, "docker", "Dockerfile"), dockerfile_content
+        )
+
         docker_compose_content = """version: '3.8'
 
 services:
@@ -440,8 +451,11 @@ networks:
 volumes:
   postgres-data:
 """
-        create_file(os.path.join(project_dir, "docker", "docker-compose.yml"), docker_compose_content)
-    
+        create_file(
+            os.path.join(project_dir, "docker", "docker-compose.yml"),
+            docker_compose_content,
+        )
+
     # Create GitHub Actions workflow if requested
     if with_github_actions:
         github_workflow_content = """name: CI
@@ -480,7 +494,10 @@ jobs:
       run: |
         pytest --cov=src
 """
-        create_file(os.path.join(project_dir, ".github", "workflows", "ci.yml"), github_workflow_content)
+        create_file(
+            os.path.join(project_dir, ".github", "workflows", "ci.yml"),
+            github_workflow_content,
+        )
 
 
 def create_module_files(
@@ -489,11 +506,11 @@ def create_module_files(
     with_api: bool = True,
     with_models: bool = True,
     with_repositories: bool = True,
-    with_services: bool = True
+    with_services: bool = True,
 ) -> None:
     """
     Create the boilerplate files for a new module.
-    
+
     Args:
         module_dir: Path to the module directory
         name: Module name
@@ -503,13 +520,15 @@ def create_module_files(
         with_services: Include services
     """
     # Create __init__.py
-    create_file(os.path.join(module_dir, "__init__.py"), f'"""\\n{name} module\\n"""\\n')
-    
+    create_file(
+        os.path.join(module_dir, "__init__.py"), f'"""\\n{name} module\\n"""\\n'
+    )
+
     # Create subdirectories and files
     if with_models:
         os.makedirs(os.path.join(module_dir, "models"), exist_ok=True)
         create_file(os.path.join(module_dir, "models", "__init__.py"), "")
-        
+
         # Create a sample model
         model_content = f"""from typing import Optional, List
 from datetime import datetime
@@ -534,12 +553,14 @@ class {name.capitalize()}(UnoModel):
     def __repr__(self) -> str:
         return f"<{name.capitalize()}(id={self.id}, name={self.name})>"
 """
-        create_file(os.path.join(module_dir, "models", f"{name.lower()}.py"), model_content)
-    
+        create_file(
+            os.path.join(module_dir, "models", f"{name.lower()}.py"), model_content
+        )
+
     if with_repositories:
         os.makedirs(os.path.join(module_dir, "repositories"), exist_ok=True)
         create_file(os.path.join(module_dir, "repositories", "__init__.py"), "")
-        
+
         # Create a sample repository
         repository_content = f"""from typing import List, Optional, Dict, Any, Union
 from uno.database.repository import UnoRepository
@@ -633,12 +654,15 @@ class {name.capitalize()}Repository(UnoRepository):
         except Exception as e:
             return Failure(e)
 """
-        create_file(os.path.join(module_dir, "repositories", f"{name.lower()}_repository.py"), repository_content)
-    
+        create_file(
+            os.path.join(module_dir, "repositories", f"{name.lower()}_repository.py"),
+            repository_content,
+        )
+
     if with_services:
         os.makedirs(os.path.join(module_dir, "services"), exist_ok=True)
         create_file(os.path.join(module_dir, "services", "__init__.py"), "")
-        
+
         # Create a sample service
         service_content = f"""from typing import List, Optional, Dict, Any, Union
 from uno.core.result import Result, Success, Failure
@@ -690,12 +714,15 @@ class {name.capitalize()}Service:
         \"\"\"
         return await self.repository.delete(id)
 """
-        create_file(os.path.join(module_dir, "services", f"{name.lower()}_service.py"), service_content)
-    
+        create_file(
+            os.path.join(module_dir, "services", f"{name.lower()}_service.py"),
+            service_content,
+        )
+
     if with_api:
         os.makedirs(os.path.join(module_dir, "api"), exist_ok=True)
         create_file(os.path.join(module_dir, "api", "__init__.py"), "")
-        
+
         # Create a sample API router
         api_content = f"""from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -727,8 +754,7 @@ class {name.capitalize()}Read({name.capitalize()}Base):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes = True)
 
 
 # Create router
@@ -877,20 +903,22 @@ async def delete_{name.lower()}(
             detail=f"{name.capitalize()} with ID {{id}} not found"
         )
 """
-        create_file(os.path.join(module_dir, "api", f"{name.lower()}_api.py"), api_content)
+        create_file(
+            os.path.join(module_dir, "api", f"{name.lower()}_api.py"), api_content
+        )
 
 
 def create_file(path: str, content: str) -> None:
     """
     Create a file with the given content.
-    
+
     Args:
         path: Path to the file
         content: Content to write to the file
     """
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    
+
     # Write content to file
     with open(path, "w") as f:
         f.write(content)

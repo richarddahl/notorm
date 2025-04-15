@@ -19,8 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.errors.base import ErrorCode
 from uno.reports.errors import (
+    ReportError,
     ReportErrorCode,
     ReportTemplateNotFoundError,
     ReportFieldNotFoundError,
@@ -58,20 +59,7 @@ from uno.reports.interfaces import (
 )
 
 
-class ReportError(UnoError):
-    """Base error class for report operations."""
-
-    def __init__(
-        self,
-        message: str,
-        error_code: str = ReportErrorCode.REPORT_OPERATION_FAILED,
-        **context: Any
-    ):
-        super().__init__(
-            message=message, 
-            error_code=error_code, 
-            **context
-        )
+# ReportError is now imported from uno.reports.errors
 
 
 class ReportTemplateRepository(

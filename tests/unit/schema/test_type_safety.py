@@ -12,7 +12,7 @@ in the improved schema and validation infrastructure.
 import pytest
 from typing import Dict, List, Optional, Type, Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from uno.schema.schema import UnoSchema, UnoSchemaConfig, PaginatedList
 from uno.schema.schema_manager import UnoSchemaManager
@@ -58,8 +58,8 @@ class TestListSchema(PaginatedList[TestModel]):
 
     __test__ = False  # Prevent pytest from collecting this class as a test
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "items": [
                     {"id": "1", "name": "Test", "email": "test@example.com", "age": 30}
@@ -70,6 +70,7 @@ class TestListSchema(PaginatedList[TestModel]):
                 "pages": 1,
             }
         }
+    )
 
 
 class TestUnoSchemaManager:

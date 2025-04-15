@@ -39,7 +39,7 @@ from uno.model import Model
 from uno.domain.repository import UnoDBRepository
 from uno.domain.core import Entity
 from uno.database.session import async_session
-from uno.database.db_manager import DatabaseManager
+from uno.database.db_manager import DBManager
 from uno.queries.batch_operations import (
     BatchOperations,
     BatchConfig,

@@ -11,7 +11,7 @@ following the project's API design pattern.
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from uno.core.errors.result import Result
 from uno.api.service_api import (
@@ -48,8 +48,8 @@ class AttributeCreateDTO(BaseModel):
         None, description="IDs of values associated with this attribute"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "attribute_type_id": "01H3ZEVKXN7PQWGW5KVS77PJ0Y",
                 "comment": "This is a test attribute",
@@ -60,6 +60,7 @@ class AttributeCreateDTO(BaseModel):
                 ],
             }
         }
+    )
 
 
 class AttributeUpdateDTO(BaseModel):
@@ -73,14 +74,15 @@ class AttributeUpdateDTO(BaseModel):
         None, description="IDs of values associated with this attribute"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "comment": "Updated comment",
                 "follow_up_required": True,
                 "value_ids": ["01H3ZEVKY6ZH3F41K5GS77PJ1Z"],
             }
         }
+    )
 
 
 class AttributeResponseDTO(BaseModel):
@@ -124,8 +126,8 @@ class AttributeTypeCreateDTO(BaseModel):
         None, description="IDs of meta types allowed as values"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Priority",
                 "text": "What is the priority of this item?",
@@ -137,6 +139,7 @@ class AttributeTypeCreateDTO(BaseModel):
                 "value_type_ids": ["01H3ZEVKY9PDSF51K5HS77PJ2A"],
             }
         }
+    )
 
 
 class AttributeTypeUpdateDTO(BaseModel):
@@ -169,8 +172,8 @@ class AttributeTypeUpdateDTO(BaseModel):
         None, description="IDs of meta types allowed as values"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "Updated Priority",
                 "text": "What is the priority level of this item?",
@@ -178,6 +181,7 @@ class AttributeTypeUpdateDTO(BaseModel):
                 "multiple_allowed": True,
             }
         }
+    )
 
 
 class AttributeTypeResponseDTO(BaseModel):
