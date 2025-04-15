@@ -12,6 +12,12 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast, Callab
 import logging
 import asyncio
 import contextlib
+from uno.database.errors import (
+    DatabaseTransactionError,
+    DatabaseTransactionConflictError,
+    DatabaseConnectionError,
+    DatabaseQueryTimeoutError,
+)
 
 from sqlalchemy import select, insert, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,14 +35,19 @@ from uno.core.async_integration import (
     AsyncCache,
 )
 from uno.core.async_utils import TaskGroup, timeout
-from uno.model import Model
-from uno.database.db import UnoDb
+from uno.database.pg_error_handler import (
+    with_pg_error_handling,
+    is_deadlock_error,
+    is_transient_error,
+    get_retry_delay_for_error,
+)
+from uno.model import UnoModel
 
-T = TypeVar('T', bound=Model)
+T = TypeVar('T', bound=UnoModel)
 R = TypeVar('R')
 
 
-class EnhancedUnoDb(UnoDb):
+class EnhancedUnoDb:
     """
     Enhanced async database operations with improved async patterns.
     
@@ -85,8 +96,13 @@ class EnhancedUnoDb(UnoDb):
         )
     
     @cancellable
-    @retry(max_attempts=3, retry_exceptions=[asyncio.TimeoutError])
+    @retry(
+        max_attempts=3, 
+        retry_exceptions=lambda ex: is_transient_error(ex) or isinstance(ex, asyncio.TimeoutError),
+        retry_delay_factory=lambda ex, attempt: get_retry_delay_for_error(ex) * attempt
+    )
     @timeout_handler(timeout_seconds=30.0, timeout_message="Database operation timed out")
+    @with_pg_error_handling(error_message="Failed to retrieve database record")
     async def get(
         self,
         model_class: Type[T],
@@ -135,6 +151,103 @@ class EnhancedUnoDb(UnoDb):
             query = select(model_class).where(pk_col == id)
             result = await session.execute(query)
             return result.scalars().first()
+            
+    @cancellable
+    @retry(
+        max_attempts=3, 
+        retry_exceptions=lambda ex: is_deadlock_error(ex),
+        retry_delay_factory=lambda ex, attempt: get_retry_delay_for_error(ex) * attempt
+    )
+    @with_pg_error_handling(error_message="Error during transaction execution")
+    async def execute_transaction(
+        self, 
+        operations: Callable[[AsyncSession], Awaitable[T]],
+        isolation_level: Optional[str] = None,
+        timeout_seconds: Optional[float] = None,
+    ) -> T:
+        """
+        Execute a series of operations in a transaction with proper error handling.
+        
+        Args:
+            operations: A callable that takes a session and returns a coroutine
+            isolation_level: Optional isolation level for the transaction
+                ("READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE")
+            timeout_seconds: Optional timeout in seconds for the transaction
+            
+        Returns:
+            The result of the operations
+            
+        Raises:
+            DatabaseTransactionError: If the transaction fails
+            DatabaseTransactionConflictError: If there is a deadlock or serialization failure
+            DatabaseConnectionError: If there is a connection error
+            DatabaseQueryTimeoutError: If the transaction times out
+        """
+        async with enhanced_async_session(factory=self.session_factory) as session:
+            # Set isolation level if provided
+            if isolation_level:
+                await session.execute(f"SET TRANSACTION ISOLATION LEVEL {isolation_level}")
+                
+            # Set statement timeout if provided
+            if timeout_seconds:
+                timeout_ms = int(timeout_seconds * 1000)
+                await session.execute(f"SET LOCAL statement_timeout = {timeout_ms}")
+            
+            # Use the timeout context manager if provided
+            timeout_ctx = timeout(timeout_seconds) if timeout_seconds else contextlib.nullcontext()
+            async with timeout_ctx:
+                try:
+                    # Start a new transaction
+                    async with session.begin():
+                        result = await operations(session)
+                        return result
+                except asyncio.TimeoutError:
+                    # Handle asyncio timeout separately
+                    self.logger.error(f"Transaction timed out after {timeout_seconds} seconds")
+                    raise DatabaseQueryTimeoutError(
+                        timeout_seconds=timeout_seconds,
+                        message=f"Transaction timed out after {timeout_seconds} seconds"
+                    )
+                    
+    @cancellable
+    @retry(
+        max_attempts=3, 
+        retry_exceptions=lambda ex: is_deadlock_error(ex),
+        retry_delay_factory=lambda ex, attempt: get_retry_delay_for_error(ex) * attempt
+    )
+    @with_pg_error_handling(error_message="Error during serializable transaction execution")
+    async def execute_serializable_transaction(
+        self, 
+        operations: Callable[[AsyncSession], Awaitable[T]],
+        timeout_seconds: Optional[float] = None,
+        retry_attempts: int = 3,
+    ) -> T:
+        """
+        Execute a series of operations in a serializable transaction.
+        
+        This method uses PostgreSQL's SERIALIZABLE isolation level, which provides
+        the strictest transaction isolation. If a serialization failure occurs,
+        it will automatically retry up to retry_attempts times.
+        
+        Args:
+            operations: A callable that takes a session and returns a coroutine
+            timeout_seconds: Optional timeout in seconds for the transaction
+            retry_attempts: Number of retry attempts for serialization failures
+            
+        Returns:
+            The result of the operations
+            
+        Raises:
+            DatabaseTransactionError: If the transaction fails
+            DatabaseTransactionConflictError: If there is a deadlock or serialization failure
+            DatabaseConnectionError: If there is a connection error
+            DatabaseQueryTimeoutError: If the transaction times out
+        """
+        return await self.execute_transaction(
+            operations=operations,
+            isolation_level="SERIALIZABLE",
+            timeout_seconds=timeout_seconds,
+        )
     
     @cancellable
     @retry(max_attempts=3, retry_exceptions=[asyncio.TimeoutError])
@@ -398,7 +511,7 @@ class EnhancedUnoDb(UnoDb):
         
         return results
     
-    def _get_model_class_by_name(self, name: str) -> Type[Model]:
+    def _get_model_class_by_name(self, name: str) -> Type[UnoModel]:
         """
         Get a model class by name.
         
@@ -411,14 +524,40 @@ class EnhancedUnoDb(UnoDb):
         Raises:
             ValueError: If the model class is not found
         """
-        # This is a simplified implementation and would need to be
-        # expanded to properly resolve model classes in a real application
-        # For now, we'll just raise an error
-        raise ValueError(f"Model class {name} not found")
+        # Import the model registry
+        from uno.registry import registry
+        
+        # Try to find the model class in the registry
+        if name in registry.models:
+            return registry.models[name]
+        
+        # If not in registry, try to find by scanning all loaded modules
+        import sys
+        import inspect
+        from uno.model import UnoModel
+        
+        for module_name, module in sys.modules.items():
+            if module_name.startswith('uno.'):
+                for obj_name, obj in inspect.getmembers(module):
+                    if (inspect.isclass(obj) and 
+                        issubclass(obj, UnoModel) and 
+                        obj.__name__ == name):
+                        return obj
+        
+        # If we can't find it, raise a more helpful error
+        raise ValueError(
+            f"Model class {name} not found. Make sure the model is registered "
+            f"in the registry or imported before accessing it."
+        )
     
     @cancellable
-    @retry(max_attempts=3, retry_exceptions=[asyncio.TimeoutError])
+    @retry(
+        max_attempts=3, 
+        retry_exceptions=lambda ex: is_transient_error(ex) or isinstance(ex, asyncio.TimeoutError),
+        retry_delay_factory=lambda ex, attempt: get_retry_delay_for_error(ex) * attempt
+    )
     @timeout_handler(timeout_seconds=30.0, timeout_message="Database operation timed out")
+    @with_pg_error_handling(error_message="Error executing operations in transaction")
     async def execute_in_transaction(
         self,
         operations: List[Callable[[AsyncSession], Awaitable[Any]]],

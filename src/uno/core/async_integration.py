@@ -86,28 +86,144 @@ def timeout_handler(
     return decorator
 
 
+import enum
+import random
+
+
+class BackoffStrategy(enum.Enum):
+    """Enumeration of backoff strategies for retry operations."""
+    CONSTANT = "constant"           # Fixed delay between retries
+    LINEAR = "linear"               # Linearly increasing delay
+    EXPONENTIAL = "exponential"     # Exponential increase (default)
+    FULL_JITTER = "full_jitter"     # Exponential with random jitter (0 to calculated delay)
+    EQUAL_JITTER = "equal_jitter"   # Exponential with equal jitter (half fixed, half random)
+    DECORRELATED = "decorrelated"   # Decorrelated jitter (independent of previous delays)
+
+
 def retry(
     max_attempts: int = 3,
     retry_exceptions: Union[Type[Exception], List[Type[Exception]]] = Exception,
     base_delay: float = 0.1,
     max_delay: float = 10.0,
+    backoff_strategy: Union[BackoffStrategy, str] = BackoffStrategy.EXPONENTIAL,
     backoff_factor: float = 2.0,
+    jitter_factor: float = 1.0,
+    retry_condition: Optional[Callable[[Exception], bool]] = None,
+    on_retry: Optional[Callable[[Exception, int, float], Awaitable[None]]] = None,
     logger: Optional[logging.Logger] = None,
 ) -> Callable[[Callable[..., Awaitable[T]]], Callable[..., Awaitable[T]]]:
     """
-    Decorator factory to add retry logic to an async function.
+    Enhanced decorator factory to add configurable retry logic to an async function.
     
     Args:
         max_attempts: Maximum number of attempts
         retry_exceptions: Exception or list of exceptions to retry on
-        base_delay: Initial delay between retries
-        max_delay: Maximum delay between retries
-        backoff_factor: Factor to multiply delay by on each attempt
+        base_delay: Initial delay between retries in seconds
+        max_delay: Maximum delay between retries in seconds
+        backoff_strategy: Strategy for calculating delays between retries
+        backoff_factor: Factor to apply in backoff calculation (depends on strategy)
+        jitter_factor: Amount of jitter to apply (0.0-1.0, only used with jitter strategies)
+        retry_condition: Optional function that takes the exception and returns True if should retry
+        on_retry: Optional async callback to execute before each retry attempt
         logger: Optional logger instance
         
     Returns:
         A decorator that applies retry logic to the decorated function
+    
+    Examples:
+        ```python
+        # Basic exponential backoff with default settings
+        @retry()
+        async def fetch_data():
+            ...
+            
+        # Retry only on network errors with full jitter
+        @retry(
+            retry_exceptions=[NetworkError, TimeoutError],
+            backoff_strategy=BackoffStrategy.FULL_JITTER,
+            max_attempts=5
+        )
+        async def api_call():
+            ...
+            
+        # Custom retry condition for specific database errors
+        def is_retryable_db_error(exc):
+            return (isinstance(exc, OperationalError) and 
+                   ("deadlock detected" in str(exc) or 
+                    "connection reset" in str(exc)))
+        
+        @retry(
+            retry_condition=is_retryable_db_error,
+            backoff_strategy="decorrelated",
+            max_attempts=3
+        )
+        async def update_record(self, session, data):
+            ...
+        ```
     """
+    # Convert string to enum if needed
+    if isinstance(backoff_strategy, str):
+        try:
+            backoff_strategy = BackoffStrategy(backoff_strategy.lower())
+        except ValueError:
+            raise ValueError(
+                f"Invalid backoff strategy: {backoff_strategy}. "
+                f"Valid options are: {', '.join(s.value for s in BackoffStrategy)}"
+            )
+    
+    # Validate parameters
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be at least 1")
+    if base_delay < 0:
+        raise ValueError("base_delay must be non-negative")
+    if max_delay < base_delay:
+        raise ValueError("max_delay must be greater than or equal to base_delay")
+    if backoff_factor <= 0 and backoff_strategy not in (BackoffStrategy.CONSTANT,):
+        raise ValueError("backoff_factor must be positive for non-constant strategies")
+    if not 0 <= jitter_factor <= 1:
+        raise ValueError("jitter_factor must be between 0 and 1")
+    
+    # State for decorrelated jitter
+    decorrelated_state = {"last_delay": base_delay}
+    
+    def calculate_delay(attempt: int) -> float:
+        """Calculate delay based on the selected strategy."""
+        if backoff_strategy == BackoffStrategy.CONSTANT:
+            delay = base_delay
+            
+        elif backoff_strategy == BackoffStrategy.LINEAR:
+            delay = base_delay + (attempt - 1) * backoff_factor
+            
+        elif backoff_strategy == BackoffStrategy.EXPONENTIAL:
+            delay = base_delay * (backoff_factor ** (attempt - 1))
+            
+        elif backoff_strategy == BackoffStrategy.FULL_JITTER:
+            # Exponential backoff with full random jitter
+            # Formula: random(0, base_delay * (backoff_factor ^ (attempt - 1)))
+            calculated = base_delay * (backoff_factor ** (attempt - 1))
+            delay = random.uniform(0, calculated * jitter_factor)
+            
+        elif backoff_strategy == BackoffStrategy.EQUAL_JITTER:
+            # Half exponential, half random
+            # Formula: (base_delay * (backoff_factor ^ (attempt - 1)) / 2) + random(0, same/2)
+            calculated = base_delay * (backoff_factor ** (attempt - 1))
+            half = calculated / 2
+            delay = half + random.uniform(0, half * jitter_factor)
+            
+        elif backoff_strategy == BackoffStrategy.DECORRELATED:
+            # Decorrelated jitter (AWS style)
+            # Formula: min(max_delay, random(base_delay, last_delay * 3))
+            last_delay = decorrelated_state["last_delay"]
+            delay = random.uniform(base_delay, last_delay * 3 * jitter_factor)
+            decorrelated_state["last_delay"] = delay
+            
+        else:
+            # Default to exponential if strategy is not recognized
+            delay = base_delay * (backoff_factor ** (attempt - 1))
+        
+        # Ensure we don't exceed the maximum delay
+        return min(delay, max_delay)
+    
     def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> T:
@@ -121,12 +237,23 @@ def retry(
             attempt = 0
             last_error = None
             
+            # Reset decorrelated state for each function call
+            if backoff_strategy == BackoffStrategy.DECORRELATED:
+                decorrelated_state["last_delay"] = base_delay
+            
             while attempt < max_attempts:
                 try:
                     return await func(*args, **kwargs)
                 except tuple(exceptions) as e:
                     last_error = e
                     attempt += 1
+                    
+                    # Check if we should retry based on custom condition
+                    if retry_condition and not retry_condition(e):
+                        log.debug(
+                            f"Function {func.__name__} failed with non-retryable error: {str(e)}"
+                        )
+                        raise
                     
                     if attempt >= max_attempts:
                         log.warning(
@@ -135,13 +262,18 @@ def retry(
                         )
                         raise
                     
-                    # Calculate delay with exponential backoff
-                    delay = min(base_delay * (backoff_factor ** (attempt - 1)), max_delay)
+                    # Calculate delay based on strategy
+                    delay = calculate_delay(attempt)
                     
                     log.debug(
                         f"Function {func.__name__} failed (attempt {attempt}/{max_attempts}). "
-                        f"Retrying in {delay:.2f}s... Error: {str(e)}"
+                        f"Retrying in {delay:.2f}s using {backoff_strategy.value} strategy... "
+                        f"Error: {str(e)}"
                     )
+                    
+                    # Execute retry callback if provided
+                    if on_retry:
+                        await on_retry(e, attempt, delay)
                     
                     await asyncio.sleep(delay)
             

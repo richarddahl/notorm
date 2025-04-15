@@ -66,11 +66,11 @@ This document outlines the absolute minimal features required for uno to be used
 - ✅ Computed fields support for derived data
 
 **Needs:**
-- Create integration tests for complex API scenarios
-- Add more examples of custom endpoint behaviors 
-- Create authentication and authorization examples
-- Add middleware examples for cross-cutting concerns
-- Implement standard support for HATEOAS links
+- ✅ Create integration tests for complex API scenarios
+- ✅ Add more examples of custom endpoint behaviors 
+- ✅ Create authentication and authorization examples
+- ✅ Add middleware examples for cross-cutting concerns
+- ✅ Implement standard support for HATEOAS links
 
 ## 5. Schema Validation (UnoSchema)
 
