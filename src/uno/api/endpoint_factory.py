@@ -2,18 +2,28 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""
-Endpoint factory component for UnoObj models.
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
 
-This module provides functionality for creating FastAPI endpoints for UnoObj models.
+"""
+Endpoint factory for creating FastAPI endpoints for domain models.
+
+This module provides a factory for creating standardized FastAPI endpoints
+for domain models, making it easy to expose model operations through a
+RESTful API with consistent patterns and error handling.
 """
 
-from typing import Dict, Type, List, Optional, Any
+import logging
+import inspect
+import traceback
+from typing import Dict, Type, List, Optional, Any, Union, Callable, Set
 
 from pydantic import BaseModel
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 
 from uno.api.endpoint import (
+    UnoEndpoint,
     CreateEndpoint,
     ViewEndpoint,
     ListEndpoint,
@@ -22,14 +32,38 @@ from uno.api.endpoint import (
     ImportEndpoint,
 )
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
+
+class EndpointCreationError(Exception):
+    """Error raised when an endpoint cannot be created."""
+    
+    def __init__(self, endpoint_type: str, model_name: str, cause: Exception):
+        """
+        Initialize the error.
+        
+        Args:
+            endpoint_type: Type of endpoint (Create, View, etc.)
+            model_name: Name of the model
+            cause: Original exception
+        """
+        self.endpoint_type = endpoint_type
+        self.model_name = model_name
+        self.cause = cause
+        super().__init__(f"Error creating {endpoint_type} endpoint for {model_name}: {cause}")
+
 
 class UnoEndpointFactory:
     """
-    Factory for creating FastAPI endpoints for UnoObj models.
-
-    This class handles the creation of FastAPI endpoints for UnoObj models.
+    Factory for creating FastAPI endpoints for domain models.
+    
+    This class simplifies the creation of standardized API endpoints for
+    domain models, ensuring consistent behavior and error handling across
+    your API.
     """
 
+    # Map of endpoint type names to endpoint classes
     ENDPOINT_TYPES = {
         "Create": CreateEndpoint,
         "View": ViewEndpoint,
@@ -47,43 +81,183 @@ class UnoEndpointFactory:
         self,
         app: FastAPI,
         model_obj: Any,
-        endpoints: List[str] = None,
-        endpoint_tags: List[str] = None,
-    ) -> None:
+        endpoints: Optional[List[str]] = None,
+        endpoint_tags: Optional[List[str]] = None,
+        router: Optional[APIRouter] = None,
+        path_prefix: Optional[str] = None,
+        include_in_schema: bool = True,
+        status_codes: Optional[Dict[str, int]] = None,
+    ) -> Dict[str, UnoEndpoint]:
         """
         Create endpoints for a model object.
 
         Args:
             app: The FastAPI application
             model_obj: The model object to create endpoints for
-            endpoints: The types of endpoints to create (defaults to all)
+            endpoints: The types of endpoints to create (defaults to standard CRUD)
             endpoint_tags: The tags to apply to the endpoints
+            router: Optional router to use instead of app directly
+            path_prefix: Optional path prefix for all endpoints
+            include_in_schema: Whether to include endpoints in OpenAPI schema
+            status_codes: Optional mapping of endpoint types to status codes
+            
+        Returns:
+            Dictionary mapping endpoint types to created endpoint instances
+            
+        Raises:
+            EndpointCreationError: If an endpoint couldn't be created
+            ValueError: If invalid arguments are provided
         """
-        if not endpoints:
-            return
-        endpoints = endpoints or [
-            "Create",
-            "View",
-            "List",
-            "Update",
-            "Delete",
-            "Import",
-        ]
-
+        # Validate inputs
+        if not app and not router:
+            raise ValueError("Either app or router must be provided")
+            
+        if not model_obj:
+            raise ValueError("Model object must be provided")
+            
+        # Get model name for logging
+        model_name = getattr(model_obj, '__name__', model_obj.__class__.__name__)
+        
+        # Use standard endpoints if none specified
+        if endpoints is None:
+            endpoints = ["Create", "View", "List", "Update", "Delete"]
+        elif not endpoints:
+            logger.info(f"No endpoints specified for {model_name}, skipping")
+            return {}
+        
+        # Initialize result
+        created_endpoints = {}
+        
+        # Prepare status codes
+        status_codes = status_codes or {}
+        
+        # Keep track of failed endpoints
+        failed_endpoints = []
+        
+        # Log endpoint creation start
+        logger.info(f"Creating {len(endpoints)} endpoints for {model_name}: {', '.join(endpoints)}")
+        
+        # Create each endpoint
         for endpoint_type in endpoints:
             if endpoint_type not in self.ENDPOINT_TYPES:
+                logger.warning(f"Unknown endpoint type '{endpoint_type}', skipping")
                 continue
 
             endpoint_class = self.ENDPOINT_TYPES[endpoint_type]
+            
+            # Get status code if specified
+            status_code = status_codes.get(endpoint_type)
 
             try:
-                endpoint_class(
-                    model=model_obj,
-                    app=app,
-                )
+                # Prepare endpoint parameters
+                endpoint_params = {
+                    "model": model_obj,
+                    "app": app if not router else None,
+                    "include_in_schema": include_in_schema,
+                }
+                
+                # Add optional parameters if provided
+                if router:
+                    endpoint_params["router"] = router
+                    
+                if path_prefix:
+                    endpoint_params["path_prefix"] = path_prefix
+                    
+                if endpoint_tags:
+                    endpoint_params["tags"] = endpoint_tags
+                    
+                if status_code:
+                    endpoint_params["status_code"] = status_code
+                
+                # Filter out parameters not accepted by the endpoint
+                valid_params = self._filter_valid_params(endpoint_class, endpoint_params)
+                
+                # Create the endpoint
+                endpoint = endpoint_class(**valid_params)
+                
+                # Add to result dictionary
+                created_endpoints[endpoint_type] = endpoint
+                
+                logger.info(f"Created {endpoint_type} endpoint for {model_name}")
+                
             except Exception as e:
                 # Log the error but continue with other endpoints
-                print(
-                    f"Error creating {endpoint_type} endpoint for {model_obj.__class__.__name__}: {e}"
+                logger.error(
+                    f"Error creating {endpoint_type} endpoint for {model_name}: {str(e)}"
                 )
-                raise e
+                logger.debug(traceback.format_exc())
+                
+                # Add to failed endpoints
+                failed_endpoints.append(endpoint_type)
+        
+        # Log creation summary
+        if failed_endpoints:
+            logger.warning(
+                f"Created {len(created_endpoints)}/{len(endpoints)} endpoints for {model_name}. "
+                f"Failed endpoints: {', '.join(failed_endpoints)}"
+            )
+        else:
+            logger.info(f"Successfully created {len(created_endpoints)} endpoints for {model_name}")
+                
+        return created_endpoints
+    
+    def _filter_valid_params(self, endpoint_class: Type[UnoEndpoint], params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Filter parameters to include only those accepted by the endpoint class.
+        
+        Args:
+            endpoint_class: The endpoint class
+            params: Parameters dictionary
+            
+        Returns:
+            Filtered parameters dictionary
+        """
+        if not hasattr(endpoint_class, '__init__'):
+            return params
+            
+        init_signature = inspect.signature(endpoint_class.__init__)
+        valid_params = {}
+        
+        for name, value in params.items():
+            if name in init_signature.parameters or init_signature.parameters.get('kwargs'):
+                valid_params[name] = value
+                
+        return valid_params
+    
+    def get_endpoint_class(self, endpoint_type: str) -> Optional[Type[UnoEndpoint]]:
+        """
+        Get the endpoint class for a given endpoint type.
+        
+        Args:
+            endpoint_type: The endpoint type name
+            
+        Returns:
+            The endpoint class or None if not found
+        """
+        return self.ENDPOINT_TYPES.get(endpoint_type)
+    
+    def register_endpoint_type(self, name: str, endpoint_class: Type[UnoEndpoint]) -> None:
+        """
+        Register a custom endpoint type.
+        
+        Args:
+            name: The name of the endpoint type
+            endpoint_class: The endpoint class
+            
+        Raises:
+            ValueError: If an endpoint with the same name already exists
+        """
+        if name in self.ENDPOINT_TYPES:
+            raise ValueError(f"Endpoint type '{name}' already registered")
+            
+        self.ENDPOINT_TYPES[name] = endpoint_class
+        logger.info(f"Registered custom endpoint type: {name}")
+    
+    def get_available_endpoints(self) -> Set[str]:
+        """
+        Get the names of all available endpoint types.
+        
+        Returns:
+            Set of endpoint type names
+        """
+        return set(self.ENDPOINT_TYPES.keys())
