@@ -1,8 +1,8 @@
-# Uno Framework Integration Summary
+# uno Framework Integration Summary
 
 ## Introduction
 
-This document summarizes the integration architecture between the key components of the Uno framework: UnoObj, UnoModel, UnoDB, DBManager, and UnoEndpoint. This integration forms the foundation of the library, enabling a clean separation of concerns while maintaining a cohesive data flow.
+This document summarizes the integration architecture between the key components of uno: UnoObj, UnoModel, UnoDB, DBManager, and UnoEndpoint. This integration forms the foundation of the library, enabling a clean separation of concerns while maintaining a cohesive data flow.
 
 ## Key Components
 
@@ -294,7 +294,7 @@ This approach allows you to verify integration patterns without getting entangle
 
 ## Conclusion
 
-The integration between UnoObj, UnoModel, UnoDB, DBManager, and UnoEndpoint provides a solid foundation for the Uno framework. By maintaining a clear separation of concerns while ensuring smooth data flow between components, the architecture promotes maintainable, testable, and flexible code.
+The integration between UnoObj, UnoModel, UnoDB, DBManager, and UnoEndpoint provides a solid foundation for uno. By maintaining a clear separation of concerns while ensuring smooth data flow between components, the architecture promotes maintainable, testable, and flexible code.
 
 This architecture allows for business logic to be developed independently of database concerns and API implementation, while still ensuring that data is properly validated, stored, and exposed through RESTful interfaces. The schema-based approach to data transformation provides additional flexibility for different use cases and API requirements.
 

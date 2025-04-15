@@ -1,6 +1,6 @@
 # Creating Plugins
 
-This guide walks you through the process of creating a plugin for the Uno framework, from basic structure to advanced features.
+This guide walks you through the process of creating a plugin for uno, from basic structure to advanced features.
 
 ## Plugin Structure
 
@@ -828,4 +828,4 @@ return os.path.join(os.path.expanduser("~"), ".uno", "plugins", self.id)
 9. **Logging**: Use the provided logger for meaningful log messages
 10. **Testing**: Write tests for your plugin to ensure it works as expected
 
-By following these guidelines, you can create robust, maintainable plugins that enhance the Uno framework in powerful ways.
+By following these guidelines, you can create robust, maintainable plugins that enhance uno in powerful ways.

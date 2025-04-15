@@ -10,7 +10,7 @@ Modern applications often need to perform operations that:
 - Need to be retried on failure (e.g., external API calls)
 - Should be processed in a distributed manner (e.g., parallel processing)
 
-The Uno Background Processing system is designed to address these needs with a flexible, scalable architecture.
+The uno Background Processing system is designed to address these needs with a flexible, scalable architecture.
 
 ## Architecture
 

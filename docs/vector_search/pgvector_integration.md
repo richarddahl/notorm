@@ -1,6 +1,6 @@
 # PostgreSQL pgvector Integration
 
-This document explains how the Uno Framework integrates with pgvector to provide powerful vector search capabilities.
+This document explains how the uno Framework integrates with pgvector to provide powerful vector search capabilities.
 
 ## What is pgvector?
 
@@ -10,9 +10,9 @@ This document explains how the Uno Framework integrates with pgvector to provide
 2. Efficient vector similarity search using multiple distance metrics
 3. Advanced indexing for fast search on large vector collections
 
-## Integration with Uno Framework
+## Integration with uno Framework
 
-Uno's pgvector integration provides:
+uno's pgvector integration provides:
 
 1. **Automatic embedding generation** through database triggers
 2. **Efficient indexing** with HNSW and IVF-Flat algorithms

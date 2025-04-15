@@ -4,7 +4,7 @@ Structured event logging provides a consistent, searchable way to track and anal
 
 ## Overview
 
-The event logging system in Uno goes beyond traditional logging by:
+The event logging system in uno goes beyond traditional logging by:
 
 - Using structured data instead of unstructured text
 - Categorizing events by type and severity

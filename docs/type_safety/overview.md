@@ -1,8 +1,8 @@
-# Type Safety in Uno Framework
+# Type Safety in uno Framework
 
 ## Overview
 
-The Uno framework now features enhanced type safety and validation mechanisms to help catch errors at compile time and runtime. This document explains the key components and how to use them effectively.
+The uno framework now features enhanced type safety and validation mechanisms to help catch errors at compile time and runtime. This document explains the key components and how to use them effectively.
 
 ## Key Components
 

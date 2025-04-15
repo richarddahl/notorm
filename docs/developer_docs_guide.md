@@ -1,6 +1,6 @@
 # Comprehensive Developer Documentation Guide
 
-This guide provides instructions for creating comprehensive documentation for the Uno framework. Following these guidelines ensures consistency and high quality across all documentation.
+This guide provides instructions for creating comprehensive documentation for uno. Following these guidelines ensures consistency and high quality across all documentation.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ This guide provides instructions for creating comprehensive documentation for th
 
 ## Documentation Structure
 
-Uno documentation is organized into the following structure:
+uno documentation is organized into the following structure:
 
 - **API Reference**: Automatically generated from code docstrings
 - **Guides**: Step-by-step tutorials for common tasks
@@ -217,7 +217,7 @@ Raises:
 
 ```python
 """
-Database engine for Uno framework.
+Database engine for uno framework.
 
 This module provides a database engine implementation that supports
 both synchronous and asynchronous operations, connection pooling,
@@ -262,7 +262,7 @@ async_engine = create_engine('postgresql://user:pass@localhost/dbname', ```
 ```markdown
 # Database Engine
 
-The database engine is the core component for database interactions in Uno. It provides connection management, pooling, and query execution capabilities.
+The database engine is the core component for database interactions in uno. It provides connection management, pooling, and query execution capabilities.
 
 ## Overview
 

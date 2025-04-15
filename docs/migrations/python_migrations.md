@@ -1,6 +1,6 @@
 # Python Migrations
 
-Python migrations provide a more flexible way to define complex database schema changes using Python code. This guide explains how to create and work with Python migrations in the Uno framework.
+Python migrations provide a more flexible way to define complex database schema changes using Python code. This guide explains how to create and work with Python migrations in uno.
 
 ## When to Use Python Migrations
 

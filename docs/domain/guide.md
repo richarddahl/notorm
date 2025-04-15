@@ -1,6 +1,6 @@
 # Domain-Driven Design Guide
 
-This guide introduces domain-driven design (DDD) concepts in the Uno framework and provides practical examples of implementing business logic using the DDD approach.
+This guide introduces domain-driven design (DDD) concepts in uno and provides practical examples of implementing business logic using the DDD approach.
 
 ## Introduction to Domain-Driven Design
 
@@ -13,7 +13,7 @@ Domain-Driven Design is an approach to software development that focuses on unde
 
 ## Core Components
 
-The Uno framework provides several core components for implementing DDD:
+The uno framework provides several core components for implementing DDD:
 
 ### Entities
 
@@ -207,4 +207,4 @@ return user
 
 ## Example Application
 
-Check out the [example.py](example.py) file for a complete example of using domain-driven design with the Uno framework.
+Check out the [example.py](example.py) file for a complete example of using domain-driven design with uno.

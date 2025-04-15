@@ -1,6 +1,6 @@
 # Structured Logging
 
-The Uno framework provides a structured logging system that integrates with the error handling framework, allowing for consistent and contextual logging throughout the application.
+The uno framework provides a structured logging system that integrates with the error handling framework, allowing for consistent and contextual logging throughout the application.
 
 ## Core Concepts
 

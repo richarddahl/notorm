@@ -1,11 +1,11 @@
 # Vector Search Quick Start
 
-This guide will help you get started with vector search functionality in Uno.
+This guide will help you get started with vector search functionality in uno.
 
 ## Prerequisites
 
 - Docker environment set up (see Docker First documentation in the project root)
-- Uno installed and configured
+- uno installed and configured
 
 ## Step 1: Start the Docker Environment
 

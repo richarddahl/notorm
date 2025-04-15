@@ -1,6 +1,6 @@
 # Async-First Architecture
 
-The Uno framework implements a comprehensive async-first architecture that extends beyond simply using Python's asyncio. This architecture ensures robust handling of asynchronous operations with proper cancellation, error handling, and resource management.
+The uno framework implements a comprehensive async-first architecture that extends beyond simply using Python's asyncio. This architecture ensures robust handling of asynchronous operations with proper cancellation, error handling, and resource management.
 
 ## Core Components
 
@@ -250,7 +250,7 @@ Robust error handling:
 
 ## Integration with Other Components
 
-The Async-First Architecture integrates with other Uno framework components:
+The Async-First Architecture integrates with other uno framework components:
 
 - **DDD**: Async repository implementations
 - **CQRS**: Async command and query handling

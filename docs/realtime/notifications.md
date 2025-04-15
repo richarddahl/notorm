@@ -1,6 +1,6 @@
 # Notification System
 
-The notification system in the Uno framework provides a comprehensive solution for creating, managing, and delivering real-time notifications to users through multiple channels.
+The notification system in uno provides a comprehensive solution for creating, managing, and delivering real-time notifications to users through multiple channels.
 
 ## Overview
 

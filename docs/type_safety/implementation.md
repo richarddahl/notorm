@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This guide explains how to implement type safety in your code when extending the Uno framework. Following these guidelines will help catch errors at compile time and make your code more maintainable.
+This guide explains how to implement type safety in your code when extending uno. Following these guidelines will help catch errors at compile time and make your code more maintainable.
 
 ## Using Protocols
 

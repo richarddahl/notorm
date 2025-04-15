@@ -2,7 +2,7 @@
 
 This guide helps you decide which architectural pattern to use for different parts of your application.
 
-With Uno's new unified database architecture, both patterns can share the same database layer components, making the decision less about technical constraints and more about application design considerations.
+With uno's new unified database architecture, both patterns can share the same database layer components, making the decision less about technical constraints and more about application design considerations.
 
 ## Quick Decision Table
 
@@ -116,7 +116,7 @@ This mixed approach leverages the strengths of both patterns.
 
 ## Unified Database Architecture
 
-Uno's new database architecture provides a foundation that works with both patterns:
+uno's new database architecture provides a foundation that works with both patterns:
 
 | Component | UnoObj Integration | Dependency Injection Integration |
 |-----------|-------------------|--------------------------------|
@@ -178,7 +178,7 @@ This evolutionary approach allows you to balance development speed with architec
 
 Both patterns have their place in a well-designed application. The key is choosing the right pattern for each specific component based on its requirements, complexity, and future maintenance needs.
 
-With Uno's unified database architecture, you can make these decisions based on application design considerations rather than technical limitations. The shared database layer makes it possible to combine both patterns effectively and evolve your application over time.
+With uno's unified database architecture, you can make these decisions based on application design considerations rather than technical limitations. The shared database layer makes it possible to combine both patterns effectively and evolve your application over time.
 
 When in doubt:
 - Default to UnoObj for simpler domains to gain development speed
@@ -186,4 +186,4 @@ When in doubt:
 - Use the unified database architecture components regardless of your pattern choice
 - Consider a hybrid approach for complex applications
 
-The most successful Uno applications often use UnoObj for rapid development of CRUD features and dependency injection for complex business logic, all built on the foundation of the unified database architecture.
+The most successful uno applications often use UnoObj for rapid development of CRUD features and dependency injection for complex business logic, all built on the foundation of the unified database architecture.

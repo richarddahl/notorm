@@ -1,6 +1,6 @@
 # Security Framework
 
-The Uno Security Framework provides comprehensive security features for Uno applications, including encryption, authentication, audit logging, and security testing.
+The uno Security Framework provides comprehensive security features for uno applications, including encryption, authentication, audit logging, and security testing.
 
 ## Key Components
 
@@ -13,7 +13,7 @@ The security framework consists of several key components:
 
 ## Getting Started
 
-To use the Uno Security Framework, you first need to create a `SecurityManager` instance:
+To use the uno Security Framework, you first need to create a `SecurityManager` instance:
 
 ```python
 from uno.security import SecurityManager
@@ -316,7 +316,7 @@ is_allowed = security_manager.validate_host("example.com")
 
 ## Best Practices
 
-Here are some best practices for using the Uno Security Framework:
+Here are some best practices for using the uno Security Framework:
 
 1. **Use strong encryption**: Always use strong encryption algorithms like AES-GCM for sensitive data.
 2. **Rotate keys regularly**: Rotate encryption keys regularly to limit the impact of a key compromise.

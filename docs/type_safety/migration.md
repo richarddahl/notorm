@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This guide explains how to migrate existing code to use the enhanced type safety features of the Uno framework. The migration process can be done incrementally, allowing you to improve type safety gradually.
+This guide explains how to migrate existing code to use the enhanced type safety features of uno. The migration process can be done incrementally, allowing you to improve type safety gradually.
 
 ## Migration Steps
 

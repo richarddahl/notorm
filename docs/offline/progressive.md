@@ -4,7 +4,7 @@ Progressive Enhancement is a strategy for building web applications that deliver
 
 ## Overview
 
-The Progressive Enhancement module in Uno provides a flexible framework for adapting application features based on:
+The Progressive Enhancement module in uno provides a flexible framework for adapting application features based on:
 
 1. **Network Connectivity**: From offline to excellent connectivity
 2. **Device Capabilities**: Memory, storage, CPU, battery status

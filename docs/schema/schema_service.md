@@ -4,7 +4,7 @@ The Schema Manager Service provides a centralized way to create and manage schem
 
 ## Overview
 
-Schemas in Uno are Pydantic BaseModels used to communicate data between layers:
+Schemas in uno are Pydantic BaseModels used to communicate data between layers:
 - Business logic (UnoObj)
 - Database (UnoDB)
 - FastAPI endpoints (UnoEndpoints)

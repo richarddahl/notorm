@@ -1,10 +1,10 @@
 # WebSocket Implementation
 
-The Uno framework provides a robust WebSocket implementation for bidirectional real-time communication between server and clients. This document covers how to use and configure the WebSocket system.
+The uno framework provides a robust WebSocket implementation for bidirectional real-time communication between server and clients. This document covers how to use and configure the WebSocket system.
 
 ## Architecture
 
-The WebSocket implementation in Uno is built with a layered architecture:
+The WebSocket implementation in uno is built with a layered architecture:
 
 1. **WebSocketManager**: Central manager that handles connections, message routing, and broadcasting
 2. **WebSocketConnection**: Represents a single client connection with its lifecycle

@@ -1,14 +1,15 @@
-# Dependency Injection in Uno Framework
+
+# Dependency Injection in uno Framework
 
 ## Overview
 
-The Uno framework provides a robust dependency injection (DI) system that helps organize application components, manage their lifecycle, and improve testability. The DI system is designed to be flexible, type-safe, and efficient.
+The uno framework provides a robust dependency injection (DI) system that helps organize application components, manage their lifecycle, and improve testability. The DI system is designed to be flexible, type-safe, and efficient.
 
 ## Key Concepts
 
 ### Services
 
-Services are the building blocks of your application. They encapsulate specific functionality and can depend on other services. The Uno framework's DI system manages the lifecycle of services and resolves their dependencies automatically.
+Services are the building blocks of your application. They encapsulate specific functionality and can depend on other services. The uno framework's DI system manages the lifecycle of services and resolves their dependencies automatically.
 
 ### Service Scopes
 
@@ -59,43 +60,27 @@ from uno.dependencies.decorators import singleton, scoped, transient
 
 # Register a singleton service
 @singleton
-class ConfigService:```
-
-def __init__(self):```
-
-self.config = {}
-```
-```
+class ConfigService:
+    def __init__(self):
+        self.config = {}
 
 # Register a singleton service with an interface
 @singleton(IConfigService)
-class ConfigServiceImpl:```
-
-def __init__(self):```
-
-self.config = {}
-```
-```
+class ConfigServiceImpl:
+    def __init__(self):
+        self.config = {}
 
 # Register a scoped service
 @scoped(IDatabaseService)
-class DatabaseService:```
-
-def __init__(self):```
-
-self.connection = None
-```
-```
+class DatabaseService:
+    def __init__(self):
+        self.connection = None
 
 # Register a transient service
 @transient(ILoggerService)
-class LoggerService:```
-
-def __init__(self):```
-
-self.logs = []
-```
-```
+class LoggerService:
+    def __init__(self):
+        self.logs = []
 ```
 
 ## Resolving Services
@@ -112,10 +97,8 @@ provider = get_service_provider()
 config_service = provider.get_service(IConfigService)
 
 # Get a service in a scope
-with provider.create_scope() as scope:```
-
-db_service = scope.resolve(IDatabaseService)
-```
+with provider.create_scope() as scope:
+    db_service = scope.resolve(IDatabaseService)
 ```
 
 ### Using Decorators
@@ -125,30 +108,22 @@ from uno.dependencies.decorators import inject, inject_params
 
 # Inject dependencies by type
 @inject(IConfigService, IDatabaseService)
-def process_data(config_service, db_service):```
-
-# Use the services
-pass
-```
+def process_data(config_service, db_service):
+    # Use the services
+    pass
 
 # Inject dependencies by parameter type annotations
 @inject_params()
-def process_data(config_service: IConfigService, db_service: IDatabaseService):```
-
-# Use the services
-pass
-```
+def process_data(config_service: IConfigService, db_service: IDatabaseService):
+    # Use the services
+    pass
 
 # Make a class's constructor use dependency injection
 @injectable_class()
-class DataProcessor:```
-
-def __init__(self, config_service: IConfigService, db_service: IDatabaseService):```
-
-self.config_service = config_service
-self.db_service = db_service
-```
-```
+class DataProcessor:
+    def __init__(self, config_service: IConfigService, db_service: IDatabaseService):
+        self.config_service = config_service
+        self.db_service = db_service
 ```
 
 ## Scopes and Lifecycle Management
@@ -161,18 +136,14 @@ from uno.dependencies.modern_provider import get_service_provider
 provider = get_service_provider()
 
 # Synchronous scope
-with provider.create_scope("my_scope") as scope:```
-
-# Resolve services within the scope
-service = scope.resolve(MyScopedService)
-```
+with provider.create_scope("my_scope") as scope:
+    # Resolve services within the scope
+    service = scope.resolve(MyScopedService)
 
 # Asynchronous scope
-async with provider.create_async_scope("my_async_scope") as scope:```
-
-# Resolve services within the scope
-service = scope.resolve(MyScopedService)
-```
+async with provider.create_async_scope("my_async_scope") as scope:
+    # Resolve services within the scope
+    service = scope.resolve(MyScopedService)
 ```
 
 ### Service Lifecycle
@@ -183,40 +154,32 @@ Services can implement a lifecycle interface to perform initialization and clean
 from uno.dependencies.modern_provider import ServiceLifecycle
 
 @singleton
-class DatabaseService(ServiceLifecycle):```
-
-async def initialize(self) -> None:```
-
-# Connect to the database
-self.connection = await create_connection()
-```
-
-async def dispose(self) -> None:```
-
-# Close the connection
-await self.connection.close()
-```
-```
+class DatabaseService(ServiceLifecycle):
+    async def initialize(self) -> None:
+        # Connect to the database
+        self.connection = await create_connection()
+        
+    async def dispose(self) -> None:
+        # Close the connection
+        await self.connection.close()
 ```
 
 ## Integration with FastAPI
 
-The Uno framework provides seamless integration with FastAPI:
+The uno framework provides seamless integration with FastAPI:
 
 ```python
 from fastapi import FastAPI
-from uno.dependencies.fastapi_integration import (```
-
-configure_fastapi,
-DIAPIRouter,
-resolve_service
-```
+from uno.dependencies.fastapi_integration import (
+    configure_fastapi,
+    DIAPIRouter,
+    resolve_service
 )
 
 # Create a FastAPI application
 app = FastAPI()
 
-# Configure FastAPI with Uno DI
+# Configure FastAPI with uno DI
 configure_fastapi(app)
 
 # Create a router with automatic dependency injection
@@ -224,17 +187,13 @@ router = DIAPIRouter()
 
 # Define an endpoint with automatically injected dependencies
 @router.get("/items")
-async def get_items(db_service: IDatabaseService):```
-
-return await db_service.get_items()
-```
+async def get_items(db_service: IDatabaseService):
+    return await db_service.get_items()
 
 # Or use the resolve_service dependency
 @app.get("/config")
-async def get_config(config_service = Depends(resolve_service(IConfigService))):```
-
-return config_service.get_config()
-```
+async def get_config(config_service = Depends(resolve_service(IConfigService))):
+    return config_service.get_config()
 
 # Include the router
 app.include_router(router)
@@ -242,23 +201,21 @@ app.include_router(router)
 
 ## Automatic Service Discovery
 
-The Uno framework can automatically discover and register services in your codebase:
+The uno framework can automatically discover and register services in your codebase:
 
 ```python
 from uno.dependencies.discovery import scan_directory_for_services
 
 # Scan a directory for services
-scan_directory_for_services(```
-
-directory="./src",
-base_package="myapp"
-```
+scan_directory_for_services(
+    directory="./src",
+    base_package="myapp"
 )
 ```
 
 ## Testing
 
-The Uno framework provides utilities for testing services:
+The uno framework provides utilities for testing services:
 
 ```python
 from unittest.mock import MagicMock
@@ -314,14 +271,10 @@ from uno.dependencies.modern_provider import get_service_provider
 provider = get_service_provider()
 
 # Register different implementations based on conditions
-if use_real_db:```
-
-provider.register_service(IDatabaseService, RealDatabaseService)
-```
-else:```
-
-provider.register_service(IDatabaseService, MockDatabaseService)
-```
+if use_real_db:
+    provider.register_service(IDatabaseService, RealDatabaseService)
+else:
+    provider.register_service(IDatabaseService, MockDatabaseService)
 ```
 
 ### Factory Methods
@@ -332,10 +285,8 @@ from uno.dependencies.scoped_container import ServiceCollection
 services = ServiceCollection()
 
 # Register a factory method
-def create_logger(name):```
-
-return LoggerService(name=name)
-```
+def create_logger(name):
+    return LoggerService(name=name)
 
 services.add_singleton(ILoggerService, create_logger, name="app")
 ```
@@ -348,11 +299,7 @@ from uno.dependencies.fastapi_integration import DIAPIRouter
 router = DIAPIRouter()
 
 @router.get("/items")
-async def get_items(db_service: IDatabaseService):```
-
-# This will use a database session scoped to the request```
-```
-
-return await db_service.get_items()
-```
+async def get_items(db_service: IDatabaseService):
+    # This will use a database session scoped to the request
+    return await db_service.get_items()
 ```

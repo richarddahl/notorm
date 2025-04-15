@@ -1,11 +1,11 @@
 # Vector Search Documentation
 
-Welcome to the vector search documentation for the Uno Framework. This section covers how to use PostgreSQL with pgvector to implement powerful vector similarity search capabilities.
+Welcome to the vector search documentation for the uno Framework. This section covers how to use PostgreSQL with pgvector to implement powerful vector similarity search capabilities.
 
 ## Table of Contents
 
 ### Getting Started
-- [Overview](./overview.md) - Introduction to vector search in Uno
+- [Overview](./overview.md) - Introduction to vector search in uno
 - [pgvector Integration](./pgvector_integration.md) - How pgvector is integrated with PostgreSQL
 - [Docker Setup](./docker_setup.md) - Setting up Docker with pgvector for development
 

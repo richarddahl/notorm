@@ -1,6 +1,6 @@
 # Legacy Code Cleanup
 
-This document provides details about the legacy code cleanup effort in the Uno framework. It covers the motivation, patterns that were removed, and their modern replacements.
+This document provides details about the legacy code cleanup effort in uno. It covers the motivation, patterns that were removed, and their modern replacements.
 
 ## Motivation
 
@@ -192,7 +192,7 @@ This script checks for:
 
 For teams migrating existing applications, follow these steps:
 
-1. **Update Dependencies**: Ensure the latest Uno framework version is being used
+1. **Update Dependencies**: Ensure the latest uno framework version is being used
 2. **Replace Inject Import**: Remove `import inject` statements
 3. **Constructor Injection**: Refactor to use constructor injection
 4. **Update Result Handling**: Replace `unwrap()` with `value` and `is_ok()` with `is_success`
@@ -201,7 +201,7 @@ For teams migrating existing applications, follow these steps:
 
 ## Benefits of Migration
 
-Migrating to the modern Uno framework provides several benefits:
+Migrating to the modern uno framework provides several benefits:
 
 1. **Better Testability**: Services with explicit dependencies are easier to test
 2. **Enhanced Type Safety**: Better IDE support and type checking

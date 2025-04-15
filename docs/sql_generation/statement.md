@@ -1,328 +1,504 @@
 # SQL Statement
 
-The `SQLStatement` class in uno represents a SQL statement with parameters. It provides a clean interface for executing SQL statements with proper parameter handling.
+The `SQLStatement` class in uno represents a SQL statement with metadata about its type, dependencies, and execution order. It provides a structured way to manage schema initialization, modifications, and database operations.
 
 ## Overview
 
-The `SQLStatement` class encapsulates:
+In uno, SQL statements are represented as structured entities with metadata to handle:
 
-- SQL text
-- Parameters
-- Statement execution
-- Result handling
+- SQL DDL/DML code generation
+- Statement dependencies and execution order
+- Statement categorization by type (functions, triggers, indexes, etc.)
+- Registration and discovery of SQL configurations
 
-## Basic Usage
+## Core Components
 
-```python
-from uno.sql.statement import SQLStatement
+### SQLStatement
 
-# Create a SQL statement
-statement = SQLStatement(```
-
-text="SELECT * FROM customer WHERE id = :id",
-params={"id": "abc123"}
-```
-)
-
-# Execute the statement
-result = await statement.execute(connection)
-
-# Process the result
-for row in result:```
-
-print(row)
-```
-```
-
-## Creating Statements
-
-### Simple Statements
+The `SQLStatement` class represents a single SQL statement with execution metadata:
 
 ```python
-from uno.sql.statement import SQLStatement
+from uno.sql.statement import SQLStatement, SQLStatementType
 
-# Select statement
-select_statement = SQLStatement(```
-
-text="SELECT id, name, email FROM customer WHERE status = :status",
-params={"status": "active"}
-```
-)
-
-# Insert statement
-insert_statement = SQLStatement(```
-
-text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email)",
-params={"id": "abc123", "name": "John Doe", "email": "john@example.com"}
-```
-)
-
-# Update statement
-update_statement = SQLStatement(```
-
-text="UPDATE customer SET name = :name WHERE id = :id",
-params={"id": "abc123", "name": "John Smith"}
-```
-)
-
-# Delete statement
-delete_statement = SQLStatement(```
-
-text="DELETE FROM customer WHERE id = :id",
-params={"id": "abc123"}
-```
+# Create a SQL function statement
+function_statement = SQLStatement(
+    name="create_audit_log_function",
+    type=SQLStatementType.FUNCTION,
+    sql="""
+    CREATE OR REPLACE FUNCTION audit_log()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        INSERT INTO audit_log (table_name, record_id, action)
+        VALUES (TG_TABLE_NAME, NEW.id, TG_OP);
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    """,
+    depends_on=["create_audit_log_table"]
 )
 ```
 
-### Complex Statements
+The `SQLStatement` class has the following attributes:
+
+- `name`: Unique identifier for the statement
+- `type`: Type of SQL statement (function, trigger, etc.)
+- `sql`: The actual SQL statement to execute
+- `depends_on`: List of statement names this statement depends on
+
+### SQLStatementType
+
+The `SQLStatementType` enum categorizes SQL statements by their purpose:
 
 ```python
-from uno.sql.statement import SQLStatement
-
-# Join with parameters
-join_statement = SQLStatement(```
-
-text="""
-SELECT c.id, c.name, o.id as order_id, o.total
-FROM customer c
-JOIN order o ON c.id = o.customer_id
-WHERE c.status = :status
-AND o.created_at > :date
-ORDER BY o.created_at DESC
-LIMIT :limit
-OFFSET :offset
-""",
-params={```
-
-"status": "active",
-"date": "2023-01-01",
-"limit": 10,
-"offset": 0
-```
-}
-```
-)
-
-# With subquery
-subquery_statement = SQLStatement(```
-
-text="""
-SELECT c.id, c.name, (```
-
-SELECT COUNT(*)
-FROM order o
-WHERE o.customer_id = c.id
-```
-) as order_count
-FROM customer c
-WHERE c.status = :status
-""",
-params={"status": "active"}
-```
-)
+class SQLStatementType(Enum):
+    """Types of SQL statements that can be emitted."""
+    FUNCTION = "function"
+    TRIGGER = "trigger"
+    INDEX = "index"
+    CONSTRAINT = "constraint"
+    GRANT = "grant"
+    VIEW = "view"
+    PROCEDURE = "procedure"
+    TABLE = "table"
+    ROLE = "role"
+    SCHEMA = "schema"
+    EXTENSION = "extension"
+    DATABASE = "database"
+    INSERT = "insert"
 ```
 
-## Executing Statements
+## SQL Configuration Registry
 
-### With Connection Object
+The `SQLConfigRegistry` manages the registration and execution of SQL configuration classes:
 
 ```python
-from uno.sql.statement import SQLStatement
-from uno.database.engine import sync_connection, async_connection
+from uno.sql.registry import SQLConfigRegistry
+from uno.sql.config import SQLConfig
 
-# Synchronous execution
-with sync_connection(db_role="app_user", db_name="my_database") as conn:```
+# Create a new SQL configuration class
+class AuditLogConfig(SQLConfig):
+    def get_statements(self):
+        return [
+            SQLStatement(
+                name="create_audit_log_table",
+                type=SQLStatementType.TABLE,
+                sql="""
+                CREATE TABLE IF NOT EXISTS audit_log (
+                    id SERIAL PRIMARY KEY,
+                    table_name TEXT NOT NULL,
+                    record_id UUID NOT NULL,
+                    action TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                """
+            ),
+            SQLStatement(
+                name="create_audit_log_function",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                CREATE OR REPLACE FUNCTION audit_log()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    INSERT INTO audit_log (table_name, record_id, action)
+                    VALUES (TG_TABLE_NAME, NEW.id, TG_OP);
+                    RETURN NEW;
+                END;
+                $$ LANGUAGE plpgsql;
+                """,
+                depends_on=["create_audit_log_table"]
+            )
+        ]
 
-statement = SQLStatement(```
+# Register the configuration class
+SQLConfigRegistry.register(AuditLogConfig)
 
-text="SELECT * FROM customer WHERE id = :id",
-params={"id": "abc123"}
-```
-)
-result = statement.execute_sync(conn)
-``````
-
-```
-```
-
-# Process the result
-for row in result:```
-
-print(row)
-```
-```
-
-# Asynchronous execution
-async with async_connection(db_role="app_user", db_name="my_database") as conn:```
-
-statement = SQLStatement(```
-
-text="SELECT * FROM customer WHERE id = :id",
-params={"id": "abc123"}
-```
-)
-result = await statement.execute(conn)
-``````
-
-```
-```
-
-# Process the result
-async for row in result:```
-
-print(row)
-```
-```
+# Emit all SQL statements
+SQLConfigRegistry.emit_all()
 ```
 
-### With Custom Executor
+### Registry Operations
+
+The `SQLConfigRegistry` provides the following operations:
+
+- `register(config_class)`: Register a SQLConfig class
+- `get(name)`: Get a SQLConfig class by name
+- `all()`: Get all registered SQLConfig classes
+- `emit_all()`: Emit SQL for all registered SQLConfig classes
+
+## Common Statement Types
+
+### Function Statements
 
 ```python
-from uno.sql.statement import SQLStatement
-
-# Define a custom executor function
-async def custom_executor(conn, sql_text, params):```
-
-"""Custom executor for specific result handling."""
-result = await conn.execute(sql_text, params)
-return await result.mappings().all()
-```
-
-# Create and execute the statement with the custom executor
-statement = SQLStatement(```
-
-text="SELECT * FROM customer WHERE status = :status",
-params={"status": "active"}
-```
+function_statement = SQLStatement(
+    name="create_merge_function", 
+    type=SQLStatementType.FUNCTION,
+    sql="""
+    CREATE OR REPLACE FUNCTION merge_record(
+        target_table TEXT,
+        primary_key TEXT,
+        primary_value TEXT,
+        data JSONB
+    ) RETURNS JSONB AS $$
+    DECLARE
+        column_exists BOOLEAN;
+        column_name TEXT;
+        column_value TEXT;
+        columns TEXT[];
+        values TEXT[];
+        update_parts TEXT[];
+        sql_statement TEXT;
+        result JSONB;
+    BEGIN
+        -- Check if record exists
+        EXECUTE format('SELECT EXISTS(SELECT 1 FROM %I WHERE %I = %L)', 
+                      target_table, primary_key, primary_value)
+        INTO column_exists;
+        
+        -- Extract columns and values from JSONB
+        FOR column_name, column_value IN SELECT * FROM jsonb_each_text(data)
+        LOOP
+            columns := array_append(columns, column_name);
+            values := array_append(values, quote_literal(column_value));
+            
+            IF column_name != primary_key THEN
+                update_parts := array_append(update_parts, 
+                                          format('%I = %s', column_name, quote_literal(column_value)));
+            END IF;
+        END LOOP;
+        
+        -- Build and execute SQL statement
+        IF column_exists THEN
+            -- UPDATE
+            sql_statement := format('UPDATE %I SET %s WHERE %I = %L RETURNING to_jsonb(%I.*)', 
+                                 target_table, 
+                                 array_to_string(update_parts, ', '), 
+                                 primary_key, 
+                                 primary_value,
+                                 target_table);
+        ELSE
+            -- INSERT
+            sql_statement := format('INSERT INTO %I (%s) VALUES (%s) RETURNING to_jsonb(%I.*)', 
+                                 target_table, 
+                                 array_to_string(columns, ', '), 
+                                 array_to_string(values, ', '),
+                                 target_table);
+        END IF;
+        
+        EXECUTE sql_statement INTO result;
+        RETURN result;
+    END;
+    $$ LANGUAGE plpgsql;
+    """
 )
-
-async with async_connection(db_role="app_user", db_name="my_database") as conn:```
-
-result = await statement.execute(conn, executor=custom_executor)
-```
 ```
 
-## Batch Operations
-
-You can execute multiple statements in a transaction:
+### Trigger Statements
 
 ```python
-from uno.sql.statement import SQLStatement
-from uno.database.engine import async_connection
-from sqlalchemy.ext.asyncio import AsyncSession
+trigger_statement = SQLStatement(
+    name="create_audit_trigger",
+    type=SQLStatementType.TRIGGER,
+    sql="""
+    CREATE TRIGGER audit_customer_changes
+    AFTER INSERT OR UPDATE ON customer
+    FOR EACH ROW
+    EXECUTE FUNCTION audit_log();
+    """,
+    depends_on=["create_audit_log_function"]
+)
+```
 
-async def create_customer_with_orders(customer_data, orders_data):```
+### Index Statements
 
-"""Create a customer and their orders in a transaction."""
-async with AsyncSession() as session:```
+```python
+index_statement = SQLStatement(
+    name="create_customer_email_index",
+    type=SQLStatementType.INDEX,
+    sql="""
+    CREATE INDEX IF NOT EXISTS idx_customer_email
+    ON customer (email);
+    """
+)
+```
 
-async with session.begin():
-    # Create customer
-    customer_statement = SQLStatement(
-        text="INSERT INTO customer (id, name, email) VALUES (:id, :name, :email) RETURNING id",
-        params=customer_data
+### Grant Statements
+
+```python
+grant_statement = SQLStatement(
+    name="grant_customer_access",
+    type=SQLStatementType.GRANT,
+    sql="""
+    GRANT SELECT, INSERT, UPDATE ON customer TO app_user;
+    """
+)
+```
+
+## Statement Dependencies and Execution Order
+
+The `SQLStatement` class uses the `depends_on` attribute to define dependencies:
+
+```python
+statements = [
+    SQLStatement(
+        name="create_customer_table",
+        type=SQLStatementType.TABLE,
+        sql="""
+        CREATE TABLE IF NOT EXISTS customer (
+            id UUID PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        """
+    ),
+    SQLStatement(
+        name="create_order_table",
+        type=SQLStatementType.TABLE,
+        sql="""
+        CREATE TABLE IF NOT EXISTS order (
+            id UUID PRIMARY KEY,
+            customer_id UUID NOT NULL REFERENCES customer(id),
+            total DECIMAL(10,2) NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        """,
+        depends_on=["create_customer_table"]
+    ),
+    SQLStatement(
+        name="create_order_item_table",
+        type=SQLStatementType.TABLE,
+        sql="""
+        CREATE TABLE IF NOT EXISTS order_item (
+            id UUID PRIMARY KEY,
+            order_id UUID NOT NULL REFERENCES order(id),
+            product_id UUID NOT NULL,
+            quantity INTEGER NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+        """,
+        depends_on=["create_order_table"]
     )
-    result = await customer_statement.execute(session.connection())
-    customer_id = result.scalar_one()
-    
-    # Create orders
-    for order_data in orders_data:
-        order_data["customer_id"] = customer_id
-        order_statement = SQLStatement(
-            text="""
-            INSERT INTO order (id, customer_id, product_id, quantity, price)
-            VALUES (:id, :customer_id, :product_id, :quantity, :price)
-            """,
-            params=order_data
-        )
-        await order_statement.execute(session.connection())
-    
-    # The transaction will be committed if no exceptions are raised
-    return customer_id
-```
-```
+]
 ```
 
-## Statement Composition
+The framework uses the dependencies to determine the execution order:
 
-You can compose statements from parts:
-
-```python
-from uno.sql.statement import SQLStatement
-
-def build_search_query(filters):```
-
-"""Build a search query dynamically."""
-base_sql = "SELECT id, name, email FROM customer WHERE 1=1"
-params = {}
-``````
-
-```
-```
-
-# Add filters dynamically
-if "name" in filters:```
-
-base_sql += " AND name ILIKE :name"
-params["name"] = f"%{filters['name']}%"
-```
-``````
-
-```
-```
-
-if "email" in filters:```
-
-base_sql += " AND email ILIKE :email"
-params["email"] = f"%{filters['email']}%"
-```
-``````
-
-```
-```
-
-if "status" in filters:```
-
-base_sql += " AND status = :status"
-params["status"] = filters["status"]
-```
-``````
-
-```
-```
-
-# Add pagination
-base_sql += " LIMIT :limit OFFSET :offset"
-params["limit"] = filters.get("limit", 10)
-params["offset"] = filters.get("offset", 0)
-``````
-
-```
-```
-
-# Create the statement
-return SQLStatement(text=base_sql, params=params)
-```
-```
+1. `create_customer_table` (no dependencies)
+2. `create_order_table` (depends on customer table)
+3. `create_order_item_table` (depends on order table)
 
 ## Best Practices
 
-1. **Use Parameters**: Always use parameterized statements to prevent SQL injection.
+1. **Statement Organization**: Group related statements in dedicated configuration classes.
 
-2. **Handle Errors**: Implement proper error handling for SQL execution errors.
+2. **Naming Conventions**: Use clear, descriptive names for statements.
 
-3. **Use Transactions**: Wrap related statements in transactions to ensure data consistency.
+3. **Dependencies**: Properly define dependencies to ensure correct execution order.
 
-4. **Close Resources**: Ensure connections and other resources are properly closed.
+4. **Error Handling**: Implement proper exception handling when executing statements.
 
-5. **Validate Input**: Validate input data before creating SQL statements.
+5. **Idempotency**: Make statements idempotent (use IF NOT EXISTS, OR REPLACE, etc.).
 
-6. **Document SQL**: Add comments to explain complex SQL statements.
+6. **Versioning**: Use a versioning scheme for schema changes.
 
-7. **Test Thoroughly**: Test SQL statements with various inputs, including edge cases.
+7. **Documentation**: Document the purpose and relationships between statements.
 
-8. **Optimize Queries**: Monitor query performance and optimize as needed.
+8. **Testing**: Test statements with sample data to verify correct behavior.
 
-9. **Use Type Annotations**: Provide proper type annotations for better IDE support.
+9. **Security**: Use parameterized statements to prevent SQL injection.
 
-10. **Separate Concerns**: Keep SQL generation separate from business logic.
+10. **Isolation**: Keep database implementation details isolated from business logic.
+
+## SQL Configuration Patterns
+
+### Schema Initialization
+
+```python
+class SchemaInitConfig(SQLConfig):
+    def get_statements(self):
+        return [
+            SQLStatement(
+                name="create_schemas",
+                type=SQLStatementType.SCHEMA,
+                sql="""
+                CREATE SCHEMA IF NOT EXISTS app;
+                CREATE SCHEMA IF NOT EXISTS audit;
+                """
+            ),
+            SQLStatement(
+                name="create_extensions",
+                type=SQLStatementType.EXTENSION,
+                sql="""
+                CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+                CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+                """
+            )
+        ]
+```
+
+### Audit Trail Configuration
+
+```python
+class AuditTrailConfig(SQLConfig):
+    def get_statements(self):
+        return [
+            SQLStatement(
+                name="create_audit_schema",
+                type=SQLStatementType.SCHEMA,
+                sql="CREATE SCHEMA IF NOT EXISTS audit;"
+            ),
+            SQLStatement(
+                name="create_audit_tables",
+                type=SQLStatementType.TABLE,
+                sql="""
+                CREATE TABLE IF NOT EXISTS audit.log (
+                    id SERIAL PRIMARY KEY,
+                    table_name TEXT NOT NULL,
+                    record_id TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    data JSONB,
+                    user_id UUID,
+                    timestamp TIMESTAMP DEFAULT NOW()
+                );
+                """,
+                depends_on=["create_audit_schema"]
+            ),
+            SQLStatement(
+                name="create_audit_function",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                CREATE OR REPLACE FUNCTION audit.log_changes()
+                RETURNS TRIGGER AS $$
+                DECLARE
+                    data JSONB;
+                BEGIN
+                    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+                        data = to_jsonb(NEW);
+                    ELSE
+                        data = to_jsonb(OLD);
+                    END IF;
+                    
+                    INSERT INTO audit.log(
+                        table_name, 
+                        record_id, 
+                        action, 
+                        data, 
+                        user_id
+                    )
+                    VALUES (
+                        TG_TABLE_NAME,
+                        data->>'id',
+                        TG_OP,
+                        data,
+                        current_setting('app.user_id', true)::UUID
+                    );
+                    
+                    RETURN NULL;
+                END;
+                $$ LANGUAGE plpgsql;
+                """,
+                depends_on=["create_audit_tables"]
+            )
+        ]
+```
+
+### Security Configuration
+
+```python
+class SecurityConfig(SQLConfig):
+    def get_statements(self):
+        return [
+            SQLStatement(
+                name="create_roles",
+                type=SQLStatementType.ROLE,
+                sql="""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_user') THEN
+                        CREATE ROLE app_user;
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app_admin') THEN
+                        CREATE ROLE app_admin;
+                    END IF;
+                END
+                $$;
+                """
+            ),
+            SQLStatement(
+                name="create_row_level_security",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                -- Enable RLS on tables
+                ALTER TABLE customer ENABLE ROW LEVEL SECURITY;
+                ALTER TABLE order ENABLE ROW LEVEL SECURITY;
+                
+                -- Create policies
+                CREATE POLICY customer_access ON customer
+                    USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
+                    
+                CREATE POLICY order_access ON order
+                    USING (tenant_id = current_setting('app.tenant_id', true)::UUID);
+                """
+            ),
+            SQLStatement(
+                name="grant_permissions",
+                type=SQLStatementType.GRANT,
+                sql="""
+                -- Grant permissions to app_user
+                GRANT USAGE ON SCHEMA public TO app_user;
+                GRANT SELECT, INSERT, UPDATE ON customer TO app_user;
+                GRANT SELECT, INSERT, UPDATE ON order TO app_user;
+                
+                -- Grant permissions to app_admin
+                GRANT USAGE ON SCHEMA public TO app_admin;
+                GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_admin;
+                """
+            )
+        ]
+```
+
+### Graph Integration
+
+```python
+class GraphConfig(SQLConfig):
+    def get_statements(self):
+        return [
+            SQLStatement(
+                name="create_age_extension",
+                type=SQLStatementType.EXTENSION,
+                sql="CREATE EXTENSION IF NOT EXISTS age;"
+            ),
+            SQLStatement(
+                name="create_graph",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                SELECT create_graph('app_graph');
+                """,
+                depends_on=["create_age_extension"]
+            ),
+            SQLStatement(
+                name="create_vertex_labels",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                SELECT create_vlabel('app_graph', 'Customer');
+                SELECT create_vlabel('app_graph', 'Order');
+                SELECT create_vlabel('app_graph', 'Product');
+                """,
+                depends_on=["create_graph"]
+            ),
+            SQLStatement(
+                name="create_edge_labels",
+                type=SQLStatementType.FUNCTION,
+                sql="""
+                SELECT create_elabel('app_graph', 'PLACED');
+                SELECT create_elabel('app_graph', 'CONTAINS');
+                """,
+                depends_on=["create_vertex_labels"]
+            )
+        ]
+```

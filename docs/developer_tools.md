@@ -1,6 +1,6 @@
 # Developer Tools
 
-This document provides an overview of the Developer Tools available in the Uno framework. These tools are designed to improve the developer experience by providing debugging utilities, profiling tools, code generation capabilities, interactive modeling, and comprehensive documentation.
+This document provides an overview of the Developer Tools available in uno. These tools are designed to improve the developer experience by providing debugging utilities, profiling tools, code generation capabilities, interactive modeling, and comprehensive documentation.
 
 ## Overview
 
@@ -17,7 +17,7 @@ The Developer Tools module is organized into several key components:
 
 ## Installation
 
-The Developer Tools are included in the main Uno package. To ensure you have all optional dependencies for the best experience, install with:
+The Developer Tools are included in the main uno package. To ensure you have all optional dependencies for the best experience, install with:
 
 ```bash
 pip install uno[devtools]
@@ -282,7 +282,7 @@ models = generator.generate_from_database(tables=["users", "orders"])
 
 ### Repository Generator
 
-The Repository Generator creates repository classes for Uno models.
+The Repository Generator creates repository classes for uno models.
 
 ```python
 from uno.devtools.codegen.repository import RepositoryGenerator, RepositoryDefinition
@@ -307,7 +307,7 @@ repo_code = generator.generate_from_model(User)
 
 ### API Generator
 
-The API Generator creates FastAPI endpoints for Uno models.
+The API Generator creates FastAPI endpoints for uno models.
 
 ```python
 from uno.devtools.codegen.api import ApiGenerator, ApiDefinition, EndpointDefinition, EndpointType
@@ -339,7 +339,7 @@ api_code = generator.generate_api(api_def)
 
 ## AI Integration
 
-All developer tools integrate with Uno's AI capabilities:
+All developer tools integrate with uno's AI capabilities:
 
 - **Smart Template Completion**: AI-enhanced template completion
 - **Code Generation**: Intelligent code suggestions
@@ -459,4 +459,4 @@ python -m uno.devtools.cli.main <command> --help
 
 ## Conclusion
 
-The Developer Tools provide a comprehensive suite of utilities to enhance your development experience with the Uno framework. From scaffolding and visual modeling to debugging, profiling, code generation and documentation, these tools are designed to make your development workflow more efficient and productive.
+The Developer Tools provide a comprehensive suite of utilities to enhance your development experience with uno. From scaffolding and visual modeling to debugging, profiling, code generation and documentation, these tools are designed to make your development workflow more efficient and productive.

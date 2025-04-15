@@ -1,6 +1,6 @@
 # Subscription Management
 
-The subscription management system in the Uno framework provides a comprehensive solution for managing real-time update subscriptions, enabling users to receive notifications, WebSocket messages, and Server-Sent Events (SSE) based on their interests.
+The subscription management system in uno provides a comprehensive solution for managing real-time update subscriptions, enabling users to receive notifications, WebSocket messages, and Server-Sent Events (SSE) based on their interests.
 
 ## Overview
 

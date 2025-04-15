@@ -4,7 +4,7 @@ Server-Sent Events (SSE) is a technology that allows a server to push updates to
 
 ## Overview
 
-The Uno framework provides comprehensive support for Server-Sent Events through the `uno.realtime.sse` module. This module includes:
+The uno framework provides comprehensive support for Server-Sent Events through the `uno.realtime.sse` module. This module includes:
 
 - `SSEConnection`: Manages individual SSE connections
 - `SSEManager`: Centralizes SSE connection management and event broadcasting

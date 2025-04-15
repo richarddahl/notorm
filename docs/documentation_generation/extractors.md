@@ -4,7 +4,7 @@ Extractors are responsible for analyzing code components and extracting document
 
 ## Overview
 
-The Uno documentation framework uses extractors to gather information from different types of components:
+The uno documentation framework uses extractors to gather information from different types of components:
 
 - **ModelExtractor**: Extracts documentation from data models
 - **EndpointExtractor**: Extracts documentation from API endpoints

@@ -1,6 +1,6 @@
-# Using Dependency Injection in Uno
+# Using Dependency Injection in uno
 
-Uno now supports two approaches to building API endpoints:
+uno now supports two approaches to building API endpoints:
 
 1. The traditional UnoObj approach
 2. The new dependency injection pattern
@@ -9,7 +9,7 @@ This guide explains how to use both approaches and when to choose each one.
 
 ## UnoObj Approach
 
-The UnoObj approach is the original pattern used in Uno. It combines model representation and business logic in a single class:
+The UnoObj approach is the original pattern used in uno. It combines model representation and business logic in a single class:
 
 ```python
 from uno.obj import UnoObj

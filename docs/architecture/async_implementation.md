@@ -1,6 +1,6 @@
 # Async-First Architecture Implementation
 
-The Async-First Architecture has been implemented in the Uno framework to enhance the robustness, reliability, and performance of asynchronous operations. This document provides a summary of the implementation approach and key components.
+The Async-First Architecture has been implemented in uno to enhance the robustness, reliability, and performance of asynchronous operations. This document provides a summary of the implementation approach and key components.
 
 ## Implementation Approach
 
@@ -71,7 +71,7 @@ Integration with database operations:
 
 ## Integration Points
 
-The Async-First Architecture integrates with several parts of the Uno framework:
+The Async-First Architecture integrates with several parts of uno:
 
 - **Database Layer**: Enhanced database connections and sessions
 - **Event System**: Async event publishing and handling

@@ -1,6 +1,6 @@
 # Schema Migration System
 
-The Uno framework includes a robust schema migration system for managing database schema changes in a versioned, repeatable way.
+The uno framework includes a robust schema migration system for managing database schema changes in a versioned, repeatable way.
 
 ## Overview
 
@@ -13,7 +13,7 @@ The migration system allows you to:
 - Manage dependencies between migrations
 - Create migrations from templates for consistency
 - Securely execute SQL with parameterized queries
-- Integrate with Uno's dependency injection system
+- Integrate with uno's dependency injection system
 
 Migrations can be defined using SQL or Python, providing flexibility for both simple and complex schema changes.
 
@@ -66,7 +66,7 @@ The migration system includes important security features:
 
 ### Dependency Injection Integration
 
-The migration system integrates with Uno's dependency injection framework:
+The migration system integrates with uno's dependency injection framework:
 
 - **MigrationServiceProvider**: Provides migration-related services to the DI container
 - **Scoped Configuration**: Migration configuration can be scoped to different environments
@@ -252,7 +252,7 @@ migrations/
 
 ## Security Considerations
 
-The Uno migration system is designed with security in mind:
+The uno migration system is designed with security in mind:
 
 1. **SQL Injection Prevention**: All SQL execution uses parameterized queries to prevent SQL injection vulnerabilities
 2. **Secure Parameter Handling**: Parameters are passed separately from SQL statements

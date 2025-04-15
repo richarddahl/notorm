@@ -1,10 +1,10 @@
 # Cache Invalidation Strategies
 
-The Uno Caching Framework provides several powerful strategies for invalidating cached data to ensure consistency between your cache and the source of truth.
+The uno Caching Framework provides several powerful strategies for invalidating cached data to ensure consistency between your cache and the source of truth.
 
 ## Overview
 
-Cache invalidation is one of the "two hard things" in computer science, and the Uno Caching Framework addresses this challenge with several complementary strategies:
+Cache invalidation is one of the "two hard things" in computer science, and the uno Caching Framework addresses this challenge with several complementary strategies:
 
 1. **Time-Based Invalidation**: Automatically expire cache entries after a specified time-to-live (TTL)
 2. **Event-Based Invalidation**: Trigger cache invalidation in response to specific domain events
@@ -201,7 +201,7 @@ shard_key = strategy.get_shard_key("user", "123")
 
 ## Combining Strategies
 
-The Uno Caching Framework allows combining multiple invalidation strategies:
+The uno Caching Framework allows combining multiple invalidation strategies:
 
 ```python
 from uno.caching.invalidation import (```

@@ -1,8 +1,8 @@
-# Uno Framework Modernization
+# uno Framework Modernization
 
 ## Introduction
 
-The Uno framework is undergoing a significant modernization effort to make it more modular, loosely coupled, and aligned with modern Python best practices. This document provides an overview of the changes and explains the rationale behind them.
+The uno framework is undergoing a significant modernization effort to make it more modular, loosely coupled, and aligned with modern Python best practices. This document provides an overview of the changes and explains the rationale behind them.
 
 ## Goals
 

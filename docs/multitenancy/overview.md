@@ -1,6 +1,6 @@
 # Multi-Tenancy Support
 
-The Uno framework provides comprehensive multi-tenancy support, allowing you to build applications that serve multiple customers (tenants) from a single deployment while keeping their data isolated.
+The uno framework provides comprehensive multi-tenancy support, allowing you to build applications that serve multiple customers (tenants) from a single deployment while keeping their data isolated.
 
 ## Overview
 
@@ -11,11 +11,11 @@ Multi-tenancy is an architecture where a single instance of software serves mult
 - **Scalability**: Resources can be allocated dynamically based on tenant needs
 - **Rapid Onboarding**: New tenants can be added without infrastructure changes
 
-The Uno framework implements a **shared schema multi-tenancy** approach, where all tenants share the same database schema but rows are filtered by tenant ID. This approach offers a good balance between resource efficiency and data isolation.
+The uno framework implements a **shared schema multi-tenancy** approach, where all tenants share the same database schema but rows are filtered by tenant ID. This approach offers a good balance between resource efficiency and data isolation.
 
 ## Architecture
 
-The multi-tenancy implementation in Uno consists of several key components:
+The multi-tenancy implementation in uno consists of several key components:
 
 1. **Database Isolation**: PostgreSQL Row Level Security (RLS) policies ensure tenant data isolation at the database level
 2. **Tenant Context**: Context variables track the current tenant throughout request processing

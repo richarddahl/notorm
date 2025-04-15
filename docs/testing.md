@@ -1,6 +1,6 @@
 # Testing in uno
 
-This document provides an overview of the testing approach in the uno framework, including philosophy, test organization, and guidelines for writing effective tests.
+This document provides an overview of the testing approach in uno, including philosophy, test organization, and guidelines for writing effective tests.
 
 ## Test Philosophy
 

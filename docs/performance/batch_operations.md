@@ -1,12 +1,12 @@
 # Performance Optimization with Batch Operations
 
-This document provides strategies for optimizing performance using Uno's batch operations system for database operations.
+This document provides strategies for optimizing performance using uno's batch operations system for database operations.
 
 ## Overview
 
 Batch operations are a powerful technique for improving performance when working with large datasets. By grouping multiple operations together, batch operations can significantly reduce database round trips, network overhead, and transaction overhead.
 
-Uno provides a comprehensive batch operations system designed specifically for PostgreSQL that leverages its efficient bulk processing capabilities while providing flexibility and error handling.
+uno provides a comprehensive batch operations system designed specifically for PostgreSQL that leverages its efficient bulk processing capabilities while providing flexibility and error handling.
 
 ## When to Use Batch Operations
 
@@ -44,7 +44,7 @@ In benchmarks, batch operations typically provide significant performance improv
 
 ## Choosing the Right Execution Strategy
 
-Uno provides multiple execution strategies to optimize for different scenarios:
+uno provides multiple execution strategies to optimize for different scenarios:
 
 ### SingleQuery Strategy
 
@@ -143,7 +143,7 @@ The ideal batch size depends on several factors:
 3. **Network Latency**: Higher latency benefits from larger batches
 4. **Database Capabilities**: Some databases handle large batches better than others
 
-Uno provides predefined batch sizes in the `BatchSize` enum:
+uno provides predefined batch sizes in the `BatchSize` enum:
 
 ```python
 from uno.queries.batch_operations import BatchSize
@@ -237,7 +237,7 @@ alert_service.send_alert("Duplicate data detected in batch operation")
 
 ## Integration with Repository Pattern
 
-The batch operations system is fully integrated with Uno's Repository pattern:
+The batch operations system is fully integrated with uno's Repository pattern:
 
 ```python
 # Repository with batch operations
@@ -455,7 +455,7 @@ return updated_count
 
 ## Conclusion
 
-Batch operations are a powerful tool for improving performance when working with large datasets. By choosing the right execution strategy, optimizing batch sizes, and monitoring performance, you can achieve significant performance improvements in your Uno applications.
+Batch operations are a powerful tool for improving performance when working with large datasets. By choosing the right execution strategy, optimizing batch sizes, and monitoring performance, you can achieve significant performance improvements in your uno applications.
 
 Remember to test different batch sizes and execution strategies with your specific data to find the optimal configuration for your use case.
 

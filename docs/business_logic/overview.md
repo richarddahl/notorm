@@ -1,6 +1,7 @@
+
 # Business Logic Layer
 
-The Business Logic Layer in Uno provides a clean interface for implementing business rules and validation logic, while abstracting away database operations. It forms the core of your application, implementing the domain logic that drives your business processes.
+The Business Logic Layer in uno provides a clean interface for implementing business rules and validation logic, while abstracting away database operations. It forms the core of your application, implementing the domain logic that drives your business processes.
 
 ## In This Section
 
@@ -10,7 +11,7 @@ The Business Logic Layer in Uno provides a clean interface for implementing busi
 
 ## Overview
 
-The Business Logic Layer in Uno is designed to separate business concerns from database and API concerns, allowing you to focus on implementing domain-specific behavior. It provides a rich set of tools for data validation, object lifecycle management, and integration with the web application.
+The Business Logic Layer in uno is designed to separate business concerns from database and API concerns, allowing you to focus on implementing domain-specific behavior. It provides a rich set of tools for data validation, object lifecycle management, and integration with the web application.
 
 ## Key Concepts
 
@@ -51,79 +52,51 @@ from uno.model import UnoModel, PostgresTypes
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Define your SQLAlchemy model
-class CustomerModel(UnoModel):```
-
-__tablename__ = "customer"
-``````
-
-```
-```
-
-id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
-name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
-phone: Mapped[PostgresTypes.String64] = mapped_column(nullable=True)
-```
+class CustomerModel(UnoModel):
+    __tablename__ = "customer"
+    
+    id: Mapped[PostgresTypes.String26] = mapped_column(primary_key=True)
+    name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False, unique=True)
+    phone: Mapped[PostgresTypes.String64] = mapped_column(nullable=True)
     
 # Define your business object
-class Customer(UnoObj[CustomerModel]):```
-
-model = CustomerModel
-``````
-
-```
-```
-
-# Define schemas for different contexts
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(),  # All fields
-"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "updated_at"}),
-"summary_schema": UnoSchemaConfig(include_fields={"id", "name", "email"}),
-```
-}
-``````
-
-```
-```
-
-# Configure API endpoints
-endpoints = ["Create", "View", "List", "Update", "Delete"]
-endpoint_tags = ["Customers"]
-``````
-
-```
-```
-
-# Add business logic methods
-async def send_welcome_email(self) -> bool:```
-
-"""Send a welcome email to the customer."""
-if not self.email:
-    raise ValidationError([{
-        "field": "email",
-        "message": "Customer has no email address",
-        "error_code": "EMAIL_REQUIRED"
-    }])
-```
-    ```
-
-# Email sending logic here
-return True
-```
-```
+class Customer(UnoObj[CustomerModel]):
+    model = CustomerModel
+    
+    # Define schemas for different contexts
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(),  # All fields
+        "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "updated_at"}),
+        "summary_schema": UnoSchemaConfig(include_fields={"id", "name", "email"}),
+    }
+    
+    # Configure API endpoints
+    endpoints = ["Create", "View", "List", "Update", "Delete"]
+    endpoint_tags = ["Customers"]
+    
+    # Add business logic methods
+    async def send_welcome_email(self) -> bool:
+        """Send a welcome email to the customer."""
+        if not self.email:
+            raise ValidationError([{
+                "field": "email",
+                "message": "Customer has no email address",
+                "error_code": "EMAIL_REQUIRED"
+            }])
+            
+        # Email sending logic here
+        return True
 ```
 
 ### 2. Use Object Lifecycle Methods
 
 ```python
 # Create a new customer
-new_customer = Customer(```
-
-name="John Doe",
-email="john@example.com",
-phone="555-123-4567"
-```
+new_customer = Customer(
+    name="John Doe",
+    email="john@example.com",
+    phone="555-123-4567"
 )
 
 # Save to database (creates a new record)
@@ -165,16 +138,13 @@ Customer.configure(app)
 1. **Keep Logic in Business Objects**: Place all domain-specific logic in your UnoObj subclasses, not in API endpoints or database code.
 
 2. **Use Custom Validation**: Implement domain-specific validation in your business objects.
+
    ```python
-   def validate(self, schema_name: str) -> ValidationContext:```
-
-   context = super().validate(schema_name)
-   if self.email and not self.email.endswith("@company.com"):```
-
-   context.add_error("email", "Must use company email", "INVALID_EMAIL_DOMAIN")
-```
-   return context
-```
+   def validate(self, schema_name: str) -> ValidationContext:
+       context = super().validate(schema_name)
+       if self.email and not self.email.endswith("@company.com"):
+           context.add_error("email", "Must use company email", "INVALID_EMAIL_DOMAIN")
+       return context
    ```
 
 3. **Create Purpose-Specific Schemas**: Define different schemas for different use cases (view, edit, list, etc.).

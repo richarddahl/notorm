@@ -1,6 +1,6 @@
 # Monitoring Dashboard
 
-The Uno framework includes a comprehensive web-based monitoring dashboard that provides a unified interface for viewing health, metrics, resources, and events in your application.
+The uno framework includes a comprehensive web-based monitoring dashboard that provides a unified interface for viewing health, metrics, resources, and events in your application.
 
 ## Overview
 

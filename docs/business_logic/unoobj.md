@@ -1,6 +1,6 @@
 # UnoObj
 
-The `UnoObj` class serves as the primary business logic layer for models in the Uno framework. It handles object lifecycle, data validation, and business logic operations.
+The `UnoObj` class serves as the primary business logic layer for models in uno. It handles object lifecycle, data validation, and business logic operations.
 
 ## Overview
 

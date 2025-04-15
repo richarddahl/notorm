@@ -1,8 +1,8 @@
 # Hybrid Architecture: Combining UnoObj with Dependency Injection
 
-Uno supports a hybrid architecture that combines the simplicity of UnoObj with the flexibility of dependency injection. This guide explains how to effectively use both patterns together.
+uno supports a hybrid architecture that combines the simplicity of UnoObj with the flexibility of dependency injection. This guide explains how to effectively use both patterns together.
 
-The latest enhancements to Uno's architecture include a unified database layer that works seamlessly with both patterns, making it easier than ever to adopt a hybrid approach.
+The latest enhancements to uno's architecture include a unified database layer that works seamlessly with both patterns, making it easier than ever to adopt a hybrid approach.
 
 ## When to Use Each Pattern
 
@@ -214,7 +214,7 @@ mock_repo.create.assert_called_once()
 
 ## Unified Database Architecture
 
-The new database architecture in Uno is designed to work seamlessly with both UnoObj and dependency injection patterns, providing a consistent interface regardless of which pattern you choose.
+The new database architecture in uno is designed to work seamlessly with both UnoObj and dependency injection patterns, providing a consistent interface regardless of which pattern you choose.
 
 ### Key Components
 
@@ -402,4 +402,4 @@ This strategy allows for incremental adoption without disrupting existing functi
 
 The hybrid approach combines the best of both worlds: the rapid development of UnoObj with the flexibility and testability of dependency injection. By using each pattern where it makes the most sense, you can build applications that are both quick to develop and easy to maintain.
 
-With the new unified database architecture, Uno offers a seamless way to adopt modern application patterns while preserving compatibility with existing code. The `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` components provide a clean, testable foundation for both patterns, making it easier than ever to build maintainable, high-performance applications with Uno.
+With the new unified database architecture, uno offers a seamless way to adopt modern application patterns while preserving compatibility with existing code. The `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` components provide a clean, testable foundation for both patterns, making it easier than ever to build maintainable, high-performance applications with uno.

@@ -1,10 +1,10 @@
-# Getting Started with Uno
+# Getting Started with uno
 
-This guide will help you get started with Uno, a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI.
+This guide will help you get started with uno, a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI.
 
 ## Overview
 
-Uno provides a unified approach to database operations, API definition, and business logic. It's designed to make development faster and more maintainable by offering a cohesive set of tools and patterns.
+uno provides a unified approach to database operations, API definition, and business logic. It's designed to make development faster and more maintainable by offering a cohesive set of tools and patterns.
 
 ## Prerequisites
 
@@ -129,7 +129,7 @@ return user
 
 ## Creating an API
 
-Uno makes it easy to create RESTful APIs with FastAPI:
+uno makes it easy to create RESTful APIs with FastAPI:
 
 ```python
 from fastapi import FastAPI, Depends
@@ -214,7 +214,7 @@ Then open your browser at [http://127.0.0.1:8001](http://127.0.0.1:8001).
 
 ## Key Concepts
 
-Uno is built around several key concepts:
+uno is built around several key concepts:
 
 - **UnoModel**: SQLAlchemy-based models for database mapping
 - **UnoObj**: Business logic containers that wrap models

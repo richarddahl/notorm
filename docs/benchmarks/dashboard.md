@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Uno Framework Benchmark Dashboard provides a comprehensive visualization and analysis tool for monitoring performance across all framework modules. It allows developers and stakeholders to track performance trends, identify bottlenecks, and measure the impact of optimizations.
+The uno Framework Benchmark Dashboard provides a comprehensive visualization and analysis tool for monitoring performance across all framework modules. It allows developers and stakeholders to track performance trends, identify bottlenecks, and measure the impact of optimizations.
 
 <!-- TODO: Add benchmark dashboard screenshot -->
 <!-- ![Dashboard Overview](../assets/images/benchmark_dashboard_overview.png) -->

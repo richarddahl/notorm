@@ -4,7 +4,7 @@ The Service Provider pattern is a powerful approach for centralizing access to y
 
 ## Overview
 
-The Uno framework implements the Unified Service Provider pattern to provide:
+The uno framework implements the Unified Service Provider pattern to provide:
 
 - Centralized service access
 - Type-safe service retrieval
@@ -174,7 +174,7 @@ _service_provider = MyServiceProvider()
 
 ## Benefits Over Direct Injection
 
-While the Uno framework supports both direct injection methods and the Service Provider pattern, using the Service Provider offers several advantages:
+While uno supports both direct injection methods and the Service Provider pattern, using the Service Provider offers several advantages:
 
 1. **Centralized Service Management**: All service access goes through a single point, making it easier to manage dependencies.
 

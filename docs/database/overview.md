@@ -1,16 +1,18 @@
 # Database Layer
 
-The Database Layer in Uno provides a comprehensive approach to database operations with specialized components for connection management, model definition, and SQL generation.
+The Database Layer in uno provides a comprehensive approach to database operations with specialized components for connection management, model definition, and SQL generation.
 
 !!! note "Architectural Evolution"```
 
-Uno now offers both the original database architecture and a new unified architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. The new architecture provides better separation of concerns, improved testability, and support for dependency injection.
+uno now offers both the original database architecture and a new unified architecture through the `DatabaseProvider`, `UnoBaseRepository`, and `SchemaManager` classes. The new architecture provides better separation of concerns, improved testability, and support for dependency injection.
 ```
 
 ## In This Section
 
 - [Database Engine](engine.md) - Connection management and factory patterns
 - [Database Manager](db_manager.md) - DDL execution and database management
+- [Transaction Management](transaction_management.md) - Robust transaction handling patterns
+- [Enhanced Connection Pool](enhanced_connection_pool.md) - Advanced connection pooling
 - [Database Repository](repository.md) - Repository pattern implementation
 - [Database Provider](provider.md) - Modern database connection provider
 - [UnoDB](unodb.md) - Database operations interface for models
@@ -18,7 +20,7 @@ Uno now offers both the original database architecture and a new unified archite
 
 ## Overview
 
-The Database Layer forms the foundation of the Uno framework, providing robust database connectivity, object-relational mapping, and type-safe database operations. It's designed to leverage PostgreSQL-specific features while maintaining a clean, consistent API that works well in both synchronous and asynchronous contexts.
+The Database Layer forms the foundation of uno, providing robust database connectivity, object-relational mapping, and type-safe database operations. It's designed to leverage PostgreSQL-specific features while maintaining a clean, consistent API that works well in both synchronous and asynchronous contexts.
 
 ## Key Components
 
@@ -230,8 +232,10 @@ pytest tests/integration/test_connection_pool.py --run-integration
 Tests for transaction isolation, nested transactions, multi-table operations, and proper cleanup.
 
 ```bash
-pytest tests/integration/database/test_transaction.py --run-integration
+pytest tests/integration/test_transaction.py --run-integration
 ```
+
+For more details on transaction management, see the [Transaction Management](transaction_management.md) documentation.
 
 ### Query Optimizer Tests
 
@@ -262,7 +266,7 @@ pytest tests/integration/test_batch_operations.py --run-integration
 ### When to Use the Original Architecture
 
 - For simpler applications with straightforward database needs
-- When working with existing Uno code that uses the original patterns
+- When working with existing uno code that uses the original patterns
 - For quick prototyping
 
 ### When to Use the Modern Architecture

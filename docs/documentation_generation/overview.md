@@ -1,6 +1,6 @@
 # Documentation Generation
 
-The Uno framework includes a powerful documentation generation system that automatically creates comprehensive API documentation from your code.
+The uno framework includes a powerful documentation generation system that automatically creates comprehensive API documentation from your code.
 
 ## Overview
 

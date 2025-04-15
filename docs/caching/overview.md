@@ -1,6 +1,6 @@
 # Caching Framework
 
-The Uno Caching Framework provides a comprehensive solution for managing application data caching. It includes support for multi-level caching, distributed caching, advanced invalidation strategies, and detailed monitoring tools.
+The uno Caching Framework provides a comprehensive solution for managing application data caching. It includes support for multi-level caching, distributed caching, advanced invalidation strategies, and detailed monitoring tools.
 
 ## Key Features
 
@@ -30,7 +30,7 @@ The caching framework offers the following key features:
 
 ## Getting Started
 
-To use the Uno Caching Framework, you'll first need to create a cache manager instance:
+To use the uno Caching Framework, you'll first need to create a cache manager instance:
 
 ```python
 from uno.caching import CacheManager, CacheConfig
@@ -477,7 +477,7 @@ You can then use Grafana or another tool to visualize these metrics.
 
 ## Best Practices
 
-Here are some best practices for using the Uno Caching Framework:
+Here are some best practices for using the uno Caching Framework:
 
 1. **Choose appropriate TTLs**: Use shorter TTLs for frequently changing data and longer TTLs for static data
 2. **Use multi-level caching**: Combine local and distributed caches for optimal performance

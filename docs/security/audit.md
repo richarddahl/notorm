@@ -1,6 +1,6 @@
 # Audit Logging
 
-The Uno Security Framework includes a comprehensive audit logging system designed to track security-relevant events in your application. This document provides details on how to use the audit logging features to enhance security monitoring, compliance, and incident response capabilities.
+The uno Security Framework includes a comprehensive audit logging system designed to track security-relevant events in your application. This document provides details on how to use the audit logging features to enhance security monitoring, compliance, and incident response capabilities.
 
 ## Overview
 

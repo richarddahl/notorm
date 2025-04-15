@@ -1,6 +1,6 @@
-# Vector Search in Uno
+# Vector Search in uno
 
-Uno provides powerful vector search capabilities through PostgreSQL's pgvector extension, allowing for semantic similarity searches and integrating with the existing graph database functionality.
+uno provides powerful vector search capabilities through PostgreSQL's pgvector extension, allowing for semantic similarity searches and integrating with the existing graph database functionality.
 
 ## Overview
 
@@ -12,7 +12,7 @@ Vector search enables applications to find semantically similar content by compa
 - Anomaly detection
 - Retrieval-Augmented Generation (RAG)
 
-Uno leverages PostgreSQL's pgvector extension to provide these capabilities natively in the database, offering several advantages:
+uno leverages PostgreSQL's pgvector extension to provide these capabilities natively in the database, offering several advantages:
 
 - Automatic embedding generation using database triggers
 - Efficient vector indexing with HNSW and IVF-Flat
@@ -22,7 +22,7 @@ Uno leverages PostgreSQL's pgvector extension to provide these capabilities nati
 
 ## Architecture
 
-The vector search implementation in Uno follows these architectural principles:
+The vector search implementation in uno follows these architectural principles:
 
 1. **Database-Native**: Core vector functionality lives directly in PostgreSQL
 2. **Event-Driven**: Updates to vector embeddings use events and queues
@@ -72,7 +72,7 @@ Key components include:
 ### Prerequisites
 
 - PostgreSQL 12+ with pgvector extension
-- Uno framework (latest version)
+- uno framework (latest version)
 
 ### Database Setup
 
@@ -190,7 +190,7 @@ VECTOR_ENTITIES = {```
 
 ### Index Types
 
-Uno supports two index types:
+uno supports two index types:
 - **HNSW**: Faster search but slower indexing and more memory usage
 - **IVF-Flat**: Balanced approach with good search speed and memory usage
 
@@ -210,7 +210,7 @@ VECTOR_AUTO_START = True    # Auto-start the update service
 
 ## Testing Vector Search
 
-Uno includes comprehensive integration tests for vector search capabilities to ensure all components work correctly together:
+uno includes comprehensive integration tests for vector search capabilities to ensure all components work correctly together:
 
 ### Running Vector Search Tests
 

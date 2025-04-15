@@ -1,10 +1,10 @@
 # Database Protocol Interfaces
 
-This document describes the protocol-based interfaces for database connectivity in the Uno framework.
+This document describes the protocol-based interfaces for database connectivity in uno.
 
 ## Introduction
 
-Database access in Uno has been refactored to use protocol interfaces, providing several benefits:
+Database access in uno has been refactored to use protocol interfaces, providing several benefits:
 
 1. **Decoupling**: Database components are now decoupled from specific implementations
 2. **Testability**: Components can be easily tested with mock implementations

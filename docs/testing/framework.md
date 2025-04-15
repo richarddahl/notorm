@@ -1,6 +1,6 @@
 # Testing Framework
 
-The Uno Testing Framework provides comprehensive utilities for testing Uno applications, 
+The uno Testing Framework provides comprehensive utilities for testing uno applications, 
 including integration testing with containerized dependencies, property-based testing,
 snapshot testing for complex objects, and performance regression testing.
 
@@ -8,7 +8,7 @@ All testing follows the standardized approach defined in the [Test Standardizati
 
 ## Installation
 
-The testing framework is included in the core Uno package and doesn't require any additional installation steps.
+The testing framework is included in the core uno package and doesn't require any additional installation steps.
 
 ## Key Components
 
@@ -22,7 +22,7 @@ The testing framework consists of five main components:
 
 ## Integration Tests
 
-The comprehensive integration test suite verifies that Uno components work correctly together in real-world environments. These tests cover core infrastructure, authentication/authorization, and data processing features.
+The comprehensive integration test suite verifies that uno components work correctly together in real-world environments. These tests cover core infrastructure, authentication/authorization, and data processing features.
 
 ### Running Integration Tests
 
@@ -125,8 +125,8 @@ assert model.name == "Fixed Name"
 
 ### Available Strategies
 
-- `UnoStrategy`: Base strategy class for Uno testing
-- `ModelStrategy`: Strategy for generating instances of Uno models
+- `UnoStrategy`: Base strategy class for uno testing
+- `ModelStrategy`: Strategy for generating instances of uno models
 - `SQLStrategy`: Strategy for generating SQL statements
 
 ### Custom Strategies
@@ -352,7 +352,7 @@ The framework automatically saves performance data to benchmark files in the `te
 
 ### Comprehensive Benchmarking System
 
-The Uno framework includes a dedicated benchmarking system for integration tests:
+The uno framework includes a dedicated benchmarking system for integration tests:
 
 1. **Benchmark Runner**: The `run_benchmarks.py` script discovers and runs all benchmark tests, collects metrics, and generates reports.
 

@@ -1,6 +1,6 @@
 # Dependency Injection Examples
 
-This page provides practical examples of using the Uno framework's dependency injection system in various scenarios.
+This page provides practical examples of using uno's dependency injection system in various scenarios.
 
 ## Basic Service Registration and Resolution
 
@@ -469,7 +469,7 @@ from uno.dependencies.modern_provider import initialize_services, shutdown_servi
 # Create a FastAPI application
 app = FastAPI()
 
-# Configure FastAPI with Uno DI
+# Configure FastAPI with uno DI
 configure_fastapi(app)
 
 # Create API endpoints
@@ -1399,4 +1399,4 @@ self.logger.info(f"User {event.user_id} deleted")
 ```
 ```
 
-These examples demonstrate how to use the Uno framework's dependency injection system in various scenarios, from basic service registration and resolution to advanced features like event-driven architecture and factory services.
+These examples demonstrate how to use uno's dependency injection system in various scenarios, from basic service registration and resolution to advanced features like event-driven architecture and factory services.

@@ -1,6 +1,6 @@
 # Generic Type Constraints in Protocols
 
-This document describes the enhanced generic type constraints that have been added to protocols in the Uno framework.
+This document describes the enhanced generic type constraints that have been added to protocols in uno.
 
 ## Introduction
 
@@ -11,7 +11,7 @@ Generic type constraints provide several key benefits:
 3. **Flexibility**: Allow for specialized implementations that maintain type safety
 4. **Static Analysis**: Enable better static analysis tools to catch type errors early
 
-By applying proper generic type constraints to our protocols, we've made the Uno framework more robust and developer-friendly.
+By applying proper generic type constraints to our protocols, we've made uno more robust and developer-friendly.
 
 ## Key Concepts
 
@@ -344,4 +344,4 @@ return value or default
 
 ## Conclusion
 
-The enhanced generic type constraints in the Uno framework protocols provide stronger type safety, clearer interfaces, and better development experiences. These improvements allow for greater flexibility in implementations while maintaining strict type checking, resulting in more robust and maintainable code.
+The enhanced generic type constraints in uno protocols provide stronger type safety, clearer interfaces, and better development experiences. These improvements allow for greater flexibility in implementations while maintaining strict type checking, resulting in more robust and maintainable code.

@@ -1,6 +1,6 @@
 # Authentication
 
-The Uno Security Framework provides comprehensive authentication functionality for securing user access to your applications.
+The uno Security Framework provides comprehensive authentication functionality for securing user access to your applications.
 
 ## Overview
 
@@ -117,7 +117,7 @@ Password policy levels:
 
 ### JWT Authentication
 
-The Uno framework provides comprehensive JSON Web Token (JWT) authentication for FastAPI applications.
+The uno framework provides comprehensive JSON Web Token (JWT) authentication for FastAPI applications.
 
 #### Basic JWT Setup
 
@@ -276,7 +276,7 @@ new_access_token = jwt_auth.refresh_access_token(refresh_token)
 
 #### FastAPI Dependencies
 
-The Uno JWT system provides several FastAPI dependencies for authenticated routes:
+The uno JWT system provides several FastAPI dependencies for authenticated routes:
 
 ```python
 from fastapi import FastAPI, Depends

@@ -1,6 +1,6 @@
 # Cache Monitoring
 
-The Uno caching framework includes comprehensive monitoring capabilities to help track cache performance, diagnose issues, and optimize cache configuration. This document provides an overview of the monitoring features and how to use them effectively.
+The uno caching framework includes comprehensive monitoring capabilities to help track cache performance, diagnose issues, and optimize cache configuration. This document provides an overview of the monitoring features and how to use them effectively.
 
 ## Overview
 

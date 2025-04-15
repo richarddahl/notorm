@@ -1,6 +1,6 @@
 # Deployment Strategies
 
-The Uno Deployment Pipeline supports multiple deployment strategies to accommodate different requirements and risk profiles. This document describes the available strategies and their implementation details.
+The uno Deployment Pipeline supports multiple deployment strategies to accommodate different requirements and risk profiles. This document describes the available strategies and their implementation details.
 
 ## Common Deployment Strategies
 

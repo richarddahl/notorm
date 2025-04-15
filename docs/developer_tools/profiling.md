@@ -1,6 +1,6 @@
 # Performance Profiling Tools
 
-The Uno framework includes a comprehensive set of performance profiling tools that help you identify and resolve performance bottlenecks in your applications. These tools provide insights into SQL query performance, endpoint responsiveness, memory usage, and CPU utilization.
+The uno framework includes a comprehensive set of performance profiling tools that help you identify and resolve performance bottlenecks in your applications. These tools provide insights into SQL query performance, endpoint responsiveness, memory usage, and CPU utilization.
 
 ## Profiling Dashboard
 
@@ -245,4 +245,4 @@ The profiling dashboard can be used alongside other performance tools:
 - **Database Monitoring**: Tools like PgHero for PostgreSQL monitoring
 - **System Monitoring**: Tools like Prometheus and Grafana
 
-By combining Uno's profiling tools with these external tools, you can gain comprehensive insights into your application's performance at all levels.
+By combining uno's profiling tools with these external tools, you can gain comprehensive insights into your application's performance at all levels.

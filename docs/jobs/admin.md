@@ -1,6 +1,6 @@
 # Job System Administration
 
-The Uno Background Processing System provides a comprehensive administration API that enables managing jobs, queues, workers, and schedules through a RESTful interface.
+The uno Background Processing System provides a comprehensive administration API that enables managing jobs, queues, workers, and schedules through a RESTful interface.
 
 ## Overview
 
@@ -378,7 +378,7 @@ Deletes a schedule.
 
 ## Dependency Injection
 
-The administration API integrates with Uno's dependency injection system:
+The administration API integrates with uno's dependency injection system:
 
 ```python
 from uno.dependencies.fastapi import get_job_manager, get_job_metrics
@@ -445,7 +445,7 @@ import httpx
 @click.group()
 def cli():```
 
-"""Command-line interface for Uno Jobs."""
+"""Command-line interface for uno Jobs."""
 pass
 ```
 

@@ -1,6 +1,6 @@
-# Uno Framework Modernization Roadmap (May 2025 Update)
+# uno Framework Modernization Roadmap (May 2025 Update)
 
-This roadmap outlines the key improvements planned for the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices. All planned roadmap items have been completed as of May 2025.
+This roadmap outlines the key improvements planned for uno to make it more modular, loosely coupled, and aligned with modern Python best practices. All planned roadmap items have been completed as of May 2025.
 
 ## Legacy Code Cleanup (✅ Completed May 2025)
 

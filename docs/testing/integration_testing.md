@@ -1,10 +1,10 @@
-# Integration Testing with Uno
+# Integration Testing with uno
 
-This document provides guidelines and examples for integration testing with Uno applications using the `uno.testing.integration` package.
+This document provides guidelines and examples for integration testing with uno applications using the `uno.testing.integration` package.
 
 ## Overview
 
-Integration testing verifies that different components of your application work together correctly. The Uno testing framework provides utilities for efficient integration testing with:
+Integration testing verifies that different components of your application work together correctly. The uno testing framework provides utilities for efficient integration testing with:
 
 - Containerized testing environments (PostgreSQL, Redis, etc.)
 - Database integration tests
@@ -546,6 +546,6 @@ pytest tests/integration/ --database-url=postgresql://user:pass@localhost:5432/t
 
 ## Conclusion
 
-The Uno integration testing utilities provide a powerful framework for testing Uno applications. By following these guidelines and using the provided utilities, you can write comprehensive integration tests that verify your application's behavior across component boundaries.
+The uno integration testing utilities provide a powerful framework for testing uno applications. By following these guidelines and using the provided utilities, you can write comprehensive integration tests that verify your application's behavior across component boundaries.
 
 For more examples, see the `example.py` file in the `uno.testing.integration` package.

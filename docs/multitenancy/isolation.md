@@ -4,7 +4,7 @@ This document describes the tenant isolation strategy implemented using PostgreS
 
 ## Overview
 
-Tenant isolation ensures that each tenant's data is completely separated from other tenants. The Uno framework implements tenant isolation at the database level using PostgreSQL's Row Level Security (RLS) feature.
+Tenant isolation ensures that each tenant's data is completely separated from other tenants. The uno framework implements tenant isolation at the database level using PostgreSQL's Row Level Security (RLS) feature.
 
 RLS allows you to define policies that restrict which rows a user can see or modify in a table. These policies are enforced by the database itself, providing a strong security boundary.
 

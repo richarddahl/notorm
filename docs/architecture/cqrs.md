@@ -1,6 +1,6 @@
 # Command Query Responsibility Segregation (CQRS)
 
-The Uno framework implements the Command Query Responsibility Segregation (CQRS) pattern to separate the read and write operations, allowing each to be optimized independently. Our implementation has been fully modernized with Python 3.12+ features, including PEP 695 type parameter syntax and comprehensive type safety.
+The uno framework implements the Command Query Responsibility Segregation (CQRS) pattern to separate the read and write operations, allowing each to be optimized independently. Our implementation has been fully modernized with Python 3.12+ features, including PEP 695 type parameter syntax and comprehensive type safety.
 
 ## Overview
 
@@ -13,7 +13,7 @@ This separation allows each side to be optimized independently, which is particu
 
 ## Implementation
 
-The Uno framework implements CQRS with the following components, now fully leveraging Python 3.12+ features and protocol-based design:
+The uno framework implements CQRS with the following components, now fully leveraging Python 3.12+ features and protocol-based design:
 
 ### Command Side
 
@@ -182,7 +182,7 @@ print(f"Error: {result.error}")
 
 #### SQL-Based Query Handlers
 
-For performance-critical read operations, the Uno framework provides SQL-based query handlers that bypass the domain model and execute optimized SQL queries directly.
+For performance-critical read operations, uno provides SQL-based query handlers that bypass the domain model and execute optimized SQL queries directly.
 
 ```python
 class GetUserStatsQueryHandler(SqlQueryHandler[GetUserStatsQuery, UserStats, UserModel]):```
@@ -214,7 +214,7 @@ return UserStats(
 
 #### Pagination Support
 
-The Uno framework includes built-in support for pagination, making it easy to work with large result sets.
+The uno framework includes built-in support for pagination, making it easy to work with large result sets.
 
 ```python
 class GetUsersQuery(PaginatedQuery[User]):```
@@ -260,7 +260,7 @@ The command side also includes specialized handlers for common operations such a
 
 ## Benefits
 
-The CQRS pattern in the Uno framework provides several benefits:
+The CQRS pattern in uno provides several benefits:
 
 1. **Separation of concerns**: Read and write logic can be developed, optimized, and scaled independently.
 2. **Performance optimization**: Queries can be optimized for read performance without compromising the domain model's integrity.
@@ -270,7 +270,7 @@ The CQRS pattern in the Uno framework provides several benefits:
 
 ## Integration with Other Patterns
 
-CQRS in the Uno framework integrates seamlessly with other architectural patterns:
+CQRS in uno integrates seamlessly with other architectural patterns:
 
 - **Domain-Driven Design (DDD)**: Commands typically interact with the domain model, preserving business rules and invariants.
 - **Event-Driven Architecture**: Commands can publish domain events that trigger further actions in the system.
@@ -343,4 +343,4 @@ print(f"Created and retrieved user: {get_result.output.username}")
 
 ## Conclusion
 
-The CQRS pattern in the Uno framework provides a powerful way to separate read and write operations, allowing each to be optimized independently while maintaining a clean, maintainable architecture. By combining CQRS with other patterns like DDD and event-driven architecture, the Uno framework offers a comprehensive solution for building complex, high-performance applications.
+The CQRS pattern in uno provides a powerful way to separate read and write operations, allowing each to be optimized independently while maintaining a clean, maintainable architecture. By combining CQRS with other patterns like DDD and event-driven architecture, uno offers a comprehensive solution for building complex, high-performance applications.

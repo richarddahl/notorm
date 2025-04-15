@@ -1,8 +1,14 @@
-# UnoObj Schema Initialization Guide
+# UnoObj Schema System Guide
 
 ## Overview
 
-In the Uno framework, schemas are used to control how model data is serialized and deserialized for different operations (viewing, editing, etc.). There are two main ways to initialize schemas for a `UnoObj` subclass:
+In uno, schemas are used to control how model data is serialized and deserialized for different operations (viewing, editing, etc.). The schema system provides powerful validation capabilities to ensure data integrity throughout your application.
+
+For comprehensive documentation on schema validation, please see:
+- [Schema Validation Guide](/schema/validation.md) - Detailed guide to validation options and techniques
+- [Schema Validation Examples](/schema/validation_examples.py) - Complete examples of validation scenarios
+
+There are two main ways to initialize schemas for a `UnoObj` subclass:
 
 1. **Automatic initialization** - happens when you create an instance of a `UnoObj` subclass
 2. **Manual initialization** - explicitly creating schemas when needed

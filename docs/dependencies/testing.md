@@ -1,10 +1,10 @@
 # Testing with Dependencies
 
-Uno provides a comprehensive set of tools for testing code that uses dependency injection.
+uno provides a comprehensive set of tools for testing code that uses dependency injection.
 
 ## Overview
 
-Testing with dependency injection involves replacing real dependencies with mock or test versions. Uno's testing utilities make this process straightforward and expressive.
+Testing with dependency injection involves replacing real dependencies with mock or test versions. uno's testing utilities make this process straightforward and expressive.
 
 ## Key Testing Components
 

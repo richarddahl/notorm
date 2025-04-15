@@ -1,6 +1,6 @@
 # Validation Framework
 
-The Uno framework provides a comprehensive validation framework that integrates with the error handling system, allowing for structured validation with detailed error reporting.
+The uno framework provides a comprehensive validation framework that integrates with the error handling system, allowing for structured validation with detailed error reporting.
 
 ## Core Concepts
 

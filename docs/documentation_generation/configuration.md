@@ -1,6 +1,6 @@
 # Documentation Generator Configuration
 
-The Uno documentation generator provides extensive configuration options to customize how documentation is generated and rendered.
+The uno documentation generator provides extensive configuration options to customize how documentation is generated and rendered.
 
 ## Configuration Options
 

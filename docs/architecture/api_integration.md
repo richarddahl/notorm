@@ -1,6 +1,6 @@
 # API Integration Layer
 
-The API Integration Layer in the Uno framework connects the Application Service Layer to HTTP endpoints, providing a clean boundary between the domain model and external clients. It translates HTTP requests into commands and queries, and transforms the results back into HTTP responses.
+The API Integration Layer in uno connects the Application Service Layer to HTTP endpoints, providing a clean boundary between the domain model and external clients. It translates HTTP requests into commands and queries, and transforms the results back into HTTP responses.
 
 ## Overview
 

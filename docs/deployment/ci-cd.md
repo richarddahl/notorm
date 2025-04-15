@@ -1,10 +1,10 @@
 # CI/CD Integration
 
-The Uno Deployment Pipeline provides templates and utilities for integrating with various CI/CD platforms. This document describes the supported platforms and how to use them effectively.
+The uno Deployment Pipeline provides templates and utilities for integrating with various CI/CD platforms. This document describes the supported platforms and how to use them effectively.
 
 ## GitHub Actions
 
-The pipeline includes a GitHub Actions workflow template for building, testing, and deploying Uno applications.
+The pipeline includes a GitHub Actions workflow template for building, testing, and deploying uno applications.
 
 ### Workflow Features
 
@@ -20,7 +20,7 @@ The pipeline includes a GitHub Actions workflow template for building, testing, 
 The workflow template is located at `src/uno/deployment/templates/github_actions.yml`. Here's an overview of the key components:
 
 ```yaml
-name: Uno CI/CD Pipeline
+name: uno CI/CD Pipeline
 
 on:
   push:```
@@ -100,7 +100,7 @@ The workflow requires the following GitHub Secrets:
 
 ## GitLab CI
 
-The pipeline also supports GitLab CI/CD with a template for building, testing, and deploying Uno applications.
+The pipeline also supports GitLab CI/CD with a template for building, testing, and deploying uno applications.
 
 ### Pipeline Features
 
@@ -152,7 +152,7 @@ The CircleCI configuration template is available at `src/uno/deployment/template
 
 ## Custom CI/CD Integration
 
-For custom CI/CD platforms, you can use the Uno deployment scripts directly:
+For custom CI/CD platforms, you can use the uno deployment scripts directly:
 
 ```bash
 # Install the package

@@ -1,10 +1,10 @@
 # Real-time Updates Overview
 
-The Uno framework provides built-in support for real-time updates via several complementary mechanisms. This allows your applications to deliver responsive, live-updating user experiences without complex custom code.
+The uno framework provides built-in support for real-time updates via several complementary mechanisms. This allows your applications to deliver responsive, live-updating user experiences without complex custom code.
 
 ## Available Mechanisms
 
-Uno offers multiple real-time update mechanisms that can be used independently or together:
+uno offers multiple real-time update mechanisms that can be used independently or together:
 
 1. **WebSockets**: Full-duplex communication channel for bidirectional real-time updates
 2. **Server-Sent Events (SSE)**: Lightweight, unidirectional server-to-client data streaming
@@ -13,7 +13,7 @@ Uno offers multiple real-time update mechanisms that can be used independently o
 
 ## Architecture Overview
 
-The real-time update system is built as an independent module that integrates with the core Uno framework. It follows the same principles of loose coupling and protocol-based design as the rest of the framework.
+The real-time update system is built as an independent module that integrates with the core uno framework. It follows the same principles of loose coupling and protocol-based design as the rest of the framework.
 
 ``````
 ```
@@ -85,7 +85,7 @@ The subscription management system allows fine-grained control over what updates
 
 ## Integration with Domain Events
 
-The real-time update system integrates with Uno's event system, allowing domain events to be published as real-time updates. This provides:
+The real-time update system integrates with uno's event system, allowing domain events to be published as real-time updates. This provides:
 
 - Consistency between your domain model and client state
 - Automatic updates when business operations complete

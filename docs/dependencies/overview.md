@@ -1,12 +1,12 @@
-# Modern Dependency Injection in Uno
+# Modern Dependency Injection in uno
 
-The Uno framework includes a modern, hierarchical dependency injection system that improves code maintainability, testability, and decoupling of components.
+The uno framework includes a modern, hierarchical dependency injection system that improves code maintainability, testability, and decoupling of components.
 
 ## Overview
 
-Dependency injection (DI) is a design pattern that allows you to decouple the creation of objects from their usage. In the Uno framework, this is implemented using a custom, protocol-based DI container that supports proper scoping and lifecycle management.
+Dependency injection (DI) is a design pattern that allows you to decouple the creation of objects from their usage. In uno, this is implemented using a custom, protocol-based DI container that supports proper scoping and lifecycle management.
 
-Uno supports both traditional UnoObj-based development and modern dependency injection patterns. This documentation explains the dependency injection system and how it can be used alongside or as an alternative to the UnoObj pattern.
+uno supports both traditional UnoObj-based development and modern dependency injection patterns. This documentation explains the dependency injection system and how it can be used alongside or as an alternative to the UnoObj pattern.
 
 ## Key Benefits
 
@@ -111,7 +111,7 @@ return await repo.list()
 
 ## Architecture Patterns
 
-Uno supports multiple architectural patterns:
+uno supports multiple architectural patterns:
 
 1. **UnoObj Pattern**: The traditional approach using UnoObj for everything
 2. **Dependency Injection Pattern**: Modern approach with protocols, repositories, and services

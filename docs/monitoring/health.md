@@ -4,7 +4,7 @@ Health checks are a critical component of any production application, providing 
 
 ## Overview
 
-The Uno framework's health check system allows you to:
+The uno framework's health check system allows you to:
 
 - Register custom health checks for your application components
 - Monitor dependent services (databases, caches, etc.)

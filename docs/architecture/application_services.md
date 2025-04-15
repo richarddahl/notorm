@@ -1,6 +1,6 @@
 # Application Service Layer
 
-The Application Service Layer in the Uno framework serves as a facade between the presentation layer (such as API controllers or UI) and the domain model. It orchestrates the execution of use cases by coordinating domain objects, repositories, and infrastructure services.
+The Application Service Layer in uno serves as a facade between the presentation layer (such as API controllers or UI) and the domain model. It orchestrates the execution of use cases by coordinating domain objects, repositories, and infrastructure services.
 
 ## Overview
 

@@ -1,10 +1,10 @@
 # Monitoring and Observability
 
-The Uno framework provides a comprehensive monitoring and observability system that helps you understand the health, performance, and behavior of your application in production.
+The uno framework provides a comprehensive monitoring and observability system that helps you understand the health, performance, and behavior of your application in production.
 
 ## Overview
 
-The monitoring and observability framework in Uno consists of five main components:
+The monitoring and observability framework in uno consists of five main components:
 
 1. **Metrics Collection**: Collect numerical measurements about your application's performance and behavior.
 2. **Distributed Tracing**: Track requests as they flow through your application and external services.
@@ -153,7 +153,7 @@ This adds endpoints for:
 
 ## Integration with Resource Management
 
-The monitoring system integrates seamlessly with Uno's resource management system:
+The monitoring system integrates seamlessly with uno's resource management system:
 
 ```python
 from uno.core.resource_monitor import get_resource_monitor

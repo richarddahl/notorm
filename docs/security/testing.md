@@ -1,10 +1,10 @@
 # Security Testing
 
-The Uno Security Framework includes a comprehensive security testing suite designed to identify vulnerabilities, enforce secure coding practices, and maintain a strong security posture. This document describes the security testing tools and methodologies available in the framework.
+The uno Security Framework includes a comprehensive security testing suite designed to identify vulnerabilities, enforce secure coding practices, and maintain a strong security posture. This document describes the security testing tools and methodologies available in the framework.
 
 ## Overview
 
-Security testing in Uno provides:
+Security testing in uno provides:
 
 - Automated vulnerability scanning of dependencies
 - Static code analysis for security issues

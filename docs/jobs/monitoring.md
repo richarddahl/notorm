@@ -1,6 +1,6 @@
 # Job System Monitoring
 
-The Uno Background Processing System includes comprehensive monitoring capabilities to help you track system health, performance, and job execution metrics.
+The uno Background Processing System includes comprehensive monitoring capabilities to help you track system health, performance, and job execution metrics.
 
 ## Overview
 

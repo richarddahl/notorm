@@ -6,7 +6,7 @@
 
 uno is a comprehensive application framework for building data-driven applications with PostgreSQL and FastAPI. Despite its name, it's not just an ORM – it's a complete framework that provides a unified approach to database operations, API definition, and business logic.
 
-### Why is it called "Uno"?
+### Why is it called "uno"?
 
 The name "uno" (Spanish for "one") represents the unified nature of the framework, bringing together database, API, and business logic in a cohesive but loosely coupled system.
 

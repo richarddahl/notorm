@@ -1,12 +1,12 @@
-# Event-Driven Architecture in the Uno Framework
+# Event-Driven Architecture in the uno Framework
 
-Event-Driven Architecture (EDA) is a software architecture pattern that promotes the production, detection, consumption of, and reaction to events. The Uno framework implements a robust event system with topic-based routing, event persistence, and both synchronous and asynchronous event handling.
+Event-Driven Architecture (EDA) is a software architecture pattern that promotes the production, detection, consumption of, and reaction to events. The uno framework implements a robust event system with topic-based routing, event persistence, and both synchronous and asynchronous event handling.
 
 ## Core Concepts
 
 ### Events
 
-Events in the Uno framework are represented by the `DomainEvent` class and represent significant occurrences within the domain model. Events are immutable records of something that happened, containing:
+Events in uno are represented by the `DomainEvent` class and represent significant occurrences within the domain model. Events are immutable records of something that happened, containing:
 
 - **Metadata**: Event ID, timestamp, type, version
 - **Context Information**: Aggregate ID, aggregate type
@@ -145,7 +145,7 @@ since_version=5
 
 ## Topic-Based Routing
 
-The Uno framework supports topic-based routing for events, which allows handlers to subscribe to events based on topic patterns. Topics are hierarchical strings that can be used to categorize events:
+The uno framework supports topic-based routing for events, which allows handlers to subscribe to events based on topic patterns. Topics are hierarchical strings that can be used to categorize events:
 
 ```python
 # Publish an event with a topic
@@ -185,7 +185,7 @@ topic_pattern="*.created"
 
 ## Event Correlation and Causation
 
-The Uno framework supports event correlation and causation for distributed tracing:
+The uno framework supports event correlation and causation for distributed tracing:
 
 ```python
 # Create an event with correlation ID
@@ -249,7 +249,7 @@ since_timestamp=datetime(2023, 1, 1)
 
 ## Event Sourcing
 
-The Uno framework supports event sourcing, which allows aggregates to be rebuilt from their event history:
+The uno framework supports event sourcing, which allows aggregates to be rebuilt from their event history:
 
 ```python
 from uno.domain.event_store import EventSourcedRepository
@@ -358,4 +358,4 @@ await profile_repository.add(profile)
 
 ## Conclusion
 
-The event-driven architecture in the Uno framework provides a powerful and flexible way to implement loosely coupled, scalable systems. By using domain events, the event bus, and event sourcing, you can build systems that are responsive, resilient, and maintainable.
+The event-driven architecture in uno provides a powerful and flexible way to implement loosely coupled, scalable systems. By using domain events, the event bus, and event sourcing, you can build systems that are responsive, resilient, and maintainable.

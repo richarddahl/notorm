@@ -1,6 +1,6 @@
-# Uno Framework Documentation
+# uno Framework Documentation
 
-Welcome to the Uno Framework documentation. uno is a platform for building data-driven applications with PostgreSQL and FastAPI.
+Welcome to the uno Framework documentation. uno is a platform for building data-driven applications with PostgreSQL and FastAPI.
 
 
 For more information, see:
@@ -10,7 +10,7 @@ For more information, see:
 - [Documentation Development Plan](./project/documentation_plan.md) - Plan for ongoing documentation improvement  
 
 
-## What is Uno?
+## What is uno?
 
 Despite its name ("uno is not an ORM"), it's an application platform that goes well beyond traditional web frameworks to provide a unified approach to database operations, API definition, and business logic.
 
@@ -51,7 +51,7 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 
 ## Layered Architecture
 
-Uno is built on a layered architecture aligned with Domain-Driven Design principles:
+uno is built on a layered architecture aligned with Domain-Driven Design principles:
 
 1. **Domain Layer**: Contains the business logic and domain model
    - `Entity`, `AggregateRoot`, `ValueObject`: Core domain model components
@@ -83,7 +83,7 @@ Uno is built on a layered architecture aligned with Domain-Driven Design princip
 
 ## Quick Start
 
-To get started with Uno, follow these steps:
+To get started with uno, follow these steps:
 
 ```bash
 # Install with Docker (recommended)

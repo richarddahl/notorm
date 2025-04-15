@@ -1,6 +1,6 @@
 # Docker Setup for Vector Search
 
-This guide explains how to set up the Docker environment for Uno Framework with vector search capabilities using PostgreSQL and pgvector.
+This guide explains how to set up the Docker environment for uno Framework with vector search capabilities using PostgreSQL and pgvector.
 
 ## Quick Setup
 
@@ -31,7 +31,7 @@ hatch run dev:app
 
 ## Overview
 
-The Docker setup for Uno creates a PostgreSQL 16 container with the following extensions:
+The Docker setup for uno creates a PostgreSQL 16 container with the following extensions:
 
 - **pgvector**: For vector similarity search
 - **AGE** (Apache Graph Extension): For graph database functionality

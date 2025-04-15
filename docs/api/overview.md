@@ -1,6 +1,6 @@
 # API Layer
 
-The API Layer in Uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
+The API Layer in uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
 
 ## In This Section
 
@@ -15,7 +15,7 @@ The API Layer sits between client applications and the business logic layer, pro
 
 ## Architecture
 
-The API layer integrates with the other components of the Uno framework to provide a complete solution:
+The API layer integrates with the other components of uno to provide a complete solution:
 
 ```
 ┌───────────────┐      ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
@@ -286,7 +286,7 @@ app.include_router(router)
 
 ## Integration with Dependency Injection
 
-The modern Uno architecture integrates the API layer with dependency injection:
+The modern uno architecture integrates the API layer with dependency injection:
 
 ```python
 from fastapi import APIRouter, Depends

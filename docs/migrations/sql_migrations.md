@@ -1,6 +1,6 @@
 # SQL Migrations
 
-SQL migrations are a simple way to define database schema changes using plain SQL statements. This guide explains how to create and work with SQL migrations in the Uno framework.
+SQL migrations are a simple way to define database schema changes using plain SQL statements. This guide explains how to create and work with SQL migrations in uno.
 
 ## Creating SQL Migrations
 

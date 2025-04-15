@@ -369,7 +369,7 @@ Set the `Accept` header to `application/x-ndjson` to receive newline-delimited J
 
 ### Error Handling
 
-UnoEndpoint integrates with Uno's error handling system to provide consistent error responses:
+UnoEndpoint integrates with uno's error handling system to provide consistent error responses:
 
 ```python
 # Configure error handlers

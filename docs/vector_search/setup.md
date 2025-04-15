@@ -1,11 +1,11 @@
 # Setting Up Vector Search
 
-This guide explains how to set up and configure vector search for your tables in Uno.
+This guide explains how to set up and configure vector search for your tables in uno.
 
 ## Prerequisites
 
 1. PostgreSQL 12+ with pgvector extension installed
-2. Uno framework configured with PostgreSQL access
+2. uno framework configured with PostgreSQL access
 
 ## Installation
 

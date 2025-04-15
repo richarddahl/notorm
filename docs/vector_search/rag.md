@@ -1,6 +1,6 @@
 # Retrieval-Augmented Generation (RAG)
 
-This guide explains how to use Uno's vector search system for Retrieval-Augmented Generation (RAG) with LLMs.
+This guide explains how to use uno's vector search system for Retrieval-Augmented Generation (RAG) with LLMs.
 
 ## What is RAG?
 
@@ -16,9 +16,9 @@ RAG helps LLMs:
 - Reduce hallucinations by grounding responses in facts
 - Stay up-to-date with information beyond their training cutoff
 
-## RAG Architecture in Uno
+## RAG Architecture in uno
 
-Uno's RAG system has these components:
+uno's RAG system has these components:
 
 1. **Vector Search Service**: Finds semantically relevant entities
 2. **RAG Service**: Formats entities into context for LLM prompts
@@ -125,7 +125,7 @@ context = rag_service.format_context_for_prompt(entities)
 
 ## Graph-Enhanced RAG
 
-Uno provides advanced graph-enhanced RAG capabilities through the `GraphRAGService` class, which leverages the knowledge graph to provide richer context for LLM interactions.
+uno provides advanced graph-enhanced RAG capabilities through the `GraphRAGService` class, which leverages the knowledge graph to provide richer context for LLM interactions.
 
 ### Setting Up Graph-Enhanced RAG
 

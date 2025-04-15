@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Uno framework provides powerful integration between the QueryModel system and the Workflow module, enabling complex conditional logic in workflows through graph-based queries.
+The uno framework provides powerful integration between the QueryModel system and the Workflow module, enabling complex conditional logic in workflows through graph-based queries.
 
 This integration allows workflow administrators to define sophisticated targeting rules by leveraging saved queries as workflow conditions. When a workflow is triggered, the condition evaluation can use the graph database to determine if the event's associated record matches the specified query.
 

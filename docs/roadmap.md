@@ -1,6 +1,6 @@
-# Uno Framework Modernization Roadmap
+# uno Framework Modernization Roadmap
 
-This roadmap outlines the planned enhancements and architectural improvements for the Uno framework.
+This roadmap outlines the planned enhancements and architectural improvements for uno.
 
 ## Completed
 
@@ -38,7 +38,7 @@ This roadmap outlines the planned enhancements and architectural improvements fo
 
 ✅ **Multi-Tenant Support**: Add comprehensive support for multi-tenant applications.
 
-✅ **Test Framework**: Build a comprehensive testing framework specific to Uno applications.
+✅ **Test Framework**: Build a comprehensive testing framework specific to uno applications.
 
 ✅ **Deployment Pipeline**: Streamline the deployment process with CI/CD integration.
 

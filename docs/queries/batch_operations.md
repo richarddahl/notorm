@@ -1,15 +1,15 @@
 # Batch Operations
 
-Uno provides powerful batch operations for efficiently processing large amounts of data with PostgreSQL. These batch operations optimize database interactions, minimize round trips, and maximize throughput.
+uno provides powerful batch operations for efficiently processing large amounts of data with PostgreSQL. These batch operations optimize database interactions, minimize round trips, and maximize throughput.
 
 ## Overview
 
-The batch operations system in Uno consists of two main components:
+The batch operations system in uno consists of two main components:
 
 1. **BatchProcessor**: The core engine that handles batch processing with different execution strategies
 2. **BatchOperations**: High-level API for performing batch operations on database entities
 
-These components work together to provide efficient batch processing capabilities that are fully integrated with Uno's repository pattern.
+These components work together to provide efficient batch processing capabilities that are fully integrated with uno's repository pattern.
 
 ## Key Features
 
@@ -37,7 +37,7 @@ These components work together to provide efficient batch processing capabilitie
 
 ## Usage in Repositories
 
-The batch operations system is fully integrated with Uno's repository pattern. The `UnoDBRepository` class provides batch methods that can be used directly:
+The batch operations system is fully integrated with uno's repository pattern. The `UnoDBRepository` class provides batch methods that can be used directly:
 
 ```python
 # Initialize repository with batch operations enabled
@@ -226,7 +226,7 @@ The following batch operations are available:
 
 ## Integration with Caching
 
-Batch operations integrate with Uno's caching system:
+Batch operations integrate with uno's caching system:
 
 - Read operations (like `batch_get`) can use cache
 - Write operations (like `batch_update`) will invalidate cache entries

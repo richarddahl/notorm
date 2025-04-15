@@ -1,6 +1,6 @@
 # Distributed Tracing
 
-Distributed tracing in Uno allows you to track requests as they flow through your application and external services. It provides visibility into the full request lifecycle, helping you identify bottlenecks and troubleshoot issues.
+Distributed tracing in uno allows you to track requests as they flow through your application and external services. It provides visibility into the full request lifecycle, helping you identify bottlenecks and troubleshoot issues.
 
 ## Key Concepts
 

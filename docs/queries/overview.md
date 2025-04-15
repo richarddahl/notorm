@@ -1,6 +1,6 @@
 # Queries Overview
 
-The Uno queries module provides a comprehensive system for building, executing, and optimizing database queries. This module is designed to work with PostgreSQL and takes advantage of its advanced features while providing a clean, type-safe API.
+The uno queries module provides a comprehensive system for building, executing, and optimizing database queries. This module is designed to work with PostgreSQL and takes advantage of its advanced features while providing a clean, type-safe API.
 
 ## Core Components
 
@@ -207,7 +207,7 @@ id_values=list(range(501, 701)),
 
 ## Integration with Repository Pattern
 
-The queries system integrates seamlessly with Uno's repository pattern:
+The queries system integrates seamlessly with uno's repository pattern:
 
 ```python
 from uno.domain.repository import UnoDBRepository
@@ -321,4 +321,4 @@ hints=hints,
 
 ## Conclusion
 
-The Uno queries module provides a powerful, flexible, and efficient system for working with databases. By combining filtering, optimization, common patterns, and batch operations, it enables high-performance database access while maintaining a clean, type-safe API.
+The uno queries module provides a powerful, flexible, and efficient system for working with databases. By combining filtering, optimization, common patterns, and batch operations, it enables high-performance database access while maintaining a clean, type-safe API.

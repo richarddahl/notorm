@@ -1,6 +1,6 @@
 # Async Utilities Overview
 
-The Uno framework provides a comprehensive suite of async utilities that extend Python's built-in asyncio library to address common challenges in asynchronous programming. These utilities are designed to make asynchronous code more robust, maintainable, and easier to reason about.
+The uno framework provides a comprehensive suite of async utilities that extend Python's built-in asyncio library to address common challenges in asynchronous programming. These utilities are designed to make asynchronous code more robust, maintainable, and easier to reason about.
 
 ## Key Components
 
@@ -210,7 +210,7 @@ cleanup_func=cleanup
 
 ## Integration with Other Components
 
-The async utilities are designed to integrate seamlessly with other Uno framework components:
+The async utilities are designed to integrate seamlessly with other uno framework components:
 
 - **Database**: Enhanced async sessions and connection management
 - **API**: Async endpoint handlers with proper cancellation

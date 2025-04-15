@@ -1,6 +1,6 @@
 # Deployment Configuration
 
-The Uno Deployment Pipeline uses a flexible configuration system to manage deployment settings across different environments and platforms. This document describes the configuration options and how to use them effectively.
+The uno Deployment Pipeline uses a flexible configuration system to manage deployment settings across different environments and platforms. This document describes the configuration options and how to use them effectively.
 
 ## Configuration Structure
 

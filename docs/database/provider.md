@@ -1,10 +1,10 @@
 # Database Provider
 
-The Uno framework includes a unified database provider system that centralizes database connections and provides a consistent API for both synchronous and asynchronous database access.
+The uno framework includes a unified database provider system that centralizes database connections and provides a consistent API for both synchronous and asynchronous database access.
 
 ## Overview
 
-The `DatabaseProvider` is the primary entry point for all database operations in Uno applications. It manages connection pools, session factories, and provides context managers for database access.
+The `DatabaseProvider` is the primary entry point for all database operations in uno applications. It manages connection pools, session factories, and provides context managers for database access.
 
 The `DatabaseProvider` is a core component of the new database architecture, designed to work with both the legacy UnoObj pattern and the new dependency injection approach. It offers a clean, testable interface for database operations with proper resource management and error handling.
 

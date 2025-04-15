@@ -1,12 +1,12 @@
 # Repository Pattern
 
-The Uno framework implements the repository pattern for database access, providing a clean separation between data access logic and business logic.
+The uno framework implements the repository pattern for database access, providing a clean separation between data access logic and business logic.
 
 ## Overview
 
 The repository pattern abstracts the details of data access, making your code more maintainable, testable, and decoupled from the database implementation.
 
-In Uno, the `UnoBaseRepository` class provides a foundation for all repositories, with methods for common CRUD operations and query functionality.
+In uno, the `UnoBaseRepository` class provides a foundation for all repositories, with methods for common CRUD operations and query functionality.
 
 The repository pattern is a key component of the new database architecture, designed to facilitate dependency injection and improve testability. Repositories encapsulate data access logic, making it easier to mock database operations during testing and providing a more structured approach to data access compared to direct use of database APIs.
 

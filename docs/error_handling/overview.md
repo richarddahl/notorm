@@ -1,6 +1,6 @@
 # Error Handling Framework
 
-The Uno framework provides a comprehensive error handling system that combines structured errors, contextual information, error codes, functional error handling, and structured logging.
+The uno framework provides a comprehensive error handling system that combines structured errors, contextual information, error codes, functional error handling, and structured logging.
 
 ## Key Features
 
@@ -450,7 +450,7 @@ When using the FastAPI integration, UnoError objects are automatically converted
 
 ## Error Categories
 
-Uno provides several error categories to help classify errors:
+uno provides several error categories to help classify errors:
 
 | Category | Description | Example |
 |----------|-------------|---------|

@@ -1,10 +1,10 @@
 # Migrating to the Modern Dependency Injection System
 
-This guide provides instructions for migrating from the legacy dependency injection approach to the modern DI system in Uno.
+This guide provides instructions for migrating from the legacy dependency injection approach to the modern DI system in uno.
 
 ## Overview of Changes
 
-The Uno framework has transitioned from a legacy DI system using the `inject` library to a modern, custom-built DI container with the following improvements:
+The uno framework has transitioned from a legacy DI system using the `inject` library to a modern, custom-built DI container with the following improvements:
 
 - Hierarchical scoping (singleton, scoped, transient)
 - Proper async lifecycle support

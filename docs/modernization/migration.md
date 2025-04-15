@@ -1,6 +1,6 @@
-# Migrating to the Modern Uno Framework
+# Migrating to the Modern uno Framework
 
-This guide provides step-by-step instructions for migrating existing applications to the modern Uno framework. The migration process is designed to be gradual, allowing you to adopt the new features at your own pace.
+This guide provides step-by-step instructions for migrating existing applications to the modern uno framework. The migration process is designed to be gradual, allowing you to adopt the new features at your own pace.
 
 ## Migration Strategy
 
@@ -15,7 +15,7 @@ The migration strategy focuses on:
 
 ### Step 1: Update Dependencies
 
-First, update to the latest version of the Uno framework:
+First, update to the latest version of uno:
 
 ```bash
 pip install --upgrade uno
@@ -752,7 +752,7 @@ services.add_singleton(UserEventProcessor)
 
 Use this checklist to track your migration progress:
 
-- [ ] Update to the latest Uno framework version
+- [ ] Update to the latest uno framework version
 - [ ] Configure modern dependency injection
 - [ ] Use dependency injection decorators
 - [ ] Update FastAPI integration
@@ -792,6 +792,6 @@ If you encounter issues with event handling:
 
 ## Conclusion
 
-By following this migration guide, you can gradually adopt the modern features of the Uno framework while maintaining compatibility with existing code. Each step provides tangible benefits, and you can adopt the steps at your own pace.
+By following this migration guide, you can gradually adopt the modern features of uno while maintaining compatibility with existing code. Each step provides tangible benefits, and you can adopt the steps at your own pace.
 
 If you encounter any issues during the migration, please refer to the troubleshooting section or file an issue on GitHub.

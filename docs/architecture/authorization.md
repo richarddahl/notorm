@@ -1,10 +1,10 @@
 # Advanced Authorization
 
-The Uno framework provides a comprehensive authorization system that integrates with the service context to provide fine-grained access control. This system includes support for policy-based authorization, role-based access control (RBAC), and multi-tenant authorization.
+The uno framework provides a comprehensive authorization system that integrates with the service context to provide fine-grained access control. This system includes support for policy-based authorization, role-based access control (RBAC), and multi-tenant authorization.
 
 ## Overview
 
-The advanced authorization system in Uno consists of several components that work together to provide secure, flexible, and powerful access control:
+The advanced authorization system in uno consists of several components that work together to provide secure, flexible, and powerful access control:
 
 1. **Authorization Policies**: Define rules for who can access what resources and actions
 2. **Role-Based Access Control (RBAC)**: Manages users, roles, and permissions
@@ -512,7 +512,7 @@ return False
 
 ## Conclusion
 
-The Advanced Authorization system in the Uno framework provides a comprehensive solution for implementing fine-grained access control. By combining policy-based authorization, role-based access control, and multi-tenant support, you can create a secure and flexible authorization system for your application.
+The Advanced Authorization system in uno provides a comprehensive solution for implementing fine-grained access control. By combining policy-based authorization, role-based access control, and multi-tenant support, you can create a secure and flexible authorization system for your application.
 
 The integration with the service context ensures that authorization is consistently applied across your application, from the API layer through to the domain model. This layered approach to authorization allows you to implement both simple and sophisticated access control as needed.
 

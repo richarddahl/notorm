@@ -1,6 +1,6 @@
 # Hybrid Search Queries
 
-This guide explores hybrid search capabilities that combine graph traversal with vector similarity in Uno.
+This guide explores hybrid search capabilities that combine graph traversal with vector similarity in uno.
 
 ## Overview
 
@@ -16,7 +16,7 @@ This enables complex queries like:
 
 ## How Hybrid Queries Work
 
-A hybrid query in Uno:
+A hybrid query in uno:
 
 1. **Starts with a graph traversal** defined by a Cypher path pattern
 2. **Filters the results** using vector similarity

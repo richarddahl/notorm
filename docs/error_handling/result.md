@@ -1,6 +1,6 @@
 # Result Pattern
 
-The Uno framework implements the Result pattern (also known as the Either pattern) for functional error handling. This pattern allows handling errors in a more explicit and functional way, without relying on exceptions.
+The uno framework implements the Result pattern (also known as the Either pattern) for functional error handling. This pattern allows handling errors in a more explicit and functional way, without relying on exceptions.
 
 ## Core Concepts
 

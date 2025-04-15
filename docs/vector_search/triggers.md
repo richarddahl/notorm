@@ -1,6 +1,6 @@
 # Vector Search Triggers
 
-This document explains the PostgreSQL trigger system that powers the vector search functionality in Uno.
+This document explains the PostgreSQL trigger system that powers the vector search functionality in uno.
 
 ## Overview
 

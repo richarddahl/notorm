@@ -1,6 +1,6 @@
 # Resource Management
 
-The Uno framework includes a comprehensive resource management system for handling connection pooling, lifecycle management, health monitoring, and circuit breaking. This system ensures that application resources are properly managed throughout their lifecycle, providing robustness and reliability.
+The uno framework includes a comprehensive resource management system for handling connection pooling, lifecycle management, health monitoring, and circuit breaking. This system ensures that application resources are properly managed throughout their lifecycle, providing robustness and reliability.
 
 ## Core Components
 
@@ -445,7 +445,7 @@ Use circuit breakers for external services:
 
 ## Integration with Other Components
 
-The resource management system integrates with other Uno framework components:
+The resource management system integrates with other uno framework components:
 
 - **Async-First Architecture**: Uses the enhanced async utilities for robust async operations
 - **Database Layer**: Enhanced database connections with pooling and circuit breaking

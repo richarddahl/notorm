@@ -4,7 +4,7 @@ This document outlines the integration between the Attributes module, Values mod
 
 ## Overview
 
-The Uno framework leverages the graph database to provide powerful querying capabilities for attributes. This allows complex queries that would be difficult or inefficient to express in pure SQL.
+The uno framework leverages the graph database to provide powerful querying capabilities for attributes. This allows complex queries that would be difficult or inefficient to express in pure SQL.
 
 ## Graph Structure
 

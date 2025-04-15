@@ -144,7 +144,7 @@ print("All implementations are valid!")
 
 ## Command-Line Validation Tool
 
-The Uno framework includes a command-line tool to validate protocol implementations across your entire codebase:
+The uno framework includes a command-line tool to validate protocol implementations across your entire codebase:
 
 ```bash
 # Validate all protocol implementations in src.uno

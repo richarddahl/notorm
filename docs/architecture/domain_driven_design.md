@@ -1,12 +1,12 @@
-# Domain-Driven Design in the Uno Framework
+# Domain-Driven Design in the uno Framework
 
-Domain-Driven Design (DDD) is a software development approach that focuses on creating a rich, expressive domain model that closely mirrors real-world business concepts. The Uno framework embraces DDD principles to create maintainable, flexible software that aligns with business needs.
+Domain-Driven Design (DDD) is a software development approach that focuses on creating a rich, expressive domain model that closely mirrors real-world business concepts. The uno framework embraces DDD principles to create maintainable, flexible software that aligns with business needs.
 
 ## Core Concepts
 
 ### Domain Model
 
-The domain model is a conceptual model of the business domain that incorporates both behavior and data. In the Uno framework, we've implemented core domain model components:
+The domain model is a conceptual model of the business domain that incorporates both behavior and data. In uno, we've implemented core domain model components:
 
 - **Entities**: Objects defined by their identity, with continuity through time
 - **Value Objects**: Immutable objects defined by their attributes, without identity
@@ -33,11 +33,11 @@ Tactical design patterns are implementation patterns for expressing the domain m
 - **Specifications**: Encapsulate business rules and query criteria
 - **Layered Architecture**: Separate domain logic from infrastructure concerns
 
-## Implementation in Uno Framework
+## Implementation in uno Framework
 
 ### Domain Model Layer
 
-The domain model in Uno is implemented in the `uno.domain` package:
+The domain model in uno is implemented in the `uno.domain` package:
 
 ```python
 from dataclasses import dataclass, field
@@ -207,7 +207,7 @@ await user_repo.save(user)
 
 ### Bounded Contexts
 
-Uno organizes code into bounded contexts, each with its own model and responsibility:
+uno organizes code into bounded contexts, each with its own model and responsibility:
 
 ```
 uno/
@@ -225,7 +225,7 @@ Each context has a clear responsibility and maintains its own ubiquitous languag
 
 ## Layered Architecture
 
-The Uno framework implements a layered architecture to separate concerns:
+The uno framework implements a layered architecture to separate concerns:
 
 ### Domain Layer
 
@@ -259,7 +259,7 @@ Handles user interaction:
 - API endpoints
 - User interfaces
 
-## Benefiting from DDD in Uno
+## Benefiting from DDD in uno
 
 ### Advantages
 
@@ -279,7 +279,7 @@ Handles user interaction:
 
 ## Transition Strategy
 
-For existing systems transitioning to DDD, Uno recommends:
+For existing systems transitioning to DDD, uno recommends:
 
 1. **Identify Implicit Contexts**: Recognize existing implicit boundaries
 2. **Make Boundaries Explicit**: Define clear context boundaries
@@ -306,6 +306,6 @@ For existing systems transitioning to DDD, Uno recommends:
 
 ## Conclusion
 
-Domain-Driven Design provides a powerful approach for building complex software systems. The Uno framework embraces DDD principles to create a maintainable, flexible, and business-aligned architecture.
+Domain-Driven Design provides a powerful approach for building complex software systems. The uno framework embraces DDD principles to create a maintainable, flexible, and business-aligned architecture.
 
-By separating the domain model from infrastructure concerns, using bounded contexts to manage complexity, and implementing tactical patterns like entities, value objects, and repositories, Uno enables developers to build systems that can evolve with changing business needs.
+By separating the domain model from infrastructure concerns, using bounded contexts to manage complexity, and implementing tactical patterns like entities, value objects, and repositories, uno enables developers to build systems that can evolve with changing business needs.

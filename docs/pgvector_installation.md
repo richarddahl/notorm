@@ -1,4 +1,4 @@
-# Installing pgvector for the Uno Framework
+# Installing pgvector for the uno Framework
 
 This guide explains how to install the pgvector extension for your local PostgreSQL database
 or Docker setup to support vector search capabilities.

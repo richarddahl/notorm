@@ -1,6 +1,6 @@
-# Uno Framework Modernization: Key Features
+# uno Framework Modernization: Key Features
 
-This document outlines the key features and improvements made to the Uno framework to make it more modular, loosely coupled, and aligned with modern Python best practices.
+This document outlines the key features and improvements made to uno to make it more modular, loosely coupled, and aligned with modern Python best practices.
 
 ## Core Architectural Improvements
 
@@ -941,4 +941,4 @@ return events
 
 8. **Async-First**: Embrace asynchronous programming for better resource utilization.
 
-These architectural improvements make the Uno framework more modular, loosely coupled, and aligned with modern Python best practices.
+These architectural improvements make uno more modular, loosely coupled, and aligned with modern Python best practices.

@@ -1,6 +1,6 @@
 # UnoModel
 
-The `UnoModel` class is the foundation for database models in the Uno framework. It provides a standardized approach to defining database tables and columns with proper type annotations.
+The `UnoModel` class is the foundation for database models in uno. It provides a standardized approach to defining database tables and columns with proper type annotations.
 
 ## Overview
 

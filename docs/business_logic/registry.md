@@ -1,6 +1,6 @@
 # Object Registry
 
-The UnoRegistry is a centralized registry system that manages the registration and lookup of business objects in the Uno framework, providing a type-safe way to discover and instantiate business objects at runtime.
+The UnoRegistry is a centralized registry system that manages the registration and lookup of business objects in uno, providing a type-safe way to discover and instantiate business objects at runtime.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Encryption
 
-The Uno Security Framework provides comprehensive encryption functionality for protecting sensitive data in your applications.
+The uno Security Framework provides comprehensive encryption functionality for protecting sensitive data in your applications.
 
 ## Overview
 

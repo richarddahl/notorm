@@ -2,7 +2,7 @@
 
 > **New Name**: This component was previously called `SchemaManager` but has been renamed to `DBManager` to better reflect its purpose of managing database objects rather than Pydantic schemas.
 
-The `DBManager` is a central component in Uno's database architecture that executes DDL (Data Definition Language) statements and manages database objects like schemas, functions, and triggers. It provides a bridge between SQL generation through emitters and actual database execution.
+The `DBManager` is a central component in uno's database architecture that executes DDL (Data Definition Language) statements and manages database objects like schemas, functions, and triggers. It provides a bridge between SQL generation through emitters and actual database execution.
 
 ## Key Features
 

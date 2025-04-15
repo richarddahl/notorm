@@ -1,6 +1,6 @@
 # Protocol-Based Design
 
-The Uno framework is built on a foundation of protocol-based design, leveraging Python's Protocol typing to create a modular, loosely coupled architecture. This approach allows for increased flexibility, testability, and maintainability.
+The uno framework is built on a foundation of protocol-based design, leveraging Python's Protocol typing to create a modular, loosely coupled architecture. This approach allows for increased flexibility, testability, and maintainability.
 
 ## What are Protocols?
 
@@ -15,7 +15,7 @@ Key characteristics of protocols:
 
 ## Core Protocol Categories
 
-The Uno framework defines protocols for various architectural patterns:
+The uno framework defines protocols for various architectural patterns:
 
 ### Domain-Driven Design
 
@@ -69,7 +69,7 @@ The Uno framework defines protocols for various architectural patterns:
 
 ## Pattern: Layered Design with Protocols
 
-A key architectural pattern in the Uno framework is the use of protocols to define clear boundaries between layers:
+A key architectural pattern in uno is the use of protocols to define clear boundaries between layers:
 
 ```
 ┌───────────────────────┐   
@@ -114,7 +114,7 @@ In this layered architecture:
 - Application layer coordinates use cases through domain protocols
 - API layer depends only on the application layer protocols
 
-## Using Protocols in the Uno Framework
+## Using Protocols in the uno Framework
 
 ### Defining Protocols
 
@@ -213,4 +213,4 @@ return await self.user_repository.get(id)
 
 ## Protocol Validation
 
-The Uno framework includes a comprehensive protocol validation system to ensure that implementations correctly fulfill their protocol contracts. See the [Protocol Validation](../protocol_validation.md) page for details.
+The uno framework includes a comprehensive protocol validation system to ensure that implementations correctly fulfill their protocol contracts. See the [Protocol Validation](../protocol_validation.md) page for details.

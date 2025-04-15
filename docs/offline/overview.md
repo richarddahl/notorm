@@ -1,10 +1,10 @@
 # Offline Support
 
-The Uno framework provides comprehensive offline support, enabling applications to continue functioning when network connectivity is limited or unavailable. This module handles data synchronization, conflict resolution, and supports progressive enhancement patterns.
+The uno framework provides comprehensive offline support, enabling applications to continue functioning when network connectivity is limited or unavailable. This module handles data synchronization, conflict resolution, and supports progressive enhancement patterns.
 
 ## Overview
 
-Modern web and mobile applications need to function reliably regardless of network conditions. The Offline Support module in Uno provides the tools and patterns necessary to build resilient applications that work seamlessly both online and offline.
+Modern web and mobile applications need to function reliably regardless of network conditions. The Offline Support module in uno provides the tools and patterns necessary to build resilient applications that work seamlessly both online and offline.
 
 ## Key Components
 

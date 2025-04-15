@@ -1,6 +1,6 @@
 # Deployment Pipeline
 
-The Uno Deployment Pipeline provides a comprehensive solution for deploying Uno applications to various environments and platforms. It supports different deployment strategies, automated testing, and configuration management.
+The uno Deployment Pipeline provides a comprehensive solution for deploying uno applications to various environments and platforms. It supports different deployment strategies, automated testing, and configuration management.
 
 ## Key Components
 
@@ -61,7 +61,7 @@ Canary deployment is a technique to reduce risk by slowly rolling out changes to
 
 ## CI/CD Integration
 
-The Uno Deployment Pipeline integrates with popular CI/CD platforms:
+The uno Deployment Pipeline integrates with popular CI/CD platforms:
 
 ### GitHub Actions
 
@@ -149,7 +149,7 @@ testing:
 
 ## Extending the Pipeline
 
-The Uno Deployment Pipeline is designed to be extensible. You can:
+The uno Deployment Pipeline is designed to be extensible. You can:
 
 1. Create custom deployment strategies by extending the `DeploymentStrategy` base class
 2. Add new tasks to the pipeline by modifying the `DeploymentManager._create_pipeline` method

@@ -1,6 +1,6 @@
 # Metrics Collection
 
-The metrics collection system in Uno helps you track numerical values about your application's behavior and performance. It provides counters, gauges, histograms, and timers for measuring different aspects of your application.
+The metrics collection system in uno helps you track numerical values about your application's behavior and performance. It provides counters, gauges, histograms, and timers for measuring different aspects of your application.
 
 ## Types of Metrics
 

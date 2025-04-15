@@ -1,6 +1,6 @@
 # Enhanced Connection Pool
 
-The Enhanced Connection Pool module provides a high-performance, feature-rich database connection pooling system for the Uno framework.
+The Enhanced Connection Pool module provides a high-performance, feature-rich database connection pooling system for uno.
 
 ## Features
 

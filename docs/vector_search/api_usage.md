@@ -1,6 +1,6 @@
 # Using Vector Search APIs
 
-This guide demonstrates how to use the vector search APIs in the Uno Framework.
+This guide demonstrates how to use the vector search APIs in the uno Framework.
 
 ## Overview
 

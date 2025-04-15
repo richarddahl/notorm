@@ -1,10 +1,10 @@
 # Vector Search Dependency Injection
 
-This document explains how to use the vector search components with the Uno dependency injection system.
+This document explains how to use the vector search components with the uno dependency injection system.
 
 ## Overview
 
-The vector search components are fully integrated with the Uno dependency injection system, allowing for:
+The vector search components are fully integrated with the uno dependency injection system, allowing for:
 
 - Type-safe access to vector services
 - Centralized configuration management

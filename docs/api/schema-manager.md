@@ -4,7 +4,7 @@ The `UnoSchemaManager` class is responsible for creating and managing schemas fo
 
 ## Overview
 
-Schemas in the Uno framework are Pydantic models that define how data is structured when being sent to or received from clients. The `UnoSchemaManager` helps with:
+Schemas in uno are Pydantic models that define how data is structured when being sent to or received from clients. The `UnoSchemaManager` helps with:
 
 - Creating schemas from model classes
 - Managing schema configurations

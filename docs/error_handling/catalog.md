@@ -1,6 +1,6 @@
 # Error Catalog
 
-The Error Catalog is a central registry of all error codes used in the Uno framework. It provides metadata for each error code, including error messages, categories, severity levels, and HTTP status codes.
+The Error Catalog is a central registry of all error codes used in uno. It provides metadata for each error code, including error messages, categories, severity levels, and HTTP status codes.
 
 ## Core Concepts
 

@@ -1,6 +1,6 @@
 # Multi-Level Caching
 
-The Uno Caching Framework's multi-level caching system combines the benefits of different cache types to provide optimal performance, reliability, and scalability.
+The uno Caching Framework's multi-level caching system combines the benefits of different cache types to provide optimal performance, reliability, and scalability.
 
 ## Overview
 
@@ -150,7 +150,7 @@ cache_manager.multi_set({
 
 ## Cache Consistency
 
-Multi-level caching introduces potential cache consistency challenges. The Uno Caching Framework mitigates these with:
+Multi-level caching introduces potential cache consistency challenges. The uno Caching Framework mitigates these with:
 
 1. **TTL-based consistency**: Data naturally expires after its TTL, limiting the window for inconsistency
 2. **Write-through caching**: All writes update both cache levels

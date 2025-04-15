@@ -1,4 +1,4 @@
-# Uno License
+# uno License
 
 MIT License
 

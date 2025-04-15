@@ -1,10 +1,10 @@
 # Monitoring & Observability
 
-The Uno framework provides a comprehensive monitoring and observability system to help you understand your application's behavior, performance, and health in production environments.
+The uno framework provides a comprehensive monitoring and observability system to help you understand your application's behavior, performance, and health in production environments.
 
 ## Overview
 
-Modern applications require robust monitoring and observability to ensure reliability and performance. The Uno monitoring framework provides:
+Modern applications require robust monitoring and observability to ensure reliability and performance. The uno monitoring framework provides:
 
 - **Metrics Collection**: Track application performance, resource usage, and business metrics
 - **Distributed Tracing**: Follow requests across service boundaries
@@ -102,7 +102,7 @@ The monitoring framework integrates with:
 - **OpenTelemetry**: Exporters for metrics and traces
 - **Prometheus**: Native exposition format
 - **Resource Management**: Monitoring of managed resources
-- **Error Handling**: Integration with the Uno error system
+- **Error Handling**: Integration with the uno error system
 
 For more details, see the [Integration Documentation](integration.md).
 

@@ -1,6 +1,6 @@
 # Plugin Architecture
 
-The Uno framework includes a powerful plugin system that allows extending the framework's functionality without modifying core code.
+The uno framework includes a powerful plugin system that allows extending the framework's functionality without modifying core code.
 
 ## Overview
 

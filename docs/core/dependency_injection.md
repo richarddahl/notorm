@@ -1,10 +1,10 @@
 # Dependency Injection System
 
-This document explains the Dependency Injection (DI) system in the Uno framework, which provides a modern, type-safe approach to managing dependencies.
+This document explains the Dependency Injection (DI) system in uno, which provides a modern, type-safe approach to managing dependencies.
 
 ## Overview
 
-The Uno DI system provides:
+The uno DI system provides:
 
 - **Type-Safe Injection**: All dependencies are registered with proper type information
 - **Lifetime Management**: Support for singleton, scoped, and transient services

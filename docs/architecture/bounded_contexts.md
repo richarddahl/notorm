@@ -1,4 +1,4 @@
-# Bounded Contexts in the Uno Framework
+# Bounded Contexts in the uno Framework
 
 Bounded Contexts are a central pattern in Domain-Driven Design. They provide explicit boundaries around domain models, establishing where specific models, terms, and rules apply.
 
@@ -19,9 +19,9 @@ A Bounded Context is a logical boundary within which a particular domain model i
 - **Evolution**: Contexts can evolve at different rates
 - **Integration**: Explicit interfaces between contexts make integration cleaner
 
-## Uno Framework Bounded Contexts
+## uno Framework Bounded Contexts
 
-The Uno framework is organized into several bounded contexts, each with its own responsibility and domain model:
+The uno framework is organized into several bounded contexts, each with its own responsibility and domain model:
 
 ### Core Domain Contexts
 
@@ -137,7 +137,7 @@ The Context Map illustrates how different bounded contexts relate to each other:
 
 6. **Separate Ways**: Contexts are separated with minimal integration
 
-### Key Relationships in Uno Framework
+### Key Relationships in uno Framework
 
 - **Domain Model ⟶ Database**: Upstream-Downstream
   - Domain Model is upstream, defining the core entities and concepts
@@ -154,11 +154,11 @@ The Context Map illustrates how different bounded contexts relate to each other:
   - Query Context uses an anti-corruption layer to translate domain queries into SQL
   - This protects the Query Context from SQL dialect variations
 
-## Implementation in Uno Framework
+## Implementation in uno Framework
 
 ### Context Organization
 
-Each bounded context in the Uno framework is organized into its own package structure:
+Each bounded context in uno is organized into its own package structure:
 
 ```
 uno/

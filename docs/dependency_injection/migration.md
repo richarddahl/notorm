@@ -217,7 +217,7 @@ resolve_service
 # Create a FastAPI application
 app = FastAPI()
 
-# Configure FastAPI with Uno DI
+# Configure FastAPI with uno DI
 configure_fastapi(app)
 
 # Create a router with automatic dependency injection

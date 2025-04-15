@@ -1,6 +1,6 @@
 # Queries Module
 
-The Uno queries module provides a comprehensive system for building, executing, and optimizing database queries, with special support for batch operations.
+The uno queries module provides a comprehensive system for building, executing, and optimizing database queries, with special support for batch operations.
 
 ## Overview
 
@@ -32,7 +32,7 @@ The queries module is designed to provide efficient database access with a clean
 - **Query Optimization**: Automatic query optimization with PostgreSQL-specific hints
 - **Efficient Filtering**: Flexible and powerful filtering system
 - **Batch Operations**: High-performance batch processing of database operations
-- **Caching Integration**: Seamless integration with Uno's caching system
+- **Caching Integration**: Seamless integration with uno's caching system
 - **Repository Integration**: Clean integration with the Repository pattern
 
 ## Common Use Cases

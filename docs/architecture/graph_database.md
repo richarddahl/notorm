@@ -1,10 +1,10 @@
 # Apache AGE Graph Database Integration
 
-The Uno framework integrates seamlessly with Apache AGE, a PostgreSQL extension that provides graph database functionality. This document explains how Uno leverages AGE for graph queries, knowledge representations, and complex relationship traversals.
+The uno framework integrates seamlessly with Apache AGE, a PostgreSQL extension that provides graph database functionality. This document explains how uno leverages AGE for graph queries, knowledge representations, and complex relationship traversals.
 
 ## Overview
 
-Apache AGE (A Graph Extension) is a PostgreSQL extension that adds graph database functionality to PostgreSQL. It allows you to use graph data models and Cypher query language alongside traditional relational database features. Uno integrates with AGE to provide:
+Apache AGE (A Graph Extension) is a PostgreSQL extension that adds graph database functionality to PostgreSQL. It allows you to use graph data models and Cypher query language alongside traditional relational database features. uno integrates with AGE to provide:
 
 1. **Automatic Synchronization**: Changes to relational tables are automatically synchronized with the graph representation
 2. **Graph Queries**: Complex traversal and path finding operations using the Cypher query language
@@ -13,12 +13,12 @@ Apache AGE (A Graph Extension) is a PostgreSQL extension that adds graph databas
 
 ## Architecture
 
-The integration between Uno and Apache AGE follows this architecture:
+The integration between uno and Apache AGE follows this architecture:
 
 ```
 ┌───────────────────┐     ┌───────────────────┐     ┌───────────────────┐
 │                   │     │                   │     │                   │
-│  Uno Application  │────▶│ Uno Graph Models  │────▶│ Graph SQL Emitter │
+│  uno Application  │────▶│ uno Graph Models  │────▶│ Graph SQL Emitter │
 │                   │     │                   │     │                   │
 └───────────────────┘     └───────────────────┘     └─────────┬─────────┘```
 ```
@@ -46,7 +46,7 @@ The integration between Uno and Apache AGE follows this architecture:
 
 ### PostgreSQL Configuration
 
-Apache AGE is automatically installed and configured when you set up the Uno Docker environment. The Docker setup scripts (`docker/scripts/init-db.sh`) handle the installation and configuration of AGE.
+Apache AGE is automatically installed and configured when you set up the uno Docker environment. The Docker setup scripts (`docker/scripts/init-db.sh`) handle the installation and configuration of AGE.
 
 ### Creating a Graph
 
@@ -62,7 +62,7 @@ SELECT * FROM ag_catalog.create_graph('your_graph_name');
 
 ## Graph Models
 
-Uno automatically maps your domain models to graph nodes and relationships based on your relational schema. The mapping is done through a combination of attributes and conventions.
+uno automatically maps your domain models to graph nodes and relationships based on your relational schema. The mapping is done through a combination of attributes and conventions.
 
 ### Entity Mapping
 
@@ -131,7 +131,7 @@ user = relationship("User", back_populates="posts")
 
 ## Data Synchronization
 
-Uno automatically synchronizes changes between relational tables and the graph database using PostgreSQL triggers. The synchronization is bidirectional, ensuring consistency between both representations.
+uno automatically synchronizes changes between relational tables and the graph database using PostgreSQL triggers. The synchronization is bidirectional, ensuring consistency between both representations.
 
 ### Synchronization Triggers
 
@@ -147,7 +147,7 @@ Edges are created based on foreign key relationships. When a relationship betwee
 
 ## Graph Queries
 
-Uno provides several ways to query the graph database, from simple path queries to complex traversals.
+uno provides several ways to query the graph database, from simple path queries to complex traversals.
 
 ### GraphPathQuery
 
@@ -243,7 +243,7 @@ entity_type=User
 
 ## AI Integration
 
-Uno's graph database integration includes components for AI-enhanced features.
+uno's graph database integration includes components for AI-enhanced features.
 
 ### Knowledge Graph Construction
 
@@ -389,7 +389,7 @@ explanation = path.metadata["explanation"]
 
 ## Integration with Query System
 
-The graph path query system integrates with Uno's query system:
+The graph path query system integrates with uno's query system:
 
 ```python
 from uno.queries.filter import UnoFilter
@@ -407,7 +407,7 @@ entity_ids, metadata = await graph_query.execute(query_spec)
 
 ## Cypher Query Examples
 
-Uno uses the Cypher query language for graph operations. Here are some common query patterns:
+uno uses the Cypher query language for graph operations. Here are some common query patterns:
 
 ### Finding Connected Nodes
 
@@ -505,7 +505,7 @@ SELECT * FROM ag_catalog.ag_graph_statistics('your_graph_name');
 
 ## Conclusion
 
-The Apache AGE integration in Uno provides powerful graph database capabilities that complement the relational database foundation. By leveraging the strengths of both paradigms, Uno offers a flexible and efficient solution for complex data modeling and querying needs.
+The Apache AGE integration in uno provides powerful graph database capabilities that complement the relational database foundation. By leveraging the strengths of both paradigms, uno offers a flexible and efficient solution for complex data modeling and querying needs.
 
 ## Related Topics
 

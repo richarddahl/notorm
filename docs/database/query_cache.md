@@ -1,6 +1,6 @@
 # Query Cache
 
-The Query Cache module provides a high-performance, feature-rich caching system for database queries in the Uno framework.
+The Query Cache module provides a high-performance, feature-rich caching system for database queries in uno.
 
 ## Features
 

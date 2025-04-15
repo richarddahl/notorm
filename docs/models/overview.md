@@ -4,7 +4,7 @@ The Models layer in uno provides a standardized approach to defining database ta
 
 ## UnoModel
 
-The `UnoModel` class is a SQLAlchemy `DeclarativeBase` subclass that serves as the foundation for all database models in the Uno framework. It provides:
+The `UnoModel` class is a SQLAlchemy `DeclarativeBase` subclass that serves as the foundation for all database models in uno. It provides:
 
 - Standardized PostgreSQL column types
 - Type annotations for better editor support
@@ -253,5 +253,6 @@ back_populates="categories"
 ## Next Steps
 
 - [UnoModel](model.md): Learn more about the UnoModel class
+- [Field Types & Validators](field_types_and_validators.md): Comprehensive guide to field types and validation options
 - [Business Logic Layer](../business_logic/overview.md): Understand how to implement business logic with UnoObj
 - [Database Operations](../database/unodb.md): Learn about database operations
