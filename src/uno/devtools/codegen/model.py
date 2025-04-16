@@ -1,7 +1,7 @@
 """
 Model code generation utilities for Uno applications.
 
-This module provides tools for generating UnoModel and UnoSchema classes.
+This module provides tools for generating UnoModel and UnoDTO classes.
 """
 
 import re
@@ -24,28 +24,28 @@ def generate_model(
     include_schema: bool = True,
     include_imports: bool = True,
     include_docstrings: bool = True,
-    schema_name: Optional[str] = None,
+    dto_name: Optional[str] = None,
     base_model_class: str = "UnoModel",
-    base_schema_class: str = "UnoSchema",
+    base_dto_class: str = "UnoDTO",
     timestamps: bool = True,
     soft_delete: bool = False,
     relationships: Optional[List[Dict[str, Any]]] = None,
     indexes: Optional[List[Dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
-    """Generate a UnoModel class with an optional UnoSchema.
+    """Generate a UnoModel class with an optional UnoDTO.
 
     Args:
         name: Name of the model class
         fields: Dictionary of field definitions
         table_name: Optional table name (defaults to snake_case of name)
         module_name: Optional module name for imports
-        include_schema: Whether to generate a UnoSchema class
+        include_schema: Whether to generate a UnoDTO class
         include_imports: Whether to include import statements
         include_docstrings: Whether to include docstrings
-        schema_name: Optional name for the schema class (defaults to {name}Schema)
+        dto_name: Optional name for the DTO class (defaults to {name}DTO)
         base_model_class: Base class for the model
-        base_schema_class: Base class for the schema
+        base_dto_class: Base class for the DTO
         timestamps: Whether to include created_at and updated_at fields
         soft_delete: Whether to include deleted_at field for soft delete
         relationships: Optional list of relationship definitions
@@ -59,9 +59,9 @@ def generate_model(
     if not table_name:
         table_name = _camel_to_snake(name)
 
-    # Prepare schema name
-    if not schema_name and include_schema:
-        schema_name = f"{name}Schema"
+    # Prepare DTO name
+    if not dto_name and include_schema:
+        dto_name = f"{name}DTO"
 
     # Start building the code
     code_parts = []
@@ -71,7 +71,7 @@ def generate_model(
         imports = _generate_model_imports(
             module_name=module_name,
             base_model_class=base_model_class,
-            base_schema_class=base_schema_class,
+            base_dto_class=base_dto_class,
             include_schema=include_schema,
             fields=fields,
         )
@@ -91,16 +91,16 @@ def generate_model(
     )
     code_parts.append(model_code)
 
-    # Add schema class if requested
+    # Add DTO class if requested
     if include_schema:
-        schema_code = _generate_schema_class(
-            name=schema_name,
+        dto_code = _generate_dto_class(
+            name=dto_name,
             model_name=name,
             fields=fields,
             include_docstrings=include_docstrings,
-            base_schema_class=base_schema_class,
+            base_dto_class=base_dto_class,
         )
-        code_parts.append(schema_code)
+        code_parts.append(dto_code)
 
     # Join code parts
     code = "\n\n".join(code_parts)
@@ -124,7 +124,7 @@ def generate_model(
 def _generate_model_imports(
     module_name: Optional[str],
     base_model_class: str,
-    base_schema_class: str,
+    base_dto_class: str,
     include_schema: bool,
     fields: Dict[str, Dict[str, Any]],
 ) -> str:
@@ -133,8 +133,8 @@ def _generate_model_imports(
     Args:
         module_name: Optional module name for imports
         base_model_class: Base class for the model
-        base_schema_class: Base class for the schema
-        include_schema: Whether to generate a UnoSchema class
+        base_dto_class: Base class for the DTO
+        include_schema: Whether to generate a UnoDTO class
         fields: Dictionary of field definitions
 
     Returns:
@@ -153,11 +153,11 @@ def _generate_model_imports(
     if module_name:
         imports.append(f"from {module_name} import {base_model_class}")
         if include_schema:
-            imports.append(f"from {module_name} import {base_schema_class}")
+            imports.append(f"from {module_name} import {base_dto_class}")
     else:
         imports.append(f"from uno.model import {base_model_class}")
         if include_schema:
-            imports.append(f"from uno.model import {base_schema_class}")
+            imports.append(f"from uno.dto import {base_dto_class}")
 
     # Import additional types based on field definitions
     import_pydantic = False
@@ -264,32 +264,32 @@ def _generate_model_class(
     return "\n".join(lines)
 
 
-def _generate_schema_class(
+def _generate_dto_class(
     name: str,
     model_name: str,
     fields: Dict[str, Dict[str, Any]],
     include_docstrings: bool,
-    base_schema_class: str,
+    base_dto_class: str,
 ) -> str:
-    """Generate a UnoSchema class definition.
+    """Generate a UnoDTO class definition.
 
     Args:
-        name: Name of the schema class
+        name: Name of the DTO class
         model_name: Name of the model class
         fields: Dictionary of field definitions
         include_docstrings: Whether to include docstrings
-        base_schema_class: Base class for the schema
+        base_dto_class: Base class for the DTO
 
     Returns:
-        Schema class definition as a string
+        DTO class definition as a string
     """
     lines = []
 
     # Class definition and docstring
-    lines.append(f"class {name}({base_schema_class}):")
+    lines.append(f"class {name}({base_dto_class}):")
 
     if include_docstrings:
-        lines.append(f'    """{name} schema for the {model_name} model."""')
+        lines.append(f'    """{name} DTO for the {model_name} model."""')
 
     # Add model reference
     lines.append(f"    model = {model_name}")

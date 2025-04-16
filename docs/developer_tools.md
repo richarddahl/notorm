@@ -251,30 +251,26 @@ leaks = detector.check_leaks()
 
 ### Model Generator
 
-The Model Generator creates UnoModel and UnoSchema classes from field definitions.
+The Model Generator creates UnoModel and UnoDTO classes from field definitions.
 
 ```python
 from uno.devtools.codegen.model import ModelGenerator, ModelDefinition, FieldDefinition
 
 # Define a model
-model_def = ModelDefinition(```
-
-name="User",
-table_name="users",
-fields=[```
-
-FieldDefinition(name="id", field_type="int", primary_key=True),
-FieldDefinition(name="name", field_type="str", nullable=False),
-FieldDefinition(name="email", field_type="str", unique=True)
-```
-]
-```
+model_def = ModelDefinition(
+    name="User",
+    table_name="users",
+    fields=[
+        FieldDefinition(name="id", field_type="int", primary_key=True),
+        FieldDefinition(name="name", field_type="str", nullable=False),
+        FieldDefinition(name="email", field_type="str", unique=True)
+    ]
 )
 
 # Generate the model code
 generator = ModelGenerator()
 model_code = generator.generate_model(model_def)
-schema_code = generator.generate_schema(model_def)
+dto_code = generator.generate_dto(model_def)
 
 # Or generate from database schema
 models = generator.generate_from_database(tables=["users", "orders"])

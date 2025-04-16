@@ -222,6 +222,7 @@ nav:
       - Comprehensive Docker Guide: docker/comprehensive_guide.md
    - Developer Tools: 
       - Overview: developer_tools.md
+      - DDD Generator: developer_tools/ddd_generator.md
       - Migrations: developer_tools/migrations.md
       - Profiling: developer_tools/profiling.md
       - Visual Modeler: developer_tools/visual_modeler.md

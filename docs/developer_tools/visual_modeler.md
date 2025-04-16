@@ -105,7 +105,9 @@ Once you've created your model, you can generate code:
 
 The generated code follows uno's architectural patterns and includes:
 
-- Entity models with appropriate fields and relationships
+- Domain entities with appropriate fields and relationships
+- Database models with SQLAlchemy columns
+- Data Transfer Objects (DTOs) for API contracts
 - Repository interfaces and implementations
 - Service classes with CRUD operations
 
