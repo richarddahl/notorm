@@ -1,11 +1,13 @@
 # API Layer
 
-The API Layer in uno provides a clean interface for exposing business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization.
+The API Layer in uno provides a clean interface for exposing domain models and business logic through REST endpoints, with support for automatic endpoint generation, advanced filtering, and authorization. It supports both the modern domain-driven design approach and the legacy UnoObj pattern.
 
 ## In This Section
 
 - [Endpoint](endpoint.md) - Core UnoEndpoint class for API interfaces
 - [Endpoint Factory](endpoint-factory.md) - Automatic endpoint generation
+- [Domain Integration](domain-integration.md) - Using domain repositories with endpoints
+- [Repository Adapter](repository-adapter.md) - Bridge between repositories and endpoints
 - [Schemas](schemas.md) - Data validation and serialization
 - [Schema Manager](schema-manager.md) - Schema creation and management
 
@@ -17,6 +19,23 @@ The API Layer sits between client applications and the business logic layer, pro
 
 The API layer integrates with the other components of uno to provide a complete solution:
 
+### Domain-Driven Design Approach (Recommended)
+
+```
+┌───────────────┐      ┌───────────────┐      ┌─────────────────┐      ┌───────────────┐
+│  API Client   │      │  UnoEndpoint  │      │   Repository    │      │    Database   │
+│  (HTTP/JSON)  │◄────►│  (FastAPI)    │◄────►│ with Entities   │◄────►│               │
+└───────────────┘      └───────────────┘      └─────────────────┘      └───────────────┘
+                              │
+                              │
+                      ┌───────▼──────┐
+                      │ Repository   │
+                      │ Adapter      │
+                      └──────────────┘
+```
+
+### Legacy UnoObj Approach
+
 ```
 ┌───────────────┐      ┌───────────────┐      ┌─────────────────┐      ┌───────────────┐
 │  API Client   │      │  UnoEndpoint  │      │     UnoObj      │      │    UnoDB      │
@@ -24,7 +43,16 @@ The API layer integrates with the other components of uno to provide a complete 
 └───────────────┘      └───────────────┘      └─────────────────┘      └───────────────┘
 ```
 
-### Request Flow (Inbound)
+### Request Flow (Inbound) - Domain-Driven Approach
+
+1. **HTTP Request**: Client sends HTTP request to endpoint
+2. **Validation**: Request data is validated using Pydantic schema
+3. **Deserialization**: JSON data is converted to Pydantic DTO
+4. **Repository Adapter**: DTO is mapped to domain entity operations
+5. **Repository**: Domain repository performs the business operation
+6. **Response**: Results are mapped to DTO and returned to client
+
+### Request Flow (Inbound) - Legacy Approach
 
 1. **HTTP Request**: Client sends HTTP request to endpoint
 2. **Validation**: Request data is validated using Pydantic schema
@@ -33,54 +61,89 @@ The API layer integrates with the other components of uno to provide a complete 
 5. **Database Operation**: UnoDB performs the database operation
 6. **Response**: Results are serialized and returned to client
 
-### Response Flow (Outbound)
-
-1. **Database Query**: Data is retrieved from database
-2. **Model Mapping**: Data is mapped to UnoModel
-3. **Schema Conversion**: Model is converted to schema using SchemaManager
-4. **Serialization**: Schema is serialized to JSON
-5. **HTTP Response**: JSON is returned to client
-
 ## Key Components
 
 ### UnoEndpoint
 
-The `UnoEndpoint` class is a FastAPI-based endpoint implementation that exposes CRUD operations for business objects.
+The `UnoEndpoint` class is a FastAPI-based endpoint implementation that exposes CRUD operations for domain repositories or business objects.
 
 ```python
 from uno.api.endpoint import UnoEndpoint
 from fastapi import FastAPI
 
-# Create a FastAPI app
+# Legacy approach with UnoObj
 app = FastAPI()
-
-# Create an endpoint for the Customer class
 endpoint = UnoEndpoint(app, Customer)
+endpoint.register_endpoints()
 
-# Register endpoints
+# Domain-driven approach with repository
+from uno.api.repository_adapter import RepositoryAdapter
+from uno.dependencies.fastapi import get_repository
+
+app = FastAPI()
+# Create repository adapter for the customer repository
+adapter = RepositoryAdapter(
+    get_repository(CustomerRepository),
+    CustomerEntity,
+    CustomerSchema
+)
+endpoint = UnoEndpoint(app, adapter)
 endpoint.register_endpoints()
 ```
 
+### Repository Adapter
+
+The `RepositoryAdapter` class bridges domain repositories with the endpoint system, allowing you to use domain-driven design with the API layer.
+
+```python
+from uno.api.repository_adapter import RepositoryAdapter
+from fastapi import Depends
+from uno.dependencies.fastapi import get_repository
+
+# Create a repository adapter
+adapter = RepositoryAdapter(
+    repository_dependency=Depends(get_repository(CustomerRepository)),
+    entity_type=CustomerEntity,
+    schema_type=CustomerSchema
+)
+
+# Use with UnoEndpoint or UnoEndpointFactory
+endpoint = UnoEndpoint(app, adapter)
+```
+
+There are specialized adapters for different use cases:
+- `RepositoryAdapter`: Full CRUD operations
+- `ReadOnlyRepositoryAdapter`: Read-only operations (get, list)
+- `BatchRepositoryAdapter`: Supports batch operations
+
 ### UnoEndpointFactory
 
-The `UnoEndpointFactory` class automatically generates endpoints for business objects based on their configuration.
+The `UnoEndpointFactory` class automatically generates endpoints for domain repositories or business objects.
 
 ```python
 from uno.api.endpoint_factory import EndpointFactory
 from fastapi import FastAPI
-from uno.dependencies.fastapi import get_db_session
+from uno.dependencies.fastapi import get_db_session, get_repository
 
 # Create FastAPI app
 app = FastAPI()
 
-# Create endpoints for Customer model
-customer_router = EndpointFactory.create_endpoints(```
+# Legacy approach with UnoObj
+customer_router = EndpointFactory.create_endpoints(
+    app=app,
+    model_obj=Customer,
+    prefix="/customers",
+    tag="Customers",
+    session_dependency=get_db_session
+)
 
-obj_class=Customer,
-prefix="/customers",
-tag="Customers",
-session_dependency=get_db_session
-```
+# Domain-driven approach with repository
+customer_router = EndpointFactory.create_endpoints(
+    app=app,
+    repository=get_repository(CustomerRepository),
+    entity_type=CustomerEntity,
+    prefix="/customers",
+    tag="Customers"
 )
 
 # Register the router with the app
@@ -209,6 +272,48 @@ The API layer provides standardized error responses:
 
 ## Creating Custom Endpoints
 
+### With Domain Repositories (Recommended)
+
+You can create custom endpoints using domain repositories and adapters:
+
+```python
+from uno.api.endpoint import UnoEndpoint
+from uno.api.repository_adapter import RepositoryAdapter
+from fastapi import FastAPI, Depends
+from uno.dependencies.fastapi import get_repository
+
+class CustomerEndpoint(UnoEndpoint):
+    """Custom endpoint for customer operations."""
+    
+    def register_endpoints(self):
+        """Register custom endpoints."""
+        super().register_endpoints()  # Register standard endpoints
+        
+        @self.app.get(f"{self.prefix}/stats")
+        async def stats(
+            repository = Depends(get_repository(CustomerRepository))
+        ):
+            """Get customer statistics."""
+            total = await repository.count()
+            active = await repository.count_active()
+            return {
+                "total": total,
+                "active": active,
+                "inactive": total - active
+            }
+
+# Create adapter and endpoint
+adapter = RepositoryAdapter(
+    get_repository(CustomerRepository),
+    CustomerEntity,
+    CustomerSchema
+)
+endpoint = CustomerEndpoint(app, adapter, prefix="/api/v1/customers")
+endpoint.register_endpoints()
+```
+
+### With Legacy UnoObj Pattern
+
 You can create custom endpoints by extending the UnoEndpoint class:
 
 ```python
@@ -216,69 +321,45 @@ from uno.api.endpoint import UnoEndpoint
 from fastapi import FastAPI, Depends
 from uno.dependencies.fastapi import get_db_session
 
-class CustomUserEndpoint(UnoEndpoint):```
-
-"""Custom endpoint for user statistics."""
-``````
-
-```
-```
-
-def register_endpoints(self):```
-
-"""Register custom endpoints."""
-super().register_endpoints()  # Register standard endpoints
-``````
-
-```
+class CustomUserEndpoint(UnoEndpoint):
+    """Custom endpoint for user statistics."""
+    
+    def register_endpoints(self):
+        """Register custom endpoints."""
+        super().register_endpoints()  # Register standard endpoints
+        
+        @self.app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
+        async def stats(session = Depends(get_db_session)):
+            """Get user statistics."""
+            result = await self.db.get_statistics(session)
+            return result
 ```
 
-@self.app.get(f"/api/v1/{self.model.__name__.lower()}/stats")
-async def stats(session = Depends(get_db_session)):
-    """Get user statistics."""
-    result = await self.db.get_statistics(session)
-    return result
-```
-```
-```
+### Using FastAPI Router Directly
 
-Alternatively, you can use FastAPI's router directly:
+Alternatively, you can use FastAPI's router directly with domain repositories:
 
 ```python
 from fastapi import APIRouter, Depends
-from uno.dependencies.fastapi import get_db_session
-from uno.database.repository import UnoBaseRepository
+from uno.dependencies.fastapi import get_repository
 
 # Create a router
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
-# Define a custom endpoint
+# Define a custom endpoint with domain repository
 @router.get("/stats")
-async def customer_stats(session = Depends(get_db_session)):```
-
-# Create a repository
-repo = UnoBaseRepository(session, CustomerModel)
-``````
-
-```
-```
-
-# Get statistics
-total = await repo.count()
-active = await repo.count(CustomerModel.is_active == True)
-``````
-
-```
-```
-
-return {```
-
-"total": total,
-"active": active,
-"inactive": total - active
-```
-}
-```
+async def customer_stats(
+    repository = Depends(get_repository(CustomerRepository))
+):
+    # Get statistics
+    total = await repository.count()
+    active = await repository.count_active()
+    
+    return {
+        "total": total,
+        "active": active,
+        "inactive": total - active
+    }
 
 # Add the router to your app
 app.include_router(router)
@@ -286,146 +367,165 @@ app.include_router(router)
 
 ## Integration with Dependency Injection
 
-The modern uno architecture integrates the API layer with dependency injection:
+The modern domain-driven architecture fully integrates the API layer with dependency injection, which is the recommended approach:
 
 ```python
-from fastapi import APIRouter, Depends
-from uno.dependencies.fastapi import get_db_session, get_repository
+from fastapi import APIRouter, Depends, HTTPException
+from uno.dependencies.fastapi import get_repository, get_service
+from uno.core.result import Result
 
 # Create a router
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
-# Create endpoints with dependency injection
-@router.get("/{customer_id}")
-async def get_customer(```
+# Create endpoints with domain repositories
+@router.get("/{customer_id}", response_model=CustomerDTO)
+async def get_customer(
+    customer_id: str,
+    customer_repo = Depends(get_repository(CustomerRepository))
+):
+    result: Result[CustomerEntity] = await customer_repo.get_by_id(customer_id)
+    
+    if result.is_failure():
+        raise HTTPException(status_code=404, detail=result.error.message)
+    
+    return CustomerDTO.from_entity(result.value)
 
-customer_id: str,
-customer_repo = Depends(get_repository(CustomerRepository))
+# Create endpoints with domain services
+@router.post("/", response_model=CustomerDTO, status_code=201)
+async def create_customer(
+    customer_data: CustomerCreateDTO,
+    customer_service = Depends(get_service(CustomerService))
+):
+    result = await customer_service.create_customer(customer_data)
+    
+    if result.is_failure():
+        raise HTTPException(status_code=400, detail=result.error.message)
+    
+    return CustomerDTO.from_entity(result.value)
 ```
-):```
 
-customer = await customer_repo.get_by_id(customer_id)
-if not customer:```
+### Using Repository Adapter with Endpoint Factory
 
-raise HTTPException(status_code=404, detail="Customer not found")
-```
-return customer
-```
+The domain-driven approach can also use the repository adapter with the endpoint factory:
 
-@router.post("/")
-async def create_customer(```
+```python
+from uno.api.endpoint_factory import EndpointFactory
+from uno.dependencies.fastapi import get_repository
 
-customer_data: CustomerCreateSchema,
-customer_service = Depends(get_service(CustomerService))
-```
-):```
+# Create customer endpoints with repository adapter
+customer_router = EndpointFactory.create_endpoints(
+    repository=get_repository(CustomerRepository),
+    entity_type=CustomerEntity,
+    schema_type=CustomerDTO,
+    prefix="/customers",
+    tag="Customers"
+)
 
-try:```
-
-customer = await customer_service.create_customer(customer_data)
-return customer
-```
-except ValidationError as e:```
-
-raise HTTPException(status_code=400, detail=str(e))
-```
-```
+app.include_router(customer_router)
 ```
 
 ## Best Practices
 
-1. **Use Consistent Endpoints**: Stick to RESTful endpoint patterns for consistency.
+1. **Use Domain-Driven Design**: Prefer domain repositories and entities over UnoObj.
    ```python
-   # Good
-   @router.get("/{id}")       # Get by ID
-   @router.get("/")           # List with filters
-   @router.post("/")          # Create
-   
-   # Avoid
-   @router.get("/fetch/{id}") # Non-standard naming
-   @router.get("/list")       # Redundant action in URL
+   # Recommended: Domain-driven approach
+   @router.get("/{id}")
+   async def get_customer(
+       id: str,
+       repo = Depends(get_repository(CustomerRepository))
+   ):
+       result = await repo.get_by_id(id)
+       # Handle result and convert to DTO
+       
+   # Legacy: UnoObj approach
+   @router.get("/{id}")
+   async def get_customer(
+       id: str,
+       session = Depends(get_db_session)
+   ):
+       customer = Customer.get(id, session)
+       return customer.to_dict()
    ```
 
-2. **Implement Filtering**: Use the FilterManager to handle query parameters.
+2. **Use Result Type for Error Handling**: Return Result type from repository/service methods.
    ```python
-   @router.get("/")
-   async def list_customers(```
-
-   filter_params: FilterParams = Depends(),
-   repo = Depends(get_repository(CustomerRepository))
-```
-   ):```
-
-   filter_manager = FilterManager()
-   return await repo.filter(filter_manager.build_filters(filter_params))
-```
+   @router.post("/")
+   async def create_customer(
+       data: CustomerCreateDTO,
+       service = Depends(get_service(CustomerService))
+   ):
+       result = await service.create_customer(data)
+       
+       if result.is_failure():
+           raise HTTPException(
+               status_code=result.error.status_code or 400,
+               detail=result.error.message
+           )
+       
+       return CustomerDTO.from_entity(result.value)
    ```
 
-3. **Document Endpoints**: Use FastAPI's documentation features to document your endpoints.
+3. **Use DTOs for API Contracts**: Create explicit DTOs for request/response models.
    ```python
-   @router.get(```
+   # DTO for customer creation requests
+   class CustomerCreateDTO(BaseModel):
+       name: str
+       email: EmailStr
+       phone: Optional[str] = None
+       
+   # DTO for customer responses
+   class CustomerDTO(BaseModel):
+       id: str
+       name: str
+       email: str
+       phone: Optional[str] = None
+       created_at: datetime
+       
+       @classmethod
+       def from_entity(cls, entity: CustomerEntity) -> "CustomerDTO":
+           return cls(
+               id=entity.id,
+               name=entity.name,
+               email=entity.email,
+               phone=entity.phone,
+               created_at=entity.created_at
+           )
+   ```
 
-   "/{id}", 
-   response_model=CustomerSchema,
-   summary="Get customer by ID",
-   description="Retrieves a customer by their unique identifier"
-```
+4. **Implement Validation**: Use Pydantic validation for request data.
+   ```python
+   # Domain validation rules
+   class CustomerCreateDTO(BaseModel):
+       name: str = Field(..., min_length=2, max_length=100)
+       email: EmailStr
+       phone: Optional[str] = Field(None, pattern=r'^\+?[0-9]{10,15}$')
+       
+       @validator('name')
+       def name_cannot_contain_special_chars(cls, v):
+           if re.search(r'[^a-zA-Z0-9 ]', v):
+               raise ValueError('Name cannot contain special characters')
+           return v
+   ```
+
+5. **Use Repository Adapter for Consistent Patterns**: Use repository adapters when working with UnoEndpoint.
+   ```python
+   # Create repository adapter
+   adapter = RepositoryAdapter(
+       repository_dependency=get_repository(CustomerRepository),
+       entity_type=CustomerEntity,
+       schema_type=CustomerDTO
    )
-   async def get_customer(id: str):
-       """
-       Get a customer by ID.
-       
-       - **id**: The customer ID
-       
-       Returns the customer details if found, or 404 if not found.
-       """```
-
-   # Implementation
-```
-   ```
-
-4. **Use Appropriate Status Codes**: Return appropriate HTTP status codes for different scenarios.
-   ```python
-   @router.post("/", status_code=201)  # Created
-   async def create_customer(customer: CustomerCreateSchema):```
-
-   # Implementation
    
-```
-   @router.delete("/{id}", status_code=204)  # No Content
-   async def delete_customer(id: str):```
-
-   # Implementation
-```
-   ```
-
-5. **Implement Pagination**: Always paginate large result sets.
-   ```python
-   @router.get("/")
-   async def list_customers(```
-
-   limit: int = 10,
-   offset: int = 0,
-   repo = Depends(get_repository(CustomerRepository))
-```
-   ):```
-
-   results = await repo.get_all(limit=limit, offset=offset)
-   count = await repo.count()
-   return {```
-
-   "data": results,
-   "total_count": count,
-   "limit": limit,
-   "offset": offset
-```
-   }
-```
+   # Create endpoint with adapter
+   endpoint = UnoEndpoint(app, adapter, prefix="/customers")
+   endpoint.register_endpoints()
    ```
 
 ## Related Sections
 
-- [Business Logic](/docs/business_logic/overview.md) - UnoObj implementation for business logic
+- [Domain Integration](domain-integration.md) - Detailed guide on domain-driven API integration
+- [Domain Driven Design](/docs/architecture/domain_driven_design.md) - DDD architecture overview
+- [Repositories](/docs/domain/repository.md) - Working with domain repositories
 - [Filter Manager](/docs/queries/filter_manager.md) - Advanced filtering and query building
 - [Authorization](/docs/authorization/overview.md) - Authentication and authorization
 - [Dependency Injection](/docs/dependency_injection/overview.md) - Modern DI architecture
