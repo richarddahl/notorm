@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from uno.api.endpoint_factory import UnoEndpointFactory
 from uno.api.repository_adapter import RepositoryAdapter
 from uno.core.protocols import Repository
+from uno.api.entities import ApiResource, EndpointConfig, HttpMethod
 
 
 # ==========================================

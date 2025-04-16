@@ -12,6 +12,7 @@ from sqlalchemy.orm import (
 )
 
 from uno.model import UnoModel, PostgresTypes
+from uno.meta.models import MetaTypeModel, MetaRecordModel
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.models import QueryModel
 
@@ -264,15 +265,18 @@ class AttributeModel(DefaultModelMixin, UnoModel):
 
     # Relationships
     attribute_type: Mapped[AttributeTypeModel] = relationship(
+        "AttributeTypeModel",
         foreign_keys=[attribute_type_id],
         back_populates="attributes",
         doc="The type of attribute",
     )
-    values: Mapped[list["MetaRecordModel"]] = relationship(
+    values: Mapped[list[MetaRecordModel]] = relationship(
+        "MetaRecordModel",
         secondary=attribute__value,
         doc="The values for the attribute",
     )
     meta_records: Mapped[list["MetaRecordModel"]] = relationship(
+        "MetaRecordModel",
         secondary=attribute__meta,
         doc="The meta_record values for the attribute",
     )

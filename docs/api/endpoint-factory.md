@@ -367,6 +367,7 @@ GET /api/v1/user?username=john&is_active=true
 - [Domain Integration](domain-integration.md): Detailed guide on domain-driven integration
 - [API Overview](overview.md): Overview of the API system
 - [Repository Adapter](repository-adapter.md): Guide to repository adapters
+- [Workflows API](workflows.md): Comprehensive reference for the Workflow System API
 
 ```python
 # Create only specific endpoint types

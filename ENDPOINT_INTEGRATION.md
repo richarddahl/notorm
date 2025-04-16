@@ -161,7 +161,7 @@ The following components have been implemented to support domain-driven design w
 | Update Endpoint Factory Documentation | Complete | Updated with repository adapter support | High |
 | Update API Overview Documentation | Complete | Updated to reflect new architecture | Medium |
 | Create Repository Adapter Documentation | Complete | Created comprehensive documentation for repository adapters | Medium |
-| Add Tutorial: Migration from UnoObj | Not Started | Guide on migrating from UnoObj to domain entities | Medium |
+| Add Tutorial: Migration from other frameworks| Not Started | Guide on migrating from other frameworks to domain entities | Medium |
 | Add Tutorial: Creating DDD API Endpoints | Not Started | Step-by-step guide for new API endpoints | High |
 
 ### Phase 3: Test Coverage Improvement
@@ -188,7 +188,7 @@ The following components have been implemented to support domain-driven design w
 
 ## Next Implementation Steps
 
-1. Add tutorial for migrating from UnoObj to domain entities
+1. Add tutorial for migrating from simpler frameworks, e.g. Django, SQLModel, sqlalchemy ORM, Flask, etc...to domain entities
 2. Create unit tests for the repository adapter
 3. Create unit tests for the endpoint factory with repositories
 4. Implement the authorization integration

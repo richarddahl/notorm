@@ -16,6 +16,7 @@ from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import GroupModelMixin
 from uno.enums import MessageImportance
+from uno.meta.models import MetaRecordModel 
 from uno.settings import uno_settings
 
 # Handle circular imports
@@ -89,21 +90,25 @@ class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
         doc="Time the message was sent",
     )
 
-    # Relationships
     users: Mapped[list["MessageUserModel"]] = relationship(
+        "MessageUserModel",
         back_populates="message",
         doc="Users associated with the message",
-    )
-    meta_records: Mapped[list[MetaRecordModel]] = relationship(
+    meta_records: Mapped[list["MetaRecordModel"]] = relationship(
+        "MetaRecordModel",
         secondary=message__meta_record,
         doc="Meta records associated with the message",
-    )
     parent: Mapped["MessageModel"] = relationship(
+        "MessageModel",
         foreign_keys=[parent_id],
         back_populates="children",
         doc="The parent attribute type",
-    )
     children: Mapped[list["MessageModel"]] = relationship(
+        "MessageModel",
+        back_populates="parent",
+        remote_side=[id],
+        doc="The child attribute types",
+    )
         back_populates="parent",
         remote_side=[id],
         doc="The child attribute types",

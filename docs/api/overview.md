@@ -10,6 +10,7 @@ The API Layer in uno provides a clean interface for exposing domain models and b
 - [Repository Adapter](repository-adapter.md) - Bridge between repositories and endpoints
 - [Schemas](schemas.md) - Data validation and serialization
 - [Schema Manager](schema-manager.md) - Schema creation and management
+- [Workflows](workflows.md) - Workflow system API based on domain-driven design
 
 ## Overview
 
@@ -529,3 +530,5 @@ app.include_router(customer_router)
 - [Filter Manager](/docs/queries/filter_manager.md) - Advanced filtering and query building
 - [Authorization](/docs/authorization/overview.md) - Authentication and authorization
 - [Dependency Injection](/docs/dependency_injection/overview.md) - Modern DI architecture
+- [Workflows API](workflows.md) - Comprehensive Workflow System API reference
+- [Workflows Overview](/docs/workflows/overview.md) - Overview of the Workflow System architecture

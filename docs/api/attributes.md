@@ -10,179 +10,442 @@ The Attributes API provides endpoints for:
 - Adding and removing values to/from attributes
 - Finding attributes applicable to specific object types
 
-## Attribute Types
+## API Architecture
 
-Attribute types define the structure and constraints for attributes. They specify what types of objects can have the attribute, what types of values the attribute can have, and other constraints.
+The Attributes API implements two approaches:
 
-### Create Attribute Type
+1. **Legacy Service-Based Approach**: Uses the original UnoObj pattern with services and endpoints
+2. **Domain-Driven Design (DDD) Approach**: Uses domain entities, repositories, and schema managers
 
-```http
-POST /attribute-types
-```
+This documentation covers both approaches with a focus on the recommended DDD approach.
 
-Request body:
+## Domain-Driven Design Approach
+
+### Base URL
+
+All DDD API endpoints are prefixed with `/api/v1`.
+
+### Attribute Types Endpoints
+
+#### Create Attribute Type
+
+`POST /api/v1/attribute-types`
+
+Creates a new attribute type with the specified properties.
+
+**Request Body:**
+
 ```json
 {
-  "name": "Priority",
-  "text": "What is the priority of this item?",
+  "name": "color",
+  "text": "Product Color",
+  "required": true,
+  "multiple_allowed": false,
+  "comment_required": false,
+  "display_with_objects": true
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "4f82-8c9d-a2b3",
+  "name": "color",
+  "text": "Product Color",
   "required": true,
   "multiple_allowed": false,
   "comment_required": false,
   "display_with_objects": true,
-  "meta_type_ids": ["01H3ZEVKY6ZH3F41K5GS77PJ1Z"],
-  "value_type_ids": ["01H3ZEVKY9PDSF51K5HS77PJ2A"]
+  "parent_id": null,
+  "initial_comment": null,
+  "description_limiting_query_id": null,
+  "value_type_limiting_query_id": null,
+  "group_id": null,
+  "tenant_id": null
 }
 ```
 
-### Get Attribute Type
+#### Get Attribute Type
 
-```http
-GET /attribute-types/{attribute_type_id}
-```
+`GET /api/v1/attribute-types/{id}`
 
-### Update Attribute Type
+Retrieves an attribute type by its ID.
 
-```http
-PATCH /attribute-types/{attribute_type_id}
-```
+**Response:**
 
-Request body:
 ```json
 {
-  "name": "Updated Priority",
-  "text": "What is the priority level of this item?",
+  "id": "4f82-8c9d-a2b3",
+  "name": "color",
+  "text": "Product Color",
   "required": true,
+  "multiple_allowed": false,
+  "comment_required": false,
+  "display_with_objects": true,
+  "parent_id": null,
+  "initial_comment": null,
+  "description_limiting_query_id": null,
+  "value_type_limiting_query_id": null,
+  "group_id": null,
+  "tenant_id": null,
+  "children": [],
+  "describes": [
+    {
+      "id": "product",
+      "name": "Product"
+    }
+  ],
+  "value_types": [
+    {
+      "id": "text_value",
+      "name": "Text Value"
+    }
+  ]
+}
+```
+
+#### List Attribute Types
+
+`GET /api/v1/attribute-types`
+
+Lists all attribute types with optional filtering.
+
+**Query Parameters:**
+
+- `name` - Filter by name
+- `required` - Filter by required flag (true/false)
+- `multiple_allowed` - Filter by multiple_allowed flag (true/false)
+- `page` - Page number (default: 1)
+- `page_size` - Page size (default: 50)
+- `fields` - Comma-separated list of fields to include
+
+**Response:**
+
+```json
+[
+  {
+    "id": "4f82-8c9d-a2b3",
+    "name": "color",
+    "text": "Product Color",
+    "required": true,
+    "multiple_allowed": false,
+    "comment_required": false,
+    "display_with_objects": true
+  },
+  {
+    "id": "7e21-5f4a-9c3b",
+    "name": "size",
+    "text": "Product Size",
+    "required": true,
+    "multiple_allowed": false,
+    "comment_required": false,
+    "display_with_objects": true
+  }
+]
+```
+
+#### Update Attribute Type
+
+`PATCH /api/v1/attribute-types/{id}`
+
+Updates an attribute type with the specified properties.
+
+**Request Body:**
+
+```json
+{
+  "text": "Updated Product Color",
+  "required": false,
   "multiple_allowed": true
 }
 ```
 
-### Update Applicable Meta Types
+**Response:**
+
+```json
+{
+  "id": "4f82-8c9d-a2b3",
+  "name": "color",
+  "text": "Updated Product Color",
+  "required": false,
+  "multiple_allowed": true,
+  "comment_required": false,
+  "display_with_objects": true,
+  "parent_id": null,
+  "initial_comment": null,
+  "description_limiting_query_id": null,
+  "value_type_limiting_query_id": null,
+  "group_id": null,
+  "tenant_id": null
+}
+```
+
+#### Delete Attribute Type
+
+`DELETE /api/v1/attribute-types/{id}`
+
+Deletes an attribute type by its ID.
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "message": "Attribute type deleted"
+}
+```
+
+### Attributes Endpoints
+
+#### Create Attribute
+
+`POST /api/v1/attributes`
+
+Creates a new attribute with the specified properties.
+
+**Request Body:**
+
+```json
+{
+  "attribute_type_id": "4f82-8c9d-a2b3",
+  "comment": "This is a blue color variant",
+  "follow_up_required": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "9a7b-6c5d-8e3f",
+  "attribute_type_id": "4f82-8c9d-a2b3",
+  "comment": "This is a blue color variant",
+  "follow_up_required": false,
+  "group_id": null,
+  "tenant_id": null,
+  "value_ids": [],
+  "meta_record_ids": []
+}
+```
+
+#### Get Attribute
+
+`GET /api/v1/attributes/{id}`
+
+Retrieves an attribute by its ID.
+
+**Response:**
+
+```json
+{
+  "id": "9a7b-6c5d-8e3f",
+  "attribute_type_id": "4f82-8c9d-a2b3",
+  "comment": "This is a blue color variant",
+  "follow_up_required": false,
+  "group_id": null,
+  "tenant_id": null,
+  "value_ids": ["val1", "val2"],
+  "meta_record_ids": [],
+  "attribute_type": {
+    "id": "4f82-8c9d-a2b3",
+    "name": "color",
+    "text": "Product Color",
+    "required": true,
+    "multiple_allowed": false,
+    "comment_required": false,
+    "display_with_objects": true
+  }
+}
+```
+
+#### List Attributes
+
+`GET /api/v1/attributes`
+
+Lists all attributes with optional filtering.
+
+**Query Parameters:**
+
+- `attribute_type_id` - Filter by attribute type ID
+- `follow_up_required` - Filter by follow_up_required flag (true/false)
+- `page` - Page number (default: 1)
+- `page_size` - Page size (default: 50)
+- `fields` - Comma-separated list of fields to include
+
+**Response:**
+
+```json
+[
+  {
+    "id": "9a7b-6c5d-8e3f",
+    "attribute_type_id": "4f82-8c9d-a2b3",
+    "comment": "This is a blue color variant",
+    "follow_up_required": false
+  },
+  {
+    "id": "2d4e-1f3c-5b6a",
+    "attribute_type_id": "7e21-5f4a-9c3b",
+    "comment": "Large size",
+    "follow_up_required": false
+  }
+]
+```
+
+#### Update Attribute
+
+`PATCH /api/v1/attributes/{id}`
+
+Updates an attribute with the specified properties.
+
+**Request Body:**
+
+```json
+{
+  "comment": "Updated comment for blue color variant",
+  "follow_up_required": true
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "9a7b-6c5d-8e3f",
+  "attribute_type_id": "4f82-8c9d-a2b3",
+  "comment": "Updated comment for blue color variant",
+  "follow_up_required": true,
+  "group_id": null,
+  "tenant_id": null,
+  "value_ids": ["val1", "val2"],
+  "meta_record_ids": []
+}
+```
+
+#### Delete Attribute
+
+`DELETE /api/v1/attributes/{id}`
+
+Deletes an attribute by its ID.
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "message": "Attribute deleted"
+}
+```
+
+#### Get Attribute Values
+
+`GET /api/v1/attributes/{attribute_id}/values`
+
+Gets all values associated with an attribute.
+
+**Response:**
+
+```json
+[
+  "val1",
+  "val2"
+]
+```
+
+### Error Handling
+
+All endpoints use standardized error responses with the following format:
+
+```json
+{
+  "code": "ERROR_CODE",
+  "message": "Human-readable error message",
+  "details": {
+    "field1": "Error details for field1",
+    "field2": "Error details for field2"
+  }
+}
+```
+
+Common error codes:
+
+- `NOT_FOUND` - The requested resource was not found
+- `VALIDATION_ERROR` - The request body failed validation
+- `DUPLICATE_KEY` - A resource with the same key already exists
+- `UNAUTHORIZED` - Authentication is required
+- `FORBIDDEN` - The authenticated user does not have permission
+
+## Legacy Approach
+
+The legacy approach uses the original service-based pattern with the following endpoints:
+
+### Legacy Attribute Types
 
 ```http
+POST /attribute-types
+GET /attribute-types/{attribute_type_id}
+PATCH /attribute-types/{attribute_type_id}
 POST /attribute-types/{attribute_type_id}/applicable-meta-types
-```
-
-Request body:
-```json
-["01H3ZEVKY6ZH3F41K5GS77PJ1Z", "01H3ZEVKY9PDSF51K5HS77PJ2A"]
-```
-
-### Update Value Meta Types
-
-```http
 POST /attribute-types/{attribute_type_id}/value-meta-types
-```
-
-Request body:
-```json
-["01H3ZEVKY6ZH3F41K5GS77PJ1Z", "01H3ZEVKY9PDSF51K5HS77PJ2A"]
-```
-
-### Get Applicable Attribute Types
-
-```http
 GET /attribute-types/applicable-for/{meta_type_id}
-```
-
-### Delete Attribute Type
-
-```http
 DELETE /attribute-types/{attribute_type_id}
 ```
 
-## Attributes
-
-Attributes are instances of attribute types that can be associated with objects and have values.
-
-### Create Attribute
+### Legacy Attributes
 
 ```http
 POST /attributes
-```
-
-Request body:
-```json
-{
-  "attribute_type_id": "01H3ZEVKXN7PQWGW5KVS77PJ0Y",
-  "comment": "This is a test attribute",
-  "follow_up_required": false,
-  "value_ids": ["01H3ZEVKY6ZH3F41K5GS77PJ1Z", "01H3ZEVKY9PDSF51K5HS77PJ2A"]
-}
-```
-
-### Get Attribute
-
-```http
 GET /attributes/{attribute_id}
-```
-
-### Update Attribute
-
-```http
 PATCH /attributes/{attribute_id}
-```
-
-Request body:
-```json
-{
-  "comment": "Updated comment",
-  "follow_up_required": true,
-  "value_ids": ["01H3ZEVKY6ZH3F41K5GS77PJ1Z"]
-}
-```
-
-### Add Values to Attribute
-
-```http
 POST /attributes/{attribute_id}/values
-```
-
-Request body:
-```json
-["01H3ZEVKY6ZH3F41K5GS77PJ1Z", "01H3ZEVKY9PDSF51K5HS77PJ2A"]
-```
-
-### Remove Values from Attribute
-
-```http
 DELETE /attributes/{attribute_id}/values
-```
-
-Request body:
-```json
-["01H3ZEVKY6ZH3F41K5GS77PJ1Z", "01H3ZEVKY9PDSF51K5HS77PJ2A"]
-```
-
-### Get Attributes for Record
-
-```http
 GET /attributes/by-record/{record_id}
-```
-
-Query parameters:
-- `include_values`: Whether to include attribute values (default: true)
-
-### Delete Attribute
-
-```http
 DELETE /attributes/{attribute_id}
 ```
 
+## Domain-Driven Design Components
+
+This API implements domain-driven design principles with the following components:
+
+1. **Domain Entities** - `Attribute` and `AttributeType` classes in `entities.py`
+2. **Repositories** - `AttributeRepository` and `AttributeTypeRepository` for data access
+3. **DTOs** - Data Transfer Objects defined in `dtos.py` for API serialization
+4. **Schema Managers** - Convert between entities and DTOs in `schemas.py`
+5. **Domain Services** - Encapsulate business logic in `domain_services.py`
+
 ## Integration
 
-To integrate the Attributes API into your FastAPI application:
+### Domain-Driven Integration
+
+To use the DDD API in your FastAPI application:
+
+```python
+from fastapi import FastAPI
+from uno.attributes.api_integration import register_domain_attribute_endpoints
+
+app = FastAPI()
+
+# Register attribute endpoints
+endpoints = register_domain_attribute_endpoints(
+    app_or_router=app,
+    path_prefix="/api/v1",
+    include_auth=True
+)
+```
+
+### Legacy Integration
+
+To integrate the legacy Attributes API into your FastAPI application:
 
 ```python
 from fastapi import FastAPI, APIRouter
 from uno.database.db_manager import DBManager
-from uno.attributes import (```
-
-AttributeRepository,
-AttributeTypeRepository,
-AttributeService,
-AttributeTypeService,
-register_attribute_endpoints,
-```
+from uno.attributes import (
+    AttributeRepository,
+    AttributeTypeRepository,
+    AttributeService,
+    AttributeTypeService,
+    register_attribute_endpoints
 )
 
 # Create FastAPI app
@@ -199,16 +462,14 @@ attribute_service = AttributeService(attribute_repository, attribute_type_reposi
 attribute_type_service = AttributeTypeService(attribute_type_repository, db_manager)
 
 # Register endpoints
-register_attribute_endpoints(```
-
-router=router,
-attribute_service=attribute_service,
-attribute_type_service=attribute_type_service,
-attribute_prefix="/attributes",
-attribute_type_prefix="/attribute-types",
-attribute_tags=["Attributes"],
-attribute_type_tags=["Attribute Types"]
-```
+register_attribute_endpoints(
+    router=router,
+    attribute_service=attribute_service,
+    attribute_type_service=attribute_type_service,
+    attribute_prefix="/attributes",
+    attribute_type_prefix="/attribute-types",
+    attribute_tags=["Attributes"],
+    attribute_type_tags=["Attribute Types"]
 )
 
 # Include router in app

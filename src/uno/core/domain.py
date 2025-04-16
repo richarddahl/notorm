@@ -8,7 +8,25 @@ value objects, and domain services.
 from abc import ABC, abstractmethod
 import copy
 from dataclasses import dataclass, field, fields, is_dataclass
-from typing import TypeVar, Generic, List, Dict, Any, Optional, Type, ClassVar, Set, Union, Protocol, runtime_checkable
+from typing import (
+    TypeVar, Generic, List, Dict, Any, Optional, Type, ClassVar, 
+    Set, Union, Protocol, runtime_checkable, TYPE_CHECKING
+)
+
+# Import DomainEvent from protocols only when type checking
+if TYPE_CHECKING:
+    from uno.core.protocols import DomainEvent
+else:
+    # Define the protocols we need directly for runtime
+    @runtime_checkable
+    class DomainEvent(Protocol):
+        """Protocol for domain events."""
+        event_id: str
+        event_type: str
+        timestamp: float
+        aggregate_id: Optional[str]
+        
+        def to_dict(self) -> Dict[str, Any]: ...
 
 # Define the protocols we need directly rather than importing them
 @runtime_checkable
@@ -20,30 +38,18 @@ class Entity(Protocol):
     def __hash__(self) -> int: ...
 
 @runtime_checkable
-class DomainEvent(Protocol):
-    """Protocol for domain events."""
-    event_id: str
-    event_type: str
-    timestamp: float
-    aggregate_id: Optional[str]
-    
-    def to_dict(self) -> Dict[str, Any]: ...
-
-@runtime_checkable
 class AggregateRoot(Entity, Protocol):
     """Protocol for aggregate roots."""
-    _events: List[DomainEvent]
+    _events: List["DomainEvent"]
     
-    def register_event(self, event: DomainEvent) -> None: ...
-    def clear_events(self) -> List[DomainEvent]: ...
+    def register_event(self, event: "DomainEvent") -> None: ...
+    def clear_events(self) -> List["DomainEvent"]: ...
 
 @runtime_checkable
 class ValueObject(Protocol):
     """Protocol for value objects."""
     def equals(self, other: Any) -> bool: ...
     def __eq__(self, other: Any) -> bool: ...
-
-from uno.core.protocols import DomainEvent
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')
@@ -114,7 +120,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         return hash((self.__class__, self.id))
     
-    def register_event(self, event: DomainEvent) -> None:
+    def register_event(self, event: "DomainEvent") -> None:
         """
         Register a domain event to be published after the aggregate is saved.
         
@@ -123,7 +129,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         self._events.append(event)
     
-    def clear_events(self) -> List[DomainEvent]:
+    def clear_events(self) -> List["DomainEvent"]:
         """
         Clear and return all registered events.
         

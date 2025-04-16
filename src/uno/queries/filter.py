@@ -25,7 +25,7 @@ Attributes:
     text_lookups (list): A list of lookup names applicable to text data types.
 """
 
-from typing import Any, ClassVar, Dict, List, Optional, TYPE_CHECKING, Type
+from typing import Any, ClassVar, Dict, List, Optional, TYPE_CHECKING, Type, Tuple
 from psycopg import sql
 from pydantic import BaseModel
 
@@ -194,6 +194,7 @@ class UnoFilter(BaseModel):
         super().__subclass_init__(*args, **kwargs)
         # Import here to avoid circular imports
         from uno.database.db_manager import UnoDBFactory
+
         cls.db = UnoDBFactory(obj=cls)
 
     def __str__(self) -> str:
@@ -273,7 +274,7 @@ class UnoFilter(BaseModel):
             list[UnoFilter]: A list of child filters extracted from the entity's filters.
         """
         # Return a list of child filters if the entity has filters
-        if hasattr(entity, 'filters') and isinstance(entity.filters, dict):
+        if hasattr(entity, "filters") and isinstance(entity.filters, dict):
             return [child for child in entity.filters.values()]
         return []
 
@@ -343,7 +344,7 @@ class UnoFilter(BaseModel):
                 )
                 .as_string()
             )
-        
+
         # OR condition query - different format that allows combining with other filters
         return (
             sql.SQL(
@@ -362,28 +363,28 @@ class UnoFilter(BaseModel):
             )
             .as_string()
         )
-    
+
     def combined_cypher_query(self, filters: List[Tuple[Any, str, str]]) -> str:
         """
         Creates a combined Cypher query from multiple filters with support for OR conditions.
-        
+
         Args:
             filters: A list of tuples containing (value, lookup, condition)
                 for each filter to be combined.
-                
+
         Returns:
             str: A formatted Cypher query string that combines all filters.
         """
         # Group filters by condition type
         and_filters = []
         or_filters = []
-        
+
         for val, lookup, condition in filters:
             if condition.upper() == "OR":
                 or_filters.append((val, lookup))
             else:
                 and_filters.append((val, lookup))
-        
+
         # Build the query
         if not or_filters and not and_filters:
             # No filters, return all nodes
@@ -401,7 +402,7 @@ class UnoFilter(BaseModel):
                 )
                 .as_string()
             )
-        
+
         # Handle only AND filters
         if and_filters and not or_filters:
             where_clauses = []
@@ -412,15 +413,21 @@ class UnoFilter(BaseModel):
                     try:
                         processed_val = val.timestamp()
                     except AttributeError:
-                        raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+                        raise TypeError(
+                            f"Value {val} is not of type {self.raw_data_type}"
+                        )
                 else:
                     processed_val = str(val)
-                
-                clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+
+                clause = (
+                    lookups.get(lookup, "t.val = '{val}'")
+                    .format(val=sql.SQL(processed_val))
+                    .as_string()
+                )
                 where_clauses.append(clause)
-            
+
             combined_where = " AND ".join(where_clauses)
-            
+
             return (
                 sql.SQL(
                     """
@@ -437,7 +444,7 @@ class UnoFilter(BaseModel):
                 )
                 .as_string()
             )
-        
+
         # Handle only OR filters
         if or_filters and not and_filters:
             where_clauses = []
@@ -448,15 +455,21 @@ class UnoFilter(BaseModel):
                     try:
                         processed_val = val.timestamp()
                     except AttributeError:
-                        raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+                        raise TypeError(
+                            f"Value {val} is not of type {self.raw_data_type}"
+                        )
                 else:
                     processed_val = str(val)
-                
-                clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+
+                clause = (
+                    lookups.get(lookup, "t.val = '{val}'")
+                    .format(val=sql.SQL(processed_val))
+                    .as_string()
+                )
                 where_clauses.append(clause)
-            
+
             combined_where = " OR ".join(where_clauses)
-            
+
             return (
                 sql.SQL(
                     """
@@ -473,7 +486,7 @@ class UnoFilter(BaseModel):
                 )
                 .as_string()
             )
-        
+
         # Handle mixed AND and OR filters (most complex case)
         and_clauses = []
         for val, lookup in and_filters:
@@ -486,10 +499,14 @@ class UnoFilter(BaseModel):
                     raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
             else:
                 processed_val = str(val)
-            
-            clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+
+            clause = (
+                lookups.get(lookup, "t.val = '{val}'")
+                .format(val=sql.SQL(processed_val))
+                .as_string()
+            )
             and_clauses.append(clause)
-        
+
         or_clauses = []
         for val, lookup in or_filters:
             if self.data_type == "bool":
@@ -501,14 +518,18 @@ class UnoFilter(BaseModel):
                     raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
             else:
                 processed_val = str(val)
-            
-            clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+
+            clause = (
+                lookups.get(lookup, "t.val = '{val}'")
+                .format(val=sql.SQL(processed_val))
+                .as_string()
+            )
             or_clauses.append(clause)
-        
+
         # Combine the conditions properly
         combined_and = " AND ".join(and_clauses)
         combined_or = " OR ".join(or_clauses)
-        
+
         # Structure the query with proper precedence: (AND conditions) OR (OR conditions)
         if and_clauses and or_clauses:
             final_where = f"({combined_and}) OR ({combined_or})"
@@ -516,7 +537,7 @@ class UnoFilter(BaseModel):
             final_where = combined_and
         else:
             final_where = combined_or
-        
+
         return (
             sql.SQL(
                 """

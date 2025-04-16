@@ -23,6 +23,7 @@ This document tracks progress on standardizing the codebase according to the roa
   - ✅ Authorization module
   - ✅ Queries module
   - ✅ Reports module
+  - ✅ Workflows module
 - ✅ **Phase 4**: Testing and API adaptation (Completed)
   - ✅ Unit testing of domain entities
   - ✅ Unit testing of domain repositories
@@ -105,6 +106,38 @@ Still required to complete the transition:
   - ✅ `test_session_async.py`
   - ✅ `test_session_mock.py`
 - ✅ Created a script to document the conversion process (`convert_tests_to_pytest.sh`)
+
+### Workflows Module Domain-Driven Design Implementation (April 16, 2025)
+- ✅ **Phase 1**: Complete rewrite of the Workflows module using DDD principles
+  - ✅ Created comprehensive DTOs for all workflow entities
+    - ✅ WorkflowDefDto (base, create, update, view, filter)
+    - ✅ WorkflowTriggerDto
+    - ✅ WorkflowConditionDto
+    - ✅ WorkflowActionDto
+    - ✅ WorkflowRecipientDto
+    - ✅ WorkflowExecutionRecordDto
+  - ✅ Implemented Schema Managers with entity-DTO conversion methods
+    - ✅ WorkflowDefSchemaManager
+    - ✅ WorkflowTriggerSchemaManager
+    - ✅ WorkflowConditionSchemaManager
+    - ✅ WorkflowActionSchemaManager
+    - ✅ WorkflowRecipientSchemaManager
+    - ✅ WorkflowExecutionRecordSchemaManager
+  - ✅ Created API integration with standardized endpoints
+    - ✅ register_workflow_definition_endpoints
+    - ✅ register_workflow_component_endpoints
+    - ✅ register_workflow_endpoints
+  - ✅ Created comprehensive API documentation in `/docs/api/workflows.md`
+- ✅ **Phase 2**: Testing and verification
+  - ✅ Unit testing of domain entities
+  - ✅ Unit testing of schema managers
+  - ✅ Unit testing of API integration
+  - ✅ Verification of API endpoints
+- ✅ **Phase 3**: Legacy code removal
+  - ✅ Removed legacy UnoObj-based workflow implementation
+  - ✅ Removed legacy workflow endpoint registration
+  - ✅ Removed legacy workflow schema definitions
+  - ✅ Updated imports across the codebase
 
 ### Shell Scripts Standardization (Item #1)
 - ✅ Created a comprehensive shell script standardization plan (`SHELL_SCRIPT_STANDARDIZATION_PLAN.md`)

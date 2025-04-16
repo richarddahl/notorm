@@ -1,557 +1,822 @@
-"""
-Schema definitions for the workflows module.
+"""Schema managers for converting between workflow domain entities and DTOs."""
 
-This module provides schema definitions for the workflow entities
-to support API endpoints and data validation.
-"""
+from typing import Dict, List, Optional, Any, Union, Type
 
-from typing import Dict, List, Optional, Any, TypeVar, Generic, Union
-from enum import Enum
-from datetime import datetime
+from pydantic import BaseModel
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict
-
-from uno.schema.schema import UnoSchema, PaginatedList
-from uno.workflows.models import (
-    WorkflowStatus,
-    WorkflowActionType,
-    WorkflowRecipientType,
-    WorkflowConditionType,
+from uno.workflows.entities import (
+    WorkflowDef,
+    WorkflowTrigger,
+    WorkflowCondition,
+    WorkflowAction,
+    WorkflowRecipient,
+    WorkflowExecutionRecord,
+    User,
 )
-from uno.workflows.entities import WorkflowDef
 
+from uno.workflows.dtos import (
+    # Workflow Definition DTOs
+    WorkflowDefBaseDto,
+    WorkflowDefCreateDto,
+    WorkflowDefUpdateDto,
+    WorkflowDefViewDto,
+    WorkflowDefFilterParams,
+    
+    # Workflow Trigger DTOs
+    WorkflowTriggerBaseDto,
+    WorkflowTriggerCreateDto,
+    WorkflowTriggerUpdateDto,
+    WorkflowTriggerViewDto,
+    WorkflowTriggerFilterParams,
+    
+    # Workflow Condition DTOs
+    WorkflowConditionBaseDto,
+    WorkflowConditionCreateDto,
+    WorkflowConditionUpdateDto,
+    WorkflowConditionViewDto,
+    WorkflowConditionFilterParams,
+    
+    # Workflow Action DTOs
+    WorkflowActionBaseDto,
+    WorkflowActionCreateDto,
+    WorkflowActionUpdateDto,
+    WorkflowActionViewDto,
+    WorkflowActionFilterParams,
+    
+    # Workflow Recipient DTOs
+    WorkflowRecipientBaseDto,
+    WorkflowRecipientCreateDto,
+    WorkflowRecipientUpdateDto,
+    WorkflowRecipientViewDto,
+    WorkflowRecipientFilterParams,
+    
+    # Workflow Execution Record DTOs
+    WorkflowExecutionRecordBaseDto,
+    WorkflowExecutionRecordCreateDto,
+    WorkflowExecutionRecordUpdateDto,
+    WorkflowExecutionRecordViewDto,
+    WorkflowExecutionRecordFilterParams,
+    
+    # User DTOs
+    UserViewDto,
+    
+    # Event DTOs
+    WorkflowEventDto,
+)
+
+
+class WorkflowTriggerSchemaManager:
+    """Schema manager for workflow trigger entities."""
+    
+    def __init__(self):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowTriggerViewDto,
+            "create_schema": WorkflowTriggerCreateDto,
+            "update_schema": WorkflowTriggerUpdateDto,
+            "filter_schema": WorkflowTriggerFilterParams,
+        }
+    
+    def entity_to_dto(
+        self, entity: WorkflowTrigger, dto_class: Type[BaseModel] = None
+    ) -> Union[WorkflowTriggerViewDto, BaseModel]:
+        """Convert a workflow trigger entity to a DTO.
+        
+        Args:
+            entity: The workflow trigger entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "workflow_id": entity.workflow_id,
+            "entity_type": entity.entity_type,
+            "operation": entity.operation,
+            "field_conditions": entity.field_conditions,
+            "priority": entity.priority,
+            "is_active": entity.is_active,
+        }
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowTriggerCreateDto, WorkflowTriggerUpdateDto], entity: Optional[WorkflowTrigger] = None
+    ) -> WorkflowTrigger:
+        """Convert a DTO to a workflow trigger entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "entity_type") and dto.entity_type is not None:
+                entity.entity_type = dto.entity_type
+            if hasattr(dto, "operation") and dto.operation is not None:
+                entity.operation = dto.operation
+            if hasattr(dto, "field_conditions") and dto.field_conditions is not None:
+                entity.field_conditions = dto.field_conditions
+            if hasattr(dto, "priority") and dto.priority is not None:
+                entity.priority = dto.priority
+            if hasattr(dto, "is_active") and dto.is_active is not None:
+                entity.is_active = dto.is_active
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(exclude_unset=True)
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            if "workflow_id" not in entity_data:
+                entity_data["workflow_id"] = ""
+            
+            return WorkflowTrigger(**entity_data)
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowTrigger], dto_class: Type[BaseModel] = None
+    ) -> List[Union[WorkflowTriggerViewDto, BaseModel]]:
+        """Convert a list of workflow trigger entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowTriggerCreateDto, WorkflowTriggerUpdateDto]]
+    ) -> List[WorkflowTrigger]:
+        """Convert a list of DTOs to a list of workflow trigger entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
+
+
+class WorkflowConditionSchemaManager:
+    """Schema manager for workflow condition entities."""
+    
+    def __init__(self):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowConditionViewDto,
+            "create_schema": WorkflowConditionCreateDto,
+            "update_schema": WorkflowConditionUpdateDto,
+            "filter_schema": WorkflowConditionFilterParams,
+        }
+    
+    def entity_to_dto(
+        self, entity: WorkflowCondition, dto_class: Type[BaseModel] = None
+    ) -> Union[WorkflowConditionViewDto, BaseModel]:
+        """Convert a workflow condition entity to a DTO.
+        
+        Args:
+            entity: The workflow condition entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "workflow_id": entity.workflow_id,
+            "condition_type": entity.condition_type,
+            "condition_config": entity.condition_config,
+            "query_id": entity.query_id,
+            "name": entity.name,
+            "description": entity.description,
+            "order": entity.order,
+        }
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowConditionCreateDto, WorkflowConditionUpdateDto], entity: Optional[WorkflowCondition] = None
+    ) -> WorkflowCondition:
+        """Convert a DTO to a workflow condition entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "condition_type") and dto.condition_type is not None:
+                entity.condition_type = dto.condition_type
+            if hasattr(dto, "condition_config") and dto.condition_config is not None:
+                entity.condition_config = dto.condition_config
+            if hasattr(dto, "query_id") and dto.query_id is not None:
+                entity.query_id = dto.query_id
+            if hasattr(dto, "name") and dto.name is not None:
+                entity.name = dto.name
+            if hasattr(dto, "description") and dto.description is not None:
+                entity.description = dto.description
+            if hasattr(dto, "order") and dto.order is not None:
+                entity.order = dto.order
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(exclude_unset=True)
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            if "workflow_id" not in entity_data:
+                entity_data["workflow_id"] = ""
+            
+            return WorkflowCondition(**entity_data)
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowCondition], dto_class: Type[BaseModel] = None
+    ) -> List[Union[WorkflowConditionViewDto, BaseModel]]:
+        """Convert a list of workflow condition entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowConditionCreateDto, WorkflowConditionUpdateDto]]
+    ) -> List[WorkflowCondition]:
+        """Convert a list of DTOs to a list of workflow condition entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
+
+
+class WorkflowRecipientSchemaManager:
+    """Schema manager for workflow recipient entities."""
+    
+    def __init__(self):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowRecipientViewDto,
+            "create_schema": WorkflowRecipientCreateDto,
+            "update_schema": WorkflowRecipientUpdateDto,
+            "filter_schema": WorkflowRecipientFilterParams,
+        }
+    
+    def entity_to_dto(
+        self, entity: WorkflowRecipient, dto_class: Type[BaseModel] = None
+    ) -> Union[WorkflowRecipientViewDto, BaseModel]:
+        """Convert a workflow recipient entity to a DTO.
+        
+        Args:
+            entity: The workflow recipient entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "workflow_id": entity.workflow_id,
+            "recipient_type": entity.recipient_type,
+            "recipient_id": entity.recipient_id,
+            "name": entity.name,
+            "action_id": entity.action_id,
+            "notification_config": entity.notification_config,
+        }
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowRecipientCreateDto, WorkflowRecipientUpdateDto], entity: Optional[WorkflowRecipient] = None
+    ) -> WorkflowRecipient:
+        """Convert a DTO to a workflow recipient entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "recipient_type") and dto.recipient_type is not None:
+                entity.recipient_type = dto.recipient_type
+            if hasattr(dto, "recipient_id") and dto.recipient_id is not None:
+                entity.recipient_id = dto.recipient_id
+            if hasattr(dto, "name") and dto.name is not None:
+                entity.name = dto.name
+            if hasattr(dto, "action_id") and dto.action_id is not None:
+                entity.action_id = dto.action_id
+            if hasattr(dto, "notification_config") and dto.notification_config is not None:
+                entity.notification_config = dto.notification_config
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(exclude_unset=True)
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            if "workflow_id" not in entity_data:
+                entity_data["workflow_id"] = ""
+            
+            return WorkflowRecipient(**entity_data)
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowRecipient], dto_class: Type[BaseModel] = None
+    ) -> List[Union[WorkflowRecipientViewDto, BaseModel]]:
+        """Convert a list of workflow recipient entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowRecipientCreateDto, WorkflowRecipientUpdateDto]]
+    ) -> List[WorkflowRecipient]:
+        """Convert a list of DTOs to a list of workflow recipient entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
+
+
+class WorkflowActionSchemaManager:
+    """Schema manager for workflow action entities."""
+    
+    def __init__(self, recipient_schema_manager: Optional[WorkflowRecipientSchemaManager] = None):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowActionViewDto,
+            "create_schema": WorkflowActionCreateDto,
+            "update_schema": WorkflowActionUpdateDto,
+            "filter_schema": WorkflowActionFilterParams,
+        }
+        self.recipient_schema_manager = recipient_schema_manager or WorkflowRecipientSchemaManager()
+    
+    def entity_to_dto(
+        self, entity: WorkflowAction, dto_class: Type[BaseModel] = None, include_related: bool = True
+    ) -> Union[WorkflowActionViewDto, BaseModel]:
+        """Convert a workflow action entity to a DTO.
+        
+        Args:
+            entity: The workflow action entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            include_related: Whether to include related entities.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "workflow_id": entity.workflow_id,
+            "action_type": entity.action_type,
+            "action_config": entity.action_config,
+            "name": entity.name,
+            "description": entity.description,
+            "order": entity.order,
+            "is_active": entity.is_active,
+            "retry_policy": entity.retry_policy,
+        }
+        
+        if include_related and hasattr(entity, "recipients") and entity.recipients:
+            dto_data["recipients"] = self.recipient_schema_manager.entity_list_to_dto_list(entity.recipients)
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowActionCreateDto, WorkflowActionUpdateDto], entity: Optional[WorkflowAction] = None
+    ) -> WorkflowAction:
+        """Convert a DTO to a workflow action entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "action_type") and dto.action_type is not None:
+                entity.action_type = dto.action_type
+            if hasattr(dto, "action_config") and dto.action_config is not None:
+                entity.action_config = dto.action_config
+            if hasattr(dto, "name") and dto.name is not None:
+                entity.name = dto.name
+            if hasattr(dto, "description") and dto.description is not None:
+                entity.description = dto.description
+            if hasattr(dto, "order") and dto.order is not None:
+                entity.order = dto.order
+            if hasattr(dto, "is_active") and dto.is_active is not None:
+                entity.is_active = dto.is_active
+            if hasattr(dto, "retry_policy") and dto.retry_policy is not None:
+                entity.retry_policy = dto.retry_policy
+            
+            # Handle recipients (if included in the DTO)
+            if hasattr(dto, "recipients") and dto.recipients:
+                entity.recipients = self.recipient_schema_manager.dto_list_to_entity_list(dto.recipients)
+                for recipient in entity.recipients:
+                    recipient.action_id = entity.id
+                    recipient.workflow_id = entity.workflow_id
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(exclude={"recipients"}, exclude_unset=True)
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            if "workflow_id" not in entity_data:
+                entity_data["workflow_id"] = ""
+            
+            entity = WorkflowAction(**entity_data)
+            
+            # Handle recipients (if included in the DTO)
+            if hasattr(dto, "recipients") and dto.recipients:
+                entity.recipients = self.recipient_schema_manager.dto_list_to_entity_list(dto.recipients)
+                for recipient in entity.recipients:
+                    recipient.action_id = entity.id
+            
+            return entity
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowAction], dto_class: Type[BaseModel] = None, include_related: bool = True
+    ) -> List[Union[WorkflowActionViewDto, BaseModel]]:
+        """Convert a list of workflow action entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            include_related: Whether to include related entities.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class, include_related) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowActionCreateDto, WorkflowActionUpdateDto]]
+    ) -> List[WorkflowAction]:
+        """Convert a list of DTOs to a list of workflow action entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
+
+
+class WorkflowExecutionRecordSchemaManager:
+    """Schema manager for workflow execution record entities."""
+    
+    def __init__(self):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowExecutionRecordViewDto,
+            "create_schema": WorkflowExecutionRecordCreateDto,
+            "update_schema": WorkflowExecutionRecordUpdateDto,
+            "filter_schema": WorkflowExecutionRecordFilterParams,
+        }
+    
+    def entity_to_dto(
+        self, entity: WorkflowExecutionRecord, dto_class: Type[BaseModel] = None
+    ) -> Union[WorkflowExecutionRecordViewDto, BaseModel]:
+        """Convert a workflow execution record entity to a DTO.
+        
+        Args:
+            entity: The workflow execution record entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "workflow_id": entity.workflow_id,
+            "trigger_event_id": entity.trigger_event_id,
+            "status": entity.status,
+            "executed_at": entity.executed_at,
+            "completed_at": entity.completed_at,
+            "result": entity.result,
+            "error": entity.error,
+            "context": entity.context,
+            "execution_time": entity.execution_time,
+        }
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowExecutionRecordCreateDto, WorkflowExecutionRecordUpdateDto], entity: Optional[WorkflowExecutionRecord] = None
+    ) -> WorkflowExecutionRecord:
+        """Convert a DTO to a workflow execution record entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "status") and dto.status is not None:
+                entity.status = dto.status
+            if hasattr(dto, "completed_at") and dto.completed_at is not None:
+                entity.completed_at = dto.completed_at
+            if hasattr(dto, "result") and dto.result is not None:
+                entity.result = dto.result
+            if hasattr(dto, "error") and dto.error is not None:
+                entity.error = dto.error
+            if hasattr(dto, "context") and dto.context is not None:
+                entity.context = dto.context
+            if hasattr(dto, "execution_time") and dto.execution_time is not None:
+                entity.execution_time = dto.execution_time
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(exclude_unset=True)
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            
+            return WorkflowExecutionRecord(**entity_data)
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowExecutionRecord], dto_class: Type[BaseModel] = None
+    ) -> List[Union[WorkflowExecutionRecordViewDto, BaseModel]]:
+        """Convert a list of workflow execution record entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowExecutionRecordCreateDto, WorkflowExecutionRecordUpdateDto]]
+    ) -> List[WorkflowExecutionRecord]:
+        """Convert a list of DTOs to a list of workflow execution record entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
+
+
+class UserSchemaManager:
+    """Schema manager for user entities."""
+    
+    def __init__(self):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": UserViewDto,
+        }
+    
+    def entity_to_dto(
+        self, entity: User, dto_class: Type[BaseModel] = None
+    ) -> Union[UserViewDto, BaseModel]:
+        """Convert a user entity to a DTO.
+        
+        Args:
+            entity: The user entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "username": entity.username,
+            "email": entity.email,
+            "is_active": entity.is_active,
+            "display_name": entity.display_name,
+            "roles": entity.roles,
+        }
+        
+        return dto_class(**dto_data)
+    
+    def entity_list_to_dto_list(
+        self, entities: List[User], dto_class: Type[BaseModel] = None
+    ) -> List[Union[UserViewDto, BaseModel]]:
+        """Convert a list of user entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class) for entity in entities]
+
+
+class WorkflowDefSchemaManager:
+    """Schema manager for workflow definition entities."""
+    
+    def __init__(
+        self,
+        trigger_schema_manager: Optional[WorkflowTriggerSchemaManager] = None,
+        condition_schema_manager: Optional[WorkflowConditionSchemaManager] = None,
+        action_schema_manager: Optional[WorkflowActionSchemaManager] = None,
+        recipient_schema_manager: Optional[WorkflowRecipientSchemaManager] = None,
+    ):
+        """Initialize the schema manager."""
+        self.schemas = {
+            "view_schema": WorkflowDefViewDto,
+            "create_schema": WorkflowDefCreateDto,
+            "update_schema": WorkflowDefUpdateDto,
+            "filter_schema": WorkflowDefFilterParams,
+        }
+        self.trigger_schema_manager = trigger_schema_manager or WorkflowTriggerSchemaManager()
+        self.condition_schema_manager = condition_schema_manager or WorkflowConditionSchemaManager()
+        self.action_schema_manager = action_schema_manager or WorkflowActionSchemaManager(
+            recipient_schema_manager=recipient_schema_manager or WorkflowRecipientSchemaManager()
+        )
+        self.recipient_schema_manager = recipient_schema_manager or WorkflowRecipientSchemaManager()
+    
+    def entity_to_dto(
+        self, entity: WorkflowDef, dto_class: Type[BaseModel] = None, include_related: bool = True
+    ) -> Union[WorkflowDefViewDto, BaseModel]:
+        """Convert a workflow definition entity to a DTO.
+        
+        Args:
+            entity: The workflow definition entity to convert.
+            dto_class: Optional DTO class to use for conversion.
+            include_related: Whether to include related entities.
+            
+        Returns:
+            The converted DTO.
+        """
+        dto_class = dto_class or self.schemas["view_schema"]
+        
+        dto_data = {
+            "id": entity.id,
+            "name": entity.name,
+            "description": entity.description,
+            "status": entity.status,
+            "version": entity.version,
+        }
+        
+        if include_related:
+            if hasattr(entity, "triggers") and entity.triggers:
+                dto_data["triggers"] = self.trigger_schema_manager.entity_list_to_dto_list(entity.triggers)
+            
+            if hasattr(entity, "conditions") and entity.conditions:
+                dto_data["conditions"] = self.condition_schema_manager.entity_list_to_dto_list(entity.conditions)
+            
+            if hasattr(entity, "actions") and entity.actions:
+                dto_data["actions"] = self.action_schema_manager.entity_list_to_dto_list(entity.actions)
+            
+            if hasattr(entity, "recipients") and entity.recipients:
+                dto_data["recipients"] = self.recipient_schema_manager.entity_list_to_dto_list(entity.recipients)
+        
+        return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
+    
+    def dto_to_entity(
+        self, dto: Union[WorkflowDefCreateDto, WorkflowDefUpdateDto], entity: Optional[WorkflowDef] = None
+    ) -> WorkflowDef:
+        """Convert a DTO to a workflow definition entity.
+        
+        Args:
+            dto: The DTO to convert.
+            entity: Optional existing entity to update.
+            
+        Returns:
+            The converted entity.
+        """
+        if entity:
+            # Update existing entity
+            if hasattr(dto, "name") and dto.name is not None:
+                entity.name = dto.name
+            if hasattr(dto, "description") and dto.description is not None:
+                entity.description = dto.description
+            if hasattr(dto, "status") and dto.status is not None:
+                entity.status = dto.status
+            if hasattr(dto, "version") and dto.version is not None:
+                entity.version = dto.version
+            
+            return entity
+        else:
+            # Create new entity
+            entity_data = dto.dict(
+                exclude={"triggers", "conditions", "actions", "recipients"}, 
+                exclude_unset=True
+            )
+            # Generate a temporary ID that will be replaced when saved to the database
+            if "id" not in entity_data:
+                entity_data["id"] = ""
+            
+            entity = WorkflowDef(**entity_data)
+            
+            # Handle related entities
+            if hasattr(dto, "triggers") and dto.triggers:
+                entity.triggers = self.trigger_schema_manager.dto_list_to_entity_list(dto.triggers)
+                for trigger in entity.triggers:
+                    trigger.workflow_id = entity.id
+            
+            if hasattr(dto, "conditions") and dto.conditions:
+                entity.conditions = self.condition_schema_manager.dto_list_to_entity_list(dto.conditions)
+                for condition in entity.conditions:
+                    condition.workflow_id = entity.id
+            
+            if hasattr(dto, "actions") and dto.actions:
+                entity.actions = self.action_schema_manager.dto_list_to_entity_list(dto.actions)
+                for action in entity.actions:
+                    action.workflow_id = entity.id
+                    for recipient in action.recipients:
+                        recipient.workflow_id = entity.id
+                        recipient.action_id = action.id
+            
+            if hasattr(dto, "recipients") and dto.recipients:
+                entity.recipients = self.recipient_schema_manager.dto_list_to_entity_list(dto.recipients)
+                for recipient in entity.recipients:
+                    recipient.workflow_id = entity.id
+            
+            return entity
+    
+    def entity_list_to_dto_list(
+        self, entities: List[WorkflowDef], dto_class: Type[BaseModel] = None, include_related: bool = True
+    ) -> List[Union[WorkflowDefViewDto, BaseModel]]:
+        """Convert a list of workflow definition entities to a list of DTOs.
+        
+        Args:
+            entities: The list of entities to convert.
+            dto_class: Optional DTO class to use for conversion.
+            include_related: Whether to include related entities.
+            
+        Returns:
+            The list of converted DTOs.
+        """
+        return [self.entity_to_dto(entity, dto_class, include_related) for entity in entities]
+    
+    def dto_list_to_entity_list(
+        self, dtos: List[Union[WorkflowDefCreateDto, WorkflowDefUpdateDto]]
+    ) -> List[WorkflowDef]:
+        """Convert a list of DTOs to a list of workflow definition entities.
+        
+        Args:
+            dtos: The list of DTOs to convert.
+            
+        Returns:
+            The list of converted entities.
+        """
+        return [self.dto_to_entity(dto) for dto in dtos]
 
-# Common fields for all schemas
-class WorkflowBaseSchema(UnoSchema):
-    """Base schema for workflow entities with common fields."""
 
-    id: Optional[str] = None
-    is_active: bool = True
-    is_deleted: bool = False
-    created_at: Optional[str] = None
-    modified_at: Optional[str] = None
-    deleted_at: Optional[str] = None
-    created_by_id: Optional[str] = None
-    modified_by_id: Optional[str] = None
-    deleted_by_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    group_id: Optional[str] = None
-
-
-class WorkflowOperationType(str, Enum):
-    """Workflow operation type enumeration."""
-
-    CREATE = "create"
-    UPDATE = "update"
-    DELETE = "delete"
-
-
-class WorkflowTriggerSchema(BaseModel):
-    """Workflow trigger schema."""
-
-    entity_type: str = Field(..., description="The entity type this trigger applies to")
-    operations: List[str] = Field(
-        ..., description="The operations that will trigger the workflow"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowConditionSchema(BaseModel):
-    """Workflow condition schema."""
-
-    id: Optional[str] = Field(None, description="The condition ID")
-    type: str = Field(..., description="The type of condition")
-    field: Optional[str] = Field(
-        None, description="The field to evaluate for field conditions"
-    )
-    operator: Optional[str] = Field(
-        None, description="The operator for field conditions"
-    )
-    value: Optional[str] = Field(None, description="The value for field conditions")
-    config: Optional[Dict[str, Any]] = Field(
-        None, description="Additional configuration for the condition"
-    )
-    order: Optional[int] = Field(
-        0, description="The order of evaluation for the condition"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowRecipientSchema(BaseModel):
-    """Workflow recipient schema."""
-
-    id: Optional[str] = Field(None, description="The recipient ID")
-    type: str = Field(..., description="The type of recipient")
-    value: str = Field(
-        ..., description="The value for the recipient (user ID, role name, etc.)"
-    )
-    action_id: Optional[str] = Field(
-        None, description="The action this recipient is associated with"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowActionSchema(BaseModel):
-    """Workflow action schema."""
-
-    id: Optional[str] = Field(None, description="The action ID")
-    type: str = Field(..., description="The type of action")
-    title: Optional[str] = Field(None, description="The title for notification actions")
-    body: Optional[str] = Field(
-        None, description="The body for notification and email actions"
-    )
-    subject: Optional[str] = Field(None, description="The subject for email actions")
-    url: Optional[str] = Field(None, description="The URL for webhook actions")
-    method: Optional[str] = Field(
-        "POST", description="The HTTP method for webhook actions"
-    )
-    priority: Optional[str] = Field(
-        "normal", description="The priority for notification actions"
-    )
-    template: Optional[str] = Field(None, description="The template for email actions")
-    operation: Optional[str] = Field(
-        None, description="The operation for database actions"
-    )
-    target_entity: Optional[str] = Field(
-        None, description="The target entity for database actions"
-    )
-    field_mapping: Optional[Dict[str, Any]] = Field(
-        None, description="Field mapping for database actions"
-    )
-    config: Optional[Dict[str, Any]] = Field(
-        None, description="Additional configuration for the action"
-    )
-    order: Optional[int] = Field(0, description="The order of execution for the action")
-    recipients: Optional[List[WorkflowRecipientSchema]] = Field(
-        [], description="Recipients for the action"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowDefinitionSchema(BaseModel):
-    """Workflow definition schema."""
-
-    id: Optional[str] = Field(None, description="The workflow ID")
-    name: str = Field(..., description="The name of the workflow")
-    description: Optional[str] = Field(
-        None, description="The description of the workflow"
-    )
-    status: str = Field("active", description="The status of the workflow")
-    version: int = Field(1, description="The version of the workflow")
-    trigger: WorkflowTriggerSchema = Field(
-        ..., description="The trigger for the workflow"
-    )
-    conditions: Optional[List[WorkflowConditionSchema]] = Field(
-        [], description="Conditions for the workflow"
-    )
-    actions: List[WorkflowActionSchema] = Field(
-        ..., description="Actions for the workflow"
-    )
-    created_at: Optional[datetime] = Field(
-        None, description="When the workflow was created"
-    )
-    updated_at: Optional[datetime] = Field(
-        None, description="When the workflow was last updated"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowExecutionStatus(str, Enum):
-    """Workflow execution status enumeration."""
-
-    SUCCESS = "success"
-    FAILURE = "failure"
-    PARTIAL = "partial"
-
-
-class WorkflowActionResultSchema(BaseModel):
-    """Workflow action execution result schema."""
-
-    id: Optional[str] = Field(None, description="The action result ID")
-    action_id: str = Field(..., description="The ID of the action that was executed")
-    type: str = Field(..., description="The type of action that was executed")
-    status: str = Field(..., description="The status of the action execution")
-    started_at: Optional[datetime] = Field(None, description="When the action started")
-    completed_at: Optional[datetime] = Field(
-        None, description="When the action completed"
-    )
-    duration_ms: Optional[int] = Field(
-        None, description="The duration of the action execution in milliseconds"
-    )
-    recipients_count: Optional[int] = Field(
-        None, description="The number of recipients for the action"
-    )
-    error: Optional[str] = Field(
-        None, description="The error message if the action failed"
-    )
-    details: Optional[str] = Field(
-        None, description="Additional details about the action execution"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowExecutionLogSchema(BaseModel):
-    """Workflow execution log schema."""
-
-    id: str = Field(..., description="The execution log ID")
-    workflow_id: str = Field(
-        ..., description="The ID of the workflow that was executed"
-    )
-    workflow_name: str = Field(
-        ..., description="The name of the workflow that was executed"
-    )
-    status: str = Field(..., description="The status of the execution")
-    entity_type: str = Field(
-        ..., description="The entity type that triggered the workflow"
-    )
-    entity_id: str = Field(
-        ..., description="The ID of the entity that triggered the workflow"
-    )
-    operation: str = Field(..., description="The operation that triggered the workflow")
-    started_at: datetime = Field(..., description="When the execution started")
-    completed_at: datetime = Field(..., description="When the execution completed")
-    duration_ms: int = Field(
-        ..., description="The duration of the execution in milliseconds"
-    )
-    conditions_result: bool = Field(..., description="Whether all conditions passed")
-    actions_total: int = Field(..., description="The total number of actions")
-    actions_success: int = Field(..., description="The number of successful actions")
-    actions_failed: int = Field(..., description="The number of failed actions")
-    action_results: List[WorkflowActionResultSchema] = Field(
-        ..., description="The results of the action executions"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowExecutionSchema(BaseModel):
-    """Workflow execution schema."""
-
-    workflow_id: str = Field(..., description="The ID of the workflow to execute")
-    entity_type: str = Field(
-        ..., description="The entity type that triggered the workflow"
-    )
-    entity_id: str = Field(
-        ..., description="The ID of the entity that triggered the workflow"
-    )
-    operation: str = Field(..., description="The operation that triggered the workflow")
-    data: Dict[str, Any] = Field(..., description="The entity data for the execution")
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowSimulationRequestSchema(BaseModel):
-    """Workflow simulation request schema."""
-
-    operation: str = Field(..., description="The operation to simulate")
-    entity_data: Dict[str, Any] = Field(
-        ..., description="The entity data for the simulation"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowConditionResultSchema(BaseModel):
-    """Workflow condition evaluation result schema."""
-
-    type: str = Field(..., description="The type of condition")
-    field: Optional[str] = Field(None, description="The field that was evaluated")
-    operator: Optional[str] = Field(None, description="The operator that was used")
-    value: Optional[str] = Field(
-        None, description="The value that was compared against"
-    )
-    result: bool = Field(..., description="Whether the condition passed")
-    description: Optional[str] = Field(
-        None, description="A human-readable description of the condition evaluation"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowSimulationActionResultSchema(BaseModel):
-    """Workflow simulation action result schema."""
-
-    type: str = Field(..., description="The type of action")
-    status: str = Field(..., description="The status of the action execution")
-    config: Dict[str, Any] = Field(..., description="The configuration for the action")
-    recipients: Optional[List[Dict[str, Any]]] = Field(
-        None, description="The recipients for the action"
-    )
-    result: Dict[str, Any] = Field(
-        ..., description="The result of the action execution"
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class WorkflowSimulationResultSchema(BaseModel):
-    """Workflow simulation result schema."""
-
-    workflow_id: str = Field(
-        ..., description="The ID of the workflow that was simulated"
-    )
-    workflow_name: str = Field(
-        ..., description="The name of the workflow that was simulated"
-    )
-    status: str = Field(..., description="The status of the simulation")
-    trigger: Dict[str, Any] = Field(..., description="The trigger for the simulation")
-    conditions: List[WorkflowConditionResultSchema] = Field(
-        ..., description="The condition evaluation results"
-    )
-    conditions_result: bool = Field(..., description="Whether all conditions passed")
-    actions: List[WorkflowSimulationActionResultSchema] = Field(
-        ..., description="The action simulation results"
-    )
-    simulation_time: datetime = Field(..., description="When the simulation was run")
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# Workflow Step Schemas
-class WorkflowStepCreate(WorkflowBaseSchema):
-    """Schema for creating workflow steps."""
-
-    name: str
-    description: Optional[str] = None
-    step_type: str
-    workflow_id: str
-    is_start: bool = False
-    is_end: bool = False
-    config: Dict[str, Any] = {}
-
-
-class WorkflowStepEdit(WorkflowBaseSchema):
-    """Schema for updating workflow steps."""
-
-    name: Optional[str] = None
-    description: Optional[str] = None
-    step_type: Optional[str] = None
-    is_start: Optional[bool] = None
-    is_end: Optional[bool] = None
-    config: Optional[Dict[str, Any]] = None
-
-
-class WorkflowStepDetail(WorkflowBaseSchema):
-    """Schema for workflow step details."""
-
-    name: str
-    description: Optional[str] = None
-    step_type: str
-    workflow_id: str
-    is_start: bool = False
-    is_end: bool = False
-    config: Dict[str, Any] = {}
-
-
-class WorkflowStepList(WorkflowBaseSchema):
-    """Schema for listing workflow steps."""
-
-    name: str
-    description: Optional[str] = None
-    step_type: str
-    workflow_id: str
-    is_start: bool = False
-    is_end: bool = False
-
-
-# Workflow Transition Schemas
-class WorkflowTransitionCreate(WorkflowBaseSchema):
-    """Schema for creating workflow transitions."""
-
-    name: str
-    description: Optional[str] = None
-    workflow_id: str
-    from_step_id: str
-    to_step_id: str
-    condition: Optional[str] = None
-
-
-class WorkflowTransitionEdit(WorkflowBaseSchema):
-    """Schema for updating workflow transitions."""
-
-    name: Optional[str] = None
-    description: Optional[str] = None
-    from_step_id: Optional[str] = None
-    to_step_id: Optional[str] = None
-    condition: Optional[str] = None
-
-
-class WorkflowTransitionDetail(WorkflowBaseSchema):
-    """Schema for workflow transition details."""
-
-    name: str
-    description: Optional[str] = None
-    workflow_id: str
-    from_step_id: str
-    to_step_id: str
-    condition: Optional[str] = None
-
-
-class WorkflowTransitionList(WorkflowBaseSchema):
-    """Schema for listing workflow transitions."""
-
-    name: str
-    description: Optional[str] = None
-    workflow_id: str
-    from_step_id: str
-    to_step_id: str
-
-
-# Workflow Task Schemas
-class WorkflowTaskCreate(WorkflowBaseSchema):
-    """Schema for creating workflow tasks."""
-
-    title: str
-    description: Optional[str] = None
-    instance_id: str
-    step_id: str
-    assignee_id: Optional[str] = None
-    priority: str = "medium"  # low, medium, high
-    status: str = "pending"  # pending, in_progress, completed, cancelled
-    due_date: Optional[str] = None
-    data: Dict[str, Any] = {}
-
-
-class WorkflowTaskEdit(WorkflowBaseSchema):
-    """Schema for updating workflow tasks."""
-
-    title: Optional[str] = None
-    description: Optional[str] = None
-    assignee_id: Optional[str] = None
-    priority: Optional[str] = None
-    status: Optional[str] = None
-    due_date: Optional[str] = None
-    data: Optional[Dict[str, Any]] = None
-
-
-class WorkflowTaskDetail(WorkflowBaseSchema):
-    """Schema for workflow task details."""
-
-    title: str
-    description: Optional[str] = None
-    instance_id: str
-    step_id: str
-    assignee_id: Optional[str] = None
-    priority: str
-    status: str
-    due_date: Optional[str] = None
-    data: Dict[str, Any] = {}
-
-
-class WorkflowTaskList(WorkflowBaseSchema):
-    """Schema for listing workflow tasks."""
-
-    title: str
-    description: Optional[str] = None
-    instance_id: str
-    step_id: str
-    priority: str
-    status: str
-    due_date: Optional[str] = None
-
-
-# Workflow Instance Schemas
-class WorkflowInstanceCreate(WorkflowBaseSchema):
-    """Schema for creating workflow instances."""
-
-    workflow_id: str
-    record_type_id: str
-    record_id: str
-    current_step_id: Optional[str] = None
-    status: str = "active"  # active, completed, cancelled
-    data: Dict[str, Any] = {}
-
-
-class WorkflowInstanceEdit(WorkflowBaseSchema):
-    """Schema for updating workflow instances."""
-
-    current_step_id: Optional[str] = None
-    status: Optional[str] = None
-    data: Optional[Dict[str, Any]] = None
-
-
-class WorkflowInstanceDetail(WorkflowBaseSchema):
-    """Schema for workflow instance details."""
-
-    workflow_id: str
-    record_type_id: str
-    record_id: str
-    current_step_id: Optional[str] = None
-    status: str
-    data: Dict[str, Any] = {}
-
-
-class WorkflowInstanceList(WorkflowBaseSchema):
-    """Schema for listing workflow instances."""
-
-    workflow_id: str
-    record_type_id: str
-    record_id: str
-    current_step_id: Optional[str] = None
-    status: str
-
-
-# Workflow Schemas
-class WorkflowCreate(WorkflowBaseSchema):
-    """Schema for creating workflows."""
-
-    name: str
-    description: Optional[str] = None
-    version: str = "1.0.0"
-    status: WorkflowStatus = WorkflowStatus.DRAFT
-
-
-class WorkflowEdit(WorkflowBaseSchema):
-    """Schema for updating workflows."""
-
-    name: Optional[str] = None
-    description: Optional[str] = None
-    version: Optional[str] = None
-    status: Optional[WorkflowStatus] = None
-
-
-class WorkflowDetail(WorkflowBaseSchema):
-    """Schema for workflow details."""
-
-    name: str
-    description: Optional[str] = None
-    version: str
-    status: WorkflowStatus
-    # Include relationships in detail view
-    steps: List[WorkflowStepDetail] = []
-    transitions: List[WorkflowTransitionDetail] = []
-
-
-class WorkflowList(WorkflowBaseSchema):
-    """Schema for listing workflows."""
-
-    name: str
-    description: Optional[str] = None
-    version: str
-    status: WorkflowStatus
-
-
-# Register all schemas with UnoSchemaManager for each model
 def register_workflow_schemas():
-    """Register all workflow schemas with their respective model schema managers."""
-    from uno.schema.schema_manager import UnoSchemaManager
-
-    # The legacy workflow classes have been removed for simplicity.
-    # Only the WorkflowDef class is supported for schema registration.
-
-    # In the future, if you implement new workflow-related models and objects,
-    # you can register their schemas here.
-
-    # For now, we'll just log a message that this function was called
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.info(
-        "Workflow schemas registration function called - legacy schemas have been removed."
-    )
+    """Register all workflow schemas with the schema registry."""
+    # This function is needed for backward compatibility
+    # with the code that expects schemas to be registered
+    pass

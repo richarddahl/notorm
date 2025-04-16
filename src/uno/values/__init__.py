@@ -11,17 +11,34 @@ type safety, proper validation, and efficient querying. Each value type
 has appropriate lookup operations defined for filtering.
 
 Key components:
-- BooleanValue: True/False values
-- TextValue: String text values
-- IntegerValue: Integer numerical values
-- DecimalValue: Decimal numerical values
-- DateValue: Date values
-- DateTimeValue: Date and time values
-- TimeValue: Time values
-- Attachment: File attachments
+- Domain Entities: Type-specific value objects following domain-driven design
+  - BooleanValue: True/False values
+  - TextValue: String text values
+  - IntegerValue: Integer numerical values
+  - DecimalValue: Decimal numerical values
+  - DateValue: Date values
+  - DateTimeValue: Date and time values
+  - TimeValue: Time values
+  - Attachment: File attachments
+- Repository Pattern: Follows domain-driven design for data access
+- Domain Services: Encapsulates business logic for values
 - API Integration: FastAPI endpoints for value operations
 """
 
+# Domain entities (DDD)
+from uno.values.entities import (
+    BaseValue,
+    Attachment,
+    BooleanValue,
+    DateTimeValue,
+    DateValue,
+    DecimalValue,
+    IntegerValue,
+    TextValue,
+    TimeValue,
+)
+
+# Models (for ORM)
 from uno.values.models import (
     AttachmentModel,
     BooleanValueModel,
@@ -32,7 +49,11 @@ from uno.values.models import (
     TextValueModel,
     TimeValueModel,
 )
+
+# Interfaces
 from uno.values.interfaces import ValueRepositoryProtocol, ValueServiceProtocol
+
+# Repositories
 from uno.values.repositories import (
     AttachmentRepository,
     BooleanValueRepository,
@@ -43,8 +64,42 @@ from uno.values.repositories import (
     TextValueRepository,
     TimeValueRepository,
 )
+
+# Services
 from uno.values.services import ValueService
+
+# DTOs
+from uno.values.dtos import (
+    BooleanValueViewDto,
+    IntegerValueViewDto,
+    TextValueViewDto,
+    DecimalValueViewDto,
+    DateValueViewDto,
+    DateTimeValueViewDto,
+    TimeValueViewDto,
+    AttachmentViewDto,
+)
+
+# Schema managers
+from uno.values.schemas import (
+    BooleanValueSchemaManager,
+    IntegerValueSchemaManager,
+    TextValueSchemaManager,
+    DecimalValueSchemaManager,
+    DateValueSchemaManager,
+    DateTimeValueSchemaManager,
+    TimeValueSchemaManager,
+    AttachmentSchemaManager,
+    ValueSchemaManagerFactory,
+)
+
+# Legacy API integration
 from uno.values.api_integration import register_value_endpoints
+
+# Domain-driven API integration
+from uno.values.domain_api_integration import register_domain_value_endpoints_api
+
+# Error types
 from uno.values.errors import (
     ValueErrorCode,
     ValueNotFoundError,
@@ -66,26 +121,31 @@ except Exception as e:
     logger.error(f"Failed to register value error codes: {e}")
 
 __all__ = [
-    # Models
+    # Domain Entities (DDD)
+    "BaseValue",
     "Attachment",
-    "AttachmentModel",
     "BooleanValue",
-    "BooleanValueModel",
     "DateTimeValue",
-    "DateTimeValueModel",
     "DateValue",
-    "DateValueModel",
     "DecimalValue",
-    "DecimalValueModel",
     "IntegerValue",
-    "IntegerValueModel",
     "TextValue",
-    "TextValueModel",
     "TimeValue",
+    
+    # ORM Models
+    "AttachmentModel",
+    "BooleanValueModel",
+    "DateTimeValueModel",
+    "DateValueModel",
+    "DecimalValueModel",
+    "IntegerValueModel",
+    "TextValueModel",
     "TimeValueModel",
+    
     # Interfaces
     "ValueRepositoryProtocol",
     "ValueServiceProtocol",
+    
     # Repositories
     "AttachmentRepository",
     "BooleanValueRepository",
@@ -95,10 +155,35 @@ __all__ = [
     "IntegerValueRepository",
     "TextValueRepository",
     "TimeValueRepository",
+    
     # Services
     "ValueService",
+    
+    # DTOs
+    "BooleanValueViewDto",
+    "IntegerValueViewDto",
+    "TextValueViewDto",
+    "DecimalValueViewDto",
+    "DateValueViewDto",
+    "DateTimeValueViewDto",
+    "TimeValueViewDto",
+    "AttachmentViewDto",
+    
+    # Schema Managers
+    "BooleanValueSchemaManager",
+    "IntegerValueSchemaManager", 
+    "TextValueSchemaManager",
+    "DecimalValueSchemaManager", 
+    "DateValueSchemaManager",
+    "DateTimeValueSchemaManager",
+    "TimeValueSchemaManager",
+    "AttachmentSchemaManager",
+    "ValueSchemaManagerFactory",
+    
     # API integration
     "register_value_endpoints",
+    "register_domain_value_endpoints_api",
+    
     # Error types
     "ValueErrorCode",
     "ValueNotFoundError",

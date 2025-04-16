@@ -11,21 +11,37 @@ creating attribute instances, and associating attribute values with objects.
 It integrates with the graph database to enable complex attribute-based queries.
 
 Key components:
-- AttributeType: Defines the structure and constraints of attributes
-- Attribute: Represents a specific attribute associated with objects
+- AttributeType: Defines the structure and constraints of attributes (domain entity)
+- Attribute: Represents a specific attribute associated with objects (domain entity)
+- Repository Pattern: Follows domain-driven design for data access
+- Domain Services: Encapsulates business logic for attributes
 - API Integration: FastAPI endpoints for attribute operations
 """
 
+# Domain entities (DDD)
+from uno.attributes.entities import Attribute, AttributeType, MetaTypeRef, QueryRef
+
+# Models (for ORM)
 from uno.attributes.models import AttributeModel, AttributeTypeModel
+
+# Interfaces
 from uno.attributes.interfaces import (
     AttributeRepositoryProtocol,
     AttributeTypeRepositoryProtocol,
     AttributeServiceProtocol,
     AttributeTypeServiceProtocol,
 )
+
+# Repositories
 from uno.attributes.repositories import AttributeRepository, AttributeTypeRepository
+
+# Services
 from uno.attributes.services import AttributeService, AttributeTypeService
+
+# API integration
 from uno.attributes.api_integration import register_attribute_endpoints
+
+# Error types
 from uno.attributes.errors import (
     AttributeErrorCode,
     AttributeNotFoundError,
@@ -48,23 +64,31 @@ except Exception as e:
     logger.error(f"Failed to register attribute error codes: {e}")
 
 __all__ = [
-    # Core models and objects
+    # Domain Entities (DDD)
     "Attribute",
     "AttributeType",
+    "MetaTypeRef",
+    "QueryRef",
+    
+    # ORM Models
     "AttributeModel",
     "AttributeTypeModel",
+    
     # Interfaces
     "AttributeRepositoryProtocol",
     "AttributeTypeRepositoryProtocol",
     "AttributeServiceProtocol",
     "AttributeTypeServiceProtocol",
+    
     # Implementation classes
     "AttributeRepository",
     "AttributeTypeRepository",
     "AttributeService",
     "AttributeTypeService",
+    
     # API integration
     "register_attribute_endpoints",
+    
     # Error types
     "AttributeErrorCode",
     "AttributeNotFoundError",
