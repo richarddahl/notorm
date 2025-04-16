@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 """
-Schema management component for UnoObj models.
+Schema management component for Domain entities and data models.
 
-This module provides functionality for creating and managing schemas for UnoObj models.
+This module provides functionality for creating and managing schemas for domain entities,
+SQLAlchemy models, and data transfer objects (DTOs) used in the Uno framework.
 """
 
 from typing import Dict, Type, Optional, Any, Set, TypeVar, cast, get_origin, get_args, List
@@ -35,9 +36,13 @@ T = TypeVar('T')
 
 class UnoSchemaManager:
     """
-    Manager for UnoObj schemas.
-
-    This class handles the creation and management of schemas for UnoObj models.
+    Manager for creating and managing schemas for domain entities and data models.
+    
+    This class handles:
+    - Creating Pydantic schemas from various source types
+    - Configuring field inclusion/exclusion
+    - Generating list schemas for paginated responses
+    - Managing schema registrations for API documentation
     """
 
     def __init__(self, schema_configs: Optional[Dict[str, UnoSchemaConfig]] = None):

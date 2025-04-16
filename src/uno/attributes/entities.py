@@ -2,7 +2,6 @@
 Domain entities for the Attributes module.
 
 This module contains domain entities for attribute types and attributes used in the application.
-It replaces the legacy UnoObj approach with a cleaner, Domain-Driven Design approach.
 """
 
 from dataclasses import dataclass, field

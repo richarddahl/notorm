@@ -29,13 +29,6 @@ from uno.workflows.models import (
     WorkflowRecipientType,
     WorkflowConditionType,
 )
-from uno.workflows.objs import (
-    WorkflowDef,
-    WorkflowTrigger,
-    WorkflowCondition,
-    WorkflowAction,
-    WorkflowRecipient,
-)
 from uno.workflows.engine import WorkflowEngine, WorkflowEventHandler
 from uno.workflows.provider import WorkflowService, WorkflowRepository
 
@@ -53,7 +46,13 @@ class UserCreatedEvent(DomainEvent):
 
 # Example domain event for order processing
 class OrderPlacedEvent(DomainEvent):
-    def __init__(self, order_id: str, user_id: str, total_amount: float, items: List[Dict[str, Any]]):
+    def __init__(
+        self,
+        order_id: str,
+        user_id: str,
+        total_amount: float,
+        items: List[Dict[str, Any]],
+    ):
         super().__init__()
         self.order_id = order_id
         self.user_id = user_id
@@ -67,7 +66,7 @@ async def create_example_workflow() -> str:
     """Create an example workflow for user registration notifications."""
     # Get the workflow service from the dependency injector
     workflow_service = get_service(WorkflowService)
-    
+
     # Create a new workflow definition
     workflow = WorkflowDef(
         name="User Registration Notification",
@@ -75,7 +74,7 @@ async def create_example_workflow() -> str:
         status=WorkflowStatus.ACTIVE,
         version="1.0.0",
     )
-    
+
     # Add a trigger for the USER_CREATED event
     trigger = WorkflowTrigger(
         entity_type="user",
@@ -84,7 +83,7 @@ async def create_example_workflow() -> str:
         is_active=True,
     )
     workflow.triggers.append(trigger)
-    
+
     # Add a condition that only triggers for verified users
     condition = WorkflowCondition(
         condition_type=WorkflowConditionType.FIELD_VALUE,
@@ -98,7 +97,7 @@ async def create_example_workflow() -> str:
         order=0,
     )
     workflow.conditions.append(condition)
-    
+
     # Add an action to send a notification
     action = WorkflowAction(
         action_type=WorkflowActionType.NOTIFICATION,
@@ -113,7 +112,7 @@ async def create_example_workflow() -> str:
         is_active=True,
     )
     workflow.actions.append(action)
-    
+
     # Add recipients for the notification
     admin_recipient = WorkflowRecipient(
         recipient_type=WorkflowRecipientType.ROLE,
@@ -121,16 +120,16 @@ async def create_example_workflow() -> str:
         name="All administrators",
     )
     workflow.recipients.append(admin_recipient)
-    
+
     # Create the workflow
     result = await workflow_service.create_workflow(workflow)
-    
+
     if result.is_failure:
         raise Exception(f"Failed to create workflow: {result.error}")
-    
+
     workflow_id = result.value
     print(f"Created workflow with ID: {workflow_id}")
-    
+
     return workflow_id
 
 
@@ -138,7 +137,7 @@ async def create_high_value_order_workflow() -> str:
     """Create an example workflow for high-value order notifications."""
     # Get the workflow service from the dependency injector
     workflow_service = get_service(WorkflowService)
-    
+
     # Create a new workflow definition
     workflow = WorkflowDef(
         name="High-Value Order Notification",
@@ -146,7 +145,7 @@ async def create_high_value_order_workflow() -> str:
         status=WorkflowStatus.ACTIVE,
         version="1.0.0",
     )
-    
+
     # Add a trigger for the ORDER_CREATED event
     trigger = WorkflowTrigger(
         entity_type="order",
@@ -155,7 +154,7 @@ async def create_high_value_order_workflow() -> str:
         is_active=True,
     )
     workflow.triggers.append(trigger)
-    
+
     # Add a condition for high-value orders (over $1000)
     condition = WorkflowCondition(
         condition_type=WorkflowConditionType.FIELD_VALUE,
@@ -169,7 +168,7 @@ async def create_high_value_order_workflow() -> str:
         order=0,
     )
     workflow.conditions.append(condition)
-    
+
     # Add an action to send an email notification
     email_action = WorkflowAction(
         action_type=WorkflowActionType.EMAIL,
@@ -188,7 +187,7 @@ async def create_high_value_order_workflow() -> str:
         is_active=True,
     )
     workflow.actions.append(email_action)
-    
+
     # Add an action to send an in-app notification
     notification_action = WorkflowAction(
         action_type=WorkflowActionType.NOTIFICATION,
@@ -203,7 +202,7 @@ async def create_high_value_order_workflow() -> str:
         is_active=True,
     )
     workflow.actions.append(notification_action)
-    
+
     # Add recipients for the notifications
     sales_team_recipient = WorkflowRecipient(
         recipient_type=WorkflowRecipientType.GROUP,
@@ -211,7 +210,7 @@ async def create_high_value_order_workflow() -> str:
         name="Sales Team",
     )
     workflow.recipients.append(sales_team_recipient)
-    
+
     # Add a specific recipient for the email only
     manager_recipient = WorkflowRecipient(
         recipient_type=WorkflowRecipientType.USER,
@@ -220,16 +219,16 @@ async def create_high_value_order_workflow() -> str:
         action_id=email_action.id,  # This recipient only gets the email, not the notification
     )
     workflow.recipients.append(manager_recipient)
-    
+
     # Create the workflow
     result = await workflow_service.create_workflow(workflow)
-    
+
     if result.is_failure:
         raise Exception(f"Failed to create workflow: {result.error}")
-    
+
     workflow_id = result.value
     print(f"Created workflow with ID: {workflow_id}")
-    
+
     return workflow_id
 
 
@@ -238,20 +237,18 @@ async def example_trigger_workflow_with_domain_event():
     # Get the event dispatcher and workflow event handler
     event_dispatcher = get_service(EventDispatcher)
     workflow_event_handler = get_service(WorkflowEventHandler)
-    
+
     # Register the workflow event handler with the event dispatcher
     event_dispatcher.register_handler(UserCreatedEvent, workflow_event_handler)
-    
+
     # Create a user created event
     user_event = UserCreatedEvent(
-        user_id="user123",
-        username="johndoe",
-        email="john@example.com"
+        user_id="user123", username="johndoe", email="john@example.com"
     )
-    
+
     # Publish the event
     await event_dispatcher.dispatch(user_event)
-    
+
     print(f"Dispatched UserCreatedEvent for user {user_event.username}")
 
 
@@ -259,16 +256,16 @@ async def example_start_postgres_listener():
     """Example of starting the PostgreSQL event listener."""
     # Get the workflow service
     workflow_service = get_service(WorkflowService)
-    
+
     # Start the PostgreSQL event listener
     result = await workflow_service.start_event_listener()
-    
+
     if result.is_failure:
         print(f"Failed to start event listener: {result.error}")
         return
-    
+
     print("PostgreSQL event listener started")
-    
+
     # Keep the listener running for a while
     try:
         print("Listening for database events (press Ctrl+C to stop)...")
@@ -285,7 +282,7 @@ async def example_manual_event_processing():
     """Example of manually processing a workflow event."""
     # Get the workflow service
     workflow_service = get_service(WorkflowService)
-    
+
     # Create a mock event
     event = {
         "table_name": "user",
@@ -297,44 +294,51 @@ async def example_manual_event_processing():
             "username": "janedoe",
             "email": "jane@example.com",
             "is_verified": True,
-        }
+        },
     }
-    
+
     # Process the event
     print(f"Processing event: {json.dumps(event, indent=2)}")
     result = await workflow_service.process_event(event)
-    
+
     if result.is_failure:
         print(f"Failed to process event: {result.error}")
         return
-    
+
     print(f"Event processed: {json.dumps(result.value, indent=2)}")
 
 
 async def demonstrate_action_executors():
     """Demonstrate the new action executor system."""
     print("\n--- Action Executor Examples ---\n")
-    
+
     # Import and run the action executor example
-    from uno.workflows.examples.action_executor_example import run_workflow_executor_example
+    from uno.workflows.examples.action_executor_example import (
+        run_workflow_executor_example,
+    )
+
     await run_workflow_executor_example()
 
 
 async def demonstrate_query_integration():
     """Demonstrate the query integration for workflow conditions."""
     print("\n--- Query Integration Examples ---\n")
-    
+
     # Import and run the query integration example
     from uno.workflows.examples.query_integration import run_query_integration_example
+
     await run_query_integration_example()
 
 
 async def demonstrate_advanced_targeting():
     """Demonstrate advanced condition and recipient targeting."""
     print("\n--- Advanced Targeting Examples ---\n")
-    
+
     # Import and run the advanced targeting example
-    from uno.workflows.examples.advanced_targeting_example import run_advanced_targeting_example
+    from uno.workflows.examples.advanced_targeting_example import (
+        run_advanced_targeting_example,
+    )
+
     await run_advanced_targeting_example()
 
 
@@ -342,30 +346,30 @@ async def run_examples():
     """Run all the workflow examples."""
     # Configure logging
     logging.basicConfig(level=logging.INFO)
-    
+
     # Create example workflows
     user_workflow_id = await create_example_workflow()
     order_workflow_id = await create_high_value_order_workflow()
-    
+
     # List all active workflows
     workflow_service = get_service(WorkflowService)
     workflows_result = await workflow_service.get_active_workflows()
-    
+
     if workflows_result.is_success:
         workflows = workflows_result.value
         print(f"Active workflows ({len(workflows)}):")
         for workflow in workflows:
             print(f"  - {workflow.name} (ID: {workflow.id})")
-    
+
     # Trigger workflows with different methods
     await example_trigger_workflow_with_domain_event()
     await example_manual_event_processing()
-    
+
     # Demonstrate new features - Uncomment to run these demos
     # await demonstrate_action_executors()
     # await demonstrate_query_integration()
     # await demonstrate_advanced_targeting()
-    
+
     # Uncomment to start the PostgreSQL event listener
     # await example_start_postgres_listener()
 

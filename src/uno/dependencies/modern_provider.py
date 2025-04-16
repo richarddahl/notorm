@@ -560,17 +560,9 @@ async def configure_base_services() -> None:
     # Register logger
     services.add_singleton(logging.Logger, lambda: logging.getLogger('uno'))
     
-    # Register registry
-    from uno.registry import get_registry, UnoRegistry
-    # Use the modern singleton pattern
-    registry = get_registry()
-    services.add_instance(UnoRegistry, registry)
-    
-    # Add method to get registry for convenience and backward compatibility
-    def get_registry_impl():
-        return registry
-    
-    UnoServiceProvider.get_registry = get_registry_impl
+    # Registry has been removed in favor of Domain approach
+    # No replacement is necessary as the dependency injection system
+    # now handles service registration and discovery
     
     # Register database provider
     from uno.database.config import ConnectionConfig

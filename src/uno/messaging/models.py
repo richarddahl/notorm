@@ -14,7 +14,6 @@ from sqlalchemy.orm import (
 
 from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
-from uno.meta.objs import MetaRecordModel
 from uno.authorization.mixins import GroupModelMixin
 from uno.enums import MessageImportance
 from uno.settings import uno_settings

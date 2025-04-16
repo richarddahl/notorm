@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 """
-Schema definitions for the Uno framework.
+Schema definitions for the Uno framework's Domain-Driven Design approach.
 
 This module provides base classes and utilities for creating and managing schemas
-that define the structure and validation rules for data models.
+that define the structure and validation rules for domain entities, data transfer
+objects (DTOs), and API responses. These schemas facilitate data validation,
+serialization, and API documentation.
 """
 
 from typing import Set, Dict, Any, Type, TypeVar, Generic, get_args, get_origin, cast, List, Optional

@@ -2,7 +2,7 @@
 Tests for the SchemaManagerService.
 
 This module contains tests for the SchemaManagerService, which
-is responsible for managing UnoObj schemas via dependency injection.
+is responsible for managing domain entity schemas via dependency injection.
 """
 
 import pytest

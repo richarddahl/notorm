@@ -2,7 +2,6 @@
 Domain entities for the Values module.
 
 This module contains domain entities for various value types used in the application.
-It replaces the legacy UnoObj approach with a cleaner, Domain-Driven Design approach.
 """
 
 import datetime

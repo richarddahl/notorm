@@ -18,7 +18,7 @@ import sys
 from typing import List, Union
 
 # Apply registry patches first
-from uno.registry import UnoRegistry
+
 
 # Save original register method
 original_registry_register = UnoRegistry.register

@@ -20,11 +20,9 @@ from uno.schema_manager import UnoSchemaManager
 from uno.schema import UnoSchemaConfig
 
 # Create schema configurations
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(),  # All fields
-"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
-```
+schema_configs = {
+    "view_schema": UnoSchemaConfig(),  # All fields
+    "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
 }
 
 # Create the schema manager
@@ -39,24 +37,16 @@ from uno.model import UnoModel, PostgresTypes
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Define a model
-class CustomerModel(UnoModel):```
-
-__tablename__ = "customer"
-``````
-
-```
-```
-
-name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
-```
+class CustomerModel(UnoModel):
+    __tablename__ = "customer"
+    
+    name: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
+    email: Mapped[PostgresTypes.String255] = mapped_column(nullable=False)
     
 # Define a business object
-class Customer(UnoObj):```
-
-model = CustomerModel
-# ...
-```
+class Customer(UnoObj):
+    model = CustomerModel
+    # ...
 
 # Create schemas for the model
 schemas = schema_manager.create_all_schemas(Customer)
@@ -72,16 +62,12 @@ edit_schema = schemas["edit_schema"]
 # Get a schema by name
 view_schema = schema_manager.get_schema("view_schema")
 
-if view_schema:```
-
-# Use the schema
-customer_data = view_schema(```
-
-name="John Doe",
-email="john@example.com"
-```
-)
-```
+if view_schema:
+    # Use the schema
+    customer_data = view_schema(
+        name="John Doe",
+        email="john@example.com"
+    )
 ```
 
 ## Advanced Usage
@@ -94,37 +80,25 @@ You can create custom schema configurations for different use cases:
 from uno.schema import UnoSchemaConfig, UnoSchema
 
 # Define a custom schema base class
-class SummarySchema(UnoSchema):```
-
-"""Base class for summary schemas with metadata."""
-``````
-
-```
-```
-
-class Config:```
-
-json_schema_extra = {
-    "description": "A summary view of the data"
-}
-```
-```
+class SummarySchema(UnoSchema):
+    """Base class for summary schemas with metadata."""
+    
+    class Config:
+        json_schema_extra = {
+            "description": "A summary view of the data"
+        }
 
 # Create configurations with different options
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(),  # All fields
-"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
-``````
-
-"summary_schema": UnoSchemaConfig(
-    schema_base=SummarySchema,
-    include_fields={"id", "name", "email"}
-),
-"admin_schema": UnoSchemaConfig(
-    exclude_fields={"deleted_at"}
-),
-```
+schema_configs = {
+    "view_schema": UnoSchemaConfig(),  # All fields
+    "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
+    "summary_schema": UnoSchemaConfig(
+        schema_base=SummarySchema,
+        include_fields={"id", "name", "email"}
+    ),
+    "admin_schema": UnoSchemaConfig(
+        exclude_fields={"deleted_at"}
+    ),
 }
 
 schema_manager = UnoSchemaManager(schema_configs)
@@ -139,11 +113,9 @@ You can add schema configurations after creating the manager:
 schema_manager = UnoSchemaManager()
 
 # Add configurations later
-schema_manager.add_schema_config(```
-
-"minimal_schema",
-UnoSchemaConfig(include_fields={"id", "name"})
-```
+schema_manager.add_schema_config(
+    "minimal_schema",
+    UnoSchemaConfig(include_fields={"id", "name"})
 )
 ```
 
@@ -151,11 +123,9 @@ UnoSchemaConfig(include_fields={"id", "name"})
 
 ```python
 # Create just one schema
-minimal_schema = schema_manager.create_schema(```
-
-"minimal_schema",
-Customer
-```
+minimal_schema = schema_manager.create_schema(
+    "minimal_schema",
+    Customer
 )
 ```
 
@@ -174,33 +144,20 @@ If validation fails, it raises a `UnoError` with a specific error code.
 The `UnoSchemaManager` is typically used inside `UnoObj` subclasses:
 
 ```python
-class Customer(UnoObj[CustomerModel]):```
-
-model = CustomerModel
-``````
-
-```
-```
-
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(),
-"edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
-```
-}
-``````
-
-```
-```
-
-def __init__(self, **data):```
-
-super().__init__(**data)
-# Schema manager is created with the provided schema_configs
-self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
-# Create all schemas
-self.schema_manager.create_all_schemas(self.__class__)
-```
+class Customer(UnoObj[CustomerModel]):
+    model = CustomerModel
+    
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(),
+        "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
+    }
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Schema manager is created with the provided schema_configs
+        self.schema_manager = UnoSchemaManager(self.__class__.schema_configs)
+        # Create all schemas
+        self.schema_manager.create_all_schemas(self.__class__)
 ```
 ```
 
@@ -215,27 +172,19 @@ from pydantic import BaseModel, Field
 from uno.schema import UnoSchema, UnoSchemaConfig
 
 # Base schema with common fields
-class BaseUserSchema(UnoSchema):```
-
-class Config:```
-
-extra = "forbid"  # Reject unknown fields
-```
-```
+class BaseUserSchema(UnoSchema):
+    class Config:
+        extra = "forbid"  # Reject unknown fields
 
 # Role-specific schema
-class AdminUserSchema(BaseUserSchema):```
-
-role: str = Field("admin", const=True)
-permissions: list[str] = []
-```
+class AdminUserSchema(BaseUserSchema):
+    role: str = Field("admin", const=True)
+    permissions: list[str] = []
 
 # Create configurations
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(schema_base=BaseUserSchema),
-"admin_schema": UnoSchemaConfig(schema_base=AdminUserSchema),
-```
+schema_configs = {
+    "view_schema": UnoSchemaConfig(schema_base=BaseUserSchema),
+    "admin_schema": UnoSchemaConfig(schema_base=AdminUserSchema),
 }
 
 schema_manager = UnoSchemaManager(schema_configs)
@@ -249,28 +198,16 @@ You can create schemas with conditional field inclusion:
 from uno.schema import UnoSchemaConfig
 from typing import Set
 
-def get_fields_for_role(role: str) -> Set[str]:```
-
-"""Get the fields visible to a specific role."""
-base_fields = {"id", "name", "email"}
-``````
-
-```
-```
-
-if role == "admin":```
-
-return base_fields | {"created_at", "modified_at", "is_active"}
-```
-elif role == "manager":```
-
-return base_fields | {"is_active"}
-```
-else:```
-
-return base_fields
-```
-```
+def get_fields_for_role(role: str) -> Set[str]:
+    """Get the fields visible to a specific role."""
+    base_fields = {"id", "name", "email"}
+    
+    if role == "admin":
+        return base_fields | {"created_at", "modified_at", "is_active"}
+    elif role == "manager":
+        return base_fields | {"is_active"}
+    else:
+        return base_fields
 
 # Create a role-specific schema configuration
 role = "manager"
@@ -290,100 +227,60 @@ from uno.schema_manager import UnoSchemaManager
 from uno.schema import UnoSchemaConfig
 from uno.errors import UnoError
 
-def test_schema_creation():```
-
-"""Test creating schemas for a model."""
-# Setup
-schema_configs = {```
-
-"view_schema": UnoSchemaConfig(),
-"edit_schema": UnoSchemaConfig(exclude_fields={"created_at"}),
-```
-}
-``````
-
-```
-```
-
-schema_manager = UnoSchemaManager(schema_configs)
-``````
-
-```
-```
-
-# Define a test model
-class TestModel:```
-
-model_fields = {
-    "id": None,
-    "name": None,
-    "email": None,
-    "created_at": None,
-}
-```
-``````
-
-```
-```
-
-# Create schemas
-schemas = schema_manager.create_all_schemas(TestModel)
-``````
-
-```
-```
-
-# Assert schemas were created
-assert "view_schema" in schemas
-assert "edit_schema" in schemas
-``````
-
-```
-```
-
-# Check field inclusion/exclusion
-view_schema = schemas["view_schema"]
-edit_schema = schemas["edit_schema"]
-``````
-
-```
-```
-
-assert "created_at" in view_schema.model_fields
-assert "created_at" not in edit_schema.model_fields
-```
-
-def test_invalid_schema_config():```
-
-"""Test validation of schema configurations."""
-# Both include and exclude fields - should fail
-with pytest.raises(UnoError) as excinfo:```
-
-invalid_config = UnoSchemaConfig(
-    include_fields={"id", "name"},
-    exclude_fields={"created_at"}
-)
-``````
-
-```
-```
-
-class TestModel:
-    model_fields = {
-        "id": None,
-        "name": None,
-        "created_at": None,
+def test_schema_creation():
+    """Test creating schemas for a model."""
+    # Setup
+    schema_configs = {
+        "view_schema": UnoSchemaConfig(),
+        "edit_schema": UnoSchemaConfig(exclude_fields={"created_at"}),
     }
     
-schema_manager = UnoSchemaManager({"invalid": invalid_config})
-schema_manager.create_schema("invalid", TestModel)
+    schema_manager = UnoSchemaManager(schema_configs)
+    
+    # Define a test model
+    class TestModel:
+        model_fields = {
+            "id": None,
+            "name": None,
+            "email": None,
+            "created_at": None,
+        }
+    
+    # Create schemas
+    schemas = schema_manager.create_all_schemas(TestModel)
+    
+    # Assert schemas were created
+    assert "view_schema" in schemas
+    assert "edit_schema" in schemas
+    
+    # Check field inclusion/exclusion
+    view_schema = schemas["view_schema"]
+    edit_schema = schemas["edit_schema"]
+    
+    assert "created_at" in view_schema.model_fields
+    assert "created_at" not in edit_schema.model_fields
 ```
-``````
 
-```
-```
-
-assert "BOTH_EXCLUDE_INCLUDE_FIELDS" in str(excinfo.value)
+def test_invalid_schema_config():
+    """Test validation of schema configurations."""
+    # Both include and exclude fields - should fail
+    with pytest.raises(UnoError) as excinfo:
+        invalid_config = UnoSchemaConfig(
+            include_fields={"id", "name"},
+            exclude_fields={"created_at"}
+        )
+        
+        class TestModel:
+            model_fields = {
+                "id": None,
+                "name": None,
+                "created_at": None,
+            }
+            
+        schema_manager = UnoSchemaManager({"invalid": invalid_config})
+        schema_manager.create_schema("invalid", TestModel)
+    
+    assert "BOTH_EXCLUDE_INCLUDE_FIELDS" in str(excinfo.value)
 ```
 ```
 

@@ -9,7 +9,13 @@ from uno.core.errors.result import Success, Failure
 from uno.database.db_manager import DBManager
 from uno.attributes.repositories import AttributeRepository, AttributeTypeRepository
 from uno.attributes.services import AttributeService, AttributeServiceError
-from uno.meta.objs import MetaRecord
+
+# Domain entities for testing
+class MockMetaRecord:
+    """Mock domain entity for MetaRecord."""
+    def __init__(self, id="mock-record-id", meta_type_id="mock-type"):
+        self.id = id
+        self.meta_type_id = meta_type_id
 
 # Mock objects to avoid pydantic initialization issues
 class MockAttribute:
@@ -102,7 +108,7 @@ class TestAttributeService:
         """Test creating an attribute."""
         # Setup
         attribute = MockAttribute(attribute_type_id="test-type")
-        values = [Mock(spec=MetaRecord)]
+        values = [MockMetaRecord()]
         
         # Create more detailed mocks for the create method response
         created_attribute = MockAttribute(
@@ -183,7 +189,7 @@ class TestAttributeService:
         mock_attribute_repository.get_by_id.return_value = Success(existing_attribute)
 
         # Create updated attribute with the new values
-        new_values = [Mock(spec=MetaRecord)]
+        new_values = [MockMetaRecord()]
         updated_attribute = MockAttribute(
             id="test-attr", attribute_type_id="test-type", values=new_values
         )
@@ -209,11 +215,11 @@ class TestAttributeService:
         existing_attribute = MockAttribute(
             id="test-attr",
             attribute_type_id="test-type",
-            values=[Mock(spec=MetaRecord)],
+            values=[MockMetaRecord()],
         )
         mock_attribute_repository.get_by_id.return_value = Success(existing_attribute)
 
-        new_values = [Mock(spec=MetaRecord)]
+        new_values = [MockMetaRecord()]
 
         # Patch the add_values method to return a failure
         from uno.core.errors.result import Failure
@@ -248,10 +254,8 @@ class TestAttributeService:
         """Test removing values from an attribute."""
         # Setup
         # Create mock values
-        value1 = Mock(spec=MetaRecord)
-        value1.id = "value1"
-        value2 = Mock(spec=MetaRecord)
-        value2.id = "value2"
+        value1 = MockMetaRecord(id="value1")
+        value2 = MockMetaRecord(id="value2")
 
         # Mock existing attribute with values
         existing_attribute = MockAttribute(
@@ -281,7 +285,7 @@ class TestAttributeService:
         """Test validating an attribute."""
         # Setup
         attribute = MockAttribute(attribute_type_id="test-type", comment="Test comment")
-        values = [Mock(spec=MetaRecord)]
+        values = [MockMetaRecord()]
         
         # Manually patch the validate_attribute method to return Success
         from uno.core.errors.result import Success

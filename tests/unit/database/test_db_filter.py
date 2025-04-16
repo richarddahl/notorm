@@ -20,7 +20,7 @@ from uno.errors import UnoError
 
 @pytest.fixture
 def mock_filter_obj(mock_model_with_columns):
-    """Fixture that provides a mock UnoObj with filters."""
+    """Fixture that provides a mock domain entity with filters."""
     # Create a mock model with proper column dict setup
     columns = ["id", "name", "email", "description", "is_active"]
     mock_model = mock_model_with_columns("users", "public", columns)
@@ -124,7 +124,7 @@ async def test_filter_with_paging(filter_db_factory):
 # Add this class definition at the end since we're still using it in the test
 # This should be removed once all tests are updated to use the fixtures from conftest.py
 class MockObj:
-    """Mock object that uses the model."""
+    """Mock domain entity that uses the model."""
     
     def __init__(self):
         self.model = None

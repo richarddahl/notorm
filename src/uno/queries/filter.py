@@ -32,10 +32,9 @@ from pydantic import BaseModel
 from uno.core.protocols.filter_protocols import UnoFilterProtocol
 from uno.core.types import FilterItem
 
-# Define UnoDB and UnoObj for type annotations without creating circular imports
+# Define UnoDB for type annotations without creating circular imports
 if TYPE_CHECKING:
     from uno.database.db_manager import UnoDB
-    from uno.obj import UnoObj
 
 # This dictionary contains predefined SQL templates for various lookup operations.
 # Each key represents a lookup name, and the corresponding value is the SQL template.
@@ -155,8 +154,8 @@ class UnoFilter(BaseModel):
             Constructs a formatted Cypher path string based on the provided fragments and an optional parent.
             Escapes certain characters when `for_cypher` is True to prevent SQL interpretation issues.
 
-        children(obj: "UnoObj") -> list["UnoFilter"]:
-            Returns a list of child filters associated with the given obj.
+        children(entity: Any) -> list["UnoFilter"]:
+            Returns a list of child filters associated with the given domain entity.
 
         cypher_query(value: Any, lookup: str) -> str:
             Generates a Cypher query string based on the filter's configuration, the provided value, and lookup type.
@@ -263,28 +262,29 @@ class UnoFilter(BaseModel):
         # If `for_cypher` is False, return the Cypher path without escaping.
         return f"{self.source_path_fragment}->{self.target_path_fragment}"
 
-    def children(self, obj: "UnoObj") -> list["UnoFilter"]:
+    def children(self, entity: Any) -> list["UnoFilter"]:
         """
-        Retrieve a list of child filters associated with the given obj.
+        Retrieve a list of child filters associated with the given domain entity.
 
         Args:
-            obj (UnoObj): The obj containing filters to retrieve.
+            entity: The domain entity containing filters to retrieve.
 
         Returns:
-            list[UnoFilter]: A list of child filters extracted from the obj's filters.
+            list[UnoFilter]: A list of child filters extracted from the entity's filters.
         """
-        # Import here to avoid circular imports
-        from uno.obj import UnoObj
-        # Return a list of child filters
-        return [child for child in obj.filters.values()]
+        # Return a list of child filters if the entity has filters
+        if hasattr(entity, 'filters') and isinstance(entity.filters, dict):
+            return [child for child in entity.filters.values()]
+        return []
 
-    def cypher_query(self, value: Any, lookup: str) -> str:
+    def cypher_query(self, value: Any, lookup: str, condition: str = "AND") -> str:
         """
         Constructs a Cypher query for filtering data based on the provided value and lookup.
 
         Args:
             value (Any): The value to filter by. Its type depends on the `data_type` attribute.
             lookup (str): The lookup operator to use for filtering (e.g., '=', '!=', '<', etc.).
+            condition (str): The condition type ("AND" or "OR") for combining filters. Defaults to "AND".
 
         Returns:
             str: A formatted Cypher query string.
@@ -300,6 +300,7 @@ class UnoFilter(BaseModel):
                 - Other types: The value is converted to a string.
             - The `lookups` dictionary is expected to map `lookup` strings to Cypher WHERE clause templates.
             - The `cypher_path` method is used to generate the Cypher path for the query.
+            - When condition is "OR", the query will be structured to allow for OR combinations with other filters.
         """
 
         if self.data_type == "bool":
@@ -324,19 +325,211 @@ class UnoFilter(BaseModel):
             lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(val)).as_string()
         )
 
+        # Standard AND condition query
+        if condition.upper() == "AND":
+            return (
+                sql.SQL(
+                    """
+            * FROM cypher('graph', $subq$
+                MATCH {cypher_path}
+                WHERE {where_clause}
+                RETURN DISTINCT s.id
+            $subq$) AS (id TEXT)
+            """
+                )
+                .format(
+                    cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
+                    where_clause=sql.SQL(where_clause),
+                )
+                .as_string()
+            )
+        
+        # OR condition query - different format that allows combining with other filters
         return (
             sql.SQL(
                 """
-        * FROM cypher('graph', $subq$
-            MATCH {cypher_path}
-            WHERE {where_clause}
-            RETURN DISTINCT s.id
-        $subq$) AS (id TEXT)
-        """
+            * FROM cypher('graph', $subq$
+                MATCH {cypher_path}
+                WITH s
+                WHERE {where_clause}
+                RETURN DISTINCT s.id
+            $subq$) AS (id TEXT)
+            """
             )
             .format(
                 cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
                 where_clause=sql.SQL(where_clause),
+            )
+            .as_string()
+        )
+    
+    def combined_cypher_query(self, filters: List[Tuple[Any, str, str]]) -> str:
+        """
+        Creates a combined Cypher query from multiple filters with support for OR conditions.
+        
+        Args:
+            filters: A list of tuples containing (value, lookup, condition)
+                for each filter to be combined.
+                
+        Returns:
+            str: A formatted Cypher query string that combines all filters.
+        """
+        # Group filters by condition type
+        and_filters = []
+        or_filters = []
+        
+        for val, lookup, condition in filters:
+            if condition.upper() == "OR":
+                or_filters.append((val, lookup))
+            else:
+                and_filters.append((val, lookup))
+        
+        # Build the query
+        if not or_filters and not and_filters:
+            # No filters, return all nodes
+            return (
+                sql.SQL(
+                    """
+                * FROM cypher('graph', $subq$
+                    MATCH {cypher_path}
+                    RETURN DISTINCT s.id
+                $subq$) AS (id TEXT)
+                """
+                )
+                .format(
+                    cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
+                )
+                .as_string()
+            )
+        
+        # Handle only AND filters
+        if and_filters and not or_filters:
+            where_clauses = []
+            for val, lookup in and_filters:
+                if self.data_type == "bool":
+                    processed_val = str(val).lower()
+                elif self.data_type in ["datetime", "date", "time"]:
+                    try:
+                        processed_val = val.timestamp()
+                    except AttributeError:
+                        raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+                else:
+                    processed_val = str(val)
+                
+                clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+                where_clauses.append(clause)
+            
+            combined_where = " AND ".join(where_clauses)
+            
+            return (
+                sql.SQL(
+                    """
+                * FROM cypher('graph', $subq$
+                    MATCH {cypher_path}
+                    WHERE {where_clause}
+                    RETURN DISTINCT s.id
+                $subq$) AS (id TEXT)
+                """
+                )
+                .format(
+                    cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
+                    where_clause=sql.SQL(combined_where),
+                )
+                .as_string()
+            )
+        
+        # Handle only OR filters
+        if or_filters and not and_filters:
+            where_clauses = []
+            for val, lookup in or_filters:
+                if self.data_type == "bool":
+                    processed_val = str(val).lower()
+                elif self.data_type in ["datetime", "date", "time"]:
+                    try:
+                        processed_val = val.timestamp()
+                    except AttributeError:
+                        raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+                else:
+                    processed_val = str(val)
+                
+                clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+                where_clauses.append(clause)
+            
+            combined_where = " OR ".join(where_clauses)
+            
+            return (
+                sql.SQL(
+                    """
+                * FROM cypher('graph', $subq$
+                    MATCH {cypher_path}
+                    WHERE {where_clause}
+                    RETURN DISTINCT s.id
+                $subq$) AS (id TEXT)
+                """
+                )
+                .format(
+                    cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
+                    where_clause=sql.SQL(combined_where),
+                )
+                .as_string()
+            )
+        
+        # Handle mixed AND and OR filters (most complex case)
+        and_clauses = []
+        for val, lookup in and_filters:
+            if self.data_type == "bool":
+                processed_val = str(val).lower()
+            elif self.data_type in ["datetime", "date", "time"]:
+                try:
+                    processed_val = val.timestamp()
+                except AttributeError:
+                    raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+            else:
+                processed_val = str(val)
+            
+            clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+            and_clauses.append(clause)
+        
+        or_clauses = []
+        for val, lookup in or_filters:
+            if self.data_type == "bool":
+                processed_val = str(val).lower()
+            elif self.data_type in ["datetime", "date", "time"]:
+                try:
+                    processed_val = val.timestamp()
+                except AttributeError:
+                    raise TypeError(f"Value {val} is not of type {self.raw_data_type}")
+            else:
+                processed_val = str(val)
+            
+            clause = lookups.get(lookup, "t.val = '{val}'").format(val=sql.SQL(processed_val)).as_string()
+            or_clauses.append(clause)
+        
+        # Combine the conditions properly
+        combined_and = " AND ".join(and_clauses)
+        combined_or = " OR ".join(or_clauses)
+        
+        # Structure the query with proper precedence: (AND conditions) OR (OR conditions)
+        if and_clauses and or_clauses:
+            final_where = f"({combined_and}) OR ({combined_or})"
+        elif and_clauses:
+            final_where = combined_and
+        else:
+            final_where = combined_or
+        
+        return (
+            sql.SQL(
+                """
+            * FROM cypher('graph', $subq$
+                MATCH {cypher_path}
+                WHERE {where_clause}
+                RETURN DISTINCT s.id
+            $subq$) AS (id TEXT)
+            """
+            )
+            .format(
+                cypher_path=sql.SQL(self.cypher_path(for_cypher=True)),
+                where_clause=sql.SQL(final_where),
             )
             .as_string()
         )

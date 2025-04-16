@@ -5,8 +5,9 @@
 """
 Unit tests for the endpoint integration concepts.
 
-This module demonstrates the integration patterns between UnoObj, UnoModel,
-UnoDB, and UnoEndpoint without requiring a database or actual HTTP requests.
+This module demonstrates the integration patterns between domain entities, 
+data models, repositories, and API endpoints without requiring a database 
+or actual HTTP requests.
 """
 
 import asyncio
@@ -30,9 +31,9 @@ class UserViewSchema(BaseModel):
     is_superuser: bool = Field(default=True)
 
 
-# Mock UnoObj for testing
+# Mock domain entity for testing
 class MockUser:
-    """Mock user business object."""
+    """Mock user domain entity."""
     def __init__(self, **data):
         for key, value in data.items():
             setattr(self, key, value)
@@ -124,7 +125,7 @@ class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
         # 2. API converts request to a schema
         request_schema = UserViewSchema(**api_request_data)
         
-        # 3. UnoObj.save() method is called with the schema
+        # 3. Repository.save() method is called with the schema
         saved_data = await MockUser.save(request_schema.model_dump())
         
         # 4. Response data is returned to the client
@@ -144,7 +145,7 @@ class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
         # 1. Client requests an object by ID
         object_id = "test123"
         
-        # 2. UnoObj.get() method is called with the ID
+        # 2. Repository.get() method is called with the ID
         db_result = await MockUser.get(object_id)
         
         # 3. Result is converted to a schema for response
@@ -169,7 +170,7 @@ class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
         # 1. Client requests a list of objects with filters
         filters = {"status": "active"}
         
-        # 2. UnoObj.filter() method is called with the filters
+        # 2. Repository.filter() method is called with the filters
         db_results = await MockUser.filter(filters)
         
         # 3. Results are converted to schemas for response
@@ -201,7 +202,7 @@ class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
         # 2. API converts request to a schema
         request_schema = UserViewSchema(**api_request_data)
         
-        # 3. UnoObj.save() method is called with the schema
+        # 3. Repository.save() method is called with the schema
         saved_data = await MockUser.save(request_schema.model_dump())
         
         # 4. Response data is returned to the client
@@ -218,7 +219,7 @@ class TestEndpointIntegrationConcepts(IsolatedAsyncioTestCase):
         # 1. Client sends delete request for an ID
         object_id = "test123"
         
-        # 2. UnoObj.delete_() method is called with the ID
+        # 2. Repository.delete() method is called with the ID
         result = await MockUser.delete_(object_id)
         
         # 3. Success result is returned to the client

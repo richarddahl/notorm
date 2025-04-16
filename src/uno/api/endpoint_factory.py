@@ -79,27 +79,35 @@ class UnoEndpointFactory:
 
     def create_endpoints(
         self,
-        app: FastAPI,
-        model_obj: Any,
+        app: Optional[FastAPI] = None,
+        model_obj: Optional[Any] = None,
+        repository: Optional[Any] = None,
+        entity_type: Optional[Type] = None,
+        schema_manager: Optional[Any] = None,
         endpoints: Optional[List[str]] = None,
         endpoint_tags: Optional[List[str]] = None,
         router: Optional[APIRouter] = None,
         path_prefix: Optional[str] = None,
         include_in_schema: bool = True,
         status_codes: Optional[Dict[str, int]] = None,
+        dependencies: Optional[List[Depends]] = None,
     ) -> Dict[str, UnoEndpoint]:
         """
-        Create endpoints for a model object.
+        Create endpoints for a model object or repository.
 
         Args:
             app: The FastAPI application
-            model_obj: The model object to create endpoints for
+            model_obj: The model object to create endpoints for (legacy approach)
+            repository: The repository to create endpoints for (DDD approach)
+            entity_type: The entity type for the repository (required if repository is provided)
+            schema_manager: The schema manager for the repository (required if repository is provided)
             endpoints: The types of endpoints to create (defaults to standard CRUD)
             endpoint_tags: The tags to apply to the endpoints
             router: Optional router to use instead of app directly
             path_prefix: Optional path prefix for all endpoints
             include_in_schema: Whether to include endpoints in OpenAPI schema
             status_codes: Optional mapping of endpoint types to status codes
+            dependencies: Optional list of dependencies to add to all endpoints
             
         Returns:
             Dictionary mapping endpoint types to created endpoint instances
@@ -112,12 +120,32 @@ class UnoEndpointFactory:
         if not app and not router:
             raise ValueError("Either app or router must be provided")
             
-        if not model_obj:
-            raise ValueError("Model object must be provided")
+        # Check for repository or model
+        if repository:
+            # Domain-driven approach
+            if not entity_type:
+                raise ValueError("Entity type must be provided when using a repository")
+                
+            # Import the adapter here to avoid circular imports
+            from uno.api.repository_adapter import RepositoryAdapter
             
-        # Get model name for logging
-        model_name = getattr(model_obj, '__name__', model_obj.__class__.__name__)
-        
+            # Create a repository adapter
+            adapter = RepositoryAdapter(
+                repository=repository,
+                entity_type=entity_type,
+                schema_manager=schema_manager,
+            )
+            
+            # Use the adapter as the model
+            target_obj = adapter
+            model_name = entity_type.__name__
+        elif model_obj:
+            # Legacy model class approach
+            target_obj = model_obj
+            model_name = getattr(model_obj, '__name__', model_obj.__class__.__name__)
+        else:
+            raise ValueError("Either model_obj or repository must be provided")
+            
         # Use standard endpoints if none specified
         if endpoints is None:
             endpoints = ["Create", "View", "List", "Update", "Delete"]
@@ -128,8 +156,9 @@ class UnoEndpointFactory:
         # Initialize result
         created_endpoints = {}
         
-        # Prepare status codes
+        # Prepare status codes and dependencies
         status_codes = status_codes or {}
+        dependencies = dependencies or []
         
         # Keep track of failed endpoints
         failed_endpoints = []
@@ -151,15 +180,14 @@ class UnoEndpointFactory:
             try:
                 # Prepare endpoint parameters
                 endpoint_params = {
-                    "model": model_obj,
-                    "app": app if not router else None,
+                    "model": target_obj,
+                    "app": app,
+                    "router": router,
                     "include_in_schema": include_in_schema,
+                    "dependencies": dependencies,
                 }
                 
                 # Add optional parameters if provided
-                if router:
-                    endpoint_params["router"] = router
-                    
                 if path_prefix:
                     endpoint_params["path_prefix"] = path_prefix
                     

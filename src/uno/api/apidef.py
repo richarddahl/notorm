@@ -5,8 +5,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from uno.registry import get_registry
-
 tags_metadata = [
     {
         "name": "0KUI",
@@ -24,7 +22,16 @@ tags_metadata = [
             "url": "http://localhost:8001/schema/",
         },
     },
+    {
+        "name": "Domain",
+        "description": "Domain-driven API endpoints",
+        "externalDocs": {
+            "description": "Domain Documentation",
+            "url": "http://localhost:8001/domain/",
+        },
+    },
 ]
+
 # Create the FastAPI app first
 app = FastAPI(
     openapi_tags=tags_metadata,
@@ -38,24 +45,4 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
-
-# Get registry instance - model configuration will happen in main.py startup event
-registry = get_registry()
-
-# Extend tags metadata for documentation
-# This will run during import but won't configure the models yet
-tags_metadata.extend(
-    [
-        {
-            "name": uno_object.display_name_plural,
-            "description": uno_object.__doc__,
-            "externalDocs": {
-                "description": f"{uno_object.display_name} Documentation",
-                "url": f"http://localhost:8001/{uno_object.display_name}",
-            },
-        }
-        for uno_object in registry.get_all().values()
-        if getattr(uno_object, "include_in_schema_docs", True)
-    ]
 )

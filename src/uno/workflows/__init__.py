@@ -34,14 +34,16 @@ from uno.workflows.models import (
     WorkflowConditionType,
 )
 
-from uno.workflows.objs import (
+from uno.workflows.entities import (
     WorkflowDef,
     WorkflowTrigger,
     WorkflowCondition,
     WorkflowAction,
     WorkflowRecipient,
     WorkflowExecutionRecord,
+    User,
 )
+
 
 from uno.workflows.engine import (
     WorkflowEngine,
@@ -142,17 +144,19 @@ from uno.workflows.app_integration import (
 
 # Import schemas and registration function
 from uno.workflows.schemas import register_workflow_schemas
+
 # Legacy schemas have been removed for simplicity
 
 # Register schemas and error codes
 try:
     # Register workflow pydantic schemas
     register_workflow_schemas()
-    
+
     # Register workflow error codes in the error catalog
     register_workflow_errors()
 except Exception as e:
     import logging
+
     logger = logging.getLogger(__name__)
     logger.error(f"Failed to register workflow components: {e}")
 
@@ -165,7 +169,6 @@ __all__ = [
     "WorkflowActionModel",
     "WorkflowRecipientModel",
     "WorkflowExecutionLog",
-    
     # Enums
     "WorkflowStatus",
     "WorkflowActionType",
@@ -179,21 +182,19 @@ __all__ = [
     "Weekday",
     "ExtendedWorkflowConditionType",
     "ExtendedRecipientType",
-    
-    # Objects - Legacy objects have been removed
+    # Domain Entities - New domain-driven design approach
     "WorkflowDef",
     "WorkflowTrigger",
     "WorkflowCondition",
     "WorkflowAction",
     "WorkflowRecipient",
     "WorkflowExecutionRecord",
-    
+    "User",
     # Engine components
     "WorkflowEngine",
     "WorkflowEventHandler",
     "PostgresWorkflowEventListener",
     "WorkflowEventModel",
-    
     # Action Executors
     "ActionExecutionContext",
     "ActionExecutor",
@@ -206,7 +207,6 @@ __all__ = [
     "register_executor",
     "get_executor_registry",
     "init_executors",
-    
     # Condition Evaluators
     "ConditionEvaluator",
     "FieldValueEvaluator",
@@ -219,7 +219,6 @@ __all__ = [
     "register_evaluator",
     "get_evaluator_registry",
     "init_evaluators",
-    
     # Recipient Resolvers
     "RecipientResolver",
     "UserResolver",
@@ -232,7 +231,6 @@ __all__ = [
     "register_resolver",
     "get_resolver_registry",
     "init_resolvers",
-    
     # Notification System
     "WorkflowNotification",
     "NotificationPriority",
@@ -240,27 +238,22 @@ __all__ = [
     "SystemNotificationCreated",
     "NotificationRead",
     "BatchNotificationsCreated",
-    
     # Repository and services
     "WorkflowRepository",
     "WorkflowService",
-    
     # Event Integrations
     "WorkflowEventIntegration",
     "get_workflow_integration",
     "register_workflow_integrations",
-    
     # App Integrations
     "setup_workflow_module",
     "get_workflow_dependency",
     "workflow_dependency",
-    
     # SQL configurations
     "workflow_module_sql_config",
-    
     # Error types
     "WorkflowErrorCode",
-    "WorkflowNotFoundError", 
+    "WorkflowNotFoundError",
     "WorkflowExecutionError",
     "WorkflowActionError",
     "WorkflowEventError",

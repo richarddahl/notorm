@@ -4,7 +4,7 @@
 
 import datetime
 import enum
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from sqlalchemy import (
     ForeignKey,
@@ -36,6 +36,10 @@ from uno.enums import (
     State,
     Flag,
 )
+
+# Import domain entities only when type checking to avoid circular imports
+if TYPE_CHECKING:
+    from uno.workflows.entities import WorkflowTrigger, User
 from uno.settings import uno_settings
 
 

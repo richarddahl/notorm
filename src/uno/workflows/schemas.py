@@ -18,6 +18,7 @@ from uno.workflows.models import (
     WorkflowRecipientType,
     WorkflowConditionType,
 )
+from uno.workflows.entities import WorkflowDef
 
 
 # Common fields for all schemas
@@ -539,7 +540,6 @@ class WorkflowList(WorkflowBaseSchema):
 # Register all schemas with UnoSchemaManager for each model
 def register_workflow_schemas():
     """Register all workflow schemas with their respective model schema managers."""
-    from uno.workflows.objs import WorkflowDef
     from uno.schema.schema_manager import UnoSchemaManager
 
     # The legacy workflow classes have been removed for simplicity.

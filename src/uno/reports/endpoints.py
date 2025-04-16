@@ -67,20 +67,6 @@ from uno.reports.repositories import (
     ReportExecutionRepository,
     ReportOutputExecutionRepository,
 )
-from uno.reports.objs import (
-    ReportTemplate,
-    ReportFieldDefinition,
-    ReportTrigger,
-    ReportOutput,
-    ReportExecution,
-    ReportOutputExecution,
-    ReportFieldType,
-    ReportTriggerType,
-    ReportOutputType,
-    ReportFormat,
-    ReportExecutionStatus,
-)
-
 
 # Create router
 router = APIRouter(

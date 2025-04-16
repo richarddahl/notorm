@@ -29,7 +29,7 @@ from uno.reports.errors import (
     ReportTriggerNotFoundError,
     ReportExecutionFailedError,
     ReportOutputDeliveryFailedError,
-    ReportTemplateInvalidError
+    ReportTemplateInvalidError,
 )
 
 from uno.database.repository import UnoBaseRepository
@@ -40,14 +40,6 @@ from uno.reports.models import (
     ReportOutputModel,
     ReportExecutionModel,
     ReportOutputExecutionModel,
-)
-from uno.reports.objs import (
-    ReportTemplate,
-    ReportFieldDefinition,
-    ReportTrigger,
-    ReportOutput,
-    ReportExecution,
-    ReportOutputExecution,
 )
 from uno.reports.interfaces import (
     ReportTemplateRepositoryProtocol,
@@ -63,23 +55,16 @@ from uno.reports.interfaces import (
 
 
 class ReportTemplateRepository(
-    UnoBaseRepository[ReportTemplateModel],
-    ReportTemplateRepositoryProtocol
+    UnoBaseRepository[ReportTemplateModel], ReportTemplateRepositoryProtocol
 ):
     """Repository implementation for ReportTemplate."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportTemplateModel, logger)
 
     async def get_by_id(
-        self,
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by ID."""
         try:
@@ -89,28 +74,28 @@ class ReportTemplateRepository(
                 .options(
                     joinedload(ReportTemplateModel.fields),
                     joinedload(ReportTemplateModel.triggers),
-                    joinedload(ReportTemplateModel.outputs)
+                    joinedload(ReportTemplateModel.outputs),
                 )
                 .where(ReportTemplateModel.id == template_id)
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportTemplate.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get report template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get report template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                )
+            )
 
     async def get_by_name(
-        self,
-        name: str,
-        session: Optional[AsyncSession] = None
+        self, name: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by name."""
         try:
@@ -120,184 +105,193 @@ class ReportTemplateRepository(
                 .options(
                     joinedload(ReportTemplateModel.fields),
                     joinedload(ReportTemplateModel.triggers),
-                    joinedload(ReportTemplateModel.outputs)
+                    joinedload(ReportTemplateModel.outputs),
                 )
                 .where(ReportTemplateModel.name == name)
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportTemplate.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get report template by name: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                name=name
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get report template by name: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    name=name,
+                )
+            )
 
     async def list_templates(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportTemplate]]:
         """List report templates, optionally filtered."""
         try:
             session = session or self.session
             stmt = select(ReportTemplateModel)
-            
+
             # Apply filters if provided
             if filters:
                 filter_conditions = []
                 for field, value in filters.items():
                     if hasattr(ReportTemplateModel, field):
-                        filter_conditions.append(getattr(ReportTemplateModel, field) == value)
-                
+                        filter_conditions.append(
+                            getattr(ReportTemplateModel, field) == value
+                        )
+
                 if filter_conditions:
                     stmt = stmt.where(and_(*filter_conditions))
-            
+
             # Execute query
             result = await session.execute(stmt)
             models = result.scalars().all()
             templates = [ReportTemplate.from_orm(model) for model in models]
-            
+
             return Success(templates)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list report templates: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                filters=filters
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list report templates: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    filters=filters,
+                )
+            )
 
     async def create(
-        self,
-        template: ReportTemplate,
-        session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: Optional[AsyncSession] = None
     ) -> Result[ReportTemplate]:
         """Create a new report template."""
         try:
             session = session or self.session
-            model_data = template.model_dump(exclude={"id"} if template.id is None else set())
-            
+            model_data = template.model_dump(
+                exclude={"id"} if template.id is None else set()
+            )
+
             # Extract related items
             fields_data = model_data.pop("fields", [])
             triggers_data = model_data.pop("triggers", [])
             outputs_data = model_data.pop("outputs", [])
-            
+
             # Create the template
             model = ReportTemplateModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             template.id = model.id
-            
+
             # Return the template with the new ID
             return Success(template)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create report template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_data=template.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create report template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_data=template.model_dump(),
+                )
+            )
 
     async def update(
-        self,
-        template: ReportTemplate,
-        session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: Optional[AsyncSession] = None
     ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         try:
             session = session or self.session
-            
+
             # Check if template exists
             template_id = template.id
             if template_id is None:
-                return Failure(ReportError(
-                    "Cannot update template without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
+                return Failure(
+                    ReportError(
+                        "Cannot update template without ID", ErrorCode.VALIDATION_ERROR
+                    )
+                )
+
             existing_template = await session.get(ReportTemplateModel, template_id)
             if existing_template is None:
-                return Failure(ReportError(
-                    f"Template with ID {template_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    template_id=template_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Template with ID {template_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        template_id=template_id,
+                    )
+                )
+
             # Update template fields
-            model_data = template.model_dump(exclude={"fields", "triggers", "outputs", "executions"})
+            model_data = template.model_dump(
+                exclude={"fields", "triggers", "outputs", "executions"}
+            )
             for key, value in model_data.items():
                 if hasattr(existing_template, key):
                     setattr(existing_template, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated template
             result = await self.get_by_id(template_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportTemplate, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update report template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update report template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template.id,
+                )
+            )
 
     async def delete(
-        self,
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a report template by ID."""
         try:
             session = session or self.session
-            
+
             # Check if template exists
             existing_template = await session.get(ReportTemplateModel, template_id)
             if existing_template is None:
-                return Failure(ReportError(
-                    f"Template with ID {template_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    template_id=template_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Template with ID {template_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        template_id=template_id,
+                    )
+                )
+
             # Delete the template
             await session.delete(existing_template)
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to delete report template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to delete report template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                )
+            )
 
 
 class ReportFieldDefinitionRepository(
     UnoBaseRepository[ReportFieldDefinitionModel],
-    ReportFieldDefinitionRepositoryProtocol
+    ReportFieldDefinitionRepositoryProtocol,
 ):
     """Repository implementation for ReportFieldDefinition."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportFieldDefinitionModel, logger)
 
     async def get_by_id(
-        self,
-        field_id: str,
-        session: Optional[AsyncSession] = None
+        self, field_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportFieldDefinition]]:
         """Get a report field definition by ID."""
         try:
@@ -306,33 +300,33 @@ class ReportFieldDefinitionRepository(
                 select(ReportFieldDefinitionModel)
                 .options(
                     joinedload(ReportFieldDefinitionModel.parent_field),
-                    joinedload(ReportFieldDefinitionModel.child_fields)
+                    joinedload(ReportFieldDefinitionModel.child_fields),
                 )
                 .where(ReportFieldDefinitionModel.id == field_id)
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportFieldDefinition.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get field definition: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                field_id=field_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get field definition: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    field_id=field_id,
+                )
+            )
 
     async def list_by_template(
-        self,
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportFieldDefinition]]:
         """List field definitions for a template."""
         try:
             session = session or self.session
-            
+
             # Get template with fields
             stmt = (
                 select(ReportTemplateModel)
@@ -341,175 +335,183 @@ class ReportFieldDefinitionRepository(
             )
             result = await session.execute(stmt)
             template = result.scalars().first()
-            
+
             if template is None:
-                return Failure(ReportError(
-                    f"Template with ID {template_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    template_id=template_id
-                ))
-            
-            fields = [ReportFieldDefinition.from_orm(field) for field in template.fields]
+                return Failure(
+                    ReportError(
+                        f"Template with ID {template_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        template_id=template_id,
+                    )
+                )
+
+            fields = [
+                ReportFieldDefinition.from_orm(field) for field in template.fields
+            ]
             return Success(fields)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list fields for template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list fields for template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                )
+            )
 
     async def create(
-        self,
-        field: ReportFieldDefinition,
-        session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
     ) -> Result[ReportFieldDefinition]:
         """Create a new field definition."""
         try:
             session = session or self.session
             model_data = field.model_dump(exclude={"id"} if field.id is None else set())
-            
+
             # Remove relationship fields from data
             model_data.pop("parent_field", None)
             model_data.pop("child_fields", None)
             model_data.pop("templates", None)
-            
+
             # Create the field
             model = ReportFieldDefinitionModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             field.id = model.id
-            
+
             # Return the field with the new ID
             return Success(field)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create field definition: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                field_data=field.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create field definition: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    field_data=field.model_dump(),
+                )
+            )
 
     async def update(
-        self,
-        field: ReportFieldDefinition,
-        session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
     ) -> Result[ReportFieldDefinition]:
         """Update an existing field definition."""
         try:
             session = session or self.session
-            
+
             # Check if field exists
             field_id = field.id
             if field_id is None:
-                return Failure(ReportError(
-                    "Cannot update field without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
+                return Failure(
+                    ReportError(
+                        "Cannot update field without ID", ErrorCode.VALIDATION_ERROR
+                    )
+                )
+
             existing_field = await session.get(ReportFieldDefinitionModel, field_id)
             if existing_field is None:
-                return Failure(ReportError(
-                    f"Field with ID {field_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    field_id=field_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Field with ID {field_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        field_id=field_id,
+                    )
+                )
+
             # Update field fields
-            model_data = field.model_dump(exclude={"parent_field", "child_fields", "templates"})
+            model_data = field.model_dump(
+                exclude={"parent_field", "child_fields", "templates"}
+            )
             for key, value in model_data.items():
                 if hasattr(existing_field, key):
                     setattr(existing_field, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated field
             result = await self.get_by_id(field_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportFieldDefinition, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update field definition: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                field_id=field.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update field definition: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    field_id=field.id,
+                )
+            )
 
     async def delete(
-        self,
-        field_id: str,
-        session: Optional[AsyncSession] = None
+        self, field_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a field definition by ID."""
         try:
             session = session or self.session
-            
+
             # Check if field exists
             existing_field = await session.get(ReportFieldDefinitionModel, field_id)
             if existing_field is None:
-                return Failure(ReportError(
-                    f"Field with ID {field_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    field_id=field_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Field with ID {field_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        field_id=field_id,
+                    )
+                )
+
             # Delete the field
             await session.delete(existing_field)
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to delete field definition: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                field_id=field_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to delete field definition: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    field_id=field_id,
+                )
+            )
 
     async def bulk_create(
         self,
         fields: List[ReportFieldDefinition],
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportFieldDefinition]]:
         """Create multiple field definitions."""
         try:
             session = session or self.session
             created_fields = []
-            
+
             for field in fields:
                 result = await self.create(field, session)
                 if result.is_failure:
                     # Roll back all creations if any fails
                     return result
                 created_fields.append(result.value)
-            
+
             return Success(created_fields)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to bulk create field definitions: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                field_count=len(fields)
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to bulk create field definitions: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    field_count=len(fields),
+                )
+            )
 
 
 class ReportTriggerRepository(
-    UnoBaseRepository[ReportTriggerModel],
-    ReportTriggerRepositoryProtocol
+    UnoBaseRepository[ReportTriggerModel], ReportTriggerRepositoryProtocol
 ):
     """Repository implementation for ReportTrigger."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportTriggerModel, logger)
 
     async def get_by_id(
-        self,
-        trigger_id: str,
-        session: Optional[AsyncSession] = None
+        self, trigger_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTrigger]]:
         """Get a report trigger by ID."""
         try:
@@ -521,46 +523,45 @@ class ReportTriggerRepository(
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportTrigger.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get trigger: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                trigger_id=trigger_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get trigger: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    trigger_id=trigger_id,
+                )
+            )
 
     async def list_by_template(
-        self,
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List triggers for a template."""
         try:
             session = session or self.session
-            stmt = (
-                select(ReportTriggerModel)
-                .where(ReportTriggerModel.report_template_id == template_id)
+            stmt = select(ReportTriggerModel).where(
+                ReportTriggerModel.report_template_id == template_id
             )
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
+
             triggers = [ReportTrigger.from_orm(model) for model in models]
             return Success(triggers)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list triggers for template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list triggers for template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                )
+            )
 
     async def list_by_event_type(
-        self,
-        event_type: str,
-        session: Optional[AsyncSession] = None
+        self, event_type: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List triggers for an event type."""
         try:
@@ -571,25 +572,26 @@ class ReportTriggerRepository(
                 .where(
                     and_(
                         ReportTriggerModel.event_type == event_type,
-                        ReportTriggerModel.is_active == True
+                        ReportTriggerModel.is_active == True,
                     )
                 )
             )
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
+
             triggers = [ReportTrigger.from_orm(model) for model in models]
             return Success(triggers)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list triggers for event type: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                event_type=event_type
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list triggers for event type: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    event_type=event_type,
+                )
+            )
 
     async def list_active_scheduled_triggers(
-        self,
-        session: Optional[AsyncSession] = None
+        self, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List all active scheduled triggers."""
         try:
@@ -600,177 +602,183 @@ class ReportTriggerRepository(
                 .where(
                     and_(
                         ReportTriggerModel.trigger_type == "scheduled",
-                        ReportTriggerModel.is_active == True
+                        ReportTriggerModel.is_active == True,
                     )
                 )
             )
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
+
             triggers = [ReportTrigger.from_orm(model) for model in models]
             return Success(triggers)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list active scheduled triggers: {str(e)}",
-                ErrorCode.DATABASE_ERROR
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list active scheduled triggers: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                )
+            )
 
     async def create(
-        self,
-        trigger: ReportTrigger,
-        session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
     ) -> Result[ReportTrigger]:
         """Create a new trigger."""
         try:
             session = session or self.session
-            model_data = trigger.model_dump(exclude={"id"} if trigger.id is None else set())
-            
+            model_data = trigger.model_dump(
+                exclude={"id"} if trigger.id is None else set()
+            )
+
             # Remove relationship fields from data
             model_data.pop("report_template", None)
-            
+
             # Create the trigger
             model = ReportTriggerModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             trigger.id = model.id
-            
+
             # Return the trigger with the new ID
             return Success(trigger)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create trigger: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                trigger_data=trigger.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create trigger: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    trigger_data=trigger.model_dump(),
+                )
+            )
 
     async def update(
-        self,
-        trigger: ReportTrigger,
-        session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
     ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         try:
             session = session or self.session
-            
+
             # Check if trigger exists
             trigger_id = trigger.id
             if trigger_id is None:
-                return Failure(ReportError(
-                    "Cannot update trigger without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
+                return Failure(
+                    ReportError(
+                        "Cannot update trigger without ID", ErrorCode.VALIDATION_ERROR
+                    )
+                )
+
             existing_trigger = await session.get(ReportTriggerModel, trigger_id)
             if existing_trigger is None:
-                return Failure(ReportError(
-                    f"Trigger with ID {trigger_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    trigger_id=trigger_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Trigger with ID {trigger_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        trigger_id=trigger_id,
+                    )
+                )
+
             # Update trigger fields
             model_data = trigger.model_dump(exclude={"report_template"})
             for key, value in model_data.items():
                 if hasattr(existing_trigger, key):
                     setattr(existing_trigger, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated trigger
             result = await self.get_by_id(trigger_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportTrigger, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update trigger: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                trigger_id=trigger.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update trigger: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    trigger_id=trigger.id,
+                )
+            )
 
     async def delete(
-        self,
-        trigger_id: str,
-        session: Optional[AsyncSession] = None
+        self, trigger_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a trigger by ID."""
         try:
             session = session or self.session
-            
+
             # Check if trigger exists
             existing_trigger = await session.get(ReportTriggerModel, trigger_id)
             if existing_trigger is None:
-                return Failure(ReportError(
-                    f"Trigger with ID {trigger_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    trigger_id=trigger_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Trigger with ID {trigger_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        trigger_id=trigger_id,
+                    )
+                )
+
             # Delete the trigger
             await session.delete(existing_trigger)
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to delete trigger: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                trigger_id=trigger_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to delete trigger: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    trigger_id=trigger_id,
+                )
+            )
 
     async def update_last_triggered(
         self,
         trigger_id: str,
         timestamp: datetime,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Update the last_triggered timestamp for a trigger."""
         try:
             session = session or self.session
-            
+
             # Check if trigger exists
             existing_trigger = await session.get(ReportTriggerModel, trigger_id)
             if existing_trigger is None:
-                return Failure(ReportError(
-                    f"Trigger with ID {trigger_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    trigger_id=trigger_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Trigger with ID {trigger_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        trigger_id=trigger_id,
+                    )
+                )
+
             # Update the timestamp
             existing_trigger.last_triggered = timestamp
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update last_triggered timestamp: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                trigger_id=trigger_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update last_triggered timestamp: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    trigger_id=trigger_id,
+                )
+            )
 
 
 class ReportOutputRepository(
-    UnoBaseRepository[ReportOutputModel],
-    ReportOutputRepositoryProtocol
+    UnoBaseRepository[ReportOutputModel], ReportOutputRepositoryProtocol
 ):
     """Repository implementation for ReportOutput."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportOutputModel, logger)
 
     async def get_by_id(
-        self,
-        output_id: str,
-        session: Optional[AsyncSession] = None
+        self, output_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportOutput]]:
         """Get a report output by ID."""
         try:
@@ -782,168 +790,171 @@ class ReportOutputRepository(
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportOutput.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get output: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_id=output_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get output: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_id=output_id,
+                )
+            )
 
     async def list_by_template(
-        self,
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportOutput]]:
         """List outputs for a template."""
         try:
             session = session or self.session
-            stmt = (
-                select(ReportOutputModel)
-                .where(ReportOutputModel.report_template_id == template_id)
+            stmt = select(ReportOutputModel).where(
+                ReportOutputModel.report_template_id == template_id
             )
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
+
             outputs = [ReportOutput.from_orm(model) for model in models]
             return Success(outputs)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list outputs for template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list outputs for template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                )
+            )
 
     async def create(
-        self,
-        output: ReportOutput,
-        session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: Optional[AsyncSession] = None
     ) -> Result[ReportOutput]:
         """Create a new output."""
         try:
             session = session or self.session
-            model_data = output.model_dump(exclude={"id"} if output.id is None else set())
-            
+            model_data = output.model_dump(
+                exclude={"id"} if output.id is None else set()
+            )
+
             # Remove relationship fields from data
             model_data.pop("report_template", None)
             model_data.pop("output_executions", None)
-            
+
             # Create the output
             model = ReportOutputModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             output.id = model.id
-            
+
             # Return the output with the new ID
             return Success(output)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create output: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_data=output.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create output: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_data=output.model_dump(),
+                )
+            )
 
     async def update(
-        self,
-        output: ReportOutput,
-        session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: Optional[AsyncSession] = None
     ) -> Result[ReportOutput]:
         """Update an existing output."""
         try:
             session = session or self.session
-            
+
             # Check if output exists
             output_id = output.id
             if output_id is None:
-                return Failure(ReportError(
-                    "Cannot update output without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
+                return Failure(
+                    ReportError(
+                        "Cannot update output without ID", ErrorCode.VALIDATION_ERROR
+                    )
+                )
+
             existing_output = await session.get(ReportOutputModel, output_id)
             if existing_output is None:
-                return Failure(ReportError(
-                    f"Output with ID {output_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    output_id=output_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Output with ID {output_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        output_id=output_id,
+                    )
+                )
+
             # Update output fields
-            model_data = output.model_dump(exclude={"report_template", "output_executions"})
+            model_data = output.model_dump(
+                exclude={"report_template", "output_executions"}
+            )
             for key, value in model_data.items():
                 if hasattr(existing_output, key):
                     setattr(existing_output, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated output
             result = await self.get_by_id(output_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportOutput, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update output: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_id=output.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update output: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_id=output.id,
+                )
+            )
 
     async def delete(
-        self,
-        output_id: str,
-        session: Optional[AsyncSession] = None
+        self, output_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete an output by ID."""
         try:
             session = session or self.session
-            
+
             # Check if output exists
             existing_output = await session.get(ReportOutputModel, output_id)
             if existing_output is None:
-                return Failure(ReportError(
-                    f"Output with ID {output_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    output_id=output_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Output with ID {output_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        output_id=output_id,
+                    )
+                )
+
             # Delete the output
             await session.delete(existing_output)
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to delete output: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_id=output_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to delete output: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_id=output_id,
+                )
+            )
 
 
 class ReportExecutionRepository(
-    UnoBaseRepository[ReportExecutionModel],
-    ReportExecutionRepositoryProtocol
+    UnoBaseRepository[ReportExecutionModel], ReportExecutionRepositoryProtocol
 ):
     """Repository implementation for ReportExecution."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportExecutionModel, logger)
 
     async def get_by_id(
-        self,
-        execution_id: str,
-        session: Optional[AsyncSession] = None
+        self, execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportExecution]]:
         """Get a report execution by ID."""
         try:
@@ -952,30 +963,32 @@ class ReportExecutionRepository(
                 select(ReportExecutionModel)
                 .options(
                     joinedload(ReportExecutionModel.report_template),
-                    joinedload(ReportExecutionModel.output_executions)
+                    joinedload(ReportExecutionModel.output_executions),
                 )
                 .where(ReportExecutionModel.id == execution_id)
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportExecution.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_id=execution_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_id=execution_id,
+                )
+            )
 
     async def list_by_template(
         self,
         template_id: str,
         status: Optional[str] = None,
         limit: int = 100,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportExecution]]:
         """List executions for a template."""
         try:
@@ -986,140 +999,153 @@ class ReportExecutionRepository(
                 .order_by(ReportExecutionModel.started_at.desc())
                 .limit(limit)
             )
-            
+
             # Apply status filter if provided
             if status:
                 stmt = stmt.where(ReportExecutionModel.status == status)
-            
+
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
+
             executions = [ReportExecution.from_orm(model) for model in models]
             return Success(executions)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list executions for template: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                template_id=template_id,
-                status=status
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list executions for template: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    template_id=template_id,
+                    status=status,
+                )
+            )
 
     async def create(
-        self,
-        execution: ReportExecution,
-        session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: Optional[AsyncSession] = None
     ) -> Result[ReportExecution]:
         """Create a new execution."""
         try:
             session = session or self.session
-            model_data = execution.model_dump(exclude={"id"} if execution.id is None else set())
-            
+            model_data = execution.model_dump(
+                exclude={"id"} if execution.id is None else set()
+            )
+
             # Remove relationship fields from data
             model_data.pop("report_template", None)
             model_data.pop("output_executions", None)
-            
+
             # Create the execution
             model = ReportExecutionModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             execution.id = model.id
-            
+
             # Return the execution with the new ID
             return Success(execution)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_data=execution.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_data=execution.model_dump(),
+                )
+            )
 
     async def update(
-        self,
-        execution: ReportExecution,
-        session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: Optional[AsyncSession] = None
     ) -> Result[ReportExecution]:
         """Update an existing execution."""
         try:
             session = session or self.session
-            
+
             # Check if execution exists
             execution_id = execution.id
             if execution_id is None:
-                return Failure(ReportError(
-                    "Cannot update execution without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
+                return Failure(
+                    ReportError(
+                        "Cannot update execution without ID", ErrorCode.VALIDATION_ERROR
+                    )
+                )
+
             existing_execution = await session.get(ReportExecutionModel, execution_id)
             if existing_execution is None:
-                return Failure(ReportError(
-                    f"Execution with ID {execution_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    execution_id=execution_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Execution with ID {execution_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        execution_id=execution_id,
+                    )
+                )
+
             # Update execution fields
-            model_data = execution.model_dump(exclude={"report_template", "output_executions"})
+            model_data = execution.model_dump(
+                exclude={"report_template", "output_executions"}
+            )
             for key, value in model_data.items():
                 if hasattr(existing_execution, key):
                     setattr(existing_execution, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated execution
             result = await self.get_by_id(execution_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportExecution, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_id=execution.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_id=execution.id,
+                )
+            )
 
     async def update_status(
         self,
         execution_id: str,
         status: str,
         error_details: Optional[str] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Update the status of an execution."""
         try:
             session = session or self.session
-            
+
             # Check if execution exists
             existing_execution = await session.get(ReportExecutionModel, execution_id)
             if existing_execution is None:
-                return Failure(ReportError(
-                    f"Execution with ID {execution_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    execution_id=execution_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Execution with ID {execution_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        execution_id=execution_id,
+                    )
+                )
+
             # Update the status
             existing_execution.status = status
             if error_details:
                 existing_execution.error_details = error_details
-            
+
             # If status is completed or failed, set completed_at
             if status in ["completed", "failed"]:
                 existing_execution.completed_at = datetime.utcnow()
-            
+
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update execution status: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_id=execution_id,
-                status=status
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update execution status: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_id=execution_id,
+                    status=status,
+                )
+            )
 
     async def complete_execution(
         self,
@@ -1127,21 +1153,23 @@ class ReportExecutionRepository(
         row_count: int,
         execution_time_ms: int,
         result_hash: Optional[str] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Mark an execution as completed with result information."""
         try:
             session = session or self.session
-            
+
             # Check if execution exists
             existing_execution = await session.get(ReportExecutionModel, execution_id)
             if existing_execution is None:
-                return Failure(ReportError(
-                    f"Execution with ID {execution_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    execution_id=execution_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Execution with ID {execution_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        execution_id=execution_id,
+                    )
+                )
+
             # Update execution details
             existing_execution.status = "completed"
             existing_execution.completed_at = datetime.utcnow()
@@ -1149,36 +1177,32 @@ class ReportExecutionRepository(
             existing_execution.execution_time_ms = execution_time_ms
             if result_hash:
                 existing_execution.result_hash = result_hash
-            
+
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to complete execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_id=execution_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to complete execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_id=execution_id,
+                )
+            )
 
 
 class ReportOutputExecutionRepository(
     UnoBaseRepository[ReportOutputExecutionModel],
-    ReportOutputExecutionRepositoryProtocol
+    ReportOutputExecutionRepositoryProtocol,
 ):
     """Repository implementation for ReportOutputExecution."""
 
-    def __init__(
-        self,
-        session: AsyncSession,
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportOutputExecutionModel, logger)
 
     async def get_by_id(
-        self,
-        output_execution_id: str,
-        session: Optional[AsyncSession] = None
+        self, output_execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportOutputExecution]]:
         """Get a report output execution by ID."""
         try:
@@ -1187,28 +1211,28 @@ class ReportOutputExecutionRepository(
                 select(ReportOutputExecutionModel)
                 .options(
                     joinedload(ReportOutputExecutionModel.report_execution),
-                    joinedload(ReportOutputExecutionModel.report_output)
+                    joinedload(ReportOutputExecutionModel.report_output),
                 )
                 .where(ReportOutputExecutionModel.id == output_execution_id)
             )
             result = await session.execute(stmt)
             model = result.scalars().first()
-            
+
             if model is None:
                 return Success(None)
-            
+
             return Success(ReportOutputExecution.from_orm(model))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to get output execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_execution_id=output_execution_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to get output execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_execution_id=output_execution_id,
+                )
+            )
 
     async def list_by_execution(
-        self,
-        execution_id: str,
-        session: Optional[AsyncSession] = None
+        self, execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportOutputExecution]]:
         """List output executions for a report execution."""
         try:
@@ -1220,125 +1244,149 @@ class ReportOutputExecutionRepository(
             )
             result = await session.execute(stmt)
             models = result.scalars().all()
-            
-            output_executions = [ReportOutputExecution.from_orm(model) for model in models]
+
+            output_executions = [
+                ReportOutputExecution.from_orm(model) for model in models
+            ]
             return Success(output_executions)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to list output executions for execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                execution_id=execution_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to list output executions for execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    execution_id=execution_id,
+                )
+            )
 
     async def create(
         self,
         output_execution: ReportOutputExecution,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[ReportOutputExecution]:
         """Create a new output execution."""
         try:
             session = session or self.session
-            model_data = output_execution.model_dump(exclude={"id"} if output_execution.id is None else set())
-            
+            model_data = output_execution.model_dump(
+                exclude={"id"} if output_execution.id is None else set()
+            )
+
             # Remove relationship fields from data
             model_data.pop("report_execution", None)
             model_data.pop("report_output", None)
-            
+
             # Create the output execution
             model = ReportOutputExecutionModel(**model_data)
             session.add(model)
             await session.flush()
-            
+
             # Set the ID in the original object
             output_execution.id = model.id
-            
+
             # Return the output execution with the new ID
             return Success(output_execution)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to create output execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_execution_data=output_execution.model_dump()
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to create output execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_execution_data=output_execution.model_dump(),
+                )
+            )
 
     async def update(
         self,
         output_execution: ReportOutputExecution,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[ReportOutputExecution]:
         """Update an existing output execution."""
         try:
             session = session or self.session
-            
+
             # Check if output execution exists
             output_execution_id = output_execution.id
             if output_execution_id is None:
-                return Failure(ReportError(
-                    "Cannot update output execution without ID",
-                    ErrorCode.VALIDATION_ERROR
-                ))
-            
-            existing_output_execution = await session.get(ReportOutputExecutionModel, output_execution_id)
+                return Failure(
+                    ReportError(
+                        "Cannot update output execution without ID",
+                        ErrorCode.VALIDATION_ERROR,
+                    )
+                )
+
+            existing_output_execution = await session.get(
+                ReportOutputExecutionModel, output_execution_id
+            )
             if existing_output_execution is None:
-                return Failure(ReportError(
-                    f"Output execution with ID {output_execution_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    output_execution_id=output_execution_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Output execution with ID {output_execution_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        output_execution_id=output_execution_id,
+                    )
+                )
+
             # Update output execution fields
-            model_data = output_execution.model_dump(exclude={"report_execution", "report_output"})
+            model_data = output_execution.model_dump(
+                exclude={"report_execution", "report_output"}
+            )
             for key, value in model_data.items():
                 if hasattr(existing_output_execution, key):
                     setattr(existing_output_execution, key, value)
-            
+
             await session.flush()
-            
+
             # Return the updated output execution
             result = await self.get_by_id(output_execution_id, session)
             if result.is_failure:
                 return result
-            
+
             return Success(cast(ReportOutputExecution, result.value))
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to update output execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_execution_id=output_execution.id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to update output execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_execution_id=output_execution.id,
+                )
+            )
 
     async def complete_output_execution(
         self,
         output_execution_id: str,
         output_location: str,
         output_size_bytes: int,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Mark an output execution as completed with result information."""
         try:
             session = session or self.session
-            
+
             # Check if output execution exists
-            existing_output_execution = await session.get(ReportOutputExecutionModel, output_execution_id)
+            existing_output_execution = await session.get(
+                ReportOutputExecutionModel, output_execution_id
+            )
             if existing_output_execution is None:
-                return Failure(ReportError(
-                    f"Output execution with ID {output_execution_id} not found",
-                    ErrorCode.NOT_FOUND,
-                    output_execution_id=output_execution_id
-                ))
-            
+                return Failure(
+                    ReportError(
+                        f"Output execution with ID {output_execution_id} not found",
+                        ErrorCode.NOT_FOUND,
+                        output_execution_id=output_execution_id,
+                    )
+                )
+
             # Update output execution details
             existing_output_execution.status = "completed"
             existing_output_execution.completed_at = datetime.utcnow()
             existing_output_execution.output_location = output_location
             existing_output_execution.output_size_bytes = output_size_bytes
-            
+
             await session.flush()
-            
+
             return Success(True)
         except Exception as e:
-            return Failure(ReportError(
-                f"Failed to complete output execution: {str(e)}",
-                ErrorCode.DATABASE_ERROR,
-                output_execution_id=output_execution_id
-            ))
+            return Failure(
+                ReportError(
+                    f"Failed to complete output execution: {str(e)}",
+                    ErrorCode.DATABASE_ERROR,
+                    output_execution_id=output_execution_id,
+                )
+            )

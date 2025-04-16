@@ -396,10 +396,10 @@ class CodeAnalyzer:
         # Map of old APIs to new ones
         api_changes = {
             # Example: method moved from one class to another
-            "UnoObj.validate_input": {
+            "DomainService.validate_input": {
                 "replacement": "UnoValidator.validate",
                 "severity": "high",
-                "description": "UnoObj.validate_input has been moved to UnoValidator.validate"
+                "description": "DomainService.validate_input has been moved to UnoValidator.validate"
             },
             # Example: function renamed
             "unodb.execute_query": {

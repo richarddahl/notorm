@@ -123,8 +123,8 @@ def get_schema_manager() -> Any:
     """
     Get the schema manager service.
     
-    This service handles the creation and management of UnoObj schemas
-    for Pydantic models, providing data validation and transformation
+    This service handles the creation and management of schemas for domain entities
+    and database models, providing data validation and transformation
     between different application layers.
     
     Returns:

@@ -17,27 +17,6 @@ from uno.reports.interfaces import (
     ReportOutputServiceProtocol,
 )
 
-from uno.reports.objs import (
-    # Original classes
-    ReportFieldConfig,
-    ReportField,
-    ReportType,
-    Report,
-    # Enhanced classes
-    ReportTemplate,
-    ReportFieldDefinition,
-    ReportTrigger,
-    ReportOutput,
-    ReportExecution,
-    ReportOutputExecution,
-    # Enums
-    ReportFieldType,
-    ReportTriggerType,
-    ReportOutputType,
-    ReportFormat,
-    ReportExecutionStatus,
-)
-
 from uno.reports.services import (
     ReportTemplateService,
     ReportFieldService,
@@ -80,10 +59,9 @@ __all__ = [
     # Interfaces
     "ReportTemplateServiceProtocol",
     "ReportFieldServiceProtocol",
-    "ReportExecutionServiceProtocol", 
+    "ReportExecutionServiceProtocol",
     "ReportTriggerServiceProtocol",
     "ReportOutputServiceProtocol",
-    
     # Object classes
     "ReportFieldConfig",
     "ReportField",
@@ -95,21 +73,18 @@ __all__ = [
     "ReportOutput",
     "ReportExecution",
     "ReportOutputExecution",
-    
     # Enums
     "ReportFieldType",
     "ReportTriggerType",
     "ReportOutputType",
     "ReportFormat",
     "ReportExecutionStatus",
-    
     # Services
     "ReportTemplateService",
     "ReportFieldService",
     "ReportExecutionService",
     "ReportTriggerService",
     "ReportOutputService",
-    
     # Error classes
     "ReportErrorCode",
     "ReportTemplateNotFoundError",
@@ -122,7 +97,6 @@ __all__ = [
     "ReportTemplateInvalidError",
     "ReportFieldInvalidError",
     "ReportTriggerInvalidError",
-    
     # Repositories
     "ReportTemplateRepository",
     "ReportFieldDefinitionRepository",
@@ -130,7 +104,6 @@ __all__ = [
     "ReportOutputRepository",
     "ReportExecutionRepository",
     "ReportOutputExecutionRepository",
-    
     # Endpoints
     "endpoints",
 ]

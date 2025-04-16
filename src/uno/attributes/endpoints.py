@@ -33,8 +33,6 @@ from uno.attributes.errors import (
     AttributeServiceError,
     AttributeTypeServiceError,
 )
-from uno.attributes.objs import Attribute, AttributeType
-from uno.meta.objs import MetaType, MetaRecord
 
 
 # DTO models for attributes

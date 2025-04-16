@@ -13,9 +13,8 @@ It uses apache age to duplicate the postgres relational table data into a knowle
 - Retreival Augmented Generation
 
 uno defines a number of classes.  The primary classes are:
-UnoObj - Provides an interface to the data for business logic processing.
 UnoModel - A customized declarative base (sqlalchemy orm) for the table structure.
-UnoSchema - A pydantic model for passing the appropriate data between the UnoObj and the database and the UnoObject and the fast api endpoints.
+UnoSchema - and the database and the UnoObject and the fast api endpoints.
 UnoDB - A custom class used to communicate with the database using psycopg3 for synchronous data base operations and asyncpg for asynchronous data base operations.
 UnoEndpoint - A custom class used to establish fastapi endpoints.
 SQLEmitter - A custom class used to build and emit custom sql statements, primarily for issuing DDL to create types, functions, and triggers.

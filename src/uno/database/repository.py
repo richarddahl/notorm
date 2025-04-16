@@ -1,8 +1,8 @@
 """
 Base repository implementation for database operations.
 
-This module provides a unified repository base that can be used
-with or without UnoObj in the Uno framework.
+This module provides a unified repository base that uses the
+Domain-Driven Design approach in the Uno framework.
 """
 
 from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Tuple, Union, TYPE_CHECKING
@@ -13,13 +13,9 @@ from sqlalchemy import select, insert, update, delete, text, Result, RowMapping
 
 from uno.model import UnoModel
 
-# Forward references for type checking to avoid circular imports
-if TYPE_CHECKING:
-    from uno.obj import UnoObj
-
 
 ModelT = TypeVar('ModelT', bound=UnoModel)
-ObjT = TypeVar('ObjT', bound='UnoObj')
+EntityT = TypeVar('EntityT')
 
 
 class UnoBaseRepository(Generic[ModelT]):
@@ -212,47 +208,58 @@ class UnoBaseRepository(Generic[ModelT]):
         result = await self.session.execute(stmt)
         return result.scalar_one()
     
-    # Integration with UnoObj
-    def to_dict(self, obj: Union['UnoObj', Dict[str, Any]]) -> Dict[str, Any]:
+    # Integration with Domain Entities
+    def to_dict(self, entity: Any) -> Dict[str, Any]:
         """
-        Convert an object to a dictionary for database operations.
+        Convert an entity to a dictionary for database operations.
         
-        This method supports both UnoObj instances and dictionaries.
+        This method supports domain entities, dictionaries, and any object with to_dict method.
         
         Args:
-            obj: UnoObj instance or dictionary
+            entity: Domain entity, dictionary, or object with to_dict method
             
         Returns:
             Dictionary of field values
         """
-        if isinstance(obj, UnoObj):
-            return obj.model_dump(exclude={'id'} if obj.id is None else set())
-        elif isinstance(obj, dict):
-            return obj
+        if isinstance(entity, dict):
+            return entity
+        elif hasattr(entity, 'to_dict'):
+            # Domain entities should implement to_dict
+            return entity.to_dict()
+        elif hasattr(entity, 'model_dump'):
+            # Pydantic-based entities use model_dump
+            return entity.model_dump(exclude={'id'} if getattr(entity, 'id', None) is None else set())
+        elif hasattr(entity, '__dict__'):
+            # Fall back to __dict__ for simple objects
+            return {k: v for k, v in entity.__dict__.items() if not k.startswith('_')}
         else:
-            raise TypeError(f"Expected UnoObj or dict, got {type(obj)}")
+            raise TypeError(f"Unable to convert {type(entity)} to dictionary")
     
-    async def save(self, obj: Union['UnoObj', Dict[str, Any]]) -> ModelT:
+    async def save(self, entity: Any) -> ModelT:
         """
-        Save an object to the database.
+        Save an entity to the database.
         
         This method handles both creation and update based on whether
-        the object has an ID.
+        the entity has an ID.
         
         Args:
-            obj: UnoObj instance or dictionary
+            entity: Domain entity, dictionary, or object with to_dict method
             
         Returns:
             The saved model
         """
-        data = self.to_dict(obj)
+        data = self.to_dict(entity)
         
-        if isinstance(obj, UnoObj) and obj.id:
-            # Update existing object
-            return await self.update(obj.id, data)
-        elif isinstance(obj, dict) and 'id' in obj and obj['id']:
-            # Update existing object from dict
-            return await self.update(obj['id'], data)
+        # Check if entity has an ID for update vs create
+        entity_id = None
+        if isinstance(entity, dict) and 'id' in entity:
+            entity_id = entity['id']
+        elif hasattr(entity, 'id'):
+            entity_id = entity.id
+            
+        if entity_id:
+            # Update existing entity
+            return await self.update(entity_id, data)
         else:
-            # Create new object
+            # Create new entity
             return await self.create(data)

@@ -524,14 +524,7 @@ class EnhancedUnoDb:
         Raises:
             ValueError: If the model class is not found
         """
-        # Import the model registry
-        from uno.registry import registry
-        
-        # Try to find the model class in the registry
-        if name in registry.models:
-            return registry.models[name]
-        
-        # If not in registry, try to find by scanning all loaded modules
+        # Find model by scanning all loaded modules
         import sys
         import inspect
         from uno.model import UnoModel
@@ -546,8 +539,8 @@ class EnhancedUnoDb:
         
         # If we can't find it, raise a more helpful error
         raise ValueError(
-            f"Model class {name} not found. Make sure the model is registered "
-            f"in the registry or imported before accessing it."
+            f"Model class {name} not found. Make sure the model is imported "
+            f"before accessing it by name."
         )
     
     @cancellable

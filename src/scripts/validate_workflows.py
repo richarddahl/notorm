@@ -7,8 +7,8 @@ This script validates the workflows module components:
 2. Object class registrations
 3. Result pattern usage (Success/Failure instead of Ok/Err)
 4. Type signatures in WorkflowEngine
-5. Model uniqueness (each legacy UnoObj has its own model with unique tablename)
-6. API endpoint generation disabled for legacy classes
+5. Model uniqueness (each domain entity has its own model with unique tablename)
+6. API endpoint generation for domain entities
 """
 
 import sys
@@ -16,25 +16,8 @@ import importlib
 import asyncio
 from typing import Any, Dict, List, Optional, Type
 
-# Apply registry patches
-from uno.registry import UnoRegistry
-
-# Save original register method
-original_registry_register = UnoRegistry.register
-
-# Create an idempotent version
-def idempotent_register(self, model_class, table_name):
-    if table_name in self._models:
-        # Always skip if already registered
-        print(f"Note: Skipping duplicate registration for {table_name}")
-        return
-    self._models[table_name] = model_class
-
-# Apply monkey patch
-UnoRegistry.register = idempotent_register
-
-# Import the registry_patch
-import uno.sql.registry_patch
+# Import necessary modules
+import uno.sql.services
 
 def validate_workflow_imports():
     """Validate that all workflow modules can be imported."""
@@ -125,7 +108,7 @@ def validate_workflow_objects(objs):
     assert not hasattr(objs, "WorkflowTask"), "Legacy WorkflowTask object should be removed"
     assert not hasattr(objs, "WorkflowInstance"), "Legacy WorkflowInstance object should be removed"
     
-    # Verify that UnoObj subclasses have model attribute set
+    # Verify that domain entity classes have model attribute set
     for obj_name in ["WorkflowDef", "WorkflowTrigger", "WorkflowCondition", "WorkflowAction", 
                      "WorkflowRecipient", "WorkflowExecutionRecord"]:
         obj_class = getattr(objs, obj_name)
@@ -261,8 +244,8 @@ async def main() -> int:
         
         print("\n✅ Core validation passed - the workflows module can now be imported successfully!")
         print("✅ Table_args are correctly formatted in all model classes")
-        print("✅ All UnoObj classes have their .model attribute correctly set")
-        print("✅ Legacy UnoObj classes have been removed to simplify the codebase")
+        print("✅ All domain entity classes have their .model attribute correctly set")
+        print("✅ Legacy workflow classes have been removed to simplify the codebase")
         print("✅ Result pattern has been updated from Ok/Err to Success/Failure")
         
         return 0

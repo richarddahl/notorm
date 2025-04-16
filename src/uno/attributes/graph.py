@@ -19,7 +19,6 @@ from uno.core.errors.result import Result, Success, Failure
 from uno.database.provider import async_connection
 from uno.database.enhanced_session import enhanced_async_session
 from uno.queries.models import QueryPathModel
-from uno.attributes.objs import AttributeType
 
 
 class AttributeGraphError(Exception):

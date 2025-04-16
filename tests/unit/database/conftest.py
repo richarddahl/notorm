@@ -44,9 +44,9 @@ class MockModel:
         self.__table__.c = MagicMock()
 
 
-# Create a mock obj class
+# Create a mock domain entity class
 class MockObj:
-    """Mock object that uses the model."""
+    """Mock domain entity that uses the model."""
     
     def __init__(self, model=None):
         self.model = model
@@ -71,16 +71,16 @@ def mock_model_with_columns():
 
 @pytest.fixture
 def mock_obj(mock_model):
-    """Fixture that provides a mock UnoObj."""
+    """Fixture that provides a mock domain entity."""
     obj = MockObj(mock_model)
     return obj
 
 
 @pytest.fixture
 def mock_obj_factory():
-    """Fixture that provides a factory for creating mock UnoObj instances."""
+    """Fixture that provides a factory for creating mock domain entity instances."""
     def _create_mock_obj(model=None):
-        """Create a mock UnoObj with the specified model."""
+        """Create a mock domain entity with the specified model."""
         return MockObj(model)
     
     return _create_mock_obj
@@ -88,15 +88,15 @@ def mock_obj_factory():
 
 @pytest.fixture
 def db_factory(mock_obj):
-    """Fixture that provides a UnoDBFactory with a mock UnoObj."""
+    """Fixture that provides a UnoDBFactory with a mock domain entity."""
     return UnoDBFactory(mock_obj)
 
 
 @pytest.fixture
 def configurable_db_factory():
-    """Fixture that provides a factory for creating UnoDBFactory instances with custom UnoObj."""
+    """Fixture that provides a factory for creating UnoDBFactory instances with custom domain entities."""
     def _create_db_factory(obj=None, model=None):
-        """Create a UnoDBFactory with the specified UnoObj or model."""
+        """Create a UnoDBFactory with the specified domain entity or model."""
         if obj is None:
             if model is None:
                 model = MockModel()

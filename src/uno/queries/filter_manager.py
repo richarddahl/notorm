@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 """
-Filter management component for UnoObj models.
+Filter management component for Domain entities and database models.
 
-This module provides functionality for creating and managing filters for UnoObj models,
+This module provides functionality for creating and managing filters for Domain entities and database models,
 with performance optimizations for common filter patterns including:
 
 - Filter generation caching for commonly-used models
@@ -65,9 +65,9 @@ VALIDATION_RESULT_CACHE_TTL = 300  # 5 minutes for validation results
 
 class UnoFilterManager(FilterManagerProtocol):
     """
-    Manager for UnoObj filters.
+    Manager for domain entity and database model filters.
 
-    This class handles the creation and management of filters for UnoObj models,
+    This class handles the creation and management of filters for domain entities and database models,
     with performance optimizations including:
     
     - Caching of generated filters to avoid repeated processing
@@ -508,6 +508,7 @@ class UnoFilterManager(FilterManagerProtocol):
         filter_params: BaseModel,
         model_class: Type[BaseModel],
         use_cache: bool = True,
+        use_or_condition: bool = False,
     ) -> List[Tuple[str, Any, str]]:
         """
         Validate filter parameters.
@@ -516,15 +517,16 @@ class UnoFilterManager(FilterManagerProtocol):
             filter_params: The filter parameters to validate
             model_class: The model class to validate against
             use_cache: Whether to use cached validation results
+            use_or_condition: Whether to process filter conditions as OR instead of AND
 
         Returns:
-            A list of validated filter tuples
+            A list of validated filter tuples with an optional condition indicator
 
         Raises:
             FilterError: If validation fails
         """
         # Try to get validation result from cache for common filter patterns
-        if FILTER_CACHE_ENABLED and use_cache:
+        if FILTER_CACHE_ENABLED and use_cache and not use_or_condition:  # Skip cache for OR conditions
             try:
                 # Generate a cache key based on filter parameters and model
                 model_key = self._generate_cache_key(model_class)
@@ -553,13 +555,13 @@ class UnoFilterManager(FilterManagerProtocol):
         # Create a validation context
         context = ValidationContext(f"{model_class.__name__}Filters")
         
-        # Create a named tuple for the filter
-        FilterTuple = namedtuple("FilterTuple", ["label", "val", "lookup"])
+        # Create a named tuple for the filter - add a 'condition' field for OR/AND logic
+        FilterTuple = namedtuple("FilterTuple", ["label", "val", "lookup", "condition"])
         filters: List[FilterTuple] = []
 
         # Get expected parameters - use a set for O(1) lookups
         expected_params = set([key.lower() for key in self.filters.keys()])
-        expected_params.update(["limit", "offset", "order_by"])
+        expected_params.update(["limit", "offset", "order_by", "or"])  # Add 'or' as acceptable prefix
 
         # Check for unexpected parameters
         param_fields = getattr(filter_params, "model_fields", {})
@@ -605,8 +607,23 @@ class UnoFilterManager(FilterManagerProtocol):
             if k.split(".")[0] not in ["limit", "offset", "order_by"]
         }
         
-        # Batch process filters with similar types to reduce overhead
+        # Group regular params by field name for OR condition processing
+        or_condition_params = {}
+        and_condition_params = {}
+        
+        # First pass - separate OR params from regular params
         for key, val in regular_params.items():
+            if key.startswith("or."):
+                # This is an OR filter parameter (e.g., or.name.contains=John)
+                # Extract the actual filter name (removing or. prefix)
+                actual_key = key[3:]  # Remove "or." prefix
+                or_condition_params[actual_key] = val
+            else:
+                # Regular AND filter parameter
+                and_condition_params[key] = val
+        
+        # Process AND condition filters
+        for key, val in and_condition_params.items():
             filter_components = key.split(".")
             edge = filter_components[0]
             edge_upper = edge.upper()
@@ -648,8 +665,67 @@ class UnoFilterManager(FilterManagerProtocol):
                 )
                 continue
 
-            # Add to validated filters
-            filters.append(FilterTuple(edge_upper, val, lookup))
+            # Add to validated filters with AND condition
+            filters.append(FilterTuple(edge_upper, val, lookup, "AND"))
+        
+        # Process OR condition filters
+        for key, val in or_condition_params.items():
+            filter_components = key.split(".")
+            edge = filter_components[0]
+            edge_upper = edge.upper()
+            
+            # Check if filter key is valid
+            if edge_upper not in self.filters.keys():
+                context.add_error(
+                    f"or.{key}",
+                    f"Invalid filter key: or.{key}",
+                    "INVALID_FILTER_KEY",
+                    val
+                )
+                continue
+
+            # Determine lookup type
+            lookup = filter_components[1] if len(filter_components) > 1 else "equal"
+            
+            # Check if lookup is valid for this filter
+            if lookup not in self.filters[edge_upper].lookups:
+                context.add_error(
+                    f"or.{key}", 
+                    f"Invalid filter lookup: {lookup}",
+                    "INVALID_FILTER_LOOKUP",
+                    val
+                )
+                continue
+
+            # Get filter definition once
+            filter_def = self.filters[edge_upper]
+            
+            # Validate the value type
+            expected_type = self._get_python_type_from_data_type(filter_def.data_type)
+            if not isinstance(val, (expected_type, type(None))):
+                context.add_error(
+                    f"or.{key}",
+                    f"Invalid value type for or.{key}: expected {expected_type.__name__}, got {type(val).__name__}",
+                    "INVALID_VALUE_TYPE",
+                    val
+                )
+                continue
+
+            # Add to validated filters with OR condition
+            filters.append(FilterTuple(edge_upper, val, lookup, "OR"))
+
+        # For global OR mode, set all conditions to OR
+        if use_or_condition and not any(f.condition == "OR" for f in filters):
+            # Convert all existing filters to OR mode (except special params)
+            new_filters = []
+            for f in filters:
+                if f.label in ["limit", "offset", "order_by"]:
+                    # Keep special params as they are
+                    new_filters.append(f)
+                else:
+                    # Change condition to OR for regular filters
+                    new_filters.append(FilterTuple(f.label, f.val, f.lookup, "OR"))
+            filters = new_filters
 
         # Raise if there are validation errors
         if context.has_errors():
@@ -658,8 +734,8 @@ class UnoFilterManager(FilterManagerProtocol):
                 validation_errors=context.errors
             )
         
-        # Cache valid results if caching is enabled
-        if FILTER_CACHE_ENABLED and use_cache:
+        # Cache valid results if caching is enabled (only for standard AND conditions)
+        if FILTER_CACHE_ENABLED and use_cache and not use_or_condition and not any(f.condition == "OR" for f in filters):
             try:
                 model_key = self._generate_cache_key(model_class)
                 # Convert parameters to a sorted, stringified representation for caching
@@ -742,10 +818,20 @@ class UnoFilterManager(FilterManagerProtocol):
                         value
                     )
                     return
-                filters.append(tuple_class(param_name, value, components[1]))
+                
+                # Special parameters always use AND condition (condition field is now required)
+                if len(tuple_class._fields) >= 4 and 'condition' in tuple_class._fields:
+                    filters.append(tuple_class(param_name, value, components[1], "AND"))
+                else:
+                    # Backward compatibility for old namedtuple format
+                    filters.append(tuple_class(param_name, value, components[1]))
             else:
                 # Default to 'asc' if not specified
-                filters.append(tuple_class(param_name, value, "asc"))
+                if len(tuple_class._fields) >= 4 and 'condition' in tuple_class._fields:
+                    filters.append(tuple_class(param_name, value, "asc", "AND"))
+                else:
+                    # Backward compatibility for old namedtuple format
+                    filters.append(tuple_class(param_name, value, "asc"))
 
         elif param_name in ["limit", "offset"]:
             if not isinstance(value, int) or value < 0:
@@ -756,8 +842,13 @@ class UnoFilterManager(FilterManagerProtocol):
                     value
                 )
                 return
-
-            filters.append(tuple_class(param_name, value, param_name))
+            
+            # Special parameters always use AND condition
+            if len(tuple_class._fields) >= 4 and 'condition' in tuple_class._fields:
+                filters.append(tuple_class(param_name, value, param_name, "AND"))
+            else:
+                # Backward compatibility for old namedtuple format
+                filters.append(tuple_class(param_name, value, param_name))
 
 
 # Alias UnoFilterManager as FilterManager for backward compatibility

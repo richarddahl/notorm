@@ -38,16 +38,6 @@ from uno.api.service_api import (
     create_response_model_for_entity,
 )
 from uno.values.services import ValueService, ValueServiceError
-from uno.values.objs import (
-    Attachment,
-    BooleanValue,
-    DateTimeValue,
-    DateValue,
-    DecimalValue,
-    IntegerValue,
-    TextValue,
-    TimeValue,
-)
 
 
 # Base value DTO

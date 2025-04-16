@@ -12,7 +12,6 @@ from sqlalchemy.orm import (
 )
 
 from uno.model import UnoModel, PostgresTypes
-from uno.meta.objs import MetaTypeModel, MetaRecordModel
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.models import QueryModel
 
@@ -122,7 +121,7 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
         ),
         {
             "comment": "Defines the type of attribute that can be associated with an object",
-            "extend_existing": True
+            "extend_existing": True,
         },
     )
 
@@ -237,7 +236,10 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
 
 class AttributeModel(DefaultModelMixin, UnoModel):
     __tablename__ = "attribute"
-    __table_args__ = {"comment": "Attributes define characteristics of objects", "extend_existing": True}
+    __table_args__ = {
+        "comment": "Attributes define characteristics of objects",
+        "extend_existing": True,
+    }
 
     # Columns
     attribute_type_id: Mapped[PostgresTypes.String26] = mapped_column(

@@ -42,7 +42,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uno.database.enhanced_session import enhanced_async_session
 from uno.enums import Include, Match
 from uno.queries.models import QueryModel
-from uno.queries.objs import Query, QueryValue, QueryPath
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.caching import QueryCache, get_cache_manager
 from uno.queries.errors import (

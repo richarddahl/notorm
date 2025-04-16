@@ -21,12 +21,10 @@ The `UnoSchemaConfig` class defines the configuration for a schema:
 from uno.schema import UnoSchemaConfig
 
 # Create a schema configuration
-view_schema = UnoSchemaConfig(```
-
-include_fields={"id", "name", "email"},  # Only include these fields
-exclude_fields={"password"},            # Exclude these fields
-read_only=True                          # Schema is read-only
-```
+view_schema = UnoSchemaConfig(
+    include_fields={"id", "name", "email"},  # Only include these fields
+    exclude_fields={"password"},             # Exclude these fields
+    read_only=True                           # Schema is read-only
 )
 ```
 
@@ -38,12 +36,11 @@ The `UnoSchemaManager` class manages schema configurations and creates schema mo
 from uno.schema import UnoSchemaManager, UnoSchemaConfig
 
 # Define schema configurations
-schema_configs = {```
+schema_configs = {
 
 "view_schema": UnoSchemaConfig(),  # All fields
 "edit_schema": UnoSchemaConfig(exclude_fields={"created_at", "modified_at"}),
 "summary_schema": UnoSchemaConfig(include_fields={"id", "name", "email"}),
-```
 }
 
 # Create a schema manager

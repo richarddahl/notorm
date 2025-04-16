@@ -2,7 +2,7 @@
 Example of using the SchemaManagerService with Dependency Injection.
 
 This example demonstrates how to use the SchemaManagerService to create
-and manage schemas for UnoObj models through dependency injection.
+and manage schemas for domain entities through dependency injection.
 """
 
 from typing import Optional, Dict, Any

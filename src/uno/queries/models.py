@@ -19,7 +19,6 @@ from uno.model import UnoModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import DefaultModelMixin
 from uno.enums import Include, Match
-from uno.meta.objs import MetaRecordModel
 from uno.settings import uno_settings
 
 query_value__values = Table(
@@ -95,7 +94,10 @@ class QueryPathModel(ModelMixin, UnoModel):
             "target_meta_type_id",
             "cypher_path",
         ),
-        {"comment": "Enables user-defined filtering via the graph DB.", "extend_existing": True},
+        {
+            "comment": "Enables user-defined filtering via the graph DB.",
+            "extend_existing": True,
+        },
     )
     # Columns
     # name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -159,7 +161,10 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
             "match",
             "lookup",
         ),
-        {"comment": "User definable values for use in queries.", "extend_existing": True},
+        {
+            "comment": "User definable values for use in queries.",
+            "extend_existing": True,
+        },
     )
 
     # Columns
@@ -202,7 +207,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
 
 class QueryModel(DefaultModelMixin, UnoModel):
     __tablename__ = "query"
-    __table_args__ = ({"comment": "User definable queries", "extend_existing": True})
+    __table_args__ = {"comment": "User definable queries", "extend_existing": True}
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(

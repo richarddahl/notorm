@@ -20,71 +20,53 @@ from uno.reports.errors import (
     ReportExecutionNotFoundError,
     ReportTriggerNotFoundError,
     ReportExecutionFailedError,
-    ReportOutputFormatInvalidError
-)
-from uno.reports.objs import (
-    ReportTemplate,
-    ReportFieldDefinition,
-    ReportTrigger,
-    ReportOutput,
-    ReportExecution,
-    ReportOutputExecution,
+    ReportOutputFormatInvalidError,
 )
 
-
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 # Repository protocols
+
 
 @runtime_checkable
 class ReportTemplateRepositoryProtocol(Protocol):
     """Protocol for report template repositories."""
 
     async def get_by_id(
-        self, 
-        template_id: str, 
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by ID."""
         ...
 
     async def get_by_name(
-        self, 
-        name: str, 
-        session: Optional[AsyncSession] = None
+        self, name: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTemplate]]:
         """Get a report template by name."""
         ...
 
     async def list_templates(
-        self, 
+        self,
         filters: Optional[Dict[str, Any]] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportTemplate]]:
         """List report templates, optionally filtered."""
         ...
 
     async def create(
-        self, 
-        template: ReportTemplate, 
-        session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: Optional[AsyncSession] = None
     ) -> Result[ReportTemplate]:
         """Create a new report template."""
         ...
 
     async def update(
-        self, 
-        template: ReportTemplate, 
-        session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: Optional[AsyncSession] = None
     ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         ...
 
     async def delete(
-        self, 
-        template_id: str, 
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a report template by ID."""
         ...
@@ -95,49 +77,39 @@ class ReportFieldDefinitionRepositoryProtocol(Protocol):
     """Protocol for report field definition repositories."""
 
     async def get_by_id(
-        self, 
-        field_id: str, 
-        session: Optional[AsyncSession] = None
+        self, field_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportFieldDefinition]]:
         """Get a report field definition by ID."""
         ...
 
     async def list_by_template(
-        self, 
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportFieldDefinition]]:
         """List field definitions for a template."""
         ...
 
     async def create(
-        self, 
-        field: ReportFieldDefinition, 
-        session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
     ) -> Result[ReportFieldDefinition]:
         """Create a new field definition."""
         ...
 
     async def update(
-        self, 
-        field: ReportFieldDefinition, 
-        session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
     ) -> Result[ReportFieldDefinition]:
         """Update an existing field definition."""
         ...
 
     async def delete(
-        self, 
-        field_id: str, 
-        session: Optional[AsyncSession] = None
+        self, field_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a field definition by ID."""
         ...
 
     async def bulk_create(
-        self, 
+        self,
         fields: List[ReportFieldDefinition],
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportFieldDefinition]]:
         """Create multiple field definitions."""
         ...
@@ -148,56 +120,43 @@ class ReportTriggerRepositoryProtocol(Protocol):
     """Protocol for report trigger repositories."""
 
     async def get_by_id(
-        self, 
-        trigger_id: str, 
-        session: Optional[AsyncSession] = None
+        self, trigger_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportTrigger]]:
         """Get a report trigger by ID."""
         ...
 
     async def list_by_template(
-        self, 
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List triggers for a template."""
         ...
 
     async def list_by_event_type(
-        self, 
-        event_type: str,
-        session: Optional[AsyncSession] = None
+        self, event_type: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List triggers for an event type."""
         ...
 
     async def list_active_scheduled_triggers(
-        self,
-        session: Optional[AsyncSession] = None
+        self, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportTrigger]]:
         """List all active scheduled triggers."""
         ...
 
     async def create(
-        self, 
-        trigger: ReportTrigger, 
-        session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
     ) -> Result[ReportTrigger]:
         """Create a new trigger."""
         ...
 
     async def update(
-        self, 
-        trigger: ReportTrigger, 
-        session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
     ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         ...
 
     async def delete(
-        self, 
-        trigger_id: str, 
-        session: Optional[AsyncSession] = None
+        self, trigger_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete a trigger by ID."""
         ...
@@ -206,7 +165,7 @@ class ReportTriggerRepositoryProtocol(Protocol):
         self,
         trigger_id: str,
         timestamp: datetime,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Update the last_triggered timestamp for a trigger."""
         ...
@@ -217,41 +176,31 @@ class ReportOutputRepositoryProtocol(Protocol):
     """Protocol for report output repositories."""
 
     async def get_by_id(
-        self, 
-        output_id: str, 
-        session: Optional[AsyncSession] = None
+        self, output_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportOutput]]:
         """Get a report output by ID."""
         ...
 
     async def list_by_template(
-        self, 
-        template_id: str,
-        session: Optional[AsyncSession] = None
+        self, template_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportOutput]]:
         """List outputs for a template."""
         ...
 
     async def create(
-        self, 
-        output: ReportOutput, 
-        session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: Optional[AsyncSession] = None
     ) -> Result[ReportOutput]:
         """Create a new output."""
         ...
 
     async def update(
-        self, 
-        output: ReportOutput, 
-        session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: Optional[AsyncSession] = None
     ) -> Result[ReportOutput]:
         """Update an existing output."""
         ...
 
     async def delete(
-        self, 
-        output_id: str, 
-        session: Optional[AsyncSession] = None
+        self, output_id: str, session: Optional[AsyncSession] = None
     ) -> Result[bool]:
         """Delete an output by ID."""
         ...
@@ -262,35 +211,29 @@ class ReportExecutionRepositoryProtocol(Protocol):
     """Protocol for report execution repositories."""
 
     async def get_by_id(
-        self, 
-        execution_id: str, 
-        session: Optional[AsyncSession] = None
+        self, execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportExecution]]:
         """Get a report execution by ID."""
         ...
 
     async def list_by_template(
-        self, 
+        self,
         template_id: str,
         status: Optional[str] = None,
         limit: int = 100,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[List[ReportExecution]]:
         """List executions for a template."""
         ...
 
     async def create(
-        self, 
-        execution: ReportExecution, 
-        session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: Optional[AsyncSession] = None
     ) -> Result[ReportExecution]:
         """Create a new execution."""
         ...
 
     async def update(
-        self, 
-        execution: ReportExecution, 
-        session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: Optional[AsyncSession] = None
     ) -> Result[ReportExecution]:
         """Update an existing execution."""
         ...
@@ -300,7 +243,7 @@ class ReportExecutionRepositoryProtocol(Protocol):
         execution_id: str,
         status: str,
         error_details: Optional[str] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Update the status of an execution."""
         ...
@@ -311,7 +254,7 @@ class ReportExecutionRepositoryProtocol(Protocol):
         row_count: int,
         execution_time_ms: int,
         result_hash: Optional[str] = None,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Mark an execution as completed with result information."""
         ...
@@ -322,33 +265,29 @@ class ReportOutputExecutionRepositoryProtocol(Protocol):
     """Protocol for report output execution repositories."""
 
     async def get_by_id(
-        self, 
-        output_execution_id: str, 
-        session: Optional[AsyncSession] = None
+        self, output_execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[Optional[ReportOutputExecution]]:
         """Get a report output execution by ID."""
         ...
 
     async def list_by_execution(
-        self, 
-        execution_id: str,
-        session: Optional[AsyncSession] = None
+        self, execution_id: str, session: Optional[AsyncSession] = None
     ) -> Result[List[ReportOutputExecution]]:
         """List output executions for a report execution."""
         ...
 
     async def create(
-        self, 
-        output_execution: ReportOutputExecution, 
-        session: Optional[AsyncSession] = None
+        self,
+        output_execution: ReportOutputExecution,
+        session: Optional[AsyncSession] = None,
     ) -> Result[ReportOutputExecution]:
         """Create a new output execution."""
         ...
 
     async def update(
-        self, 
-        output_execution: ReportOutputExecution, 
-        session: Optional[AsyncSession] = None
+        self,
+        output_execution: ReportOutputExecution,
+        session: Optional[AsyncSession] = None,
     ) -> Result[ReportOutputExecution]:
         """Update an existing output execution."""
         ...
@@ -358,7 +297,7 @@ class ReportOutputExecutionRepositoryProtocol(Protocol):
         output_execution_id: str,
         output_location: str,
         output_size_bytes: int,
-        session: Optional[AsyncSession] = None
+        session: Optional[AsyncSession] = None,
     ) -> Result[bool]:
         """Mark an output execution as completed with result information."""
         ...
@@ -366,50 +305,39 @@ class ReportOutputExecutionRepositoryProtocol(Protocol):
 
 # Service protocols
 
+
 @runtime_checkable
 class ReportTemplateServiceProtocol(Protocol):
     """Protocol for report template services."""
 
     async def create_template(
-        self, 
-        template_data: Dict[str, Any]
+        self, template_data: Dict[str, Any]
     ) -> Result[ReportTemplate]:
         """Create a new report template."""
         ...
 
     async def update_template(
-        self, 
-        template_id: str, 
-        template_data: Dict[str, Any]
+        self, template_id: str, template_data: Dict[str, Any]
     ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         ...
 
-    async def delete_template(
-        self, 
-        template_id: str
-    ) -> Result[bool]:
+    async def delete_template(self, template_id: str) -> Result[bool]:
         """Delete a report template."""
         ...
 
-    async def get_template(
-        self, 
-        template_id: str
-    ) -> Result[Optional[ReportTemplate]]:
+    async def get_template(self, template_id: str) -> Result[Optional[ReportTemplate]]:
         """Get a report template by ID."""
         ...
 
     async def list_templates(
-        self, 
-        filters: Optional[Dict[str, Any]] = None
+        self, filters: Optional[Dict[str, Any]] = None
     ) -> Result[List[ReportTemplate]]:
         """List report templates, optionally filtered."""
         ...
 
     async def clone_template(
-        self, 
-        template_id: str, 
-        new_name: str
+        self, template_id: str, new_name: str
     ) -> Result[ReportTemplate]:
         """Clone an existing template with a new name."""
         ...
@@ -420,53 +348,41 @@ class ReportFieldServiceProtocol(Protocol):
     """Protocol for report field services."""
 
     async def add_field(
-        self, 
-        template_id: str, 
-        field_data: Dict[str, Any]
+        self, template_id: str, field_data: Dict[str, Any]
     ) -> Result[ReportFieldDefinition]:
         """Add a field to a report template."""
         ...
 
     async def update_field(
-        self, 
-        field_id: str, 
-        field_data: Dict[str, Any]
+        self, field_id: str, field_data: Dict[str, Any]
     ) -> Result[ReportFieldDefinition]:
         """Update a field definition."""
         ...
 
-    async def delete_field(
-        self, 
-        field_id: str
-    ) -> Result[bool]:
+    async def delete_field(self, field_id: str) -> Result[bool]:
         """Delete a field from a report template."""
         ...
 
     async def get_available_fields(
-        self, 
-        base_object_type: str
+        self, base_object_type: str
     ) -> Result[List[Dict[str, Any]]]:
         """Get available fields for a specific object type."""
         ...
 
     async def validate_field_config(
-        self, 
-        field_type: str, 
-        field_config: Dict[str, Any]
+        self, field_type: str, field_config: Dict[str, Any]
     ) -> Result[bool]:
         """Validate a field configuration."""
         ...
 
     async def get_field_by_id(
-        self,
-        field_id: str
+        self, field_id: str
     ) -> Result[Optional[ReportFieldDefinition]]:
         """Get a field by ID."""
         ...
 
     async def list_fields_by_template(
-        self,
-        template_id: str
+        self, template_id: str
     ) -> Result[List[ReportFieldDefinition]]:
         """List all fields for a template."""
         ...
@@ -477,43 +393,35 @@ class ReportExecutionServiceProtocol(Protocol):
     """Protocol for report execution services."""
 
     async def execute_report(
-        self, 
-        template_id: str, 
+        self,
+        template_id: str,
         parameters: Optional[Dict[str, Any]] = None,
         trigger_type: str = "manual",
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> Result[ReportExecution]:
         """Execute a report with optional parameters."""
         ...
 
-    async def get_execution_status(
-        self, 
-        execution_id: str
-    ) -> Result[Dict[str, Any]]:
+    async def get_execution_status(self, execution_id: str) -> Result[Dict[str, Any]]:
         """Get the status of a report execution."""
         ...
 
-    async def cancel_execution(
-        self, 
-        execution_id: str
-    ) -> Result[bool]:
+    async def cancel_execution(self, execution_id: str) -> Result[bool]:
         """Cancel a running report execution."""
         ...
 
     async def get_execution_result(
-        self, 
-        execution_id: str,
-        format: Optional[str] = None
+        self, execution_id: str, format: Optional[str] = None
     ) -> Result[Any]:
         """Get the result of a completed report execution."""
         ...
 
     async def list_executions(
-        self, 
-        template_id: Optional[str] = None, 
+        self,
+        template_id: Optional[str] = None,
         status: Optional[str] = None,
         date_range: Optional[tuple[datetime, datetime]] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> Result[List[ReportExecution]]:
         """List report executions, optionally filtered."""
         ...
@@ -524,59 +432,40 @@ class ReportTriggerServiceProtocol(Protocol):
     """Protocol for report trigger services."""
 
     async def create_trigger(
-        self, 
-        template_id: str, 
-        trigger_data: Dict[str, Any]
+        self, template_id: str, trigger_data: Dict[str, Any]
     ) -> Result[ReportTrigger]:
         """Create a new trigger for a report template."""
         ...
 
     async def update_trigger(
-        self, 
-        trigger_id: str, 
-        trigger_data: Dict[str, Any]
+        self, trigger_id: str, trigger_data: Dict[str, Any]
     ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         ...
 
-    async def delete_trigger(
-        self, 
-        trigger_id: str
-    ) -> Result[bool]:
+    async def delete_trigger(self, trigger_id: str) -> Result[bool]:
         """Delete a trigger."""
         ...
 
-    async def enable_trigger(
-        self, 
-        trigger_id: str
-    ) -> Result[bool]:
+    async def enable_trigger(self, trigger_id: str) -> Result[bool]:
         """Enable a trigger."""
         ...
 
-    async def disable_trigger(
-        self, 
-        trigger_id: str
-    ) -> Result[bool]:
+    async def disable_trigger(self, trigger_id: str) -> Result[bool]:
         """Disable a trigger."""
         ...
 
     async def handle_event(
-        self, 
-        event_type: str, 
-        event_data: Dict[str, Any]
+        self, event_type: str, event_data: Dict[str, Any]
     ) -> Result[List[str]]:
         """Handle an event that might trigger reports (returns execution IDs)."""
         ...
 
-    async def check_query_triggers(
-        self
-    ) -> Result[List[str]]:
+    async def check_query_triggers(self) -> Result[List[str]]:
         """Check query-based triggers and execute reports if conditions are met."""
         ...
 
-    async def process_scheduled_triggers(
-        self
-    ) -> Result[List[str]]:
+    async def process_scheduled_triggers(self) -> Result[List[str]]:
         """Process scheduled triggers and execute reports if due."""
         ...
 
@@ -586,40 +475,25 @@ class ReportOutputServiceProtocol(Protocol):
     """Protocol for report output services."""
 
     async def create_output_config(
-        self, 
-        template_id: str, 
-        output_data: Dict[str, Any]
+        self, template_id: str, output_data: Dict[str, Any]
     ) -> Result[ReportOutput]:
         """Create a new output configuration for a report template."""
         ...
 
     async def update_output_config(
-        self, 
-        output_id: str, 
-        output_data: Dict[str, Any]
+        self, output_id: str, output_data: Dict[str, Any]
     ) -> Result[ReportOutput]:
         """Update an existing output configuration."""
         ...
 
-    async def delete_output_config(
-        self, 
-        output_id: str
-    ) -> Result[bool]:
+    async def delete_output_config(self, output_id: str) -> Result[bool]:
         """Delete an output configuration."""
         ...
 
-    async def format_report(
-        self, 
-        execution_id: str, 
-        format: str
-    ) -> Result[bytes]:
+    async def format_report(self, execution_id: str, format: str) -> Result[bytes]:
         """Format a report result in the specified format."""
         ...
 
-    async def deliver_report(
-        self, 
-        execution_id: str, 
-        output_id: str
-    ) -> Result[bool]:
+    async def deliver_report(self, execution_id: str, output_id: str) -> Result[bool]:
         """Deliver a report according to an output configuration."""
         ...

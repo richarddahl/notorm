@@ -4,10 +4,9 @@ API endpoints for the authorization domain.
 This module provides FastAPI endpoints for the authorization domain,
 using dependency injection for services and repositories.
 
-IMPORTANT NOTE:
-This module uses a different pattern than the standard UnoObj approach.
-It demonstrates how to use dependency injection with FastAPI directly,
-while the rest of the application uses the UnoObj pattern.
+This module demonstrates the domain-driven design approach with
+dependency injection and FastAPI, following the best practices for
+scalable API development.
 """
 
 from typing import List, Optional, Annotated

@@ -2,7 +2,7 @@
 API integration layer for the Domain-Driven Design approach in the Uno framework.
 
 This module provides utilities for integrating domain services with FastAPI endpoints,
-facilitating the transition from UnoObj patterns to the Domain approach.
+following the Domain-Driven Design pattern for API development.
 """
 
 from typing import Type, List, Dict, Any, Optional, Generic, TypeVar, get_type_hints, Union, cast

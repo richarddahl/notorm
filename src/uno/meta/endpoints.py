@@ -4,10 +4,9 @@ API endpoints for the meta domain.
 This module provides FastAPI endpoints for the meta domain,
 using dependency injection for services and repositories.
 
-IMPORTANT NOTE:
-This module uses the dependency injection pattern as an alternative 
-to the standard UnoObj approach. It demonstrates how to build API
-endpoints with repositories and services.
+This module demonstrates the Domain-Driven Design pattern with
+proper separation of concerns between repositories, services, and
+API endpoints.
 """
 
 from typing import List, Optional, Dict, Any

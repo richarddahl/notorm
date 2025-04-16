@@ -926,7 +926,7 @@ class TableMergeFunction(SQLEmitter):
     """Emitter for table-specific merge function.
 
     This emitter generates a PL/pgSQL function for each table that accepts
-    a JSONB parameter containing model_dump from a UnoObj schema. It uses
+    a JSONB parameter containing model_dump from a domain entity DTO. It uses
     PostgreSQL 16's MERGE command to:
     1. Look up the record using PK or unique constraints
     2. Update only non-PK, non-unique constraint columns if found
