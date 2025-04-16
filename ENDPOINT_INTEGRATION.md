@@ -188,7 +188,7 @@ The following components have been implemented to support domain-driven design w
 
 ## Next Implementation Steps
 
-1. Add tutorial for migrating from simpler frameworks, e.g. Django, SQLModel, sqlalchemy ORM, Flask, etc...to domain entities
+1. Add tutorial for migrating from other frameworks, e.g. Django, SQLModel, sqlalchemy ORM, Flask, etc...to domain entities
 2. Create unit tests for the repository adapter
 3. Create unit tests for the endpoint factory with repositories
 4. Implement the authorization integration
