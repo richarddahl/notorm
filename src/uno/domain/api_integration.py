@@ -93,14 +93,43 @@ class DomainRouter(Generic[T, SvcT]):
         
         This method automatically creates reasonable DTOs if they weren't provided.
         """
-        entity_name = self.entity_type.__name__
-        entity_fields = get_type_hints(self.entity_type)
+        from dataclasses import fields, MISSING
         
-        # Filter out private fields and methods
-        filtered_fields = {
-            k: v for k, v in entity_fields.items() 
-            if not k.startswith('_') and k not in ['id', 'created_at', 'updated_at']
-        }
+        entity_name = self.entity_type.__name__
+        
+        # Extract field information properly from dataclass fields
+        field_info = {}
+        excluded_fields = ['id', 'created_at', 'updated_at']
+        
+        # Get dataclass fields to handle default values correctly
+        dataclass_fields = {f.name: f for f in fields(self.entity_type)}
+        # Get type hints for annotation information
+        type_hints = get_type_hints(self.entity_type)
+        
+        for name, field_type in type_hints.items():
+            # Skip private fields and exclusions
+            if name.startswith('_') or name in excluded_fields:
+                continue
+                
+            # Skip ClassVar fields
+            if str(field_type).startswith('typing.ClassVar'):
+                continue
+                
+            # Handle fields with default values from dataclass fields
+            if name in dataclass_fields:
+                dc_field = dataclass_fields[name]
+                if dc_field.default is not MISSING:
+                    # Field has a default value
+                    field_info[name] = (field_type, dc_field.default)
+                elif dc_field.default_factory is not MISSING:
+                    # Field has a default factory
+                    field_info[name] = (field_type, None)
+                else:
+                    # Required field
+                    field_info[name] = (field_type, ...)
+            else:
+                # Regular field without default
+                field_info[name] = (field_type, ...)
         
         # Create response model (includes all fields)
         if not self.response_dto:
@@ -109,21 +138,24 @@ class DomainRouter(Generic[T, SvcT]):
                 id=(str, ...),
                 created_at=(Optional[Any], None),
                 updated_at=(Optional[Any], None),
-                **filtered_fields
+                **field_info
             )
             
         # Create model for creation (no id required)
         if not self.create_dto:
             self.create_dto = create_model(
                 f"{entity_name}Create",
-                **filtered_fields
+                **field_info
             )
             
         # Create model for updates (all fields optional)
         if not self.update_dto:
+            update_field_info = {
+                k: (Optional[v[0]], None) for k, v in field_info.items()
+            }
             self.update_dto = create_model(
                 f"{entity_name}Update",
-                **{k: (Optional[v], None) for k, v in filtered_fields.items()}
+                **update_field_info
             )
 
     def _register_endpoints(self) -> None:

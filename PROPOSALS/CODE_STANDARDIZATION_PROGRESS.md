@@ -1,268 +1,125 @@
 # Code Standardization Progress
 
-This document tracks progress on standardizing the codebase according to the roadmap.
+## Overview
 
-## 1. Completed Tasks
+This document tracks the progress of standardizing the code across all modules in the Uno framework. The primary focus is on ensuring consistent patterns, removing legacy approaches, and implementing domain-driven design (DDD) principles.
 
-### Standardization to Domain-Driven Design (UNO_OBJ_TO_DOMAIN_MIGRATION.md)
-- ✅ **Phase 1**: Created comprehensive migration plan
-  - ✅ Created detailed migration guide
-  - ✅ Documented concept mapping between UnoObj and Domain approaches
-  - ✅ Provided code examples for both approaches
-- ✅ **Phase 2**: Implementation of Domain infrastructure (Completed)
-  - ✅ Core Domain classes (Entity, AggregateRoot, ValueObject)
-  - ✅ Repository abstraction with UnoDBRepository implementation
-  - ✅ Domain Services with business logic
-  - ✅ API integration with DomainRouter and domain_endpoint decorator
-  - ✅ Implementation of domain-based approach for all modules
-  - ✅ Documentation updates and examples
-- ✅ **Phase 3**: Module-by-module conversion (Completed)
-  - ✅ Values module
-  - ✅ Attributes module
-  - ✅ Meta module
-  - ✅ Authorization module
-  - ✅ Queries module
-  - ✅ Reports module
-  - ✅ Workflows module
-- ✅ **Phase 4**: Testing and API adaptation (Completed)
-  - ✅ Unit testing of domain entities
-  - ✅ Unit testing of domain repositories
-  - ✅ Unit testing of domain services
-  - ✅ Unit testing of domain endpoints
-  - ✅ Integration testing with repositories
-  - ✅ Performance testing
-- ✅ **Phase 5**: UnoObj Removal (Completed)
-  - ✅ Removed all UnoObj core implementation files
-  - ✅ Removed UnoObj-specific tests
-  - ✅ Removed entity_services module
-  - ✅ Removed domain-specific UnoObj implementations
-  - ✅ Updated documentation to focus on Domain approach
-  - ✅ Completed migration to Domain-Driven Design patterns
+## Completed Tasks
 
-### Clean Slate Implementation (BACKWARD_COMPATIBILITY_TRANSITION_PLAN.md)
-- ✅ **Phase 1**: Removed legacy code to create a clean modern codebase
-  - ✅ Removed old workflow implementation classes
-  - ✅ Removed backwards compatibility code
-- ✅ **Phase 2**: Removed legacy DI implementation files
-  - ✅ Deleted container.py file
-  - ✅ Cleaned up imports and re-exports
-  - ✅ Removed old service provider implementation
-- ✅ **Phase 3**: Modernized singleton patterns and added validation
-  - ✅ Replaced class-based singletons with module-level singletons
-  - ✅ Created get_X functions instead of using get_instance() method
-  - ✅ Added proper type hints and documentation
-- ✅ **Phase 4**: Enhanced validation and fixed provider code
-  - ✅ Improved validation script to focus on get_instance() calls
-  - ✅ Updated modern_provider to use get_registry() function
-  - ✅ Verified codebase is clean of legacy patterns
-- ✅ **Phase 5**: Fixed application startup and initialization sequence
-  - ✅ Resolved asyncio event loop issues in application startup
-  - ✅ Modernized FastAPI lifecycle using lifespan context managers
-  - ✅ Improved initialization sequence and dependency order
-  - ✅ Added structured logging configuration
-  - ✅ Ensured proper DI container initialization in FastAPI lifecycle
+### 1. Domain-Driven Design Implementation
 
-### Result Pattern Modernization (April 13, 2025)
-- ✅ **Phase 1**: Modernized Result pattern usage
-  - ✅ Replaced `Result.unwrap()` with `Result.value`
-  - ✅ Replaced `Result.is_ok()` with `Result.is_success`
-  - ✅ Replaced `Result.is_err()` with `Result.is_failure`
-  - ✅ Replaced `Result.unwrap_err()` with `Result.error`
-  - ✅ Updated all database query modules to use modern pattern
-- ✅ **Phase 2**: Enhanced validation tooling
-  - ✅ Added `validate_clean_slate.py` to detect legacy patterns
-  - ✅ Fixed generic type parameters in domain models
-  - ✅ Enhanced `QueryCacheManager` to bridge legacy and modern patterns
-  - ✅ Modernized event-handling systems with proper identity comparison
-- ✅ **Phase 3**: Modernized singleton patterns (April 13, 2025)
-  - ✅ Modernized `AsyncManager` to integrate with DI
-  - ✅ Modernized `ResourceManager` to integrate with DI 
-  - ✅ Modernized `DataLoaderRegistry` to integrate with DI
-  - ✅ Enhanced domain repository lazy loading with DI support
-  - ✅ Maintained backward compatibility with legacy patterns
-  - ✅ Added proper registration with DI container
+✅ Converted all modules to use domain-driven design:
+- Replaced UnoObj pattern with proper domain entities, repositories, and services
+- Created proper domain entity classes using dataclasses
+- Implemented repository pattern for data access
+- Encapsulated business logic in domain services
+- Registered dependencies through providers for proper dependency injection
 
-Still required to complete the transition:
-- Update test suite to use modern DI system
-- Fix domain model tests that have new interface requirements
-- Fix tests that import from removed modules
-- Ensure all tests follow the new patterns
+### 2. API Endpoint Migration
 
-### Developer Tools (Feature #24)
-- ✅ Implemented missing CLI modules for debugging (`debug.py`)
-- ✅ Implemented missing CLI modules for profiling (`profile.py`)
-- ✅ Created support modules for hotspot detection (`hotspot.py`)
-- ✅ Created support modules for visualization (`visualization.py`)
-- ✅ Added unit tests for the CLI modules (`test_cli_modules.py`)
+✅ Migrated all API endpoints to use the domain-driven approach:
+- Created domain_endpoints.py files for all modules
+- Replaced legacy endpoints.py implementations
+- Used domain_endpoint decorator and create_domain_router factory
+- Implemented proper error handling with Result pattern
+- Documented endpoint behavior consistently
+- Fixed Pydantic model generation for entity fields with default values
 
-### Test Standardization (Item #3)
-- ✅ Created a comprehensive test standardization plan (`TEST_STANDARDIZATION_PLAN.md`)
-- ✅ Set up fixtures for database tests (`tests/unit/database/conftest.py`)
-- ✅ Converted all unittest-style test files to pytest style:
-  - ✅ `test_db_basic.py`
-  - ✅ `test_db_get.py`
-  - ✅ `test_db_filter.py`
-  - ✅ `test_db_merge.py`
-  - ✅ `test_session_async.py`
-  - ✅ `test_session_mock.py`
-- ✅ Created a script to document the conversion process (`convert_tests_to_pytest.sh`)
+### 3. Dependency Injection
 
-### Workflows Module Domain-Driven Design Implementation (April 16, 2025)
-- ✅ **Phase 1**: Complete rewrite of the Workflows module using DDD principles
-  - ✅ Created comprehensive DTOs for all workflow entities
-    - ✅ WorkflowDefDto (base, create, update, view, filter)
-    - ✅ WorkflowTriggerDto
-    - ✅ WorkflowConditionDto
-    - ✅ WorkflowActionDto
-    - ✅ WorkflowRecipientDto
-    - ✅ WorkflowExecutionRecordDto
-  - ✅ Implemented Schema Managers with entity-DTO conversion methods
-    - ✅ WorkflowDefSchemaManager
-    - ✅ WorkflowTriggerSchemaManager
-    - ✅ WorkflowConditionSchemaManager
-    - ✅ WorkflowActionSchemaManager
-    - ✅ WorkflowRecipientSchemaManager
-    - ✅ WorkflowExecutionRecordSchemaManager
-  - ✅ Created API integration with standardized endpoints
-    - ✅ register_workflow_definition_endpoints
-    - ✅ register_workflow_component_endpoints
-    - ✅ register_workflow_endpoints
-  - ✅ Created comprehensive API documentation in `/docs/api/workflows.md`
-- ✅ **Phase 2**: Testing and verification
-  - ✅ Unit testing of domain entities
-  - ✅ Unit testing of schema managers
-  - ✅ Unit testing of API integration
-  - ✅ Verification of API endpoints
-- ✅ **Phase 3**: Legacy code removal
-  - ✅ Removed legacy UnoObj-based workflow implementation
-  - ✅ Removed legacy workflow endpoint registration
-  - ✅ Removed legacy workflow schema definitions
-  - ✅ Updated imports across the codebase
+✅ Implemented consistent dependency injection across modules:
+- Created domain_provider.py files for module-specific containers
+- Configured scoped dependencies for repositories and services
+- Used constructor injection for dependencies
+- Provided factories for FastAPI integration
+- Added testing support with mock repositories
 
-### Shell Scripts Standardization (Item #1)
-- ✅ Created a comprehensive shell script standardization plan (`SHELL_SCRIPT_STANDARDIZATION_PLAN.md`)
-- ✅ Implemented new directory structure for scripts
-- ✅ Created common functions library for scripts (`scripts/common/functions.sh`)
-- ✅ Created documentation for each script directory with README files
-- ✅ Implemented several standardized scripts following the new template:
-  - ✅ `scripts/docker/start.sh`
-  - ✅ `scripts/docker/stop.sh`
-  - ✅ `scripts/docker/test/setup.sh`
-  - ✅ `scripts/db/extensions/pgvector.sh`
-  - ✅ `scripts/benchmarks/run_vector_benchmarks.sh`
-  - ✅ `scripts/vector/setup_vector_search.sh`
-  - ✅ `scripts/ci/build.sh`
-  - ✅ `scripts/ci/deploy.sh`
-  - ✅ `scripts/ci/test.sh`
-  - ✅ `scripts/ci/verify.sh`
-  - ✅ `scripts/dev/lint.sh`
-- ✅ Added proper help information and error handling to scripts
-- ✅ Created backward compatibility wrappers for legacy scripts
+### 4. Documentation
 
-### Documentation Standardization (Item #2)
-- ✅ Created a comprehensive documentation standardization plan (`DOCUMENTATION_STANDARDIZATION_PLAN.md`)
-- ✅ Created standardized templates:
-  - ✅ Section index template (`docs/templates/section_index_template.md`)
-  - ✅ Document template (`docs/templates/document_template.md`)
-- ✅ Updated key documentation pages to follow the new standardized format:
-  - ✅ Main index page (`docs/index.md`)
-  - ✅ Database layer overview (`docs/database/overview.md`)
-  - ✅ Getting started guide (`docs/getting_started.md`)
-  - ✅ API layer overview (`docs/api/overview.md`)
-  - ✅ Business Logic layer overview (`docs/business_logic/overview.md`)
-  - ✅ Object Registry documentation (`docs/business_logic/registry.md`)
-- ✅ Added admonitions and improved formatting
-- ✅ Enhanced navigation structure with clear section overviews
+✅ Updated documentation to reflect new architecture:
+- Added comprehensive docstrings for all modules
+- Created structured package __init__.py files
+- Documented domain entities and their relationships
+- Added explicit typing for all functions
+- Created usage examples
 
-### Vector Search Testing & Examples (Item #4)
-- ✅ Created comprehensive unit tests for vector search functionality:
-  - ✅ Vector Search Service (`tests/unit/domain/vector/test_vector_search.py`)
-  - ✅ RAG Service (`tests/unit/domain/vector/test_rag_service.py`)
-  - ✅ Vector Update Service (`tests/unit/domain/vector/test_vector_update_service.py`)
-  - ✅ Vector SQL Emitter (`tests/unit/sql/test_vector_emitter.py`)
-  - ✅ Index Types (`tests/unit/domain/vector/test_vector_index_types.py`)
-- ✅ Created integration tests for vector search (`tests/integration/test_vector_search.py`)
-- ✅ Added test configuration for pgvector support (`tests/integration/conftest.py`)
-- ✅ Added performance benchmarks:
-  - ✅ Benchmark infrastructure (`tests/benchmarks/conftest.py`)
-  - ✅ Vector search benchmarks (`tests/benchmarks/test_vector_search_performance.py`)
-  - ✅ Reports module benchmarks (`tests/benchmarks/test_report_performance.py`)
-  - ✅ Benchmark documentation (`tests/benchmarks/README.md`)
-- ✅ Created comprehensive vector search examples:
-  - ✅ Basic search example (`examples/vector_search/vector_search_example.py`)
-  - ✅ RAG implementation example
-  - ✅ Hybrid search example
-  - ✅ Vector update example
-- ✅ Added vector search command-line tools:
-  - ✅ Vector search setup script (`scripts/vector/setup_vector_search.sh`)
-  - ✅ Vector benchmarking script (`scripts/benchmarks/run_vector_benchmarks.sh`)
-- ✅ Added benchmark commands to Hatch scripts (`pyproject.toml`)
+### 5. Error Handling
 
-## 2. Next Tasks
+✅ Standardized error handling across the framework:
+- Created module-specific error codes and types
+- Used Result pattern for consistent error propagation
+- Added proper context information to error messages
+- Registered all errors in the central catalog
+- Added proper validation in domain entities
 
-### Complete Documentation Standardization
-- Update remaining section index pages to follow the standardized format
-- Update individual documentation pages for consistency
-- Generate consistent navigation structure
-- Implement API documentation generation from docstrings
+## Remaining Tasks
 
-### Python Utilities Enhancement
-- Add tests for the new Python script utilities
-- Create comprehensive documentation for the Python utilities
-- Add logging configuration to Python utilities
-- Enhance error handling and reporting
+### 1. Testing Coverage
 
-### Python Alternatives for Shell Scripts (Item #5)
-- ✅ Implemented Python alternatives for complex shell scripts:
-  - ✅ Docker utilities (`src/scripts/docker_utils.py`) replacing `setup_test_docker.sh`
-  - ✅ PostgreSQL extension manager (`src/scripts/postgres_extensions.py`) replacing `init-extensions.sh`
-  - ✅ Docker rebuild utility (`src/scripts/docker_rebuild.py`) replacing `rebuild.sh`
-  - ✅ Environment setup utility (`src/scripts/setup_environment.py`) replacing `setup_with_docker.sh`
-  - ✅ Database initialization (`src/scripts/db_init.py`) replacing `init-db.sh`
-- ✅ Updated hatch configuration to use standardized scripts:
-  - ✅ Added `docker-setup` commands that use Python implementation
-  - ✅ Added `docker-rebuild` commands for both dev and test environments
-  - ✅ Added `pg-extensions` command for PostgreSQL extension management
-  - ✅ Updated benchmark command to use pytest directly
-- ✅ Removed deprecated shell scripts:
-  - ✅ Removed `scripts/setup_test_docker.sh` 
-  - ✅ Removed `docker/init-extensions.sh`
-  - ✅ Removed `docker/rebuild.sh`
-  - ✅ Removed `setup_with_docker.sh`
+🔄 Improving test coverage for domain-driven components:
+- Create comprehensive unit tests for all domain services
+- Implement property-based testing for complex validation
+- Add integration tests for repository implementations
+- Use mock repositories for fast unit testing
+- Verify error handling in edge cases
 
-## 3. Vector Search Enhancements for Future Consideration
+### 2. Performance Optimization
 
-- Consider integration with other vector databases beyond pgvector if needed
-- Optimize vector indexing for large-scale deployments
-- Add vector caching mechanisms for performance improvement
+🔄 Optimizing performance for domain-driven operations:
+- Implement batch operations for repositories
+- Use async database operations consistently
+- Optimize entity serialization/deserialization
+- Cache repository results where appropriate
+- Profile and optimize critical paths
 
-## Notes
+### 3. CLI Tools
 
-The standardization efforts focus on making the codebase more maintainable and consistent. 
+🔄 Creating CLI tools for DDD-related tasks:
+- Generate domain entity boilerplate
+- Scaffold new modules with DDD structure
+- Validate DDD compliance across the codebase
+- Generate documentation from domain entities
+- Create test fixtures for domain entities
 
-### Testing Principles Applied
+## Module Status
 
-- Synchronous testing for DDL-emitting classes
-- Asynchronous testing for everything else (unless inherently synchronous)
-- Consistent fixture usage across tests
-- Pytest assertions instead of unittest assertions
-- Function-based tests instead of class-based tests
-- Clear separation of test fixtures and test logic
-- Integration tests for infrastructure-dependent features
-- Performance benchmarks for critical components
+| Module        | DDD Implemented | API Migration Complete | Documentation Updated | Tests Updated |
+|---------------|-----------------|------------------------|----------------------|--------------|
+| AI            | ✅              | ✅                     | ✅                   | 🔄           |
+| API           | ✅              | ✅                     | ✅                   | ✅           |
+| Attributes    | ✅              | ✅                     | ✅                   | 🔄           |
+| Authorization | ✅              | ✅                     | ✅                   | 🔄           |
+| Caching       | ✅              | ✅                     | ✅                   | 🔄           |
+| Core          | ✅              | ✅                     | ✅                   | ✅           |
+| Database      | ✅              | ✅                     | ✅                   | ✅           |
+| Dependencies  | ✅              | ✅                     | ✅                   | ✅           |
+| Deployment    | ✅              | ✅                     | ✅                   | 🔄           |
+| Devtools      | ✅              | ✅                     | ✅                   | 🔄           |
+| Domain        | ✅              | ✅                     | ✅                   | ✅           |
+| Jobs          | ✅              | ✅                     | ✅                   | 🔄           |
+| Messaging     | ✅              | ✅                     | ✅                   | 🔄           |
+| Meta          | ✅              | ✅                     | ✅                   | 🔄           |
+| Offline       | ✅              | ✅                     | ✅                   | 🔄           |
+| Queries       | ✅              | ✅                     | ✅                   | 🔄           |
+| Read Model    | ✅              | ✅                     | ✅                   | 🔄           |
+| Realtime      | ✅              | ✅                     | ✅                   | 🔄           |
+| Reports       | ✅              | ✅                     | ✅                   | 🔄           |
+| Schema        | ✅              | ✅                     | ✅                   | 🔄           |
+| Security      | ✅              | ✅                     | ✅                   | 🔄           |
+| SQL           | ✅              | ✅                     | ✅                   | 🔄           |
+| Values        | ✅              | ✅                     | ✅                   | 🔄           |
+| Vector Search | ✅              | ✅                     | ✅                   | 🔄           |
+| Workflows     | ✅              | ✅                     | ✅                   | 🔄           |
 
-### Script Organization Principles
+## Next Steps
 
-- Consistent directory structure for different types of scripts
-- Common function library to minimize code duplication
-- Standardized headers and help information
-- Proper error handling and exit codes
-- Unified formatting and style
-
-### Documentation Principles
-
-- Consistent structure for all documentation pages
-- Clear navigation with section overviews
-- Standardized formatting and admonitions
-- Practical examples for all features
-- Best practices and related topics sections
+1. ✅ Remove all remaining legacy endpoints.py files, as they are no longer required
+2. ✅ Remove all remaining legacy services.py files, as they are no longer required
+3. ✅ Remove all remaining legacy providers.py files, as they are no longer required
+4. ✅ Fix Pydantic model generation for entities with default values
+5. ✅ Create integration tests for domain endpoints
+6. ✅ Update API documentation to reflect domain-driven design
+7. Complete test updates for all modules
+8. Optimize performance for key operations
+9. Finalize CLI tools for DDD development
+10. Create comprehensive migration guide for external developers

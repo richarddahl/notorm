@@ -6,16 +6,11 @@
 API integration for the attributes module.
 
 This module provides a convenient way to register attribute and attribute type endpoints
-with a FastAPI application using both legacy service-based and modern domain-driven
-approaches.
+with a FastAPI application using the domain-driven approach.
 """
 
 from typing import Dict, List, Any, Optional, Union
 from fastapi import FastAPI, Depends, Security, APIRouter
-
-# Legacy service-based approach
-from uno.attributes.services import AttributeService, AttributeTypeService
-from uno.attributes.endpoints import create_attribute_endpoints, create_attribute_type_endpoints
 
 # Domain-driven approach
 from uno.api.endpoint_factory import UnoEndpointFactory
@@ -23,48 +18,7 @@ from uno.api.repository_adapter import RepositoryAdapter
 from uno.attributes.domain_repositories import AttributeTypeRepository, AttributeRepository
 from uno.attributes.entities import AttributeType, Attribute
 from uno.attributes.schemas import AttributeTypeSchemaManager, AttributeSchemaManager
-from uno.attributes.domain_services import AttributeTypeService as AttributeTypeDomainService
-from uno.attributes.domain_services import AttributeService as AttributeDomainService
-
-
-def register_attribute_endpoints(
-    router: APIRouter,
-    attribute_service: AttributeService,
-    attribute_type_service: AttributeTypeService,
-    attribute_prefix: str = "/attributes",
-    attribute_type_prefix: str = "/attribute-types",
-    attribute_tags: List[str] = ["Attributes"],
-    attribute_type_tags: List[str] = ["Attribute Types"]
-):
-    """
-    Register all attribute and attribute type endpoints with a FastAPI router using the legacy approach.
-    
-    Args:
-        router: FastAPI router
-        attribute_service: Attribute service instance
-        attribute_type_service: Attribute type service instance
-        attribute_prefix: API route prefix for attributes
-        attribute_type_prefix: API route prefix for attribute types
-        attribute_tags: API tags for attribute endpoints
-        attribute_type_tags: API tags for attribute type endpoints
-    """
-    # Create attribute endpoints
-    create_attribute_endpoints(
-        router=router,
-        attribute_service=attribute_service,
-        prefix=attribute_prefix,
-        tags=attribute_tags
-    )
-    
-    # Create attribute type endpoints
-    create_attribute_type_endpoints(
-        router=router,
-        attribute_type_service=attribute_type_service,
-        prefix=attribute_type_prefix,
-        tags=attribute_type_tags
-    )
-    
-    return router
+from uno.attributes.domain_services import AttributeService, AttributeTypeService
 
 
 def register_domain_attribute_endpoints(

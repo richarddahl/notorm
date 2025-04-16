@@ -38,23 +38,9 @@ from uno.values.entities import (
     TimeValue,
 )
 
-# Models (for ORM)
-from uno.values.models import (
-    AttachmentModel,
-    BooleanValueModel,
-    DateTimeValueModel,
-    DateValueModel,
-    DecimalValueModel,
-    IntegerValueModel,
-    TextValueModel,
-    TimeValueModel,
-)
-
-# Interfaces
-from uno.values.interfaces import ValueRepositoryProtocol, ValueServiceProtocol
-
-# Repositories
-from uno.values.repositories import (
+# Domain repositories (DDD)
+from uno.values.domain_repositories import (
+    ValueRepository,
     AttachmentRepository,
     BooleanValueRepository,
     DateTimeValueRepository,
@@ -65,38 +51,26 @@ from uno.values.repositories import (
     TimeValueRepository,
 )
 
-# Services
-from uno.values.services import ValueService
-
-# DTOs
-from uno.values.dtos import (
-    BooleanValueViewDto,
-    IntegerValueViewDto,
-    TextValueViewDto,
-    DecimalValueViewDto,
-    DateValueViewDto,
-    DateTimeValueViewDto,
-    TimeValueViewDto,
-    AttachmentViewDto,
+# Domain services (DDD)
+from uno.values.domain_services import (
+    ValueService,
+    AttachmentService,
+    BooleanValueService,
+    DateTimeValueService,
+    DateValueService,
+    DecimalValueService,
+    IntegerValueService,
+    TextValueService,
+    TimeValueService,
 )
 
-# Schema managers
-from uno.values.schemas import (
-    BooleanValueSchemaManager,
-    IntegerValueSchemaManager,
-    TextValueSchemaManager,
-    DecimalValueSchemaManager,
-    DateValueSchemaManager,
-    DateTimeValueSchemaManager,
-    TimeValueSchemaManager,
-    AttachmentSchemaManager,
-    ValueSchemaManagerFactory,
+# Dependency injection provider
+from uno.values.domain_provider import (
+    get_values_provider,
+    configure_values_services,
 )
 
-# Legacy API integration
-from uno.values.api_integration import register_value_endpoints
-
-# Domain-driven API integration
+# Domain API integration
 from uno.values.domain_api_integration import register_domain_value_endpoints_api
 
 # Error types
@@ -132,21 +106,8 @@ __all__ = [
     "TextValue",
     "TimeValue",
     
-    # ORM Models
-    "AttachmentModel",
-    "BooleanValueModel",
-    "DateTimeValueModel",
-    "DateValueModel",
-    "DecimalValueModel",
-    "IntegerValueModel",
-    "TextValueModel",
-    "TimeValueModel",
-    
-    # Interfaces
-    "ValueRepositoryProtocol",
-    "ValueServiceProtocol",
-    
-    # Repositories
+    # Domain Repositories (DDD)
+    "ValueRepository",
     "AttachmentRepository",
     "BooleanValueRepository",
     "DateTimeValueRepository",
@@ -156,32 +117,22 @@ __all__ = [
     "TextValueRepository",
     "TimeValueRepository",
     
-    # Services
+    # Domain Services (DDD)
     "ValueService",
+    "AttachmentService",
+    "BooleanValueService",
+    "DateTimeValueService",
+    "DateValueService",
+    "DecimalValueService",
+    "IntegerValueService",
+    "TextValueService",
+    "TimeValueService",
     
-    # DTOs
-    "BooleanValueViewDto",
-    "IntegerValueViewDto",
-    "TextValueViewDto",
-    "DecimalValueViewDto",
-    "DateValueViewDto",
-    "DateTimeValueViewDto",
-    "TimeValueViewDto",
-    "AttachmentViewDto",
-    
-    # Schema Managers
-    "BooleanValueSchemaManager",
-    "IntegerValueSchemaManager", 
-    "TextValueSchemaManager",
-    "DecimalValueSchemaManager", 
-    "DateValueSchemaManager",
-    "DateTimeValueSchemaManager",
-    "TimeValueSchemaManager",
-    "AttachmentSchemaManager",
-    "ValueSchemaManagerFactory",
+    # Dependency Injection
+    "get_values_provider",
+    "configure_values_services",
     
     # API integration
-    "register_value_endpoints",
     "register_domain_value_endpoints_api",
     
     # Error types

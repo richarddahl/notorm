@@ -662,7 +662,7 @@ async def add_user_to_tenant(
     return result.value.to_dict()
 
 
-def register_authorization_routers(app):
+def register_auth_endpoints(app):
     """
     Register all authorization routers with a FastAPI application.
     

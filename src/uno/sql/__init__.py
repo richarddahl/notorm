@@ -42,10 +42,71 @@ from uno.sql.errors import (
     register_sql_errors,
 )
 
+# Domain-driven design exports
+from uno.sql.entities import (
+    SQLStatementId,
+    SQLEmitterId,
+    SQLConfigId,
+    SQLTransactionIsolationLevel,
+    SQLFunctionVolatility,
+    SQLFunctionLanguage,
+    SQLFunction,
+    SQLTrigger,
+    DatabaseConnectionInfo,
+    SQLConfiguration
+)
+
+from uno.sql.domain_repositories import (
+    SQLStatementRepositoryProtocol,
+    SQLEmitterRepositoryProtocol,
+    SQLConfigurationRepositoryProtocol,
+    SQLFunctionRepositoryProtocol,
+    SQLTriggerRepositoryProtocol,
+    SQLConnectionManagerProtocol,
+    InMemorySQLStatementRepository,
+    InMemorySQLEmitterRepository,
+    InMemorySQLConfigurationRepository,
+    InMemorySQLFunctionRepository,
+    InMemorySQLTriggerRepository
+)
+
+from uno.sql.domain_services import (
+    SQLStatementServiceProtocol,
+    SQLEmitterServiceProtocol,
+    SQLConfigurationServiceProtocol,
+    SQLFunctionServiceProtocol,
+    SQLTriggerServiceProtocol,
+    SQLConnectionServiceProtocol,
+    SQLStatementService,
+    SQLEmitterService,
+    SQLConfigurationService,
+    SQLFunctionService,
+    SQLTriggerService,
+    SQLConnectionService
+)
+
+from uno.sql.domain_provider import (
+    configure_sql_dependencies,
+    get_sql_statement_service,
+    get_sql_emitter_service,
+    get_sql_configuration_service,
+    get_sql_function_service,
+    get_sql_trigger_service,
+    get_sql_connection_service,
+    create_sql_statement,
+    execute_sql_statement,
+    create_sql_function,
+    create_sql_trigger,
+    create_database_connection,
+    execute_sql,
+    get_sql_dependencies
+)
+
 # Register SQL errors
 register_sql_errors()
 
 __all__ = [
+    # Legacy components
     "SQLConfigRegistry",
     "SQLConfig",
     "SQLEmitter",
@@ -72,4 +133,59 @@ __all__ = [
     "SQLRegistryClassAlreadyExistsError",
     "SQLConfigError",
     "SQLConfigInvalidError",
+    
+    # Domain entities
+    "SQLStatementId",
+    "SQLEmitterId",
+    "SQLConfigId",
+    "SQLTransactionIsolationLevel",
+    "SQLFunctionVolatility",
+    "SQLFunctionLanguage",
+    "SQLFunction",
+    "SQLTrigger",
+    "DatabaseConnectionInfo",
+    "SQLConfiguration",
+    
+    # Domain repositories
+    "SQLStatementRepositoryProtocol",
+    "SQLEmitterRepositoryProtocol",
+    "SQLConfigurationRepositoryProtocol",
+    "SQLFunctionRepositoryProtocol",
+    "SQLTriggerRepositoryProtocol",
+    "SQLConnectionManagerProtocol",
+    "InMemorySQLStatementRepository",
+    "InMemorySQLEmitterRepository",
+    "InMemorySQLConfigurationRepository",
+    "InMemorySQLFunctionRepository",
+    "InMemorySQLTriggerRepository",
+    
+    # Domain services
+    "SQLStatementServiceProtocol",
+    "SQLEmitterServiceProtocol",
+    "SQLConfigurationServiceProtocol",
+    "SQLFunctionServiceProtocol",
+    "SQLTriggerServiceProtocol",
+    "SQLConnectionServiceProtocol",
+    "SQLStatementService",
+    "SQLEmitterService",
+    "SQLConfigurationService",
+    "SQLFunctionService",
+    "SQLTriggerService",
+    "SQLConnectionService",
+    
+    # Domain provider
+    "configure_sql_dependencies",
+    "get_sql_statement_service",
+    "get_sql_emitter_service",
+    "get_sql_configuration_service",
+    "get_sql_function_service",
+    "get_sql_trigger_service",
+    "get_sql_connection_service",
+    "create_sql_statement",
+    "execute_sql_statement",
+    "create_sql_function",
+    "create_sql_trigger",
+    "create_database_connection",
+    "execute_sql",
+    "get_sql_dependencies",
 ]

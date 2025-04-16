@@ -6,9 +6,7 @@ The `UnoEndpointFactory` class automates the creation of FastAPI endpoints for d
 
 The endpoint factory creates standardized API endpoints based on domain entity configurations. This ensures consistency across your API and reduces the boilerplate code needed to expose your domain entities via a RESTful interface.
 
-The factory supports two approaches:
-1. **Domain-Driven Design**: Using repositories and domain entities (recommended)
-2. **Legacy Pattern**: Using model objects directly (compatible with UnoObj pattern)
+The factory focuses on the Domain-Driven Design approach, using repositories and domain entities to provide a clean separation of concerns.
 
 ## Basic Usage
 
@@ -81,25 +79,26 @@ endpoints = endpoint_factory.create_endpoints(
 )
 ```
 
-### Legacy Approach (Backward Compatible)
+### Using Model Adapter
 
 ```python
 from fastapi import FastAPI
-from uno.model import UnoModel
 from uno.api.endpoint_factory import UnoEndpointFactory
+from uno.api.repository_adapter import RepositoryAdapter
+from uno.domain.model import DomainModel
 
 # Create a FastAPI application
 app = FastAPI()
 
-# Define your model class
-class CustomerModel(UnoModel):
-    # Model definition...
+# Define your model adapter
+class CustomerAdapter(RepositoryAdapter):
+    # Adapter implementation...
     pass
 
-# Create endpoints for the model
+# Create endpoints for the model adapter
 endpoints = endpoint_factory.create_endpoints(
     app=app,
-    model_obj=CustomerModel,
+    adapter=CustomerAdapter,
     path_prefix="/api/v1",
     endpoint_tags=["Customers"]
 )
@@ -554,23 +553,27 @@ v2_router = APIRouter(prefix="/api/v2")
 v1_factory = UnoEndpointFactory()
 v2_factory = UnoEndpointFactory()
 
-# Create v1 endpoints
-class CustomerV1(UnoObj[CustomerModel]):```
+# Create repositories for each version
+class CustomerRepositoryV1(Repository):
+    # v1 repository implementation
+    pass
 
-model = CustomerModel
-# v1 configuration
-```
+class CustomerRepositoryV2(Repository):
+    # v2 repository implementation with additional features
+    pass
 
-# Create v2 endpoints with different behavior
-class CustomerV2(UnoObj[CustomerModel]):```
-
-model = CustomerModel
-# v2 configuration with additional fields or different validation
-```
+# Create services for each version
+class CustomerServiceV1:
+    def __init__(self, repository=CustomerRepositoryV1()):
+        self.repository = repository
+        
+class CustomerServiceV2:
+    def __init__(self, repository=CustomerRepositoryV2()):
+        self.repository = repository
 
 # Create endpoints for each version
-v1_factory.create_endpoints(v1_router, CustomerV1)
-v2_factory.create_endpoints(v2_router, CustomerV2)
+v1_factory.create_endpoints(v1_router, repository=CustomerRepositoryV1(), entity_type=Customer)
+v2_factory.create_endpoints(v2_router, repository=CustomerRepositoryV2(), entity_type=Customer)
 
 # Include routers in the main app
 app.include_router(v1_router)

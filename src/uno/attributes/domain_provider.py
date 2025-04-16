@@ -5,9 +5,11 @@ This module integrates the attributes domain services and repositories with
 the dependency injection system, making them available throughout the application.
 """
 
+import logging
 from functools import lru_cache
 from typing import Dict, Any, Optional, Type
 
+from uno.database.db_manager import DBManager
 from uno.dependencies.modern_provider import (
     UnoServiceProvider,
     ServiceLifecycle,
@@ -35,14 +37,44 @@ def get_attributes_provider() -> UnoServiceProvider:
         A configured service provider for the Attributes module
     """
     provider = UnoServiceProvider("attributes")
+    logger = logging.getLogger("uno.attributes")
     
-    # Register repositories
-    provider.register(AttributeRepository, lifecycle=ServiceLifecycle.SCOPED)
-    provider.register(AttributeTypeRepository, lifecycle=ServiceLifecycle.SCOPED)
+    # Register repositories with their dependencies
+    provider.register(
+        AttributeTypeRepository,
+        lambda container: AttributeTypeRepository(
+            db_factory=container.resolve(DBManager),
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
-    # Register services
-    provider.register(AttributeService, lifecycle=ServiceLifecycle.SCOPED)
-    provider.register(AttributeTypeService, lifecycle=ServiceLifecycle.SCOPED)
+    provider.register(
+        AttributeRepository,
+        lambda container: AttributeRepository(
+            db_factory=container.resolve(DBManager),
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    
+    # Register services with their repository dependencies
+    provider.register(
+        AttributeTypeService,
+        lambda container: AttributeTypeService(
+            repository=container.resolve(AttributeTypeRepository),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    
+    provider.register(
+        AttributeService,
+        lambda container: AttributeService(
+            repository=container.resolve(AttributeRepository),
+            attribute_type_service=container.resolve(AttributeTypeService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
     return provider
 
@@ -56,30 +88,3 @@ def configure_attributes_services(container):
     """
     provider = get_attributes_provider()
     provider.configure_container(container)
-
-
-def create_attribute_service_factory(
-    attribute_repo: Optional[AttributeRepository] = None,
-    attribute_type_service: Optional[AttributeTypeService] = None
-):
-    """
-    Create a factory function for AttributeService.
-    
-    This function creates a factory that can be used with the dependency
-    injection system to create AttributeService instances with specific
-    dependencies.
-    
-    Args:
-        attribute_repo: Optional repository for attributes
-        attribute_type_service: Optional service for attribute types
-        
-    Returns:
-        A factory function for creating AttributeService instances
-    """
-    def create_service():
-        return AttributeService(
-            repository=attribute_repo,
-            attribute_type_service=attribute_type_service
-        )
-    
-    return create_service

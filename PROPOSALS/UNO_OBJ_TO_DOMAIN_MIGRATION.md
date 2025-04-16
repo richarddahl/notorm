@@ -597,6 +597,8 @@ As of April 16, 2025, the migration from UnoObj to the Domain pattern has been f
 - UnoObj-specific error handling
 - UnoRegistry system 
 - Domain-specific UnoObj implementations (`objs.py` files in various modules)
+- Legacy service implementations (`services.py` files in various modules)
+- Legacy dependency provider implementations (`providers.py` files in various modules)
 - Entity services framework (entire `src/uno/entity_services/` directory)
 - All import and reference usages throughout the codebase
 - UnoObj tests and example implementations

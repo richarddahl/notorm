@@ -6,31 +6,67 @@
 API module for Uno.
 
 This module provides tools and utilities for creating API endpoints in the
-Uno framework. It includes endpoint factories, schema managers, and other
-components for building RESTful APIs.
+Uno framework using a domain-driven design approach. It includes repository interfaces,
+services, and dependency injection providers for building RESTful APIs.
 
 Key components:
 - Domain Entities: Core business objects for API resources
   - ApiResource: Represents a collection of related endpoints
   - EndpointConfig: Represents configuration for an individual endpoint
-- Endpoint Factory: Creates FastAPI endpoints from domain entities
-- Schema Manager: Manages data transfer object schemas
-- Repository Adapter: Adapts domain repositories to API endpoints
+- Domain Repositories: Data access interfaces and implementations
+  - ApiResourceRepository: Manages API resource data
+  - EndpointConfigRepository: Manages endpoint configuration data
+- Domain Services: Business logic for API operations
+  - ApiResourceService: Manages API resources
+  - EndpointFactoryService: Creates endpoints for entity types
+  - RepositoryAdapterService: Creates adapters for domain repositories
+- Dependency Injection: Configures and provides services
+  - ApiProvider: Configures dependencies for the API module
+  - TestingApiProvider: Configures dependencies for testing
+- Repository Adapters: Bridge domain repositories with API endpoints
+  - RepositoryAdapter: Standard adapter for repositories
+  - ReadOnlyRepositoryAdapter: Adapter for read-only repositories
+  - BatchRepositoryAdapter: Adapter for batch operations
 """
 
-# Domain entities (DDD)
+# Domain entities
 from uno.api.entities import ApiResource, EndpointConfig, HttpMethod
 
-# Endpoint factory
+# Domain repositories
+from uno.api.domain_repositories import (
+    ApiResourceRepositoryProtocol,
+    EndpointConfigRepositoryProtocol,
+    InMemoryApiResourceRepository,
+    InMemoryEndpointConfigRepository,
+    FileApiResourceRepository,
+)
+
+# Domain services
+from uno.api.domain_services import (
+    ApiResourceServiceProtocol,
+    EndpointFactoryServiceProtocol,
+    RepositoryAdapterServiceProtocol,
+    ApiResourceService,
+    EndpointFactoryService,
+    RepositoryAdapterService,
+)
+
+# Domain provider
+from uno.api.domain_provider import ApiProvider, TestingApiProvider
+
+# Domain endpoints
+from uno.api.domain_endpoints import router as api_resource_router
+
+# Repository adapters
+from uno.api.repository_adapter import (
+    RepositoryAdapter, 
+    ReadOnlyRepositoryAdapter,
+    BatchRepositoryAdapter,
+)
+
+# Legacy components (deprecated)
 from uno.api.endpoint_factory import UnoEndpointFactory, UnoEndpoint
-
-# Schema manager
 from uno.api.endpoint import DomainRouter, domain_endpoint
-
-# Repository adapter
-from uno.api.repository_adapter import RepositoryAdapter
-
-# Error handling
 from uno.api.error_handlers import (
     register_error_handlers,
     default_error_handler,
@@ -39,23 +75,43 @@ from uno.api.error_handlers import (
 )
 
 __all__ = [
-    # Domain Entities (DDD)
+    # Domain Entities
     "ApiResource",
     "EndpointConfig",
     "HttpMethod",
     
-    # Endpoint Factory
+    # Domain Repositories
+    "ApiResourceRepositoryProtocol",
+    "EndpointConfigRepositoryProtocol",
+    "InMemoryApiResourceRepository",
+    "InMemoryEndpointConfigRepository",
+    "FileApiResourceRepository",
+    
+    # Domain Services
+    "ApiResourceServiceProtocol",
+    "EndpointFactoryServiceProtocol",
+    "RepositoryAdapterServiceProtocol",
+    "ApiResourceService",
+    "EndpointFactoryService",
+    "RepositoryAdapterService",
+    
+    # Domain Provider
+    "ApiProvider",
+    "TestingApiProvider",
+    
+    # Domain Endpoints
+    "api_resource_router",
+    
+    # Repository Adapters
+    "RepositoryAdapter",
+    "ReadOnlyRepositoryAdapter",
+    "BatchRepositoryAdapter",
+    
+    # Legacy Components (deprecated)
     "UnoEndpointFactory",
     "UnoEndpoint",
-    
-    # Schema Manager
     "DomainRouter",
     "domain_endpoint",
-    
-    # Repository Adapter
-    "RepositoryAdapter",
-    
-    # Error Handling
     "register_error_handlers",
     "default_error_handler",
     "validation_error_handler",

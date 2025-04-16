@@ -1,5 +1,6 @@
 """Domain services for the Queries module."""
-from typing import Dict, List, Optional, Union, Any, cast
+from typing import Dict, List, Optional, Union, Any, Type, cast, Tuple
+import logging
 
 from uno.core.domain import UnoEntityService
 from uno.core.errors.result import Result, Success, Failure
@@ -9,6 +10,10 @@ from uno.queries.domain_repositories import (
     QueryValueRepository,
     QueryRepository,
 )
+from uno.queries.errors import QueryExecutionError, QueryPathError, QueryNotFoundError
+from uno.queries.filter_manager import UnoFilterManager, get_filter_manager
+from uno.queries.executor import QueryExecutor, get_query_executor
+from uno.enums import Include, Match
 
 
 class QueryPathService(UnoEntityService[QueryPath]):
@@ -68,6 +73,45 @@ class QueryPathService(UnoEntityService[QueryPath]):
         try:
             path = await self.repository.find_by_path_name(path_name)
             return Success(path)
+        except Exception as e:
+            return Failure(str(e))
+
+    async def generate_for_model(self, model_class: Type[Any]) -> Result[List[QueryPath]]:
+        """Generate query paths for a model class.
+        
+        This method uses the FilterManager to create filter definitions from a model's schema
+        and converts them to QueryPath entities.
+        
+        Args:
+            model_class: The model class to generate paths for.
+            
+        Returns:
+            Success with a list of generated query paths,
+            or Failure if an error occurs.
+        """
+        try:
+            # Get the filter manager
+            filter_manager = get_filter_manager()
+            
+            # Create filters from the model class
+            filters = filter_manager.create_filters_from_table(model_class)
+            
+            # Convert filters to query paths
+            query_paths = []
+            for filter_name, filter_def in filters.items():
+                query_path = QueryPath(
+                    source_meta_type_id=filter_def.source_meta_type_id,
+                    target_meta_type_id=filter_def.target_meta_type_id,
+                    cypher_path=filter_def.cypher_path(),
+                    data_type=filter_def.data_type,
+                )
+                
+                # Add path name as a description or additional property
+                setattr(query_path, "path_name", filter_name)
+                
+                query_paths.append(query_path)
+            
+            return Success(query_paths)
         except Exception as e:
             return Failure(str(e))
 
@@ -136,6 +180,7 @@ class QueryService(UnoEntityService[Query]):
         repository: QueryRepository,
         query_value_service: QueryValueService,
         query_path_service: QueryPathService,
+        logger: Optional[logging.Logger] = None,
     ):
         """Initialize the service.
         
@@ -143,11 +188,16 @@ class QueryService(UnoEntityService[Query]):
             repository: The repository for query entities.
             query_value_service: The service for query value entities.
             query_path_service: The service for query path entities.
+            logger: Optional logger for diagnostic output.
         """
         super().__init__(repository)
         self.repository = repository
         self.query_value_service = query_value_service
         self.query_path_service = query_path_service
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Initialize the query executor
+        self.query_executor = get_query_executor()
 
     async def find_by_name(self, name: str) -> Result[Optional[Query]]:
         """Find a query by name.
@@ -238,8 +288,10 @@ class QueryService(UnoEntityService[Query]):
                 query_value = QueryValue(
                     query_path_id=path_id,
                     query_id=created_query.id,
-                    value=value_data.get("value"),
-                    lookup_type=value_data.get("lookup_type", "eq"),
+                    include=value_data.get("include", Include.INCLUDE),
+                    match=value_data.get("match", Match.AND),
+                    lookup=value_data.get("lookup", "equal"),
+                    values=value_data.get("values", []),
                 )
                 
                 # Add bidirectional relationships
@@ -305,8 +357,10 @@ class QueryService(UnoEntityService[Query]):
                 query_value = QueryValue(
                     query_path_id=path_id,
                     query_id=query_id,
-                    value=value_data.get("value"),
-                    lookup_type=value_data.get("lookup_type", "eq"),
+                    include=value_data.get("include", Include.INCLUDE),
+                    match=value_data.get("match", Match.AND),
+                    lookup=value_data.get("lookup", "equal"),
+                    values=value_data.get("values", []),
                 )
                 
                 # Create the query value
@@ -341,58 +395,245 @@ class QueryService(UnoEntityService[Query]):
             return Failure(str(e))
 
     async def execute_query(
-        self, query_id: str, entity_type: str, filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[Dict[str, Any]]]:
-        """Execute a query to filter entities.
+        self, query_id: str, filters: Optional[Dict[str, Any]] = None, force_refresh: bool = False
+    ) -> Result[List[str]]:
+        """Execute a query and return matching record IDs.
+        
+        This method uses the QueryExecutor to execute a query and return matching record IDs.
         
         Args:
             query_id: The ID of the query to execute.
-            entity_type: The type of entity to filter.
             filters: Additional filters to apply.
+            force_refresh: If True, bypass cache and force a fresh query.
             
         Returns:
-            Success with a list of filtered entities if successful, Failure otherwise.
+            Success with a list of matching record IDs if successful, Failure otherwise.
         """
         try:
             # Get the query with values
             query_result = await self.get_with_values(query_id)
             if query_result.is_failure:
-                return query_result
+                return Failure(QueryNotFoundError(f"Query with ID {query_id} not found"))
             
             query = query_result.value
             
-            # Validate that the query is for the requested entity type
-            if query.query_meta_type_id != entity_type:
-                return Failure(
-                    f"Query is for entity type {query.query_meta_type_id}, "
-                    f"but requested entity type is {entity_type}"
-                )
+            # Execute the query using the QueryExecutor
+            executor_result = await self.query_executor.execute_query(
+                query, session=None, force_refresh=force_refresh
+            )
             
-            # Combine query values with additional filters
-            combined_filters = filters or {}
+            if executor_result.is_failure:
+                error = executor_result.error
+                return Failure(error)
             
-            for value in query.query_values:
-                path_result = await self.query_path_service.get(value.query_path_id)
-                if path_result.is_failure:
-                    return path_result
-                
-                path = path_result.value
-                combined_filters[path.path_name] = {
-                    "lookup": value.lookup_type,
-                    "val": value.value,
-                }
+            # Get the matching record IDs
+            record_ids = executor_result.value
             
-            # Execute the query using the repository
-            # Note: This is simplified; in a real implementation, you would need to
-            # use a repository for the entity type being queried
+            return Success(record_ids)
+        except QueryExecutionError as e:
+            return Failure(e)
+        except QueryPathError as e:
+            return Failure(e)
+        except Exception as e:
+            return Failure(QueryExecutionError(
+                reason=str(e),
+                query_id=query_id,
+                original_exception=str(type(e).__name__),
+            ))
+
+    async def count_query_matches(
+        self, query_id: str, force_refresh: bool = False
+    ) -> Result[int]:
+        """Count the number of records that match a query.
+        
+        This method uses the QueryExecutor to count the number of records that match a query.
+        
+        Args:
+            query_id: The ID of the query to count matches for.
+            force_refresh: If True, bypass cache and force a fresh count.
+            
+        Returns:
+            Success with the count of matching records if successful, Failure otherwise.
+        """
+        try:
+            # Get the query with values
+            query_result = await self.get_with_values(query_id)
+            if query_result.is_failure:
+                return Failure(QueryNotFoundError(f"Query with ID {query_id} not found"))
+            
+            query = query_result.value
+            
+            # Count the matches using the QueryExecutor
+            count_result = await self.query_executor.count_query_matches(
+                query, session=None, force_refresh=force_refresh
+            )
+            
+            if count_result.is_failure:
+                error = count_result.error
+                return Failure(error)
+            
+            # Get the match count
+            count = count_result.value
+            
+            return Success(count)
+        except QueryExecutionError as e:
+            return Failure(e)
+        except QueryPathError as e:
+            return Failure(e)
+        except Exception as e:
+            return Failure(QueryExecutionError(
+                reason=str(e),
+                query_id=query_id,
+                operation="count",
+                original_exception=str(type(e).__name__),
+            ))
+
+    async def check_record_matches_query(
+        self, query_id: str, record_id: str, force_refresh: bool = False
+    ) -> Result[bool]:
+        """Check if a record matches a query.
+        
+        This method uses the QueryExecutor to check if a specific record matches a query.
+        
+        Args:
+            query_id: The ID of the query to check against.
+            record_id: The ID of the record to check.
+            force_refresh: If True, bypass cache and force a fresh check.
+            
+        Returns:
+            Success with True if the record matches, False otherwise,
+            or Failure if an error occurs.
+        """
+        try:
+            # Get the query with values
+            query_result = await self.get_with_values(query_id)
+            if query_result.is_failure:
+                return Failure(QueryNotFoundError(f"Query with ID {query_id} not found"))
+            
+            query = query_result.value
+            
+            # Check if the record matches the query using the QueryExecutor
+            match_result = await self.query_executor.check_record_matches_query(
+                query, record_id, session=None, force_refresh=force_refresh
+            )
+            
+            if match_result.is_failure:
+                error = match_result.error
+                return Failure(error)
+            
+            # Get the match result
+            is_match = match_result.value
+            
+            return Success(is_match)
+        except QueryExecutionError as e:
+            return Failure(e)
+        except QueryPathError as e:
+            return Failure(e)
+        except Exception as e:
+            return Failure(QueryExecutionError(
+                reason=str(e),
+                query_id=query_id,
+                record_id=record_id,
+                operation="check_record",
+                original_exception=str(type(e).__name__),
+            ))
+
+    async def invalidate_cache(self, meta_type_id: Optional[str] = None) -> Result[int]:
+        """Invalidate the query cache.
+        
+        This method invalidates the query cache for a specific meta type or all meta types.
+        
+        Args:
+            meta_type_id: Optional meta type ID to invalidate cache for.
+            
+        Returns:
+            Success with the number of cache entries invalidated,
+            or Failure if an error occurs.
+        """
+        try:
+            count = 0
+            
+            if meta_type_id:
+                # Invalidate cache for a specific meta type
+                count = await self.query_executor.invalidate_cache_for_meta_type(meta_type_id)
+            else:
+                # Invalidate all caches
+                count = await self.query_executor.clear_cache()
+            
+            return Success(count)
+        except Exception as e:
+            return Failure(str(e))
+
+    async def create_filter_manager(self, model_class: Type[Any]) -> Result[UnoFilterManager]:
+        """Create a filter manager for a model class.
+        
+        This method creates a filter manager and initializes it with filters
+        generated from the model class.
+        
+        Args:
+            model_class: The model class to create filters for.
+            
+        Returns:
+            Success with the filter manager if successful, Failure otherwise.
+        """
+        try:
+            # Create a filter manager
+            filter_manager = UnoFilterManager(logger=self.logger)
+            
+            # Initialize with filters from the model class
+            filters = filter_manager.create_filters_from_table(model_class)
+            
+            return Success(filter_manager)
+        except Exception as e:
+            return Failure(str(e))
+
+    async def execute_query_with_filters(
+        self, entity_type: str, filters: Dict[str, Any]
+    ) -> Result[Tuple[List[Dict[str, Any]], int]]:
+        """Execute a query with filters.
+        
+        This method is similar to the legacy `execute_query` method but uses the
+        new filter system. It's provided for backward compatibility.
+        
+        Args:
+            entity_type: The type of entity to filter.
+            filters: The filters to apply.
+            
+        Returns:
+            Success with a tuple of (entities, count) if successful, Failure otherwise.
+        """
+        try:
+            # Create a filter manager for the entity type
+            from uno.dependencies.service import get_entity_model_class
+            model_class = get_entity_model_class(entity_type)
+            
+            if not model_class:
+                return Failure(f"Invalid entity type: {entity_type}")
+            
+            filter_manager_result = await self.create_filter_manager(model_class)
+            if filter_manager_result.is_failure:
+                return filter_manager_result
+            
+            filter_manager = filter_manager_result.value
+            
+            # Validate and process the filters
+            from uno.core.types import FilterParam
+            filter_param = FilterParam(**filters)
+            
+            validated_filters = filter_manager.validate_filter_params(
+                filter_param, model_class
+            )
+            
+            # Execute the query using the repository for the entity type
             from uno.database.repository import get_repository_for_entity_type
             repo = await get_repository_for_entity_type(entity_type)
             
-            entities = await repo.list(filters=combined_filters)
+            entities = await repo.list(filters=validated_filters)
+            count = len(entities)
             
             # Convert entities to dictionaries
             entity_dicts = [entity.to_dict() for entity in entities]
             
-            return Success(entity_dicts)
+            return Success((entity_dicts, count))
         except Exception as e:
             return Failure(str(e))

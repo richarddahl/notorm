@@ -1,16 +1,16 @@
 # Domain-Driven API Integration
 
-This guide explains how to integrate domain-driven design with API endpoints in the Uno framework. It demonstrates the use of repository adapters and domain entities to create RESTful API endpoints.
+This guide explains how to integrate domain-driven design with API endpoints in the Uno framework. The API module has been completely redesigned to support a clean domain-driven approach, while maintaining compatibility with legacy patterns.
 
 ## Overview
 
 The Uno framework provides a seamless way to expose domain entities via RESTful API endpoints. The key components of this integration are:
 
-1. **Domain Entities**: Your core business objects
-2. **Repositories**: Classes that manage data access for entities
-3. **Repository Adapters**: Bridge between repositories and API endpoints
-4. **Endpoint Factory**: Creates standardized endpoints for entities
-5. **Schema Management**: Handles conversion between entities and DTOs
+1. **Domain Entities** - Core business objects (`ApiResource`, `EndpointConfig`)
+2. **Domain Repositories** - Data access interfaces and implementations
+3. **Domain Services** - Business logic for API operations
+4. **Domain Provider** - Dependency injection configuration
+5. **Repository Adapters** - Bridge between domain repositories and API endpoints
 
 This approach follows domain-driven design principles by keeping your domain logic separate from your API presentation layer while still providing a convenient way to expose your domain entities to clients.
 
@@ -417,30 +417,239 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
+## New Domain-Driven Design Implementation
+
+The API module now includes a full domain-driven design implementation with clear separation of concerns. This section covers the new approach for integrating APIs with domain-driven design.
+
+### Setting Up the Provider
+
+Before using the API module, you need to configure the dependency injection provider:
+
+```python
+from uno.api import ApiProvider
+
+# Configure with in-memory repositories (default)
+ApiProvider.configure()
+
+# Or configure with file-based persistence
+ApiProvider.configure(persistence_directory="/path/to/data")
+
+# Or configure with custom repositories
+ApiProvider.configure(
+    resource_repository=CustomApiResourceRepository(),
+    endpoint_repository=CustomEndpointConfigRepository()
+)
+```
+
+### Creating API Resources and Endpoints
+
+Once configured, you can use the provider to access services:
+
+```python
+import asyncio
+from uno.api import ApiProvider
+
+async def create_api_resources():
+    # Get the API resource service
+    api_service = ApiProvider.get_api_resource_service()
+    
+    # Create a resource
+    customer_resource = await api_service.create_resource(
+        name="Customers",
+        path_prefix="/api/v1/customers",
+        entity_type_name="Customer",
+        tags=["Customers"],
+        description="Customer management API"
+    )
+    
+    # Add an endpoint
+    await api_service.add_endpoint_to_resource(
+        resource_id=customer_resource.value.id,
+        path="/api/v1/customers/{id}",
+        method="GET",
+        summary="Get customer by ID",
+        description="Retrieves a customer by their unique identifier"
+    )
+
+# Run the async function
+asyncio.run(create_api_resources())
+```
+
+### Generating CRUD Endpoints Automatically
+
+You can automatically generate CRUD endpoints for an entity type:
+
+```python
+import asyncio
+from uno.api import ApiProvider
+
+async def create_crud_endpoints():
+    # Get the endpoint factory service
+    factory_service = ApiProvider.get_endpoint_factory_service()
+    
+    # Create CRUD endpoints
+    result = await factory_service.create_crud_endpoints(
+        resource_name="Products",
+        entity_type_name="Product",
+        path_prefix="/api/v1/products",
+        tags=["Products"],
+        description="Product management API"
+    )
+    
+    # Print the created resource
+    if result.is_success():
+        print(f"Created resource: {result.value.name}")
+        print(f"Created endpoints: {len(result.value.endpoints)}")
+    else:
+        print(f"Error: {result.error.message}")
+
+# Run the async function
+asyncio.run(create_crud_endpoints())
+```
+
+### Integrating with FastAPI
+
+The API module includes a preconfigured FastAPI router for API resource management:
+
+```python
+from fastapi import FastAPI
+from uno.api import ApiProvider, api_resource_router
+
+# Configure the provider
+ApiProvider.configure()
+
+# Create FastAPI app
+app = FastAPI()
+
+# Include the API resource router
+app.include_router(api_resource_router)
+```
+
+This router provides endpoints for managing API resources and their endpoints, which can be accessed at `/api/v1/api-resources`.
+
+### Creating Adapters for Domain Repositories
+
+To bridge your domain repositories with the API layer, use the repository adapter service:
+
+```python
+from uno.api import ApiProvider
+from uno.dependencies.fastapi import get_repository
+
+# Get the adapter service
+adapter_service = ApiProvider.get_repository_adapter_service()
+
+# Create an adapter for the repository
+customer_adapter = adapter_service.create_adapter(
+    repository=get_repository(CustomerRepository),
+    entity_type=CustomerEntity,
+    schema_type=CustomerSchema
+)
+
+# Use the adapter with FastAPI
+@app.get("/api/v1/customers/{id}")
+async def get_customer(id: str):
+    customer = await customer_adapter.get(id)
+    if customer:
+        return customer
+    raise HTTPException(status_code=404, detail="Customer not found")
+```
+
+### Testing
+
+For testing, use the `TestingApiProvider`:
+
+```python
+from uno.api import TestingApiProvider
+from unittest.mock import Mock
+
+# Mock repositories
+mock_resource_repo = Mock()
+mock_endpoint_repo = Mock()
+
+# Configure test container
+dependencies = TestingApiProvider.configure(
+    resource_repository=mock_resource_repo,
+    endpoint_repository=mock_endpoint_repo
+)
+
+# Access configured services for testing
+api_service = dependencies["api_service"]
+factory_service = dependencies["endpoint_factory_service"]
+```
+
 ## Best Practices
 
-1. **Separation of Concerns**: Keep your domain logic separate from your API layer.
-2. **DTOs vs. Entities**: Use DTOs for API communication and entities for domain logic.
-3. **Repository Pattern**: Implement the Repository protocol for data access.
-4. **Error Handling**: Provide meaningful error responses.
-5. **Pagination**: Always paginate list endpoints for large datasets.
-6. **Documentation**: Use OpenAPI features for clear documentation.
-7. **Validation**: Validate input at the DTO level.
-8. **Authorization**: Add authorization checks to your endpoints.
-9. **Testing**: Test your repositories and API endpoints separately.
+1. **Use the Provider**: Always configure the `ApiProvider` before using API services.
+2. **Prefer Domain Repositories**: Use domain repositories instead of direct database access.
+3. **Use Repository Adapters**: Bridge your domain repositories with the API layer using adapters.
+4. **Implement Error Handling**: Use the `Result` pattern for consistent error handling.
+5. **Create API Resources**: Define API resources for related endpoints to maintain organization.
+6. **Validate Inputs**: Use Pydantic models for request validation.
+7. **Document with OpenAPI**: Add descriptions, summaries, and tags to endpoints.
+8. **Test with TestingApiProvider**: Use the testing provider for unit tests.
+9. **Pagination**: Always paginate list endpoints for large datasets.
 10. **Versioning**: Use versioning in your API URLs.
 
 ## Migration from UnoObj Pattern
 
 If you're migrating from the UnoObj pattern to domain-driven design, here's a step-by-step approach:
 
-1. **Create Domain Entities**: Convert your UnoObj classes to domain entities.
-2. **Implement Repositories**: Create repositories for your entities.
-3. **Create DTOs**: Define your API schemas as Pydantic models.
-4. **Set Up Schema Manager**: Create a schema manager to handle conversion.
-5. **Update Endpoints**: Use the endpoint factory with your repositories.
+1. **Configure the ApiProvider**: Set up the dependency injection provider.
+2. **Create Domain Entities**: Convert your UnoObj classes to domain entities.
+3. **Implement Domain Repositories**: Create repositories for your entities.
+4. **Create DTOs**: Define your API schemas as Pydantic models.
+5. **Create Repository Adapters**: Use the adapter service to bridge repositories and endpoints.
+6. **Register with Service**: Use the endpoint factory service to create standard endpoints.
+7. **Update FastAPI Application**: Include the generated routers in your app.
 
-For more details, see the [Migration Guide](migration-guide.md).
+### Legacy Approach
+
+```python
+from uno.api import UnoEndpointFactory
+from fastapi import FastAPI
+
+app = FastAPI()
+
+# Legacy approach with UnoObj
+UnoEndpointFactory.create_endpoints(
+    app=app,
+    model_obj=Customer,
+    prefix="/customers",
+    tag="Customers"
+)
+```
+
+### Domain-Driven Approach
+
+```python
+from uno.api import ApiProvider
+from fastapi import FastAPI
+from uno.dependencies.fastapi import get_repository
+
+# Configure the provider
+ApiProvider.configure()
+
+# Create FastAPI app
+app = FastAPI()
+
+# Get the factory service
+factory_service = ApiProvider.get_endpoint_factory_service()
+
+# Register repository for endpoints
+result = await factory_service.register_repository(
+    repository=get_repository(CustomerRepository),
+    entity_type=CustomerEntity,
+    schema_type=CustomerSchema,
+    path_prefix="/customers",
+    tags=["Customers"]
+)
+
+# Add router to app
+if result.is_success():
+    # The endpoints are already registered with FastAPI
+    # through the adapter integration
+    pass
+```
 
 ## Related Documentation
 

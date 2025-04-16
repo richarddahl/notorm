@@ -5,9 +5,11 @@ This module integrates the meta domain services and repositories with
 the dependency injection system, making them available throughout the application.
 """
 
+import logging
 from functools import lru_cache
 from typing import Dict, Any, Optional, Type
 
+from uno.database.db_manager import DBManager
 from uno.dependencies.modern_provider import (
     UnoServiceProvider,
     ServiceLifecycle,
@@ -35,21 +37,45 @@ def get_meta_provider() -> UnoServiceProvider:
         A configured service provider for the Meta module
     """
     provider = UnoServiceProvider("meta")
+    logger = logging.getLogger("uno.meta")
     
-    # Register repositories
-    provider.register(MetaTypeRepository, lifecycle=ServiceLifecycle.SCOPED)
-    provider.register(MetaRecordRepository, lifecycle=ServiceLifecycle.SCOPED)
+    # Register repositories with their dependencies
+    provider.register(
+        MetaTypeRepository,
+        lambda container: MetaTypeRepository(
+            db_factory=container.resolve(DBManager),
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
-    # Register services with dependencies
-    provider.register(MetaTypeService, lifecycle=ServiceLifecycle.SCOPED)
+    provider.register(
+        MetaRecordRepository,
+        lambda container: MetaRecordRepository(
+            db_factory=container.resolve(DBManager),
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
-    # For MetaRecordService, configure it to use MetaTypeService
-    def create_meta_record_service():
-        meta_type_service = provider.get_service(MetaTypeService)
-        repository = provider.get_service(MetaRecordRepository)
-        return MetaRecordService(repository=repository, meta_type_service=meta_type_service)
+    # Register MetaTypeService with its repository dependency
+    provider.register(
+        MetaTypeService,
+        lambda container: MetaTypeService(
+            repository=container.resolve(MetaTypeRepository),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
-    provider.register_factory(MetaRecordService, create_meta_record_service, lifecycle=ServiceLifecycle.SCOPED)
+    # Register MetaRecordService with its repository and MetaTypeService dependencies
+    provider.register(
+        MetaRecordService,
+        lambda container: MetaRecordService(
+            repository=container.resolve(MetaRecordRepository),
+            meta_type_service=container.resolve(MetaTypeService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
     
     return provider
 

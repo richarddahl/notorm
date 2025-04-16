@@ -21,25 +21,17 @@ Key components:
 # Domain entities (DDD)
 from uno.attributes.entities import Attribute, AttributeType, MetaTypeRef, QueryRef
 
-# Models (for ORM)
-from uno.attributes.models import AttributeModel, AttributeTypeModel
+# Domain repositories (DDD)
+from uno.attributes.domain_repositories import AttributeRepository, AttributeTypeRepository
 
-# Interfaces
-from uno.attributes.interfaces import (
-    AttributeRepositoryProtocol,
-    AttributeTypeRepositoryProtocol,
-    AttributeServiceProtocol,
-    AttributeTypeServiceProtocol,
-)
+# Domain services (DDD)
+from uno.attributes.domain_services import AttributeService, AttributeTypeService
 
-# Repositories
-from uno.attributes.repositories import AttributeRepository, AttributeTypeRepository
+# Domain provider
+from uno.attributes.domain_provider import get_attributes_provider, configure_attributes_services
 
-# Services
-from uno.attributes.services import AttributeService, AttributeTypeService
-
-# API integration
-from uno.attributes.api_integration import register_attribute_endpoints
+# Domain endpoints
+from uno.attributes.domain_endpoints import register_attribute_routers
 
 # Error types
 from uno.attributes.errors import (
@@ -70,24 +62,20 @@ __all__ = [
     "MetaTypeRef",
     "QueryRef",
     
-    # ORM Models
-    "AttributeModel",
-    "AttributeTypeModel",
-    
-    # Interfaces
-    "AttributeRepositoryProtocol",
-    "AttributeTypeRepositoryProtocol",
-    "AttributeServiceProtocol",
-    "AttributeTypeServiceProtocol",
-    
-    # Implementation classes
+    # Domain Repositories (DDD)
     "AttributeRepository",
     "AttributeTypeRepository",
+    
+    # Domain Services (DDD)
     "AttributeService",
     "AttributeTypeService",
     
-    # API integration
-    "register_attribute_endpoints",
+    # Dependency Injection
+    "get_attributes_provider",
+    "configure_attributes_services",
+    
+    # API Integration
+    "register_attribute_routers",
     
     # Error types
     "AttributeErrorCode",

@@ -59,6 +59,17 @@ from uno.reports.domain_services import (
     ReportOutputExecutionService,
 )
 
+# Domain provider and endpoints
+from uno.reports.domain_provider import (
+    get_reports_provider,
+    get_report_field_definition_service,
+    get_report_template_service,
+    get_report_trigger_service,
+    get_report_output_service,
+    get_report_execution_service,
+    get_report_output_execution_service,
+)
+
 # Schema managers for entity-DTO conversion
 from uno.reports.schemas import (
     ReportFieldDefinitionSchemaManager,
@@ -132,60 +143,20 @@ from uno.reports.api_integration import (
     register_reports_endpoints,
 )
 
-# Legacy code (to be removed in future versions)
-try:
-    # Interfaces
-    from uno.reports.interfaces import (
-        ReportTemplateServiceProtocol,
-        ReportFieldServiceProtocol,
-        ReportExecutionServiceProtocol,
-        ReportTriggerServiceProtocol,
-        ReportOutputServiceProtocol,
-    )
-
-    # Services
-    from uno.reports.services import (
-        ReportTemplateService as LegacyReportTemplateService,
-        ReportFieldService,
-        ReportExecutionService as LegacyReportExecutionService,
-        ReportTriggerService as LegacyReportTriggerService,
-        ReportOutputService as LegacyReportOutputService,
-    )
-
-    # Error types
-    from uno.reports.errors import (
-        ReportErrorCode,
-        ReportTemplateNotFoundError,
-        ReportFieldNotFoundError,
-        ReportExecutionNotFoundError,
-        ReportTriggerNotFoundError,
-        ReportExecutionFailedError,
-        ReportOutputFormatInvalidError,
-        ReportOutputDeliveryFailedError,
-        ReportTemplateInvalidError,
-        ReportFieldInvalidError,
-        ReportTriggerInvalidError,
-        register_report_errors,
-    )
-
-    # Legacy repositories
-    from uno.reports.repositories import (
-        ReportTemplateRepository as LegacyReportTemplateRepository,
-        ReportFieldDefinitionRepository as LegacyReportFieldDefinitionRepository,
-        ReportTriggerRepository as LegacyReportTriggerRepository,
-        ReportOutputRepository as LegacyReportOutputRepository,
-        ReportExecutionRepository as LegacyReportExecutionRepository,
-        ReportOutputExecutionRepository as LegacyReportOutputExecutionRepository,
-    )
-
-    # Export endpoints for API integration (legacy)
-    from uno.reports.endpoints import endpoints
-
-    # Register report errors
-    register_report_errors()
-except ImportError:
-    # Legacy modules not available
-    pass
+# Error types
+from uno.reports.errors import (
+    ReportErrorCode,
+    ReportTemplateNotFoundError,
+    ReportFieldNotFoundError,
+    ReportExecutionNotFoundError,
+    ReportTriggerNotFoundError,
+    ReportExecutionFailedError,
+    ReportOutputFormatInvalidError,
+    ReportOutputDeliveryFailedError,
+    ReportTemplateInvalidError,
+    ReportFieldInvalidError,
+    ReportTriggerInvalidError,
+)
 
 __all__ = [
     # Domain Entities (DDD)
@@ -218,6 +189,15 @@ __all__ = [
     "ReportOutputService",
     "ReportExecutionService",
     "ReportOutputExecutionService",
+    
+    # Domain Provider
+    "get_reports_provider",
+    "get_report_field_definition_service",
+    "get_report_template_service",
+    "get_report_trigger_service",
+    "get_report_output_service",
+    "get_report_execution_service",
+    "get_report_output_execution_service",
     
     # Schema Managers
     "ReportFieldDefinitionSchemaManager",
@@ -284,4 +264,17 @@ __all__ = [
     "register_report_execution_endpoints",
     "register_report_output_execution_endpoints",
     "register_reports_endpoints",
+    
+    # Error types
+    "ReportErrorCode",
+    "ReportTemplateNotFoundError",
+    "ReportFieldNotFoundError",
+    "ReportExecutionNotFoundError",
+    "ReportTriggerNotFoundError",
+    "ReportExecutionFailedError",
+    "ReportOutputFormatInvalidError",
+    "ReportOutputDeliveryFailedError",
+    "ReportTemplateInvalidError",
+    "ReportFieldInvalidError",
+    "ReportTriggerInvalidError",
 ]

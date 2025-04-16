@@ -8,11 +8,94 @@ This module provides a robust, scalable job processing system with support for:
 - Task definition and discovery
 """
 
-from uno.jobs.queue import (
-    Queue,
+# Domain entities
+from uno.jobs.entities import (
+    Job,
     JobPriority,
     JobStatus,
-    Job
+    JobError,
+    Schedule,
+    ScheduleInterval
+)
+
+# Domain repositories
+from uno.jobs.domain_repositories import (
+    JobRepositoryProtocol,
+    ScheduleRepositoryProtocol,
+    JobRepository,
+    ScheduleRepository
+)
+
+# Domain services
+from uno.jobs.domain_services import (
+    TaskRegistryProtocol,
+    JobManagerServiceProtocol,
+    TaskRegistryService,
+    JobManagerService
+)
+
+# DTOs
+from uno.jobs.dtos import (
+    # Job DTOs
+    JobViewDto,
+    JobListDto,
+    CreateJobDto,
+    JobFilterParams,
+    CancelJobDto,
+    JobStatsDto,
+    RunSyncJobDto,
+    
+    # Schedule DTOs
+    ScheduleViewDto,
+    ScheduleListDto,
+    CreateScheduleDto,
+    UpdateScheduleDto,
+    ScheduleFilterParams,
+    ScheduleIntervalDto,
+    
+    # Task DTOs
+    TaskInfoDto,
+    TaskListDto,
+    
+    # Queue DTOs
+    QueueInfoDto,
+    QueueListDto,
+    
+    # Enums
+    PriorityEnum,
+    StatusEnum
+)
+
+# Schema managers
+from uno.jobs.schemas import (
+    JobSchemaManager,
+    ScheduleSchemaManager,
+    TaskSchemaManager,
+    QueueSchemaManager
+)
+
+# API integration
+from uno.jobs.api_integration import register_jobs_endpoints
+from uno.jobs.domain_endpoints import (
+    register_job_endpoints,
+    register_schedule_endpoints,
+    register_queue_endpoints,
+    register_task_endpoints,
+    register_all_job_endpoints
+)
+
+# Domain provider
+from uno.jobs.domain_provider import (
+    configure_jobs_dependencies,
+    get_jobs_di_config
+)
+
+# Legacy imports (for backward compatibility)
+from uno.jobs.queue import (
+    Queue,
+    JobPriority as LegacyJobPriority,
+    JobStatus as LegacyJobStatus,
+    Job as LegacyJob
 )
 
 from uno.jobs.worker import (
@@ -23,7 +106,7 @@ from uno.jobs.worker import (
 
 from uno.jobs.scheduler import (
     Scheduler,
-    Schedule
+    Schedule as LegacySchedule
 )
 
 from uno.jobs.tasks import (
@@ -40,36 +123,85 @@ from uno.jobs.storage import (
     RedisStorage
 )
 
-from uno.jobs.manager import JobManager
+from uno.jobs.manager import JobManager as LegacyJobManager
 
 __all__ = [
-    # Queue
-    "Queue",
+    # Domain entities
+    "Job",
     "JobPriority",
     "JobStatus",
-    "Job",
+    "JobError",
+    "Schedule",
+    "ScheduleInterval",
     
-    # Worker
+    # Domain repositories
+    "JobRepositoryProtocol",
+    "ScheduleRepositoryProtocol",
+    "JobRepository",
+    "ScheduleRepository",
+    
+    # Domain services
+    "TaskRegistryProtocol",
+    "JobManagerServiceProtocol",
+    "TaskRegistryService",
+    "JobManagerService",
+    
+    # DTOs
+    "JobViewDto",
+    "JobListDto",
+    "CreateJobDto",
+    "JobFilterParams",
+    "CancelJobDto",
+    "JobStatsDto",
+    "RunSyncJobDto",
+    "ScheduleViewDto",
+    "ScheduleListDto",
+    "CreateScheduleDto",
+    "UpdateScheduleDto",
+    "ScheduleFilterParams",
+    "ScheduleIntervalDto",
+    "TaskInfoDto",
+    "TaskListDto",
+    "QueueInfoDto",
+    "QueueListDto",
+    "PriorityEnum",
+    "StatusEnum",
+    
+    # Schema managers
+    "JobSchemaManager",
+    "ScheduleSchemaManager",
+    "TaskSchemaManager",
+    "QueueSchemaManager",
+    
+    # API integration
+    "register_jobs_endpoints",
+    "register_job_endpoints",
+    "register_schedule_endpoints",
+    "register_queue_endpoints",
+    "register_task_endpoints",
+    "register_all_job_endpoints",
+    
+    # Domain provider
+    "configure_jobs_dependencies",
+    "get_jobs_di_config",
+    
+    # Legacy classes (for backward compatibility)
+    "Queue",
+    "LegacyJobPriority",
+    "LegacyJobStatus",
+    "LegacyJob",
     "Worker",
     "AsyncWorker",
     "WorkerMiddleware",
-    
-    # Scheduler
     "Scheduler",
-    "Schedule",
-    
-    # Tasks
+    "LegacySchedule",
     "Task",
     "TaskMiddleware",
     "TaskWorkflow",
     "TaskContext",
-    
-    # Storage
     "StorageBackend",
     "MemoryStorage",
     "DatabaseStorage",
     "RedisStorage",
-    
-    # Manager
-    "JobManager",
+    "LegacyJobManager",
 ]

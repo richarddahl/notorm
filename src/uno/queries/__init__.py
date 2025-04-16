@@ -35,6 +35,23 @@ endpoints = register_query_endpoints(
     include_auth=True,
 )
 
+# Using query service with dependency injection
+from fastapi import FastAPI, Depends
+from uno.queries.domain_provider import get_query_service
+from uno.queries.domain_services import QueryService
+
+app = FastAPI()
+
+@app.get("/api/v1/queries/{query_id}/execute")
+async def execute_query(
+    query_id: str,
+    query_service: QueryService = Depends(get_query_service),
+):
+    result = await query_service.execute_query(query_id)
+    if result.is_failure:
+        return {"error": str(result.error)}
+    return {"results": result.value}
+
 # Using batch operations
 from uno.queries import BatchOperations, BatchConfig, BatchExecutionStrategy
 
@@ -74,6 +91,22 @@ from uno.queries.domain_services import (
     QueryService,
 )
 
+# Domain providers
+from uno.queries.domain_provider import (
+    get_query_path_service,
+    get_query_value_service,
+    get_query_service,
+    get_queries_provider,
+    setup_query_module,
+)
+
+# Domain endpoints (routers)
+from uno.queries.domain_endpoints import (
+    query_path_router,
+    query_value_router,
+    query_router,
+)
+
 # DTOs
 from uno.queries.dtos import (
     QueryPathCreateDto,
@@ -101,10 +134,19 @@ from uno.queries.api_integration import register_query_endpoints
 
 # Filter system
 from uno.queries.filter import Filter, FilterItem
-from uno.queries.filter_manager import FilterManager, FilterConnection
+from uno.queries.filter_manager import (
+    UnoFilterManager,
+    FilterManager,
+    FilterConnection,
+    get_filter_manager,
+)
 
 # Query execution
-from uno.queries.executor import QueryExecutor
+from uno.queries.executor import (
+    QueryExecutor,
+    get_query_executor,
+    cache_query_result,
+)
 from uno.queries.optimized_queries import OptimizedQuery, OptimizedModelQuery, QueryHints
 from uno.queries.common_patterns import CommonQueryPatterns, QueryPattern
 
@@ -133,6 +175,9 @@ from uno.queries.errors import (
 # Register error codes in the catalog
 register_query_errors()
 
+# Initialize the module
+setup_query_module()
+
 __all__ = [
     # Domain Entities
     'Query',
@@ -148,6 +193,18 @@ __all__ = [
     'QueryPathService',
     'QueryValueService',
     'QueryService',
+    
+    # Domain Providers
+    'get_query_path_service',
+    'get_query_value_service',
+    'get_query_service',
+    'get_queries_provider',
+    'setup_query_module',
+    
+    # Domain Endpoints
+    'query_path_router',
+    'query_value_router',
+    'query_router',
     
     # DTOs
     'QueryPathCreateDto',
@@ -173,11 +230,15 @@ __all__ = [
     # Filter
     'Filter',
     'FilterItem',
+    'UnoFilterManager',
     'FilterManager',
     'FilterConnection',
+    'get_filter_manager',
     
     # Query Execution
     'QueryExecutor',
+    'get_query_executor',
+    'cache_query_result',
     
     # Optimized Queries
     'OptimizedQuery',

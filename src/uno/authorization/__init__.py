@@ -21,6 +21,7 @@ Key components:
   - Tenant: Represents organizations in a multi-tenant system
 - Repository Pattern: Data access following domain-driven design
 - Domain Services: Business logic for authorization
+- API Integration: Register standardized API endpoints
 - Row-Level Security: Database-level access controls
 """
 
@@ -34,18 +35,8 @@ from uno.authorization.entities import (
     Tenant,
 )
 
-# Models
-from uno.authorization.models import (
-    UserModel,
-    GroupModel,
-    RoleModel,
-    ResponsibilityRoleModel,
-    PermissionModel,
-    TenantModel,
-)
-
-# Repositories
-from uno.authorization.repositories import (
+# Domain repositories (DDD)
+from uno.authorization.domain_repositories import (
     UserRepository,
     GroupRepository,
     RoleRepository,
@@ -54,8 +45,8 @@ from uno.authorization.repositories import (
     TenantRepository,
 )
 
-# Services
-from uno.authorization.services import (
+# Domain services (DDD)
+from uno.authorization.domain_services import (
     UserService,
     GroupService,
     RoleService,
@@ -65,12 +56,15 @@ from uno.authorization.services import (
     AuthorizationService,
 )
 
-# Error types
-from uno.authorization.errors import (
-    AuthorizationError,
-    PermissionDeniedError,
-    ResourceNotFoundError,
-    AuthenticationError,
+# Dependency provider
+from uno.authorization.domain_provider import (
+    get_authorization_provider,
+    configure_authorization_services,
+)
+
+# Domain API endpoints
+from uno.authorization.domain_endpoints import (
+    register_auth_endpoints,
 )
 
 # RLS integration
@@ -79,6 +73,14 @@ from uno.authorization.rlssql import (
     setup_bypass_rls_for_admin,
     set_tenant_context,
     clear_tenant_context,
+)
+
+# Error types
+from uno.authorization.errors import (
+    AuthorizationError,
+    PermissionDeniedError,
+    ResourceNotFoundError,
+    AuthenticationError,
 )
 
 __all__ = [
@@ -90,15 +92,7 @@ __all__ = [
     "Permission",
     "Tenant",
     
-    # Models
-    "UserModel",
-    "GroupModel",
-    "RoleModel",
-    "ResponsibilityRoleModel",
-    "PermissionModel",
-    "TenantModel",
-    
-    # Repositories
+    # Domain Repositories (DDD)
     "UserRepository",
     "GroupRepository",
     "RoleRepository",
@@ -106,7 +100,7 @@ __all__ = [
     "PermissionRepository",
     "TenantRepository",
     
-    # Services
+    # Domain Services (DDD)
     "UserService",
     "GroupService",
     "RoleService",
@@ -114,6 +108,13 @@ __all__ = [
     "PermissionService",
     "TenantService",
     "AuthorizationService",
+    
+    # Dependency Injection
+    "get_authorization_provider",
+    "configure_authorization_services",
+    
+    # API Integration
+    "register_auth_endpoints",
     
     # Error types
     "AuthorizationError",

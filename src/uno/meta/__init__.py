@@ -15,50 +15,50 @@ Key components:
   - MetaRecord: Represents instances of meta types
 - Repository Pattern: Data access following domain-driven design
 - Domain Services: Business logic for meta information
+- API Integration: Register standardized API endpoints
 """
 
 # Domain entities (DDD)
 from uno.meta.entities import MetaType, MetaRecord
 
-# Models
-from uno.meta.models import MetaTypeModel, MetaRecordModel
-
-# Services
-from uno.meta.services import MetaTypeService, MetaRecordService
-
-# Repositories 
-from uno.meta.repositories import MetaTypeRepository, MetaRecordRepository
-
-# Domain services and repositories
-from uno.meta.domain_services import (
-    MetaTypeDomainService,
-    MetaRecordDomainService,
-)
+# Domain repositories (DDD)
 from uno.meta.domain_repositories import (
-    MetaTypeDomainRepository,
-    MetaRecordDomainRepository,
+    MetaTypeRepository,
+    MetaRecordRepository,
 )
+
+# Domain services (DDD)
+from uno.meta.domain_services import (
+    MetaTypeService,
+    MetaRecordService,
+)
+
+# Dependency provider
+from uno.meta.domain_provider import (
+    get_meta_provider,
+    configure_meta_services,
+)
+
+# Domain endpoints
+from uno.meta.domain_endpoints import register_meta_routers
 
 __all__ = [
     # Domain Entities (DDD)
     "MetaType",
     "MetaRecord",
     
-    # Models
-    "MetaTypeModel",
-    "MetaRecordModel",
-    
-    # Services
-    "MetaTypeService",
-    "MetaRecordService",
-    
-    # Repositories
+    # Domain Repositories (DDD)
     "MetaTypeRepository",
     "MetaRecordRepository",
     
-    # Domain services and repositories
-    "MetaTypeDomainService",
-    "MetaRecordDomainService",
-    "MetaTypeDomainRepository",
-    "MetaRecordDomainRepository",
+    # Domain Services (DDD)
+    "MetaTypeService",
+    "MetaRecordService",
+    
+    # Dependency Injection
+    "get_meta_provider",
+    "configure_meta_services",
+    
+    # API Integration
+    "register_meta_routers",
 ]

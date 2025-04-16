@@ -7,8 +7,45 @@ Schema module for Uno framework.
 
 This module provides utilities for creating, validating, and converting between
 different schema formats, supporting the data layer of the application.
+
+The Schema module has been redesigned to follow domain-driven design principles,
+with clear separation of concerns into entities, repositories, services, and endpoints.
 """
 
+# Domain-driven design implementation
+from uno.schema.entities import (
+    SchemaId, SchemaDefinition, SchemaType, FieldDefinition,
+    SchemaConfiguration, PaginatedResult, PaginationMetadata,
+    SchemaCreationRequest, SchemaUpdateRequest, SchemaValidationRequest,
+    ApiSchemaCreationRequest
+)
+
+from uno.schema.domain_repositories import (
+    SchemaDefinitionRepositoryProtocol,
+    SchemaConfigurationRepositoryProtocol,
+    InMemorySchemaDefinitionRepository,
+    InMemorySchemaConfigurationRepository,
+    FileSchemaDefinitionRepository, 
+    FileSchemaConfigurationRepository
+)
+
+from uno.schema.domain_services import (
+    SchemaManagerServiceProtocol,
+    SchemaValidationServiceProtocol,
+    SchemaTransformationServiceProtocol,
+    SchemaManagerService,
+    SchemaValidationService,
+    SchemaTransformationService
+)
+
+from uno.schema.domain_provider import (
+    SchemaProvider,
+    TestingSchemaProvider
+)
+
+from uno.schema.domain_endpoints import router as schema_router
+
+# Legacy implementation
 from uno.schema.schema import (
     UnoSchema,
     UnoSchemaConfig,
@@ -22,7 +59,7 @@ from uno.schema.schema_manager import (
 )
 
 from uno.schema.services import (
-    SchemaManagerService,
+    SchemaManagerService as LegacySchemaManagerService,
 )
 
 from uno.schema.errors import (
@@ -43,18 +80,41 @@ from uno.schema.errors import (
 register_schema_errors()
 
 __all__ = [
-    # Schema classes
+    # Domain-driven design exports
+    "SchemaId", "SchemaDefinition", "SchemaType", "FieldDefinition",
+    "SchemaConfiguration", "PaginatedResult", "PaginationMetadata",
+    "SchemaCreationRequest", "SchemaUpdateRequest", "SchemaValidationRequest",
+    "ApiSchemaCreationRequest",
+    
+    "SchemaDefinitionRepositoryProtocol",
+    "SchemaConfigurationRepositoryProtocol",
+    "InMemorySchemaDefinitionRepository",
+    "InMemorySchemaConfigurationRepository",
+    "FileSchemaDefinitionRepository", 
+    "FileSchemaConfigurationRepository",
+    
+    "SchemaManagerServiceProtocol",
+    "SchemaValidationServiceProtocol",
+    "SchemaTransformationServiceProtocol",
+    "SchemaManagerService",
+    "SchemaValidationService",
+    "SchemaTransformationService",
+    
+    "SchemaProvider",
+    "TestingSchemaProvider",
+    
+    "schema_router",
+    
+    # Legacy exports
     "UnoSchema",
     "UnoSchemaConfig",
     "PaginatedList",
     "WithMetadata",
     
-    # Schema management
     "UnoSchemaManager",
     "get_schema_manager",
-    "SchemaManagerService",
+    "LegacySchemaManagerService",
     
-    # Error types
     "SchemaErrorCode",
     "SchemaNotFoundError",
     "SchemaAlreadyExistsError",
