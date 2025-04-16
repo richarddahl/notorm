@@ -287,6 +287,8 @@ For existing systems transitioning to DDD, uno recommends:
 4. **Refactor Incrementally**: Gradually move toward the target architecture
 5. **Start with Core Domain**: Focus first on the most valuable parts
 
+For a detailed step-by-step migration guide, see [DDD Migration Guide](ddd_migration_guide.md).
+
 ## Common Challenges and Solutions
 
 ### Challenge: Complex Domain
