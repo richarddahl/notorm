@@ -165,6 +165,8 @@ nav:
       - Overview: modernization/overview.md
       - Key Features: modernization/key_features.md
       - Migration Guide: modernization/migration.md
+      - Framework Migration: modernization/framework_migration.md
+      - Schema to DTO Transition: modernization/dto_transition.md
       - Legacy Cleanup: modernization/legacy_cleanup.md
    - Security:
       - Overview: security/overview.md

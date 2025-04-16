@@ -163,5 +163,8 @@ We welcome contributions to the modernization effort! Here's how you can get inv
 
 - [Key Features](key_features.md): Detailed description of the new features
 - [Migration Guide](migration.md): Instructions for migrating existing applications
+- [Framework Migration](framework_migration.md): Specific guides for migrating from Django, Flask, SQLAlchemy, etc.
+- [Schema to DTO Transition](dto_transition.md): Guide for transitioning from UnoSchema to UnoDTO naming
+- [Legacy Cleanup](legacy_cleanup.md): Guide to cleaning up legacy code
 - [Examples](key_features.md): Examples of using the new features
 - [ROADMAP.md](../project/ROADMAP.md): Detailed roadmap for the modernization effort

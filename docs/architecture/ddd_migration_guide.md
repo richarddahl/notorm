@@ -412,6 +412,18 @@ products = await repository.filter({"price__gt": 100})
 4. Use Pydantic models for request and response schemas
 5. Keep endpoint handlers thin, delegate logic to services
 
+## Migrating from Other Frameworks
+
+If you're migrating from other popular frameworks such as Django, Flask, SQLAlchemy, or SQLModel, we have a dedicated tutorial that covers specific patterns and examples.
+
+See our [Framework Migration Guide](../modernization/framework_migration.md) for detailed instructions on:
+
+- Migrating Django models to domain entities
+- Converting SQLAlchemy ORM code to repositories
+- Transforming Flask routes to domain endpoints
+- Refactoring FastAPI applications to use domain-driven design
+- And more...
+
 ## Conclusion
 
 Migrating to domain-driven design may seem like a significant effort, but the benefits in terms of code quality, maintainability, and testability are substantial. By following this guide and using the provided tools, you can modernize your codebase and align with Uno's architecture.

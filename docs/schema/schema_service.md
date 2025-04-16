@@ -1,5 +1,7 @@
 # Schema Manager Service
 
+> **Note**: As part of aligning with Domain-Driven Design principles, the `UnoSchema` classes are being renamed to `UnoDTO` to better reflect their purpose as Data Transfer Objects. See the [Schema to DTO Transition](../modernization/dto_transition.md) guide for more details.
+
 The Schema Manager Service provides a centralized way to create and manage schemas for domain entities, data transfer objects (DTOs), and database models with proper dependency injection and configuration.
 
 ## Overview
