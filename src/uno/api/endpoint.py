@@ -20,7 +20,7 @@ from fastapi import (
     Query,
 )
 
-from uno.schema.schema import UnoSchema
+from uno.dto import UnoDTO
 from uno.registry_errors import RegistryClassNotFoundError
 from uno.settings import uno_settings
 from uno.api.repository_adapter import RepositoryAdapter
@@ -851,37 +851,37 @@ class UnoEndpoint(BaseModel):
 
 class CreateEndpoint(UnoEndpoint):
     router: UnoRouter = InsertRouter
-    body_model: UnoSchema = "edit_schema"
-    response_model: UnoSchema = "view_schema"
+    body_model: UnoDTO = "edit_schema"
+    response_model: UnoDTO = "view_schema"
     status_code: int = status.HTTP_201_CREATED
 
 
 class ViewEndpoint(UnoEndpoint):
     router: UnoRouter = SelectRouter
-    body_model: UnoSchema = None
-    response_model: UnoSchema = "view_schema"
+    body_model: UnoDTO = None
+    response_model: UnoDTO = "view_schema"
 
 
 class ListEndpoint(UnoEndpoint):
     router: UnoRouter = ListRouter
-    body_model: UnoSchema = None
-    response_model: UnoSchema = "view_schema"
+    body_model: UnoDTO = None
+    response_model: UnoDTO = "view_schema"
 
 
 class UpdateEndpoint(UnoEndpoint):
     router: UnoRouter = UpdateRouter
-    body_model: UnoSchema = "edit_schema"
-    response_model: UnoSchema = "view_schema"
+    body_model: UnoDTO = "edit_schema"
+    response_model: UnoDTO = "view_schema"
 
 
 class DeleteEndpoint(UnoEndpoint):
     router: UnoRouter = DeleteRouter
-    body_model: UnoSchema = None
-    response_model: UnoSchema = None
+    body_model: UnoDTO = None
+    response_model: UnoDTO = None
 
 
 class ImportEndpoint(UnoEndpoint):
     router: UnoRouter = ImportRouter
-    body_model: UnoSchema = "view_schema"
-    response_model: UnoSchema = "view_schema"
+    body_model: UnoDTO = "view_schema"
+    response_model: UnoDTO = "view_schema"
     status_code: int = status.HTTP_201_CREATED

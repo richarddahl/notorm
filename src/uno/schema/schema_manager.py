@@ -25,7 +25,7 @@ from uno.schema.errors import (
     SchemaFieldTypeMismatchError,
     SchemaConversionError
 )
-from uno.schema.schema import UnoSchema, UnoSchemaConfig, PaginatedList
+from uno.dto import UnoDTO, DTOConfig, PaginatedListDTO
 from uno.core.errors.base import UnoError
 
 
@@ -45,17 +45,17 @@ class UnoSchemaManager:
     - Managing schema registrations for API documentation
     """
 
-    def __init__(self, schema_configs: Optional[Dict[str, UnoSchemaConfig]] = None):
+    def __init__(self, schema_configs: Optional[Dict[str, DTOConfig]] = None):
         """
         Initialize the schema manager.
 
         Args:
             schema_configs: Optional initial schema configurations
         """
-        self.schema_configs: Dict[str, UnoSchemaConfig] = schema_configs or {}
-        self.schemas: Dict[str, Type[UnoSchema]] = {}
+        self.schema_configs: Dict[str, DTOConfig] = schema_configs or {}
+        self.schemas: Dict[str, Type[UnoDTO]] = {}
 
-    def add_schema_config(self, name: str, config: UnoSchemaConfig) -> None:
+    def add_schema_config(self, name: str, config: DTOConfig) -> None:
         """
         Add a schema configuration.
 
@@ -67,7 +67,7 @@ class UnoSchemaManager:
 
     def create_schema(
         self, schema_name: str, model: Type[BaseModel]
-    ) -> Type[UnoSchema]:
+    ) -> Type[UnoDTO]:
         """
         Create a schema for a model.
 
@@ -89,15 +89,15 @@ class UnoSchemaManager:
             )
 
         schema_config = self.schema_configs[schema_name]
-        schema = schema_config.create_schema(
-            schema_name=schema_name,
+        schema = schema_config.create_dto(
+            dto_name=schema_name,
             model=model,
         )
 
         self.schemas[schema_name] = schema
         return schema
 
-    def create_all_schemas(self, model: Type[BaseModel]) -> Dict[str, Type[UnoSchema]]:
+    def create_all_schemas(self, model: Type[BaseModel]) -> Dict[str, Type[UnoDTO]]:
         """
         Create all schemas for a model.
 
@@ -111,7 +111,7 @@ class UnoSchemaManager:
             self.create_schema(schema_name, model)
         return self.schemas
 
-    def get_schema(self, schema_name: str) -> Optional[Type[UnoSchema]]:
+    def get_schema(self, schema_name: str) -> Optional[Type[UnoDTO]]:
         """
         Get a schema by name.
 
@@ -123,7 +123,7 @@ class UnoSchemaManager:
         """
         return self.schemas.get(schema_name)
         
-    def get_list_schema(self, model: Type[Any]) -> Type[UnoSchema]:
+    def get_list_schema(self, model: Type[Any]) -> Type[UnoDTO]:
         """
         Get or create a schema for lists of the given model.
         
@@ -162,13 +162,13 @@ class UnoSchemaManager:
             # For Pydantic models, get or create a detail schema
             base_schema = self._get_or_create_detail_schema(model)
         
-        # Create the list schema using the PaginatedList generic
-        list_schema_name = f"{model.__name__}ListSchema"
-        # Create a specialized list schema as a subclass of PaginatedList
+        # Create the list schema using the PaginatedListDTO generic
+        list_schema_name = f"{model.__name__}ListDTO"
+        # Create a specialized list schema as a subclass of PaginatedListDTO
         # Use a different approach to create the list schema to avoid mypy issues
         from typing import cast
         
-        # Create a list schema directly without using PaginatedList[T]
+        # Create a list schema directly without using PaginatedListDTO[T]
         # mypy has issues with create_model and variable types, so we use type: ignore
         item_type = Any  # Default type for mypy
         if isinstance(base_schema, type):
@@ -176,7 +176,7 @@ class UnoSchemaManager:
             
         list_schema = create_model(  # type: ignore
             list_schema_name,
-            __base__=UnoSchema,
+            __base__=UnoDTO,
             items=(List[item_type], ...),  # type: ignore
             total=(int, ...),
             page=(int, 1),
@@ -185,13 +185,13 @@ class UnoSchemaManager:
         )
         
         # Cast to ensure the type system recognizes it correctly
-        typed_list_schema = cast(Type[UnoSchema], list_schema)
+        typed_list_schema = cast(Type[UnoDTO], list_schema)
         
         # Store the created schema
         self.schemas[schema_name] = typed_list_schema
         return typed_list_schema
     
-    def _create_schema_from_sqlalchemy_model(self, model: Type[Any]) -> Type[UnoSchema]:
+    def _create_schema_from_sqlalchemy_model(self, model: Type[Any]) -> Type[UnoDTO]:
         """
         Create a Pydantic schema from a SQLAlchemy model.
         
@@ -219,12 +219,12 @@ class UnoSchemaManager:
         # Create a new Pydantic model based on the SQLAlchemy model
         # mypy has issues with create_model, so we use type: ignore
         schema = create_model(  # type: ignore
-            f"{model.__name__}Schema",
-            __base__=UnoSchema,
+            f"{model.__name__}DTO",
+            __base__=UnoDTO,
             **fields
         )
         
-        return cast(Type[UnoSchema], schema)
+        return cast(Type[UnoDTO], schema)
     
     def _get_python_type_for_column(self, column: Any) -> Type[Any]:
         """
@@ -258,7 +258,7 @@ class UnoSchemaManager:
             
         return python_type
     
-    def _get_or_create_detail_schema(self, model: Type[BaseModel]) -> Type[UnoSchema]:
+    def _get_or_create_detail_schema(self, model: Type[BaseModel]) -> Type[UnoDTO]:
         """
         Get or create a detail schema for a Pydantic model.
         
@@ -283,19 +283,22 @@ class UnoSchemaManager:
                     base_schema = self.create_schema(default_schema_name, model)
                 else:
                     # Create a simple detail schema config with all fields
-                    detail_config = UnoSchemaConfig()
+                    detail_config = DTOConfig()
                     self.add_schema_config(base_schema_name, detail_config)
                     base_schema = self.create_schema(base_schema_name, model)
         
         return base_schema
 
 
-# Global schema manager instance
+# Global schema manager instance (deprecated, using DTOManager internally)
 _schema_manager: Optional[UnoSchemaManager] = None
 
 
 def get_schema_manager() -> UnoSchemaManager:
     """
+    DEPRECATED: This function is maintained for backward compatibility.
+    Please use get_dto_manager() from uno.dto instead.
+    
     Get the global schema manager instance.
     
     This function returns the global schema manager instance, creating it
@@ -304,6 +307,8 @@ def get_schema_manager() -> UnoSchemaManager:
     Returns:
         The global schema manager instance
     """
+    from uno.dto import get_dto_manager
+    
     global _schema_manager
     
     if _schema_manager is None:

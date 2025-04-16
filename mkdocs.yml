@@ -70,11 +70,11 @@ nav:
       - Endpoint: api/endpoint.md
       - Endpoint Factory: api/endpoint-factory.md
       - Filter Manager: queries/filter_manager.md
-      - Schemas: api/schemas.md
+      - DTOs: api/dto.md
       - Attributes: api/attributes.md
       - Values: api/values.md
       - Workflows: api/workflows.md
-      - Schema Manager: api/schema-manager.md
+      - DTO Manager: api/dto-manager.md
    - Queries:
       - Overview: queries/overview.md
       - Index: queries/index.md
@@ -263,8 +263,10 @@ nav:
       - Dependency Injection: core/dependency_injection.md
    - Domain:
       - Guide: domain/guide.md
-   - Schema:
-      - Schema Service: schema/schema_service.md
+   - DTO:
+      - Overview: dto/overview.md
+      - DTO Manager: dto/manager.md
+      - DTO Service: dto/dto_service.md
       - Validation: schema/validation.md
    - Benchmarks:
       - Dashboard: benchmarks/dashboard.md

@@ -141,13 +141,13 @@ class SQLExecution(Entity):
     including metadata about the execution like duration and result.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     statement_id: SQLStatementId
     executed_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     duration_ms: float = 0.0
     success: bool = True
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 
 @dataclass
@@ -207,7 +207,6 @@ class SQLFunction(Entity):
     This class represents a SQL function definition with all its attributes.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     body: str
     args: str = ""
@@ -218,6 +217,7 @@ class SQLFunction(Entity):
     security_definer: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def to_sql(self) -> str:
         """
@@ -267,7 +267,6 @@ class SQLTrigger(Entity):
     This class represents a SQL trigger definition with all its attributes.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     table: str
     function_name: str
@@ -277,6 +276,7 @@ class SQLTrigger(Entity):
     for_each: str = "ROW"
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def to_sql(self) -> str:
         """
@@ -320,7 +320,6 @@ class SQLTrigger(Entity):
 class DatabaseConnectionInfo(Entity):
     """Information about a database connection."""
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     db_name: str
     db_user: str
     db_host: str
@@ -329,6 +328,7 @@ class DatabaseConnectionInfo(Entity):
     admin_role: Optional[str] = None
     writer_role: Optional[str] = None
     reader_role: Optional[str] = None
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def __post_init__(self):
         """Set default roles if not provided."""
