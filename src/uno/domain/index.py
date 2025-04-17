@@ -24,14 +24,14 @@ from uno.domain.query import (
     QueryExecutor,
     RepositoryQueryExecutor,
     FilterQueryExecutor,
-    QueryService
+    QueryService,
 )
 
 # Enhanced query system
 from uno.domain.enhanced_query import (
     QueryMetadata,
     EnhancedQueryExecutor,
-    GraphPathQuery
+    GraphPathQuery,
 )
 
 from uno.domain.query_optimizer import (
@@ -39,38 +39,56 @@ from uno.domain.query_optimizer import (
     QueryPerformanceMetric,
     QueryResultCache,
     GraphQueryOptimizer,
-    MaterializedQueryView
+    MaterializedQueryView,
 )
 
 from uno.domain.selective_updater import (
     GraphChangeEvent,
     SelectiveGraphUpdater,
-    GraphSynchronizer
+    GraphSynchronizer,
 )
 
 from uno.domain.graph_path_query import (
     PathQuerySpecification,
     GraphPathQuery,
-    GraphPathQueryService
+    GraphPathQueryService,
 )
 
 __all__ = [
     # Core domain
-    'Entity', 'ValueObject', 'DomainEvent', 'AggregateRoot',
-    'Repository', 'DomainService', 'Factory',
-    
+    "Entity",
+    "ValueObject",
+    "DomainEvent",
+    "AggregateRoot",
+    "Repository",
+    "DomainService",
+    "Factory",
     # Event handling
-    'EventStore', 'EventDispatcher', 'EventHandler', 'EventStoreManager',
-    'register_event_handler',
-    
+    "EventStore",
+    "EventDispatcher",
+    "EventHandler",
+    "EventStoreManager",
+    "register_event_handler",
     # Query system
-    'QuerySpecification', 'QueryResult', 'QueryExecutor',
-    'RepositoryQueryExecutor', 'FilterQueryExecutor', 'QueryService',
-    
+    "QuerySpecification",
+    "QueryResult",
+    "QueryExecutor",
+    "RepositoryQueryExecutor",
+    "FilterQueryExecutor",
+    "QueryService",
     # Enhanced query system
-    'QueryMetadata', 'EnhancedQueryExecutor', 'GraphPathQuery',
-    'QueryPerformanceTracker', 'QueryPerformanceMetric', 'QueryResultCache',
-    'GraphQueryOptimizer', 'MaterializedQueryView',
-    'GraphChangeEvent', 'SelectiveGraphUpdater', 'GraphSynchronizer',
-    'PathQuerySpecification', 'GraphPathQuery', 'GraphPathQueryService'
+    "QueryMetadata",
+    "EnhancedQueryExecutor",
+    "GraphPathQuery",
+    "QueryPerformanceTracker",
+    "QueryPerformanceMetric",
+    "QueryResultCache",
+    "GraphQueryOptimizer",
+    "MaterializedQueryView",
+    "GraphChangeEvent",
+    "SelectiveGraphUpdater",
+    "GraphSynchronizer",
+    "PathQuerySpecification",
+    "GraphPathQuery",
+    "GraphPathQueryService",
 ]

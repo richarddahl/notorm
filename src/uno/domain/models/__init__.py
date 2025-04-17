@@ -1,18 +1,19 @@
 """
 Domain models package.
 
-This package contains all domain model components including Entity, ValueObject,
-AggregateRoot, DomainEvent, and related classes.
+This package contains concrete domain models built upon the core DDD
+components defined in uno.domain.core.
 """
 
-from uno.domain.models.base import (
+from uno.domain.core import (
     DomainEvent,
     ValueObject,
     PrimitiveValueObject,
     Entity,
     AggregateRoot,
-    CommandResult,
-    # Common value objects
+)
+
+from uno.domain.value_objects import (
     Email,
     Money,
     Address,
@@ -41,7 +42,6 @@ __all__ = [
     "ValueObject",
     "PrimitiveValueObject",
     "DomainEvent",
-    "CommandResult",
     
     # Common value objects
     "Email",

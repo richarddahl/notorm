@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from pydantic import Field, field_validator
 
-from uno.domain.models.base import Entity, ValueObject
+from uno.domain.core import Entity, ValueObject
 
 
 class OrderStatus(str, Enum):

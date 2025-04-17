@@ -7,8 +7,7 @@ approach in the Uno framework, including entities, value objects, aggregates, an
 
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from functools import wraps
+from datetime import datetime, UTC
 from typing import (
     Dict,
     Any,
@@ -19,104 +18,22 @@ from typing import (
     Set,
     ClassVar,
     Type,
+    Union,
     cast,
 )
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
-# Python 3.13 compatibility workaround
-import sys
+# Define types that can be used for primitive value objects
+PrimitiveType = Union[str, int, float, bool, UUID, datetime, None]
 
-if sys.version_info[:2] >= (3, 13):
-    # For Python 3.13+, we patch the abc module's update_abstractmethods function
-    # to avoid the dictionary keys changed during iteration error
-    import abc
-
-    _original_update_abstractmethods = abc.update_abstractmethods
-
-    def _patched_update_abstractmethods(cls):
-        """
-        A patched version of abc.update_abstractmethods that handles dictionary modification safely.
-
-        This is a workaround for a Python 3.13 issue with dataclasses where the original
-        implementation can cause a "dictionary keys changed during iteration" error.
-        """
-        try:
-            return _original_update_abstractmethods(cls)
-        except RuntimeError as e:
-            if "dictionary keys changed during iteration" in str(e):
-                # Just return cls without modifying abstract methods
-                # This is safe for our use case with dataclasses
-                return cls
-            # Re-raise any other RuntimeError
-            raise
-
-    # Apply the patch
-    abc.update_abstractmethods = _patched_update_abstractmethods
-
-
-# Keep the safe_dataclass decorator for additional safety
-def safe_dataclass(cls: Type) -> Type:
-    """
-    A decorator to safely create dataclasses from classes that might have abstract methods.
-
-    This adds extra safety by ensuring proper collection initialization, especially
-    for Python 3.13 compatibility.
-
-    Usage:
-        @safe_dataclass
-        @dataclass
-        class MyClass(Entity):
-            # class definition...
-
-    Args:
-        cls: The class to decorate
-
-    Returns:
-        The decorated class
-    """
-    # Store original __annotations__ to avoid modification during iteration
-    orig_annotations = getattr(cls, "__annotations__", {}).copy()
-
-    # Get the original __post_init__ if it exists
-    orig_post_init = getattr(cls, "__post_init__", None)
-
-    # Define a safe post_init method that ensures all collections are initialized
-    def safe_post_init(self):
-        """Safe initialization after dataclass processing."""
-        # Call original __post_init__ if it exists
-        if orig_post_init is not None:
-            orig_post_init(self)
-
-        # Initialize collections based on annotations
-        for field_name, field_type in orig_annotations.items():
-            if not hasattr(self, field_name) or getattr(self, field_name) is None:
-                # Handle dictionary fields
-                if (
-                    field_type == Dict
-                    or isinstance(field_type, type)
-                    and issubclass(field_type, Dict)
-                ):
-                    setattr(self, field_name, {})
-                # Handle list fields
-                elif (
-                    field_type == List
-                    or isinstance(field_type, type)
-                    and issubclass(field_type, List)
-                ):
-                    setattr(self, field_name, [])
-                # Handle set fields
-                elif (
-                    field_type == Set
-                    or isinstance(field_type, type)
-                    and issubclass(field_type, Set)
-                ):
-                    setattr(self, field_name, set())
-
-    # Set the safe __post_init__ on the class
-    cls.__post_init__ = safe_post_init
-
-    return cls
+# Type variables
+T_ID = TypeVar("T_ID")  # Entity ID type
+T = TypeVar("T", bound="Entity")  # Entity type
+T_Child = TypeVar("T_Child", bound="Entity")  # Child entity type
+E = TypeVar("E", bound="DomainEvent")  # Event type
+V = TypeVar("V")  # Value type for primitive value objects
 
 
 class DomainException(Exception):
@@ -144,230 +61,314 @@ class DomainEvent(BaseModel):
     Base class for domain events.
 
     Domain events represent something significant that occurred within the domain.
-    They are used to communicate between different parts of the application
-    and to enable event-driven architectures.
+    They are immutable records of what happened, used to communicate between
+    different parts of the application.
     """
 
     model_config = ConfigDict(frozen=True)
 
-    event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: UUID = Field(default_factory=uuid4)
     event_type: str = Field(default="domain_event")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    aggregate_id: Optional[str] = None
+    aggregate_type: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert event to a dictionary."""
+        return self.model_dump()
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DomainEvent":
         """Create an event from a dictionary."""
         return cls(**data)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to a dictionary."""
-        return self.model_dump()
-
 
 class ValueObject(BaseModel):
     """
     Base class for value objects.
 
-    Value objects are immutable objects that contain attributes but lack a conceptual identity.
-    They are used to represent concepts within your domain that are defined by their attributes
-    rather than by an identity.
+    Value objects:
+    - Are immutable objects defined by their attributes
+    - Have no identity
+    - Are equatable by their attributes
+    - Cannot be changed after creation
 
     Examples include Money, Address, and DateRange.
     """
 
     model_config = ConfigDict(frozen=True)
 
-    def __eq__(self, other):
+    @model_validator(mode='after')
+    def validate_value_object(self) -> 'ValueObject':
+        """
+        Validate the value object after initialization.
+        
+        This method is automatically called after initialization
+        to validate the value object's state.
+        
+        Returns:
+            The validated value object
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        self.validate()
+        return self
+    
+    def validate(self) -> None:
+        """
+        Validate the value object.
+        
+        Override this method to implement specific validation logic.
+        
+        Raises:
+            ValueError: If validation fails
+        """
+        pass
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        Value objects are equal if they have the same type and attributes.
+        
+        Args:
+            other: Object to compare with
+            
+        Returns:
+            True if equal, False otherwise
+        """
         if not isinstance(other, self.__class__):
             return False
         return self.model_dump() == other.model_dump()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """
+        Hash based on all attributes.
+        
+        Returns:
+            Hash value
+        """
+        # Use sorted items to ensure consistent hash
         return hash(tuple(sorted(self.model_dump().items())))
 
 
-T_ID = TypeVar("T_ID")  # Entity ID type
+class PrimitiveValueObject(ValueObject, Generic[V]):
+    """
+    Value object that wraps a primitive value.
+    
+    Use this for domain values that need validation or semantic meaning
+    beyond what a primitive type provides, e.g., EmailAddress, Money.
+    
+    Type Parameters:
+        V: The type of the primitive value
+    """
+    
+    value: V
+    
+    def __str__(self) -> str:
+        """
+        String representation of the primitive value.
+        
+        Returns:
+            String representation
+        """
+        return str(self.value)
+    
+    @classmethod
+    def create(cls, value: V) -> 'PrimitiveValueObject[V]':
+        """
+        Create a new primitive value object.
+        
+        Args:
+            value: The primitive value
+            
+        Returns:
+            Primitive value object
+            
+        Raises:
+            ValueError: If validation fails
+        """
+        return cls(value=value)
 
 
 class Entity(BaseModel, Generic[T_ID]):
     """
     Base class for domain entities.
 
-    Entities are objects that have a distinct identity that runs through time and
-    different states. They are defined by their identity, not by their attributes.
+    Entities:
+    - Have a distinct identity that persists through state changes
+    - Are equatable by their identity, not their attributes
+    - May change over time
+    - Can register domain events
 
     Examples include User, Order, and Product.
     """
 
-    # Allow arbitrary types to support rich domain models
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    id: T_ID = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: Optional[datetime] = Field(default=None)
+    id: T_ID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: Optional[datetime] = None
+    
+    # Domain events - excluded from serialization
+    _events: List[DomainEvent] = Field(default_factory=list, exclude=True)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
+        """
+        Entities are equal if they have the same type and ID.
+        
+        Args:
+            other: Object to compare with
+            
+        Returns:
+            True if equal, False otherwise
+        """
         if not isinstance(other, self.__class__):
             return False
         return self.id == other.id
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """
+        Hash based on the entity's ID.
+        
+        Returns:
+            Hash value
+        """
         return hash(self.id)
 
     @model_validator(mode="before")
     def set_updated_at(cls, values):
         """Update the updated_at field whenever the entity is modified."""
-        # Handle Pydantic v2 ValidationInfo objects
-        if hasattr(values, "get_default_value"):
-            # We're dealing with a ValidationInfo object in Pydantic v2
-            # In this case, we're in the before validator and values is the data dict
-            data = values
-            # Only set updated_at for existing entities that are being modified
-            if (
-                isinstance(data, dict)
-                and "id" in data
-                and "created_at" in data
-                and data["id"]
-                and data["created_at"]
-            ):
-                data["updated_at"] = datetime.now(timezone.utc)
-            return data
-
-        # Handle regular dict (for backward compatibility)
+        # Only set updated_at for existing entities that are being modified
         if isinstance(values, dict) and values.get("id") and values.get("created_at"):
-            values["updated_at"] = datetime.now(timezone.utc)
-
+            values["updated_at"] = datetime.now(UTC)
         return values
 
-    # Python 3.13 compatibility methods for dataclasses
-    def __post_init__(self):
+    def add_event(self, event: DomainEvent) -> None:
         """
-        Handle initialization after dataclass processing.
-
-        This method is called by dataclasses after the object is initialized.
-        Override it in subclasses to handle additional initialization
-        requirements, but be sure to call super().__post_init__() first.
+        Add a domain event to this entity.
+        
+        Events represent significant changes that have occurred to the entity.
+        They will be published when the entity is saved.
+        
+        Args:
+            event: The domain event to add
         """
-        # Ensure object attributes are properly initialized
-        for field_name, field_value in self.__annotations__.items():
-            # Check if this is a collection that might need initialization
-            if hasattr(self, field_name):
-                continue  # Field already exists
+        self._events.append(event)
 
-            # Handle dictionary fields
-            if (
-                field_value == Dict
-                or isinstance(field_value, type)
-                and issubclass(field_value, Dict)
-            ):
-                setattr(self, field_name, {})
-            # Handle list fields
-            elif (
-                field_value == List
-                or isinstance(field_value, type)
-                and issubclass(field_value, List)
-            ):
-                setattr(self, field_name, [])
-            # Handle set fields
-            elif (
-                field_value == Set
-                or isinstance(field_value, type)
-                and issubclass(field_value, Set)
-            ):
-                setattr(self, field_name, set())
-
-
-T = TypeVar("T", bound=Entity)
-T_Child = TypeVar("T_Child", bound=Entity)
+    def clear_events(self) -> List[DomainEvent]:
+        """
+        Clear and return all domain events.
+        
+        Returns:
+            The list of events that were cleared
+        """
+        events = list(self._events)
+        self._events.clear()
+        return events
+    
+    def get_events(self) -> List[DomainEvent]:
+        """
+        Get all domain events without clearing them.
+        
+        Returns:
+            The list of events
+        """
+        return list(self._events)
+        
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert entity to a dictionary.
+        
+        Returns:
+            Dictionary representation of entity
+        """
+        # Exclude private fields and events
+        return self.model_dump(exclude={"_events"})
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Entity':
+        """
+        Create an entity from a dictionary.
+        
+        Args:
+            data: Dictionary containing entity data
+            
+        Returns:
+            Entity instance
+        """
+        return cls(**data)
 
 
 class AggregateRoot(Entity[T_ID]):
     """
     Base class for aggregate roots.
 
-    Aggregate roots are the entry point to an aggregate - a cluster of domain objects
-    that can be treated as a single unit. They encapsulate related domain objects and
-    define boundaries for transactions and consistency.
+    Aggregate Roots:
+    - Are entities that are the root of an aggregate
+    - Maintain consistency boundaries
+    - Manage lifecycle of child entities
+    - Enforce invariants across the aggregate
+    - Coordinate domain events for the aggregate
 
-    Examples include Order (which contains OrderLines), User (which contains Addresses).
+    Examples include Order (containing OrderItems), User (containing Addresses).
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    # Add type annotations to mark class attributes
-    # These can be used to hold instance attributes that should be properly initialized
-    events: List[DomainEvent]
-    child_entities: Set[Entity]
+    # Version for optimistic concurrency control
+    version: int = Field(default=1)
+    
+    # Child entities - excluded from serialization
+    _child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        # Initialize instance-specific collections
-        self.events = []
-        self.child_entities = set()
-
-    # Override __post_init__ from Entity to handle dataclass compatibility
-    def __post_init__(self):
+    def check_invariants(self) -> None:
         """
-        Handle initialization after dataclass processing for aggregate roots.
-
-        This method ensures that all necessary collections are properly initialized,
-        even when the object is created through dataclass processing.
+        Check that the aggregate invariants are maintained.
+        
+        Override this method to implement specific invariant checks.
+        
+        Raises:
+            ValueError: If invariants are violated
         """
-        super().__post_init__()
+        pass
 
-        # Explicitly initialize our instance collections
-        if not hasattr(self, "events") or self.events is None:
-            self.events = []
-        if not hasattr(self, "child_entities") or self.child_entities is None:
-            self.child_entities = set()
-
-    def add_event(self, event: DomainEvent) -> None:
+    def apply_changes(self) -> None:
         """
-        Add a domain event to this aggregate.
-
-        Domain events are collected within the aggregate and can be processed
-        after the aggregate is saved.
-
-        Args:
-            event: The domain event to add
+        Apply any pending changes and ensure consistency.
+        
+        This method should be called before saving the aggregate to ensure
+        that it is in a valid state and to update metadata.
+        
+        Raises:
+            ValueError: If invariants are violated
         """
-        if not hasattr(self, "events") or self.events is None:
-            self.events = []
-        self.events.append(event)
+        self.check_invariants()
+        self.updated_at = datetime.now(UTC)
+        self.version += 1
 
-    def clear_events(self) -> List[DomainEvent]:
-        """
-        Clear all domain events from this aggregate.
-
-        Returns:
-            The list of events that were cleared
-        """
-        if not hasattr(self, "events") or self.events is None:
-            self.events = []
-            return []
-
-        events = self.events.copy()
-        self.events.clear()
-        return events
-
-    def register_child_entity(self, entity: Entity) -> None:
+    def add_child_entity(self, entity: Entity) -> None:
         """
         Register a child entity with this aggregate root.
-
+        
         Args:
             entity: The child entity to register
         """
-        if not hasattr(self, "child_entities") or self.child_entities is None:
-            self.child_entities = set()
-        self.child_entities.add(entity)
+        self._child_entities.add(entity)
+        
+    def remove_child_entity(self, entity: Entity) -> None:
+        """
+        Remove a child entity from this aggregate root.
+        
+        Args:
+            entity: The child entity to remove
+        """
+        self._child_entities.discard(entity)
 
     def get_child_entities(self) -> Set[Entity]:
         """
         Get all child entities of this aggregate root.
-
+        
         Returns:
             The set of child entities
         """
-        if not hasattr(self, "child_entities") or self.child_entities is None:
-            self.child_entities = set()
-        return self.child_entities
+        return self._child_entities.copy()
