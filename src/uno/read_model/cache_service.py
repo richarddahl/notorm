@@ -1,317 +1,579 @@
-"""Cache service implementation for the Uno framework.
+"""
+Cache service for read models.
 
-This module defines caching mechanisms for read models to improve
-query performance in the CQRS pattern's query side.
+This module defines the cache service for read models, providing
+an abstraction over different caching mechanisms.
 """
 
-import asyncio
-import json
 import logging
-import time
-from abc import ABC, abstractmethod
-from typing import (
-    Any, Dict, Generic, List, Optional, Set, Type, TypeVar, Union, Protocol,
-    cast
-)
+import json
+import hashlib
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+from datetime import datetime, UTC, timedelta
+
+from pydantic import BaseModel, Field
 
 from uno.read_model.read_model import ReadModel
 
-# Type variables
 T = TypeVar('T', bound=ReadModel)
 
 
-class ReadModelCache(Generic[T], ABC):
+class CacheConfig(BaseModel):
     """
-    Abstract base class for read model caches.
+    Configuration for read model caching.
     
-    Read model caches provide a way to cache read models for improved
-    query performance.
+    Attributes:
+        enabled: Whether caching is enabled
+        ttl_seconds: Default time-to-live for cached items
+        namespace: Namespace prefix for cache keys
+        invalidate_on_update: Whether to invalidate cache on model updates
+        max_cache_size: Maximum number of items to cache (for in-memory cache)
+    """
+    
+    enabled: bool = True
+    ttl_seconds: int = 300  # 5 minutes
+    namespace: str = "read_model"
+    invalidate_on_update: bool = True
+    max_cache_size: int = 1000
+
+
+class CacheMetrics(BaseModel):
+    """
+    Metrics for cache operations.
+    
+    Attributes:
+        hits: Number of cache hits
+        misses: Number of cache misses
+        sets: Number of cache sets
+        invalidations: Number of cache invalidations
+        errors: Number of cache errors
+    """
+    
+    hits: int = 0
+    misses: int = 0
+    sets: int = 0
+    invalidations: int = 0
+    errors: int = 0
+
+
+class ReadModelCache(Generic[T]):
+    """
+    Cache service for read models.
+    
+    This service provides an abstraction over different caching mechanisms,
+    with support for different cache backends.
     """
     
     def __init__(
         self,
         model_type: Type[T],
+        config: Optional[CacheConfig] = None,
         logger: Optional[logging.Logger] = None
     ):
         """
-        Initialize the cache.
+        Initialize the cache service.
         
         Args:
-            model_type: The type of read model this cache stores
-            logger: Optional logger instance
+            model_type: The type of read model
+            config: Cache configuration
+            logger: Optional logger for diagnostics
         """
         self.model_type = model_type
-        self.logger = logger or logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.config = config or CacheConfig()
+        self.logger = logger or logging.getLogger(__name__)
+        self.metrics = CacheMetrics()
     
-    @abstractmethod
-    async def get(self, id: str) -> Optional[T]:
+    async def get(self, key: str) -> Optional[T]:
         """
-        Get a read model from the cache.
+        Get a read model from cache.
         
         Args:
-            id: The read model ID
+            key: The cache key
             
         Returns:
-            The read model if found in the cache, None otherwise
+            The read model if found, None otherwise
         """
-        pass
+        # To be implemented by subclasses
+        raise NotImplementedError("ReadModelCache.get must be implemented by subclasses")
     
-    @abstractmethod
-    async def set(self, id: str, model: T, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: T, ttl_seconds: Optional[int] = None) -> None:
         """
-        Set a read model in the cache.
+        Set a read model in cache.
         
         Args:
-            id: The read model ID
-            model: The read model to cache
-            ttl: Optional time-to-live in seconds
+            key: The cache key
+            value: The read model to cache
+            ttl_seconds: Optional TTL override
         """
-        pass
+        # To be implemented by subclasses
+        raise NotImplementedError("ReadModelCache.set must be implemented by subclasses")
     
-    @abstractmethod
-    async def delete(self, id: str) -> None:
+    async def invalidate(self, key: str) -> None:
         """
-        Delete a read model from the cache.
+        Invalidate a cached read model.
         
         Args:
-            id: The read model ID
+            key: The cache key
         """
-        pass
+        # To be implemented by subclasses
+        raise NotImplementedError("ReadModelCache.invalidate must be implemented by subclasses")
     
-    @abstractmethod
     async def clear(self) -> None:
-        """Clear the entire cache."""
-        pass
+        """Clear all cached read models."""
+        # To be implemented by subclasses
+        raise NotImplementedError("ReadModelCache.clear must be implemented by subclasses")
+    
+    def get_namespace_key(self, key: str) -> str:
+        """
+        Get a namespaced cache key.
+        
+        Args:
+            key: The original key
+            
+        Returns:
+            Namespaced key
+        """
+        return f"{self.config.namespace}:{self.model_type.__name__}:{key}"
+    
+    def get_metrics(self) -> Dict[str, int]:
+        """
+        Get cache metrics.
+        
+        Returns:
+            Dictionary of cache metrics
+        """
+        return self.metrics.model_dump()
+    
+    def reset_metrics(self) -> None:
+        """Reset cache metrics."""
+        self.metrics = CacheMetrics()
 
 
 class InMemoryReadModelCache(ReadModelCache[T]):
     """
-    In-memory implementation of the read model cache.
+    In-memory implementation of read model cache.
     
-    This implementation stores read models in memory, which is useful for
-    testing and simple applications.
+    This implementation stores read models in memory, which is useful
+    for testing and simple applications.
     """
     
     def __init__(
         self,
         model_type: Type[T],
-        default_ttl: Optional[int] = 3600,  # 1 hour default TTL
+        config: Optional[CacheConfig] = None,
         logger: Optional[logging.Logger] = None
     ):
         """
-        Initialize the cache.
+        Initialize the in-memory cache.
         
         Args:
-            model_type: The type of read model this cache stores
-            default_ttl: Optional default time-to-live in seconds
-            logger: Optional logger instance
+            model_type: The type of read model
+            config: Cache configuration
+            logger: Optional logger for diagnostics
         """
-        super().__init__(model_type, logger)
-        self.default_ttl = default_ttl
-        self._cache: Dict[str, T] = {}
-        self._expiry: Dict[str, float] = {}
-        self._cleanup_task: Optional[asyncio.Task] = None
+        super().__init__(model_type, config, logger)
+        self.cache: Dict[str, Dict[str, Any]] = {}  # key -> {value, expires_at}
     
-    async def get(self, id: str) -> Optional[T]:
+    async def get(self, key: str) -> Optional[T]:
         """
-        Get a read model from the cache.
+        Get a read model from cache.
         
         Args:
-            id: The read model ID
+            key: The cache key
             
         Returns:
-            The read model if found in the cache, None otherwise
+            The read model if found, None otherwise
         """
-        # Check if entry exists and is not expired
-        if id in self._cache:
-            if id in self._expiry and self._expiry[id] < time.time():
-                # Entry has expired
-                del self._cache[id]
-                del self._expiry[id]
-                return None
+        if not self.config.enabled:
+            return None
+        
+        namespaced_key = self.get_namespace_key(key)
+        
+        try:
+            # Check if key exists and is not expired
+            if namespaced_key in self.cache:
+                entry = self.cache[namespaced_key]
+                
+                # Check expiration
+                if "expires_at" in entry:
+                    expires_at = entry["expires_at"]
+                    if expires_at and datetime.now(UTC) > expires_at:
+                        # Expired
+                        del self.cache[namespaced_key]
+                        self.metrics.misses += 1
+                        return None
+                
+                # Return the cached value
+                if "value" in entry:
+                    cached_data = entry["value"]
+                    self.metrics.hits += 1
+                    
+                    # Convert the cached data to the model type
+                    if isinstance(cached_data, dict):
+                        return self.model_type(**cached_data)
+                    elif isinstance(cached_data, self.model_type):
+                        return cached_data
+                
+            # Not found or invalid
+            self.metrics.misses += 1
+            return None
             
-            return self._cache[id]
-        
-        return None
+        except Exception as e:
+            self.logger.error(f"Error getting from cache: {e}")
+            self.metrics.errors += 1
+            return None
     
-    async def set(self, id: str, model: T, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: T, ttl_seconds: Optional[int] = None) -> None:
         """
-        Set a read model in the cache.
+        Set a read model in cache.
         
         Args:
-            id: The read model ID
-            model: The read model to cache
-            ttl: Optional time-to-live in seconds
+            key: The cache key
+            value: The read model to cache
+            ttl_seconds: Optional TTL override
         """
-        self._cache[id] = model
+        if not self.config.enabled:
+            return
         
-        # Set expiry if TTL is provided or a default exists
-        if ttl is not None or self.default_ttl is not None:
-            ttl_value = ttl if ttl is not None else self.default_ttl
-            if ttl_value is not None:  # Additional check to ensure ttl_value is not None
-                self._expiry[id] = time.time() + ttl_value
+        namespaced_key = self.get_namespace_key(key)
         
-        # Start the cleanup task if it's not running
-        if self._cleanup_task is None or self._cleanup_task.done():
-            self._cleanup_task = asyncio.create_task(self._cleanup_expired())
+        try:
+            # Calculate expiration time
+            ttl = ttl_seconds if ttl_seconds is not None else self.config.ttl_seconds
+            expires_at = datetime.now(UTC) + timedelta(seconds=ttl)
+            
+            # Store value with expiration
+            self.cache[namespaced_key] = {
+                "value": value.model_dump(),
+                "expires_at": expires_at
+            }
+            
+            self.metrics.sets += 1
+            
+            # Check if we need to evict old entries
+            if len(self.cache) > self.config.max_cache_size:
+                self._evict_oldest_entries()
+                
+        except Exception as e:
+            self.logger.error(f"Error setting in cache: {e}")
+            self.metrics.errors += 1
     
-    async def delete(self, id: str) -> None:
+    async def invalidate(self, key: str) -> None:
         """
-        Delete a read model from the cache.
+        Invalidate a cached read model.
         
         Args:
-            id: The read model ID
+            key: The cache key
         """
-        if id in self._cache:
-            del self._cache[id]
+        if not self.config.enabled:
+            return
         
-        if id in self._expiry:
-            del self._expiry[id]
+        namespaced_key = self.get_namespace_key(key)
+        
+        try:
+            if namespaced_key in self.cache:
+                del self.cache[namespaced_key]
+                self.metrics.invalidations += 1
+                
+        except Exception as e:
+            self.logger.error(f"Error invalidating cache: {e}")
+            self.metrics.errors += 1
     
     async def clear(self) -> None:
-        """Clear the entire cache."""
-        self._cache.clear()
-        self._expiry.clear()
+        """Clear all cached read models."""
+        try:
+            # Clear only keys in our namespace
+            namespace_prefix = f"{self.config.namespace}:{self.model_type.__name__}:"
+            
+            keys_to_delete = [
+                key for key in self.cache.keys()
+                if key.startswith(namespace_prefix)
+            ]
+            
+            for key in keys_to_delete:
+                del self.cache[key]
+                
+            self.metrics.invalidations += len(keys_to_delete)
+            
+        except Exception as e:
+            self.logger.error(f"Error clearing cache: {e}")
+            self.metrics.errors += 1
     
-    async def _cleanup_expired(self) -> None:
-        """Periodically clean up expired cache entries."""
-        while True:
-            try:
-                # Sleep for a while
-                await asyncio.sleep(60)  # Check every minute
-                
-                # Find expired entries
-                now = time.time()
-                expired_ids = [
-                    id for id, expiry in self._expiry.items()
-                    if expiry < now
-                ]
-                
-                # Remove expired entries
-                for id in expired_ids:
-                    if id in self._cache:
-                        del self._cache[id]
-                    if id in self._expiry:
-                        del self._expiry[id]
-                
-                if expired_ids:
-                    self.logger.debug(f"Cleaned up {len(expired_ids)} expired cache entries")
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                self.logger.error(f"Error in cache cleanup task: {str(e)}")
+    def _evict_oldest_entries(self) -> None:
+        """Evict the oldest entries from the cache."""
+        # Sort entries by expiration time
+        sorted_entries = sorted(
+            [(k, v.get("expires_at", datetime.max.replace(tzinfo=UTC))) 
+             for k, v in self.cache.items()],
+            key=lambda x: x[1]
+        )
+        
+        # Calculate number of entries to evict (remove 25% of max size)
+        num_to_evict = max(1, int(self.config.max_cache_size * 0.25))
+        
+        # Evict oldest entries
+        for i in range(min(num_to_evict, len(sorted_entries))):
+            key = sorted_entries[i][0]
+            if key in self.cache:
+                del self.cache[key]
 
 
 class RedisReadModelCache(ReadModelCache[T]):
     """
-    Redis implementation of the read model cache.
+    Redis implementation of read model cache.
     
-    This implementation uses Redis for caching read models, which is suitable
-    for production applications and distributed environments.
+    This implementation uses Redis for distributed caching.
     """
     
     def __init__(
         self,
         model_type: Type[T],
-        redis_client: Any,  # Using Any since we don't know the concrete type
-        prefix: str = "read_model:",
-        default_ttl: Optional[int] = 3600,  # 1 hour default TTL
+        redis_client: Any,  # Redis client
+        config: Optional[CacheConfig] = None,
         logger: Optional[logging.Logger] = None
     ):
         """
-        Initialize the cache.
+        Initialize the Redis cache.
         
         Args:
-            model_type: The type of read model this cache stores
-            redis_client: The Redis client
-            prefix: Prefix for Redis keys
-            default_ttl: Optional default time-to-live in seconds
-            logger: Optional logger instance
+            model_type: The type of read model
+            redis_client: Redis client instance
+            config: Cache configuration
+            logger: Optional logger for diagnostics
         """
-        super().__init__(model_type, logger)
-        self.redis_client = redis_client
-        self.prefix = prefix
-        self.default_ttl = default_ttl
+        super().__init__(model_type, config, logger)
+        self.redis = redis_client
     
-    def _get_key(self, id: str) -> str:
+    async def get(self, key: str) -> Optional[T]:
         """
-        Get the Redis key for a read model ID.
+        Get a read model from Redis cache.
         
         Args:
-            id: The read model ID
+            key: The cache key
             
         Returns:
-            The Redis key
+            The read model if found, None otherwise
         """
-        return f"{self.prefix}{self.model_type.__name__}:{id}"
-    
-    async def get(self, id: str) -> Optional[T]:
-        """
-        Get a read model from the cache.
+        if not self.config.enabled:
+            return None
         
-        Args:
-            id: The read model ID
-            
-        Returns:
-            The read model if found in the cache, None otherwise
-        """
-        key = self._get_key(id)
-        data = await self.redis_client.get(key)
-        
-        if data:
-            try:
-                # Deserialize the JSON and create the model
-                model_data = json.loads(data)
-                return self.model_type(**model_data)
-            except Exception as e:
-                self.logger.error(f"Error deserializing cached model {id}: {str(e)}")
-                return None
-        
-        return None
-    
-    async def set(self, id: str, model: T, ttl: Optional[int] = None) -> None:
-        """
-        Set a read model in the cache.
-        
-        Args:
-            id: The read model ID
-            model: The read model to cache
-            ttl: Optional time-to-live in seconds
-        """
-        key = self._get_key(id)
+        namespaced_key = self.get_namespace_key(key)
         
         try:
-            # Serialize the model to JSON
-            data = model.model_dump_json()
+            # Get from Redis
+            cached_data = await self.redis.get(namespaced_key)
             
-            # Set in Redis with TTL
-            ttl_value = ttl if ttl is not None else self.default_ttl
-            if ttl_value is not None:
-                await self.redis_client.setex(key, ttl_value, data)
-            else:
-                await self.redis_client.set(key, data)
+            if cached_data:
+                # Parse the JSON data
+                model_data = json.loads(cached_data)
+                self.metrics.hits += 1
+                
+                # Convert to model instance
+                return self.model_type(**model_data)
+            
+            self.metrics.misses += 1
+            return None
+            
         except Exception as e:
-            self.logger.error(f"Error caching model {id}: {str(e)}")
+            self.logger.error(f"Error getting from Redis cache: {e}")
+            self.metrics.errors += 1
+            return None
     
-    async def delete(self, id: str) -> None:
+    async def set(self, key: str, value: T, ttl_seconds: Optional[int] = None) -> None:
         """
-        Delete a read model from the cache.
+        Set a read model in Redis cache.
         
         Args:
-            id: The read model ID
+            key: The cache key
+            value: The read model to cache
+            ttl_seconds: Optional TTL override
         """
-        key = self._get_key(id)
-        await self.redis_client.delete(key)
+        if not self.config.enabled:
+            return
+        
+        namespaced_key = self.get_namespace_key(key)
+        
+        try:
+            # Convert model to JSON
+            model_json = json.dumps(value.model_dump())
+            
+            # Calculate TTL
+            ttl = ttl_seconds if ttl_seconds is not None else self.config.ttl_seconds
+            
+            # Store in Redis with expiration
+            await self.redis.set(namespaced_key, model_json, ex=ttl)
+            
+            self.metrics.sets += 1
+                
+        except Exception as e:
+            self.logger.error(f"Error setting in Redis cache: {e}")
+            self.metrics.errors += 1
+    
+    async def invalidate(self, key: str) -> None:
+        """
+        Invalidate a cached read model in Redis.
+        
+        Args:
+            key: The cache key
+        """
+        if not self.config.enabled:
+            return
+        
+        namespaced_key = self.get_namespace_key(key)
+        
+        try:
+            # Delete from Redis
+            await self.redis.delete(namespaced_key)
+            self.metrics.invalidations += 1
+                
+        except Exception as e:
+            self.logger.error(f"Error invalidating Redis cache: {e}")
+            self.metrics.errors += 1
     
     async def clear(self) -> None:
-        """Clear all cached models of this type."""
-        pattern = f"{self.prefix}{self.model_type.__name__}:*"
-        cursor = 0
-        
-        while True:
-            cursor, keys = await self.redis_client.scan(cursor, match=pattern)
-            if keys:
-                await self.redis_client.delete(*keys)
+        """Clear all cached read models in Redis."""
+        try:
+            # Find keys in our namespace
+            namespace_prefix = f"{self.config.namespace}:{self.model_type.__name__}:*"
             
-            if cursor == 0:
-                break
+            # Get matching keys
+            keys = await self.redis.keys(namespace_prefix)
+            
+            if keys:
+                # Delete all matching keys
+                await self.redis.delete(*keys)
+                self.metrics.invalidations += len(keys)
+            
+        except Exception as e:
+            self.logger.error(f"Error clearing Redis cache: {e}")
+            self.metrics.errors += 1
+
+
+class MultiLevelReadModelCache(ReadModelCache[T]):
+    """
+    Multi-level implementation of read model cache.
+    
+    This implementation combines multiple cache levels
+    (e.g., in-memory and Redis) for better performance.
+    """
+    
+    def __init__(
+        self,
+        model_type: Type[T],
+        caches: List[ReadModelCache[T]],
+        config: Optional[CacheConfig] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize the multi-level cache.
+        
+        Args:
+            model_type: The type of read model
+            caches: List of cache implementations (ordered from fastest to slowest)
+            config: Cache configuration
+            logger: Optional logger for diagnostics
+        """
+        super().__init__(model_type, config, logger)
+        self.caches = caches
+    
+    async def get(self, key: str) -> Optional[T]:
+        """
+        Get a read model from multi-level cache.
+        
+        Args:
+            key: The cache key
+            
+        Returns:
+            The read model if found, None otherwise
+        """
+        if not self.config.enabled:
+            return None
+        
+        # Try each cache level
+        for i, cache in enumerate(self.caches):
+            try:
+                value = await cache.get(key)
+                
+                if value:
+                    # Found in this cache level
+                    self.metrics.hits += 1
+                    
+                    # Populate lower-level caches
+                    for j in range(i):
+                        await self.caches[j].set(key, value)
+                    
+                    return value
+                    
+            except Exception as e:
+                self.logger.warning(f"Error getting from cache level {i}: {e}")
+        
+        # Not found in any cache
+        self.metrics.misses += 1
+        return None
+    
+    async def set(self, key: str, value: T, ttl_seconds: Optional[int] = None) -> None:
+        """
+        Set a read model in multi-level cache.
+        
+        Args:
+            key: The cache key
+            value: The read model to cache
+            ttl_seconds: Optional TTL override
+        """
+        if not self.config.enabled:
+            return
+        
+        # Set in all cache levels
+        for i, cache in enumerate(self.caches):
+            try:
+                await cache.set(key, value, ttl_seconds)
+            except Exception as e:
+                self.logger.warning(f"Error setting in cache level {i}: {e}")
+        
+        self.metrics.sets += 1
+    
+    async def invalidate(self, key: str) -> None:
+        """
+        Invalidate a cached read model in all cache levels.
+        
+        Args:
+            key: The cache key
+        """
+        if not self.config.enabled:
+            return
+        
+        # Invalidate in all cache levels
+        for i, cache in enumerate(self.caches):
+            try:
+                await cache.invalidate(key)
+            except Exception as e:
+                self.logger.warning(f"Error invalidating cache level {i}: {e}")
+        
+        self.metrics.invalidations += 1
+    
+    async def clear(self) -> None:
+        """Clear all cached read models in all cache levels."""
+        # Clear all cache levels
+        for i, cache in enumerate(self.caches):
+            try:
+                await cache.clear()
+            except Exception as e:
+                self.logger.warning(f"Error clearing cache level {i}: {e}")
+    
+    def get_metrics(self) -> Dict[str, Any]:
+        """
+        Get combined cache metrics.
+        
+        Returns:
+            Dictionary of combined cache metrics
+        """
+        # Start with our own metrics
+        metrics = super().get_metrics()
+        
+        # Add per-level metrics
+        level_metrics = {}
+        for i, cache in enumerate(self.caches):
+            level_metrics[f"level_{i}"] = cache.get_metrics()
+        
+        metrics["levels"] = level_metrics
+        return metrics

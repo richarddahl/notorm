@@ -50,6 +50,27 @@ from uno.core.protocols import (
     DatabaseRepository
 )
 
+# CQRS Pattern
+from uno.core.cqrs import (
+    # Command and Query base implementations
+    BaseCommand, BaseQuery,
+    
+    # Command and Query handlers
+    BaseCommandHandler, BaseQueryHandler, EventSourcingCommandHandler,
+    
+    # Command and Query buses
+    CommandBus, QueryBus, HandlerRegistry, Mediator,
+    
+    # Handler registration
+    command_handler, query_handler,
+    
+    # Mediator management
+    initialize_mediator, reset_mediator, get_mediator,
+    
+    # API functions
+    execute_command, execute_query
+)
+
 # Error handling
 from uno.core.errors.base import ErrorCategory, UnoError
 from uno.core.errors.result import Success, Failure, Result
@@ -102,8 +123,14 @@ __all__ = [
     # Repository and Unit of Work
     'Repository', 'UnitOfWork',
     
-    # Command and Query
+    # Command and Query protocols
     'Command', 'Query', 'CommandHandler', 'QueryHandler',
+    
+    # CQRS implementations
+    'BaseCommand', 'BaseQuery', 'BaseCommandHandler', 'BaseQueryHandler', 
+    'EventSourcingCommandHandler', 'CommandBus', 'QueryBus', 'HandlerRegistry', 
+    'Mediator', 'command_handler', 'query_handler', 'initialize_mediator', 
+    'reset_mediator', 'get_mediator', 'execute_command', 'execute_query',
     
     # Event system
     'EventHandler', 'EventBus',

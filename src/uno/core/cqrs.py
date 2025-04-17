@@ -10,12 +10,12 @@ import inspect
 import logging
 import uuid
 from abc import abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC, timedelta
 from enum import Enum, auto
 from typing import (
     Any, Dict, List, Optional, Type, TypeVar, Generic, Protocol, Union,
     Callable, Awaitable, get_type_hints, cast, runtime_checkable, ClassVar,
-    Self
+    Self, Tuple
 )
 
 from .errors.base import ErrorCategory, UnoError
@@ -404,6 +404,229 @@ class BaseCommandHandler[TCommand, TResult](CommandHandler[TCommand, TResult]):
         self._pending_events.clear()
 
 
+class EventSourcingCommandHandler[TCommand, TResult](BaseCommandHandler[TCommand, TResult]):
+    """
+    Command handler with event sourcing support.
+    
+    This command handler integrates with the event store to provide
+    event sourcing capabilities and transactional consistency.
+    
+    Type Parameters:
+        TCommand: The type of command this handler processes
+        TResult: The type of result after command execution
+    """
+    
+    def __init__(
+        self, 
+        event_publisher: Optional[EventPublisher] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize an event-sourcing command handler.
+        
+        Args:
+            event_publisher: Optional event publisher for raising events
+            logger: Optional logger for diagnostic information
+        """
+        super().__init__(event_publisher)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        # Lazy-loaded event store integration
+        self._event_store_integration = None
+        
+    @property
+    def event_store_integration(self):
+        """Get the event store integration instance."""
+        if self._event_store_integration is None:
+            # Import here to avoid circular imports
+            from uno.domain.event_store_integration import get_event_store_integration
+            self._event_store_integration = get_event_store_integration()
+        return self._event_store_integration
+    
+    async def publish_events(self) -> None:
+        """
+        Publish all pending events with event sourcing support.
+        
+        This method stores events in the event store and then
+        publishes them to the event bus.
+        """
+        if not self._pending_events:
+            return
+        
+        try:
+            # Publish to event store (which will also publish to event bus)
+            result = await self.event_store_integration.publish_events(
+                [event for event in self._pending_events]
+            )
+            
+            if result.is_failure():
+                self.logger.error(f"Failed to publish events: {result.error}")
+            
+            # Clear pending events
+            self._pending_events.clear()
+            
+        except Exception as e:
+            self.logger.error(f"Error publishing events: {e}")
+            # Don't clear events on error so they can be retried
+
+
+class TransactionalCommandHandler[TCommand, TResult](BaseCommandHandler[TCommand, TResult]):
+    """
+    Command handler with transaction support.
+    
+    This command handler integrates with the unit of work pattern to provide
+    transactional consistency for database operations and event publishing.
+    
+    Type Parameters:
+        TCommand: The type of command this handler processes
+        TResult: The type of result after command execution
+    """
+    
+    def __init__(
+        self, 
+        unit_of_work_factory: Callable[[], 'UnitOfWork'],
+        event_publisher: Optional[EventPublisher] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize a transactional command handler.
+        
+        Args:
+            unit_of_work_factory: Factory function that creates unit of work instances
+            event_publisher: Optional event publisher for raising events
+            logger: Optional logger for diagnostic information
+        """
+        super().__init__(event_publisher)
+        self.unit_of_work_factory = unit_of_work_factory
+        self.logger = logger or logging.getLogger(__name__)
+        
+    async def handle(self, command: TCommand) -> TResult:
+        """
+        Handle a command within a transaction.
+        
+        This method wraps the command handling in a transaction and ensures
+        that events are published only if the transaction is committed successfully.
+        
+        Args:
+            command: The command to handle
+            
+        Returns:
+            Result of command execution
+        """
+        async with self.unit_of_work_factory() as uow:
+            # Execute the command
+            result = await self._handle(command, uow)
+            
+            # Collect events from the unit of work
+            # These will be published automatically when the transaction is committed
+            for event in self._pending_events:
+                if hasattr(uow, 'add_event'):
+                    uow.add_event(event)
+            
+            # Clear pending events since they are now handled by the unit of work
+            self._pending_events.clear()
+            
+            return result
+    
+    @abstractmethod
+    async def _handle(self, command: TCommand, uow: 'UnitOfWork') -> TResult:
+        """
+        Handle a command with access to the unit of work.
+        
+        This method must be implemented by subclasses to provide the actual
+        command handling logic.
+        
+        Args:
+            command: The command to handle
+            uow: The unit of work for this transaction
+            
+        Returns:
+            Result of command execution
+        """
+        raise NotImplementedError("Subclasses must implement _handle")
+
+
+class EventSourcingTransactionalCommandHandler[TCommand, TResult](TransactionalCommandHandler[TCommand, TResult]):
+    """
+    Command handler with both event sourcing and transaction support.
+    
+    This command handler combines the features of EventSourcingCommandHandler
+    and TransactionalCommandHandler to provide comprehensive support for
+    domain-driven design with event sourcing.
+    
+    Type Parameters:
+        TCommand: The type of command this handler processes
+        TResult: The type of result after command execution
+    """
+    
+    def __init__(
+        self, 
+        unit_of_work_factory: Callable[[], 'UnitOfWork'],
+        event_publisher: Optional[EventPublisher] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize an event-sourcing transactional command handler.
+        
+        Args:
+            unit_of_work_factory: Factory function that creates unit of work instances
+            event_publisher: Optional event publisher for raising events
+            logger: Optional logger for diagnostic information
+        """
+        super().__init__(unit_of_work_factory, event_publisher, logger)
+        
+        # Lazy-loaded event store integration
+        self._event_store_integration = None
+        
+    @property
+    def event_store_integration(self):
+        """Get the event store integration instance."""
+        if self._event_store_integration is None:
+            # Import here to avoid circular imports
+            from uno.domain.event_store_integration import get_event_store_integration
+            self._event_store_integration = get_event_store_integration()
+        return self._event_store_integration
+    
+    async def handle(self, command: TCommand) -> TResult:
+        """
+        Handle a command within a transaction with event sourcing support.
+        
+        This method wraps the command handling in a transaction and ensures
+        that events are stored in the event store and published only if the
+        transaction is committed successfully.
+        
+        Args:
+            command: The command to handle
+            
+        Returns:
+            Result of command execution
+        """
+        async with self.unit_of_work_factory() as uow:
+            # Execute the command
+            result = await self._handle(command, uow)
+            
+            # Store events in the event store
+            if self._pending_events and self.event_store_integration:
+                try:
+                    # This will be executed in the same transaction as the command
+                    event_result = await self.event_store_integration.publish_events(
+                        [event for event in self._pending_events]
+                    )
+                    
+                    if event_result.is_failure():
+                        self.logger.error(f"Failed to publish events: {event_result.error}")
+                        raise Exception(f"Failed to publish events: {event_result.error}")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error publishing events: {e}")
+                    raise
+            
+            # Clear pending events
+            self._pending_events.clear()
+            
+            return result
+
+
 class BaseQueryHandler[TQuery, TResult](QueryHandler[TQuery, TResult]):
     """
     Base implementation of a query handler.
@@ -428,6 +651,218 @@ class BaseQueryHandler[TQuery, TResult](QueryHandler[TQuery, TResult]):
             Result of query execution
         """
         raise NotImplementedError("Query handlers must implement handle")
+
+
+class CachedQueryHandler[TQuery, TResult](BaseQueryHandler[TQuery, TResult]):
+    """
+    Query handler with caching support.
+    
+    This handler caches query results to improve performance for
+    frequently executed queries.
+    
+    Type Parameters:
+        TQuery: The type of query this handler processes
+        TResult: The type of result after query execution
+    """
+    
+    def __init__(
+        self, 
+        cache_service: Any, 
+        ttl_seconds: int = 300,
+        region_name: Optional[str] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize a cached query handler.
+        
+        Args:
+            cache_service: Service for cache operations
+            ttl_seconds: Time to live for cached items in seconds
+            region_name: Optional cache region name
+            logger: Optional logger for diagnostic information
+        """
+        self.cache_service = cache_service
+        self.ttl_seconds = ttl_seconds
+        self.region_name = region_name
+        self.logger = logger or logging.getLogger(__name__)
+    
+    async def handle(self, query: TQuery) -> TResult:
+        """
+        Handle a query with caching support.
+        
+        This method first checks the cache for a matching result. If not found,
+        it executes the query and caches the result.
+        
+        Args:
+            query: The query to handle
+            
+        Returns:
+            Result of query execution
+        """
+        # Get cache key for this query
+        cache_key = self._get_cache_key(query)
+        
+        # Try to get from cache
+        try:
+            cache_result = await self.cache_service.get_item(cache_key, self.region_name)
+            
+            if cache_result.is_success() and cache_result.value and cache_result.value.value is not None:
+                self.logger.debug(f"Cache hit for query {query.query_type}")
+                return cache_result.value.value
+                
+        except Exception as e:
+            self.logger.warning(f"Error getting from cache: {e}")
+        
+        # Cache miss or error, execute query
+        self.logger.debug(f"Cache miss for query {query.query_type}")
+        result = await self._handle(query)
+        
+        # Cache the result
+        try:
+            if result is not None:
+                # Calculate expiry time
+                expiry = datetime.now(UTC) + timedelta(seconds=self.ttl_seconds) if self.ttl_seconds > 0 else None
+                
+                # Store in cache
+                await self.cache_service.set_item(
+                    key=cache_key,
+                    value=result,
+                    expiry=expiry,
+                    region_name=self.region_name
+                )
+        except Exception as e:
+            self.logger.warning(f"Error storing in cache: {e}")
+        
+        return result
+    
+    @abstractmethod
+    async def _handle(self, query: TQuery) -> TResult:
+        """
+        Handle a query when cache misses.
+        
+        This method must be implemented by subclasses to provide the actual
+        query handling logic.
+        
+        Args:
+            query: The query to handle
+            
+        Returns:
+            Result of query execution
+        """
+        raise NotImplementedError("Subclasses must implement _handle")
+    
+    def _get_cache_key(self, query: TQuery) -> str:
+        """
+        Get cache key for a query.
+        
+        The default implementation uses the query type and a hash of its attributes.
+        Subclasses can override this to provide custom cache key generation.
+        
+        Args:
+            query: The query to get a cache key for
+            
+        Returns:
+            Cache key string
+        """
+        # Convert query attributes to a hashable form
+        query_attrs = getattr(query, "__dict__", {})
+        
+        # Create a deterministic representation of the query
+        # Skip the query_id as it's unique per instance
+        attrs_dict = {k: v for k, v in query_attrs.items() if k not in ("query_id", "timestamp")}
+        
+        # Sort keys to ensure consistent key generation
+        attrs_tuple = tuple(sorted((k, str(v)) for k, v in attrs_dict.items()))
+        
+        # Generate a hash based on query type and attributes
+        attrs_hash = hash(attrs_tuple)
+        
+        return f"query:{query.query_type}:{attrs_hash}"
+
+
+class SqlQueryHandler[TQuery, TResult](BaseQueryHandler[TQuery, TResult]):
+    """
+    Query handler that executes SQL queries.
+    
+    This handler is optimized for database-specific query execution.
+    
+    Type Parameters:
+        TQuery: The type of query this handler processes
+        TResult: The type of result after query execution
+    """
+    
+    def __init__(
+        self,
+        db_provider: Any,
+        result_factory: Optional[Callable[[Any], TResult]] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize a SQL query handler.
+        
+        Args:
+            db_provider: Database provider
+            result_factory: Optional function to convert database results to domain objects
+            logger: Optional logger for diagnostic information
+        """
+        self.db_provider = db_provider
+        self.result_factory = result_factory
+        self.logger = logger or logging.getLogger(__name__)
+    
+    async def handle(self, query: TQuery) -> TResult:
+        """
+        Handle a query by executing a SQL query.
+        
+        Args:
+            query: The query to handle
+            
+        Returns:
+            Result of query execution
+        """
+        # Get SQL query and parameters
+        sql, params = self._build_query(query)
+        
+        # Execute query
+        async with self.db_provider.session() as session:
+            result = await session.execute(sql, params)
+            
+            # Process the result
+            if self.result_factory:
+                return self.result_factory(result)
+            else:
+                return self._process_result(result, query)
+    
+    @abstractmethod
+    def _build_query(self, query: TQuery) -> Tuple[str, Dict[str, Any]]:
+        """
+        Build SQL query and parameters.
+        
+        This method must be implemented by subclasses to provide
+        SQL query generation logic.
+        
+        Args:
+            query: The query to build SQL for
+            
+        Returns:
+            Tuple of (SQL query string, parameters dict)
+        """
+        raise NotImplementedError("Subclasses must implement _build_query")
+    
+    def _process_result(self, result: Any, query: TQuery) -> TResult:
+        """
+        Process a database result into the expected return type.
+        
+        This method should be implemented by subclasses to convert database
+        result objects into domain objects.
+        
+        Args:
+            result: The database result
+            query: The original query
+            
+        Returns:
+            Processed query result
+        """
+        raise NotImplementedError("Subclasses must implement _process_result")
 
 
 # =============================================================================

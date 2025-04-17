@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, AsyncMock
 
 from uno.core.cqrs import (
     BaseCommand, BaseQuery, BaseCommandHandler, BaseQueryHandler,
-    CommandBus, QueryBus, HandlerRegistry, Mediator,
+    EventSourcingCommandHandler, CommandBus, QueryBus, HandlerRegistry, Mediator,
     command_handler, query_handler,
     initialize_mediator, reset_mediator, get_mediator,
     execute_command, execute_query
@@ -902,3 +902,134 @@ async def test_duplicate_handler_registration(command_bus):
     assert "Command handler already registered" in str(excinfo.value)
     assert excinfo.value.error_code == "COMMAND_HANDLER_ALREADY_REGISTERED"
     # Skip category check since error is not registered in the catalog
+
+
+@pytest.mark.asyncio
+async def test_reset_mediator():
+    """Test resetting the mediator."""
+    # Initialize mediator
+    command_bus = CommandBus()
+    query_bus = QueryBus()
+    initialize_mediator(command_bus, query_bus)
+    
+    # Keep a reference to the original mediator
+    original_mediator = get_mediator()
+    
+    # Reset the mediator
+    reset_mediator()
+    
+    # Initialize a new mediator
+    initialize_mediator()
+    
+    # Should be able to get the mediator
+    mediator = get_mediator()
+    assert mediator is not None
+    assert mediator is not original_mediator
+        
+        
+class TestEventSourcingCommandHandler:
+    """Test the event sourcing command handler."""
+    
+    class TestCommand(BaseCommand[str]):
+        """Test command for handler tests."""
+        name: str = "Test Command"
+    
+    class TestEvent:
+        """Test event for handler tests."""
+        event_id: str = "event-123"
+        event_type: str = "test_event"
+        aggregate_id: str = "test-aggregate"
+        
+        def to_dict(self):
+            """Convert to dictionary."""
+            return {"event_id": self.event_id, "event_type": self.event_type}
+    
+    class TestHandler(EventSourcingCommandHandler[TestCommand, str]):
+        """Test handler for testing."""
+        
+        async def handle(self, command: TestCommand) -> str:
+            """Handle the command."""
+            # Add an event
+            event = self.TestEvent()
+            self.add_event(event)
+            return f"Handled {command.name}"
+    
+    @pytest.fixture
+    def mock_event_store_integration(self):
+        """Create a mock event store integration."""
+        from uno.core.result import Result
+        
+        integration = AsyncMock()
+        integration.publish_events.return_value = Result.success(None)
+        return integration
+    
+    @pytest.fixture
+    def handler(self, mock_event_store_integration):
+        """Create a test handler with mocked dependencies."""
+        handler = self.TestHandler()
+        handler._event_store_integration = mock_event_store_integration
+        return handler
+    
+    @pytest.mark.asyncio
+    async def test_handle_with_events(self, handler, mock_event_store_integration):
+        """Test handling a command with events."""
+        command = self.TestCommand(name="Test Event Command")
+        
+        # Handle the command
+        result = await handler.handle(command)
+        
+        # Should return expected result
+        assert result == "Handled Test Event Command"
+        
+        # Should have one pending event
+        assert len(handler._pending_events) == 1
+        assert handler._pending_events[0].event_type == "test_event"
+        
+        # Publish events
+        await handler.publish_events()
+        
+        # Should have published to event store
+        mock_event_store_integration.publish_events.assert_called_once()
+        
+        # Should have cleared pending events
+        assert len(handler._pending_events) == 0
+    
+    @pytest.mark.asyncio
+    async def test_publish_events_failure(self, handler, mock_event_store_integration):
+        """Test publishing events with failure."""
+        from uno.core.result import Result
+        
+        # Add an event
+        event = self.TestEvent()
+        handler.add_event(event)
+        
+        # Mock failure
+        mock_event_store_integration.publish_events.return_value = Result.failure("Test error")
+        
+        # Should log error but not raise exception
+        await handler.publish_events()
+        
+        # Should have published to event store
+        mock_event_store_integration.publish_events.assert_called_once()
+        
+        # Should have cleared pending events even with failure
+        assert len(handler._pending_events) == 0
+    
+    @pytest.mark.asyncio
+    async def test_publish_events_exception(self, handler, mock_event_store_integration):
+        """Test exception handling when publishing events."""
+        # Add an event
+        event = self.TestEvent()
+        handler.add_event(event)
+        
+        # Mock exception
+        mock_event_store_integration.publish_events.side_effect = Exception("Test exception")
+        
+        # Should log error but not raise exception
+        await handler.publish_events()
+        
+        # Should have attempted to publish to event store
+        mock_event_store_integration.publish_events.assert_called_once()
+        
+        # Should NOT have cleared pending events on exception
+        assert len(handler._pending_events) == 1
