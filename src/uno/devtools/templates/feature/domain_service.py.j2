@@ -1,0 +1,375 @@
+"""
+{{ feature_name|pascal_case }} domain service module.
+
+This module provides domain services for {{ feature_name|pascal_case }} entities,
+implementing business logic and operations.
+"""
+
+import logging
+from typing import List, Optional, Dict, Any, cast
+from uuid import UUID
+from datetime import datetime, UTC
+
+from uno.core.result import Result, Success, Failure, ErrorDetails
+from uno.domain.service import DomainService
+from uno.core.events import EventDispatcher, Event
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_repository import {{ feature_name|pascal_case }}RepositoryProtocol
+
+
+class {{ feature_name|pascal_case }}Created(Event):
+    """Event emitted when a {{ feature_name|pascal_case }} is created."""
+    
+    entity_id: str
+    name: str
+
+
+class {{ feature_name|pascal_case }}Updated(Event):
+    """Event emitted when a {{ feature_name|pascal_case }} is updated."""
+    
+    entity_id: str
+    changes: Dict[str, Any]
+
+
+class {{ feature_name|pascal_case }}Deleted(Event):
+    """Event emitted when a {{ feature_name|pascal_case }} is deleted."""
+    
+    entity_id: str
+
+
+class {{ feature_name|pascal_case }}ServiceProtocol:
+    """Protocol defining the interface for {{ feature_name|pascal_case }} services."""
+    
+    async def get_by_id(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Get a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to retrieve
+            
+        Returns:
+            Result containing the {{ feature_name|pascal_case }} or None if not found
+        """
+        ...
+    
+    async def list(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+        """
+        List {{ feature_name|pascal_case }} entities.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            filters: Optional filters to apply
+            
+        Returns:
+            Result containing list of {{ feature_name|pascal_case }} entities
+        """
+        ...
+    
+    async def create(self, data: Dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Create a new {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            data: The data for the new entity
+            
+        Returns:
+            Result containing the created entity
+        """
+        ...
+    
+    async def update(self, id: str, data: Dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Update an existing {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            id: The ID of the entity to update
+            data: The data to update
+            
+        Returns:
+            Result containing the updated entity or None if not found
+        """
+        ...
+    
+    async def delete(self, id: str) -> Result[bool]:
+        """
+        Delete a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to delete
+            
+        Returns:
+            Result containing True if deleted, False if not found
+        """
+        ...
+
+
+class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal_case }}, str], {{ feature_name|pascal_case }}ServiceProtocol):
+    """
+    Service for managing {{ feature_name|pascal_case }} entities.
+    
+    This class implements business logic for {{ feature_name|pascal_case }} entities
+    and provides operations for CRUD and domain-specific actions.
+    """
+    
+    def __init__(
+        self, 
+        repository: {{ feature_name|pascal_case }}RepositoryProtocol,
+        event_dispatcher: Optional[EventDispatcher] = None,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize the service.
+        
+        Args:
+            repository: Repository for {{ feature_name|pascal_case }} entities
+            event_dispatcher: Optional event dispatcher for domain events
+            logger: Optional logger instance
+        """
+        super().__init__(repository)
+        self.repository = repository
+        self.event_dispatcher = event_dispatcher
+        self.logger = logger or logging.getLogger(__name__)
+    
+    async def get_by_id(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Get a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to retrieve
+            
+        Returns:
+            Result containing the {{ feature_name|pascal_case }} or None if not found
+        """
+        return await self.repository.get_by_id(id)
+    
+    async def list(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+        """
+        List {{ feature_name|pascal_case }} entities.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            filters: Optional filters to apply
+            
+        Returns:
+            Result containing list of {{ feature_name|pascal_case }} entities
+        """
+        # Apply default filters to show only active entities
+        if filters is None:
+            filters = {}
+        if "is_active" not in filters:
+            filters["is_active"] = True
+            
+        return await self.repository.list(skip=skip, limit=limit, filters=filters)
+    
+    async def create(self, data: Dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Create a new {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            data: The data for the new entity
+            
+        Returns:
+            Result containing the created entity
+        """
+        try:
+            # Create entity from data
+            entity = {{ feature_name|pascal_case }}(
+                name=data["name"],
+                description=data.get("description"),
+                created_at=datetime.now(UTC),
+                is_active=data.get("is_active", True)
+            )
+            
+            # Additional business logic validations
+            # ...
+            
+            # Save to repository
+            result = await self.repository.create(entity)
+            
+            if result.is_success():
+                # Emit creation event
+                if self.event_dispatcher:
+                    await self.event_dispatcher.dispatch(
+                        {{ feature_name|pascal_case }}Created(
+                            entity_id=entity.id,
+                            name=entity.name
+                        )
+                    )
+                    
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error creating {{ feature_name|pascal_case }}: {str(e)}")
+            return Failure(ErrorDetails(
+                message=f"Failed to create {{ feature_name|pascal_case }}: {str(e)}",
+                code="SERVICE_ERROR",
+                details={"data": data, "error": str(e)}
+            ))
+    
+    async def update(self, id: str, data: Dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Update an existing {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            id: The ID of the entity to update
+            data: The data to update
+            
+        Returns:
+            Result containing the updated entity or None if not found
+        """
+        try:
+            # Get existing entity
+            get_result = await self.repository.get_by_id(id)
+            if not get_result.is_success():
+                return get_result
+                
+            entity = get_result.value
+            if entity is None:
+                return Success(None)
+            
+            # Track changes for events
+            changes = {}
+            for key, value in data.items():
+                if hasattr(entity, key) and getattr(entity, key) != value:
+                    changes[key] = value
+            
+            # Update entity fields
+            entity.update(**data)
+            
+            # Additional business logic validations
+            # ...
+            
+            # Save to repository
+            result = await self.repository.update(entity)
+            
+            if result.is_success() and changes and self.event_dispatcher:
+                # Emit update event if we have changes
+                await self.event_dispatcher.dispatch(
+                    {{ feature_name|pascal_case }}Updated(
+                        entity_id=entity.id,
+                        changes=changes
+                    )
+                )
+                
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error updating {{ feature_name|pascal_case }} {id}: {str(e)}")
+            return Failure(ErrorDetails(
+                message=f"Failed to update {{ feature_name|pascal_case }}: {str(e)}",
+                code="SERVICE_ERROR",
+                details={"id": id, "data": data, "error": str(e)}
+            ))
+    
+    async def delete(self, id: str) -> Result[bool]:
+        """
+        Delete a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to delete
+            
+        Returns:
+            Result containing True if deleted, False if not found
+        """
+        try:
+            # Delete from repository
+            result = await self.repository.delete(id)
+            
+            if result.is_success() and result.value and self.event_dispatcher:
+                # Emit deletion event
+                await self.event_dispatcher.dispatch(
+                    {{ feature_name|pascal_case }}Deleted(entity_id=id)
+                )
+                
+            return result
+            
+        except Exception as e:
+            self.logger.error(f"Error deleting {{ feature_name|pascal_case }} {id}: {str(e)}")
+            return Failure(ErrorDetails(
+                message=f"Failed to delete {{ feature_name|pascal_case }}: {str(e)}",
+                code="SERVICE_ERROR",
+                details={"id": id, "error": str(e)}
+            ))
+    
+    async def activate(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Activate a {{ feature_name|pascal_case }}.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to activate
+            
+        Returns:
+            Result containing the activated entity or None if not found
+        """
+        try:
+            # Get existing entity
+            get_result = await self.repository.get_by_id(id)
+            if not get_result.is_success():
+                return get_result
+                
+            entity = get_result.value
+            if entity is None:
+                return Success(None)
+            
+            # Activate entity
+            entity.activate()
+            
+            # Save to repository
+            return await self.repository.update(entity)
+            
+        except Exception as e:
+            self.logger.error(f"Error activating {{ feature_name|pascal_case }} {id}: {str(e)}")
+            return Failure(ErrorDetails(
+                message=f"Failed to activate {{ feature_name|pascal_case }}: {str(e)}",
+                code="SERVICE_ERROR",
+                details={"id": id, "error": str(e)}
+            ))
+    
+    async def deactivate(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Deactivate a {{ feature_name|pascal_case }}.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to deactivate
+            
+        Returns:
+            Result containing the deactivated entity or None if not found
+        """
+        try:
+            # Get existing entity
+            get_result = await self.repository.get_by_id(id)
+            if not get_result.is_success():
+                return get_result
+                
+            entity = get_result.value
+            if entity is None:
+                return Success(None)
+            
+            # Deactivate entity
+            entity.deactivate()
+            
+            # Save to repository
+            return await self.repository.update(entity)
+            
+        except Exception as e:
+            self.logger.error(f"Error deactivating {{ feature_name|pascal_case }} {id}: {str(e)}")
+            return Failure(ErrorDetails(
+                message=f"Failed to deactivate {{ feature_name|pascal_case }}: {str(e)}",
+                code="SERVICE_ERROR",
+                details={"id": id, "error": str(e)}
+            ))
+    
+    # Add additional domain-specific methods below

@@ -206,6 +206,71 @@ def scaffold_project(
     return project_dir
 
 
+def _create_model(
+    name: str,
+    project_dir: Path,
+    env: Environment,
+    context: Dict[str, Any]
+) -> Path:
+    """Create a database model file."""
+    models_dir = project_dir / "src" / context["project_name"] / "infrastructure" / "database" / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create __init__.py if it doesn't exist
+    init_file = models_dir / "__init__.py"
+    if not init_file.exists():
+        with open(init_file, "w") as f:
+            f.write('"""Database models for the application."""\n\n')
+            f.write('from sqlalchemy.ext.declarative import declarative_base\n\n')
+            f.write('Base = declarative_base()\n\n')
+            f.write('# Import all models here\n')
+    
+    output_file = models_dir / f"{name.lower()}_model.py"
+    
+    try:
+        # Try to use the domain model template first
+        template_path = "feature/domain_model.py.j2"
+        if not (TEMPLATES_DIR / template_path).exists():
+            # If the template doesn't exist, create a simple model file
+            logger.warning(f"Template {template_path} not found, creating simple model file")
+            with open(output_file, "w") as f:
+                f.write(f'"""\n{name.title()} database model.\n"""\n\n')
+                f.write('from sqlalchemy import Column, String, Text, Boolean, DateTime\n')
+                f.write('from sqlalchemy.dialects.postgresql import UUID\n')
+                f.write('from datetime import datetime\n')
+                f.write('import uuid\n\n')
+                f.write(f'from {context["project_name"]}.infrastructure.database.base import Base\n\n\n')
+                f.write(f'class {name.title()}Model(Base):\n')
+                f.write(f'    """SQLAlchemy model for {name.title()}."""\n\n')
+                f.write(f'    __tablename__ = "{name.lower()}s"\n\n')
+                f.write('    id = Column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))\n')
+                f.write('    name = Column(String(255), nullable=False)\n')
+                f.write('    description = Column(Text, nullable=True)\n')
+                f.write('    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)\n')
+                f.write('    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)\n')
+                f.write('    is_active = Column(Boolean, nullable=False, default=True)\n')
+            return output_file
+            
+        # Render the template
+        template = env.get_template(template_path)
+        content = template.render(**context)
+        
+        with open(output_file, "w") as f:
+            f.write(content)
+        
+        # Update the __init__.py file to import the model
+        with open(init_file, "r") as f:
+            content = f.read()
+            
+        if f"from .{name.lower()}_model import {name.title()}Model" not in content:
+            with open(init_file, "a") as f:
+                f.write(f"from .{name.lower()}_model import {name.title()}Model\n")
+        
+        return output_file
+    except Exception as e:
+        logger.error(f"Error creating model: {e}")
+        raise
+
 def scaffold_feature(
     name: str,
     domain: Optional[str] = None,
@@ -213,6 +278,7 @@ def scaffold_feature(
     create_repository: bool = True,
     create_service: bool = True,
     create_endpoint: bool = True,
+    create_model: bool = True,
     create_tests: bool = True,
     project_dir: Optional[Path] = None
 ) -> List[Path]:
@@ -226,6 +292,7 @@ def scaffold_feature(
         create_repository: Create repository
         create_service: Create service
         create_endpoint: Create API endpoint
+        create_model: Create database model
         create_tests: Create tests
         project_dir: Project directory (default: detect from current directory)
     
@@ -287,6 +354,10 @@ def scaffold_feature(
                 entity_file = _create_entity(name, domain_dir, env, context)
                 created_files.append(entity_file)
             
+            if create_model:
+                model_file = _create_model(name, project_dir, env, context)
+                created_files.append(model_file)
+            
             if create_repository:
                 repo_file = _create_repository(name, domain_dir, env, context)
                 created_files.append(repo_file)
@@ -310,6 +381,10 @@ def scaffold_feature(
         if create_entity:
             entity_file = _create_entity(name, domain_dir, env, context)
             created_files.append(entity_file)
+        
+        if create_model:
+            model_file = _create_model(name, project_dir, env, context)
+            created_files.append(model_file)
         
         if create_repository:
             repo_file = _create_repository(name, domain_dir, env, context)
@@ -520,7 +595,13 @@ def _create_entity(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
     try:
-        template = env.get_template("feature/entity.py.j2")
+        # Try to use the domain entity template first
+        template_path = "feature/domain_entity.py.j2"
+        if not (TEMPLATES_DIR / template_path).exists():
+            # Fall back to the basic template
+            template_path = "feature/entity.py.j2"
+            
+        template = env.get_template(template_path)
         content = template.render(**context)
         
         with open(output_file, "w") as f:
@@ -543,7 +624,13 @@ def _create_repository(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
     try:
-        template = env.get_template("feature/repository.py.j2")
+        # Try to use the domain repository template first
+        template_path = "feature/domain_repository.py.j2"
+        if not (TEMPLATES_DIR / template_path).exists():
+            # Fall back to the basic template
+            template_path = "feature/repository.py.j2"
+            
+        template = env.get_template(template_path)
         content = template.render(**context)
         
         with open(output_file, "w") as f:
@@ -566,7 +653,13 @@ def _create_service(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
     try:
-        template = env.get_template("feature/service.py.j2")
+        # Try to use the domain service template first
+        template_path = "feature/domain_service.py.j2"
+        if not (TEMPLATES_DIR / template_path).exists():
+            # Fall back to the basic template
+            template_path = "feature/service.py.j2"
+            
+        template = env.get_template(template_path)
         content = template.render(**context)
         
         with open(output_file, "w") as f:
@@ -590,7 +683,13 @@ def _create_endpoint(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
     try:
-        template = env.get_template("feature/endpoint.py.j2")
+        # Try to use the domain endpoints template first
+        template_path = "feature/domain_endpoints.py.j2"
+        if not (TEMPLATES_DIR / template_path).exists():
+            # Fall back to the basic template
+            template_path = "feature/endpoint.py.j2"
+            
+        template = env.get_template(template_path)
         content = template.render(**context)
         
         with open(output_file, "w") as f:
@@ -693,6 +792,7 @@ if TYPER_AVAILABLE:
         name: str = typer.Argument(..., help="Feature name"),
         domain: Optional[str] = typer.Option(None, "--domain", "-d", help="Domain name"),
         no_entity: bool = typer.Option(False, "--no-entity", help="Skip entity creation"),
+        no_model: bool = typer.Option(False, "--no-model", help="Skip database model creation"),
         no_repository: bool = typer.Option(False, "--no-repository", help="Skip repository creation"),
         no_service: bool = typer.Option(False, "--no-service", help="Skip service creation"),
         no_endpoint: bool = typer.Option(False, "--no-endpoint", help="Skip endpoint creation"),
@@ -705,6 +805,7 @@ if TYPER_AVAILABLE:
                 name=name,
                 domain=domain,
                 create_entity=not no_entity,
+                create_model=not no_model,
                 create_repository=not no_repository,
                 create_service=not no_service,
                 create_endpoint=not no_endpoint,
@@ -737,6 +838,7 @@ def setup_parser(subparsers):
     feature_parser.add_argument("name", help="Feature name")
     feature_parser.add_argument("--domain", "-d", help="Domain name")
     feature_parser.add_argument("--no-entity", action="store_true", help="Skip entity creation")
+    feature_parser.add_argument("--no-model", action="store_true", help="Skip database model creation")
     feature_parser.add_argument("--no-repository", action="store_true", help="Skip repository creation")
     feature_parser.add_argument("--no-service", action="store_true", help="Skip service creation")
     feature_parser.add_argument("--no-endpoint", action="store_true", help="Skip endpoint creation")
@@ -759,6 +861,7 @@ def handle_command(args):
             name=args.name,
             domain=args.domain,
             create_entity=not args.no_entity,
+            create_model=not args.no_model if hasattr(args, 'no_model') else True,
             create_repository=not args.no_repository,
             create_service=not args.no_service,
             create_endpoint=not args.no_endpoint,

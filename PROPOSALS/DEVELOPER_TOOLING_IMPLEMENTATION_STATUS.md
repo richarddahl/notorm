@@ -13,6 +13,7 @@ We've implemented a comprehensive developer tooling infrastructure to enhance un
 - Create new uno projects from templates
 - Scaffold complete features with entities, repositories, services, and endpoints
 - Generate unit and integration tests automatically
+- Generate database models with proper SQLAlchemy configuration
 
 The implementation includes:
 
@@ -20,6 +21,7 @@ The implementation includes:
 - Project structure detection and analysis
 - Configuration-driven scaffolding
 - Rich terminal UI for better feedback
+- DDD-compliant code organization
 
 ### 2. Templates
 
@@ -29,13 +31,15 @@ The implementation includes:
 - Domain-driven design project structure
 - API integration options
 
-✅ **Component Templates**: Templates for creating domain components:
+✅ **Component Templates**: Enhanced templates for creating domain components:
 
-- Entity models with validation
-- Repository interfaces and implementations
-- Service implementations with business logic
-- API endpoints with FastAPI integration
-- Unit and integration tests
+- Entity models with validation and AggregateRoot pattern
+- Repository interfaces and implementations with Result pattern for error handling
+- Service implementations with proper business logic and domain events
+- API endpoints with FastAPI integration and DTO pattern
+- Unit and integration tests with comprehensive coverage
+- Database models with SQLAlchemy ORM integration
+- Value Objects for domain-specific types
 
 ### 3. Visual Data Modeling Interface
 
@@ -85,6 +89,8 @@ The implementation is designed to work with the existing CLI infrastructure in `
 - The CLI needs testing with the current project structure
 - Some template adjustments may be needed for full compatibility
 - The visual modeler needs comprehensive testing with complex entity relationships
+- Documentation for the new scaffolding features needs to be expanded
+- Additional test coverage for the enhanced scaffolding system is needed
 
 ## Current Focus
 
@@ -97,6 +103,10 @@ We're now focusing on implementing the Performance Profiling Dashboard as our ne
 - ✅ Project scaffolding system 
 - ✅ Feature component generation
 - ✅ Template-based code generation
+- ✅ Database model generation
+- ✅ DDD-compliant domain entity templates
+- ✅ Result pattern integration in repositories
+- ✅ Domain events in service templates
 
 ### 2. Visual Data Modeling ✅
 - ✅ Interactive entity modeling interface with Web Components
@@ -130,11 +140,16 @@ We're now focusing on implementing the Performance Profiling Dashboard as our ne
 
 ### 3. Short-term Enhancements
 
-1. Add more sophisticated project templates
-2. Create template customization options
-3. Support for scaffold plugins
-4. Add code inspection capabilities
-5. Integrate content generation for code documentation
+1. ✅ Enhance domain entity templates with AggregateRoot pattern
+2. ✅ Add Result pattern to repository templates
+3. ✅ Integrate domain events in service templates
+4. ✅ Create database model generation functionality
+5. ✅ Add support for generating value objects
+6. Add more sophisticated project templates
+7. Create template customization options
+8. Support for scaffold plugins
+9. Add code inspection capabilities
+10. Integrate content generation for code documentation
 
 ### 4. Future Features
 
@@ -171,6 +186,16 @@ python -m uno.devtools.cli.main scaffold feature product --domain ecommerce
 
 # Using argparse
 python -m uno.devtools.cli.main scaffold feature product --domain ecommerce
+```
+
+### Creating a Database Model
+
+```bash
+# Using typer
+python -m uno.devtools.cli.main scaffold model product --domain ecommerce
+
+# Using argparse
+python -m uno.devtools.cli.main scaffold model product --domain ecommerce
 ```
 
 ### Using the Visual Data Modeler

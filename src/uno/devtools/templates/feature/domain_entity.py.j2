@@ -1,0 +1,108 @@
+"""
+{{ feature_name|pascal_case }} domain entity module.
+
+This module defines the domain entity for {{ feature_name|pascal_case }} in the uno framework
+following Domain-Driven Design principles.
+"""
+
+from dataclasses import dataclass, field
+from datetime import datetime, UTC
+from typing import Optional, List, Dict, Any, ClassVar
+from uuid import UUID, uuid4
+
+from uno.domain.core import AggregateRoot, Entity, ValueObject
+from uno.core.errors.base import ValidationError
+
+
+@dataclass
+class {{ feature_name|pascal_case }}Id:
+    """Value object for {{ feature_name|pascal_case }} ID."""
+    
+    value: str
+    
+    def __post_init__(self):
+        """Validate ID format."""
+        if not self.value:
+            raise ValidationError("{{ feature_name|pascal_case }} ID cannot be empty")
+    
+    @classmethod
+    def create(cls) -> "{{ feature_name|pascal_case }}Id":
+        """Create a new {{ feature_name|pascal_case }} ID."""
+        return cls(str(uuid4()))
+
+
+@dataclass
+class {{ feature_name|pascal_case }}(AggregateRoot[str]):
+    """
+    {{ feature_name|pascal_case }} domain entity.
+    
+    This class represents the domain entity for {{ feature_name|pascal_case }} following DDD principles.
+    It encapsulates business rules and behaviors related to {{ feature_name|pascal_case }}.
+    """
+    
+    name: str
+    description: Optional[str] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: Optional[datetime] = None
+    is_active: bool = True
+    
+    # Define domain events and behaviors
+    id: str = field(default_factory=lambda: str(uuid4()))
+    
+    # SQLAlchemy model mapping
+    __uno_model__: ClassVar[str] = "{{ feature_name|pascal_case }}Model"
+    
+    def validate(self) -> None:
+        """Validate the {{ feature_name|snake_case }}."""
+        if not self.name:
+            raise ValidationError("Name cannot be empty")
+        
+        # Add additional domain validation rules here
+    
+    def update(self, **kwargs: Any) -> None:
+        """
+        Update entity fields.
+        
+        Args:
+            **kwargs: Fields to update
+        
+        Raises:
+            ValidationError: If validation fails
+        """
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        
+        self.updated_at = datetime.now(UTC)
+        self.validate()
+    
+    def deactivate(self) -> None:
+        """Deactivate the {{ feature_name|snake_case }}."""
+        self.is_active = False
+        self.updated_at = datetime.now(UTC)
+    
+    def activate(self) -> None:
+        """Activate the {{ feature_name|snake_case }}."""
+        self.is_active = True
+        self.updated_at = datetime.now(UTC)
+
+
+# Add related value objects or entities below
+
+@dataclass
+class {{ feature_name|pascal_case }}Details(ValueObject):
+    """Value object for {{ feature_name|pascal_case }} details."""
+    
+    category: str
+    tags: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    def add_tag(self, tag: str) -> None:
+        """Add a tag if it doesn't already exist."""
+        if tag not in self.tags:
+            self.tags.append(tag)
+    
+    def remove_tag(self, tag: str) -> None:
+        """Remove a tag if it exists."""
+        if tag in self.tags:
+            self.tags.remove(tag)

@@ -1,0 +1,356 @@
+"""
+{{ feature_name|pascal_case }} API endpoints.
+
+This module defines FastAPI endpoints for {{ feature_name|pascal_case }} domain entities,
+providing a RESTful API for CRUD operations and domain-specific actions.
+"""
+
+from typing import List, Optional, Dict, Any, Union
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body, status
+from pydantic import BaseModel, Field, validator
+
+from uno.core.result import Result, Success, Failure
+from uno.api.endpoint import UnoEndpoint
+from uno.dependencies.fastapi_integration import inject_dependency
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_service import {{ feature_name|pascal_case }}ServiceProtocol
+from {{ project_name }}.api.dependencies import get_{{ feature_name|snake_case }}_service
+
+
+# Request and response models
+class {{ feature_name|pascal_case }}CreateDTO(BaseModel):
+    """Data Transfer Object for creating a {{ feature_name|pascal_case }}."""
+    
+    name: str = Field(..., description="Name of the {{ feature_name|pascal_case }}")
+    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    is_active: bool = Field(True, description="Whether the {{ feature_name|pascal_case }} is active")
+
+    class Config:
+        """Pydantic model configuration."""
+        json_schema_extra = {
+            "example": {
+                "name": "Example {{ feature_name|pascal_case }}",
+                "description": "This is an example {{ feature_name|pascal_case }} description",
+                "is_active": True
+            }
+        }
+
+
+class {{ feature_name|pascal_case }}UpdateDTO(BaseModel):
+    """Data Transfer Object for updating a {{ feature_name|pascal_case }}."""
+    
+    name: Optional[str] = Field(None, description="Name of the {{ feature_name|pascal_case }}")
+    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    is_active: Optional[bool] = Field(None, description="Whether the {{ feature_name|pascal_case }} is active")
+
+    class Config:
+        """Pydantic model configuration."""
+        json_schema_extra = {
+            "example": {
+                "name": "Updated {{ feature_name|pascal_case }}",
+                "description": "This is an updated description"
+            }
+        }
+
+
+class {{ feature_name|pascal_case }}ResponseDTO(BaseModel):
+    """Data Transfer Object for {{ feature_name|pascal_case }} responses."""
+    
+    id: str
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    is_active: bool
+
+    class Config:
+        """Pydantic model configuration."""
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Example {{ feature_name|pascal_case }}",
+                "description": "This is an example {{ feature_name|pascal_case }} description",
+                "created_at": "2023-01-01T00:00:00Z",
+                "updated_at": "2023-01-02T00:00:00Z",
+                "is_active": True
+            }
+        }
+
+
+class {{ feature_name|pascal_case }}ListResponseDTO(BaseModel):
+    """Data Transfer Object for a list of {{ feature_name|pascal_case }}s."""
+    
+    items: List[{{ feature_name|pascal_case }}ResponseDTO]
+    total: int
+    skip: int
+    limit: int
+
+
+# Create the router
+router = APIRouter(prefix="/api/{{ feature_name|snake_case }}s", tags=["{{ feature_name|snake_case }}s"])
+
+
+# Endpoint for listing {{ feature_name|pascal_case }}s
+@router.get("", response_model={{ feature_name|pascal_case }}ListResponseDTO)
+async def list_{{ feature_name|snake_case }}s(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    name: Optional[str] = Query(None, description="Filter by name"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ListResponseDTO:
+    """
+    List {{ feature_name|pascal_case }}s with optional filtering.
+    
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        name: Optional filter by name
+        is_active: Optional filter by active status
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        List of {{ feature_name|pascal_case }}s
+        
+    Raises:
+        HTTPException: On service error
+    """
+    # Build filters from query params
+    filters = {}
+    if name is not None:
+        filters["name"] = name
+    if is_active is not None:
+        filters["is_active"] = is_active
+    
+    # Get entities from service
+    result = await service.list(skip=skip, limit=limit, filters=filters)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    # Build response
+    items = [{{ feature_name|pascal_case }}ResponseDTO.model_validate(item.__dict__) for item in result.value]
+    
+    return {{ feature_name|pascal_case }}ListResponseDTO(
+        items=items,
+        total=len(items),  # In a real implementation, get the total from a count query
+        skip=skip,
+        limit=limit
+    )
+
+
+# Endpoint for getting a {{ feature_name|pascal_case }} by ID
+@router.get("/{id}", response_model={{ feature_name|pascal_case }}ResponseDTO)
+async def get_{{ feature_name|snake_case }}(
+    id: str = Path(..., description="The {{ feature_name|pascal_case }} ID"),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ResponseDTO:
+    """
+    Get a {{ feature_name|pascal_case }} by ID.
+    
+    Args:
+        id: The {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        {{ feature_name|pascal_case }} details
+        
+    Raises:
+        HTTPException: If {{ feature_name|pascal_case }} not found or on service error
+    """
+    result = await service.get_by_id(id)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    if result.value is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found"
+        )
+    
+    return {{ feature_name|pascal_case }}ResponseDTO.model_validate(result.value.__dict__)
+
+
+# Endpoint for creating a {{ feature_name|pascal_case }}
+@router.post("", response_model={{ feature_name|pascal_case }}ResponseDTO, status_code=status.HTTP_201_CREATED)
+async def create_{{ feature_name|snake_case }}(
+    data: {{ feature_name|pascal_case }}CreateDTO,
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ResponseDTO:
+    """
+    Create a new {{ feature_name|pascal_case }}.
+    
+    Args:
+        data: {{ feature_name|pascal_case }} data
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Created {{ feature_name|pascal_case }}
+        
+    Raises:
+        HTTPException: On validation or service error
+    """
+    result = await service.create(data.model_dump())
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST if "validation" in str(result.error).lower() else status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    return {{ feature_name|pascal_case }}ResponseDTO.model_validate(result.value.__dict__)
+
+
+# Endpoint for updating a {{ feature_name|pascal_case }}
+@router.patch("/{id}", response_model={{ feature_name|pascal_case }}ResponseDTO)
+async def update_{{ feature_name|snake_case }}(
+    id: str = Path(..., description="The {{ feature_name|pascal_case }} ID"),
+    data: {{ feature_name|pascal_case }}UpdateDTO = Body(...),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ResponseDTO:
+    """
+    Update a {{ feature_name|pascal_case }}.
+    
+    Args:
+        id: The {{ feature_name|pascal_case }} ID
+        data: {{ feature_name|pascal_case }} data
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Updated {{ feature_name|pascal_case }}
+        
+    Raises:
+        HTTPException: If {{ feature_name|pascal_case }} not found or on service error
+    """
+    # Filter out None values
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    result = await service.update(id, update_data)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST if "validation" in str(result.error).lower() else status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    if result.value is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found"
+        )
+    
+    return {{ feature_name|pascal_case }}ResponseDTO.model_validate(result.value.__dict__)
+
+
+# Endpoint for deleting a {{ feature_name|pascal_case }}
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_{{ feature_name|snake_case }}(
+    id: str = Path(..., description="The {{ feature_name|pascal_case }} ID"),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> None:
+    """
+    Delete a {{ feature_name|pascal_case }}.
+    
+    Args:
+        id: The {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Raises:
+        HTTPException: If {{ feature_name|pascal_case }} not found or on service error
+    """
+    result = await service.delete(id)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    if not result.value:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found"
+        )
+
+
+# Domain-specific endpoints
+
+@router.post("/{id}/activate", response_model={{ feature_name|pascal_case }}ResponseDTO)
+async def activate_{{ feature_name|snake_case }}(
+    id: str = Path(..., description="The {{ feature_name|pascal_case }} ID"),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ResponseDTO:
+    """
+    Activate a {{ feature_name|pascal_case }}.
+    
+    Args:
+        id: The {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Activated {{ feature_name|pascal_case }}
+        
+    Raises:
+        HTTPException: If {{ feature_name|pascal_case }} not found or on service error
+    """
+    result = await service.activate(id)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    if result.value is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found"
+        )
+    
+    return {{ feature_name|pascal_case }}ResponseDTO.model_validate(result.value.__dict__)
+
+
+@router.post("/{id}/deactivate", response_model={{ feature_name|pascal_case }}ResponseDTO)
+async def deactivate_{{ feature_name|snake_case }}(
+    id: str = Path(..., description="The {{ feature_name|pascal_case }} ID"),
+    service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
+) -> {{ feature_name|pascal_case }}ResponseDTO:
+    """
+    Deactivate a {{ feature_name|pascal_case }}.
+    
+    Args:
+        id: The {{ feature_name|pascal_case }} ID
+        service: {{ feature_name|pascal_case }} service
+        
+    Returns:
+        Deactivated {{ feature_name|pascal_case }}
+        
+    Raises:
+        HTTPException: If {{ feature_name|pascal_case }} not found or on service error
+    """
+    result = await service.deactivate(id)
+    
+    if not result.is_success():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(result.error)
+        )
+    
+    if result.value is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"{{ feature_name|pascal_case }} with ID {id} not found"
+        )
+    
+    return {{ feature_name|pascal_case }}ResponseDTO.model_validate(result.value.__dict__)

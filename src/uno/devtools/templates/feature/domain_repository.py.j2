@@ -1,0 +1,294 @@
+"""
+{{ feature_name|pascal_case }} domain repository module.
+
+This module defines repository interfaces and implementations for {{ feature_name|pascal_case }}
+following the Repository pattern from Domain-Driven Design.
+"""
+
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any, Protocol, TypeVar, Generic, cast
+from uuid import UUID
+
+from sqlalchemy import select, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from uno.database.repository import UnoRepository
+from uno.core.result import Result, Success, Failure, ErrorDetails
+from uno.domain.repository import Repository
+
+from {{ project_name }}.domain.{{ domain + "." if domain else "" }}{{ feature_name|snake_case }}_entity import {{ feature_name|pascal_case }}
+from {{ project_name }}.infrastructure.database.models import {{ feature_name|pascal_case }}Model
+
+
+class {{ feature_name|pascal_case }}RepositoryProtocol(Protocol):
+    """Protocol defining the interface for {{ feature_name|pascal_case }} repositories."""
+    
+    async def get_by_id(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Get a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to retrieve
+            
+        Returns:
+            Result containing the {{ feature_name|pascal_case }} or None if not found
+        """
+        ...
+    
+    async def list(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+        """
+        List {{ feature_name|pascal_case }} entities.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            filters: Optional filters to apply
+            
+        Returns:
+            Result containing list of {{ feature_name|pascal_case }} entities
+        """
+        ...
+    
+    async def create(self, entity: {{ feature_name|pascal_case }}) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Create a new {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            entity: The entity to create
+            
+        Returns:
+            Result containing the created entity
+        """
+        ...
+    
+    async def update(self, entity: {{ feature_name|pascal_case }}) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Update an existing {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            entity: The entity to update
+            
+        Returns:
+            Result containing the updated entity
+        """
+        ...
+    
+    async def delete(self, id: str) -> Result[bool]:
+        """
+        Delete a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to delete
+            
+        Returns:
+            Result containing True if deleted, False if not found
+        """
+        ...
+
+
+class {{ feature_name|pascal_case }}Repository(Repository[{{ feature_name|pascal_case }}, str], {{ feature_name|pascal_case }}RepositoryProtocol):
+    """
+    SQLAlchemy implementation of {{ feature_name|pascal_case }} repository.
+    
+    This class implements the {{ feature_name|pascal_case }}RepositoryProtocol using SQLAlchemy
+    and UnoRepository for data access.
+    """
+    
+    def __init__(self, db_session: AsyncSession):
+        """
+        Initialize the repository.
+        
+        Args:
+            db_session: Database session
+        """
+        self.db = UnoRepository(db_session, {{ feature_name|pascal_case }}Model)
+        self.entity_class = {{ feature_name|pascal_case }}
+    
+    async def get_by_id(self, id: str) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+        """
+        Get a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to retrieve
+            
+        Returns:
+            Result containing the {{ feature_name|pascal_case }} or None if not found
+        """
+        try:
+            db_obj = await self.db.get(id)
+            if db_obj is None:
+                return Success(None)
+            
+            entity = self._to_entity(db_obj)
+            return Success(entity)
+        except Exception as e:
+            return Failure(ErrorDetails(
+                message=f"Failed to get {{ feature_name|pascal_case }} with ID {id}: {str(e)}",
+                code="REPOSITORY_ERROR",
+                details={"id": id, "error": str(e)}
+            ))
+    
+    async def list(
+        self, 
+        skip: int = 0, 
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None
+    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+        """
+        List {{ feature_name|pascal_case }} entities.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            filters: Optional filters to apply
+            
+        Returns:
+            Result containing list of {{ feature_name|pascal_case }} entities
+        """
+        try:
+            query = select({{ feature_name|pascal_case }}Model)
+            
+            # Apply filters if provided
+            if filters:
+                for key, value in filters.items():
+                    if hasattr({{ feature_name|pascal_case }}Model, key):
+                        query = query.filter(getattr({{ feature_name|pascal_case }}Model, key) == value)
+            
+            # Apply pagination
+            query = query.offset(skip).limit(limit)
+            
+            result = await self.db.execute(query)
+            db_objs = result.scalars().all()
+            
+            entities = [self._to_entity(db_obj) for db_obj in db_objs]
+            return Success(entities)
+        except Exception as e:
+            return Failure(ErrorDetails(
+                message=f"Failed to list {{ feature_name|pascal_case }} entities: {str(e)}",
+                code="REPOSITORY_ERROR",
+                details={"skip": skip, "limit": limit, "filters": filters, "error": str(e)}
+            ))
+    
+    async def create(self, entity: {{ feature_name|pascal_case }}) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Create a new {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            entity: The entity to create
+            
+        Returns:
+            Result containing the created entity
+        """
+        try:
+            # Validate entity
+            entity.validate()
+            
+            # Convert entity to model
+            db_obj = self._to_model(entity)
+            
+            # Save to database
+            created_obj = await self.db.add(db_obj)
+            
+            # Convert back to entity
+            created_entity = self._to_entity(created_obj)
+            return Success(created_entity)
+        except Exception as e:
+            return Failure(ErrorDetails(
+                message=f"Failed to create {{ feature_name|pascal_case }}: {str(e)}",
+                code="REPOSITORY_ERROR",
+                details={"entity": entity.__dict__, "error": str(e)}
+            ))
+    
+    async def update(self, entity: {{ feature_name|pascal_case }}) -> Result[{{ feature_name|pascal_case }}]:
+        """
+        Update an existing {{ feature_name|pascal_case }} entity.
+        
+        Args:
+            entity: The entity to update
+            
+        Returns:
+            Result containing the updated entity
+        """
+        try:
+            # Validate entity
+            entity.validate()
+            
+            # Check if entity exists
+            db_obj = await self.db.get(entity.id)
+            if db_obj is None:
+                return Failure(ErrorDetails(
+                    message=f"{{ feature_name|pascal_case }} with ID {entity.id} not found",
+                    code="NOT_FOUND",
+                    details={"id": entity.id}
+                ))
+            
+            # Update model with entity values
+            for key, value in entity.__dict__.items():
+                if hasattr(db_obj, key):
+                    setattr(db_obj, key, value)
+            
+            # Save to database
+            updated_obj = await self.db.update(db_obj)
+            
+            # Convert back to entity
+            updated_entity = self._to_entity(updated_obj)
+            return Success(updated_entity)
+        except Exception as e:
+            return Failure(ErrorDetails(
+                message=f"Failed to update {{ feature_name|pascal_case }}: {str(e)}",
+                code="REPOSITORY_ERROR",
+                details={"entity": entity.__dict__, "error": str(e)}
+            ))
+    
+    async def delete(self, id: str) -> Result[bool]:
+        """
+        Delete a {{ feature_name|pascal_case }} by ID.
+        
+        Args:
+            id: The ID of the {{ feature_name|pascal_case }} to delete
+            
+        Returns:
+            Result containing True if deleted, False if not found
+        """
+        try:
+            # Check if entity exists
+            db_obj = await self.db.get(id)
+            if db_obj is None:
+                return Success(False)
+            
+            # Delete from database
+            await self.db.delete(id)
+            return Success(True)
+        except Exception as e:
+            return Failure(ErrorDetails(
+                message=f"Failed to delete {{ feature_name|pascal_case }} with ID {id}: {str(e)}",
+                code="REPOSITORY_ERROR",
+                details={"id": id, "error": str(e)}
+            ))
+    
+    def _to_entity(self, model: {{ feature_name|pascal_case }}Model) -> {{ feature_name|pascal_case }}:
+        """Convert a database model to a domain entity."""
+        return {{ feature_name|pascal_case }}(
+            id=str(model.id),
+            name=model.name,
+            description=model.description,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            is_active=model.is_active
+        )
+    
+    def _to_model(self, entity: {{ feature_name|pascal_case }}) -> {{ feature_name|pascal_case }}Model:
+        """Convert a domain entity to a database model."""
+        return {{ feature_name|pascal_case }}Model(
+            id=entity.id,
+            name=entity.name,
+            description=entity.description,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
+            is_active=entity.is_active
+        )

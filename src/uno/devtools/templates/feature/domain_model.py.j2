@@ -1,0 +1,57 @@
+"""
+{{ feature_name|pascal_case }} database model.
+
+This module defines the SQLAlchemy ORM model for {{ feature_name|pascal_case }}.
+"""
+
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+from sqlalchemy import (
+    Column, String, Text, Boolean, DateTime, 
+    Integer, ForeignKey, Table, UniqueConstraint
+)
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
+
+from {{ project_name }}.infrastructure.database.base import Base
+import uuid
+
+
+class {{ feature_name|pascal_case }}Model(Base):
+    """SQLAlchemy model for {{ feature_name|pascal_case }}."""
+    
+    __tablename__ = "{{ feature_name|snake_case }}s"
+    
+    id = Column(
+        UUID(as_uuid=False), 
+        primary_key=True, 
+        default=lambda: str(uuid.uuid4())
+    )
+    name = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    
+    # Define relationships
+    # Example:
+    # tags = relationship("TagModel", secondary="{{ feature_name|snake_case }}_tags", back_populates="{{ feature_name|snake_case }}s")
+    
+    # Define table constraints
+    __table_args__ = (
+        UniqueConstraint('name', name='uq_{{ feature_name|snake_case }}_name'),
+    )
+    
+    def __repr__(self) -> str:
+        """String representation of the model."""
+        return f"{{ feature_name|pascal_case }}(id={self.id}, name={self.name})"
+
+
+# Junction tables for many-to-many relationships
+# Example:
+# {{ feature_name|snake_case }}_tags = Table(
+#     "{{ feature_name|snake_case }}_tags",
+#     Base.metadata,
+#     Column("{{ feature_name|snake_case }}_id", UUID(as_uuid=False), ForeignKey("{{ feature_name|snake_case }}s.id"), primary_key=True),
+#     Column("tag_id", UUID(as_uuid=False), ForeignKey("tags.id"), primary_key=True),
+# )
