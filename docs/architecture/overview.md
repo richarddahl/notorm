@@ -65,6 +65,10 @@ The CQRS pattern separates read and write operations:
 - **Query Handlers**: Retrieve data without changing state
 - **Read Models**: Optimized data structures for querying
 - **SQL-Based Query Handlers**: Performance-optimized direct SQL queries
+- **Command Bus/Query Bus**: Message buses for routing commands and queries
+- **Mediator**: Central coordinator for command and query execution
+- **Performance Optimizations**: Batch processing, caching, and parallelization
+- **Monitoring and Observability**: Metrics collection, tracing, and health checks
 
 ## Component Relationships
 
@@ -125,4 +129,8 @@ uno is built on several key design principles:
 - [Domain-Driven Design](domain_driven_design.md): Implementing DDD with uno
 - [Event-Driven Architecture](event_driven_architecture.md): Using the event system
 - [CQRS Pattern](cqrs.md): Implementing Command Query Responsibility Segregation
+- [CQRS and Alternatives](cqrs_and_alternatives.md): Comparing CQRS with alternative approaches
+- [CQRS Performance Guidelines](cqrs_performance_guidelines.md): Optimizing CQRS performance
 - [Application Services](application_services.md): Building the application service layer
+- [Read Model API](/docs/api/read_model.md): Using the Read Model pattern
+- [CQRS and Read Model Integration](/docs/api/cqrs_read_model_integration.md): Integrating CQRS and Read Model

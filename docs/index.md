@@ -21,6 +21,7 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 - **Unified Database Management**: Centralized approach to database connection management with support for both synchronous and asynchronous operations
 - **Domain-Driven Design**: Comprehensive DDD implementation with entities, aggregates, value objects, repositories, and domain services
 - **Event-Driven Architecture**: Robust event system with topic-based routing, event persistence, and both sync and async handlers
+- **CQRS and Read Models**: Complete Command Query Responsibility Segregation implementation with optimized read models, performance enhancements, and monitoring
 - **Vector Search**: Integrated pgvector support for semantic search and embedding storage
 - **SQL Generation**: Powerful SQL emitters for creating and managing database objects
 - **API Integration**: FastAPI endpoint factory for quickly building REST APIs
@@ -37,9 +38,13 @@ The name "uno" (Spanish for "one") represents the unified nature of the framewor
 
 - [**Getting Started**](getting_started.md): Installation and first steps
 - [**Architecture**](architecture/overview.md): High-level architecture and design principles
+  - [CQRS and Read Model](architecture/cqrs.md): Command Query Responsibility Segregation pattern
+  - [CQRS and Alternatives](architecture/cqrs_and_alternatives.md): Comparing CQRS with alternative database approaches
+  - [CQRS Performance Guidelines](architecture/cqrs_performance_guidelines.md): Optimizing CQRS performance
 - [**Data Layer**](database/overview.md): Database integration and management
 - [**Business Logic**](business_logic/overview.md): Business logic implementation
 - [**API Layer**](api/overview.md): API definition and integration
+  - [CQRS and Read Model Integration](api/cqrs_read_model_integration.md): Integration between CQRS and Read Model
 - [**Security**](security/overview.md): Authentication, authorization, and security features
 - [**Vector Search**](vector_search/overview.md): Semantic search capabilities
 - [**Error Handling**](error_handling/overview.md): Error management and reporting
@@ -94,6 +99,12 @@ python src/scripts/createdb.py
 
 # Run the example application
 python examples/ecommerce/app.py
+
+# Check out the database interaction approaches
+python examples/database_interaction_approaches.py
+
+# Try the CQRS performance and monitoring examples
+python examples/cqrs_performance_monitoring_example.py
 ```
 
 For more detailed instructions, see the [Getting Started](getting_started.md) guide.
