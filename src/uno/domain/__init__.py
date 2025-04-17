@@ -5,17 +5,107 @@ This module implements a domain-driven design (DDD) approach for the Uno framewo
 providing a clear separation of concerns and a rich domain model.
 """
 
-# Core domain concepts
-from uno.domain.core import (
-    Entity, 
-    ValueObject, 
-    AggregateRoot, 
+import warnings
+
+# Core domain models, protocols, and factories
+from uno.domain.models import (
     DomainEvent,
-    DomainException
+    ValueObject,
+    PrimitiveValueObject,
+    Entity,
+    AggregateRoot,
+    CommandResult,
+    # Common value objects
+    Email,
+    Money,
+    Address,
 )
 
-# Data access
-from uno.domain.repository import Repository
+from uno.domain.protocols import (
+    DomainEventProtocol,
+    ValueObjectProtocol, 
+    PrimitiveValueObjectProtocol,
+    EntityProtocol,
+    AggregateRootProtocol,
+    SpecificationProtocol,
+    EntityFactoryProtocol,
+    CommandResultProtocol,
+    DomainServiceProtocol,
+)
+
+from uno.domain.factories import (
+    EntityFactory,
+    AggregateFactory,
+    ValueObjectFactory,
+    FactoryRegistry,
+    create_entity_factory,
+    create_aggregate_factory,
+    create_value_factory,
+)
+
+from uno.domain.specifications import (
+    Specification,
+    AndSpecification,
+    OrSpecification,
+    NotSpecification,
+    AttributeSpecification,
+    PredicateSpecification,
+    DictionarySpecification,
+    specification_factory,
+)
+
+# Specification translators
+from uno.domain.specification_translators import (
+    SpecificationTranslator,
+    PostgreSQLSpecificationTranslator,
+    PostgreSQLRepository,
+    AsyncPostgreSQLRepository,
+)
+
+# SQLAlchemy repositories
+from uno.domain.sqlalchemy_repositories import (
+    SQLAlchemyRepository,
+    SQLAlchemyUnitOfWork,
+)
+
+# Repository protocols
+from uno.domain.repository_protocols import (
+    ReadRepositoryProtocol,
+    WriteRepositoryProtocol,
+    RepositoryProtocol,
+    BatchRepositoryProtocol,
+    UnitOfWorkProtocol,
+    AsyncReadRepositoryProtocol,
+    AsyncWriteRepositoryProtocol,
+    AsyncRepositoryProtocol,
+    AsyncBatchRepositoryProtocol,
+    AsyncUnitOfWorkProtocol,
+)
+
+# Repository results
+from uno.domain.repository_results import (
+    RepositoryResult,
+    GetResult,
+    FindResult,
+    FindOneResult,
+    CountResult,
+    ExistsResult,
+    AddResult,
+    UpdateResult,
+    RemoveResult,
+)
+
+# Base repositories
+from uno.domain.repositories import (
+    Repository,
+    InMemoryRepository,
+    UnitOfWork,
+    InMemoryUnitOfWork,
+)
+
+# Include compatibility imports for backward compatibility
+# These will be removed in a future version
+from uno.domain.core import DomainException
 
 # Business logic
 from uno.domain.service import DomainService
@@ -23,7 +113,6 @@ from uno.domain.service import DomainService
 # Event sourcing and event store
 try:
     from uno.domain.events import (
-        DomainEvent,
         EventHandler,
         EventBus,
         EventStore,
@@ -114,17 +203,95 @@ try:
             "get_event_sourced_repository"
         ]
     
-    __all__ = [
-        # Core domain concepts
-        "Entity",
-        "ValueObject",
-        "AggregateRoot",
+    # New domain model components
+    domain_model_components = [
+        # Core domain models
         "DomainEvent",
-        "DomainException",
+        "ValueObject",
+        "PrimitiveValueObject",
+        "Entity",
+        "AggregateRoot",
+        "CommandResult",
+        "Email",
+        "Money",
+        "Address",
         
-        # Data access
+        # Domain protocols
+        "DomainEventProtocol",
+        "ValueObjectProtocol", 
+        "PrimitiveValueObjectProtocol",
+        "EntityProtocol",
+        "AggregateRootProtocol",
+        "SpecificationProtocol",
+        "EntityFactoryProtocol",
+        "CommandResultProtocol",
+        "DomainServiceProtocol",
+        
+        # Domain factories
+        "EntityFactory",
+        "AggregateFactory",
+        "ValueObjectFactory",
+        "FactoryRegistry",
+        "create_entity_factory",
+        "create_aggregate_factory",
+        "create_value_factory",
+        
+        # Specifications
+        "Specification",
+        "AndSpecification",
+        "OrSpecification",
+        "NotSpecification",
+        "AttributeSpecification",
+        "PredicateSpecification",
+        "DictionarySpecification",
+        "specification_factory",
+        
+        # Specification translators
+        "SpecificationTranslator",
+        "PostgreSQLSpecificationTranslator",
+        "PostgreSQLRepository",
+        "AsyncPostgreSQLRepository",
+        
+        # SQLAlchemy repositories
+        "SQLAlchemyRepository",
+        "SQLAlchemyUnitOfWork",
+        
+        # Repository protocols
+        "ReadRepositoryProtocol",
+        "WriteRepositoryProtocol",
+        "RepositoryProtocol",
+        "BatchRepositoryProtocol",
+        "UnitOfWorkProtocol",
+        "AsyncReadRepositoryProtocol",
+        "AsyncWriteRepositoryProtocol",
+        "AsyncRepositoryProtocol",
+        "AsyncBatchRepositoryProtocol",
+        "AsyncUnitOfWorkProtocol",
+        
+        # Repository results
+        "RepositoryResult",
+        "GetResult",
+        "FindResult",
+        "FindOneResult",
+        "CountResult",
+        "ExistsResult",
+        "AddResult",
+        "UpdateResult",
+        "RemoveResult",
+        
+        # Base repositories
         "Repository",
-        
+        "InMemoryRepository",
+        "UnitOfWork",
+        "InMemoryUnitOfWork",
+    ]
+    
+    # Legacy for backward compatibility (will be removed)
+    legacy_components = [
+        "DomainException",
+    ]
+    
+    __all__ = domain_model_components + legacy_components + [
         # Business logic
         "DomainService",
         
@@ -179,17 +346,110 @@ except ImportError:
             "get_event_sourced_repository"
         ]
     
-    __all__ = [
-        # Core domain concepts
-        "Entity",
-        "ValueObject",
-        "AggregateRoot",
+    # New domain model components
+    domain_model_components = [
+        # Core domain models
         "DomainEvent",
-        "DomainException",
+        "ValueObject",
+        "PrimitiveValueObject",
+        "Entity",
+        "AggregateRoot",
+        "CommandResult",
+        "Email",
+        "Money",
+        "Address",
         
-        # Data access
+        # Domain protocols
+        "DomainEventProtocol",
+        "ValueObjectProtocol", 
+        "PrimitiveValueObjectProtocol",
+        "EntityProtocol",
+        "AggregateRootProtocol",
+        "SpecificationProtocol",
+        "EntityFactoryProtocol",
+        "CommandResultProtocol",
+        "DomainServiceProtocol",
+        
+        # Domain factories
+        "EntityFactory",
+        "AggregateFactory",
+        "ValueObjectFactory",
+        "FactoryRegistry",
+        "create_entity_factory",
+        "create_aggregate_factory",
+        "create_value_factory",
+        
+        # Specifications
+        "Specification",
+        "AndSpecification",
+        "OrSpecification",
+        "NotSpecification",
+        "AttributeSpecification",
+        "PredicateSpecification",
+        "DictionarySpecification",
+        "specification_factory",
+        
+        # Specification translators
+        "SpecificationTranslator",
+        "PostgreSQLSpecificationTranslator",
+        "PostgreSQLRepository",
+        "AsyncPostgreSQLRepository",
+        
+        # SQLAlchemy repositories
+        "SQLAlchemyRepository",
+        "SQLAlchemyUnitOfWork",
+        
+        # Repository protocols
+        "ReadRepositoryProtocol",
+        "WriteRepositoryProtocol",
+        "RepositoryProtocol",
+        "BatchRepositoryProtocol",
+        "UnitOfWorkProtocol",
+        "AsyncReadRepositoryProtocol",
+        "AsyncWriteRepositoryProtocol",
+        "AsyncRepositoryProtocol",
+        "AsyncBatchRepositoryProtocol",
+        "AsyncUnitOfWorkProtocol",
+        
+        # Repository results
+        "RepositoryResult",
+        "GetResult",
+        "FindResult",
+        "FindOneResult",
+        "CountResult",
+        "ExistsResult",
+        "AddResult",
+        "UpdateResult",
+        "RemoveResult",
+        
+        # Base repositories
         "Repository",
-        
+        "InMemoryRepository",
+        "UnitOfWork",
+        "InMemoryUnitOfWork",
+    ]
+    
+    # Legacy for backward compatibility (will be removed)
+    legacy_components = [
+        "DomainException",
+    ]
+    
+    __all__ = domain_model_components + legacy_components + [
         # Business logic
         "DomainService",
     ] + event_store_components
+
+# Display a warning to encourage using the new imports directly
+warnings.warn(
+    "For improved code organization, import domain model components directly from:\n"
+    "- uno.domain.models (Entity, ValueObject, etc.)\n"
+    "- uno.domain.protocols (EntityProtocol, ValueObjectProtocol, etc.)\n"
+    "- uno.domain.factories (EntityFactory, create_entity_factory, etc.)\n"
+    "- uno.domain.specifications (Specification, AttributeSpecification, etc.)\n"
+    "- uno.domain.specification_translators (PostgreSQLSpecificationTranslator, etc.)\n"
+    "- uno.domain.sqlalchemy_repositories (SQLAlchemyRepository, SQLAlchemyUnitOfWork, etc.)\n"
+    "- uno.domain.repository_protocols (RepositoryProtocol, etc.)\n"
+    "- uno.domain.repository_results (RepositoryResult, GetResult, etc.)",
+    DeprecationWarning,
+    stacklevel=2
+)
