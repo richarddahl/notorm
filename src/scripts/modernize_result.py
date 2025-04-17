@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Modernize Result API usage in the codebase.
@@ -13,6 +14,10 @@ import os
 import re
 from pathlib import Path
 import sys
+import cli_utils
+
+# Shared logger
+logger = cli_utils.setup_logger(__name__)
 
 
 def update_file(file_path: Path) -> tuple[int, list[str]]:
@@ -68,18 +73,18 @@ def update_file(file_path: Path) -> tuple[int, list[str]]:
     return count, modified_lines
 
 
-def main():
+def main() -> int:
     """Update Result API usage in the codebase."""
-    # Get the project root directory (2 levels up from the script)
+    # Parse arguments and determine target path
     project_root = Path(__file__).parent.parent.parent
-    
-    if len(sys.argv) > 1:
-        # Allow specifying a specific file or directory
-        target_path = Path(sys.argv[1])
+    target_arg = cli_utils.parse_path_arg(
+        "Update Result API usage in the codebase"
+    )
+    if target_arg:
+        target_path = Path(target_arg)
         if not target_path.is_absolute():
             target_path = project_root / target_path
     else:
-        # Default to scanning the src directory
         target_path = project_root / 'src'
     
     py_files = []
@@ -88,7 +93,7 @@ def main():
     else:
         py_files = list(target_path.glob('**/*.py'))
     
-    print(f"Scanning {len(py_files)} Python files...")
+    logger.info(f"Scanning {len(py_files)} Python files...")
     
     total_replacements = 0
     modified_files = 0
@@ -106,14 +111,13 @@ def main():
             modified_files += 1
             total_replacements += count
             rel_path = file_path.relative_to(project_root) if project_root in file_path.parents else file_path
-            print(f"\nUpdated {rel_path} ({count} replacements):")
+            logger.info(f"\nUpdated {rel_path} ({count} replacements):")
             for line in modified_lines[:5]:  # Show at most 5 modifications per file
-                print(f"  {line}")
+                logger.info(f"  {line}")
             if len(modified_lines) > 5:
-                print(f"  ... and {len(modified_lines) - 5} more modifications")
+                logger.info(f"  ... and {len(modified_lines) - 5} more modifications")
     
-    print(f"\nSummary: Updated {total_replacements} occurrences in {modified_files} files.")
-    
+    logger.info(f"\nSummary: Updated {total_replacements} occurrences in {modified_files} files.")
     return 0
 
 
