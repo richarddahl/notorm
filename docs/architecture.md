@@ -1,107 +1,185 @@
-<!-- docs/architecture.md -->
-# Unified DDD Architecture for 'uno' Library
 
-This document defines a unified, modern Domain‑Driven Design (DDD) architecture for the 'uno' library, a framework to build type‑safe Python web APIs.
-It aligns and organizes existing modules into clear DDD layers, leverages Protocols over concrete base classes for interfaces, adopts Pydantic for
-DTOs and settings, and removes unused code. The goal is to deliver a lean, extensible library for building production‑ready DDD applications.
+# Progress Summary
 
-## 1. Goals
-- Offer a cohesive, type-safe DDD framework: Domain, Application, Infrastructure, API layers
-- Consolidate and reuse existing modules under clear layer boundaries
-- Use typing.Protocol for interface definitions (repositories, unit of work, event bus)
-- Adopt Pydantic models for DTOs, schema validation, and settings management
-- Provide CLI scaffolding to generate new bounded contexts and modules
-- Remove unused code and modules without backward‑compatibility constraints
-- Enforce dependency direction (inner layers independent of outer layers), strict typing, and testability
+- Confirmed project uses a `src/` directory layout for proper package management.
+- Defined core Protocols for key abstractions:
+  - `Repository[T]` for data persistence.
+  - `EventBus` for asynchronous event pub/sub.
+  - `UnitOfWork` for transaction management.
+  - `CacheAdapter` for caching mechanisms.
+  - `AuthProvider` for authentication/authorization.
+- Incorporated existing Protocols from `uno/protocols.py` and verified alignment.
+- Implemented a minimal RabbitMQ `EventBus` using `aio_pika`, serving as a starting point for RabbitMQ messaging.
+- Prepared the foundational structure for dependency injection, module reorganization, and Pydantic DTOs, as per the plan.
 
-## 2. Layered Module Mapping
+    This document defines a modern, layered Domain-Driven Design (DDD) architecture for the uno library, aimed at building type-safe, scalable Python web APIs.
 
-Align existing `src/uno` modules into the following DDD layers:
+    ## Goals
 
-  Layer              | Modules / Files
-  ------------------ | --------------------------------------------------------------
-  Domain             | `uno/domain/`, `uno/values.py`, `uno/enums.py`, domain Events
-  Application        | `uno/queries/`, `uno/jobs/`, `uno/workflows/`, DTOs in `uno/dto/`
-  Infrastructure     | `uno/database/`, `uno/sql/`, `uno/messaging/`, `uno/caching/`, `uno/security/`
-  API                | `uno/api/`, `uno/realtime/`, generate FastAPI controllers & schemas
-  Core & Protocols   | `uno/core/`, `uno/protocols.py`, `uno/errors.py`, `uno/settings.py`, DI in `uno/dependencies/`
+        * Establish a coherent, extensible framework organized around DDD layers: Domain, Application, Infrastructure, API.
+        * Reorganize existing modules into these layers, removing unused code.
+        * Use Protocols in interfaces instead of ABCs or concrete classes.
+        * Leverage Pydantic models for DTOs and configuration.
+        * Provide CLI scaffolding for bounded contexts.
+        * Enforce clear dependency directions and testability.
 
-The root `uno/` package will be reorganized to match this structure: move or alias modules into new subpackages and remove unused folders
-(e.g., `offline/`, `vector_search/`, `static/`, `templates/`).
+    ## Module Mapping
 
-## 3. Core DDD Layers
-We follow Onion/Hexagonal architecture:
+    Align existing modules into DDD layers:
 
-  - **Domain layer**
-    - Entities, Value Objects, Aggregates, Domain Events
-    - Pure business logic, no external dependencies
-  - **Application layer**
-    - Application Services (use‑cases), Commands, Queries, Unit of Work
-    - Depends only on Domain interfaces (Protocols)
-  - **Infrastructure layer**
-    - Concrete implementations: Repositories (SQLAlchemy), EventBus adapters (Kafka, in‑process), Caching, Security
-    - Depends on Application and Domain interfaces
-  - **API layer**
-    - Controllers (FastAPI), DTOs (Pydantic), routing, dependency injection
-    - Depends on Application layer only
+    ┌──────────────────┬───────────────────────────────────────────────────────────────────────────────┐
+    │ Layer            │ Modules / Files                                                               │
+    ├──────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+    │ Domain           │ uno/domain/, uno/values.py, uno/enums.py, domain Events                       │
+    ├──────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+    │ Application      │ uno/queries/, uno/jobs/, uno/workflows/, uno/dto/                             │
+    ├──────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+    │ Infrastructure   │ uno/database/, uno/sql/, uno/messaging/, uno/caching/, uno/security/          │
+    ├──────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+    │ API              │ uno/api/, uno/realtime/, FastAPI controllers & schemas                        │
+    ├──────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+    │ Core & Protocols │ uno/core/, uno/protocols.py, uno/errors.py, uno/settings.py, uno/dependencies │
+    └──────────────────┴───────────────────────────────────────────────────────────────────────────────┘
 
-**Rule**: Deny imports from outer layers into inner layers. Use Protocols in inner layers to define abstractions.
+    ## Core DDD Layers
 
-## 4. Protocols and Core Utilities
-Centralize shared interfaces and utilities:
+    We adopt Onion/Hexagonal architecture:
 
-- **uno/protocols.py**: Define Protocols for:
-  - `Repository[T]`, `UnitOfWork`, `EventBus`, `CacheAdapter`, `AuthProvider`
-  - CommandHandler, QueryHandler, EventHandler
-- **uno/errors.py**: Standard exception hierarchy (DomainError, ApplicationError, InfrastructureError)
-- **uno/settings.py**: Pydantic-based configuration management
-- **uno/dependencies/**: DI container registrations, factory functions
-- **uno/logging/**: Structured logging utilities
+        * **Domain**: Entities, Value Objects, Domain Events, business rules.
+        * **Application**: Use cases, services, commands, queries, based only on domain interfaces.
+        * **Infrastructure**: Repositories, messaging, storage, external APIs.
+        * **API**: REST controllers, DTOs, route setup.
+
+    Internal layers depend only on inner layers; use Protocols to define abstractions.
+
+    ## Protocols and Utilities
+
+    Centralize shared interfaces in uno/protocols.py, e.g., Repository[T], UnitOfWork, EventBus, CacheAdapter, AuthProvider.
+    Define error hierarchies in uno/errors.py, configs in uno/settings.py (Pydantic).
+    Set up Dependency Injection and logging utilities.
+
+    ## CLI and Scaffolding
+
+    Use CLI tools to generate new contexts:
+
+        uno-cli create-context Order --output contexts/Order
+
+    Creates folder structure with domain, application, infrastructure, api.
+    Each folder includes a stub and README with guidelines.
+
+    ## Messaging & Events
+
+        * Domain events, async integration events via EventBus with adapters (in-memory, Kafka).
+        * Handlers registered via Dependency Injection.
+
+    ## Persistence
+
+        * Repository interfaces in Domain, implementations using SQLAlchemy, Alembic migrations.
+        * Optional CQRS with separate read models.
+
+    ## Testing
+
+        * Unit tests for domain and application layers.
+        * Integration tests for infrastructure.
+        * Use `pytest`, static analysis with `mypy`, `black`, `isort`, pre-commit hooks for code quality.
+
+    ## Milestones
+
+        1. Module reorganization
+        2. Protocol extraction
+        3. Pydantic DTOs
+        4. Dependency registration
+        5. Code cleanup
+        6. Event & CQRS consolidation
+        7. Testing & CI
+        8. Documentation updates
+        9. Release v1.0
+
+    ### 1. Module Reorganization
+
+        * Create directories:
+            * `uno/domain/` for domain entities, value objects, domain events
+
+            * `uno/application/` for use cases, commands, queries, services
+
+            * `uno/infrastructure/` for repositories, database, messaging, caching, external integrations
+
+            * `uno/api/` for FastAPI controllers, schemas, route setup
+
+            * `uno/core/` for core utilities, Protocols, errors, settings, DI
+        * Move code files from existing locations into these directories based on their responsibility.
+        * Remove unused modules and code (like static assets, old vector search, other unrelated modules).
+
+    ### 2. Define Protocols
+
+        * In `uno/protocols.py`, define interfaces for core abstractions:
+            * `Repository[T]` with methods: add, get, list, remove, etc.
+
+            * `UnitOfWork` with commit, rollback.
+
+            * `EventBus` with publish, subscribe.
+
+            * `CacheAdapter` with get, set, delete.
+
+            * `AuthProvider` with authenticate, authorize.
+        * Update existing service and repository code to depend on these Protocols instead of concrete classes or ABCs.
+
+    ### 3. Refactor Interfaces and Implementations
+
+        * Replace existing abstract base classes with Protocols where appropriate.
+        * In Infrastructure, implement repositories and adapters conforming to Protocols.
+        * Ensure all dependencies are injected via the interfaces, enabling easy testing and swapping implementations.
+
+    ### 4. Convert DTOs and Configurations to Pydantic
+
+        * Migrate existing DTOs, request/response schemas to Pydantic models.
+        * Convert configuration settings to Pydantic-based `Settings` class with environment variable support.
+        * Update validation logic to use Pydantic validation rather than custom or legacy methods.
+
+    ### 5. Setup Dependency Injection
+
+        * In `uno/dependencies.py`, register all service implementations and Protocols.
+        * Use a DI container or manual registration pattern.
+        * Provide factory functions for repositories, event buses, cache, security, and other integrations.
+
+    ### 6. Add CLI scaffolding
+
+        * Create commands such as `create-context` that generate a new context folder with a predefined structure:      contexts/
+              └── Order/
+                  ├── domain/
+                  ├── application/
+                  ├── infrastructure/
+                  └── api/
+        * Include stub files and README guidance in each folder.
+
+    ### 7. Set up Messaging & Events
+
+        * Implement domain events in the domain layer.
+        * Implement async event handlers and an event bus in infrastructure.
+        * Integrate with external message brokers (Kafka, RabbitMQ) via adapters.
+
+    ### 8. Configure Persistence and Migrations
+
+        * Define repository interfaces in Domain.
+        * Implement SQLAlchemy repositories in Infrastructure.
+        * Set up Alembic for database migrations, and establish naming conventions.
+
+    ### 9. Testing Strategy
+
+        * Write unit tests for inner layers, mocking dependencies via Protocols.
+        * Write integration tests for infrastructure components and CLI commands.
+        * Enforce static typing with `mypy` and code quality with pre-commit hooks.
+
+    ### 10. Document and update
+
+        * Update the architecture.md to reflect the new structure, protocols, and best practices.
+        * Create example usage, REST endpoints, and documentation/tutorials.
+
+    ### 11. Final review & release
+
+        * Conduct thorough testing and code review.
+        * Tag the initial `v1.0` release once stability is achieved.
+        * Continue to iterate and improve based on feedback.
 
 
-## 5. CLI Scaffolding
-Use `devtools` or `scripts/` to scaffold new bounded contexts:
-```bash
-uno-cli create-context Order --output contexts/Order
-```
-The generated structure:
-```
-contexts/Order/
-├── domain/
-├── application/
-├── infrastructure/
-└── api/
-```
-Each folder includes a stub and README with guidelines.
-
-## 6. Communication & Events
-- **Domain Events**: Synchronous, in‑process, defined in Domain layer
-- **Integration Events**: Asynchronous, versioned schemas (Protobuf/JSON-Schema), published via `EventBus` adapters
-- Out-of-the-box adapters: in‑memory bus, Kafka, RabbitMQ
-- Handlers registered via dependency injection in Infrastructure
-
-## 7. Persistence & Data Access
-- Define repository interfaces (Protocols) in Domain layer
-- Implement repositories using SQLAlchemy in Infrastructure
-- Use Alembic for migrations per context
-- Optional CQRS: define read models in Application or dedicated `read_model/` package
-
-## 8. Testing & Quality Gates
-- Unit tests for Domain and Application layers (pytest + fixtures)
-- Integration tests for Infrastructure adapters and CLI
-- Static analysis: `black`, `isort`, `flake8`, `mypy --strict`
-- Pre-commit hooks for formatting, linting, type checks
-
-## 9. Refactor Plan & Milestones
-1. **Module Reorganization**: Create `domain/`, `application/`, `infrastructure/`, `api/`, `core/` subpackages under `uno/` and move existing code accordingly.
-2. **Protocol Definitions**: Extract interfaces into `uno/protocols.py`, replace ABCs with Protocols.
-3. **Pydantic Adoption**: Convert DTOs, settings, and schema validations to Pydantic models.
-4. **Dependency Injection**: Centralize in `uno/dependencies/`, register all adapters and services.
-5. **Cleanup**: Remove unused modules (`offline/`, `vector_search/`, `static/`, `templates/`).
-6. **CQRS & Events**: Consolidate read/write patterns, event bus adapters.
-7. **Testing & CI**: Add strict mypy, pre-commit, and expand test coverage.
-8. **Documentation & Examples**: Update docs and examples reflecting new structure.
-9. **v1.0.0 Release**: Final review, tag, and publish.
-
----
-_This document is the living architecture and roadmap for the DDD Python library. It will evolve as features are added and feedback is collected._
+    Living document, update as features evolve.
