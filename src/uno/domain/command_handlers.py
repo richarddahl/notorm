@@ -23,7 +23,7 @@ from typing import (
 from uuid import uuid4
 
 from uno.domain.cqrs import Command, CommandHandler, CommandResult
-from uno.domain.model import Entity, AggregateRoot
+from uno.domain.models import Entity, AggregateRoot
 from uno.domain.repositories import Repository, AggregateRepository
 from uno.domain.unit_of_work import UnitOfWork
 from uno.core.errors import UnoError, ValidationError

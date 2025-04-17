@@ -70,3 +70,35 @@ class FeatureFactory:
         raise AttributeError(
             f"No 'router' or 'get_router' in {mod.__name__}"  # noqa: E501
         )
+    
+    def get_routers(self) -> list[Any]:  # requires Python 3.9+
+        """
+        Collect all FastAPI APIRouter instances from the feature's endpoints module.
+        """
+        if self.endpoints is None:
+            raise ModuleNotFoundError(
+                f"domain_endpoints not found for feature '{self.feature}'"
+            )
+        mod = self.endpoints
+        routers: list[Any] = []
+        # Allow get_router() to contribute
+        try:
+            primary = self.get_router()
+            routers.append(primary)
+        except (ModuleNotFoundError, AttributeError):
+            pass
+        # Discover any APIRouter instances defined at module level
+        try:
+            from fastapi import APIRouter
+        except ImportError:
+            return routers
+        for attr in dir(mod):
+            val = getattr(mod, attr)
+            if isinstance(val, APIRouter):
+                routers.append(val)
+        # Deduplicate
+        unique: list[Any] = []
+        for r in routers:
+            if r not in unique:
+                unique.append(r)
+        return unique

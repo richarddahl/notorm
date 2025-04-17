@@ -308,7 +308,7 @@ class Entity(BaseModel, Generic[IdT]):
             Dictionary representation of entity
         """
         # Use pydantic's model_dump but exclude events
-        return self.model_dump(exclude_none=False, exclude={'_events'})
+        return self.model_dump(exclude_none=False, exclude={'events'})
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Entity':

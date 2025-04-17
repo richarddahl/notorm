@@ -5,10 +5,11 @@ This module contains domain entities for meta types and meta records used in the
 These are core entities that provide a foundation for type and record tracking in the system.
 """
 
-from dataclasses import dataclass, field
 from typing import ClassVar, List, Optional, Dict, Any, Set
+from datetime import datetime
+from dataclasses import dataclass, field
 
-from uno.domain.core import Entity, AggregateRoot
+from uno.domain.models import Entity, AggregateRoot
 from uno.core.errors.base import ValidationError
 
 

@@ -1,8 +1,8 @@
 """
-Domain models for the domain layer.
+Domain models package.
 
-This module contains the domain model entities, value objects, and domain events
-that make up the core domain model for the uno framework.
+This package contains all domain model components including Entity, ValueObject,
+AggregateRoot, DomainEvent, and related classes.
 """
 
 from uno.domain.models.base import (
@@ -33,3 +33,27 @@ from uno.domain.models.order import (
     OrderStatus,
     OrderItem,
 )
+
+__all__ = [
+    # Base domain components
+    "Entity",
+    "AggregateRoot",
+    "ValueObject",
+    "PrimitiveValueObject",
+    "DomainEvent",
+    "CommandResult",
+    
+    # Common value objects
+    "Email",
+    "Money",
+    "Address",
+    
+    # Domain models
+    "User",
+    "UserRole",
+    "Product",
+    "ProductCategory",
+    "Order",
+    "OrderStatus",
+    "OrderItem",
+]

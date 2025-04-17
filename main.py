@@ -66,6 +66,7 @@ from uno.dependencies.modern_provider import get_service_provider
 
 # Import the app, but we need to redefine it with our lifespan
 from uno.api.apidef import app as api_app
+from uno.core.feature_factory import FeatureFactory
 
 # Add modern lifespan event handlers for FastAPI
 from contextlib import asynccontextmanager
@@ -103,82 +104,26 @@ async def lifespan(app: FastAPI):
         # Set up API routers
         logger.info("Setting up API routers")
 
-        # Authorization endpoints
-        from uno.authorization.endpoints import router as auth_router
-
-        api_app.include_router(auth_router)
-        logger.debug("Authorization router included")
-
-        # Meta endpoints
-        from uno.meta.endpoints import router as meta_router
-
-        api_app.include_router(meta_router)
-        logger.debug("Meta router included")
-
-        # Vector search endpoints (if available)
-        try:
-            from uno.vector_search.endpoints import router as vector_router
-
-            api_app.include_router(vector_router)
-            logger.info("Vector search router included")
-        except ImportError:
-            logger.debug("Vector search router not available")
-
-        # Domain endpoints for Queries module
-        try:
-            from uno.queries.domain_endpoints import (
-                query_path_router,
-                query_value_router,
-                query_router,
-            )
-
-            api_app.include_router(query_path_router.router)
-            api_app.include_router(query_value_router.router)
-            api_app.include_router(query_router)
-            logger.info("Queries module domain routers included")
-        except ImportError:
-            logger.debug("Queries module domain routers not available")
-
-        # Domain endpoints for Reports module
-        try:
-            from uno.reports.domain_endpoints import (
-                field_definition_router,
-                template_router,
-                trigger_router,
-                output_router,
-                execution_router,
-                output_execution_router,
-            )
-
-            api_app.include_router(field_definition_router.router)
-            api_app.include_router(template_router.router)
-            api_app.include_router(trigger_router.router)
-            api_app.include_router(output_router.router)
-            api_app.include_router(execution_router.router)
-            api_app.include_router(output_execution_router)
-            logger.info("Reports module domain routers included")
-        except ImportError:
-            logger.debug("Reports module domain routers not available")
-
-        # Admin UI
-        try:
-            from uno.api.admin_ui import AdminUIRouter
-
-            admin_ui = AdminUIRouter(api_app)
-            logger.info("Admin UI router included")
-        except ImportError:
-            logger.debug("Admin UI router not available")
-
-        # Set up the workflow module
-        try:
-            from uno.workflows.app_integration import setup_workflow_module
-
-            setup_workflow_module(api_app)
-            logger.info("Workflow module setup complete")
-        except ImportError:
-            logger.debug("Workflow module not available")
-        except Exception as e:
-            logger.error(f"Error setting up workflow module: {e}", exc_info=True)
+        # Dynamically include feature routers based on Domain-Driven layouts
+        for feat in [
+            "authorization",
+            "meta",
+            "database",
+            "messaging",
+            "queries",
+            "reports",
+            "values",
+            "workflows",
+        ]:
+            try:
+                ff = FeatureFactory(feat)
+                for router in ff.get_routers():
+                    api_app.include_router(router)
+                    logger.info(f"{feat} router included")
+            except ModuleNotFoundError:
+                logger.debug(f"{feat} module not available")
+            except AttributeError as e:
+                logger.debug(f"{feat} domain_endpoints missing router: {e}")
 
         # Example domain endpoints using modern dependency injection
         # try:

@@ -1,8 +1,11 @@
 """
-Domain layer for the Uno framework.
+Domain module for domain-driven design patterns.
 
 This module implements a domain-driven design (DDD) approach for the Uno framework,
 providing a clear separation of concerns and a rich domain model.
+
+It contains implementations of domain-driven design patterns including entities,
+value objects, aggregates, repositories, and specifications.
 """
 
 import warnings
@@ -52,6 +55,7 @@ from uno.domain.specifications import (
     PredicateSpecification,
     DictionarySpecification,
     specification_factory,
+    specification_from_predicate,
 )
 
 # Specification translators
@@ -245,6 +249,8 @@ try:
         "PredicateSpecification",
         "DictionarySpecification",
         "specification_factory",
+        "specification_from_predicate",
+        "specification_from_predicate",
         
         # Specification translators
         "SpecificationTranslator",

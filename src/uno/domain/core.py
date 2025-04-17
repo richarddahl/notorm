@@ -218,19 +218,25 @@ class Entity(BaseModel, Generic[T_ID]):
     def set_updated_at(cls, values):
         """Update the updated_at field whenever the entity is modified."""
         # Handle Pydantic v2 ValidationInfo objects
-        if hasattr(values, 'get_default_value'):
+        if hasattr(values, "get_default_value"):
             # We're dealing with a ValidationInfo object in Pydantic v2
             # In this case, we're in the before validator and values is the data dict
             data = values
             # Only set updated_at for existing entities that are being modified
-            if isinstance(data, dict) and 'id' in data and 'created_at' in data and data['id'] and data['created_at']:
-                data['updated_at'] = datetime.now(timezone.utc)
+            if (
+                isinstance(data, dict)
+                and "id" in data
+                and "created_at" in data
+                and data["id"]
+                and data["created_at"]
+            ):
+                data["updated_at"] = datetime.now(timezone.utc)
             return data
-        
+
         # Handle regular dict (for backward compatibility)
         if isinstance(values, dict) and values.get("id") and values.get("created_at"):
             values["updated_at"] = datetime.now(timezone.utc)
-        
+
         return values
 
     # Python 3.13 compatibility methods for dataclasses
@@ -290,14 +296,14 @@ class AggregateRoot(Entity[T_ID]):
 
     # Add type annotations to mark class attributes
     # These can be used to hold instance attributes that should be properly initialized
-    _events: List[DomainEvent]
-    _child_entities: Set[Entity]
+    events: List[DomainEvent]
+    child_entities: Set[Entity]
 
     def __init__(self, **data):
         super().__init__(**data)
         # Initialize instance-specific collections
-        self._events = []
-        self._child_entities = set()
+        self.events = []
+        self.child_entities = set()
 
     # Override __post_init__ from Entity to handle dataclass compatibility
     def __post_init__(self):
@@ -310,10 +316,10 @@ class AggregateRoot(Entity[T_ID]):
         super().__post_init__()
 
         # Explicitly initialize our instance collections
-        if not hasattr(self, "_events") or self._events is None:
-            self._events = []
-        if not hasattr(self, "_child_entities") or self._child_entities is None:
-            self._child_entities = set()
+        if not hasattr(self, "events") or self.events is None:
+            self.events = []
+        if not hasattr(self, "child_entities") or self.child_entities is None:
+            self.child_entities = set()
 
     def add_event(self, event: DomainEvent) -> None:
         """
@@ -325,9 +331,9 @@ class AggregateRoot(Entity[T_ID]):
         Args:
             event: The domain event to add
         """
-        if not hasattr(self, "_events") or self._events is None:
-            self._events = []
-        self._events.append(event)
+        if not hasattr(self, "events") or self.events is None:
+            self.events = []
+        self.events.append(event)
 
     def clear_events(self) -> List[DomainEvent]:
         """
@@ -336,12 +342,12 @@ class AggregateRoot(Entity[T_ID]):
         Returns:
             The list of events that were cleared
         """
-        if not hasattr(self, "_events") or self._events is None:
-            self._events = []
+        if not hasattr(self, "events") or self.events is None:
+            self.events = []
             return []
 
-        events = self._events.copy()
-        self._events.clear()
+        events = self.events.copy()
+        self.events.clear()
         return events
 
     def register_child_entity(self, entity: Entity) -> None:
@@ -351,9 +357,9 @@ class AggregateRoot(Entity[T_ID]):
         Args:
             entity: The child entity to register
         """
-        if not hasattr(self, "_child_entities") or self._child_entities is None:
-            self._child_entities = set()
-        self._child_entities.add(entity)
+        if not hasattr(self, "child_entities") or self.child_entities is None:
+            self.child_entities = set()
+        self.child_entities.add(entity)
 
     def get_child_entities(self) -> Set[Entity]:
         """
@@ -362,6 +368,6 @@ class AggregateRoot(Entity[T_ID]):
         Returns:
             The set of child entities
         """
-        if not hasattr(self, "_child_entities") or self._child_entities is None:
-            self._child_entities = set()
-        return self._child_entities
+        if not hasattr(self, "child_entities") or self.child_entities is None:
+            self.child_entities = set()
+        return self.child_entities

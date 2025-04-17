@@ -58,6 +58,9 @@ Documentation = "https://github.com/richarddahl/notorm#readme"
 Issues = "https://github.com/richarddahl/notorm/issues"
 Source = "https://github.com/richarddahl/notorm"
 
+[project.scripts]
+ddd-lib = "src.scripts.ddd_lib:main"
+
 [tool.hatch.version]
 path = "src/uno/__about__.py"
 

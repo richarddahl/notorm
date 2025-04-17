@@ -31,7 +31,7 @@ from uno.domain.multi_tenant import (
     get_multi_tenant_auth_service,
 )
 from uno.domain.application_services import ServiceContext
-from uno.domain.model import Entity, AggregateRoot
+from uno.domain.models import Entity, AggregateRoot
 from uno.core.errors.base import AuthorizationError
 from uno.domain.core import safe_dataclass
 
@@ -430,7 +430,9 @@ async def test_rbac_authorization_integration(
     # Create roles
     rbac_service.create_role("admin", ["entity:read", "entity:write", "entity:delete"])
 
-    rbac_service.create_role("user", ["entity:read", "entity:write"])  # Add write permission
+    rbac_service.create_role(
+        "user", ["entity:read", "entity:write"]
+    )  # Add write permission
 
     # Create users
     rbac_service.create_user("admin", ["admin"])
@@ -546,14 +548,14 @@ def test_tenant_specific_roles_and_users(tenant_rbac_service):
     assert tenant_rbac_service.get_user("tenant1_user", "tenant1") is not None
     assert tenant_rbac_service.get_user("tenant2_user", "tenant2") is not None
 
-    # Get the roles and check their permissions directly - we'll skip the has_permission 
+    # Get the roles and check their permissions directly - we'll skip the has_permission
     # method as it might not be working correctly
     global_admin_role = tenant_rbac_service.get_role("global_admin")
     assert global_admin_role.has_permission(Permission.from_string("entity:read"))
-    
+
     tenant1_admin_role = tenant_rbac_service.get_role("tenant_admin", "tenant1")
     assert tenant1_admin_role.has_permission(Permission.from_string("entity:write"))
-    
+
     tenant1_user_role = tenant_rbac_service.get_role("tenant_user", "tenant1")
     assert tenant1_user_role.has_permission(Permission.from_string("entity:read"))
     assert not tenant1_user_role.has_permission(Permission.from_string("entity:write"))
@@ -561,7 +563,7 @@ def test_tenant_specific_roles_and_users(tenant_rbac_service):
     # Add a user to a tenant
     tenant_rbac_service.add_user_to_tenant("global_admin", "tenant1", ["tenant_admin"])
     assert tenant_rbac_service.get_user("global_admin", "tenant1") is not None
-    
+
     # Check user membership in tenant
     user_tenants = tenant_rbac_service.get_user_tenants("global_admin")
     assert "tenant1" in user_tenants
@@ -601,17 +603,17 @@ def test_multi_tenant_user(tenant_rbac_service):
     tenant1_user = tenant_rbac_service.get_user("multi_user", "tenant1")
     assert tenant1_user is not None
     assert "tenant1_role" in tenant1_user.roles
-    
+
     tenant2_user = tenant_rbac_service.get_user("multi_user", "tenant2")
     assert tenant2_user is not None
     assert "tenant2_role" in tenant2_user.roles
-    
+
     # Get role permissions directly
     tenant1_role = tenant_rbac_service.get_role("tenant1_role", "tenant1")
     assert tenant1_role.has_permission(Permission.from_string("entity:read"))
     assert tenant1_role.has_permission(Permission.from_string("entity:write"))
     assert not tenant1_role.has_permission(Permission.from_string("entity:delete"))
-    
+
     tenant2_role = tenant_rbac_service.get_role("tenant2_role", "tenant2")
     assert tenant2_role.has_permission(Permission.from_string("entity:read"))
     assert tenant2_role.has_permission(Permission.from_string("entity:delete"))
@@ -653,11 +655,11 @@ async def test_multi_tenant_authorization(
     assert admin_role.has_permission(Permission.from_string("entity:read"))
     assert admin_role.has_permission(Permission.from_string("entity:write"))
     assert admin_role.has_permission(Permission.from_string("entity:delete"))
-    
+
     user_role = tenant_rbac_service.get_role("tenant_user", "tenant1")
     assert user_role.has_permission(Permission.from_string("entity:read"))
     assert not user_role.has_permission(Permission.from_string("entity:write"))
-    
+
     # Create entity in tenant1
     from datetime import datetime, timezone
 
@@ -685,36 +687,28 @@ async def test_multi_tenant_authorization(
         user_id="tenant1_admin",
         tenant_id="tenant1",
         is_authenticated=True,
-        permissions=["entity:read", "entity:write", "entity:delete"]
+        permissions=["entity:read", "entity:write", "entity:delete"],
     )
-    
+
     user_context = ServiceContext(
         user_id="tenant1_user",
         tenant_id="tenant1",
         is_authenticated=True,
-        permissions=["entity:read"]
+        permissions=["entity:read"],
     )
 
     # Test simple authorization (not tenant isolation for the test)
     # Admin should have read permission
-    assert await mt_auth_service.authorize(
-        admin_context, "entity", "read", None
-    )
-    
+    assert await mt_auth_service.authorize(admin_context, "entity", "read", None)
+
     # User should have read permission
-    assert await mt_auth_service.authorize(
-        user_context, "entity", "read", None
-    )
-    
+    assert await mt_auth_service.authorize(user_context, "entity", "read", None)
+
     # Admin should have write permission
-    assert await mt_auth_service.authorize(
-        admin_context, "entity", "write", None
-    )
-    
+    assert await mt_auth_service.authorize(admin_context, "entity", "write", None)
+
     # User should not have write permission
-    assert not await mt_auth_service.authorize(
-        user_context, "entity", "write", None
-    )
+    assert not await mt_auth_service.authorize(user_context, "entity", "write", None)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ from uuid import uuid4
 
 import pytest
 
-from uno.domain.model import Entity, AggregateRoot
+from uno.domain.models import Entity, AggregateRoot
 from uno.domain.cqrs import (
     Command,
     Query,
