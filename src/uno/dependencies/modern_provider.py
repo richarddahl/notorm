@@ -664,7 +664,7 @@ async def configure_base_services() -> None:
     )
 
     # Register event bus
-    from uno.domain.events import EventBus, EventPublisher
+    from uno.core.unified_events import EventBus, EventPublisher
 
     event_bus = EventBus(logger=logging.getLogger("uno.events"))
     services.add_instance(EventBus, event_bus)

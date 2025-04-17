@@ -16,7 +16,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.domain.core import Entity, AggregateRoot, DomainEvent
+from uno.domain.core import Entity, AggregateRoot, UnoDomainEvent
 from uno.domain.repository import (
     Repository, AggregateRepository, 
     SQLAlchemyRepository, SQLAlchemyAggregateRepository, 
@@ -47,7 +47,7 @@ class UnitOfWork(AsyncContextManager, ABC):
         self.logger = logger or logging.getLogger(__name__)
         self._repositories: Dict[Type[Entity], Repository] = {}
         self._committed = False
-        self._pending_events: List[DomainEvent] = []
+        self._pending_events: List[UnoDomainEvent] = []
     
     async def __aenter__(self) -> "UnitOfWork":
         """Enter the async context manager."""
@@ -110,7 +110,7 @@ class UnitOfWork(AsyncContextManager, ABC):
         
         return cast(Repository[T], self._repositories[entity_type])
     
-    async def collect_events(self) -> List[DomainEvent]:
+    async def collect_events(self) -> List[UnoDomainEvent]:
         """
         Collect events from all aggregate repositories.
         

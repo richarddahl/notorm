@@ -32,7 +32,7 @@ PrimitiveType = Union[str, int, float, bool, UUID, datetime, None]
 T_ID = TypeVar("T_ID")  # Entity ID type
 T = TypeVar("T", bound="Entity")  # Entity type
 T_Child = TypeVar("T_Child", bound="Entity")  # Child entity type
-E = TypeVar("E", bound="DomainEvent")  # Event type
+E = TypeVar("E", bound="UnoDomainEvent")  # Event type
 V = TypeVar("V")  # Value type for primitive value objects
 
 
@@ -56,7 +56,7 @@ class DomainException(Exception):
         super().__init__(message)
 
 
-class DomainEvent(BaseModel):
+class UnoDomainEvent(BaseModel):
     """
     Base class for domain events.
 
@@ -78,7 +78,7 @@ class DomainEvent(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DomainEvent":
+    def from_dict(cls, data: Dict[str, Any]) -> "UnoDomainEvent":
         """Create an event from a dictionary."""
         return cls(**data)
 
@@ -98,29 +98,29 @@ class ValueObject(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    @model_validator(mode='after')
-    def validate_value_object(self) -> 'ValueObject':
+    @model_validator(mode="after")
+    def validate_value_object(self) -> "ValueObject":
         """
         Validate the value object after initialization.
-        
+
         This method is automatically called after initialization
         to validate the value object's state.
-        
+
         Returns:
             The validated value object
-            
+
         Raises:
             ValueError: If validation fails
         """
         self.validate()
         return self
-    
+
     def validate(self) -> None:
         """
         Validate the value object.
-        
+
         Override this method to implement specific validation logic.
-        
+
         Raises:
             ValueError: If validation fails
         """
@@ -129,10 +129,10 @@ class ValueObject(BaseModel):
     def __eq__(self, other: Any) -> bool:
         """
         Value objects are equal if they have the same type and attributes.
-        
+
         Args:
             other: Object to compare with
-            
+
         Returns:
             True if equal, False otherwise
         """
@@ -143,7 +143,7 @@ class ValueObject(BaseModel):
     def __hash__(self) -> int:
         """
         Hash based on all attributes.
-        
+
         Returns:
             Hash value
         """
@@ -154,36 +154,36 @@ class ValueObject(BaseModel):
 class PrimitiveValueObject(ValueObject, Generic[V]):
     """
     Value object that wraps a primitive value.
-    
+
     Use this for domain values that need validation or semantic meaning
     beyond what a primitive type provides, e.g., EmailAddress, Money.
-    
+
     Type Parameters:
         V: The type of the primitive value
     """
-    
+
     value: V
-    
+
     def __str__(self) -> str:
         """
         String representation of the primitive value.
-        
+
         Returns:
             String representation
         """
         return str(self.value)
-    
+
     @classmethod
-    def create(cls, value: V) -> 'PrimitiveValueObject[V]':
+    def create(cls, value: V) -> "PrimitiveValueObject[V]":
         """
         Create a new primitive value object.
-        
+
         Args:
             value: The primitive value
-            
+
         Returns:
             Primitive value object
-            
+
         Raises:
             ValueError: If validation fails
         """
@@ -208,17 +208,17 @@ class Entity(BaseModel, Generic[T_ID]):
     id: T_ID = Field(default_factory=uuid4)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: Optional[datetime] = None
-    
+
     # Domain events - excluded from serialization
-    _events: List[DomainEvent] = Field(default_factory=list, exclude=True)
+    _events: List[UnoDomainEvent] = Field(default_factory=list, exclude=True)
 
     def __eq__(self, other: Any) -> bool:
         """
         Entities are equal if they have the same type and ID.
-        
+
         Args:
             other: Object to compare with
-            
+
         Returns:
             True if equal, False otherwise
         """
@@ -229,7 +229,7 @@ class Entity(BaseModel, Generic[T_ID]):
     def __hash__(self) -> int:
         """
         Hash based on the entity's ID.
-        
+
         Returns:
             Hash value
         """
@@ -243,56 +243,56 @@ class Entity(BaseModel, Generic[T_ID]):
             values["updated_at"] = datetime.now(UTC)
         return values
 
-    def add_event(self, event: DomainEvent) -> None:
+    def add_event(self, event: UnoDomainEvent) -> None:
         """
         Add a domain event to this entity.
-        
+
         Events represent significant changes that have occurred to the entity.
         They will be published when the entity is saved.
-        
+
         Args:
             event: The domain event to add
         """
         self._events.append(event)
 
-    def clear_events(self) -> List[DomainEvent]:
+    def clear_events(self) -> List[UnoDomainEvent]:
         """
         Clear and return all domain events.
-        
+
         Returns:
             The list of events that were cleared
         """
         events = list(self._events)
         self._events.clear()
         return events
-    
-    def get_events(self) -> List[DomainEvent]:
+
+    def get_events(self) -> List[UnoDomainEvent]:
         """
         Get all domain events without clearing them.
-        
+
         Returns:
             The list of events
         """
         return list(self._events)
-        
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert entity to a dictionary.
-        
+
         Returns:
             Dictionary representation of entity
         """
         # Exclude private fields and events
         return self.model_dump(exclude={"_events"})
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Entity':
+    def from_dict(cls, data: Dict[str, Any]) -> "Entity":
         """
         Create an entity from a dictionary.
-        
+
         Args:
             data: Dictionary containing entity data
-            
+
         Returns:
             Entity instance
         """
@@ -317,16 +317,16 @@ class AggregateRoot(Entity[T_ID]):
 
     # Version for optimistic concurrency control
     version: int = Field(default=1)
-    
+
     # Child entities - excluded from serialization
     _child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
 
     def check_invariants(self) -> None:
         """
         Check that the aggregate invariants are maintained.
-        
+
         Override this method to implement specific invariant checks.
-        
+
         Raises:
             ValueError: If invariants are violated
         """
@@ -335,10 +335,10 @@ class AggregateRoot(Entity[T_ID]):
     def apply_changes(self) -> None:
         """
         Apply any pending changes and ensure consistency.
-        
+
         This method should be called before saving the aggregate to ensure
         that it is in a valid state and to update metadata.
-        
+
         Raises:
             ValueError: If invariants are violated
         """
@@ -349,16 +349,16 @@ class AggregateRoot(Entity[T_ID]):
     def add_child_entity(self, entity: Entity) -> None:
         """
         Register a child entity with this aggregate root.
-        
+
         Args:
             entity: The child entity to register
         """
         self._child_entities.add(entity)
-        
+
     def remove_child_entity(self, entity: Entity) -> None:
         """
         Remove a child entity from this aggregate root.
-        
+
         Args:
             entity: The child entity to remove
         """
@@ -367,7 +367,7 @@ class AggregateRoot(Entity[T_ID]):
     def get_child_entities(self) -> Set[Entity]:
         """
         Get all child entities of this aggregate root.
-        
+
         Returns:
             The set of child entities
         """

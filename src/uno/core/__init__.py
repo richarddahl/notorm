@@ -16,59 +16,73 @@ This module provides core functionality for the Uno framework, including:
 # Import from protocols
 from uno.core.protocols import (
     # Domain model protocols
-    Entity, ValueObject, DomainEvent, AggregateRoot,
-    
+    Entity,
+    ValueObject,
+    UnoDomainEvent,
+    AggregateRoot,
     # Repository and Unit of Work
-    Repository, UnitOfWork,
-    
+    Repository,
+    UnitOfWork,
     # Command and Query
-    Command, Query, CommandHandler, QueryHandler,
-    
+    Command,
+    Query,
+    CommandHandler,
+    QueryHandler,
     # Event system
-    EventHandler, EventBus,
-    
+    EventHandler,
+    EventBus,
     # Dependency Injection
-    ServiceProvider, ServiceScope,
-    
+    ServiceProvider,
+    ServiceScope,
     # Lifecycle
-    Initializable, Disposable, AsyncDisposable,
-    
+    Initializable,
+    Disposable,
+    AsyncDisposable,
     # Error handling
     Result,
-    
     # Logging and monitoring
-    Logger, Metric, MetricsProvider,
-    
+    Logger,
+    Metric,
+    MetricsProvider,
     # Common type definitions
-    Pagination, Sorting, QueryOptions,
-    
+    Pagination,
+    Sorting,
+    QueryOptions,
     # Type guards
-    is_entity, is_value_object, is_aggregate_root,
-    
+    is_entity,
+    is_value_object,
+    is_aggregate_root,
     # Database protocols
-    DatabaseSessionProtocol, DatabaseSessionContextProtocol, DatabaseSessionFactoryProtocol,
-    DatabaseRepository
+    DatabaseSessionProtocol,
+    DatabaseSessionContextProtocol,
+    DatabaseSessionFactoryProtocol,
+    DatabaseRepository,
 )
 
 # CQRS Pattern
 from uno.core.cqrs import (
     # Command and Query base implementations
-    BaseCommand, BaseQuery,
-    
+    BaseCommand,
+    BaseQuery,
     # Command and Query handlers
-    BaseCommandHandler, BaseQueryHandler, EventSourcingCommandHandler,
-    
+    BaseCommandHandler,
+    BaseQueryHandler,
+    EventSourcingCommandHandler,
     # Command and Query buses
-    CommandBus, QueryBus, HandlerRegistry, Mediator,
-    
+    CommandBus,
+    QueryBus,
+    HandlerRegistry,
+    Mediator,
     # Handler registration
-    command_handler, query_handler,
-    
+    command_handler,
+    query_handler,
     # Mediator management
-    initialize_mediator, reset_mediator, get_mediator,
-    
+    initialize_mediator,
+    reset_mediator,
+    get_mediator,
     # API functions
-    execute_command, execute_query
+    execute_command,
+    execute_query,
 )
 
 # Error handling
@@ -76,108 +90,166 @@ from uno.core.errors.base import ErrorCategory, UnoError
 from uno.core.errors.result import Success, Failure, Result
 from uno.core.errors import (
     # Error context
-    with_error_context, add_error_context, get_error_context,
-    
+    with_error_context,
+    add_error_context,
+    get_error_context,
     # Error catalog
-    register_error, get_error_code_info, get_all_error_codes,
-    
+    register_error,
+    get_error_code_info,
+    get_all_error_codes,
     # Validation
-    ValidationError, ValidationContext, validate_fields,
-    
+    ValidationError,
+    ValidationContext,
+    validate_fields,
     # Result pattern helpers
-    of, failure, from_exception, from_awaitable, combine, combine_dict
+    of,
+    failure,
+    from_exception,
+    from_awaitable,
+    combine,
+    combine_dict,
 )
 
 # Dependency Injection
 from uno.core.di import (
     # Container management
-    DIContainer, ServiceLifetime, ServiceRegistration,
-    initialize_container, get_container, reset_container,
-    
+    DIContainer,
+    ServiceLifetime,
+    ServiceRegistration,
+    initialize_container,
+    get_container,
+    reset_container,
     # Service resolution
-    get_service, create_scope, create_async_scope
+    get_service,
+    create_scope,
+    create_async_scope,
 )
 
 # FastAPI integration
 from uno.core.di_fastapi import (
     # Dependency providers
-    FromDI, ScopedDeps, create_request_scope, get_service as fastapi_get_service,
-    
+    FromDI,
+    ScopedDeps,
+    create_request_scope,
+    get_service as fastapi_get_service,
     # Application integration
-    configure_di_middleware, register_app_shutdown
+    configure_di_middleware,
+    register_app_shutdown,
 )
 
 # Testing utilities
 from uno.core.di_testing import (
     # Test container
-    TestContainer, test_container,
-    
+    TestContainer,
+    test_container,
     # Mock injection
-    inject_mock, create_test_scope
+    inject_mock,
+    create_test_scope,
 )
 
 __all__ = [
     # Domain model protocols
-    'Entity', 'ValueObject', 'DomainEvent', 'AggregateRoot',
-    
+    "Entity",
+    "ValueObject",
+    "UnoDomainEvent",
+    "AggregateRoot",
     # Repository and Unit of Work
-    'Repository', 'UnitOfWork',
-    
+    "Repository",
+    "UnitOfWork",
     # Command and Query protocols
-    'Command', 'Query', 'CommandHandler', 'QueryHandler',
-    
+    "Command",
+    "Query",
+    "CommandHandler",
+    "QueryHandler",
     # CQRS implementations
-    'BaseCommand', 'BaseQuery', 'BaseCommandHandler', 'BaseQueryHandler', 
-    'EventSourcingCommandHandler', 'CommandBus', 'QueryBus', 'HandlerRegistry', 
-    'Mediator', 'command_handler', 'query_handler', 'initialize_mediator', 
-    'reset_mediator', 'get_mediator', 'execute_command', 'execute_query',
-    
+    "BaseCommand",
+    "BaseQuery",
+    "BaseCommandHandler",
+    "BaseQueryHandler",
+    "EventSourcingCommandHandler",
+    "CommandBus",
+    "QueryBus",
+    "HandlerRegistry",
+    "Mediator",
+    "command_handler",
+    "query_handler",
+    "initialize_mediator",
+    "reset_mediator",
+    "get_mediator",
+    "execute_command",
+    "execute_query",
     # Event system
-    'EventHandler', 'EventBus',
-    
+    "EventHandler",
+    "EventBus",
     # Dependency Injection protocols
-    'ServiceProvider', 'ServiceScope',
-    
+    "ServiceProvider",
+    "ServiceScope",
     # Lifecycle
-    'Initializable', 'Disposable', 'AsyncDisposable',
-    
+    "Initializable",
+    "Disposable",
+    "AsyncDisposable",
     # Error handling
-    'UnoError', 'ErrorCategory', 'Result', 'Success', 'Failure',
-    
+    "UnoError",
+    "ErrorCategory",
+    "Result",
+    "Success",
+    "Failure",
     # Error context
-    'with_error_context', 'add_error_context', 'get_error_context',
-    
+    "with_error_context",
+    "add_error_context",
+    "get_error_context",
     # Error catalog
-    'register_error', 'get_error_code_info', 'get_all_error_codes',
-    
+    "register_error",
+    "get_error_code_info",
+    "get_all_error_codes",
     # Validation
-    'ValidationError', 'ValidationContext', 'validate_fields',
-    
+    "ValidationError",
+    "ValidationContext",
+    "validate_fields",
     # Result pattern helpers
-    'of', 'failure', 'from_exception', 'from_awaitable', 'combine', 'combine_dict',
-    
+    "of",
+    "failure",
+    "from_exception",
+    "from_awaitable",
+    "combine",
+    "combine_dict",
     # Logging and monitoring
-    'Logger', 'Metric', 'MetricsProvider',
-    
+    "Logger",
+    "Metric",
+    "MetricsProvider",
     # Common type definitions
-    'Pagination', 'Sorting', 'QueryOptions',
-    
+    "Pagination",
+    "Sorting",
+    "QueryOptions",
     # Type guards
-    'is_entity', 'is_value_object', 'is_aggregate_root',
-    
+    "is_entity",
+    "is_value_object",
+    "is_aggregate_root",
     # Database protocols
-    'DatabaseSessionProtocol', 'DatabaseSessionContextProtocol', 'DatabaseSessionFactoryProtocol',
-    'DatabaseRepository',
-    
+    "DatabaseSessionProtocol",
+    "DatabaseSessionContextProtocol",
+    "DatabaseSessionFactoryProtocol",
+    "DatabaseRepository",
     # DI Container
-    'DIContainer', 'ServiceLifetime', 'ServiceRegistration',
-    'initialize_container', 'get_container', 'reset_container',
-    'get_service', 'create_scope', 'create_async_scope',
-    
+    "DIContainer",
+    "ServiceLifetime",
+    "ServiceRegistration",
+    "initialize_container",
+    "get_container",
+    "reset_container",
+    "get_service",
+    "create_scope",
+    "create_async_scope",
     # FastAPI integration
-    'FromDI', 'ScopedDeps', 'create_request_scope', 'fastapi_get_service',
-    'configure_di_middleware', 'register_app_shutdown',
-    
+    "FromDI",
+    "ScopedDeps",
+    "create_request_scope",
+    "fastapi_get_service",
+    "configure_di_middleware",
+    "register_app_shutdown",
     # Testing utilities
-    'TestContainer', 'test_container', 'inject_mock', 'create_test_scope'
+    "TestContainer",
+    "test_container",
+    "inject_mock",
+    "create_test_scope",
 ]

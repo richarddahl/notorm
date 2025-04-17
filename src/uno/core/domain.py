@@ -24,13 +24,13 @@ from typing import (
     TYPE_CHECKING,
 )
 
-# Import DomainEvent from protocols only when type checking
+# Import UnoDomainEvent from protocols only when type checking
 if TYPE_CHECKING:
-    from uno.core.protocols import DomainEvent
+    from uno.core.protocols import UnoDomainEvent
 else:
     # Define the protocols we need directly for runtime
     @runtime_checkable
-    class DomainEvent(Protocol):
+    class UnoDomainEvent(Protocol):
         """Protocol for domain events."""
 
         event_id: str
@@ -56,10 +56,10 @@ class Entity(Protocol):
 class AggregateRoot(Entity, Protocol):
     """Protocol for aggregate roots."""
 
-    events: List["DomainEvent"]
+    events: List["UnoDomainEvent"]
 
-    def register_event(self, event: "DomainEvent") -> None: ...
-    def clear_events(self) -> List["DomainEvent"]: ...
+    def register_event(self, event: "UnoDomainEvent") -> None: ...
+    def clear_events(self) -> List["UnoDomainEvent"]: ...
 
 
 @runtime_checkable
@@ -112,7 +112,7 @@ class AggregateEntity(Generic[KeyT]):
     """Base class for aggregate entities."""
 
     id: KeyT
-    events: List[DomainEvent] = field(default_factory=list, init=False, repr=False)
+    events: List[UnoDomainEvent] = field(default_factory=list, init=False, repr=False)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -139,7 +139,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         return hash((self.__class__, self.id))
 
-    def register_event(self, event: "DomainEvent") -> None:
+    def register_event(self, event: "UnoDomainEvent") -> None:
         """
         Register a domain event to be published after the aggregate is saved.
 
@@ -148,7 +148,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         self.events.append(event)
 
-    def clear_events(self) -> List["DomainEvent"]:
+    def clear_events(self) -> List["UnoDomainEvent"]:
         """
         Clear and return all registered events.
 

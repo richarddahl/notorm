@@ -6,7 +6,7 @@ business logic, including entities, value objects, services, and repositories.
 """
 
 # Core domain components
-from uno.domain.core import Entity, ValueObject, DomainEvent, AggregateRoot
+from uno.domain.core import Entity, ValueObject, UnoDomainEvent, AggregateRoot
 from uno.domain.repository import Repository
 from uno.domain.service import DomainService
 from uno.domain.factory import Factory
@@ -15,7 +15,7 @@ from uno.domain.factory import Factory
 from uno.domain.event_store import EventStore
 from uno.domain.event_dispatcher import EventDispatcher, EventHandler
 from uno.domain.event_store_manager import EventStoreManager
-from uno.domain.events import register_event_handler
+from uno.core.unified_events import register_event_handler
 
 # Query system
 from uno.domain.query import (
@@ -58,7 +58,7 @@ __all__ = [
     # Core domain
     "Entity",
     "ValueObject",
-    "DomainEvent",
+    "UnoDomainEvent",
     "AggregateRoot",
     "Repository",
     "DomainService",

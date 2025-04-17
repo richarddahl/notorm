@@ -78,10 +78,15 @@ uno is a new library, there is no reason to support backwards compatibilty, impl
 
 uno is a new library, there is NO reason to support backwards compatibility.  Make improvements to the code to simplify things, always looking forward, not back.
 
-## Prefer datetime.now(datetime.UTC) 
+## Prefer datetime.now(datetime.UTC)
 
   DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
 
+## Prefer pydantic whenever practical
+
+Dont create bare classes if pydantic serialization or validation is required, use pydantc version 2 BaseMdoel.
+
+Use pydantic version 2 base models instead of dataclasses when practical.
 
 ## Prefer modern web-component based front end ui
 

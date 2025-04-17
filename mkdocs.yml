@@ -69,6 +69,7 @@ nav:
       - Overview: api/overview.md
       - Endpoint: api/endpoint.md
       - Endpoint Factory: api/endpoint-factory.md
+      - Domain Service Integration: api/domain-service-integration.md
       - Filter Manager: queries/filter_manager.md
       - DTOs: api/dto.md
       - Attributes: api/attributes.md

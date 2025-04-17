@@ -12,7 +12,7 @@ import warnings
 
 # Core domain models, protocols, and factories
 from uno.domain.models import (
-    DomainEvent,
+    UnoDomainEvent,
     ValueObject,
     PrimitiveValueObject,
     Entity,
@@ -26,7 +26,7 @@ from uno.domain.models import (
 
 from uno.domain.protocols import (
     DomainEventProtocol,
-    ValueObjectProtocol, 
+    ValueObjectProtocol,
     PrimitiveValueObjectProtocol,
     EntityProtocol,
     AggregateRootProtocol,
@@ -116,7 +116,7 @@ from uno.domain.service import DomainService
 
 # Event sourcing and event store
 try:
-    from uno.domain.events import (
+    from uno.core.unified_events import (
         EventHandler,
         EventBus,
         EventStore,
@@ -124,23 +124,23 @@ try:
         EventPublisher,
         get_event_bus,
         get_event_store,
-        get_event_publisher
+        get_event_publisher,
     )
-    
+
     from uno.domain.event_store import (
         EventStore as EventStoreBase,
         PostgresEventStore,
-        EventSourcedRepository
+        EventSourcedRepository,
     )
-    
+
     from uno.domain.event_store_manager import EventStoreManager
-    
+
     from uno.domain.event_store_integration import (
         EventStoreIntegration,
         get_event_store_integration,
-        get_event_sourced_repository
+        get_event_sourced_repository,
     )
-    
+
     has_event_store = True
 except ImportError:
     has_event_store = False
@@ -153,33 +153,30 @@ try:
         QueryExecutor,
         RepositoryQueryExecutor,
         FilterQueryExecutor,
-        QueryService
+        QueryService,
     )
 
     # Enhanced query system
-    from uno.domain.enhanced_query import (
-        QueryMetadata,
-        EnhancedQueryExecutor
-    )
+    from uno.domain.enhanced_query import QueryMetadata, EnhancedQueryExecutor
 
     from uno.domain.query_optimizer import (
         QueryPerformanceTracker,
         QueryPerformanceMetric,
         QueryResultCache,
         GraphQueryOptimizer,
-        MaterializedQueryView
+        MaterializedQueryView,
     )
 
     from uno.domain.selective_updater import (
         GraphChangeEvent,
         SelectiveGraphUpdater,
-        GraphSynchronizer
+        GraphSynchronizer,
     )
 
     from uno.domain.graph_path_query import (
         PathQuerySpecification,
         GraphPathQuery,
-        GraphPathQueryService
+        GraphPathQueryService,
     )
 
     event_store_components = []
@@ -194,23 +191,21 @@ try:
             "get_event_bus",
             "get_event_store",
             "get_event_publisher",
-            
             # Event store
             "EventStoreBase",
             "PostgresEventStore",
             "EventSourcedRepository",
             "EventStoreManager",
-            
             # Event store integration
             "EventStoreIntegration",
             "get_event_store_integration",
-            "get_event_sourced_repository"
+            "get_event_sourced_repository",
         ]
-    
+
     # New domain model components
     domain_model_components = [
         # Core domain models
-        "DomainEvent",
+        "UnoDomainEvent",
         "ValueObject",
         "PrimitiveValueObject",
         "Entity",
@@ -219,10 +214,9 @@ try:
         "Email",
         "Money",
         "Address",
-        
         # Domain protocols
         "DomainEventProtocol",
-        "ValueObjectProtocol", 
+        "ValueObjectProtocol",
         "PrimitiveValueObjectProtocol",
         "EntityProtocol",
         "AggregateRootProtocol",
@@ -230,7 +224,6 @@ try:
         "EntityFactoryProtocol",
         "CommandResultProtocol",
         "DomainServiceProtocol",
-        
         # Domain factories
         "EntityFactory",
         "AggregateFactory",
@@ -239,7 +232,6 @@ try:
         "create_entity_factory",
         "create_aggregate_factory",
         "create_value_factory",
-        
         # Specifications
         "Specification",
         "AndSpecification",
@@ -251,17 +243,14 @@ try:
         "specification_factory",
         "specification_from_predicate",
         "specification_from_predicate",
-        
         # Specification translators
         "SpecificationTranslator",
         "PostgreSQLSpecificationTranslator",
         "PostgreSQLRepository",
         "AsyncPostgreSQLRepository",
-        
         # SQLAlchemy repositories
         "SQLAlchemyRepository",
         "SQLAlchemyUnitOfWork",
-        
         # Repository protocols
         "ReadRepositoryProtocol",
         "WriteRepositoryProtocol",
@@ -273,7 +262,6 @@ try:
         "AsyncRepositoryProtocol",
         "AsyncBatchRepositoryProtocol",
         "AsyncUnitOfWorkProtocol",
-        
         # Repository results
         "RepositoryResult",
         "GetResult",
@@ -284,46 +272,48 @@ try:
         "AddResult",
         "UpdateResult",
         "RemoveResult",
-        
         # Base repositories
         "Repository",
         "InMemoryRepository",
         "UnitOfWork",
         "InMemoryUnitOfWork",
     ]
-    
+
     # Legacy for backward compatibility (will be removed)
     legacy_components = [
         "DomainException",
     ]
-    
-    __all__ = domain_model_components + legacy_components + [
-        # Business logic
-        "DomainService",
-        
-        # Query system
-        "QuerySpecification",
-        "QueryResult",
-        "QueryExecutor",
-        "RepositoryQueryExecutor",
-        "FilterQueryExecutor",
-        "QueryService",
-        
-        # Enhanced query system
-        "QueryMetadata",
-        "EnhancedQueryExecutor",
-        "QueryPerformanceTracker",
-        "QueryPerformanceMetric",
-        "QueryResultCache",
-        "GraphQueryOptimizer",
-        "MaterializedQueryView",
-        "GraphChangeEvent",
-        "SelectiveGraphUpdater",
-        "GraphSynchronizer",
-        "PathQuerySpecification",
-        "GraphPathQuery",
-        "GraphPathQueryService"
-    ] + event_store_components
+
+    __all__ = (
+        domain_model_components
+        + legacy_components
+        + [
+            # Business logic
+            "DomainService",
+            # Query system
+            "QuerySpecification",
+            "QueryResult",
+            "QueryExecutor",
+            "RepositoryQueryExecutor",
+            "FilterQueryExecutor",
+            "QueryService",
+            # Enhanced query system
+            "QueryMetadata",
+            "EnhancedQueryExecutor",
+            "QueryPerformanceTracker",
+            "QueryPerformanceMetric",
+            "QueryResultCache",
+            "GraphQueryOptimizer",
+            "MaterializedQueryView",
+            "GraphChangeEvent",
+            "SelectiveGraphUpdater",
+            "GraphSynchronizer",
+            "PathQuerySpecification",
+            "GraphPathQuery",
+            "GraphPathQueryService",
+        ]
+        + event_store_components
+    )
 
 except ImportError:
     # In case some enhanced query components aren't available yet
@@ -339,23 +329,21 @@ except ImportError:
             "get_event_bus",
             "get_event_store",
             "get_event_publisher",
-            
             # Event store
             "EventStoreBase",
             "PostgresEventStore",
             "EventSourcedRepository",
             "EventStoreManager",
-            
             # Event store integration
             "EventStoreIntegration",
             "get_event_store_integration",
-            "get_event_sourced_repository"
+            "get_event_sourced_repository",
         ]
-    
+
     # New domain model components
     domain_model_components = [
         # Core domain models
-        "DomainEvent",
+        "UnoDomainEvent",
         "ValueObject",
         "PrimitiveValueObject",
         "Entity",
@@ -364,10 +352,9 @@ except ImportError:
         "Email",
         "Money",
         "Address",
-        
         # Domain protocols
         "DomainEventProtocol",
-        "ValueObjectProtocol", 
+        "ValueObjectProtocol",
         "PrimitiveValueObjectProtocol",
         "EntityProtocol",
         "AggregateRootProtocol",
@@ -375,7 +362,6 @@ except ImportError:
         "EntityFactoryProtocol",
         "CommandResultProtocol",
         "DomainServiceProtocol",
-        
         # Domain factories
         "EntityFactory",
         "AggregateFactory",
@@ -384,7 +370,6 @@ except ImportError:
         "create_entity_factory",
         "create_aggregate_factory",
         "create_value_factory",
-        
         # Specifications
         "Specification",
         "AndSpecification",
@@ -394,17 +379,14 @@ except ImportError:
         "PredicateSpecification",
         "DictionarySpecification",
         "specification_factory",
-        
         # Specification translators
         "SpecificationTranslator",
         "PostgreSQLSpecificationTranslator",
         "PostgreSQLRepository",
         "AsyncPostgreSQLRepository",
-        
         # SQLAlchemy repositories
         "SQLAlchemyRepository",
         "SQLAlchemyUnitOfWork",
-        
         # Repository protocols
         "ReadRepositoryProtocol",
         "WriteRepositoryProtocol",
@@ -416,7 +398,6 @@ except ImportError:
         "AsyncRepositoryProtocol",
         "AsyncBatchRepositoryProtocol",
         "AsyncUnitOfWorkProtocol",
-        
         # Repository results
         "RepositoryResult",
         "GetResult",
@@ -427,23 +408,27 @@ except ImportError:
         "AddResult",
         "UpdateResult",
         "RemoveResult",
-        
         # Base repositories
         "Repository",
         "InMemoryRepository",
         "UnitOfWork",
         "InMemoryUnitOfWork",
     ]
-    
+
     # Legacy for backward compatibility (will be removed)
     legacy_components = [
         "DomainException",
     ]
-    
-    __all__ = domain_model_components + legacy_components + [
-        # Business logic
-        "DomainService",
-    ] + event_store_components
+
+    __all__ = (
+        domain_model_components
+        + legacy_components
+        + [
+            # Business logic
+            "DomainService",
+        ]
+        + event_store_components
+    )
 
 # Display a warning to encourage using the new imports directly
 warnings.warn(
@@ -457,5 +442,5 @@ warnings.warn(
     "- uno.domain.repository_protocols (RepositoryProtocol, etc.)\n"
     "- uno.domain.repository_results (RepositoryResult, GetResult, etc.)",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )

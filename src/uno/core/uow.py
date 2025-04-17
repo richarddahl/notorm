@@ -21,8 +21,8 @@ from typing import (
     AsyncContextManager,
 )
 
-from uno.core.protocols import Repository, UnitOfWork, DomainEvent
-from uno.core.events import EventBus
+from uno.core.protocols import Repository, UnitOfWork, UnoDomainEvent
+from uno.core.unified_events import EventBus
 
 T = TypeVar("T")
 RepoT = TypeVar("RepoT", bound=Repository)
@@ -46,7 +46,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         self._event_bus = event_bus
         self._logger = logger or logging.getLogger(__name__)
         self._repositories: Dict[Type[Repository], Repository] = {}
-        self.events: Set[DomainEvent] = set()
+        self.events: Set[UnoDomainEvent] = set()
 
     def register_repository(self, repo_type: Type[RepoT], repo: RepoT) -> None:
         """
@@ -75,7 +75,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
             raise KeyError(f"Repository not found: {repo_type.__name__}")
         return cast(RepoT, self._repositories[repo_type])
 
-    def collect_events(self) -> Set[DomainEvent]:
+    def collect_events(self) -> Set[UnoDomainEvent]:
         """
         Collect all events from registered repositories.
 

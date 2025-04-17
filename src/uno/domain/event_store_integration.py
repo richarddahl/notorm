@@ -11,8 +11,8 @@ from typing import Dict, Any, List, Optional, Type, TypeVar, cast, Union, Generi
 from datetime import datetime, UTC
 
 from uno.core.di import inject_dependency
-from uno.domain.events import (
-    DomainEvent,
+from uno.core.unified_events import (
+    UnoDomainEvent,
     EventBus,
     EventStore,
     EventPublisher,
@@ -25,7 +25,7 @@ from uno.domain.models import AggregateRoot
 from uno.core.result import Result
 
 
-T = TypeVar("T", bound=DomainEvent)
+T = TypeVar("T", bound=UnoDomainEvent)
 A = TypeVar("A", bound=AggregateRoot)
 
 
@@ -80,7 +80,7 @@ class EventStoreIntegration:
             self.logger.error(f"Error initializing event store integration: {e}")
             raise
 
-    async def publish_event(self, event: DomainEvent) -> Result[None]:
+    async def publish_event(self, event: UnoDomainEvent) -> Result[None]:
         """
         Publish an event to the event store and event bus.
 
@@ -97,7 +97,7 @@ class EventStoreIntegration:
             self.logger.error(f"Error publishing event {event.event_type}: {e}")
             return Result.failure(str(e))
 
-    async def publish_events(self, events: List[DomainEvent]) -> Result[None]:
+    async def publish_events(self, events: List[UnoDomainEvent]) -> Result[None]:
         """
         Publish multiple events to the event store and event bus.
 
@@ -116,7 +116,7 @@ class EventStoreIntegration:
 
     async def get_events_by_type(
         self, event_type: str, since: Optional[datetime] = None
-    ) -> List[DomainEvent]:
+    ) -> List[UnoDomainEvent]:
         """
         Get all events of a specific type from the event store.
 
@@ -136,7 +136,7 @@ class EventStoreIntegration:
 
     async def get_events_by_aggregate(
         self, aggregate_id: str, event_types: Optional[List[str]] = None
-    ) -> List[DomainEvent]:
+    ) -> List[UnoDomainEvent]:
         """
         Get all events for a specific aggregate from the event store.
 

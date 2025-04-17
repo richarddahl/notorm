@@ -19,7 +19,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from uno.database.db_manager import DBManager
-from uno.domain.events import DomainEvent, EventDispatcher
+from uno.core.unified_events import UnoDomainEvent, EventDispatcher
 from uno.enums import WorkflowDBEvent
 from uno.dependencies.scoped_container import get_service
 
@@ -37,7 +37,7 @@ from uno.workflows.executor import (
 )
 
 
-class OrderCreatedEvent(DomainEvent):
+class OrderCreatedEvent(UnoDomainEvent):
     """Example event for order creation."""
 
     def __init__(

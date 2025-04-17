@@ -16,7 +16,7 @@ import sys
 from typing import Dict, Any, List, Optional
 
 from uno.database.db_manager import DBManager
-from uno.domain.events import DomainEvent
+from uno.core.unified_events import UnoDomainEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.enums import WorkflowDBEvent
 from uno.settings import uno_settings
@@ -34,7 +34,7 @@ from uno.workflows.provider import WorkflowService, WorkflowRepository
 
 
 # Example domain event that could trigger a workflow
-class UserCreatedEvent(DomainEvent):
+class UserCreatedEvent(UnoDomainEvent):
     def __init__(self, user_id: str, username: str, email: str):
         super().__init__()
         self.user_id = user_id
@@ -45,7 +45,7 @@ class UserCreatedEvent(DomainEvent):
 
 
 # Example domain event for order processing
-class OrderPlacedEvent(DomainEvent):
+class OrderPlacedEvent(UnoDomainEvent):
     def __init__(
         self,
         order_id: str,

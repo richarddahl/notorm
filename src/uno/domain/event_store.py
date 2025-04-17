@@ -26,11 +26,11 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.database.session import async_session
-from uno.domain.events import DomainEvent, EventStore
+from uno.core.unified_events import UnoDomainEvent, EventStore
 from uno.domain.models import Entity, AggregateRoot
 
 
-E = TypeVar("E", bound=DomainEvent)
+E = TypeVar("E", bound=UnoDomainEvent)
 
 
 class EventStore(Generic[E]):
@@ -545,9 +545,9 @@ class EventSourcedRepository(Generic[E]):
             aggregate: The aggregate to remove
         """
         # Create a deletion event
-        from uno.domain.events import DomainEvent
+        from uno.core.unified_events import UnoDomainEvent
 
-        event = DomainEvent(
+        event = UnoDomainEvent(
             event_type="aggregate_deleted",
             aggregate_id=str(aggregate.id),
             aggregate_type=self.aggregate_type.__name__,
@@ -560,7 +560,7 @@ class EventSourcedRepository(Generic[E]):
         if str(aggregate.id) in self._snapshots:
             del self._snapshots[str(aggregate.id)]
 
-    def _apply_event(self, aggregate: AggregateRoot, event: DomainEvent) -> None:
+    def _apply_event(self, aggregate: AggregateRoot, event: UnoDomainEvent) -> None:
         """
         Apply an event to an aggregate to update its state.
 

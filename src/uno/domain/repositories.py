@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update, delete
 
 from uno.domain.models import Entity, AggregateRoot
-from uno.domain.events import DomainEvent
+from uno.core.unified_events import UnoDomainEvent
 from uno.core.errors.base import EntityNotFoundError, ConcurrencyError
 
 
@@ -179,7 +179,7 @@ class AggregateRepository(Repository[A], Generic[A]):
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._pending_events: List[DomainEvent] = []
+        self._pending_events: List[UnoDomainEvent] = []
 
     async def save(self, aggregate: A) -> A:
         """
@@ -207,7 +207,7 @@ class AggregateRepository(Repository[A], Generic[A]):
         else:
             return await self.add(aggregate)
 
-    def collect_events(self) -> List[DomainEvent]:
+    def collect_events(self) -> List[UnoDomainEvent]:
         """
         Collect all pending domain events.
 

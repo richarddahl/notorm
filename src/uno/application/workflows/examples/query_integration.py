@@ -14,7 +14,7 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from uno.database.db_manager import DBManager
-from uno.domain.events import DomainEvent
+from uno.core.unified_events import UnoDomainEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.enums import WorkflowDBEvent, Include, Match
 from uno.dependencies.scoped_container import get_service, get_scoped_service
@@ -29,7 +29,7 @@ from uno.workflows.models import (
 from uno.workflows.provider import WorkflowService
 
 
-class CustomerCreatedEvent(DomainEvent):
+class CustomerCreatedEvent(UnoDomainEvent):
     """Example event for customer creation."""
 
     def __init__(self, customer_id: str, name: str, region: str, segment: str):

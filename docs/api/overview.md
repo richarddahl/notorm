@@ -129,6 +129,7 @@ Each module follows the same consistent pattern for endpoint organization, makin
 
 - [Domain Endpoints](domain-endpoints.md): Comprehensive guide to domain-driven endpoints
 - [Domain Integration](domain-integration.md): Detailed guide on domain-driven integration
+- [Domain Service Integration](domain-service-integration.md): Guide to integrating domain services with API endpoints
 - [Endpoint Factory](endpoint-factory.md): Guide to creating endpoints
 - [Repository Adapter](repository-adapter.md): Guide to repository adapters
 

@@ -16,7 +16,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update, delete, func, and_, or_, not_
 
-from uno.domain.core import Entity, AggregateRoot, DomainEvent
+from uno.domain.core import Entity, AggregateRoot, UnoDomainEvent
 from uno.domain.specifications import Specification
 from uno.core.errors.result import Result, Success, Failure
 
@@ -349,7 +349,7 @@ class AggregateRepository(Repository[A], Generic[A]):
             logger: Optional logger for diagnostic output
         """
         super().__init__(aggregate_type, logger)
-        self._pending_events: List[DomainEvent] = []
+        self._pending_events: List[UnoDomainEvent] = []
     
     async def save(self, aggregate: A) -> A:
         """
@@ -396,7 +396,7 @@ class AggregateRepository(Repository[A], Generic[A]):
             self.logger.error(f"Error saving aggregate: {e}")
             return Failure(str(e))
     
-    def collect_events(self) -> List[DomainEvent]:
+    def collect_events(self) -> List[UnoDomainEvent]:
         """
         Collect all pending domain events.
         
