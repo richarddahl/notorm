@@ -14,7 +14,6 @@ It uses apache age to duplicate the postgres relational table data into a knowle
 
 uno defines a number of classes.  The primary classes are:
 UnoModel - A customized declarative base (sqlalchemy orm) for the table structure.
-UnoSchema - and the database and the UnoObject and the fast api endpoints.
 UnoDB - A custom class used to communicate with the database using psycopg3 for synchronous data base operations and asyncpg for asynchronous data base operations.
 UnoEndpoint - A custom class used to establish fastapi endpoints.
 SQLEmitter - A custom class used to build and emit custom sql statements, primarily for issuing DDL to create types, functions, and triggers.
@@ -183,7 +182,6 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Use type hints for all functions and variables
 - Use dependency injection for when practical (generally is)
   - Use the `uno.dependencies` module for dependency injection
-  - Choose between UnoObj pattern (simple domains) and DI pattern (complex domains)
   - Prefer constructor injection over service location
   - Use Protocol classes for dependency interfaces
   - Use FastAPI's Depends() with our DI utilities (`get_db_session`, `get_repository`, etc.)
