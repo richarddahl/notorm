@@ -19,24 +19,27 @@ ValueT = TypeVar('ValueT')  # Type for value object values
 EntityT = TypeVar('EntityT', bound='EntityProtocol')  # Type for entities
 
 
+# Import the canonical domain event protocol implementation
+import warnings
+from uno.core.unified_events import DomainEventProtocol as CanonicalDomainEventProtocol
+
+# Protocol alias for backward compatibility
 @runtime_checkable
-class DomainEventProtocol(Protocol):
-    """Protocol for domain events."""
+class DomainEventProtocol(CanonicalDomainEventProtocol, Protocol):
+    """
+    Protocol for domain events. (DEPRECATED)
     
-    event_id: str
-    event_type: str
-    timestamp: datetime
-    aggregate_id: Optional[str]
-    aggregate_type: Optional[str]
+    This is a compatibility alias for DomainEventProtocol from unified_events.
+    """
     
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to dictionary."""
-        ...
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'DomainEventProtocol':
-        """Create event from dictionary."""
-        ...
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "DomainEventProtocol in uno.domain.protocols is deprecated. "
+            "Please use DomainEventProtocol from uno.core.unified_events instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return super().__new__(cls)
 
 
 @runtime_checkable

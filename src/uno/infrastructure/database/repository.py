@@ -1,9 +1,21 @@
 """
-Base repository implementation for database operations.
+Base repository implementation for database operations. (DEPRECATED)
 
 This module provides a unified repository base that uses the
 Domain-Driven Design approach in the Uno framework.
+
+DEPRECATED: This implementation is deprecated in favor of the unified repository implementation
+in `uno.domain.repository`. New code should use the unified repository classes instead.
 """
+
+import warnings
+
+warnings.warn(
+    "The repository implementation in uno.infrastructure.database.repository is deprecated. "
+    "Please use the unified implementation from uno.domain.repository instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from typing import TypeVar, Generic, Type, Optional, List, Dict, Any, Tuple, Union, TYPE_CHECKING
 import logging

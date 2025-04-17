@@ -1,9 +1,21 @@
 """
-Domain service pattern implementation for the Uno framework.
+Domain service pattern implementation for the Uno framework. (DEPRECATED)
 
 This module provides a domain service pattern implementation for implementing business
 logic that doesn't naturally fit within domain entities.
+
+DEPRECATED: This implementation is deprecated in favor of the unified service implementation
+in `uno.domain.unified_services`. New code should use the unified services instead.
 """
+
+import warnings
+
+warnings.warn(
+    "The domain service implementation in uno.domain.service is deprecated. "
+    "Please use the unified implementation from uno.domain.unified_services instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import logging
 from abc import ABC, abstractmethod

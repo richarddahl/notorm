@@ -188,40 +188,29 @@ class ValueObject(Protocol):
         ...
 
 
-@runtime_checkable
-class UnoDomainEvent(Protocol):
-    """
-    Protocol for domain events.
+# Import domain event protocol from the canonical implementation
+import warnings
+from uno.core.unified_events import DomainEventProtocol
 
+# Protocol alias for backward compatibility, but with a deprecation warning
+@runtime_checkable
+class UnoDomainEvent(DomainEventProtocol, Protocol):
+    """
+    Protocol for domain events. (DEPRECATED)
+
+    This is a compatibility alias for DomainEventProtocol from unified_events.
     Domain events represent something that happened in the domain that
     domain experts care about. They are immutable and named in the past tense.
     """
-
-    event_id: str
-    event_type: str
-    timestamp: datetime
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert event to dictionary representation.
-
-        Returns:
-            Dictionary representation of the event
-        """
-        ...
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Self:
-        """
-        Create event from dictionary representation.
-
-        Args:
-            data: Dictionary representation of the event
-
-        Returns:
-            Event instance
-        """
-        ...
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoDomainEvent in uno.core.protocols is deprecated. "
+            "Please use DomainEventProtocol from uno.core.unified_events instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return super().__new__(cls)
 
 
 @runtime_checkable

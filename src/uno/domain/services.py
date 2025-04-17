@@ -1,9 +1,21 @@
 """
-Domain services for the Uno framework.
+Domain services for the Uno framework. (DEPRECATED)
 
 This module contains the base classes for domain services, which encapsulate
 domain operations that don't naturally belong to a single entity or value object.
+
+DEPRECATED: This implementation is deprecated in favor of the unified service implementation
+in `uno.domain.unified_services`. New code should use the unified services instead.
 """
+
+import warnings
+
+warnings.warn(
+    "The domain service implementation in uno.domain.services is deprecated. "
+    "Please use the unified implementation from uno.domain.unified_services instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 from abc import ABC, abstractmethod

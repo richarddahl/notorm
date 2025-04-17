@@ -24,21 +24,17 @@ from typing import (
     TYPE_CHECKING,
 )
 
-# Import UnoDomainEvent from protocols only when type checking
-if TYPE_CHECKING:
-    from uno.core.protocols import UnoDomainEvent
-else:
-    # Define the protocols we need directly for runtime
-    @runtime_checkable
-    class UnoDomainEvent(Protocol):
-        """Protocol for domain events."""
+# Import UnoDomainEvent from the canonical implementation
+import warnings
+from uno.core.unified_events import UnoDomainEvent, DomainEventProtocol
 
-        event_id: str
-        event_type: str
-        timestamp: float
-        aggregate_id: Optional[str]
-
-        def to_dict(self) -> Dict[str, Any]: ...
+# Provide a deprecation warning for direct usage of this module
+warnings.warn(
+    "The domain event implementation in uno.core.domain is deprecated. "
+    "Please use the canonical implementation from uno.core.unified_events instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 # Define the protocols we need directly rather than importing them

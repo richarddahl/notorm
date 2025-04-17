@@ -1,10 +1,22 @@
 """
-Base repository implementation for Uno framework.
+Base repository implementation for Uno framework. (DEPRECATED)
 
 This module provides a base repository implementation that can be
 extended for specific model types. Repositories handle data access
 operations and are injectable via the DI container.
+
+DEPRECATED: This implementation is deprecated in favor of the unified repository implementation
+in `uno.domain.repository`. New code should use the unified repository classes instead.
 """
+
+import warnings
+
+warnings.warn(
+    "The repository implementation in uno.dependencies.repository is deprecated. "
+    "Please use the unified implementation from uno.domain.repository instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from typing import Dict, List, Optional, Type, TypeVar, Any, Generic
 import logging

@@ -56,31 +56,29 @@ class DomainException(Exception):
         super().__init__(message)
 
 
-class UnoDomainEvent(BaseModel):
-    """
-    Base class for domain events.
+# Import the canonical domain event implementation
+import warnings
+from uno.core.unified_events import UnoDomainEvent as CanonicalUnoDomainEvent
 
+# Alias the canonical implementation with a deprecation warning
+class UnoDomainEvent(CanonicalUnoDomainEvent):
+    """
+    Base class for domain events. (DEPRECATED)
+    
+    This is a compatibility alias for UnoDomainEvent from unified_events.
     Domain events represent something significant that occurred within the domain.
     They are immutable records of what happened, used to communicate between
     different parts of the application.
     """
-
-    model_config = ConfigDict(frozen=True)
-
-    event_id: UUID = Field(default_factory=uuid4)
-    event_type: str = Field(default="domain_event")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert event to a dictionary."""
-        return self.model_dump()
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "UnoDomainEvent":
-        """Create an event from a dictionary."""
-        return cls(**data)
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoDomainEvent in uno.domain.core is deprecated. "
+            "Please use UnoDomainEvent from uno.core.unified_events instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return super().__new__(cls, *args, **kwargs)
 
 
 class ValueObject(BaseModel):

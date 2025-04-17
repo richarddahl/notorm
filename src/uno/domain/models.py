@@ -39,68 +39,28 @@ IdT = TypeVar("IdT")  # Type for entity identifiers
 ValueT = TypeVar("ValueT")  # Type for value object values
 
 
-class UnoDomainEvent(BaseModel):
-    """
-    Base class for domain events.
+# Import the canonical domain event implementation
+import warnings
+from uno.core.unified_events import UnoDomainEvent as CanonicalEvent
 
+# Alias the canonical implementation with a deprecation warning
+class UnoDomainEvent(CanonicalEvent):
+    """
+    Base class for domain events. (DEPRECATED)
+    
+    This is a compatibility alias for UnoDomainEvent from unified_events.
     Domain events represent significant occurrences within the domain.
     They are immutable records of something that happened.
     """
-
-    model_config = ConfigDict(frozen=True)
-
-    # Standard event metadata
-    event_id: str = Field(default_factory=lambda: str(uuid4()))
-    event_type: str = Field(
-        default_factory=lambda: cls_name_to_event_type(UnoDomainEvent.__name__)
-    )
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert event to dictionary.
-
-        Returns:
-            Dictionary representation of event
-        """
-        return self.model_dump()
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "UnoDomainEvent":
-        """
-        Create event from dictionary.
-
-        Args:
-            data: Dictionary containing event data
-
-        Returns:
-            Domain event instance
-        """
-        return cls(**data)
-
-    def to_json(self) -> str:
-        """
-        Convert event to JSON string.
-
-        Returns:
-            JSON string representation of event
-        """
-        return json.dumps(self.to_dict())
-
-    @classmethod
-    def from_json(cls, json_str: str) -> "UnoDomainEvent":
-        """
-        Create event from JSON string.
-
-        Args:
-            json_str: JSON string containing event data
-
-        Returns:
-            Domain event instance
-        """
-        return cls.from_dict(json.loads(json_str))
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoDomainEvent in uno.domain.models is deprecated. "
+            "Please use UnoDomainEvent from uno.core.unified_events instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return super().__new__(cls, *args, **kwargs)
 
 
 class ValueObject(BaseModel):
@@ -369,7 +329,8 @@ class AggregateRoot(Entity[IdT]):
     """
 
     # Child entities - not part of equality/hash
-    child_entities: Set[EntityProtocol] = Field(default_factory=set, exclude=True)
+    # Using Any as a fallback since we're deprecating EntityProtocol
+    child_entities: Set[Any] = Field(default_factory=set, exclude=True)
 
     # Version for optimistic concurrency control
     version: int = Field(default=1)
@@ -445,7 +406,7 @@ class CommandResult:
     def __init__(
         self,
         is_success: bool,
-        events: Optional[List[DomainEventProtocol]] = None,
+        events: Optional[List[CanonicalEvent]] = None,
         error: Optional[Exception] = None,
     ):
         """
@@ -472,7 +433,7 @@ class CommandResult:
 
     @classmethod
     def success(
-        cls, events: Optional[List[DomainEventProtocol]] = None
+        cls, events: Optional[List[CanonicalEvent]] = None
     ) -> "CommandResult":
         """
         Create a successful command result.

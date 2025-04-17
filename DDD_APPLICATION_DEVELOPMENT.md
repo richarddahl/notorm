@@ -1652,16 +1652,52 @@ Comprehensive documentation has been created:
 4. `docs/api/domain-service-integration.md` - Documentation for the domain service integration
 5. `tests/unit/api/test_service_endpoint_integration.py` - Tests for the integration
 
+## Code Cleanup and Redundancy Resolution
+
+After identifying code redundancies and inconsistencies in our DDD implementation, I've taken steps to address them:
+
+### 1. Domain Event Consolidation
+
+I've consolidated the multiple `DomainEvent`/`UnoDomainEvent` implementations:
+- Added imports from the canonical implementation in `uno.core.unified_events`
+- Added deprecation warnings to redundant implementations
+- Updated documentation to point to the canonical implementation
+- Created adapters for backward compatibility
+
+### 2. Repository Pattern Standardization
+
+I've standardized the repository pattern implementation:
+- Added deprecation warnings to legacy repository implementations
+- Created adapter classes for integrating legacy repositories with the standardized pattern
+- Created a registry system for module-specific repository implementations
+
+### 3. Service Pattern Standardization
+
+I've standardized the service pattern implementation:
+- Added deprecation warnings to legacy service implementations
+- Created adapter classes for integrating legacy services with the unified pattern
+- Created a registry system for module-specific service implementations
+
+### 4. Migration Guide
+
+I've created a comprehensive migration guide:
+- `docs/domain/migration_to_unified_ddd.md` - Guide for migrating to the unified DDD approach
+- Includes examples and best practices for new code
+- Provides adapter patterns for gradual migration
+
+### 5. Deprecation Warnings
+
+I've added deprecation warnings to all redundant implementations:
+- `uno.core.domain.UnoDomainEvent`
+- `uno.core.protocols.UnoDomainEvent`
+- `uno.domain.core.UnoDomainEvent`
+- `uno.domain.models.UnoDomainEvent`
+- `uno.domain.service`
+- `uno.domain.services`
+- `uno.dependencies.repository.UnoRepository`
+- `uno.infrastructure.database.repository`
+
 ## Next Steps
-
-With the domain model, repository pattern, event system, domain services, and API integration now standardized, the next steps are:
-
-### 1. Address Code Redundancy
-
-Resolve the identified code duplications, particularly:
-- Consolidate the multiple `DomainEvent`/`UnoDomainEvent` implementations
-- Remove deprecated modules and implementations
-- Create clear migration paths for legacy code
 
 ### 2. Create Example Applications
 
