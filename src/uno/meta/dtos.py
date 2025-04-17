@@ -48,7 +48,7 @@ class MetaTypeViewDto(MetaTypeBaseDto):
     display_name: str = Field(..., description="Human-readable display name")
     record_count: int = Field(0, description="Number of records of this type")
     
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "id": "user_profile",
@@ -99,7 +99,7 @@ class MetaRecordViewDto(MetaRecordBaseDto):
     type_name: str = Field(..., description="Display name of the meta type")
     attributes: List[str] = Field(default_factory=list, description="IDs of attributes associated with this record")
     
-    class Config:
+    model_config = ConfigDict(
         json_schema_extra = {
             "example": {
                 "id": "prof_12345abcde",

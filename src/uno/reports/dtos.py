@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Any, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 
 # Enums for validation and documentation
@@ -78,10 +78,8 @@ class ReportFieldDefinitionBaseDto(BaseModel):
     is_visible: bool = Field(True, description="Whether the field is visible")
     parent_field_id: Optional[str] = Field(None, description="ID of the parent field")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "customer_name",
                 "display": "Customer Name",
@@ -95,6 +93,7 @@ class ReportFieldDefinitionBaseDto(BaseModel):
                 "parent_field_id": None,
             }
         }
+    )
 
 
 class ReportFieldDefinitionCreateDto(ReportFieldDefinitionBaseDto):
@@ -121,10 +120,8 @@ class ReportFieldDefinitionUpdateDto(BaseModel):
     is_visible: Optional[bool] = Field(None, description="Whether the field is visible")
     parent_field_id: Optional[str] = Field(None, description="ID of the parent field")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "display": "Customer Full Name",
                 "description": "The customer's full legal name",
@@ -132,6 +129,7 @@ class ReportFieldDefinitionUpdateDto(BaseModel):
                 "is_visible": True,
             }
         }
+    )
 
 
 class ReportFieldDefinitionViewDto(ReportFieldDefinitionBaseDto):
@@ -139,10 +137,8 @@ class ReportFieldDefinitionViewDto(ReportFieldDefinitionBaseDto):
 
     id: str = Field(..., description="Unique identifier")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "fd123e4567-e89b-12d3-a456-426614174000",
                 "name": "customer_name",
@@ -157,6 +153,7 @@ class ReportFieldDefinitionViewDto(ReportFieldDefinitionBaseDto):
                 "parent_field_id": None,
             }
         }
+    )
 
 
 class ReportFieldDefinitionFilterParams(BaseModel):
@@ -172,10 +169,9 @@ class ReportFieldDefinitionFilterParams(BaseModel):
     template_id: Optional[str] = Field(None, description="Filter by template ID")
     is_visible: Optional[bool] = Field(None, description="Filter by visibility")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {"example": {"field_type": "db_column", "is_visible": True}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"field_type": "db_column", "is_visible": True}}
+    )
 
 
 # Report Template DTOs
@@ -196,10 +192,8 @@ class ReportTemplateBaseDto(BaseModel):
     )
     version: str = Field("1.0.0", description="Template version")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "monthly_sales_report",
                 "description": "Monthly sales by customer and product",
@@ -214,6 +208,7 @@ class ReportTemplateBaseDto(BaseModel):
                 "version": "1.0.0",
             }
         }
+    )
 
 
 class ReportTemplateCreateDto(ReportTemplateBaseDto):
@@ -243,16 +238,15 @@ class ReportTemplateUpdateDto(BaseModel):
     )
     version: Optional[str] = Field(None, description="Template version")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "description": "Updated monthly sales by customer and product",
                 "format_config": {"page_size": "letter", "orientation": "portrait"},
                 "cache_policy": {"max_age_seconds": 1800},
             }
         }
+    )
 
 
 class ReportTemplateViewDto(ReportTemplateBaseDto):
@@ -263,10 +257,8 @@ class ReportTemplateViewDto(ReportTemplateBaseDto):
         default_factory=list, description="Associated fields"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "rt123e4567-e89b-12d3-a456-426614174000",
                 "name": "monthly_sales_report",
@@ -283,6 +275,7 @@ class ReportTemplateViewDto(ReportTemplateBaseDto):
                 "fields": [],
             }
         }
+    )
 
 
 class ReportTemplateFilterParams(BaseModel):
@@ -294,10 +287,9 @@ class ReportTemplateFilterParams(BaseModel):
     )
     field_id: Optional[str] = Field(None, description="Filter by associated field ID")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {"example": {"base_object_type": "Order"}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"base_object_type": "Order"}}
+    )
 
 
 # Report Trigger DTOs
@@ -319,31 +311,35 @@ class ReportTriggerBaseDto(BaseModel):
     query_id: Optional[str] = Field(None, description="Query ID for query triggers")
     is_active: bool = Field(True, description="Whether the trigger is active")
 
-    @validator("schedule")
-    def validate_schedule(cls, v, values):
+    @model_validator(mode="before")
+    def validate_schedule(cls, values):
         """Validate that schedule is provided for scheduled triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.SCHEDULED and not v:
+        if values.get(
+            "trigger_type"
+        ) == ReportTriggerTypeEnum.SCHEDULED and not values.get("schedule"):
             raise ValueError("Schedule is required for scheduled triggers")
-        return v
+        return values
 
-    @validator("event_type")
-    def validate_event_type(cls, v, values):
+    @model_validator(mode="before")
+    def validate_event_type(cls, values):
         """Validate that event_type is provided for event triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not v:
+        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not values.get(
+            "event_type"
+        ):
             raise ValueError("Event type is required for event triggers")
-        return v
+        return values
 
-    @validator("query_id")
-    def validate_query_id(cls, v, values):
+    @model_validator(mode="before")
+    def validate_query_id(cls, values):
         """Validate that query_id is provided for query triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not v:
+        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not values.get(
+            "query_id"
+        ):
             raise ValueError("Query ID is required for query triggers")
-        return v
+        return values
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
                 "trigger_type": "scheduled",
@@ -352,6 +348,7 @@ class ReportTriggerBaseDto(BaseModel):
                 "is_active": True,
             }
         }
+    )
 
 
 class ReportTriggerCreateDto(ReportTriggerBaseDto):
@@ -379,15 +376,14 @@ class ReportTriggerUpdateDto(BaseModel):
     query_id: Optional[str] = Field(None, description="Query ID for query triggers")
     is_active: Optional[bool] = Field(None, description="Whether the trigger is active")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "schedule": "0 0 15 * *",  # 15th day of the month at midnight
                 "is_active": False,
             }
         }
+    )
 
 
 class ReportTriggerViewDto(ReportTriggerBaseDto):
@@ -398,10 +394,8 @@ class ReportTriggerViewDto(ReportTriggerBaseDto):
         None, description="When the trigger was last fired"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "tr123e4567-e89b-12d3-a456-426614174000",
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
@@ -412,6 +406,7 @@ class ReportTriggerViewDto(ReportTriggerBaseDto):
                 "last_triggered": "2023-05-01T00:00:00Z",
             }
         }
+    )
 
 
 class ReportTriggerFilterParams(BaseModel):
@@ -423,12 +418,9 @@ class ReportTriggerFilterParams(BaseModel):
     )
     is_active: Optional[bool] = Field(None, description="Filter by active status")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
-            "example": {"trigger_type": "scheduled", "is_active": True}
-        }
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"trigger_type": "scheduled", "is_active": True}}
+    )
 
 
 # Report Output DTOs
@@ -446,26 +438,29 @@ class ReportOutputBaseDto(BaseModel):
     )
     is_active: bool = Field(True, description="Whether the output is active")
 
-    @validator("output_config")
-    def validate_output_config(cls, v, values):
+    @model_validator(mode="before")
+    def validate_output_config(cls, values):
         """Validate output_config based on output_type."""
-        if values.get("output_type") == ReportOutputTypeEnum.FILE and "path" not in v:
+        output_config = values.get("output_config", {})
+        if (
+            values.get("output_type") == ReportOutputTypeEnum.FILE
+            and "path" not in output_config
+        ):
             raise ValueError("File output must include a path in output_config")
         elif (
             values.get("output_type") == ReportOutputTypeEnum.EMAIL
-            and "recipients" not in v
+            and "recipients" not in output_config
         ):
             raise ValueError("Email output must include recipients in output_config")
         elif (
-            values.get("output_type") == ReportOutputTypeEnum.WEBHOOK and "url" not in v
+            values.get("output_type") == ReportOutputTypeEnum.WEBHOOK
+            and "url" not in output_config
         ):
             raise ValueError("Webhook output must include a URL in output_config")
-        return v
+        return values
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
                 "output_type": "email",
@@ -478,6 +473,7 @@ class ReportOutputBaseDto(BaseModel):
                 "is_active": True,
             }
         }
+    )
 
 
 class ReportOutputCreateDto(ReportOutputBaseDto):
@@ -501,10 +497,8 @@ class ReportOutputUpdateDto(BaseModel):
     )
     is_active: Optional[bool] = Field(None, description="Whether the output is active")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "output_config": {
                     "recipients": ["user@example.com", "manager@example.com"],
@@ -513,6 +507,7 @@ class ReportOutputUpdateDto(BaseModel):
                 "is_active": False,
             }
         }
+    )
 
 
 class ReportOutputViewDto(ReportOutputBaseDto):
@@ -520,10 +515,8 @@ class ReportOutputViewDto(ReportOutputBaseDto):
 
     id: str = Field(..., description="Unique identifier")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "ro123e4567-e89b-12d3-a456-426614174000",
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
@@ -537,6 +530,7 @@ class ReportOutputViewDto(ReportOutputBaseDto):
                 "is_active": True,
             }
         }
+    )
 
 
 class ReportOutputFilterParams(BaseModel):
@@ -549,10 +543,9 @@ class ReportOutputFilterParams(BaseModel):
     format: Optional[ReportFormatEnum] = Field(None, description="Filter by format")
     is_active: Optional[bool] = Field(None, description="Filter by active status")
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {"example": {"output_type": "email", "is_active": True}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"output_type": "email", "is_active": True}}
+    )
 
 
 # Report Execution DTOs
@@ -573,10 +566,8 @@ class ReportExecutionBaseDto(BaseModel):
         ReportExecutionStatusEnum.PENDING, description="Execution status"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
                 "triggered_by": "user@example.com",
@@ -585,6 +576,7 @@ class ReportExecutionBaseDto(BaseModel):
                 "status": "pending",
             }
         }
+    )
 
 
 class ReportExecutionCreateDto(ReportExecutionBaseDto):
@@ -603,10 +595,9 @@ class ReportExecutionUpdateStatusDto(BaseModel):
         None, description="Error details if status is failed"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {"example": {"status": "completed", "error_details": None}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"status": "completed", "error_details": None}}
+    )
 
 
 class ReportExecutionViewDto(ReportExecutionBaseDto):
@@ -629,10 +620,8 @@ class ReportExecutionViewDto(ReportExecutionBaseDto):
         default_factory=list, description="Output executions"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "re123e4567-e89b-12d3-a456-426614174000",
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
@@ -649,6 +638,7 @@ class ReportExecutionViewDto(ReportExecutionBaseDto):
                 "output_executions": [],
             }
         }
+    )
 
 
 class ReportExecutionFilterParams(BaseModel):
@@ -669,16 +659,15 @@ class ReportExecutionFilterParams(BaseModel):
         None, description="Filter by created before date"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_template_id": "rt123e4567-e89b-12d3-a456-426614174000",
                 "status": "completed",
                 "created_after": "2023-01-01T00:00:00Z",
             }
         }
+    )
 
 
 # Report Output Execution DTOs
@@ -691,16 +680,15 @@ class ReportOutputExecutionBaseDto(BaseModel):
         ReportExecutionStatusEnum.PENDING, description="Execution status"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_execution_id": "re123e4567-e89b-12d3-a456-426614174000",
                 "report_output_id": "ro123e4567-e89b-12d3-a456-426614174000",
                 "status": "pending",
             }
         }
+    )
 
 
 class ReportOutputExecutionCreateDto(ReportOutputExecutionBaseDto):
@@ -723,10 +711,8 @@ class ReportOutputExecutionUpdateStatusDto(BaseModel):
         None, description="Size of the output in bytes"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "completed",
                 "error_details": None,
@@ -734,6 +720,7 @@ class ReportOutputExecutionUpdateStatusDto(BaseModel):
                 "output_size_bytes": 1024000,
             }
         }
+    )
 
 
 class ReportOutputExecutionViewDto(ReportOutputExecutionBaseDto):
@@ -751,10 +738,8 @@ class ReportOutputExecutionViewDto(ReportOutputExecutionBaseDto):
         None, description="Size of the output in bytes"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "roe123e4567-e89b-12d3-a456-426614174000",
                 "report_execution_id": "re123e4567-e89b-12d3-a456-426614174000",
@@ -766,6 +751,7 @@ class ReportOutputExecutionViewDto(ReportOutputExecutionBaseDto):
                 "output_size_bytes": 1024000,
             }
         }
+    )
 
 
 class ReportOutputExecutionFilterParams(BaseModel):
@@ -779,16 +765,15 @@ class ReportOutputExecutionFilterParams(BaseModel):
         None, description="Filter by status"
     )
 
-    class Config:
-        """Pydantic config."""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "report_execution_id": "re123e4567-e89b-12d3-a456-426614174000",
                 "status": "completed",
             }
         }
+    )
 
 
 # Fix forward references for nested DTOs
-ReportExecutionViewDto.update_forward_refs()
+ReportExecutionViewDto.model_rebuild()
