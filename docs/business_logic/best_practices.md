@@ -1785,6 +1785,5 @@ async def complete_order(self) -> bool:
 
 ## See Also
 
-- [UnoObj Reference](unoobj.md) - Core UnoObj class documentation
 - [Schema Management](schema.md) - Schema management for UnoObj
 - [Registry System](registry.md) - Type-safe registry for business objects
