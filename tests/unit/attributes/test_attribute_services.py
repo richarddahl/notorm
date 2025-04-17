@@ -145,7 +145,7 @@ class TestAttributeService:
         """Test creating an attribute with validation failure."""
         # Setup
         # Change the attribute type to require a comment
-        attribute_type = mock_attribute_type_repository.get_by_id.return_value.unwrap()
+        attribute_type = mock_attribute_type_repository.get_by_id.return_value.value
         attribute_type.comment_required = True
 
         attribute = MockAttribute(attribute_type_id="test-type")  # No comment provided
@@ -208,7 +208,7 @@ class TestAttributeService:
         """Test adding values when multiple values are not allowed."""
         # Setup
         # Change the attribute type to disallow multiple values
-        attribute_type = mock_attribute_type_repository.get_by_id.return_value.unwrap()
+        attribute_type = mock_attribute_type_repository.get_by_id.return_value.value
         attribute_type.multiple_allowed = False
 
         # Mock existing attribute with a value
@@ -315,7 +315,7 @@ class TestAttributeService:
         """Test validating an attribute that requires a value."""
         # Setup
         # Change the attribute type to require a value
-        attribute_type = mock_attribute_type_repository.get_by_id.return_value.unwrap()
+        attribute_type = mock_attribute_type_repository.get_by_id.return_value.value
         attribute_type.required = True
 
         attribute = MockAttribute(attribute_type_id="test-type")

@@ -64,7 +64,7 @@ def test_failure_flat_map():
 def test_success_unwrap():
     """Test unwrapping a Success result."""
     result = Success(42)
-    assert result.unwrap() == 42
+    assert result.value == 42
 
 
 def test_failure_unwrap():
@@ -72,7 +72,7 @@ def test_failure_unwrap():
     error = ValueError("test error")
     result = Failure(error)
     with pytest.raises(ValueError):
-        result.unwrap()
+        result.value
 
 
 def test_success_unwrap_or():

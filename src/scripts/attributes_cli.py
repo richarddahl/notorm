@@ -96,8 +96,8 @@ class AttributeCLI:
             attribute_type, applicable_meta_types, value_meta_types
         )
 
-        if result.is_ok():
-            created_type = result.unwrap()
+        if result.is_success:
+            created_type = result.value
             print(
                 f"Successfully created attribute type '{created_type.name}' with ID: {created_type.id}"
             )
@@ -121,7 +121,7 @@ class AttributeCLI:
                 )
             )
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to create attribute type: {error}")
             sys.exit(1)
 
@@ -131,8 +131,8 @@ class AttributeCLI:
         async with self.db_manager.get_enhanced_session() as session:
             result = await self.attribute_type_repository.get_by_id(args.id, session)
 
-            if result.is_ok():
-                attribute_type = result.unwrap()
+            if result.is_success:
+                attribute_type = result.value
 
                 if not attribute_type:
                     logger.error(f"Attribute type with ID {args.id} not found")
@@ -182,7 +182,7 @@ class AttributeCLI:
                     )
                 )
             else:
-                error = result.unwrap_err()
+                error = result.error
                 logger.error(f"Failed to get attribute type: {error}")
                 sys.exit(1)
 
@@ -194,13 +194,13 @@ class AttributeCLI:
                 args.meta_type_id
             )
 
-            if result.is_ok():
-                attribute_types = result.unwrap()
+            if result.is_success:
+                attribute_types = result.value
                 print(
                     f"Found {len(attribute_types)} attribute types for meta type {args.meta_type_id}:"
                 )
             else:
-                error = result.unwrap_err()
+                error = result.error
                 logger.error(f"Failed to get attribute types: {error}")
                 sys.exit(1)
         else:
@@ -225,8 +225,8 @@ class AttributeCLI:
         async with self.db_manager.get_enhanced_session() as session:
             result = await self.attribute_type_repository.delete(args.id, session)
 
-            if result.is_ok():
-                success = result.unwrap()
+            if result.is_success:
+                success = result.value
 
                 if success:
                     print(f"Successfully deleted attribute type with ID {args.id}")
@@ -234,7 +234,7 @@ class AttributeCLI:
                     logger.error(f"Attribute type with ID {args.id} not found")
                     sys.exit(1)
             else:
-                error = result.unwrap_err()
+                error = result.error
                 logger.error(f"Failed to delete attribute type: {error}")
                 sys.exit(1)
 
@@ -261,8 +261,8 @@ class AttributeCLI:
         # Create attribute
         result = await self.attribute_service.create_attribute(attribute, values)
 
-        if result.is_ok():
-            created_attribute = result.unwrap()
+        if result.is_success:
+            created_attribute = result.value
             print(f"Successfully created attribute with ID: {created_attribute.id}")
             print(
                 json.dumps(
@@ -289,7 +289,7 @@ class AttributeCLI:
                 )
             )
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to create attribute: {error}")
             sys.exit(1)
 
@@ -299,8 +299,8 @@ class AttributeCLI:
         async with self.db_manager.get_enhanced_session() as session:
             result = await self.attribute_repository.get_by_id(args.id, session)
 
-            if result.is_ok():
-                attribute = result.unwrap()
+            if result.is_success:
+                attribute = result.value
 
                 if not attribute:
                     logger.error(f"Attribute with ID {args.id} not found")
@@ -337,7 +337,7 @@ class AttributeCLI:
                     )
                 )
             else:
-                error = result.unwrap_err()
+                error = result.error
                 logger.error(f"Failed to get attribute: {error}")
                 sys.exit(1)
 
@@ -359,8 +359,8 @@ class AttributeCLI:
         # Add values
         result = await self.attribute_service.add_values(args.id, values)
 
-        if result.is_ok():
-            updated_attribute = result.unwrap()
+        if result.is_success:
+            updated_attribute = result.value
             print(
                 f"Successfully added values to attribute with ID {updated_attribute.id}"
             )
@@ -368,7 +368,7 @@ class AttributeCLI:
                 f"Added {len(values)} values. Attribute now has {len(updated_attribute.values) if updated_attribute.values else 0} values."
             )
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to add values to attribute: {error}")
             sys.exit(1)
 
@@ -377,8 +377,8 @@ class AttributeCLI:
         # Remove values
         result = await self.attribute_service.remove_values(args.id, args.value_ids)
 
-        if result.is_ok():
-            updated_attribute = result.unwrap()
+        if result.is_success:
+            updated_attribute = result.value
             print(
                 f"Successfully removed values from attribute with ID {updated_attribute.id}"
             )
@@ -386,7 +386,7 @@ class AttributeCLI:
                 f"Attribute now has {len(updated_attribute.values) if updated_attribute.values else 0} values."
             )
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to remove values from attribute: {error}")
             sys.exit(1)
 
@@ -397,8 +397,8 @@ class AttributeCLI:
             args.record_id, include_values=not args.no_values
         )
 
-        if result.is_ok():
-            attributes = result.unwrap()
+        if result.is_success:
+            attributes = result.value
             print(f"Found {len(attributes)} attributes for record {args.record_id}:")
 
             for idx, attr in enumerate(attributes, 1):
@@ -414,7 +414,7 @@ class AttributeCLI:
                         )
                 print()
         else:
-            error = result.unwrap_err()
+            error = result.error
             logger.error(f"Failed to get attributes for record: {error}")
             sys.exit(1)
 
@@ -424,8 +424,8 @@ class AttributeCLI:
         async with self.db_manager.get_enhanced_session() as session:
             result = await self.attribute_repository.delete(args.id, session)
 
-            if result.is_ok():
-                success = result.unwrap()
+            if result.is_success:
+                success = result.value
 
                 if success:
                     print(f"Successfully deleted attribute with ID {args.id}")
@@ -433,7 +433,7 @@ class AttributeCLI:
                     logger.error(f"Attribute with ID {args.id} not found")
                     sys.exit(1)
             else:
-                error = result.unwrap_err()
+                error = result.error
                 logger.error(f"Failed to delete attribute: {error}")
                 sys.exit(1)
 

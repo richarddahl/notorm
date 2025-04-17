@@ -193,10 +193,10 @@ def validate_result_pattern(engine):
     # Check for absence of old pattern
     assert "Ok(" not in engine_code, "Should not use Ok constructor"
     assert "Err(" not in engine_code, "Should not use Err constructor"
-    assert ".is_ok()" not in engine_code, "Should not use is_ok() method"
-    assert ".is_err()" not in engine_code, "Should not use is_err() method"
-    assert ".unwrap()" not in engine_code, "Should not use unwrap() method"
-    assert ".unwrap_err()" not in engine_code, "Should not use unwrap_err() method"
+    assert ".is_ok()" not in engine_code, "Should use .is_success instead of .is_ok()"
+    assert ".is_err()" not in engine_code, "Should use .is_failure instead of .is_err()"
+    assert ".unwrap()" not in engine_code, "Should use .value instead of .unwrap()"
+    assert ".unwrap_err()" not in engine_code, "Should use .error instead of .unwrap_err()"
     
     print("✅ Result pattern validation passed!")
 
