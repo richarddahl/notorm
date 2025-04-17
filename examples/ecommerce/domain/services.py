@@ -6,7 +6,7 @@ that doesn't naturally fit within domain entities.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Optional, Dict, Any, Tuple
 
 from uno.domain.service import DomainService
@@ -222,7 +222,7 @@ class ProductService(DomainService[Product]):
             previous_count=previous_count,
             new_count=product.inventory_count,
             change_amount=change,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(datetime.UTC)
         )
         product.add_event(event)
         
@@ -423,7 +423,7 @@ class OrderService(DomainService[Order]):
                     return None, f"Invalid credit card: {str(e)}"
                 
                 # Process payment (in a real implementation, this would call a payment gateway)
-                transaction_id = f"cc-{datetime.utcnow().timestamp()}"
+                transaction_id = f"cc-{datetime.now(datetime.UTC).timestamp()}"
                 
             elif payment_method == PaymentMethod.PAYPAL:
                 # Validate PayPal details (simplified)
@@ -432,7 +432,7 @@ class OrderService(DomainService[Order]):
                     return None, "Missing PayPal ID"
                     
                 # Process payment (in a real implementation, this would call PayPal API)
-                transaction_id = f"pp-{datetime.utcnow().timestamp()}"
+                transaction_id = f"pp-{datetime.now(datetime.UTC).timestamp()}"
                 
             elif payment_method == PaymentMethod.BANK_TRANSFER:
                 # Validate bank transfer details (simplified)
@@ -441,7 +441,7 @@ class OrderService(DomainService[Order]):
                     return None, "Missing bank transfer reference"
                     
                 # Process payment (in a real implementation, this would check bank transfer)
-                transaction_id = f"bt-{datetime.utcnow().timestamp()}"
+                transaction_id = f"bt-{datetime.now(datetime.UTC).timestamp()}"
                 
             else:
                 return None, f"Unsupported payment method: {payment_method}"

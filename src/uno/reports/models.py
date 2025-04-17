@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import (
     ForeignKey,
@@ -460,7 +460,7 @@ class ReportExecutionModel(DefaultModelMixin, UnoModel):
         doc="Status of the execution",
     )
     started_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, doc="When execution started"
+        default=lambda: datetime.now(datetime.UTC), doc="When execution started"
     )
     completed_at: Mapped[Optional[datetime]] = mapped_column(
         nullable=True, doc="When execution completed"

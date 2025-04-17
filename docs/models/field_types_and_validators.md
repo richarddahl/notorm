@@ -219,7 +219,7 @@ When defining columns using `mapped_column()`, you can specify various configura
 | `index` | Whether to create an index on this column | `index=True` |
 | `default` | Default value for the column | `default="pending"` |
 | `server_default` | Default value set by the database | `server_default=text("now()")` |
-| `onupdate` | Value to set on updates | `onupdate=datetime.utcnow` |
+| `onupdate` | Value to set on updates | `onupdate=lambda: datetime.now(datetime.UTC)` |
 | `doc` | Documentation string for the column | `doc="User's email address"` |
 
 **Example Usage:**
@@ -265,7 +265,7 @@ class UserModel(UnoModel):
     updated_at: Mapped[PostgresTypes.Timestamp] = mapped_column(
         nullable=False,
         server_default=text("now()"),
-        onupdate=datetime.utcnow,
+        onupdate=lambda: datetime.now(datetime.UTC),
         doc="When the user was last updated"
     )
 ```

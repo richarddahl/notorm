@@ -9,7 +9,7 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Dict, Any, Optional, Union
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Text
@@ -45,8 +45,8 @@ class User(Base, Model):
     email = Column(String(100), unique=True, nullable=False)
     full_name = Column(String(100))
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
 
     # Relationships
     posts = relationship("Post", back_populates="author")
@@ -62,8 +62,8 @@ class Post(Base, Model):
     content = Column(Text)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     published = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
 
     # Relationships
     author = relationship("User", back_populates="posts")
@@ -78,7 +78,7 @@ class Comment(Base, Model):
     content = Column(Text, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
 
     # Relationships
     author = relationship("User")
@@ -155,8 +155,8 @@ async def demonstrate_batch_insert(session: AsyncSession) -> BatchOperationResul
             "email": f"user{i}@example.com",
             "full_name": f"User {i}",
             "is_active": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": datetime.now(datetime.UTC),
+            "updated_at": datetime.now(datetime.UTC),
         }
         for i in range(1, 1001)  # 1000 users
     ]
@@ -255,7 +255,7 @@ async def demonstrate_batch_update(session: AsyncSession) -> BatchOperationResul
         {
             "id": i,
             "full_name": f"Updated User {i}",
-            "updated_at": datetime.utcnow(),
+            "updated_at": datetime.now(datetime.UTC),
         }
         for i in range(1, 501)  # 500 users
     ]
@@ -316,7 +316,7 @@ async def demonstrate_batch_upsert(session: AsyncSession) -> BatchOperationResul
                 "email": f"user{i}@example.com",
                 "full_name": f"Updated User {i}",
                 "is_active": True,
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(datetime.UTC),
             }
         )
 
@@ -328,8 +328,8 @@ async def demonstrate_batch_upsert(session: AsyncSession) -> BatchOperationResul
                 "email": f"user{i}@example.com",
                 "full_name": f"User {i}",
                 "is_active": True,
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow(),
+                "created_at": datetime.now(datetime.UTC),
+                "updated_at": datetime.now(datetime.UTC),
             }
         )
 
@@ -433,8 +433,8 @@ async def demonstrate_batch_import(session: AsyncSession) -> BatchOperationResul
                     "content": f"This is post {i} by user {user_id}.",
                     "user_id": user_id,
                     "published": True,
-                    "created_at": datetime.utcnow(),
-                    "updated_at": datetime.utcnow(),
+                    "created_at": datetime.now(datetime.UTC),
+                    "updated_at": datetime.now(datetime.UTC),
                 }
             )
 

@@ -9,7 +9,7 @@ and cross-process synchronization work correctly.
 import asyncio
 import time
 import pytest
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Dict, Any, Optional
 
 from uno.caching.distributed import RedisCache
@@ -44,7 +44,7 @@ class TestCacheItem(Base):
     description = Column(String(500))
     value = Column(Float, default=0.0)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
 
 
 @pytest.fixture(scope="module")
@@ -518,7 +518,7 @@ async def test_cache_with_serialization_edge_cases(distributed_query_cache):
         ("simple_float", 3.14159),
         ("simple_string", "Hello, Cache!"),
         ("complex_dict", {"nested": {"data": ["array", "of", "values"], "number": 42}}),
-        ("datetime_value", datetime.utcnow()),
+        ("datetime_value", datetime.now(datetime.UTC)),
         ("mixed_list", [1, "two", 3.0, {"four": 4}, [5, 6]]),
         ("empty_values", {"null": None, "empty_list": [], "empty_dict": {}}),
         ("bool_values", {"true": True, "false": False}),

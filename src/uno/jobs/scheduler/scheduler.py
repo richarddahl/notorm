@@ -349,7 +349,7 @@ class Scheduler:
             updated_metadata = metadata or {}
             if changelog:
                 updated_metadata["changelog"] = changelog
-                updated_metadata["updated_at"] = datetime.utcnow().isoformat()
+                updated_metadata["updated_at"] = datetime.now(datetime.UTC).isoformat()
         
         # Extract schedule parameters if a schedule object is provided
         cron_expression = None
@@ -475,7 +475,7 @@ class Scheduler:
         if next_run and isinstance(next_run, str):
             next_run = datetime.fromisoformat(next_run)
         else:
-            next_run = datetime.utcnow()
+            next_run = datetime.now(datetime.UTC)
         
         return schedule.get_next_n_run_times(next_run, count)
     
@@ -573,7 +573,7 @@ class Scheduler:
                 **(schedule_data.get("metadata") or {}),
                 "schedule_id": schedule_id,
                 "manual_trigger": True,
-                "scheduled_run": datetime.utcnow().isoformat(),
+                "scheduled_run": datetime.now(datetime.UTC).isoformat(),
             },
             "max_retries": schedule_data.get("max_retries", 0),
             "retry_delay": schedule_data.get("retry_delay", 60),
@@ -648,7 +648,7 @@ class Scheduler:
                         "event_trigger": True,
                         "event_name": event_name,
                         "event_data": event_data,
-                        "scheduled_run": datetime.utcnow().isoformat(),
+                        "scheduled_run": datetime.now(datetime.UTC).isoformat(),
                     },
                     "max_retries": schedule.get("max_retries", 0),
                     "retry_delay": schedule.get("retry_delay", 60),
@@ -665,7 +665,7 @@ class Scheduler:
                 await self.storage.update_schedule(
                     schedule_id=schedule_id,
                     metadata={
-                        "last_triggered": datetime.utcnow().isoformat(),
+                        "last_triggered": datetime.now(datetime.UTC).isoformat(),
                         "last_event_data": event_data,
                     }
                 )

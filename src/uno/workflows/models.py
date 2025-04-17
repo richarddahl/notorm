@@ -387,7 +387,7 @@ class WorkflowExecutionLog(ModelMixin, UnoModel, RecordAuditModelMixin):
         doc="Status of the workflow execution",
     )
     executed_at: Mapped[datetime.datetime] = mapped_column(
-        default=datetime.datetime.utcnow,
+        default=datetime.datetime.now(datetime.UTC),
         doc="When the workflow was executed",
     )
     completed_at: Mapped[Optional[datetime.datetime]] = mapped_column(

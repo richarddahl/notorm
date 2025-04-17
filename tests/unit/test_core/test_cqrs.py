@@ -8,7 +8,7 @@ queries, and their respective handlers.
 import asyncio
 import unittest
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
 
@@ -81,7 +81,7 @@ class MockAggregate(AggregateRoot):
     def add_item(self, item_id: str, name: str, value: int) -> None:
         """Add an item to the aggregate."""
         self.items.append({"id": item_id, "name": name, "value": value})
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def check_invariants(self) -> None:
         """Check that all invariants are satisfied."""

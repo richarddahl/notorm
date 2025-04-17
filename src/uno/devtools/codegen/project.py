@@ -531,7 +531,7 @@ def create_module_files(
 
         # Create a sample model
         model_content = f"""from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, UTC
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -547,8 +547,8 @@ class {name.capitalize()}(UnoModel):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
     
     def __repr__(self) -> str:
         return f"<{name.capitalize()}(id={self.id}, name={self.name})>"
@@ -727,7 +727,7 @@ class {name.capitalize()}Service:
         api_content = f"""from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, UTC
 
 from uno.dependencies import get_db_session
 from ..models.{name.lower()} import {name.capitalize()}

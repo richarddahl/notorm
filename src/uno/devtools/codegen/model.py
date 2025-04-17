@@ -141,7 +141,7 @@ def _generate_model_imports(
         Import statements as a string
     """
     imports = [
-        "from datetime import datetime, date, time, timedelta",
+        "from datetime import datetime, date, time, timedelta", UTC,
         "from typing import Dict, List, Optional, Set, Union, Any",
         "from uuid import UUID",
     ]
@@ -234,10 +234,10 @@ def _generate_model_class(
     if timestamps:
         lines.append("    # Timestamps")
         lines.append(
-            "    created_at = sa.Column(sa.DateTime, default=datetime.utcnow, nullable=False)"
+            "    created_at = sa.Column(sa.DateTime, default=lambda: datetime.now(datetime.UTC), nullable=False)"
         )
         lines.append(
-            "    updated_at = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)"
+            "    updated_at = sa.Column(sa.DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC), nullable=False)"
         )
 
     # Add soft delete
@@ -360,7 +360,7 @@ def _generate_model_field(field_name: str, field_info: Dict[str, Any]) -> str:
             args.append(f"default='{default}'")
         elif field_type.lower() in ["datetime"]:
             if default == "utcnow":
-                args.append("default=datetime.utcnow")
+                args.append("default=lambda: datetime.now(datetime.UTC)")
             else:
                 args.append(f"default={default}")
         else:

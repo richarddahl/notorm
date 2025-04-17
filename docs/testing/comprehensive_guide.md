@@ -346,7 +346,7 @@ def user_factory():
             "id": str(uuid.uuid4()),
             "username": f"user_{uuid.uuid4().hex[:8]}",
             "email": f"user_{uuid.uuid4().hex[:8]}@example.com",
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(datetime.UTC).isoformat(),
             "is_active": True
         }
         return {**default_user, **kwargs}
@@ -363,7 +363,7 @@ def item_factory():
             "name": f"Item {uuid.uuid4().hex[:8]}",
             "description": "Test item description",
             "price": 10.99,
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now(datetime.UTC).isoformat()
         }
         return {**default_item, **kwargs}
     

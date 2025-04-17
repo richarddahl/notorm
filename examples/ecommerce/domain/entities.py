@@ -6,7 +6,7 @@ in the e-commerce domain, including users, products, and orders.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Optional, Dict, Any, Set
 
 from pydantic import Field, validator
@@ -66,7 +66,7 @@ class User(AggregateRoot):
             self.email = email
         if phone is not None:
             self.phone = phone
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_addresses(
         self,
@@ -90,27 +90,27 @@ class User(AggregateRoot):
         if not use_billing_for_shipping and shipping_address is not None:
             self.shipping_address = shipping_address
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def deactivate(self) -> None:
         """Deactivate the user account."""
         self.is_active = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def reactivate(self) -> None:
         """Reactivate a deactivated user account."""
         self.is_active = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def make_admin(self) -> None:
         """Make the user an administrator."""
         self.is_admin = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def remove_admin(self) -> None:
         """Remove administrator privileges from the user."""
         self.is_admin = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     @classmethod
     def register(
@@ -154,7 +154,7 @@ class User(AggregateRoot):
             shipping_address=shipping_address,
             is_active=True,
             is_admin=False,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
         )
 
         # Create registration event
@@ -162,7 +162,7 @@ class User(AggregateRoot):
             user_id=user.id,
             username=user.username,
             email=user.email.address,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(datetime.UTC),
         )
         user.add_event(event)
 
@@ -184,12 +184,12 @@ class ProductCategory(Entity):
     def deactivate(self) -> None:
         """Deactivate the category."""
         self.is_active = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def reactivate(self) -> None:
         """Reactivate the category."""
         self.is_active = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_details(
         self, name: Optional[str] = None, description: Optional[str] = None
@@ -205,7 +205,7 @@ class ProductCategory(Entity):
             self.name = name
         if description is not None:
             self.description = description
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
 
 class Product(AggregateRoot):
@@ -242,7 +242,7 @@ class Product(AggregateRoot):
         if new_price.amount < 0:
             raise ValueError("Product price cannot be negative")
         self.price = new_price
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_inventory(self, count: int) -> None:
         """
@@ -254,7 +254,7 @@ class Product(AggregateRoot):
         if count < 0:
             raise ValueError("Inventory count cannot be negative")
         self.inventory_count = count
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def add_inventory(self, quantity: int) -> None:
         """
@@ -266,7 +266,7 @@ class Product(AggregateRoot):
         if quantity < 0:
             raise ValueError("Cannot add negative inventory")
         self.inventory_count += quantity
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def remove_inventory(self, quantity: int) -> None:
         """
@@ -285,7 +285,7 @@ class Product(AggregateRoot):
                 f"Cannot remove {quantity} items, only {self.inventory_count} in stock"
             )
         self.inventory_count -= quantity
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def add_rating(self, rating: Rating) -> None:
         """
@@ -295,7 +295,7 @@ class Product(AggregateRoot):
             rating: The rating to add
         """
         self.ratings.append(rating)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def get_average_rating(self) -> Optional[float]:
         """
@@ -315,12 +315,12 @@ class Product(AggregateRoot):
     def deactivate(self) -> None:
         """Deactivate the product (hide from listings)."""
         self.is_active = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def reactivate(self) -> None:
         """Reactivate the product."""
         self.is_active = True
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_details(
         self,
@@ -342,7 +342,7 @@ class Product(AggregateRoot):
             self.description = description
         if category_id is not None:
             self.category_id = category_id
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_attribute(self, key: str, value: Any) -> None:
         """
@@ -353,7 +353,7 @@ class Product(AggregateRoot):
             value: Attribute value
         """
         self.attributes[key] = value
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def remove_attribute(self, key: str) -> None:
         """
@@ -364,7 +364,7 @@ class Product(AggregateRoot):
         """
         if key in self.attributes:
             del self.attributes[key]
-            self.updated_at = datetime.utcnow()
+            self.updated_at = datetime.now(datetime.UTC)
 
     @classmethod
     def create(
@@ -402,7 +402,7 @@ class Product(AggregateRoot):
             inventory_count=inventory_count,
             is_active=True,
             attributes=attributes or {},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
         )
 
         # Create product creation event
@@ -411,7 +411,7 @@ class Product(AggregateRoot):
             name=product.name,
             price=product.price.amount,
             currency=product.price.currency,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(datetime.UTC),
         )
         product.add_event(event)
 
@@ -479,7 +479,7 @@ class Payment(Entity):
         """
         self.status = "completed"
         self.transaction_id = transaction_id
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def fail(self, reason: str) -> None:
         """
@@ -490,7 +490,7 @@ class Payment(Entity):
         """
         self.status = "failed"
         self.payment_details["failure_reason"] = reason
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def refund(self, reason: Optional[str] = None) -> None:
         """
@@ -502,7 +502,7 @@ class Payment(Entity):
         self.status = "refunded"
         if reason:
             self.payment_details["refund_reason"] = reason
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
 
 class Order(AggregateRoot):
@@ -560,7 +560,7 @@ class Order(AggregateRoot):
         for item in self.items:
             if item.product_id == product_id:
                 item.quantity += quantity
-                self.updated_at = datetime.utcnow()
+                self.updated_at = datetime.now(datetime.UTC)
                 return
 
         # Create new order item
@@ -570,12 +570,12 @@ class Order(AggregateRoot):
             product_name=product_name,
             price=price,
             quantity=quantity,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
         )
 
         self.items.append(item)
         self.register_child_entity(item)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def remove_item(self, product_id: str) -> None:
         """
@@ -592,7 +592,7 @@ class Order(AggregateRoot):
 
         # Find and remove the item
         self.items = [item for item in self.items if item.product_id != product_id]
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
     def update_item_quantity(self, product_id: str, quantity: int) -> None:
         """
@@ -614,7 +614,7 @@ class Order(AggregateRoot):
                     self.remove_item(product_id)
                 else:
                     item.quantity = quantity
-                self.updated_at = datetime.utcnow()
+                self.updated_at = datetime.now(datetime.UTC)
                 return
 
     def process_payment(
@@ -644,12 +644,12 @@ class Order(AggregateRoot):
             method=method,
             status="pending",
             payment_details=payment_details or {},
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
         )
 
         self.payment = payment
         self.register_child_entity(payment)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
         # Create payment event
         event = PaymentProcessedEvent(
@@ -659,7 +659,7 @@ class Order(AggregateRoot):
             currency=payment.amount.currency,
             method=payment.method,
             status=payment.status,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(datetime.UTC),
         )
         self.add_event(event)
 
@@ -686,24 +686,24 @@ class Order(AggregateRoot):
 
         # Update status-specific timestamps
         if new_status == OrderStatus.SHIPPED and not self.shipped_at:
-            self.shipped_at = datetime.utcnow()
+            self.shipped_at = datetime.now(datetime.UTC)
         elif new_status == OrderStatus.DELIVERED and not self.delivered_at:
-            self.delivered_at = datetime.utcnow()
+            self.delivered_at = datetime.now(datetime.UTC)
         elif new_status == OrderStatus.CANCELLED and not self.cancelled_at:
-            self.cancelled_at = datetime.utcnow()
+            self.cancelled_at = datetime.now(datetime.UTC)
 
         # Add notes if provided
         if notes:
             self.notes = notes
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
         # Create status change event
         event = OrderStatusChangedEvent(
             order_id=self.id,
             old_status=old_status,
             new_status=new_status,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(datetime.UTC),
         )
         self.add_event(event)
 
@@ -746,7 +746,7 @@ class Order(AggregateRoot):
             shipping_address=shipping_address,
             billing_address=billing_address,
             status=OrderStatus.PENDING,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(datetime.UTC),
         )
 
         # Add items if provided
@@ -768,7 +768,7 @@ class Order(AggregateRoot):
             total_amount=order.subtotal.amount,
             currency=order.subtotal.currency,
             items_count=order.total_items,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(datetime.UTC),
         )
         order.add_event(event)
 

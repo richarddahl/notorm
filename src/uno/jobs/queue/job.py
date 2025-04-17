@@ -33,7 +33,7 @@ class Job(BaseModel):
     scheduled_for: Optional[datetime] = None
 
     # Execution tracking
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     result: Optional[Any] = None
@@ -67,7 +67,7 @@ class Job(BaseModel):
         if not self.started_at:
             return None
 
-        end_time = self.completed_at or datetime.utcnow()
+        end_time = self.completed_at or datetime.now(datetime.UTC)
         return (end_time - self.started_at).total_seconds()
 
     @property
@@ -80,7 +80,7 @@ class Job(BaseModel):
         if not self.scheduled_for:
             return True
 
-        return datetime.utcnow() >= self.scheduled_for
+        return datetime.now(datetime.UTC) >= self.scheduled_for
 
     @property
     def can_retry(self) -> bool:
@@ -103,7 +103,7 @@ class Job(BaseModel):
     def mark_running(self) -> None:
         """Mark the job as running."""
         self.status = JobStatus.RUNNING
-        self.started_at = datetime.utcnow()
+        self.started_at = datetime.now(datetime.UTC)
 
     def mark_completed(self, result: Any = None) -> None:
         """Mark the job as completed.
@@ -112,7 +112,7 @@ class Job(BaseModel):
             result: Optional result data from the job execution
         """
         self.status = JobStatus.COMPLETED
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(datetime.UTC)
         self.result = result
 
     def mark_failed(self, error_info: Dict[str, Any]) -> None:
@@ -122,7 +122,7 @@ class Job(BaseModel):
             error_info: Information about the error that caused the failure
         """
         self.status = JobStatus.FAILED
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(datetime.UTC)
         self.error = error_info
 
     def mark_retry(self, error_info: Dict[str, Any]) -> None:
@@ -143,7 +143,7 @@ class Job(BaseModel):
             reason: Optional reason for cancellation
         """
         self.status = JobStatus.CANCELLED
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(datetime.UTC)
 
         if reason:
             self.metadata["cancel_reason"] = reason
@@ -151,7 +151,7 @@ class Job(BaseModel):
     def mark_timeout(self) -> None:
         """Mark the job as timed out."""
         self.status = JobStatus.TIMEOUT
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(datetime.UTC)
         self.error = {
             "type": "TimeoutError",
             "message": f"Job exceeded timeout of {self.timeout} seconds",

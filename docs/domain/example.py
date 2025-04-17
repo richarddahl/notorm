@@ -6,7 +6,7 @@ to implement business logic in a clean, maintainable way.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Optional, Dict, Any
 
 from uno.domain.core import Entity, ValueObject, AggregateRoot, DomainEvent
@@ -86,7 +86,7 @@ class User(AggregateRoot):
             
         old_email = self.email
         self.email = new_email
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
     
     def change_address(self, new_address: Address) -> None:
         """
@@ -100,7 +100,7 @@ class User(AggregateRoot):
             old_address = self.address.model_dump()
             
         self.address = new_address
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
         
         # Create an event for this change
         event = UserAddressChangedEvent(
@@ -116,7 +116,7 @@ class User(AggregateRoot):
             return
             
         self.is_active = False
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
 
 # Example usage in a service layer
@@ -138,7 +138,7 @@ async def create_user(username: str, email: str, address: Optional[Address] = No
         email=email,
         address=address,
         is_active=True,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(datetime.UTC)
     )
     
     # Get the user service from DI

@@ -13,7 +13,7 @@ with the PostgreSQL persistence layer, showing:
 import asyncio
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Dict, Any, Optional
 
 # Set up logging
@@ -154,7 +154,7 @@ async def create_sample_data():
         status=OrderStatus.PENDING,
         shipping_address=user.shipping_address,
         billing_address=user.billing_address,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(datetime.UTC)
     )
     
     # Add items to the order
@@ -200,7 +200,7 @@ async def create_product(repo, name, description, price, inventory_count=0):
             description=description,
             price=Money(amount=price, currency="USD"),
             inventory_count=inventory_count,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(datetime.UTC)
         )
         
         return await repo.add(product)

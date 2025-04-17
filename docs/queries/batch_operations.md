@@ -315,7 +315,7 @@ limit=1000,
 for order in pending_orders:```
 
 order.status = 'processing'
-order.updated_at = datetime.utcnow()
+order.updated_at = datetime.now(datetime.UTC)
 ```
 
 # Update all orders in a single batch operation

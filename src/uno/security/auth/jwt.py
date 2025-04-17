@@ -215,7 +215,7 @@ class JWTAuth:
         """
         import uuid
         
-        now = datetime.utcnow()
+        now = datetime.now(datetime.UTC)
         expires_at = now + expires_delta
         
         # Prepare claims

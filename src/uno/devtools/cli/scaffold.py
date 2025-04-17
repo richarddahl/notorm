@@ -237,7 +237,7 @@ def _create_model(
                 f.write(f'"""\n{name.title()} database model.\n"""\n\n')
                 f.write('from sqlalchemy import Column, String, Text, Boolean, DateTime\n')
                 f.write('from sqlalchemy.dialects.postgresql import UUID\n')
-                f.write('from datetime import datetime\n')
+                f.write('from datetime import datetime, UTC\n')
                 f.write('import uuid\n\n')
                 f.write(f'from {context["project_name"]}.infrastructure.database.base import Base\n\n\n')
                 f.write(f'class {name.title()}Model(Base):\n')
@@ -246,8 +246,8 @@ def _create_model(
                 f.write('    id = Column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))\n')
                 f.write('    name = Column(String(255), nullable=False)\n')
                 f.write('    description = Column(Text, nullable=True)\n')
-                f.write('    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)\n')
-                f.write('    updated_at = Column(DateTime, nullable=True, onupdate=datetime.utcnow)\n')
+                f.write('    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(datetime.UTC))\n')
+                f.write('    updated_at = Column(DateTime, nullable=True, onupdate=lambda: datetime.now(datetime.UTC))\n')
                 f.write('    is_active = Column(Boolean, nullable=False, default=True)\n')
             return output_file
             
