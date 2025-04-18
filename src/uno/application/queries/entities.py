@@ -11,7 +11,7 @@ from typing import ClassVar, List, Optional, Set, Dict, Any
 from enum import Enum
 
 from uno.domain.core import Entity, AggregateRoot
-from uno.core.errors.base import ValidationError
+from uno.core.base.error import ValidationError
 from uno.enums import Include, Match, SQLOperation
 
 

@@ -390,7 +390,7 @@ def default_result_error_handler(result: Result) -> None:
         status_code = status.HTTP_400_BAD_REQUEST
         error_dict = {"message": str(error)}
         
-        # Extract more information if it's a UnoError
+        # Extract more information if it's a BaseError
         if hasattr(error, "error_code"):
             error_dict["error"] = error.error_code
             

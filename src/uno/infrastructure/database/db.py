@@ -167,7 +167,7 @@ def UnoDBFactory(
                     # Handle the case where the object already exists
                     raise UniqueViolationError
             except Exception as e:
-                raise UnoError(f"Unknown error occurred: {e}", "UNKNOWN_ERROR") from e
+                raise BaseError(f"Unknown error occurred: {e}", "UNKNOWN_ERROR") from e
 
         @classmethod
         async def update(
@@ -192,7 +192,7 @@ def UnoDBFactory(
                     # Handle the case where the object already exists
                     raise UniqueViolationError
             except Exception as e:
-                raise UnoError(f"Unknown error occurred: {e}") from e
+                raise BaseError(f"Unknown error occurred: {e}") from e
 
         @classmethod
         async def get(cls, select_related=None, **kwargs: Any) -> Optional[T]:
@@ -212,7 +212,7 @@ def UnoDBFactory(
             Raises:
                 NotFoundException: If the record does not exist
                 IntegrityConflictException: If multiple records match the query
-                UnoError: For other errors
+                BaseError: For other errors
             """
             column_names = obj.model.__table__.columns.keys()
             stmt = select(obj.model.__table__.c[*column_names])
@@ -266,7 +266,7 @@ def UnoDBFactory(
 
                     return record
             except Exception as e:
-                raise UnoError(
+                raise BaseError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
                 ) from e
 
@@ -293,7 +293,7 @@ def UnoDBFactory(
                     await session.commit()
                     return True
             except Exception as e:
-                raise UnoError(
+                raise BaseError(
                     f"Unhandled error occurred during delete: {e}",
                     error_code="DELETE_ERROR",
                 ) from e
@@ -373,7 +373,7 @@ def UnoDBFactory(
 
                     return records
             except Exception as e:
-                raise UnoError(
+                raise BaseError(
                     f"Unhandled error occurred: {e}", error_code="SELECT_ERROR"
                 ) from e
 

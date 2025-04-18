@@ -17,7 +17,7 @@ from uno.domain.authorization import (
 )
 from uno.domain.rbac import RbacService, User, Role
 from uno.domain.application_services import ServiceContext
-from uno.core.errors.base import AuthorizationError
+from uno.core.base.error import AuthorizationError
 
 
 @dataclass

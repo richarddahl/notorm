@@ -36,7 +36,7 @@ from uno.domain.protocols import (
     EntityFactoryProtocol,
     DomainEventProtocol,
 )
-from uno.core.errors.base import DomainValidationError
+from uno.core.base.error import DomainValidationError
 
 
 # Type variables

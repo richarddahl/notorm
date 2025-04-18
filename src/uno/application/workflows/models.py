@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import (
     JSONB,
 )
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import RecordAuditModelMixin
 from uno.enums import (
@@ -46,6 +46,7 @@ from uno.settings import uno_settings
 # Extended Workflow Enums
 class WorkflowStatus(enum.StrEnum):
     """Workflow status states"""
+
     DRAFT = "draft"
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -54,6 +55,7 @@ class WorkflowStatus(enum.StrEnum):
 
 class WorkflowActionType(enum.StrEnum):
     """Types of actions a workflow can perform"""
+
     NOTIFICATION = "notification"
     EMAIL = "email"
     WEBHOOK = "webhook"
@@ -63,6 +65,7 @@ class WorkflowActionType(enum.StrEnum):
 
 class WorkflowRecipientType(enum.StrEnum):
     """Types of workflow notification recipients"""
+
     USER = "user"
     ROLE = "role"
     GROUP = "group"
@@ -71,6 +74,7 @@ class WorkflowRecipientType(enum.StrEnum):
 
 class WorkflowExecutionStatus(enum.StrEnum):
     """Status of workflow execution"""
+
     PENDING = "pending"
     SUCCESS = "success"
     FAILURE = "failure"
@@ -79,6 +83,7 @@ class WorkflowExecutionStatus(enum.StrEnum):
 
 class WorkflowConditionType(enum.StrEnum):
     """Types of workflow conditions"""
+
     FIELD_VALUE = "field_value"
     TIME_BASED = "time_based"
     ROLE_BASED = "role_based"
@@ -86,17 +91,14 @@ class WorkflowConditionType(enum.StrEnum):
     CUSTOM = "custom"
 
 
-class WorkflowDefinition(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowDefinition(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Defines a workflow that can be triggered by database events."""
+
     __tablename__ = "workflow_definition"
-    __table_args__ = (
-        {"comment": "User-defined workflow definitions"},
-    )
+    __table_args__ = ({"comment": "User-defined workflow definitions"},)
 
     # Basic workflow information
-    name: Mapped[PostgresTypes.String255] = mapped_column(
-        doc="Name of the workflow"
-    )
+    name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the workflow")
     description: Mapped[str] = mapped_column(
         doc="Explanation of the workflow indicating its purpose and expected outcome"
     )
@@ -143,8 +145,9 @@ class WorkflowDefinition(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class WorkflowTriggerModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowTriggerModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Defines what triggers a workflow."""
+
     __tablename__ = "workflow_trigger"
     __table_args__ = (
         Index("idx_workflow_trigger_entity", "entity_type"),
@@ -191,12 +194,11 @@ class WorkflowTriggerModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class WorkflowConditionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowConditionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Additional conditions that must be met for workflow to execute."""
+
     __tablename__ = "workflow_condition"
-    __table_args__ = (
-        {"comment": "Conditions for workflow execution"},
-    )
+    __table_args__ = ({"comment": "Conditions for workflow execution"},)
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -246,12 +248,11 @@ class WorkflowConditionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class WorkflowActionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowActionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Action to take when workflow is triggered and conditions are met."""
+
     __tablename__ = "workflow_action"
-    __table_args__ = (
-        {"comment": "Actions to execute when workflow is triggered"},
-    )
+    __table_args__ = ({"comment": "Actions to execute when workflow is triggered"},)
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -303,12 +304,11 @@ class WorkflowActionModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class WorkflowRecipientModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowRecipientModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Recipients for workflow notifications."""
+
     __tablename__ = "workflow_recipient"
-    __table_args__ = (
-        {"comment": "Recipients for workflow notifications"},
-    )
+    __table_args__ = ({"comment": "Recipients for workflow notifications"},)
 
     # Foreign key to workflow
     workflow_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -352,8 +352,9 @@ class WorkflowRecipientModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class WorkflowExecutionLog(ModelMixin, UnoModel, RecordAuditModelMixin):
+class WorkflowExecutionLog(ModelMixin, BaseModel, RecordAuditModelMixin):
     """Logs of workflow executions."""
+
     __tablename__ = "workflow_execution_log"
     __table_args__ = (
         Index("idx_workflow_execution_status", "status"),
@@ -415,9 +416,11 @@ class WorkflowExecutionLog(ModelMixin, UnoModel, RecordAuditModelMixin):
 
 
 # Legacy models to maintain backward compatibility - marked for future removal
-class Workflow(ModelMixin, UnoModel, RecordAuditModelMixin):
+class Workflow(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "workflow"
-    __table_args__ = {"comment": "DEPRECATED: User-defined workflows, use workflow_definition instead"}
+    __table_args__ = {
+        "comment": "DEPRECATED: User-defined workflows, use workflow_definition instead"
+    }
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the workflow")
@@ -426,9 +429,11 @@ class Workflow(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class TaskType(ModelMixin, UnoModel, RecordAuditModelMixin):
+class TaskType(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "task_type"
-    __table_args__ = {"comment": "DEPRECATED: Manually created or trigger-created tasks"}
+    __table_args__ = {
+        "comment": "DEPRECATED: Manually created or trigger-created tasks"
+    }
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(doc="Name of the task type")
@@ -533,9 +538,11 @@ class TaskType(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class Task(ModelMixin, UnoModel, RecordAuditModelMixin):
+class Task(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "task"
-    __table_args__ = {"comment": "DEPRECATED: Manually created or trigger created tasks"}
+    __table_args__ = {
+        "comment": "DEPRECATED: Manually created or trigger created tasks"
+    }
 
     # Columns
     task_type_id: Mapped[PostgresTypes.String26] = mapped_column(
@@ -562,7 +569,7 @@ class Task(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class TaskRecord(ModelMixin, UnoModel, RecordAuditModelMixin):
+class TaskRecord(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "task_record"
     __table_args__ = {"comment": "DEPRECATED: Records of task completions"}
 

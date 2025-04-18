@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar, Union, cast
 
-from uno.core.errors.base import ValidationError
+from uno.core.base.error import ValidationError
 
 
 class ValidationSeverity(Enum):

@@ -16,7 +16,7 @@ from typing import Optional, Type, Any, Dict, List
 
 import inject
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.workflows.errors import WorkflowErrorCode, WorkflowEventError
 
 from uno.core.events import (
@@ -133,7 +133,7 @@ class WorkflowEventIntegration:
             error_msg = "No workflow service available for PostgreSQL event integration"
             self.logger.warning(error_msg)
             return Failure(
-                UnoError(
+                BaseError(
                     error_msg,
                     WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
                     component="workflow_service",
@@ -147,7 +147,7 @@ class WorkflowEventIntegration:
             error_msg = f"Failed to start PostgreSQL event listener: {result.error}"
             self.logger.error(error_msg)
             return Failure(
-                UnoError(
+                BaseError(
                     error_msg,
                     WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
                     operation="start_postgres_listener",
@@ -169,7 +169,7 @@ class WorkflowEventIntegration:
             error_msg = f"Failed to stop PostgreSQL event listener: {result.error}"
             self.logger.error(error_msg)
             return Failure(
-                UnoError(
+                BaseError(
                     error_msg,
                     WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
                     operation="stop_postgres_listener",

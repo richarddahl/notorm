@@ -10,11 +10,11 @@ that facilitate data transfer between different layers of the application, inclu
 validation, serialization, and API documentation.
 """
 
-from .dto import UnoDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
+from uno.core.base.dto import BaseDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
 from .manager import DTOManager, get_dto_manager
 
 __all__ = [
-    "UnoDTO",
+    "BaseDTO",
     "DTOConfig",
     "PaginatedListDTO",
     "WithMetadataDTO",

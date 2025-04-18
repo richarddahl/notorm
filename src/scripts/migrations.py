@@ -272,7 +272,7 @@ from alembic import context
 
 # Import Uno configuration and model base
 from uno.settings import uno_settings
-from uno.model import UnoModel
+from uno.domain.base.model import BaseModel
 from uno.database.config import ConnectionConfig
 from uno.database.engine import sync_connection, SyncEngineFactory
 import uno.attributes.models  # noqa: F401
@@ -291,7 +291,7 @@ config = context.config
 fileConfig(config.config_file_name)
 
 # Add model's MetaData object for 'autogenerate' support
-target_metadata = UnoModel.metadata
+target_metadata = BaseModel.metadata
 
 
 def run_migrations_offline() -> None:

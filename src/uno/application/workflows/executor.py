@@ -170,7 +170,7 @@ class NotificationExecutor:
 
         except Exception as e:
             self.logger.exception(f"Error executing notification action: {e}")
-            return Failure(UnoError(f"Error executing notification action: {str(e)}"))
+            return Failure(BaseError(f"Error executing notification action: {str(e)}"))
 
     def _create_notification_event(
         self,
@@ -304,7 +304,7 @@ class EmailExecutor:
 
         except Exception as e:
             self.logger.exception(f"Error executing email action: {e}")
-            return Failure(UnoError(f"Error executing email action: {str(e)}"))
+            return Failure(BaseError(f"Error executing email action: {str(e)}"))
 
     async def _load_email_template(self, template_name: str) -> str:
         """Load an email template from the templates directory"""
@@ -386,7 +386,7 @@ class WebhookExecutor:
             # Get webhook details from config
             url = config.get("url")
             if not url:
-                return Failure(UnoError("No URL provided for webhook action"))
+                return Failure(BaseError("No URL provided for webhook action"))
 
             method = config.get("method", "POST").upper()
             headers = config.get("headers", {})
@@ -475,7 +475,7 @@ class WebhookExecutor:
 
         except Exception as e:
             self.logger.exception(f"Error executing webhook action: {e}")
-            return Failure(UnoError(f"Error executing webhook action: {str(e)}"))
+            return Failure(BaseError(f"Error executing webhook action: {str(e)}"))
 
 
 class DatabaseExecutor:
@@ -506,13 +506,15 @@ class DatabaseExecutor:
             operation = config.get("operation", "INSERT")
             target_table = config.get("table")
             if not target_table:
-                return Failure(UnoError("No target table provided for database action"))
+                return Failure(
+                    BaseError("No target table provided for database action")
+                )
 
             # Get field mappings from the config
             field_mappings = config.get("field_mappings", {})
             if not field_mappings:
                 return Failure(
-                    UnoError("No field mappings provided for database action")
+                    BaseError("No field mappings provided for database action")
                 )
 
             # Prepare data to insert/update
@@ -566,7 +568,7 @@ class DatabaseExecutor:
 
                     if not record_id and not filter_condition:
                         return Failure(
-                            UnoError(
+                            BaseError(
                                 "No record ID or filter condition provided for UPDATE operation"
                             )
                         )
@@ -622,12 +624,12 @@ class DatabaseExecutor:
 
                 else:
                     return Failure(
-                        UnoError(f"Unsupported database operation: {operation}")
+                        BaseError(f"Unsupported database operation: {operation}")
                     )
 
         except Exception as e:
             self.logger.exception(f"Error executing database action: {e}")
-            return Failure(UnoError(f"Error executing database action: {str(e)}"))
+            return Failure(BaseError(f"Error executing database action: {str(e)}"))
 
 
 class CustomExecutor:
@@ -663,13 +665,13 @@ class CustomExecutor:
             # Get custom executor type
             executor_type = config.get("executor_type")
             if not executor_type:
-                return Failure(UnoError("No executor type provided for custom action"))
+                return Failure(BaseError("No executor type provided for custom action"))
 
             # Find the corresponding executor function
             executor_func = self.custom_executors.get(executor_type)
             if not executor_func:
                 return Failure(
-                    UnoError(
+                    BaseError(
                         f"No executor found for custom action type: {executor_type}"
                     )
                 )
@@ -692,7 +694,7 @@ class CustomExecutor:
 
         except Exception as e:
             self.logger.exception(f"Error executing custom action: {e}")
-            return Failure(UnoError(f"Error executing custom action: {str(e)}"))
+            return Failure(BaseError(f"Error executing custom action: {str(e)}"))
 
 
 class ActionExecutorRegistry:

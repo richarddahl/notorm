@@ -13,7 +13,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import text
 
-from uno.model import PostgresTypes
+from uno.domain.base.model import PostgresTypes
 from uno.mixins import ObjectMixin, ModelMixin
 
 

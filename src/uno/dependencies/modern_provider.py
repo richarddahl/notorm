@@ -45,7 +45,7 @@ from uno.dependencies.interfaces import (
     SQLExecutionProtocol,
     EventBusProtocol,
 )
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.core.errors.core_errors import (
     DependencyNotFoundError,
     DependencyResolutionError,
@@ -101,7 +101,7 @@ class UnoServiceProvider:
             services: The service collection to use
         """
         if self._initialized:
-            raise UnoError(
+            raise BaseError(
                 "Services have already been initialized and cannot be reconfigured",
                 "SERVICES_ALREADY_INITIALIZED",
             )
@@ -116,7 +116,7 @@ class UnoServiceProvider:
             services: The service collection containing extension services
         """
         if self._initialized:
-            raise UnoError(
+            raise BaseError(
                 "Services have already been initialized and cannot be extended",
                 "SERVICES_ALREADY_INITIALIZED",
             )
@@ -255,11 +255,11 @@ class UnoServiceProvider:
             An instance of the requested service
 
         Raises:
-            UnoError: If the service provider is not initialized
+            BaseError: If the service provider is not initialized
         """
         if not self._initialized:
             self._logger.error("Service provider not initialized")
-            raise UnoError(
+            raise BaseError(
                 "Service provider must be initialized before retrieving services",
                 "SERVICES_NOT_INITIALIZED",
             )
@@ -290,11 +290,11 @@ class UnoServiceProvider:
             An instance of the requested service
 
         Raises:
-            UnoError: If the service provider is not initialized
+            BaseError: If the service provider is not initialized
         """
         if not self._initialized:
             self._logger.error("Service provider not initialized")
-            raise UnoError(
+            raise BaseError(
                 "Service provider must be initialized before retrieving services",
                 "SERVICES_NOT_INITIALIZED",
             )
@@ -320,11 +320,11 @@ class UnoServiceProvider:
             An instance of the requested service
 
         Raises:
-            UnoError: If the service provider is not initialized
+            BaseError: If the service provider is not initialized
         """
         if not self._initialized:
             self._logger.error("Service provider not initialized")
-            raise UnoError(
+            raise BaseError(
                 "Service provider must be initialized before retrieving services",
                 "SERVICES_NOT_INITIALIZED",
             )
@@ -347,11 +347,11 @@ class UnoServiceProvider:
             The service resolver with the active scope
 
         Raises:
-            UnoError: If the service provider is not initialized
+            BaseError: If the service provider is not initialized
         """
         if not self._initialized:
             self._logger.error("Service provider not initialized")
-            raise UnoError(
+            raise BaseError(
                 "Service provider must be initialized before creating a scope",
                 "SERVICES_NOT_INITIALIZED",
             )
@@ -397,6 +397,7 @@ class UnoServiceProvider:
         """
         # Use the new DTO manager instead of the deprecated schema manager
         from uno.dto import get_dto_manager
+
         return get_dto_manager()
 
     def get_sql_emitter_factory(self) -> SQLEmitterFactoryProtocol:

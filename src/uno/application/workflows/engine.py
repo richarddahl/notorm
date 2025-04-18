@@ -12,7 +12,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.core.events import UnoEvent, EventHandler
 from uno.workflows.errors import (
     WorkflowErrorCode,
@@ -48,7 +48,7 @@ from uno.workflows.entities import (
 )
 
 
-class WorkflowEngineError(UnoError):
+class WorkflowEngineError(BaseError):
     """Base error class for workflow engine module errors."""
 
     def __init__(

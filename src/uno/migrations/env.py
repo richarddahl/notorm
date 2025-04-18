@@ -11,7 +11,7 @@ from alembic import context
 
 # Import Uno configuration and model base
 from uno.settings import uno_settings
-from uno.model import UnoModel
+from uno.domain.base.model import BaseModel
 from uno.database.config import ConnectionConfig
 from uno.database.engine import sync_connection, SyncEngineFactory
 import uno.attributes.models  # noqa: F401
@@ -43,46 +43,47 @@ config = context.config
 fileConfig(config.config_file_name)
 
 # Add model's MetaData object for 'autogenerate' support
-target_metadata = UnoModel.metadata
+target_metadata = BaseModel.metadata
+
 
 # Build connection URI with properly encoded password
 def get_connection_url():
     """Build a SQLAlchemy connection URL with proper encoding."""
     # Use login role with connect permission
     db_role = f"{uno_settings.DB_NAME}_login"
-    
+
     # URL encode the password to handle special characters
     encoded_pw = urllib.parse.quote_plus(uno_settings.DB_USER_PW)
-    
+
     # Determine driver to use
     driver = uno_settings.DB_SYNC_DRIVER
     if driver.startswith("postgresql+"):
         driver = driver.replace("postgresql+", "")
-    
+
     # Build the connection string
     url = f"postgresql+{driver}://{db_role}:{encoded_pw}@{uno_settings.DB_HOST}:{uno_settings.DB_PORT}/{uno_settings.DB_NAME}"
-    
+
     logger.info(f"Using database URL: {url.replace(encoded_pw, '********')}")
     return url
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
-    
+
     This configures the context with just a URL and not an Engine,
     though an Engine is acceptable here as well. By skipping the Engine creation
     we don't even need a DBAPI to be available.
-    
+
     Calls to context.execute() here emit the given string to the script output.
     """
     # Get connection URL with properly encoded password
     url = get_connection_url()
-    
+
     def include_set_role(conn, sql):
         # For offline mode, prepend SET ROLE command to each SQL statement
         admin_role = f"{uno_settings.DB_NAME}_admin"
         return f"SET ROLE {admin_role}; {sql}"
-    
+
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -94,7 +95,7 @@ def run_migrations_offline() -> None:
         output_buffer=None,
         starting_rev=None,
         tag=None,
-        process_statement=include_set_role  # Process each SQL statement to set role
+        process_statement=include_set_role,  # Process each SQL statement to set role
     )
 
     with context.begin_transaction():
@@ -103,30 +104,30 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
-    
+
     In this scenario we need to create an Engine and associate a connection with the context.
     We connect with the login role, then switch to admin role for DDL statements.
     """
     try:
         # Get connection URL with properly encoded password
         url = get_connection_url()
-        
+
         # Create engine directly
         engine = create_engine(url, echo=False)
-        
+
         with engine.connect() as connection:
             try:
                 # Set role to admin before running migrations
                 admin_role = f"{uno_settings.DB_NAME}_admin"
                 logger.info(f"Setting role to {admin_role}")
                 connection.execute(text(f"SET ROLE {admin_role};"))
-                
+
                 # Create a custom migration context that logs each statement
                 def process_statement(statement):
                     # For debugging
                     logger.info(f"Executing SQL: {statement[:80]}...")
                     return statement
-                
+
                 context.configure(
                     connection=connection,
                     target_metadata=target_metadata,

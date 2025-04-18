@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import ErrorCode
+from uno.core.base.error import ErrorCode
 from uno.reports.errors import (
     ReportError,
     ReportErrorCode,

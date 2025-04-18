@@ -535,10 +535,10 @@ from datetime import datetime, UTC
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
-from uno.database.model import UnoModel
+from uno.database.model import BaseModel
 
 
-class {name.capitalize()}(UnoModel):
+class {name.capitalize()}(BaseModel):
     \"\"\"
     {name.capitalize()} model
     \"\"\"

@@ -53,7 +53,7 @@ from uno.core.protocols import (
 )
 
 # Error handling
-from uno.core.errors.base import ErrorCategory, UnoError
+from uno.core.base.error import ErrorCategory, BaseError
 from uno.core.errors.result import Success, Failure, Result
 from uno.core.errors import (
     # Error context
@@ -133,7 +133,7 @@ __all__ = [
     "Disposable",
     "AsyncDisposable",
     # Error handling
-    "UnoError",
+    "BaseError",
     "ErrorCategory",
     "Result",
     "Success",

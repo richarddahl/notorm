@@ -14,9 +14,9 @@ from uno.sql.errors import (
     SQLErrorCode,
     SQLEmitterError,
     SQLExecutionError,
-    SQLConfigError
+    SQLConfigError,
 )
-from uno.core.errors import UnoError
+from uno.core.errors import BaseError
 
 
 class CreateRolesAndDatabase(SQLEmitter):
@@ -284,7 +284,7 @@ class CreatePGULID(SQLEmitter):
             List of SQL statements with metadata
 
         Raises:
-            UnoError: If the PGULID SQL file cannot be read
+            BaseError: If the PGULID SQL file cannot be read
         """
         statements = []
 
@@ -308,7 +308,7 @@ class CreatePGULID(SQLEmitter):
 
         except FileNotFoundError as e:
             logging.error(f"Error reading PGULID SQL file: {e}")
-            raise UnoError(
+            raise BaseError(
                 f"Failed to read PGULID SQL file: {e}", "SQL_FILE_READ_ERROR"
             )
 

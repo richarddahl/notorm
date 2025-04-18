@@ -16,7 +16,7 @@ from uno.domain.authorization import (
     get_authorization_service,
 )
 from uno.domain.application_services import ServiceContext
-from uno.core.errors.base import AuthorizationError
+from uno.core.base.error import AuthorizationError
 
 
 @dataclass

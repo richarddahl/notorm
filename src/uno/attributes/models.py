@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.models import QueryModel
@@ -19,7 +19,7 @@ from uno.queries.models import QueryModel
 
 attribute__value = Table(
     "attribute__value",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "attribute_id",
         ForeignKey("attribute.id", ondelete="CASCADE"),
@@ -42,7 +42,7 @@ attribute__value = Table(
 
 attribute__meta = Table(
     "attribute__meta",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "attribute_id",
         ForeignKey("attribute.id", ondelete="CASCADE"),
@@ -66,7 +66,7 @@ attribute__meta = Table(
 
 attribute_type___meta_type = Table(
     "attribute_type__meta_type",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "attribute_type_id",
         ForeignKey("attribute_type.id", ondelete="CASCADE"),
@@ -90,7 +90,7 @@ attribute_type___meta_type = Table(
 
 attribute_type__value_type = Table(
     "attribute_type__value_type",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "attribute_type_id",
         ForeignKey("attribute_type.id", ondelete="CASCADE"),
@@ -112,7 +112,7 @@ attribute_type__value_type = Table(
 )
 
 
-class AttributeTypeModel(DefaultModelMixin, UnoModel):
+class AttributeTypeModel(DefaultModelMixin, BaseModel):
     __tablename__ = "attribute_type"
     __table_args__ = (
         UniqueConstraint(
@@ -235,7 +235,7 @@ class AttributeTypeModel(DefaultModelMixin, UnoModel):
     )
 
 
-class AttributeModel(DefaultModelMixin, UnoModel):
+class AttributeModel(DefaultModelMixin, BaseModel):
     __tablename__ = "attribute"
     __table_args__ = {
         "comment": "Attributes define characteristics of objects",

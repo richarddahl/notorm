@@ -175,4 +175,4 @@ class BaseModel(AsyncAttrs, DeclarativeBase):
 
 
 # For backward compatibility only - use BaseModel directly in new code
-UnoModel = BaseModel
+BaseModel = BaseModel

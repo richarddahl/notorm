@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import (
     BIGINT,
 )
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import RecordAuditModelMixin
 from uno.enums import SQLOperation, TenantType
@@ -30,7 +30,7 @@ from uno.settings import uno_settings
 
 user__group = Table(
     "user__group",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "user_id",
         VARCHAR(26),
@@ -58,7 +58,7 @@ user__group = Table(
 
 user__role = Table(
     "user__role",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "user_id",
         VARCHAR(26),
@@ -86,7 +86,7 @@ user__role = Table(
 
 role__permission = Table(
     "role__permission",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "role_id",
         VARCHAR(26),
@@ -112,7 +112,7 @@ role__permission = Table(
 )
 
 
-class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class UserModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "user"
     __table_args__ = (
         CheckConstraint(
@@ -193,15 +193,12 @@ class UserModel(ModelMixin, UnoModel, RecordAuditModelMixin):
         return self.email
 
 
-class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class GroupModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "group"
     __table_args__ = (
         Index("ix_group_tenant_id_name", "tenant_id", "name"),
         UniqueConstraint("tenant_id", "name"),
-        {
-            "comment": "Application end-user groups",
-            "extend_existing": True
-        },
+        {"comment": "Application end-user groups", "extend_existing": True},
     )
 
     # Columns
@@ -234,9 +231,12 @@ class GroupModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class ResponsibilityRoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class ResponsibilityRoleModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "responsibility_role"
-    __table_args__ = {"comment": "Application process responsibility", "extend_existing": True}
+    __table_args__ = {
+        "comment": "Application process responsibility",
+        "extend_existing": True,
+    }
 
     # Columns
     name: Mapped[PostgresTypes.String255] = mapped_column(
@@ -263,7 +263,7 @@ class ResponsibilityRoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class RoleModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "role"
     __table_args__ = (
         Index("ix_role_tenant_id_name", "tenant_id", "name"),
@@ -322,7 +322,7 @@ class RoleModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
+class TenantModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     __tablename__ = "tenant"
     __table_args__ = (
         Index("ix_tenant_name", "name"),
@@ -361,7 +361,7 @@ class TenantModel(ModelMixin, UnoModel, RecordAuditModelMixin):
     )
 
 
-class PermissionModel(UnoModel):
+class PermissionModel(BaseModel):
     __tablename__ = "permission"
     __table_args__ = (
         Index("ix_permission_meta_type_id_operation", "meta_type_id", "operation"),

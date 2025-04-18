@@ -45,7 +45,7 @@ ModelT = TypeVar("ModelT", bound=BaseModel)
 T = TypeVar("T")
 
 
-class UnoDTOManager:
+class BaseDTOManager:
     """
     Manager for creating and managing schemas for domain entities and data models.
 
@@ -138,10 +138,10 @@ class UnoDTOManager:
 
         This method returns a schema suitable for representing lists of items,
         typically used for API list endpoints. It handles both Pydantic models
-        and SQLAlchemy models like UnoModel.
+        and SQLAlchemy models like BaseModel.
 
         Args:
-            model: The model to create a list schema for (can be BaseModel or UnoModel)
+            model: The model to create a list schema for (can be BaseModel or BaseModel)
 
         Returns:
             A schema class for lists of the given model
@@ -294,5 +294,3 @@ class UnoDTOManager:
                     base_schema = self.create_schema(base_schema_name, model)
 
         return base_schema
-
-

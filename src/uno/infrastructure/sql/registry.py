@@ -17,7 +17,7 @@ from uno.sql.errors import (
     SQLRegistryClassNotFoundError,
     SQLRegistryClassAlreadyExistsError,
     SQLExecutionError,
-    SQLConfigError
+    SQLConfigError,
 )
 
 
@@ -41,7 +41,7 @@ class SQLConfigRegistry:
             config_class: SQLConfig class to register
 
         Raises:
-            UnoError: If a class with the same name already exists in the registry
+            BaseError: If a class with the same name already exists in the registry
                      and it's not the same class
         """
         if config_class.__name__ in cls._registry:
@@ -49,7 +49,7 @@ class SQLConfigRegistry:
             existing_class = cls._registry[config_class.__name__]
             if config_class.__module__ == existing_class.__module__:
                 return
-            raise UnoError(
+            raise BaseError(
                 f"SQLConfig class: {config_class.__name__} already exists in the registry.",
                 "DUPLICATE_SQLCONFIG",
             )
@@ -93,7 +93,7 @@ class SQLConfigRegistry:
             exclude: List of config class names to exclude
 
         Raises:
-            UnoError: If SQL emission fails
+            BaseError: If SQL emission fails
         """
         exclude = exclude or []
 

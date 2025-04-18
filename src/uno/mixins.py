@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
 )
 from pydantic import BaseModel
 
-from uno.model import PostgresTypes
+from uno.domain.base.model import PostgresTypes
 
 
 class ObjectMixin(BaseModel):

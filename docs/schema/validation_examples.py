@@ -6,7 +6,7 @@ from datetime import date, datetime
 from pydantic import Field, field_validator, model_validator
 
 from uno.dto.schema import UnoSchema, UnoSchemaConfig, PaginatedList, WithMetadata
-from uno.dto.dto_manager import UnoDTOManager
+from uno.dto.dto_manager import BaseDTOManager
 from uno.errors import ValidationContext
 
 
@@ -202,7 +202,7 @@ def schema_manager_example():
     edit_config = UnoSchemaConfig(exclude_fields={"created_at", "updated_at"})
 
     # Create schema manager with configurations
-    manager = UnoDTOManager(
+    manager = BaseDTOManager(
         {
             "view": view_config,
             "edit": edit_config,

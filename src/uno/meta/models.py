@@ -5,10 +5,10 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 
 
-class MetaTypeModel(UnoModel):
+class MetaTypeModel(BaseModel):
     __tablename__ = "meta_type"
 
     id: Mapped[PostgresTypes.String63] = mapped_column(
@@ -19,7 +19,7 @@ class MetaTypeModel(UnoModel):
     )
 
 
-class MetaRecordModel(UnoModel):
+class MetaRecordModel(BaseModel):
     __tablename__ = "meta_record"
 
     id: Mapped[PostgresTypes.String26] = mapped_column(

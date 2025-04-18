@@ -10,26 +10,26 @@ security-related concerns.
 """
 
 from typing import Any, Dict, Optional
-from uno.core.errors.base import UnoError, ErrorCode
+from uno.core.base.error import BaseError, ErrorCode
 
 
-class AuthenticationError(UnoError):
+class AuthenticationError(BaseError):
     """
     Error raised when authentication fails.
-    
+
     This error is raised when a user cannot be authenticated, such as when
     credentials are invalid or missing.
     """
-    
+
     def __init__(
-        self, 
-        message: str = "Authentication failed", 
+        self,
+        message: str = "Authentication failed",
         error_code: str = ErrorCode.AUTHENTICATION_ERROR,
-        **context: Any
+        **context: Any,
     ):
         """
         Initialize an authentication error.
-        
+
         Args:
             message: The error message
             error_code: The error code
@@ -38,25 +38,25 @@ class AuthenticationError(UnoError):
         super().__init__(message, error_code, **context)
 
 
-class AuthorizationError(UnoError):
+class AuthorizationError(BaseError):
     """
     Error raised when authorization fails.
-    
+
     This error is raised when a user does not have permission to perform
     an operation or access a resource.
     """
-    
+
     def __init__(
-        self, 
-        message: str = "Authorization failed", 
+        self,
+        message: str = "Authorization failed",
         error_code: str = ErrorCode.AUTHORIZATION_ERROR,
         permission: Optional[str] = None,
         resource: Optional[str] = None,
-        **context: Any
+        **context: Any,
     ):
         """
         Initialize an authorization error.
-        
+
         Args:
             message: The error message
             error_code: The error code
@@ -69,5 +69,5 @@ class AuthorizationError(UnoError):
             ctx["permission"] = permission
         if resource:
             ctx["resource"] = resource
-            
+
         super().__init__(message, error_code, **ctx)

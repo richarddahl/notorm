@@ -6,7 +6,7 @@
 Comprehensive error handling system for the Uno framework.
 
 This module provides a cohesive approach to error handling with:
-1. Structured exceptions with error codes (UnoError)
+1. Structured exceptions with error codes (BaseError)
 2. Functional error handling with Result objects (Success/Failure)
 3. Contextual information for rich error diagnostics
 4. Error catalog for consistent error documentation
@@ -14,8 +14,8 @@ This module provides a cohesive approach to error handling with:
 """
 
 # Import core components
-from uno.core.errors.base import (
-    UnoError,
+from uno.core.base.error import (
+    BaseError,
     ErrorCode,
     ErrorCategory,
     ErrorSeverity,
@@ -58,7 +58,7 @@ ErrorCatalog.initialize()
 
 __all__ = [
     # Base error components
-    "UnoError",
+    "BaseError",
     "ErrorCode",
     "ErrorCategory",
     "ErrorSeverity",
@@ -66,7 +66,6 @@ __all__ = [
     "add_error_context",
     "with_error_context",
     "with_async_error_context",
-    
     # Common error types
     "ValidationError",
     "EntityNotFoundError",
@@ -74,7 +73,6 @@ __all__ = [
     "DatabaseError",
     "ConfigurationError",
     "DependencyError",
-    
     # Result pattern
     "Result",
     "Success",
@@ -85,11 +83,9 @@ __all__ = [
     "from_awaitable",
     "combine",
     "combine_dict",
-    
     # Validation
     "ValidationContext",
     "validate_fields",
-    
     # Error catalog
     "ErrorCatalog",
 ]

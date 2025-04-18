@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum
 
 from uno.domain.core import Entity, AggregateRoot
-from uno.core.errors.base import ValidationError
+from uno.core.base.error import ValidationError
 
 from uno.workflows.models import (
     WorkflowStatus,
@@ -169,9 +169,11 @@ class WorkflowRecipient(Entity[str]):
             recipient_id=record["recipient_id"],
             name=record["name"],
             action_id=record["action_id"],
-            notification_config=record["notification_config"]
-            if record.get("notification_config")
-            else {},
+            notification_config=(
+                record["notification_config"]
+                if record.get("notification_config")
+                else {}
+            ),
         )
 
 

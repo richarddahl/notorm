@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY, VARCHAR
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import DefaultModelMixin
 from uno.enums import Include, Match
@@ -23,7 +23,7 @@ from uno.settings import uno_settings
 
 query_value__values = Table(
     "query_value__values",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "query_value_id",
         ForeignKey("query_value.id", ondelete="CASCADE"),
@@ -44,7 +44,7 @@ query_value__values = Table(
 
 query__query_value = Table(
     "query__query_value",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "query_id",
         ForeignKey("query.id", ondelete="CASCADE"),
@@ -65,7 +65,7 @@ query__query_value = Table(
 
 query__child_query = Table(
     "query__child_query",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "query_id",
         ForeignKey("query.id", ondelete="CASCADE"),
@@ -85,7 +85,7 @@ query__child_query = Table(
 )
 
 
-class QueryPathModel(ModelMixin, UnoModel):
+class QueryPathModel(ModelMixin, BaseModel):
     __tablename__ = "query_path"
     __table_args__ = (
         Index(
@@ -145,7 +145,7 @@ class QueryPathModel(ModelMixin, UnoModel):
     )
 
 
-class QueryValueModel(DefaultModelMixin, UnoModel):
+class QueryValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "query_value"
     __table_args__ = (
         UniqueConstraint(
@@ -205,7 +205,7 @@ class QueryValueModel(DefaultModelMixin, UnoModel):
     )
 
 
-class QueryModel(DefaultModelMixin, UnoModel):
+class QueryModel(DefaultModelMixin, BaseModel):
     __tablename__ = "query"
     __table_args__ = {"comment": "User definable queries", "extend_existing": True}
 

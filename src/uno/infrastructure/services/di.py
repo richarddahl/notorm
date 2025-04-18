@@ -7,21 +7,35 @@ the service factory to create services with the correct dependencies.
 """
 
 import logging
-from typing import Dict, Any, Type, TypeVar, Optional, Generic, cast, Callable, get_type_hints
+from typing import (
+    Dict,
+    Any,
+    Type,
+    TypeVar,
+    Optional,
+    Generic,
+    cast,
+    Callable,
+    get_type_hints,
+)
 
-from uno.core.errors.base import UnoError
-from uno.dependencies.scoped_container import ServiceCollection, get_container, get_service
+from uno.core.base.error import BaseError
+from uno.dependencies.scoped_container import (
+    ServiceCollection,
+    get_container,
+    get_service,
+)
 from uno.dependencies.interfaces import UnoConfigProtocol
 
 from uno.infrastructure.services.protocols import (
     ServiceProtocol,
-    CrudServiceProtocol, 
+    CrudServiceProtocol,
     AggregateCrudServiceProtocol,
     QueryServiceProtocol,
     ApplicationServiceProtocol,
     EventCollectingServiceProtocol,
     ReadModelServiceProtocol,
-    DomainEventPublisherProtocol
+    DomainEventPublisherProtocol,
 )
 
 from uno.infrastructure.services.base import (
@@ -31,7 +45,7 @@ from uno.infrastructure.services.base import (
     QueryService,
     RepositoryQueryService,
     ApplicationService,
-    EventPublisher
+    EventPublisher,
 )
 
 from uno.infrastructure.services.factory import (
@@ -42,45 +56,40 @@ from uno.infrastructure.services.factory import (
     create_aggregate_service,
     create_query_service,
     create_application_service,
-    create_event_publisher
+    create_event_publisher,
 )
 
-T = TypeVar('T')
-EntityT = TypeVar('EntityT')
-QueryT = TypeVar('QueryT')
-ResultT = TypeVar('ResultT')
+T = TypeVar("T")
+EntityT = TypeVar("EntityT")
+QueryT = TypeVar("QueryT")
+ResultT = TypeVar("ResultT")
 
 
 def init_service_system(services: Optional[ServiceCollection] = None) -> None:
     """
     Initialize the service system.
-    
+
     This function registers core service components with the dependency
     injection system, making them available throughout the application.
-    
+
     Args:
         services: Optional service collection to register with
     """
     # Get the container
     container = get_container()
-    
+
     # Create a service collection if not provided
     if services is None:
         services = ServiceCollection()
-    
+
     # Register the service factory
     services.add_singleton(
-        ServiceFactory,
-        ServiceFactory,
-        logger=logging.getLogger("uno.services")
+        ServiceFactory, ServiceFactory, logger=logging.getLogger("uno.services")
     )
-    
+
     # Register factory functions
-    services.add_singleton(
-        Callable[[Type[T]], T],
-        lambda: create_service
-    )
-    
+    services.add_singleton(Callable[[Type[T]], T], lambda: create_service)
+
     # Register service base classes
     services.add_transient(Service, Service)
     services.add_transient(CrudService, CrudService)
@@ -89,23 +98,23 @@ def init_service_system(services: Optional[ServiceCollection] = None) -> None:
     services.add_transient(RepositoryQueryService, RepositoryQueryService)
     services.add_transient(ApplicationService, ApplicationService)
     services.add_transient(EventPublisher, EventPublisher)
-    
+
     # Register the event publisher
     event_publisher = create_event_publisher()
     services.add_instance(DomainEventPublisherProtocol, event_publisher)
-    
+
     # Update the container with the service collection
     for service_type, registration in services._registrations.items():
         container.register(
             service_type,
             registration.implementation,
             registration.scope,
-            registration.params
+            registration.params,
         )
-    
+
     for service_type, instance in services._instances.items():
         container.register_instance(service_type, instance)
-    
+
     logger = logging.getLogger("uno.services")
     logger.info("Service system initialized")
 
@@ -113,10 +122,10 @@ def init_service_system(services: Optional[ServiceCollection] = None) -> None:
 def get_service_by_type(service_type: Type[T]) -> T:
     """
     Get a service by its type.
-    
+
     Args:
         service_type: The service type
-        
+
     Returns:
         The service instance
     """
@@ -124,16 +133,15 @@ def get_service_by_type(service_type: Type[T]) -> T:
 
 
 def get_crud_service(
-    entity_type: Type[EntityT],
-    **kwargs
+    entity_type: Type[EntityT], **kwargs
 ) -> CrudServiceProtocol[EntityT]:
     """
     Get a CRUD service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         **kwargs: Additional arguments to pass to the service constructor
-        
+
     Returns:
         The CRUD service
     """
@@ -147,16 +155,15 @@ def get_crud_service(
 
 
 def get_aggregate_service(
-    entity_type: Type[EntityT],
-    **kwargs
+    entity_type: Type[EntityT], **kwargs
 ) -> AggregateCrudServiceProtocol[EntityT]:
     """
     Get an aggregate CRUD service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         **kwargs: Additional arguments to pass to the service constructor
-        
+
     Returns:
         The aggregate CRUD service
     """
@@ -170,16 +177,15 @@ def get_aggregate_service(
 
 
 def get_query_service(
-    entity_type: Type[EntityT],
-    **kwargs
+    entity_type: Type[EntityT], **kwargs
 ) -> QueryServiceProtocol[EntityT]:
     """
     Get a query service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         **kwargs: Additional arguments to pass to the service constructor
-        
+
     Returns:
         The query service
     """
@@ -193,16 +199,15 @@ def get_query_service(
 
 
 def get_application_service(
-    service_type: Type[ApplicationServiceProtocol],
-    **kwargs
+    service_type: Type[ApplicationServiceProtocol], **kwargs
 ) -> ApplicationServiceProtocol:
     """
     Get an application service.
-    
+
     Args:
         service_type: The service type
         **kwargs: Additional arguments to pass to the service constructor
-        
+
     Returns:
         The application service
     """
@@ -218,7 +223,7 @@ def get_application_service(
 def get_event_publisher() -> DomainEventPublisherProtocol:
     """
     Get the event publisher.
-    
+
     Returns:
         The event publisher
     """
@@ -231,7 +236,7 @@ def get_event_publisher() -> DomainEventPublisherProtocol:
 def register_service(service_type: Type[T], implementation: Type[T], **kwargs) -> None:
     """
     Register a service with the DI container.
-    
+
     Args:
         service_type: The service type to register
         implementation: The implementation class
@@ -244,7 +249,7 @@ def register_service(service_type: Type[T], implementation: Type[T], **kwargs) -
 def register_service_instance(service_type: Type[T], instance: T) -> None:
     """
     Register a service instance with the DI container.
-    
+
     Args:
         service_type: The service type to register
         instance: The service instance
@@ -256,11 +261,11 @@ def register_service_instance(service_type: Type[T], instance: T) -> None:
 def register_crud_service(
     entity_type: Type[EntityT],
     implementation: Type[CrudServiceProtocol[EntityT]],
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Register a CRUD service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         implementation: The service implementation
@@ -268,7 +273,7 @@ def register_crud_service(
     """
     # Create the service
     service = create_service(implementation, entity_type=entity_type, **kwargs)
-    
+
     # Register it with the container
     register_service_instance(CrudServiceProtocol[entity_type], service)
 
@@ -276,11 +281,11 @@ def register_crud_service(
 def register_aggregate_service(
     entity_type: Type[EntityT],
     implementation: Type[AggregateCrudServiceProtocol[EntityT]],
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Register an aggregate CRUD service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         implementation: The service implementation
@@ -288,7 +293,7 @@ def register_aggregate_service(
     """
     # Create the service
     service = create_service(implementation, entity_type=entity_type, **kwargs)
-    
+
     # Register it with the container
     register_service_instance(AggregateCrudServiceProtocol[entity_type], service)
 
@@ -296,11 +301,11 @@ def register_aggregate_service(
 def register_query_service(
     entity_type: Type[EntityT],
     implementation: Type[QueryServiceProtocol[EntityT]],
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Register a query service for an entity type.
-    
+
     Args:
         entity_type: The entity type
         implementation: The service implementation
@@ -308,7 +313,7 @@ def register_query_service(
     """
     # Create the service
     service = create_service(implementation, entity_type=entity_type, **kwargs)
-    
+
     # Register it with the container
     register_service_instance(QueryServiceProtocol[entity_type], service)
 
@@ -316,11 +321,11 @@ def register_query_service(
 def register_application_service(
     service_type: Type[ApplicationServiceProtocol],
     implementation: Type[ApplicationServiceProtocol],
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Register an application service.
-    
+
     Args:
         service_type: The service type to register
         implementation: The service implementation
@@ -328,6 +333,6 @@ def register_application_service(
     """
     # Create the service
     service = create_service(implementation, **kwargs)
-    
+
     # Register it with the container
     register_service_instance(service_type, service)

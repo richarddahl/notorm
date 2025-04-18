@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar, List, Optional, Dict, Any, Set
 
 from uno.domain.core import Entity, AggregateRoot
-from uno.core.errors.base import ValidationError
+from uno.core.base.error import ValidationError
 
 
 @dataclass

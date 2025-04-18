@@ -14,11 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from uno.database.config import ConnectionConfig
 from uno.database.engine.sync import SyncEngineFactory, sync_connection
-from uno.sql.errors import (
-    SQLConfigError,
-    SQLConfigInvalidError,
-    SQLExecutionError
-)
+from uno.sql.errors import SQLConfigError, SQLConfigInvalidError, SQLExecutionError
 
 from uno.sql.registry import SQLConfigRegistry
 from uno.sql.emitter import SQLEmitter
@@ -63,7 +59,7 @@ class SQLConfig(BaseModel):
             **kwargs: Additional keyword arguments
 
         Raises:
-            UnoError: If a subclass with the same name already exists in the registry
+            BaseError: If a subclass with the same name already exists in the registry
         """
         super().__init_subclass__(**kwargs)
         if cls is not SQLConfig:  # Don't register the base class
@@ -96,7 +92,7 @@ class SQLConfig(BaseModel):
                        a new connection will be created using the engine factory.
 
         Raises:
-            UnoError: If SQL emission fails
+            BaseError: If SQL emission fails
         """
         should_create_connection = connection is None
 
@@ -113,7 +109,7 @@ class SQLConfig(BaseModel):
                 self._emit_sql_internal(connection)
         except SQLAlchemyError as e:
             logging.error(f"Error emitting SQL: {e}")
-            raise UnoError(f"Failed to emit SQL: {e}", "SQL_EMISSION_ERROR")
+            raise BaseError(f"Failed to emit SQL: {e}", "SQL_EMISSION_ERROR")
 
     def _emit_sql_internal(self, connection: Connection) -> None:
         """Internal method to emit SQL statements.

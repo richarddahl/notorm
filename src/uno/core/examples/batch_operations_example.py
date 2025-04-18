@@ -17,7 +17,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from uno.model import Model
+from uno.domain.base.model import Model
 from uno.queries.batch_operations import (
     BatchOperations,
     BatchConfig,
@@ -46,7 +46,11 @@ class User(Base, Model):
     full_name = Column(String(100))
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Relationships
     posts = relationship("Post", back_populates="author")
@@ -63,7 +67,11 @@ class Post(Base, Model):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     published = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Relationships
     author = relationship("User", back_populates="posts")

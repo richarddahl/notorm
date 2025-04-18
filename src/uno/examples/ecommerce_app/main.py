@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.core.events import initialize_events
 from uno.domain.unified_services import DomainServiceFactory, initialize_service_factory
 
@@ -44,10 +44,10 @@ app.add_middleware(
 )
 
 
-# Global exception handler for UnoError
-@app.exception_handler(UnoError)
-async def uno_error_handler(request: Request, exc: UnoError):
-    """Handle UnoError exceptions and convert to appropriate HTTP responses."""
+# Global exception handler for BaseError
+@app.exception_handler(BaseError)
+async def uno_error_handler(request: Request, exc: BaseError):
+    """Handle BaseError exceptions and convert to appropriate HTTP responses."""
     status_code = 400
 
     # Map specific error codes to status codes

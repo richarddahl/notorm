@@ -10,7 +10,7 @@ from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtoco
 from uno.database.db_manager import DBManager
 from uno.database.repository import UnoBaseRepository
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.workflows.errors import (
     WorkflowErrorCode,
     WorkflowNotFoundError,
@@ -361,7 +361,7 @@ class WorkflowService(UnoServiceProtocol):
         except Exception as e:
             self.logger.exception(f"Error getting active workflows: {e}")
             return Failure(
-                UnoError(
+                BaseError(
                     f"Error getting active workflows: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
                     operation="get_active_workflows",
@@ -376,7 +376,7 @@ class WorkflowService(UnoServiceProtocol):
         except Exception as e:
             self.logger.exception(f"Error creating workflow: {e}")
             return Failure(
-                UnoError(
+                BaseError(
                     f"Error creating workflow: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_INVALID_DEFINITION,
                     operation="create_workflow",
@@ -435,7 +435,7 @@ class WorkflowService(UnoServiceProtocol):
         except Exception as e:
             self.logger.exception(f"Error getting execution logs: {e}")
             return Failure(
-                UnoError(
+                BaseError(
                     f"Error retrieving execution logs: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
                     operation="get_execution_logs",
@@ -455,7 +455,7 @@ class WorkflowService(UnoServiceProtocol):
         except Exception as e:
             self.logger.exception(f"Error starting event listener: {e}")
             return Failure(
-                UnoError(
+                BaseError(
                     f"Error starting event listener: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
                 )
@@ -472,7 +472,7 @@ class WorkflowService(UnoServiceProtocol):
         except Exception as e:
             self.logger.exception(f"Error stopping event listener: {e}")
             return Failure(
-                UnoError(
+                BaseError(
                     f"Error stopping event listener: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EVENT_LISTENER_FAILED,
                 )

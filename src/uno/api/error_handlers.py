@@ -18,7 +18,12 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError as PydanticValidationError
 
-from uno.core.errors.base import UnoError, ValidationError, NotFoundError, AuthorizationError
+from uno.core.base.error import (
+    BaseError,
+    ValidationError,
+    NotFoundError,
+    AuthorizationError,
+)
 from uno.core.errors.result import ErrorResult
 
 # Configure logger
@@ -27,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ErrorResponse:
     """Standardized error response format."""
-    
+
     def __init__(
         self,
         code: str,
@@ -38,7 +43,7 @@ class ErrorResponse:
     ):
         """
         Initialize a standardized error response.
-        
+
         Args:
             code: Error code (e.g. "VALIDATION_ERROR")
             message: Human-readable error message
@@ -59,18 +64,15 @@ class ErrorResponse:
             "message": self.message,
             "details": self.details,
         }
-        
+
         if self.help_text:
             response["help_text"] = self.help_text
-            
+
         return response
 
     def to_json_response(self) -> JSONResponse:
         """Convert the error response to a FastAPI JSONResponse."""
-        return JSONResponse(
-            status_code=self.status_code,
-            content=self.to_dict()
-        )
+        return JSONResponse(status_code=self.status_code, content=self.to_dict())
 
 
 # Error mapping - maps error types to handler functions
@@ -78,20 +80,26 @@ ERROR_HANDLERS: Dict[Type[Exception], Callable[[Exception], ErrorResponse]] = {}
 
 
 def register_error_handler(
-    exception_type: Type[Exception]
-) -> Callable[[Callable[[Exception], ErrorResponse]], Callable[[Exception], ErrorResponse]]:
+    exception_type: Type[Exception],
+) -> Callable[
+    [Callable[[Exception], ErrorResponse]], Callable[[Exception], ErrorResponse]
+]:
     """
     Decorator to register an error handler for an exception type.
-    
+
     Args:
         exception_type: The exception type to handle
-        
+
     Returns:
         Decorator function
     """
-    def decorator(handler: Callable[[Exception], ErrorResponse]) -> Callable[[Exception], ErrorResponse]:
+
+    def decorator(
+        handler: Callable[[Exception], ErrorResponse],
+    ) -> Callable[[Exception], ErrorResponse]:
         ERROR_HANDLERS[exception_type] = handler
         return handler
+
     return decorator
 
 
@@ -103,7 +111,7 @@ def handle_validation_error(exc: ValidationError) -> ErrorResponse:
         message=str(exc),
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         details=getattr(exc, "details", {}),
-        help_text="Please check the request parameters and ensure they meet the validation requirements."
+        help_text="Please check the request parameters and ensure they meet the validation requirements.",
     )
 
 
@@ -115,16 +123,16 @@ def handle_pydantic_validation_error(exc: PydanticValidationError) -> ErrorRespo
         error_info = {
             "loc": error.get("loc", []),
             "msg": error.get("msg", ""),
-            "type": error.get("type", "")
+            "type": error.get("type", ""),
         }
         errors.append(error_info)
-        
+
     return ErrorResponse(
         code="VALIDATION_ERROR",
         message="Request validation failed",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         details={"errors": errors},
-        help_text="Please check the format of your request and make sure all required fields are provided."
+        help_text="Please check the format of your request and make sure all required fields are provided.",
     )
 
 
@@ -136,16 +144,16 @@ def handle_request_validation_error(exc: RequestValidationError) -> ErrorRespons
         error_info = {
             "loc": error.get("loc", []),
             "msg": error.get("msg", ""),
-            "type": error.get("type", "")
+            "type": error.get("type", ""),
         }
         errors.append(error_info)
-        
+
     return ErrorResponse(
         code="VALIDATION_ERROR",
         message="Request validation failed",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         details={"errors": errors},
-        help_text="Please check the format of your request and make sure all required fields are provided."
+        help_text="Please check the format of your request and make sure all required fields are provided.",
     )
 
 
@@ -157,7 +165,7 @@ def handle_not_found_error(exc: NotFoundError) -> ErrorResponse:
         message=str(exc),
         status_code=status.HTTP_404_NOT_FOUND,
         details=getattr(exc, "details", {}),
-        help_text="The requested resource could not be found. Please check the identifier and try again."
+        help_text="The requested resource could not be found. Please check the identifier and try again.",
     )
 
 
@@ -169,7 +177,7 @@ def handle_authorization_error(exc: AuthorizationError) -> ErrorResponse:
         message=str(exc),
         status_code=status.HTTP_403_FORBIDDEN,
         details=getattr(exc, "details", {}),
-        help_text="You do not have the necessary permissions to access this resource."
+        help_text="You do not have the necessary permissions to access this resource.",
     )
 
 
@@ -183,9 +191,9 @@ def handle_error_result(exc: ErrorResult) -> ErrorResponse:
         "UNAUTHORIZED": status.HTTP_401_UNAUTHORIZED,
         "CONFLICT": status.HTTP_409_CONFLICT,
     }
-    
+
     status_code = status_mapping.get(exc.error_code, status.HTTP_400_BAD_REQUEST)
-    
+
     return ErrorResponse(
         code=exc.error_code,
         message=exc.error_message,
@@ -200,22 +208,22 @@ def handle_generic_exception(exc: Exception) -> ErrorResponse:
     # Log the full exception for debugging
     logger.error(f"Unhandled exception: {exc}")
     logger.error(traceback.format_exc())
-    
+
     return ErrorResponse(
         code="INTERNAL_SERVER_ERROR",
         message="An unexpected error occurred",
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        help_text="Please try again later. If the problem persists, contact the system administrator."
+        help_text="Please try again later. If the problem persists, contact the system administrator.",
     )
 
 
 def find_exception_handler(exc: Exception) -> Callable[[Exception], ErrorResponse]:
     """
     Find the appropriate error handler for an exception.
-    
+
     Args:
         exc: The exception to handle
-        
+
     Returns:
         Error handler function
     """
@@ -223,12 +231,12 @@ def find_exception_handler(exc: Exception) -> Callable[[Exception], ErrorRespons
     for exc_type, handler in ERROR_HANDLERS.items():
         if isinstance(exc, exc_type):
             return handler
-            
+
     # If no direct match, find a base class match
     for exc_type, handler in ERROR_HANDLERS.items():
         if issubclass(type(exc), exc_type):
             return handler
-            
+
     # Default to generic exception handler
     return handle_generic_exception
 
@@ -236,41 +244,57 @@ def find_exception_handler(exc: Exception) -> Callable[[Exception], ErrorRespons
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Global exception handler for FastAPI.
-    
+
     Args:
         request: The FastAPI request
         exc: The exception to handle
-        
+
     Returns:
         JSONResponse with standardized error format
     """
     handler = find_exception_handler(exc)
     error_response = handler(exc)
-    
+
     # Log the error
     if error_response.status_code >= 500:
-        logger.error(f"Error processing request {request.url}: {error_response.message}")
+        logger.error(
+            f"Error processing request {request.url}: {error_response.message}"
+        )
         logger.error(traceback.format_exc())
     elif error_response.status_code >= 400:
-        logger.warning(f"Client error for request {request.url}: {error_response.message}")
-    
+        logger.warning(
+            f"Client error for request {request.url}: {error_response.message}"
+        )
+
     return error_response.to_json_response()
 
 
 def configure_error_handlers(app: FastAPI) -> None:
     """
     Configure error handlers for a FastAPI application.
-    
+
     Args:
         app: FastAPI application
     """
     # Register the global exception handler
     app.exception_handler(Exception)(global_exception_handler)
-    
+
     # Register specific exception handlers
-    app.exception_handler(ValidationError)(lambda req, exc: handle_validation_error(exc).to_json_response())
-    app.exception_handler(PydanticValidationError)(lambda req, exc: handle_pydantic_validation_error(exc).to_json_response())
-    app.exception_handler(RequestValidationError)(lambda req, exc: handle_request_validation_error(exc).to_json_response())
-    app.exception_handler(NotFoundError)(lambda req, exc: handle_not_found_error(exc).to_json_response())
-    app.exception_handler(AuthorizationError)(lambda req, exc: handle_authorization_error(exc).to_json_response())
-    app.exception_handler(ErrorResult)(lambda req, exc: handle_error_result(exc).to_json_response())
+    app.exception_handler(ValidationError)(
+        lambda req, exc: handle_validation_error(exc).to_json_response()
+    )
+    app.exception_handler(PydanticValidationError)(
+        lambda req, exc: handle_pydantic_validation_error(exc).to_json_response()
+    )
+    app.exception_handler(RequestValidationError)(
+        lambda req, exc: handle_request_validation_error(exc).to_json_response()
+    )
+    app.exception_handler(NotFoundError)(
+        lambda req, exc: handle_not_found_error(exc).to_json_response()
+    )
+    app.exception_handler(AuthorizationError)(
+        lambda req, exc: handle_authorization_error(exc).to_json_response()
+    )
+    app.exception_handler(ErrorResult)(
+        lambda req, exc: handle_error_result(exc).to_json_response()
+    )

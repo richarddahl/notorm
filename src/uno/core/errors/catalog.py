@@ -10,7 +10,7 @@ descriptions, categories, and other metadata.
 """
 
 from typing import Dict, List, Optional
-from uno.core.errors.base import ErrorInfo, ErrorCategory, ErrorSeverity
+from uno.core.base.error import ErrorInfo, ErrorCategory, ErrorSeverity
 
 # Global registry of error codes
 _ERROR_CATALOG: Dict[str, ErrorInfo] = {}

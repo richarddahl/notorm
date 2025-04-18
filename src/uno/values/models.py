@@ -12,7 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.filter import (
     boolean_lookups,
@@ -24,7 +24,7 @@ from uno.queries.filter import (
 
 attachment__meta_record = Table(
     "attachment__meta_record",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "attachment_id",
         VARCHAR(26),
@@ -49,7 +49,7 @@ attachment__meta_record = Table(
 )
 
 
-class AttachmentModel(DefaultModelMixin, UnoModel):
+class AttachmentModel(DefaultModelMixin, BaseModel):
     __tablename__ = "attachment"
     __table_args__ = (
         UniqueConstraint(
@@ -70,7 +70,7 @@ class AttachmentModel(DefaultModelMixin, UnoModel):
     # Relationships
 
 
-class BooleanValueModel(DefaultModelMixin, UnoModel):
+class BooleanValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "boolean_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_boolean_value_tenant_id_value"),
@@ -89,7 +89,7 @@ class BooleanValueModel(DefaultModelMixin, UnoModel):
     )
 
 
-class DateTimeValueModel(DefaultModelMixin, UnoModel):
+class DateTimeValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "datetime_value"
     __table_args__ = (
         UniqueConstraint(
@@ -108,7 +108,7 @@ class DateTimeValueModel(DefaultModelMixin, UnoModel):
     value: Mapped[PostgresTypes.Timestamp] = mapped_column(doc="The datetime value.")
 
 
-class DateValueModel(DefaultModelMixin, UnoModel):
+class DateValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "date_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_date_value_tenant_id_value"),
@@ -125,7 +125,7 @@ class DateValueModel(DefaultModelMixin, UnoModel):
     value: Mapped[PostgresTypes.Date] = mapped_column(doc="The date value.")
 
 
-class DecimalValueModel(DefaultModelMixin, UnoModel):
+class DecimalValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "decimal_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_decimal_value_tenant_id_value"),
@@ -142,7 +142,7 @@ class DecimalValueModel(DefaultModelMixin, UnoModel):
     value: Mapped[PostgresTypes.Decimal] = mapped_column(doc="The decimal value.")
 
 
-class IntegerValueModel(DefaultModelMixin, UnoModel):
+class IntegerValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "integer_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_integer_value_tenant_id_value"),
@@ -159,7 +159,7 @@ class IntegerValueModel(DefaultModelMixin, UnoModel):
     value: Mapped[int] = mapped_column()
 
 
-class TextValueModel(DefaultModelMixin, UnoModel):
+class TextValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "text_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_text_value_tenant_id_value"),
@@ -176,7 +176,7 @@ class TextValueModel(DefaultModelMixin, UnoModel):
     value: Mapped[str] = mapped_column()
 
 
-class TimeValueModel(DefaultModelMixin, UnoModel):
+class TimeValueModel(DefaultModelMixin, BaseModel):
     __tablename__ = "time_value"
     __table_args__ = (
         UniqueConstraint("tenant_id", "value", name="uq_time_value_tenant_id_value"),

@@ -1,7 +1,7 @@
 """
 Model code generation utilities for Uno applications.
 
-This module provides tools for generating UnoModel and UnoDTO classes.
+This module provides tools for generating BaseModel and BaseDTO classes.
 """
 
 import re
@@ -25,22 +25,22 @@ def generate_model(
     include_imports: bool = True,
     include_docstrings: bool = True,
     dto_name: Optional[str] = None,
-    base_model_class: str = "UnoModel",
-    base_dto_class: str = "UnoDTO",
+    base_model_class: str = "BaseModel",
+    base_dto_class: str = "BaseDTO",
     timestamps: bool = True,
     soft_delete: bool = False,
     relationships: Optional[List[Dict[str, Any]]] = None,
     indexes: Optional[List[Dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
-    """Generate a UnoModel class with an optional UnoDTO.
+    """Generate a BaseModel class with an optional BaseDTO.
 
     Args:
         name: Name of the model class
         fields: Dictionary of field definitions
         table_name: Optional table name (defaults to snake_case of name)
         module_name: Optional module name for imports
-        include_schema: Whether to generate a UnoDTO class
+        include_schema: Whether to generate a BaseDTO class
         include_imports: Whether to include import statements
         include_docstrings: Whether to include docstrings
         dto_name: Optional name for the DTO class (defaults to {name}DTO)
@@ -134,14 +134,15 @@ def _generate_model_imports(
         module_name: Optional module name for imports
         base_model_class: Base class for the model
         base_dto_class: Base class for the DTO
-        include_schema: Whether to generate a UnoDTO class
+        include_schema: Whether to generate a BaseDTO class
         fields: Dictionary of field definitions
 
     Returns:
         Import statements as a string
     """
     imports = [
-        "from datetime import datetime, date, time, timedelta", UTC,
+        "from datetime import datetime, date, time, timedelta",
+        UTC,
         "from typing import Dict, List, Optional, Set, Union, Any",
         "from uuid import UUID",
     ]
@@ -155,7 +156,7 @@ def _generate_model_imports(
         if include_schema:
             imports.append(f"from {module_name} import {base_dto_class}")
     else:
-        imports.append(f"from uno.model import {base_model_class}")
+        imports.append(f"from uno.domain.base.model import {base_model_class}")
         if include_schema:
             imports.append(f"from uno.dto import {base_dto_class}")
 
@@ -195,7 +196,7 @@ def _generate_model_class(
     relationships: Optional[List[Dict[str, Any]]] = None,
     indexes: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
-    """Generate a UnoModel class definition.
+    """Generate a BaseModel class definition.
 
     Args:
         name: Name of the model class
@@ -271,7 +272,7 @@ def _generate_dto_class(
     include_docstrings: bool,
     base_dto_class: str,
 ) -> str:
-    """Generate a UnoDTO class definition.
+    """Generate a BaseDTO class definition.
 
     Args:
         name: Name of the DTO class

@@ -34,7 +34,7 @@ import math
 import inject
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.workflows.errors import (
     WorkflowErrorCode,
     WorkflowConditionError,
@@ -49,7 +49,7 @@ from uno.queries.entities import Query
 from uno.workflows.entities import WorkflowCondition
 
 
-class ConditionError(UnoError):
+class ConditionError(BaseError):
     """Error raised when there's an issue evaluating a condition."""
 
     pass

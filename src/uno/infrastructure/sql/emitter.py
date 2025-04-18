@@ -22,7 +22,7 @@ from uno.sql.errors import (
     SQLEmitterError,
     SQLExecutionError,
     SQLStatementError,
-    SQLSyntaxError
+    SQLSyntaxError,
 )
 
 from uno.sql.statement import SQLStatement, SQLStatementType
@@ -175,19 +175,21 @@ class SQLEmitter(BaseModel):
         db_name = None
         if self.config:
             db_name = self.config.DB_NAME
-            
+
         if db_name:
             # We need to handle the special case where we're dropping a database
             # In that case, we're connected to 'postgres' database but want to affect the target database
-            if self.__class__.__name__ == 'DropDatabaseAndRoles':
+            if self.__class__.__name__ == "DropDatabaseAndRoles":
                 # No need to set role when connected as postgres user to postgres db
-                self.logger.debug("Connected as postgres, no need to set role for dropping database")
+                self.logger.debug(
+                    "Connected as postgres, no need to set role for dropping database"
+                )
             else:
                 # For regular operations, set to the admin role for the target database
                 admin_role = f"{db_name}_admin"
                 connection.execute(text(f"SET ROLE {admin_role};"))
                 self.logger.debug(f"Set role to {admin_role}")
-            
+
         # Execute the statements
         for statement in statements:
             self.logger.debug(f"Executing SQL statement: {statement.name}")
@@ -206,7 +208,7 @@ class SQLEmitter(BaseModel):
             List of SQL statements if dry_run is True, None otherwise
 
         Raises:
-            UnoError: If SQL execution fails
+            BaseError: If SQL execution fails
         """
         statements = []
         if 1 == 1:  # try:
@@ -237,7 +239,7 @@ class SQLEmitter(BaseModel):
         #        observer.on_sql_error(self.__class__.__name__, statements, e)
 
         #    # Re-raise the exception
-        #    raise UnoError(f"Failed to execute SQL: {e}", "SQL_EXECUTION_ERROR")
+        #    raise BaseError(f"Failed to execute SQL: {e}", "SQL_EXECUTION_ERROR")
 
     def emit_with_connection(
         self,
@@ -259,7 +261,7 @@ class SQLEmitter(BaseModel):
 
         Raises:
             ValueError: If no connection configuration is provided
-            UnoError: If SQL execution fails
+            BaseError: If SQL execution fails
         """
         # Use provided factory or instance factory or create a new one
         engine_factory = (
@@ -298,20 +300,21 @@ class SQLEmitter(BaseModel):
 
     def get_function_builder(self) -> "SQLFunctionBuilder":
         """Get a pre-configured SQL function builder with database name set.
-        
+
         Returns:
             SQLFunctionBuilder: A function builder with database name set
         """
         from uno.sql.builders.function import SQLFunctionBuilder
+
         builder = SQLFunctionBuilder()
-        
+
         if self.connection_config:
             builder.with_db_name(self.connection_config.db_name)
         elif self.config:
             builder.with_db_name(self.config.DB_NAME)
-            
+
         return builder
-        
+
     def format_sql_template(self, template: str, **kwargs) -> str:
         """Format an SQL template with variables.
 

@@ -32,7 +32,7 @@ from enum import Enum
 import inject
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.errors.base import UnoError
+from uno.core.base.error import BaseError
 from uno.workflows.errors import (
     WorkflowErrorCode,
     WorkflowRecipientError,
@@ -45,7 +45,7 @@ from uno.workflows.models import WorkflowRecipientType
 from uno.workflows.entities import WorkflowRecipient, User
 
 
-class RecipientError(UnoError):
+class RecipientError(BaseError):
     """Error raised when there's an issue resolving recipients."""
 
     pass

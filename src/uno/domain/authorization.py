@@ -24,7 +24,7 @@ from typing import (
 )
 
 from uno.domain.application_services import ServiceContext
-from uno.core.errors.base import AuthorizationError
+from uno.core.base.error import AuthorizationError
 from uno.domain.models import Entity, AggregateRoot
 
 

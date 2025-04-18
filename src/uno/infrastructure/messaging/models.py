@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.model import UnoModel, PostgresTypes
+from uno.domain.base.model import BaseModel, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import GroupModelMixin
 from uno.enums import MessageImportance
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 message__meta_record = Table(
     "message__meta_record",
-    UnoModel.metadata,
+    BaseModel.metadata,
     Column(
         "message_id",
         ForeignKey("message.id", ondelete="CASCADE"),
@@ -46,7 +46,7 @@ message__meta_record = Table(
 )
 
 
-class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
+class MessageModel(GroupModelMixin, ModelMixin, BaseModel):
     __tablename__ = "message"
     __table_args__ = {"comment": "Messages are used to communicate between users"}
 
@@ -115,7 +115,7 @@ class MessageModel(GroupModelMixin, ModelMixin, UnoModel):
     )
 
 
-class MessageUserModel(UnoModel):
+class MessageUserModel(BaseModel):
     __tablename__ = "message_user"
     __table_args__ = {"comment": "Message Users"}
 
