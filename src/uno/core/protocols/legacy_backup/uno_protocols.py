@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 """
-Legacy protocol definitions for the Uno framework.
+Protocol definitions for the Uno framework.
 
-This module provides database and schema-related protocols that have not yet been migrated to the
-core protocol system. For core domain protocols, use uno.core.protocols instead.
+This module provides structured interfaces (protocols) that define the shapes of
+the objects used in the Uno framework, enhancing type safety and interoperability.
 """
 
 from typing import Any, Dict, List, Optional, Protocol, TypeVar, Set, Type, runtime_checkable, Union
@@ -15,9 +15,6 @@ from types import TracebackType
 import asyncio
 from contextlib import AsyncExitStack
 from pydantic import BaseModel
-
-# Re-export core protocols
-from uno.core.protocols import *
 
 # Type variables for generic protocols
 T = TypeVar("T", covariant=True)

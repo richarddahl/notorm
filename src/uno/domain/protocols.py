@@ -1,25 +1,22 @@
 """
 Domain model protocols for the uno framework.
 
-This module defines protocols (interfaces) for all domain model components,
-providing a clear, consistent foundation for domain-driven design.
+This module re-exports the core protocols from uno.core.protocols to maintain backward compatibility.
 """
 
-from typing import (
-    Protocol,
-    TypeVar,
-    Generic,
-    List,
-    Set,
-    Dict,
-    Any,
-    Optional,
-    runtime_checkable,
-    Self,
-    ClassVar,
+from uno.core.protocols import (
+    EntityProtocol,
+    AggregateRootProtocol,
+    ValueObjectProtocol
 )
-from datetime import datetime
-from uuid import UUID
+
+from uno.core.protocols.event import EventProtocol as DomainEventProtocol
+
+# Export everything from core protocols
+from uno.core.protocols import *
+
+# Legacy type variables for backward compatibility
+from typing import TypeVar, Protocol, runtime_checkable, Any, Dict, List, Optional, Set
 
 # Type variables
 IdT = TypeVar("IdT")  # Type for entity identifiers
@@ -28,96 +25,8 @@ ValueT = TypeVar("ValueT")  # Type for value object values
 EntityT = TypeVar("EntityT", bound="EntityProtocol")  # Type for entities
 
 
-# Import the canonical domain event protocol implementation
-from uno.core.events import DomainEventProtocol
-
-
-@runtime_checkable
-class ValueObjectProtocol(Protocol):
-    """Protocol for value objects."""
-
-    def equals(self, other: Any) -> bool:
-        """Check if this value object equals another."""
-        ...
-
-    def validate(self) -> None:
-        """Validate the value object."""
-        ...
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert value object to dictionary."""
-        ...
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ValueObjectProtocol":
-        """Create value object from dictionary."""
-        ...
-
-
-@runtime_checkable
-class PrimitiveValueObjectProtocol(ValueObjectProtocol, Protocol[ValueT]):
-    """Protocol for primitive value objects."""
-
-    value: ValueT
-
-    @classmethod
-    def create(cls, value: ValueT) -> "PrimitiveValueObjectProtocol[ValueT]":
-        """Create a primitive value object."""
-        ...
-
-
-@runtime_checkable
-class EntityProtocol(Protocol[IdT]):
-    """Protocol for domain entities."""
-
-    id: IdT
-    created_at: datetime
-    updated_at: Optional[datetime]
-
-    def register_event(self, event: DomainEventProtocol) -> None:
-        """Register a domain event."""
-        ...
-
-    def clear_events(self) -> List[DomainEventProtocol]:
-        """Clear and return all registered domain events."""
-        ...
-
-    def update(self) -> None:
-        """Update the entity."""
-        ...
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert entity to dictionary."""
-        ...
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EntityProtocol":
-        """Create entity from dictionary."""
-        ...
-
-
-@runtime_checkable
-class AggregateRootProtocol(EntityProtocol[IdT], Protocol):
-    """Protocol for aggregate roots."""
-
-    version: int
-
-    def check_invariants(self) -> None:
-        """Check that all aggregate invariants are satisfied."""
-        ...
-
-    def apply_changes(self) -> None:
-        """Apply changes and ensure consistency."""
-        ...
-
-    def add_child_entity(self, entity: EntityProtocol) -> None:
-        """Add a child entity."""
-        ...
-
-    def get_child_entities(self) -> Set[EntityProtocol]:
-        """Get all child entities."""
-        ...
-
+# The following protocols are kept for backward compatibility
+# but should be migrated to the new protocols in uno.core.protocols
 
 @runtime_checkable
 class SpecificationProtocol(Protocol[EntityT]):
