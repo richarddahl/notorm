@@ -75,8 +75,7 @@ from uno.infrastructure.repositories.di import (
     clear_repository_cache,
 )
 
-# Backward compatibility aliases
-Repository = BaseRepository
+# No backward compatibility needed
 
 # Export everything for convenient imports
 __all__ = [

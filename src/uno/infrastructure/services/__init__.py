@@ -16,30 +16,38 @@ The implementation is designed to integrate with the repository pattern,
 dependency injection system, and event system of the Uno framework.
 """
 
-# Protocols
-from uno.infrastructure.services.protocols import (
+# Core protocols
+from uno.core.base.service import (
     ServiceProtocol,
-    TransactionalServiceProtocol,
     CrudServiceProtocol,
-    AggregateCrudServiceProtocol,
     QueryServiceProtocol,
+    BaseService,
+    BaseQueryService,
+)
+
+# Infrastructure-specific protocols
+from uno.infrastructure.services.protocols import (
+    TransactionalServiceProtocol,
+    AggregateCrudServiceProtocol,
     RepositoryQueryServiceProtocol,
     ApplicationServiceProtocol,
     EventCollectingServiceProtocol,
     ReadModelServiceProtocol,
-    DomainEventPublisherProtocol
 )
 
 # Base implementations
-from uno.infrastructure.services.base import (
-    Service,
+from uno.infrastructure.services.base_service import (
     TransactionalService,
     CrudService,
-    AggregateCrudService,
-    QueryService,
     RepositoryQueryService,
-    ApplicationService,
-    EventPublisher
+    EventPublisher,
+    DomainEventPublisherProtocol,
+)
+
+# Backward compatibility
+from uno.infrastructure.services.base_service import (
+    Service,
+    QueryService,
 )
 
 # Factory functions
@@ -82,27 +90,33 @@ from uno.infrastructure.services.initialization import (
 
 # Export everything for convenient imports
 __all__ = [
-    # Protocols
+    # Core protocols
     "ServiceProtocol",
-    "TransactionalServiceProtocol",
     "CrudServiceProtocol",
-    "AggregateCrudServiceProtocol",
     "QueryServiceProtocol",
+    
+    # Infrastructure-specific protocols
+    "TransactionalServiceProtocol",
+    "AggregateCrudServiceProtocol",
     "RepositoryQueryServiceProtocol",
     "ApplicationServiceProtocol",
     "EventCollectingServiceProtocol",
     "ReadModelServiceProtocol",
     "DomainEventPublisherProtocol",
     
-    # Base implementations
-    "Service",
+    # Core base implementations
+    "BaseService",
+    "BaseQueryService",
+    
+    # Infrastructure implementations
     "TransactionalService",
     "CrudService",
-    "AggregateCrudService",
-    "QueryService",
     "RepositoryQueryService",
-    "ApplicationService",
     "EventPublisher",
+    
+    # Backward compatibility
+    "Service",
+    "QueryService",
     
     # Factory functions
     "ServiceFactory",

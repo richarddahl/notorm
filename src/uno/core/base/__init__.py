@@ -22,12 +22,22 @@ from uno.core.base.repository import (
     FilterProtocol,
     FilterType,
 )
+from uno.core.base.service import (
+    BaseService,
+    BaseQueryService,
+    ServiceProtocol,
+    CrudServiceProtocol,
+    QueryServiceProtocol,
+)
 
 __all__ = [
+    # DTO classes
     "BaseDTO",
     "DTOConfig",
     "PaginatedListDTO",
     "WithMetadataDTO",
+    
+    # Repository classes and protocols
     "BaseRepository",
     "SpecificationRepository",
     "BatchRepository",
@@ -39,4 +49,11 @@ __all__ = [
     "StreamingRepositoryProtocol",
     "FilterProtocol",
     "FilterType",
+    
+    # Service classes and protocols
+    "BaseService",
+    "BaseQueryService",
+    "ServiceProtocol",
+    "CrudServiceProtocol",
+    "QueryServiceProtocol",
 ]
