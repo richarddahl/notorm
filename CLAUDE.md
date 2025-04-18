@@ -31,12 +31,65 @@ PROPOSALS/CODE_STANDARDIZATION_PROGRESS.md is an excellent example.
 
 ## Dependency Injection System
 
-uno implements a dependency injection system using the `inject` library. Key components include:
+uno implements a dependency injection system 
 
-- **Interfaces**: Protocol classes in `uno.dependencies.interfaces` like `UnoRepositoryProtocol` and `UnoServiceProtocol`
-- **Container**: Configured in `uno.dependencies.container`, provides centralized dependency management
-- **Base Implementations**: `UnoRepository`, `UnoService`, and `CrudService` for common patterns
-- **FastAPI Integration**: Utilities in `uno.dependencies.fastapi` to integrate with FastAPI's dependency system
+## Naming Convention Rules
+
+### Directory Naming
+
+1. **Rule**: Use plural form for directories containing multiple implementations
+2. **Examples**:
+   - `/models/` (not `/model/`)
+   - `/repositories/` (not `/repository/`)
+   - `/services/` (not `/service/`)
+
+### File Naming
+
+1. **Rule**: Use snake_case for all Python files
+2. **Rule**: Use singular form for base/interface files
+3. **Rule**: Use plural form for collections of utilities
+4. **Rule**: Use descriptive, action-oriented names for implementation files
+5. **Examples**:
+   - `base_repository.py` - Base class or interface
+   - `user_repository.py` - Specific implementation
+   - `validators.py` - Collection of validation utilities
+   - `query_executor.py` - Implementation of a specific action
+
+### Class Naming
+
+1. **Rule**: Use PascalCase for all classes
+2. **Rule**: Use standard suffixes to indicate role:
+   - `Repository` - Data access objects
+   - `Service` - Business logic services
+   - `Factory` - Object creation
+   - `Manager` - Resource management
+   - `Controller` - Endpoint handling
+3. **Rule**: Use `Base` prefix for abstract/base classes:
+   - `BaseRepository`
+   - `BaseService`
+4. **Rule**: Domain entities should use clean domain names without suffixes:
+   - `User` (not `UserEntity` or `UserModel`)
+   - `Product` (not `ProductEntity`)
+5. **Examples**:
+   - `UserRepository` - Repository for user data
+   - `OrderService` - Service for order business logic
+   - `EndpointFactory` - Factory for creating endpoints
+   - `CacheManager` - Manager for cache resources
+
+### Function/Method Naming
+
+1. **Rule**: Use snake_case for all functions and methods
+2. **Rule**: Use verb prefix for actions:
+   - `get_` for retrieval operations
+   - `create_` for creation operations
+   - `update_` for update operations
+   - `delete_` for deletion operations
+   - `validate_` for validation operations
+3. **Examples**:
+   - `get_user_by_id()`
+   - `create_order()`
+   - `update_product_price()`
+   - `delete_inactive_accounts()`
 
 When implementing new features:
 1. Define interfaces using Protocol classes

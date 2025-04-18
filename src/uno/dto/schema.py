@@ -5,17 +5,13 @@
 """
 DEPRECATED: This module has been replaced by uno.dto.
 
-To align with Domain-Driven Design principles, UnoSchema has been renamed to UnoDTO.
-Please import from uno.dto instead of uno.schema.schema.
+To align with Domain-Driven Design principles, this module has been replaced
+by the uno.dto module. Please import from uno.dto instead.
 
 Example:
-    from uno.dto import UnoDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
+    from uno.dto import BaseDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
 """
 
-from uno.dto import UnoDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
+from uno.core.base.dto import BaseDTO, DTOConfig, PaginatedListDTO, WithMetadataDTO
 
-# For backward compatibility
-UnoSchema = UnoDTO
-UnoSchemaConfig = DTOConfig
-PaginatedList = PaginatedListDTO
-WithMetadata = WithMetadataDTO
+# No backward compatibility needed

@@ -29,6 +29,7 @@ from uno.core.base.service import (
     CrudServiceProtocol,
     QueryServiceProtocol,
 )
+from uno.core.base.error import BaseError
 
 __all__ = [
     # DTO classes
@@ -56,4 +57,7 @@ __all__ = [
     "ServiceProtocol",
     "CrudServiceProtocol",
     "QueryServiceProtocol",
+    
+    # Error classes
+    "BaseError",
 ]

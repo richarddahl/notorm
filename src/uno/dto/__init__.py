@@ -3,14 +3,28 @@
 # SPDX-License-Identifier: MIT
 
 """
-Schema module for Uno framework.
+DTO (Data Transfer Object) module for the Uno framework.
 
-This module provides utilities for creating, validating, and converting between
-different schema formats, supporting the data layer of the application.
+This module provides the DTO (Data Transfer Object) functionality for the Uno framework,
+including base DTO classes, DTO configurations, and DTO managers.
 
-The Schema module has been redesigned to follow domain-driven design principles,
+The DTO module has been redesigned to follow domain-driven design principles,
 with clear separation of concerns into entities, repositories, services, and endpoints.
 """
+
+# Import from core module for fundamental components
+from uno.core.base.dto import (
+    BaseDTO,
+    DTOConfig,
+    PaginatedListDTO,
+    WithMetadataDTO,
+)
+
+# Import from application module for manager implementation
+from uno.application.dto.manager import (
+    DTOManager,
+    get_dto_manager,
+)
 
 # Domain-driven design implementation
 from uno.dto.entities import (
@@ -46,25 +60,9 @@ from uno.dto.domain_services import (
 )
 
 from uno.dto.domain_provider import SchemaProvider, TestingSchemaProvider
-
 from uno.dto.domain_endpoints import router as schema_router
 
-# Legacy implementation
-from uno.dto.schema import (
-    UnoSchema,
-    UnoSchemaConfig,
-    PaginatedList,
-    WithMetadata,
-)
-
-from uno.dto.dto_manager import (
-    UnoDTOManager,
-)
-
-from uno.dto.services import (
-    SchemaManagerService as LegacySchemaManagerService,
-)
-
+# Import error types for error handling
 from uno.dto.errors import (
     SchemaErrorCode,
     SchemaNotFoundError,
@@ -79,10 +77,20 @@ from uno.dto.errors import (
     register_schema_errors,
 )
 
+# No backward compatibility needed
+
 # Register schema errors
 register_schema_errors()
 
 __all__ = [
+    # Core DTO classes
+    "BaseDTO",
+    "DTOConfig",
+    "PaginatedListDTO",
+    "WithMetadataDTO",
+    "DTOManager",
+    "get_dto_manager",
+    
     # Domain-driven design exports
     "SchemaId",
     "SchemaDefinition",
@@ -110,13 +118,8 @@ __all__ = [
     "SchemaProvider",
     "TestingSchemaProvider",
     "schema_router",
-    # Legacy exports
-    "UnoSchema",
-    "UnoSchemaConfig",
-    "PaginatedList",
-    "WithMetadata",
-    "UnoDTOManager",
-    "LegacySchemaManagerService",
+    
+    # Error types
     "SchemaErrorCode",
     "SchemaNotFoundError",
     "SchemaAlreadyExistsError",

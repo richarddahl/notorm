@@ -23,7 +23,7 @@ from typing import (
 
 from pydantic import BaseModel, Field
 
-from uno.core.errors import UnoError
+from uno.core.base.error import BaseError
 
 # Type variable for DTO classes
 DTOT = TypeVar("DTOT", bound="BaseDTO")
@@ -50,7 +50,7 @@ class BaseDTO(BaseModel):
             A dictionary with field metadata
         """
         if field_name not in cls.model_fields:
-            raise UnoError(
+            raise BaseError(
                 f"Field {field_name} not found in DTO {cls.__name__}", "FIELD_NOT_FOUND"
             )
 
@@ -98,13 +98,13 @@ class DTOConfig(BaseModel):
             The created DTO class
 
         Raises:
-            UnoError: If there are issues with the DTO creation
+            BaseError: If there are issues with the DTO creation
         """
         from pydantic import create_model, model_validator
         
         # Validate config
         if self.exclude_fields and self.include_fields:
-            raise UnoError(
+            raise BaseError(
                 "The DTO configuration cannot have both exclude_fields or include_fields.",
                 "BOTH_EXCLUDE_INCLUDE_FIELDS",
             )
@@ -118,7 +118,7 @@ class DTOConfig(BaseModel):
         if self.include_fields:
             invalid_fields = self.include_fields.difference(all_model_fields)
             if invalid_fields:
-                raise UnoError(
+                raise BaseError(
                     f"Include fields not found in model {model.__name__}: {', '.join(invalid_fields)} for DTO: {dto_name}",
                     "INCLUDE_FIELD_NOT_IN_MODEL",
                 )
@@ -127,7 +127,7 @@ class DTOConfig(BaseModel):
         if self.exclude_fields:
             invalid_fields = self.exclude_fields.difference(all_model_fields)
             if invalid_fields:
-                raise UnoError(
+                raise BaseError(
                     f"Exclude fields not found in model {model.__name__}: {', '.join(invalid_fields)} for DTO: {dto_name}",
                     "EXCLUDE_FIELD_NOT_IN_MODEL",
                 )
@@ -142,7 +142,7 @@ class DTOConfig(BaseModel):
 
         # If no fields are specified, use all fields
         if not field_names:
-            raise UnoError(
+            raise BaseError(
                 f"No fields specified for DTO {dto_name}.",
                 "NO_FIELDS_SPECIFIED",
             )

@@ -36,8 +36,8 @@ from uno.dto.errors import (
     SchemaFieldTypeMismatchError,
     SchemaConversionError,
 )
-from uno.dto import UnoDTO, DTOConfig, PaginatedListDTO
-from uno.core.errors.base import UnoError
+from uno.core.base.dto import BaseDTO, DTOConfig, PaginatedListDTO
+from uno.core.base.error import BaseError
 
 
 # Type variables for improved type safety
@@ -64,7 +64,7 @@ class UnoDTOManager:
             schema_configs: Optional initial schema configurations
         """
         self.schema_configs: Dict[str, DTOConfig] = schema_configs or {}
-        self.schemas: Dict[str, Type[UnoDTO]] = {}
+        self.schemas: Dict[str, Type[BaseDTO]] = {}
 
     def add_schema_config(self, name: str, config: DTOConfig) -> None:
         """
@@ -76,7 +76,7 @@ class UnoDTOManager:
         """
         self.schema_configs[name] = config
 
-    def create_schema(self, schema_name: str, model: Type[BaseModel]) -> Type[UnoDTO]:
+    def create_schema(self, schema_name: str, model: Type[BaseModel]) -> Type[BaseDTO]:
         """
         Create a schema for a model.
 
@@ -88,11 +88,11 @@ class UnoDTOManager:
             The created schema class
 
         Raises:
-            UnoError: If the schema configuration is not found or if there are issues
+            BaseError: If the schema configuration is not found or if there are issues
                     with the schema creation
         """
         if schema_name not in self.schema_configs:
-            raise UnoError(
+            raise BaseError(
                 f"Schema configuration {schema_name} not found.",
                 "SCHEMA_CONFIG_NOT_FOUND",
             )
@@ -106,7 +106,7 @@ class UnoDTOManager:
         self.schemas[schema_name] = schema
         return schema
 
-    def create_all_schemas(self, model: Type[BaseModel]) -> Dict[str, Type[UnoDTO]]:
+    def create_all_schemas(self, model: Type[BaseModel]) -> Dict[str, Type[BaseDTO]]:
         """
         Create all schemas for a model.
 
@@ -120,7 +120,7 @@ class UnoDTOManager:
             self.create_schema(schema_name, model)
         return self.schemas
 
-    def get_schema(self, schema_name: str) -> Optional[Type[UnoDTO]]:
+    def get_schema(self, schema_name: str) -> Optional[Type[BaseDTO]]:
         """
         Get a schema by name.
 
@@ -132,7 +132,7 @@ class UnoDTOManager:
         """
         return self.schemas.get(schema_name)
 
-    def get_list_schema(self, model: Type[Any]) -> Type[UnoDTO]:
+    def get_list_schema(self, model: Type[Any]) -> Type[BaseDTO]:
         """
         Get or create a schema for lists of the given model.
 
@@ -147,7 +147,7 @@ class UnoDTOManager:
             A schema class for lists of the given model
 
         Raises:
-            UnoError: If there are issues with the schema creation
+            BaseError: If there are issues with the schema creation
         """
         # Use a standard naming convention for list schemas
         schema_name = f"{model.__name__}_list"
@@ -187,7 +187,7 @@ class UnoDTOManager:
 
         list_schema = create_model(  # type: ignore
             list_schema_name,
-            __base__=UnoDTO,
+            __base__=BaseDTO,
             items=(List[item_type], ...),  # type: ignore
             total=(int, ...),
             page=(int, 1),
@@ -196,13 +196,13 @@ class UnoDTOManager:
         )
 
         # Cast to ensure the type system recognizes it correctly
-        typed_list_schema = cast(Type[UnoDTO], list_schema)
+        typed_list_schema = cast(Type[BaseDTO], list_schema)
 
         # Store the created schema
         self.schemas[schema_name] = typed_list_schema
         return typed_list_schema
 
-    def _create_schema_from_sqlalchemy_model(self, model: Type[Any]) -> Type[UnoDTO]:
+    def _create_schema_from_sqlalchemy_model(self, model: Type[Any]) -> Type[BaseDTO]:
         """
         Create a Pydantic schema from a SQLAlchemy model.
 
@@ -227,10 +227,10 @@ class UnoDTOManager:
         # Create a new Pydantic model based on the SQLAlchemy model
         # mypy has issues with create_model, so we use type: ignore
         schema = create_model(  # type: ignore
-            f"{model.__name__}DTO", __base__=UnoDTO, **fields
+            f"{model.__name__}DTO", __base__=BaseDTO, **fields
         )
 
-        return cast(Type[UnoDTO], schema)
+        return cast(Type[BaseDTO], schema)
 
     def _get_python_type_for_column(self, column: Any) -> Type[Any]:
         """
@@ -264,7 +264,7 @@ class UnoDTOManager:
 
         return python_type
 
-    def _get_or_create_detail_schema(self, model: Type[BaseModel]) -> Type[UnoDTO]:
+    def _get_or_create_detail_schema(self, model: Type[BaseModel]) -> Type[BaseDTO]:
         """
         Get or create a detail schema for a Pydantic model.
 

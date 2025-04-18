@@ -26,7 +26,7 @@ from pydantic import BaseModel, create_model, Field
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
-from uno.core.errors import UnoError
+from uno.core.base.error import BaseError
 from uno.core.base.dto import BaseDTO, DTOConfig, PaginatedListDTO
 
 
@@ -78,11 +78,11 @@ class DTOManager:
             The created DTO class
 
         Raises:
-            UnoError: If the DTO configuration is not found or if there are issues
+            BaseError: If the DTO configuration is not found or if there are issues
                     with the DTO creation
         """
         if dto_name not in self.dto_configs:
-            raise UnoError(
+            raise BaseError(
                 f"DTO configuration {dto_name} not found.",
                 "DTO_CONFIG_NOT_FOUND",
             )
@@ -122,7 +122,7 @@ class DTOManager:
         """
         return self.dtos.get(dto_name)
 
-    def get_list_dto(self, model: Type[Any]) -> Type[BaseDTO]:
+    def get_list_dto(self, model: Type[T]) -> Type[PaginatedListDTO[T]]:
         """
         Get or create a DTO for lists of the given model.
 
@@ -131,13 +131,13 @@ class DTOManager:
         and SQLAlchemy models like BaseModel.
 
         Args:
-            model: The model to create a list DTO for (can be BaseModel or BaseModel)
+            model: The model to create a list DTO for (can be a Pydantic model or SQLAlchemy model)
 
         Returns:
             A DTO class for lists of the given model
 
         Raises:
-            UnoError: If there are issues with the DTO creation
+            BaseError: If there are issues with the DTO creation
         """
         # Use a standard naming convention for list DTOs
         dto_name = f"{model.__name__}_list"
@@ -165,26 +165,18 @@ class DTOManager:
 
         # Create the list DTO using the PaginatedListDTO generic
         list_dto_name = f"{model.__name__}ListDTO"
+        
         # Create a specialized list DTO as a subclass of PaginatedListDTO
-        from typing import cast
-
-        # Create a list DTO directly without using PaginatedListDTO[T]
-        item_type = Any  # Default type for mypy
-        if isinstance(base_dto, type):
-            item_type = base_dto
-
+        item_type = base_dto
+        
+        # Create a proper generic PaginatedListDTO class
         list_dto = create_model(
             list_dto_name,
-            __base__=BaseDTO,
-            items=(List[item_type], ...),
-            total=(int, ...),
-            page=(int, 1),
-            page_size=(int, 25),
-            pages=(int, 1),
+            __base__=PaginatedListDTO[item_type],
         )
-
+        
         # Cast to ensure the type system recognizes it correctly
-        typed_list_dto = cast(Type[BaseDTO], list_dto)
+        typed_list_dto = cast(Type[PaginatedListDTO[T]], list_dto)
 
         # Store the created DTO
         self.dtos[dto_name] = typed_list_dto

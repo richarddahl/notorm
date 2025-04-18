@@ -10,7 +10,8 @@ specific to the schema functionality.
 """
 
 from typing import Any, Dict, List, Optional, Union, Type, Set
-from uno.core.errors.base import UnoError, ErrorCategory, ErrorSeverity
+from uno.core.base.error import BaseError
+from uno.core.errors.base import ErrorCategory, ErrorSeverity
 from uno.core.errors.catalog import register_error
 
 
@@ -39,7 +40,7 @@ class SchemaErrorCode:
 
 
 # Schema errors
-class SchemaNotFoundError(UnoError):
+class SchemaNotFoundError(BaseError):
     """Error raised when a schema is not found."""
     
     def __init__(
@@ -57,7 +58,7 @@ class SchemaNotFoundError(UnoError):
         )
 
 
-class SchemaAlreadyExistsError(UnoError):
+class SchemaAlreadyExistsError(BaseError):
     """Error raised when attempting to create a duplicate schema."""
     
     def __init__(
@@ -75,7 +76,7 @@ class SchemaAlreadyExistsError(UnoError):
         )
 
 
-class SchemaInvalidError(UnoError):
+class SchemaInvalidError(BaseError):
     """Error raised when a schema is invalid."""
     
     def __init__(
@@ -99,7 +100,7 @@ class SchemaInvalidError(UnoError):
 
 
 # Validation errors
-class SchemaValidationError(UnoError):
+class SchemaValidationError(BaseError):
     """Error raised when schema validation fails."""
     
     def __init__(
@@ -128,7 +129,7 @@ class SchemaValidationError(UnoError):
         )
 
 
-class SchemaFieldMissingError(UnoError):
+class SchemaFieldMissingError(BaseError):
     """Error raised when a required field is missing."""
     
     def __init__(
@@ -151,7 +152,7 @@ class SchemaFieldMissingError(UnoError):
         )
 
 
-class SchemaFieldTypeMismatchError(UnoError):
+class SchemaFieldTypeMismatchError(BaseError):
     """Error raised when a field type doesn't match the expected type."""
     
     def __init__(
@@ -182,7 +183,7 @@ class SchemaFieldTypeMismatchError(UnoError):
 
 
 # Conversion errors
-class SchemaConversionError(UnoError):
+class SchemaConversionError(BaseError):
     """Error raised when schema conversion fails."""
     
     def __init__(
@@ -208,7 +209,7 @@ class SchemaConversionError(UnoError):
         )
 
 
-class SchemaSerializationError(UnoError):
+class SchemaSerializationError(BaseError):
     """Error raised when schema serialization fails."""
     
     def __init__(
@@ -231,7 +232,7 @@ class SchemaSerializationError(UnoError):
         )
 
 
-class SchemaDeserializationError(UnoError):
+class SchemaDeserializationError(BaseError):
     """Error raised when schema deserialization fails."""
     
     def __init__(
