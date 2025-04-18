@@ -69,8 +69,7 @@ from uno.domain.specification_translators import (
 # These will be removed in a future version
 from uno.domain.core import DomainException
 
-# Business logic
-from uno.domain.service import DomainService
+# Business logic now comes from the unified infrastructure.services module
 
 # Event sourcing and event store
 try:
@@ -216,8 +215,6 @@ try:
         domain_model_components
         + legacy_components
         + [
-            # Business logic
-            "DomainService",
             # Query system
             "QuerySpecification",
             "QueryResult",
@@ -322,8 +319,6 @@ except ImportError:
         domain_model_components
         + legacy_components
         + [
-            # Business logic
-            "DomainService",
         ]
         + event_store_components
     )

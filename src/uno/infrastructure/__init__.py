@@ -40,3 +40,47 @@ from uno.infrastructure.repositories import (
     get_repository,
     get_unit_of_work,
 )
+
+# Import service components for convenience
+from uno.infrastructure.services import (
+    # Protocols
+    ServiceProtocol,
+    TransactionalServiceProtocol,
+    CrudServiceProtocol,
+    AggregateCrudServiceProtocol,
+    QueryServiceProtocol,
+    RepositoryQueryServiceProtocol,
+    ApplicationServiceProtocol,
+    EventCollectingServiceProtocol,
+    ReadModelServiceProtocol,
+    DomainEventPublisherProtocol,
+    
+    # Base implementations
+    Service,
+    TransactionalService,
+    CrudService,
+    AggregateCrudService,
+    QueryService,
+    RepositoryQueryService,
+    ApplicationService,
+    EventPublisher,
+    
+    # Factory functions
+    ServiceFactory,
+    get_service_factory,
+    create_service,
+    create_crud_service,
+    create_aggregate_service,
+    create_query_service,
+    create_application_service,
+    create_event_publisher,
+    
+    # DI helpers
+    init_service_system,
+    get_service_by_type,
+    get_crud_service,
+    get_aggregate_service,
+    get_query_service,
+    get_application_service,
+    get_event_publisher,
+)

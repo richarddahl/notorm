@@ -21,8 +21,7 @@ from uno.dependencies.interfaces import (
     EventBusProtocol,
 )
 
-# Implementations
-from uno.dependencies.service import UnoService, CrudService
+# Services - use the unified service implementation from infrastructure.services
 
 # Modern FastAPI integration is imported separately
 # Modern FastAPI integration was removed as part of backward compatibility removal
@@ -159,9 +158,7 @@ __all__ = [
     "BatchVectorUpdateServiceProtocol",
     "VectorConfigServiceProtocol",
     
-    # Implementations
-    "UnoService",
-    "CrudService",
+    # Service implementation now in infrastructure.services
     
     # Modern FastAPI integration is in fastapi_integration module
     
