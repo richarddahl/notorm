@@ -11,8 +11,6 @@ for handling errors in a functional way without relying on exceptions.
 
 from typing import TypeVar, Generic, Optional, Callable, cast, Any, List, Dict, Union, Protocol, runtime_checkable
 import traceback
-import inspect
-import functools
 from dataclasses import dataclass
 from uno.core.errors.base import UnoError, ErrorCode, get_error_context
 
@@ -116,7 +114,6 @@ class Success(Generic[T]):
         # No-op for Success
         return self
     
-    # Backward compatibility methods for tests
     def unwrap(self) -> T:
         """
         Unwrap a successful result to get its value.
@@ -266,7 +263,6 @@ class Failure(Generic[T]):
             pass
         return self
     
-    # Backward compatibility methods for tests
     def unwrap(self) -> T:
         """
         Unwrap a successful result to get its value.
@@ -342,14 +338,8 @@ class Failure(Generic[T]):
 # Type alias for Result
 Result = Union[Success[T], Failure[T]]
 
-# Alias Ok for backward compatibility
-Ok = Success
 
-# Alias Err for backward compatibility
-Err = Failure
-
-
-def of(value: T) -> Result[T]:
+def success(value: T) -> Success[T]:
     """
     Create a successful result with a value.
     
@@ -362,7 +352,7 @@ def of(value: T) -> Result[T]:
     return Success(value)
 
 
-def failure(error: Exception) -> Result[T]:
+def failure(error: Exception) -> Failure[Any]:
     """
     Create a failed result with an error.
     
@@ -385,7 +375,6 @@ def from_exception(func: Callable[..., T]) -> Callable[..., Result[T]]:
     Returns:
         A function that returns a Result
     """
-    @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
         try:
             return Success(func(*args, **kwargs))
@@ -394,7 +383,7 @@ def from_exception(func: Callable[..., T]) -> Callable[..., Result[T]]:
     return wrapper
 
 
-async def from_awaitable(awaitable: Any) -> Result[T]:
+async def from_awaitable(awaitable: Any) -> Result[Any]:
     """
     Convert an awaitable that might raise exceptions to a Result.
     

@@ -3,42 +3,40 @@
 # SPDX-License-Identifier: MIT
 
 """
-Comprehensive error handling framework for the Uno application.
+Comprehensive error handling system for the Uno framework.
 
-This module provides a unified approach to error handling with
-structured errors, error codes, contextual information, and
-integration with both exception-based and functional error handling.
+This module provides a cohesive approach to error handling with:
+1. Structured exceptions with error codes (UnoError)
+2. Functional error handling with Result objects (Success/Failure)
+3. Contextual information for rich error diagnostics
+4. Error catalog for consistent error documentation
+5. Validation utilities for input validation
 """
 
+# Import core components
 from uno.core.errors.base import (
     UnoError,
     ErrorCode,
     ErrorCategory,
     ErrorSeverity,
-    ErrorContext,
-    ErrorInfo,
+    get_error_context,
+    add_error_context,
     with_error_context,
     with_async_error_context,
-    add_error_context,
-    get_error_context,
+    ValidationError,
     EntityNotFoundError,
-    ConcurrencyError,
-    DomainValidationError,
-    AggregateInvariantViolationError,
+    AuthorizationError,
+    DatabaseError,
+    ConfigurationError,
+    DependencyError,
 )
 
-from uno.core.errors.catalog import (
-    ErrorCatalog,
-    register_error,
-    get_error_code_info,
-    get_all_error_codes,
-)
-
+# Import Result pattern components
 from uno.core.errors.result import (
     Result,
     Success,
     Failure,
-    of,
+    success,
     failure,
     from_exception,
     from_awaitable,
@@ -46,82 +44,42 @@ from uno.core.errors.result import (
     combine_dict,
 )
 
+# Import validation components
 from uno.core.errors.validation import (
-    ValidationError,
     ValidationContext,
-    FieldValidationError,
     validate_fields,
 )
 
-from uno.core.errors.logging import (
-    configure_logging,
-    get_logger,
-    LogConfig,
-    with_logging_context,
-    add_logging_context,
-    get_logging_context,
-    clear_logging_context,
-)
+# Initialize the error catalog (automatically registers standard errors)
+from uno.core.errors.catalog import ErrorCatalog
 
-from uno.core.errors.security import (
-    AuthenticationError,
-    AuthorizationError,
-)
-
-from uno.core.errors.core_errors import (
-    CoreErrorCode,
-    ConfigNotFoundError,
-    ConfigInvalidError,
-    ConfigTypeMismatchError,
-    InitializationError,
-    ComponentInitializationError,
-    DependencyNotFoundError,
-    DependencyResolutionError,
-    DependencyCycleError,
-    ObjectNotFoundError,
-    ObjectInvalidError,
-    ObjectPropertyError,
-    SerializationError,
-    DeserializationError,
-    ProtocolValidationError,
-    InterfaceMethodError,
-    OperationFailedError,
-    NotImplementedError as UnoNotImplementedError,
-    InternalError,
-    register_core_errors,
-)
-
-# Register core errors
-register_core_errors()
+# Initialize error catalog with standard errors
+ErrorCatalog.initialize()
 
 __all__ = [
-    # Base errors
+    # Base error components
     "UnoError",
     "ErrorCode",
     "ErrorCategory",
     "ErrorSeverity",
-    "ErrorContext",
-    "ErrorInfo",
+    "get_error_context",
+    "add_error_context",
     "with_error_context",
     "with_async_error_context",
-    "add_error_context",
-    "get_error_context",
-    "EntityNotFoundError",
-    "ConcurrencyError",
-    "DomainValidationError",
-    "AggregateInvariantViolationError",
     
-    # Error catalog
-    "ErrorCatalog",
-    "register_error",
-    "get_error_code_info",
-    "get_all_error_codes",
+    # Common error types
+    "ValidationError",
+    "EntityNotFoundError",
+    "AuthorizationError",
+    "DatabaseError",
+    "ConfigurationError",
+    "DependencyError",
     
     # Result pattern
     "Result",
     "Success",
     "Failure",
-    "of",
+    "success",
     "failure",
     "from_exception",
     "from_awaitable",
@@ -129,42 +87,9 @@ __all__ = [
     "combine_dict",
     
     # Validation
-    "ValidationError",
     "ValidationContext",
-    "FieldValidationError",
     "validate_fields",
     
-    # Logging
-    "configure_logging",
-    "get_logger",
-    "LogConfig",
-    "with_logging_context",
-    "add_logging_context",
-    "get_logging_context",
-    "clear_logging_context",
-    
-    # Security
-    "AuthenticationError",
-    "AuthorizationError",
-    
-    # Core errors
-    "CoreErrorCode",
-    "ConfigNotFoundError",
-    "ConfigInvalidError", 
-    "ConfigTypeMismatchError",
-    "InitializationError",
-    "ComponentInitializationError",
-    "DependencyNotFoundError",
-    "DependencyResolutionError",
-    "DependencyCycleError",
-    "ObjectNotFoundError",
-    "ObjectInvalidError",
-    "ObjectPropertyError",
-    "SerializationError",
-    "DeserializationError",
-    "ProtocolValidationError",
-    "InterfaceMethodError",
-    "OperationFailedError",
-    "UnoNotImplementedError",
-    "InternalError",
+    # Error catalog
+    "ErrorCatalog",
 ]

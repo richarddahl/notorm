@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Base error classes and utilities for the Uno error handling framework.
+Base error classes and utilities for the Uno framework.
 
 This module provides the foundation for structured error handling with
 error codes, contextual information, and error categories.
@@ -403,55 +403,49 @@ class UnoError(Exception):
         return f"{self.error_code}: {self.message}"
 
 
-class DomainValidationError(UnoError):
-    """Error raised when domain validation fails."""
-
-    def __init__(self, message: str, entity_name: Optional[str] = None, **context: Any):
-        """
-        Initialize a DomainValidationError.
-
-        Args:
-            message: The error message
-            entity_name: The name of the entity that failed validation
-            **context: Additional context information
-        """
-        context_dict = context.copy()
-        if entity_name:
-            context_dict["entity_name"] = entity_name
-
-        super().__init__(
-            message=message, error_code=ErrorCode.VALIDATION_ERROR, **context_dict
-        )
-
-
-class AggregateInvariantViolationError(UnoError):
-    """Error raised when an aggregate invariant is violated."""
+class ValidationError(UnoError):
+    """Error raised when validation fails."""
 
     def __init__(
         self,
         message: str,
-        aggregate_name: Optional[str] = None,
-        aggregate_id: Optional[str] = None,
+        field: Optional[str] = None,
+        value: Optional[Any] = None,
+        validation_errors: Optional[list] = None,
         **context: Any,
     ):
         """
-        Initialize an AggregateInvariantViolationError.
+        Initialize a ValidationError.
 
         Args:
             message: The error message
-            aggregate_name: The name of the aggregate
-            aggregate_id: The ID of the aggregate
+            field: The field that failed validation
+            value: The value that failed validation
+            validation_errors: A list of validation errors
             **context: Additional context information
         """
         context_dict = context.copy()
-        if aggregate_name:
-            context_dict["aggregate_name"] = aggregate_name
-        if aggregate_id:
-            context_dict["aggregate_id"] = aggregate_id
+        if field:
+            context_dict["field"] = field
+        if value is not None:
+            context_dict["value"] = value
 
         super().__init__(
-            message=message, error_code=ErrorCode.BUSINESS_RULE, **context_dict
+            message=message, error_code=ErrorCode.VALIDATION_ERROR, **context_dict
         )
+        self.validation_errors = validation_errors or []
+        
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the error to a dictionary.
+        
+        Returns:
+            A dictionary representation of the error
+        """
+        result = super().to_dict()
+        if self.validation_errors:
+            result["validation_errors"] = self.validation_errors
+        return result
 
 
 class EntityNotFoundError(UnoError):
@@ -473,44 +467,6 @@ class EntityNotFoundError(UnoError):
             entity_type=entity_type,
             entity_id=entity_id,
             **context,
-        )
-
-
-class ConcurrencyError(UnoError):
-    """Error raised when there is a concurrency conflict."""
-
-    def __init__(
-        self,
-        entity_type: str,
-        entity_id: Any,
-        expected_version: Optional[int] = None,
-        actual_version: Optional[int] = None,
-        **context: Any,
-    ):
-        """
-        Initialize a ConcurrencyError.
-
-        Args:
-            entity_type: The type of entity with the concurrency conflict
-            entity_id: The ID of the entity with the concurrency conflict
-            expected_version: The expected version of the entity
-            actual_version: The actual version of the entity
-            **context: Additional context information
-        """
-        message = f"Concurrency conflict detected for {entity_type} with ID {entity_id}"
-
-        context_dict = context.copy()
-        if expected_version is not None:
-            context_dict["expected_version"] = expected_version
-        if actual_version is not None:
-            context_dict["actual_version"] = actual_version
-
-        super().__init__(
-            message=message,
-            error_code=ErrorCode.RESOURCE_CONFLICT,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            **context_dict,
         )
 
 
@@ -548,31 +504,83 @@ class AuthorizationError(UnoError):
         )
 
 
-class ValidationError(UnoError):
-    """Error raised when validation fails."""
-
+class DatabaseError(UnoError):
+    """Error raised for database-related issues."""
+    
     def __init__(
         self,
         message: str,
-        field: Optional[str] = None,
-        value: Optional[Any] = None,
+        error_code: str = ErrorCode.DB_QUERY_ERROR,
+        query: Optional[str] = None,
+        params: Optional[Dict[str, Any]] = None,
         **context: Any,
     ):
         """
-        Initialize a ValidationError.
-
+        Initialize a DatabaseError.
+        
         Args:
             message: The error message
-            field: The field that failed validation
-            value: The value that failed validation
+            error_code: The database error code
+            query: The SQL query that caused the error
+            params: The parameters for the query
             **context: Additional context information
         """
         context_dict = context.copy()
-        if field:
-            context_dict["field"] = field
-        if value is not None:
-            context_dict["value"] = value
+        if query:
+            context_dict["query"] = query
+        if params:
+            context_dict["params"] = params
+            
+        super().__init__(message=message, error_code=error_code, **context_dict)
 
+
+class ConfigurationError(UnoError):
+    """Error raised for configuration issues."""
+    
+    def __init__(
+        self,
+        message: str,
+        config_key: Optional[str] = None,
+        **context: Any,
+    ):
+        """
+        Initialize a ConfigurationError.
+        
+        Args:
+            message: The error message
+            config_key: The configuration key that caused the issue
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if config_key:
+            context_dict["config_key"] = config_key
+            
         super().__init__(
-            message=message, error_code=ErrorCode.VALIDATION_ERROR, **context_dict
+            message=message, error_code=ErrorCode.CONFIGURATION_ERROR, **context_dict
+        )
+
+
+class DependencyError(UnoError):
+    """Error raised for dependency resolution issues."""
+    
+    def __init__(
+        self,
+        message: str,
+        dependency_name: Optional[str] = None,
+        **context: Any,
+    ):
+        """
+        Initialize a DependencyError.
+        
+        Args:
+            message: The error message
+            dependency_name: The name of the dependency that couldn't be resolved
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if dependency_name:
+            context_dict["dependency_name"] = dependency_name
+            
+        super().__init__(
+            message=message, error_code=ErrorCode.DEPENDENCY_ERROR, **context_dict
         )
