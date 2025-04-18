@@ -90,40 +90,7 @@ from uno.jobs.domain_provider import (
     get_jobs_di_config
 )
 
-# Legacy imports (for backward compatibility)
-from uno.jobs.queue import (
-    Queue,
-    JobPriority as LegacyJobPriority,
-    JobStatus as LegacyJobStatus,
-    Job as LegacyJob
-)
-
-from uno.jobs.worker import (
-    Worker,
-    AsyncWorker,
-    WorkerMiddleware
-)
-
-from uno.jobs.scheduler import (
-    Scheduler,
-    Schedule as LegacySchedule
-)
-
-from uno.jobs.tasks import (
-    Task,
-    TaskMiddleware,
-    TaskWorkflow,
-    TaskContext
-)
-
-from uno.jobs.storage import (
-    StorageBackend,
-    MemoryStorage,
-    DatabaseStorage,
-    RedisStorage
-)
-
-from uno.jobs.manager import JobManager as LegacyJobManager
+# No legacy imports - use the DDD-based implementation instead
 
 __all__ = [
     # Domain entities
@@ -185,23 +152,5 @@ __all__ = [
     "configure_jobs_dependencies",
     "get_jobs_di_config",
     
-    # Legacy classes (for backward compatibility)
-    "Queue",
-    "LegacyJobPriority",
-    "LegacyJobStatus",
-    "LegacyJob",
-    "Worker",
-    "AsyncWorker",
-    "WorkerMiddleware",
-    "Scheduler",
-    "LegacySchedule",
-    "Task",
-    "TaskMiddleware",
-    "TaskWorkflow",
-    "TaskContext",
-    "StorageBackend",
-    "MemoryStorage",
-    "DatabaseStorage",
-    "RedisStorage",
-    "LegacyJobManager",
+    # No legacy classes - use the DDD-based implementation instead
 ]

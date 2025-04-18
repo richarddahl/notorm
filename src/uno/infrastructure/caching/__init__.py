@@ -5,29 +5,8 @@ including multi-level caching, distributed caching, cache invalidation strategie
 and monitoring tools.
 """
 
-# Legacy exports for backward compatibility
-from uno.caching.config import CacheConfig
-from uno.caching.manager import CacheManager, get_cache_manager
-from uno.caching.local import LocalCache, MemoryCache, FileCache
-from uno.caching.distributed import (
-    DistributedCache, 
-    RedisCache, 
-    MemcachedCache
-)
-from uno.caching.decorators import (
-    cached, 
-    async_cached, 
-    invalidate_cache,
-    cache_aside
-)
-from uno.caching.key import get_cache_key
-from uno.caching.invalidation import (
-    InvalidationStrategy,
-    TimeBasedInvalidation,
-    EventBasedInvalidation,
-    PatternBasedInvalidation
-)
-from uno.caching.monitoring import CacheMonitor
+# Use the domain-driven approach instead of legacy exports
+# See domain-based components below
 
 # Domain-driven design exports
 from uno.caching.entities import (
@@ -90,26 +69,7 @@ from uno.caching.domain_provider import (
 __version__ = "0.2.0"
 
 __all__ = [
-    # Legacy exports
-    "CacheConfig",
-    "CacheManager",
-    "get_cache_manager",
-    "LocalCache",
-    "MemoryCache",
-    "FileCache",
-    "DistributedCache",
-    "RedisCache",
-    "MemcachedCache",
-    "cached",
-    "async_cached",
-    "invalidate_cache",
-    "cache_aside",
-    "get_cache_key",
-    "InvalidationStrategy",
-    "TimeBasedInvalidation",
-    "EventBasedInvalidation",
-    "PatternBasedInvalidation",
-    "CacheMonitor",
+    # Modern domain-driven implementation only
     
     # Domain-driven design exports
     # Entities

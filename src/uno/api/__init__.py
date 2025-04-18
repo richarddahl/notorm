@@ -64,9 +64,7 @@ from uno.api.repository_adapter import (
     BatchRepositoryAdapter,
 )
 
-# Legacy components (deprecated)
-from uno.api.endpoint_factory import UnoEndpointFactory, UnoEndpoint
-from uno.api.endpoint import DomainRouter, domain_endpoint
+# Error handlers (still used in modern implementation)
 from uno.api.error_handlers import (
     register_error_handlers,
     default_error_handler,
@@ -107,11 +105,7 @@ __all__ = [
     "ReadOnlyRepositoryAdapter",
     "BatchRepositoryAdapter",
     
-    # Legacy Components (deprecated)
-    "UnoEndpointFactory",
-    "UnoEndpoint",
-    "DomainRouter",
-    "domain_endpoint",
+    # Error handlers
     "register_error_handlers",
     "default_error_handler",
     "validation_error_handler",

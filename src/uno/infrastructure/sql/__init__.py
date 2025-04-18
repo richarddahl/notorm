@@ -9,23 +9,8 @@ for database operations including creating tables, functions, triggers,
 and other database objects.
 """
 
-# Core SQL generation and execution components
-from uno.sql.registry import SQLConfigRegistry
-from uno.sql.config import SQLConfig
-from uno.sql.emitter import SQLEmitter, SQLGenerator, SQLExecutor
-from uno.sql.statement import SQLStatement, SQLStatementType
-from uno.sql.observers import SQLObserver, LoggingSQLObserver
-
-# SQL builders for functions and triggers
-from uno.sql.builders.function import SQLFunctionBuilder
-from uno.sql.builders.trigger import SQLTriggerBuilder
-
-# Common SQL emitters
-from uno.sql.emitters import (
-    AlterGrants,
-    RecordUserAuditFunction,
-    InsertMetaRecordTrigger,
-)
+# Use the domain-based SQL implementation instead
+# See domain repositories and services below
 
 # Error types
 from uno.sql.errors import (
@@ -47,21 +32,7 @@ from uno.sql.errors import (
 register_sql_errors()
 
 __all__ = [
-    # Legacy components
-    "SQLConfigRegistry",
-    "SQLConfig",
-    "SQLEmitter",
-    "SQLGenerator",
-    "SQLExecutor",
-    "SQLStatement",
-    "SQLStatementType",
-    "SQLObserver",
-    "LoggingSQLObserver",
-    "SQLFunctionBuilder",
-    "SQLTriggerBuilder",
-    "AlterGrants",
-    "RecordUserAuditFunction",
-    "InsertMetaRecordTrigger",
+    # Modern domain-based components only
     # Error types
     "SQLErrorCode",
     "SQLStatementError",
