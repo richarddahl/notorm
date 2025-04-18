@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pydantic import BaseModel, ValidationError
 from typing import Dict, Any, Optional, List, Type, TypeVar, Generic, Set, Callable, cast, Union, get_type_hints, get_origin
 
-from uno.core.protocols import ConfigProvider
+from uno.dependencies.interfaces import ConfigProtocol
 
 
 T = TypeVar('T')
@@ -343,7 +343,7 @@ class FileConfigSource(ConfigSource):
         return {}
 
 
-class ConfigurationService(ConfigProvider):
+class ConfigurationService(ConfigProtocol):
     """Configuration service that combines multiple sources."""
     
     def __init__(self, sources: Optional[List[ConfigSource]] = None, logger: Optional[logging.Logger] = None):
@@ -386,6 +386,43 @@ class ConfigurationService(ConfigProvider):
                 return value
         
         return default
+    
+    # Alias for backward compatibility
+    def get_value(self, key: str, default: Any = None) -> Any:
+        """Alias for get() to maintain backward compatibility."""
+        return self.get(key, default)
+    
+    def all(self) -> Dict[str, Any]:
+        """
+        Get all configuration values.
+        
+        Returns:
+            A dictionary containing all configuration values
+        """
+        return self.get_section("")
+    
+    def set(self, key: str, value: Any) -> None:
+        """
+        Set a configuration value.
+        
+        Args:
+            key: The configuration key
+            value: The value to set
+        """
+        # For now, just log that this was called since our config sources
+        # don't support direct setting of values
+        self._logger.warning(
+            "set() called on ConfigurationService, but no writable config sources available."
+        )
+    
+    def load(self, path: str) -> None:
+        """
+        Load configuration from a path.
+        
+        Args:
+            path: The path to load configuration from
+        """
+        self.add_source(FileConfigSource(path, auto_reload=True), priority=5)
     
     def get_section(self, section: str) -> Dict[str, Any]:
         """

@@ -12,7 +12,7 @@ from typing import Dict, List, Any, Optional, Type
 from uno.dependencies.interfaces import UnoServiceProviderProtocol
 
 # Legacy ServiceProvider removed as part of backward compatibility removal
-from uno.dependencies.interfaces import UnoConfigProtocol
+from uno.dependencies.interfaces import ConfigProtocol
 from uno.dependencies.vector_interfaces import (
     VectorSearchServiceProtocol,
     RAGServiceProtocol,
@@ -34,7 +34,7 @@ class VectorConfigService:
     managing dimensions, index types, and vectorizable fields.
     """
     
-    def __init__(self, config: UnoConfigProtocol):
+    def __init__(self, config: ConfigProtocol):
         """
         Initialize the vector configuration service.
         
@@ -42,14 +42,14 @@ class VectorConfigService:
             config: The application configuration
         """
         self.config = config
-        self._default_dimensions = self.config.get_value("VECTOR_DIMENSIONS", 1536)
-        self._default_index_type = self.config.get_value("VECTOR_INDEX_TYPE", "hnsw")
+        self._default_dimensions = self.config.get("VECTOR_DIMENSIONS", 1536)
+        self._default_index_type = self.config.get("VECTOR_INDEX_TYPE", "hnsw")
         
         # Entity-specific configurations
         self._entity_configs: Dict[str, Dict[str, Any]] = {}
         
         # Initialize from config if available
-        vector_entities = self.config.get_value("VECTOR_ENTITIES", {})
+        vector_entities = self.config.get("VECTOR_ENTITIES", {})
         for entity_type, entity_config in vector_entities.items():
             self.register_vectorizable_entity(
                 entity_type=entity_type,
@@ -161,8 +161,8 @@ class VectorSearchProvider:
     def get_config(self):
         """Get the application configuration."""
         from uno.dependencies.scoped_container import get_service
-        from uno.dependencies.interfaces import UnoConfigProtocol
-        return get_service(UnoConfigProtocol)
+        from uno.dependencies.interfaces import ConfigProtocol
+        return get_service(ConfigProtocol)
     
     def get_service(self, service_type):
         """Get a service by type."""
@@ -216,7 +216,7 @@ class VectorSearchProvider:
         
         batch_service = BatchVectorUpdateService(
             dispatcher=dispatcher,
-            batch_size=self.get_config().get_value("VECTOR_BATCH_SIZE", 100),
+            batch_size=self.get_config().get("VECTOR_BATCH_SIZE", 100),
             logger=logging.getLogger('uno.vector.batch')
         )
         self.register_service(BatchVectorUpdateServiceProtocol, batch_service)
@@ -263,7 +263,7 @@ class VectorSearchProvider:
             logger=logging.getLogger('uno.vector.events')
         )
     
-    def _create_vector_update_service(self, config: UnoConfigProtocol, 
+    def _create_vector_update_service(self, config: ConfigProtocol, 
                                      dispatcher: EventDispatcher) -> VectorUpdateService:
         """
         Create and configure the vector update service.
@@ -277,13 +277,13 @@ class VectorSearchProvider:
         """
         service = VectorUpdateService(
             dispatcher=dispatcher,
-            batch_size=config.get_value("VECTOR_BATCH_SIZE", 10),
-            update_interval=config.get_value("VECTOR_UPDATE_INTERVAL", 1.0),
+            batch_size=config.get("VECTOR_BATCH_SIZE", 10),
+            update_interval=config.get("VECTOR_UPDATE_INTERVAL", 1.0),
             logger=logging.getLogger('uno.vector.updates')
         )
         
         # Start the service if auto-start is enabled
-        if config.get_value("VECTOR_AUTO_START", True):
+        if config.get("VECTOR_AUTO_START", True):
             import asyncio
             
             async def start_service():

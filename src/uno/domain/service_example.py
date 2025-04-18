@@ -18,7 +18,7 @@ from uno.dependencies.decorators import (
 )
 from uno.dependencies.modern_provider import ServiceLifecycle
 from uno.dependencies.interfaces import (
-    UnoConfigProtocol,
+    ConfigProtocol,
     UnoDatabaseProviderProtocol,
     EventBusProtocol
 )
@@ -182,7 +182,7 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         self,
         user_repository: UserRepository,
         event_bus: EventBusProtocol,
-        config: UnoConfigProtocol,
+        config: ConfigProtocol,
         logger: Optional[logging.Logger] = None
     ):
         """
@@ -205,8 +205,8 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         self.logger.info("Initializing user service")
         
         # Load configuration
-        self.max_users = self.config.get_value("MAX_USERS", 100)
-        self.user_name_max_length = self.config.get_value("USER_NAME_MAX_LENGTH", 50)
+        self.max_users = self.config.get("MAX_USERS", 100)
+        self.user_name_max_length = self.config.get("USER_NAME_MAX_LENGTH", 50)
         
         # Subscribe to events
         # Note: This is just an example. In a real application, you would

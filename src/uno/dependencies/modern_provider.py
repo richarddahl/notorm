@@ -580,16 +580,22 @@ async def configure_base_services() -> None:
 
     # Register configuration service
     from uno.settings import uno_settings
+    from uno.dependencies.interfaces import ConfigProtocol
 
-    class UnoConfig(UnoConfigProtocol):
+    class UnoConfig(ConfigProtocol):
         """Configuration provider implementation."""
 
         def __init__(self, settings=None):
             self._settings = settings or uno_settings
-
-        def get_value(self, key: str, default: Any = None) -> Any:
+            
+        def get(self, key: str, default: Any = None) -> Any:
             """Get a configuration value by key."""
             return getattr(self._settings, key, default)
+        
+        # Legacy method for backward compatibility
+        def get_value(self, key: str, default: Any = None) -> Any:
+            """Legacy alias for get() - for backward compatibility."""
+            return self.get(key, default)
 
         def all(self) -> Dict[str, Any]:
             """Get all configuration values."""
@@ -598,7 +604,39 @@ async def configure_base_services() -> None:
                 for k, v in self._settings.__dict__.items()
                 if not k.startswith("_")
             }
+            
+        def set(self, key: str, value: Any) -> None:
+            """Set a configuration value (not implemented)."""
+            # Settings from uno_settings are not mutable at runtime
+            # Log a warning that this operation isn't supported
+            import logging
+            logging.getLogger("uno.config").warning(
+                f"set() called on UnoConfig for key '{key}', but this implementation does not support setting values"
+            )
+            
+        def load(self, path: str) -> None:
+            """Load configuration from a path (not implemented)."""
+            # This implementation doesn't support loading from a path
+            import logging
+            logging.getLogger("uno.config").warning(
+                f"load() called on UnoConfig with path '{path}', but this implementation does not support loading from a path"
+            )
+            
+        def reload(self) -> None:
+            """Reload configuration (not implemented)."""
+            # This implementation doesn't support reloading
+            pass
+            
+        def get_section(self, section: str) -> Dict[str, Any]:
+            """Get a configuration section."""
+            # Simple implementation that returns all config values
+            # A more sophisticated implementation would filter by section
+            if not section:
+                return self.all()
+            return {}
 
+    # Register with both interfaces for backward compatibility
+    services.add_singleton(ConfigProtocol, UnoConfig)
     services.add_singleton(UnoConfigProtocol, UnoConfig)
 
     # Register logger

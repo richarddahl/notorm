@@ -43,8 +43,12 @@ from uno.core.errors.core_errors import (
 class TestServiceProtocol(Protocol):
     """Protocol for test services."""
     
-    def get_value(self) -> str:
+    def get(self) -> str:
         """Get a value from the service."""
+        ...
+        
+    def get_value(self) -> str:
+        """Legacy method to get a value from the service."""
         ...
 
 
@@ -70,8 +74,13 @@ class TestService(TestServiceProtocol):
     def __init__(self, value: str = "default"):
         self.value = value
     
-    def get_value(self) -> str:
+    def get(self) -> str:
+        """Get the value using the new interface method."""
         return self.value
+        
+    def get_value(self) -> str:
+        """Legacy method for backward compatibility."""
+        return self.get()
 
 
 class TestDependency(TestDependencyProtocol):

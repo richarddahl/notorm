@@ -22,9 +22,88 @@ QueryT = TypeVar('QueryT')
 ResultT = TypeVar('ResultT')
 
 
+class ConfigProtocol(Protocol):
+    """
+    Protocol for configuration providers.
+
+    Configuration providers are responsible for managing application
+    settings and configuration values.
+    """
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get a configuration value.
+
+        Args:
+            key: The configuration key
+            default: Default value if the key is not found
+
+        Returns:
+            The configuration value
+        """
+        ...
+
+    def all(self) -> Dict[str, Any]:
+        """
+        Get all configuration values.
+
+        Returns:
+            A dictionary containing all configuration values
+        """
+        ...
+
+    def set(self, key: str, value: Any) -> None:
+        """
+        Set a configuration value.
+
+        Args:
+            key: The configuration key
+            value: The value to set
+        """
+        ...
+
+    def load(self, path: str) -> None:
+        """
+        Load configuration from a path.
+
+        Args:
+            path: The path to load configuration from
+        """
+        ...
+
+    def reload(self) -> None:
+        """Reload the configuration."""
+        ...
+
+    def get_section(self, section: str) -> Dict[str, Any]:
+        """
+        Get a configuration section.
+
+        Args:
+            section: The section name
+
+        Returns:
+            The configuration section
+        """
+        ...
+
+
+# Legacy alias for backwards compatibility
 class UnoConfigProtocol(Protocol):
-    """Protocol for configuration providers."""
+    """
+    Legacy protocol for configuration providers.
     
+    Deprecated: Use ConfigProtocol instead.
+    """
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoConfigProtocol is deprecated. Use ConfigProtocol instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__new__(cls)
+        
     def get_value(self, key: str, default: Any = None) -> Any:
         """Get a configuration value by key."""
         ...
@@ -32,10 +111,6 @@ class UnoConfigProtocol(Protocol):
     def all(self) -> Dict[str, Any]:
         """Get all configuration values."""
         ...
-
-
-# UnoRepositoryProtocol has been replaced by the unified repository pattern
-# in uno.infrastructure.repositories - see RepositoryProtocol and related protocols
 
 
 class UnoDatabaseProviderProtocol(Protocol):

@@ -46,7 +46,10 @@ The uno framework defines protocols for various architectural patterns:
 
 ### Configuration
 
-- `ConfigProvider`: Protocol for accessing application configuration from various sources
+- `ConfigProtocol`: The primary protocol for accessing application configuration from various sources
+- `ConfigProvider`: An alias for `ConfigProtocol` with runtime checkable capabilities
+
+Note: Prior to the unification, there were two similar interfaces: `ConfigProvider` (in `uno.core.protocols`) and `UnoConfigProtocol` (in `uno.dependencies.interfaces`). These have been unified into a single `ConfigProtocol` interface with `ConfigProvider` now serving as an alias for backward compatibility.
 
 ### Messaging
 
