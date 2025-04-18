@@ -585,3 +585,37 @@ class DependencyError(BaseError):
         super().__init__(
             message=message, error_code=ErrorCode.DEPENDENCY_ERROR, **context_dict
         )
+
+
+class ConcurrencyError(BaseError):
+    """Error raised when optimistic concurrency control fails."""
+    
+    def __init__(
+        self,
+        message: str,
+        aggregate_id: Optional[str] = None,
+        expected_version: Optional[int] = None,
+        actual_version: Optional[int] = None,
+        **context: Any,
+    ):
+        """
+        Initialize a ConcurrencyError.
+        
+        Args:
+            message: The error message
+            aggregate_id: The ID of the aggregate with version conflict
+            expected_version: The version that was expected
+            actual_version: The actual version found
+            **context: Additional context information
+        """
+        context_dict = context.copy()
+        if aggregate_id:
+            context_dict["aggregate_id"] = aggregate_id
+        if expected_version is not None:
+            context_dict["expected_version"] = expected_version
+        if actual_version is not None:
+            context_dict["actual_version"] = actual_version
+            
+        super().__init__(
+            message=message, error_code=ErrorCode.RESOURCE_CONFLICT, **context_dict
+        )

@@ -3,7 +3,19 @@ Database integration for the modern dependency injection system.
 
 This module provides utilities for integrating the database provider
 with the modern DI system.
+
+DEPRECATED: Some components in this module reference legacy interfaces.
+Use uno.core.di and uno.core.protocols.database for new code.
 """
+
+import warnings
+
+warnings.warn(
+    "Some components in this module reference legacy interfaces. "
+    "Use uno.core.di and uno.core.protocols.database for new code.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 from typing import (
     TypeVar,
@@ -27,6 +39,14 @@ import psycopg
 # Use the modern DI system exclusively
 from uno.dependencies.scoped_container import get_service
 
+# Use new protocols from core rather than legacy interfaces
+from uno.core.protocols.database import (
+    DatabaseProviderProtocol, 
+    DatabaseManagerProtocol,
+    QueryExecutorProtocol
+)
+
+# Legacy imports for backward compatibility
 from uno.dependencies.interfaces import (
     UnoDatabaseProviderProtocol,
     UnoDBManagerProtocol,
@@ -37,7 +57,9 @@ from uno.dependencies.interfaces import (
     DomainRepositoryProtocol,
     DomainServiceProtocol,
 )
-from uno.database.repository import UnoBaseRepository
+
+# Use repository protocol from core instead
+from uno.core.protocols.repository import RepositoryProtocol
 
 
 T = TypeVar("T")
@@ -54,7 +76,7 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
     Yields:
         An AsyncSession instance
     """
-    db_provider = get_service(UnoDatabaseProviderProtocol)
+    db_provider = get_service(DatabaseProviderProtocol)
     async with db_provider.async_session() as session:
         yield session
 
@@ -69,14 +91,14 @@ async def get_raw_connection() -> AsyncIterator[asyncpg.Connection]:
     Yields:
         An asyncpg Connection instance
     """
-    db_provider = get_service(UnoDatabaseProviderProtocol)
+    db_provider = get_service(DatabaseProviderProtocol)
     async with db_provider.async_connection() as conn:
         yield conn
 
 
 def get_repository(
-    repo_class: Type[UnoBaseRepository],
-) -> Callable[[AsyncSession], UnoBaseRepository]:
+    repo_class: Type[RepositoryProtocol],
+) -> Callable[[AsyncSession], RepositoryProtocol]:
     """
     Create a FastAPI dependency for a repository.
 
@@ -89,7 +111,7 @@ def get_repository(
 
     def dependency(
         session: AsyncSession = Depends(get_db_session),
-    ) -> UnoBaseRepository:
+    ) -> RepositoryProtocol:
         # Instantiate the repository with the session
         return repo_class(session)
 
@@ -107,7 +129,7 @@ def get_db_manager() -> Any:
     Returns:
         A DBManager instance
     """
-    return get_service(UnoDBManagerProtocol)
+    return get_service(DatabaseManagerProtocol)
 
 
 def get_sql_emitter_factory() -> Any:
@@ -131,7 +153,7 @@ def get_sql_execution_service() -> Any:
     Returns:
         The SQL execution service
     """
-    return get_service(SQLExecutionProtocol)
+    return get_service(QueryExecutorProtocol)
 
 
 def get_schema_manager() -> Any:

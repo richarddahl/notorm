@@ -64,13 +64,14 @@ This document details the concrete steps required to implement the unified archi
 
 ## Phase 1: Core Infrastructure (2 weeks)
 
-### Week 1: Protocol Definitions
+### Week 1: Protocol Definitions and DI System
 
 | Task | Description | Effort | Dependencies | Validation |
 |------|-------------|--------|--------------|------------|
 | **Define Core Protocols** | Create/refine protocol interfaces for Repository, Service, EventBus | 2 days | None | Static type checking passes |
 | **DI Container** | Implement unified DI container with lifetime management | 3 days | Core protocols | Unit tests for container resolution |
-| **Validation Framework** | Create core validation mechanisms with Result pattern | 2 days | None | Unit tests for validation cases |
+| **Remove Legacy DI** | Identify and remove legacy DI code, updating documentation | 1 day | DI Container | Code cleanliness and builds pass |
+| **Validation Framework** | Create comprehensive validation framework with Result pattern, schema validation, domain validation, and rule-based validation | 2 days | None | Unit tests for validation cases |
 | **Protocol Testing** | Create test fixtures and mocks for protocols | 1 day | Core protocols | Mock implementations pass protocol validation |
 
 **Deliverables:**
@@ -78,6 +79,7 @@ This document details the concrete steps required to implement the unified archi
 - Unified DI container implementation
 - Validation framework with Result pattern
 - Protocol test fixtures
+- Migration guide for DI system
 
 ### Week 2: Infrastructure Components
 
@@ -258,7 +260,7 @@ This document details the concrete steps required to implement the unified archi
 Use the protocol validation script to track adoption of the new architecture:
 
 ```
-$ python src/scripts/validate_protocols.py --report
+$ python src/scripts/validate_protocol_compliance.py --report
 
 Protocol Compliance Report:
 Repository: 24/45 implementations (53%)
@@ -269,58 +271,59 @@ EventBus: 2/4 implementations (50%)
 
 Track coverage over time to ensure continuous progress toward 100% compliance.
 
+## Project Structure
+
+Below is the target four-layer structure that follows clean architecture principles:
+
+```
+src/uno/
+│
+├── domain/               # ——— Domain Layer ———
+│   • Pure business logic, entities, value-objects, specs, domain-services
+│   ├── entities/         # Entity, AggregateRoot, ValueObject base classes + folder for sub-domains
+│   ├── services/         # Stateless domain services (implement DomainServiceProtocol)
+│   ├── specifications/   # Specification<T> classes (and/or/not)
+│   ├── events/           # DomainEventProtocol + event definitions
+│   ├── factories/        # EntityFactoryProtocol implementations
+│   └── protocols.py      # Domain-only Protocol interfaces (EntityProtocol, ValueObjectProtocol, etc.)
+│
+├── application/          # ——— Application Layer ———
+│   • Application-services, use-case orchestration, DTO-mappers, transactions
+│   ├── services/         # ApplicationService classes (use cases)
+│   ├── workflows/        # Orchestration or saga-style workflows if needed
+│   ├── dto/              # Pydantic/Payload schemas, Command/Query DTOs
+│   ├── mappers/          # Map domain models ↔ DTOs
+│   └── composition.py    # Composition root: DI container, registrations for all protocols
+│
+├── infrastructure/       # ——— Infrastructure Layer ———
+│   • Adapters for all external systems: DB, messaging, 3rd-party APIs, file I/O
+│   ├── db/               # Database providers: SqlAlchemyEngine, connection pools
+│   ├── repositories/     # Concrete Repository<T> implementations (SqlRepository, InMemory, etc.)
+│   ├── eventbus/         # AsyncEventBus, EventStore integrations
+│   ├── messaging/        # Kafka/RabbitMQ/SQS clients and handlers
+│   ├── cache/            # Cache adapters (Redis, local cache, etc.)
+│   └── config/           # ConfigProvider implementations (env, files, vaults)
+│
+└── interface/            # ——— Interface Layer ———
+    • Exposed entry-points: HTTP, CLI, UIs, GraphQL, etc.
+    ├── http/             # FastAPI/Starlette routers, controllers, error handlers
+    │   ├── endpoints/    # Endpoint definitions inheriting EndpointBase
+    │   ├── middleware/   # Logging, auth, error-handling middleware
+    │   └── schemas/      # Request/Response models (OpenAPI/Pydantic)
+    ├── cli/              # Click/typer commands
+    ├── ws/               # WebSocket gateways if any
+    └── docs/             # Static assets or UI (SwaggerUI customizations, admin UI)
+```
+
+Key points:
+
+- **Domain Layer**: Contains only pure domain logic with no dependencies on infrastructure or frameworks
+- **Application Layer**: Orchestrates domain operations, handles transactions, and maps between DTOs and domain objects
+- **Infrastructure Layer**: Implements interfaces defined in the domain and application layers
+- **Interface Layer**: Adapts external interfaces (HTTP, CLI, etc.) to the application layer
+
 ## Conclusion
 
 This implementation plan provides a roadmap to transform the UNO framework into a cohesive, modern architecture built on solid domain-driven design principles. By following this structured approach, with clear deliverables and validation criteria for each phase, we can systematically eliminate duplication and inconsistency while building a foundation that will support future growth and maintainability.
 
 The plan balances the need for thoroughness with pragmatic timelines, allowing for progressive improvement while maintaining a functioning system throughout the transition. By focusing on core abstractions first and establishing clean interfaces between components, we create the flexibility to evolve implementation details as requirements change.
-
-
-
-## Project Structure
-Below is a suggested “four‑layer” structure to replace/augment the existing layout under src/uno. You can include this in your docs (for example in src/uno/ARCHITECTURE.md under a new “Layers” section, or as its own markdown file).
-
-    src/uno/
-    │
-    ├── domain/               # ——— Domain Layer ———
-    │   • Pure business logic, entities, value‑objects, specs, domain‑services
-    │   ├── entities/         # Entity, AggregateRoot, ValueObject base classes + folder for sub‑domains
-    │   ├── services/         # Stateless domain services (implement DomainServiceProtocol)
-    │   ├── specifications/   # Specification<T> classes (and/or/not)
-    │   ├── events/           # DomainEventProtocol + event definitions
-    │   ├── factories/        # EntityFactoryProtocol implementations
-    │   └── protocols.py      # Domain‑only Protocol interfaces (EntityProtocol, ValueObjectProtocol, etc.)
-    │
-    ├── application/          # ——— Application Layer ———
-    │   • Application‑services, use‑case orchestration, DTO‐mappers, transactions
-    │   ├── services/         # ApplicationService classes (use cases)
-    │   ├── workflows/        # Orchestration or saga‑style workflows if needed
-    │   ├── dto/              # Pydantic/Payload schemas, Command/Query DTOs
-    │   ├── mappers/          # Map domain models ↔ DTOs
-    │   └── composition.py    # Composition root: DI container, registrations for all protocols
-    │
-    ├── infrastructure/       # ——— Infrastructure Layer ———
-    │   • Adapters for all external systems: DB, messaging, 3rd‑party APIs, file I/O
-    │   ├── db/               # Database providers: SqlAlchemyEngine, connection pools
-    │   ├── repositories/     # Concrete Repository<T> implementations (SqlRepository, InMemory, etc.)
-    │   ├── eventbus/         # AsyncEventBus, EventStore integrations
-    │   ├── messaging/        # Kafka/RabbitMQ/SQS clients and handlers
-    │   ├── cache/            # Cache adapters (Redis, local cache, etc.)
-    │   └── config/           # ConfigProvider implementations (env, files, vaults)
-    │
-    └── interface/            # ——— Interface Layer ———
-        • Exposed entry‑points: HTTP, CLI, UIs, GraphQL, etc.
-        ├── http/             # FastAPI/Starlette routers, controllers, error handlers
-        │   ├── endpoints/    # Endpoint definitions inheriting EndpointBase
-        │   ├── middleware/   # Logging, auth, error‑handling middleware
-        │   └── schemas/      # Request/Response models (OpenAPI/Pydantic)
-        ├── cli/              # Click/typer commands
-        ├── ws/               # WebSocket gateways if any
-        └── docs/             # Static assets or UI (SwaggerUI customizations, admin UI)
-
-Key points:
-
-• “domain” contains only pure‑DDD code—no imports from FastAPI, SQL, or DI.
-• “application” orchestrates domain calls, handles transactions (via UoW), maps to/from DTOs, and boots your DI container in composition.py.
-• “infrastructure” implements every Protocol (DBClientProtocol, RepositoryProtocol, EventBusProtocol, ConfigProtocol, etc.) against real systems.
-• “interface” wires request/response, CLI commands, or other I/O into your application layer via adapters/endpoints.

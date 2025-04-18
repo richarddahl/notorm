@@ -6,7 +6,10 @@ supporting both synchronous and asynchronous access patterns.
 """
 
 import logging
-from typing import Optional, AsyncContextManager, ContextManager, Dict, Any
+from typing import (
+    Optional, AsyncContextManager, ContextManager, Dict, Any, List,
+    Union, Type, TypeVar, cast
+)
 from contextlib import asynccontextmanager, contextmanager
 
 import asyncpg
@@ -16,16 +19,25 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.pool import NullPool
 
-from uno.database.config import ConnectionConfig
+from uno.core.protocols.database import (
+    DatabaseProviderProtocol, 
+    ConnectionPoolProtocol, 
+    DatabaseConnectionProtocol,
+    DatabaseSessionProtocol
+)
+from uno.core.validation import ValidationResult, validate_schema
+from uno.infrastructure.database.config import ConnectionConfig
 
 
-class DatabaseProvider:
+class DatabaseProvider(DatabaseProviderProtocol):
     """
     Central database connection provider for Uno.
     
     This class manages database connections and sessions for both
     synchronous and asynchronous operations. It is the single entry point
     for database access in Uno applications.
+    
+    It implements the DatabaseProviderProtocol from uno.core.protocols.database.
     """
     
     def __init__(
@@ -309,3 +321,192 @@ class DatabaseProvider:
             self._async_pool = None
         
         # The sync pool is created on-demand, so nothing to close there
+
+
+class ConnectionPool(ConnectionPoolProtocol):
+    """
+    Connection pool implementation.
+    
+    This class provides a unified interface to manage connection pools
+    for database access. It supports both asyncpg and psycopg connections.
+    """
+    
+    def __init__(
+        self, 
+        config: ConnectionConfig,
+        logger: Optional[logging.Logger] = None
+    ):
+        """
+        Initialize the connection pool.
+        
+        Args:
+            config: Database connection configuration
+            logger: Optional logger instance
+        """
+        self.config = config
+        self.logger = logger or logging.getLogger(__name__)
+        self._pool: Optional[asyncpg.Pool] = None
+    
+    async def create_pool(self) -> asyncpg.Pool:
+        """
+        Create a new connection pool.
+        
+        Returns:
+            asyncpg.Pool: The connection pool
+        """
+        self.logger.debug("Creating connection pool")
+        
+        pool = await asyncpg.create_pool(
+            host=self.config.db_host,
+            port=self.config.db_port,
+            user=self.config.db_role,
+            password=self.config.db_user_pw,
+            database=self.config.db_name,
+            min_size=2,
+            max_size=self.config.pool_size,
+            command_timeout=self.config.pool_timeout,
+            max_inactive_connection_lifetime=self.config.pool_recycle,
+            server_settings=self.config.connect_args or {}
+        )
+        
+        self._pool = pool
+        return pool
+    
+    async def acquire(self) -> asyncpg.Connection:
+        """
+        Acquire a connection from the pool.
+        
+        Returns:
+            asyncpg.Connection: A database connection
+        """
+        if self._pool is None:
+            await self.create_pool()
+        
+        assert self._pool is not None
+        return await self._pool.acquire()
+    
+    async def release(self, connection: asyncpg.Connection) -> None:
+        """
+        Release a connection back to the pool.
+        
+        Args:
+            connection: The connection to release
+        """
+        if self._pool is None:
+            self.logger.warning("Attempted to release connection to non-existent pool")
+            return
+        
+        await self._pool.release(connection)
+    
+    async def close(self) -> None:
+        """Close the pool and all connections."""
+        if self._pool is not None:
+            self.logger.debug("Closing connection pool")
+            await self._pool.close()
+            self._pool = None
+    
+    async def terminate(self) -> None:
+        """
+        Terminate the pool and all connections.
+        
+        This is a more forceful version of close() that doesn't
+        wait for connections to be released.
+        """
+        if self._pool is not None:
+            self.logger.debug("Terminating connection pool")
+            await self._pool.terminate()
+            self._pool = None
+    
+    @property
+    def min_size(self) -> int:
+        """Get the minimum number of connections in the pool."""
+        return 2  # asyncpg default if not specified
+    
+    @property
+    def max_size(self) -> int:
+        """Get the maximum number of connections in the pool."""
+        return self.config.pool_size
+    
+    @property
+    def size(self) -> int:
+        """Get the current number of connections in the pool."""
+        if self._pool is None:
+            return 0
+        
+        return self._pool.get_size()
+    
+    @property
+    def free_size(self) -> int:
+        """Get the number of free connections in the pool."""
+        if self._pool is None:
+            return 0
+        
+        return self._pool.get_size() - self._pool.get_usage()
+    
+    async def check_health(self) -> bool:
+        """
+        Check the health of the connection pool.
+        
+        Returns:
+            bool: True if the pool is healthy, False otherwise
+        """
+        try:
+            connection = await self.acquire()
+            try:
+                await connection.execute("SELECT 1")
+                return True
+            finally:
+                await self.release(connection)
+        except Exception as e:
+            self.logger.error(f"Connection pool health check failed: {str(e)}")
+            return False
+
+
+# Factory function to create a database provider
+def create_database_provider(
+    config_or_uri: Union[ConnectionConfig, str, Dict[str, Any]] = None,
+    logger: Optional[logging.Logger] = None
+) -> DatabaseProvider:
+    """
+    Create a new database provider.
+    
+    Args:
+        config_or_uri: A ConnectionConfig instance, connection URI string, or config dict
+        logger: Optional logger instance
+        
+    Returns:
+        A DatabaseProvider instance
+    """
+    if config_or_uri is None:
+        # Use default configuration
+        config = ConnectionConfig()
+    elif isinstance(config_or_uri, str):
+        # Create config from URI string
+        from urllib.parse import urlparse
+        uri = urlparse(config_or_uri)
+        
+        # Extract components from URI
+        config = ConnectionConfig(
+            db_host=uri.hostname or "localhost",
+            db_port=uri.port or 5432,
+            db_role=uri.username or "postgres",
+            db_user_pw=uri.password or "",
+            db_name=uri.path.lstrip("/") or "postgres",
+        )
+    elif isinstance(config_or_uri, dict):
+        # Create config from dictionary
+        validate = validate_schema(ConnectionConfig)
+        result = validate(config_or_uri)
+        
+        if result.is_failure:
+            # Convert validation errors to a readable message
+            error_message = "Invalid database configuration: "
+            error_details = ", ".join(f"{e.path}: {e.message}" for e in result.errors)
+            raise ValueError(f"{error_message}{error_details}")
+        
+        config = result.value
+    else:
+        # Assume it's already a ConnectionConfig
+        config = config_or_uri
+    
+    return DatabaseProvider(config, logger)

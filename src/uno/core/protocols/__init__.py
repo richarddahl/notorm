@@ -32,6 +32,16 @@ from uno.core.protocols.entity import (
     AggregateRootProtocol,
     ValueObjectProtocol
 )
+from uno.core.protocols.database import (
+    DatabaseProviderProtocol,
+    DatabaseConnectionProtocol,
+    DatabaseSessionProtocol,
+    TransactionManagerProtocol,
+    ConnectionPoolProtocol,
+    DatabaseManagerProtocol,
+    QueryExecutorProtocol,
+    UnoDatabaseProviderProtocol
+)
 
 __all__ = [
     # Repository protocols
@@ -56,4 +66,14 @@ __all__ = [
     'EntityProtocol',
     'AggregateRootProtocol',
     'ValueObjectProtocol',
+    
+    # Database protocols
+    'DatabaseProviderProtocol',
+    'DatabaseConnectionProtocol',
+    'DatabaseSessionProtocol',
+    'TransactionManagerProtocol',
+    'ConnectionPoolProtocol',
+    'DatabaseManagerProtocol',
+    'QueryExecutorProtocol',
+    'UnoDatabaseProviderProtocol',
 ]

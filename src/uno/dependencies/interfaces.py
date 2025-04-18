@@ -114,7 +114,20 @@ class UnoConfigProtocol(Protocol):
 
 
 class UnoDatabaseProviderProtocol(Protocol):
-    """Protocol for database providers."""
+    """
+    Protocol for database providers.
+    
+    Deprecated: Use DatabaseProviderProtocol from uno.core.protocols.database instead.
+    This protocol is maintained for backward compatibility only.
+    """
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoDatabaseProviderProtocol is deprecated. Use DatabaseProviderProtocol from uno.core.protocols.database instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__new__(cls)
     
     def async_session(self) -> AsyncIterator[AsyncSession]:
         """Get an async session context manager."""
@@ -142,7 +155,20 @@ class UnoDatabaseProviderProtocol(Protocol):
 
 
 class UnoDBManagerProtocol(Protocol):
-    """Protocol for database managers."""
+    """
+    Protocol for database managers.
+    
+    Deprecated: Use DatabaseManagerProtocol from uno.core.protocols.database instead.
+    This protocol is maintained for backward compatibility only.
+    """
+    
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoDBManagerProtocol is deprecated. Use DatabaseManagerProtocol from uno.core.protocols.database instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__new__(cls)
     
     def execute_ddl(self, ddl: str) -> None:
         """Execute DDL statement."""

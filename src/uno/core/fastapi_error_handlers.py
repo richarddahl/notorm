@@ -19,7 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
 from uno.core.base.error import BaseError, ErrorCode, ErrorCategory, ErrorSeverity
-from uno.core.errors.validation import ValidationError as UnoValidationError
+from uno.core.errors.result import ValidationError as ResultValidationError, ValidationResult, ErrorSeverity as ValidationSeverity
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -154,27 +154,42 @@ def setup_error_handlers(app: FastAPI, include_tracebacks: bool = False) -> None
             status_code=status.HTTP_400_BAD_REQUEST, content=response_content
         )
 
-    @app.exception_handler(UnoValidationError)
+    @app.exception_handler(ResultValidationError)
     async def uno_validation_error_handler(
-        request: Request, exc: UnoValidationError
+        request: Request, exc: ResultValidationError
     ) -> JSONResponse:
         """
-        Handle UnoValidationError exceptions.
+        Handle ValidationError exceptions from the Result pattern.
 
-        This handler converts UnoValidationError objects to JSONResponse with status code 400.
+        This handler converts ValidationError objects to JSONResponse with status code 400.
 
         Args:
             request: The FastAPI request object
-            exc: The UnoValidationError exception
+            exc: The ValidationError exception
 
         Returns:
             A JSONResponse with status code 400 and error content
         """
-        logger.warning(f"Uno validation error: {exc}", exc_info=True)
+        logger.warning(f"Validation error: {exc}", exc_info=True)
 
-        response_content = _build_error_response(
-            exc, include_traceback=include_tracebacks
-        )
+        # Create a response with validation error details
+        response_content = {
+            "error": {
+                "code": ErrorCode.VALIDATION_ERROR,
+                "message": exc.message,
+                "details": {
+                    "path": exc.path,
+                    "code": exc.code,
+                    "severity": exc.severity.name if exc.severity else ValidationSeverity.ERROR.name,
+                    "context": exc.context
+                },
+                "category": ErrorCategory.VALIDATION.name,
+                "severity": ErrorSeverity.ERROR.name,
+            }
+        }
+
+        if include_tracebacks:
+            response_content["error"]["traceback"] = "".join(traceback.format_exc())
 
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=response_content

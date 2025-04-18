@@ -38,6 +38,9 @@ nav:
       - Application Services: architecture/application_services.md
       - Authorization: architecture/authorization.md
       - Graph Database: architecture/graph_database.md
+      - Dependency Injection: architecture/dependency_injection.md
+      - New Architecture: architecture/new_architecture.md
+      - Implementation Plan: architecture/implementation_plan.md
    - Data Layer:
       - Overview: database/overview.md
       - Database Engine: database/engine.md
@@ -117,19 +120,9 @@ nav:
       - Overview: type_safety/overview.md
       - Implementation: type_safety/implementation.md
       - Migration: type_safety/migration.md
-   - Dependency Injection:
-      - Overview: dependency_injection/overview.md
-      - Examples: dependency_injection/examples.md
-      - Advanced Patterns: dependency_injection/advanced_patterns.md
-      - Migration: dependency_injection/migration.md
-   - Dependencies:
-      - Overview: dependencies/overview.md
-      - Decision Guide: dependencies/decision_guide.md
-      - Hybrid Approach: dependencies/hybrid_approach.md
-      - Migration: dependencies/migration.md
-      - Service Provider: dependencies/service_provider.md
-      - Testing: dependencies/testing.md
-      - Usage: dependencies/usage.md
+   - Core:
+      - Dependency Injection: core/dependency_injection.md
+      - Dependency Injection Migration: core/dependency_injection_migration.md
    - Protocol System:
       - Overview: protocols/overview.md
       - Database Protocols: protocols/database_protocols.md
@@ -261,8 +254,6 @@ nav:
       - Use Cases: reports/use_cases.md
    - Admin:
       - Overview: admin/overview.md
-   - Core:
-      - Dependency Injection: core/dependency_injection.md
    - Domain:
       - Guide: domain/guide.md
    - DTO:
