@@ -117,10 +117,10 @@ class MetadataFactory:
 default_metadata = MetadataFactory.create_metadata()
 
 # Type variable for generic model classes
-T = TypeVar("T", bound="UnoModel")
+T = TypeVar("T", bound="BaseModel")
 
 
-class UnoModel(AsyncAttrs, DeclarativeBase):
+class BaseModel(AsyncAttrs, DeclarativeBase):
     """
     Base class for all database models in the Uno framework.
 
@@ -161,7 +161,7 @@ class UnoModel(AsyncAttrs, DeclarativeBase):
     @classmethod
     def with_custom_metadata(cls, metadata: MetaData) -> Type[T]:
         """
-        Create a subclass of UnoModel with custom metadata.
+        Create a subclass of BaseModel with custom metadata.
 
         This is useful when models need to be mapped to different schemas.
 
@@ -169,6 +169,10 @@ class UnoModel(AsyncAttrs, DeclarativeBase):
             metadata: The custom metadata to use
 
         Returns:
-            A new UnoModel subclass with the specified metadata
+            A new BaseModel subclass with the specified metadata
         """
         return type(f"{cls.__name__}WithCustomMetadata", (cls,), {"metadata": metadata})
+
+
+# For backward compatibility only - use BaseModel directly in new code
+UnoModel = BaseModel

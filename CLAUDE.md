@@ -208,6 +208,7 @@ This project uses a Docker-first approach for all database interactions. We neve
 - `src/scripts/validate_errors.py`: Validates error handling
 - `src/scripts/validate_reports.py`: Validates report generation
 - `src/scripts/validate_workflows.py`: Validates workflow definitions
+- `src/scripts/validate_import_standards.py`: Validates adherence to import standards and identifies legacy code
 - `src/scripts/test_merge_function.py`: Tests merge function
 - `tests/integration/run_benchmarks.py`: Runs integration test benchmarks and generates reports
 - `benchmarks/dashboard/run_dashboard.sh`: Launches the benchmark visualization dashboard
@@ -225,6 +226,13 @@ This project uses a Docker-first approach for all database interactions. We neve
 - `src/scripts/attributes_cli.py`: CLI for managing attributes
 - `src/scripts/values_cli.py`: CLI for managing values
 - `src/scripts/reports_cli.py`: CLI for managing reports
+
+### Modernization Scripts
+- `src/scripts/modernize_imports.py`: Automatically updates legacy imports and class names to follow standards
+- `src/scripts/modernize_async.py`: Updates legacy async patterns to modern Python 3.12+ patterns
+- `src/scripts/modernize_datetime.py`: Updates datetime.utcnow() to use datetime.now(datetime.UTC)
+- `src/scripts/modernize_domain.py`: Modernizes domain model implementations
+- `src/scripts/modernize_result.py`: Updates code to use Result pattern for error handling
 
 ### Issues Identified
 - Some scripts have dependency issues (e.g., generate_docs.py imports missing modules)

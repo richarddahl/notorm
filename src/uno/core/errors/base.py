@@ -26,6 +26,7 @@ _error_context = contextvars.ContextVar[ErrorContext]("error_context", default={
 
 def get_error_context() -> ErrorContext:
     """
+from uno.core.base.error import BaseError
     Get the current error context.
 
     Returns:
@@ -292,7 +293,7 @@ class ErrorCode:
         return info.http_status_code if info and info.http_status_code else 500
 
 
-class UnoError(Exception):
+class BaseError(Exception):
     """
     Base class for all Uno framework errors.
 
@@ -302,7 +303,7 @@ class UnoError(Exception):
 
     def __init__(self, message: str, error_code: str, **context: Any):
         """
-        Initialize a UnoError.
+        Initialize a BaseError.
 
         Args:
             message: The error message
@@ -403,7 +404,7 @@ class UnoError(Exception):
         return f"{self.error_code}: {self.message}"
 
 
-class ValidationError(UnoError):
+class ValidationError(BaseError):
     """Error raised when validation fails."""
 
     def __init__(
@@ -448,7 +449,7 @@ class ValidationError(UnoError):
         return result
 
 
-class EntityNotFoundError(UnoError):
+class EntityNotFoundError(BaseError):
     """Error raised when an entity is not found."""
 
     def __init__(self, entity_type: str, entity_id: Any, **context: Any):
@@ -470,7 +471,7 @@ class EntityNotFoundError(UnoError):
         )
 
 
-class AuthorizationError(UnoError):
+class AuthorizationError(BaseError):
     """Error raised when user is not authorized to perform an operation."""
 
     def __init__(
@@ -504,7 +505,7 @@ class AuthorizationError(UnoError):
         )
 
 
-class DatabaseError(UnoError):
+class DatabaseError(BaseError):
     """Error raised for database-related issues."""
     
     def __init__(
@@ -534,7 +535,7 @@ class DatabaseError(UnoError):
         super().__init__(message=message, error_code=error_code, **context_dict)
 
 
-class ConfigurationError(UnoError):
+class ConfigurationError(BaseError):
     """Error raised for configuration issues."""
     
     def __init__(
@@ -560,7 +561,7 @@ class ConfigurationError(UnoError):
         )
 
 
-class DependencyError(UnoError):
+class DependencyError(BaseError):
     """Error raised for dependency resolution issues."""
     
     def __init__(

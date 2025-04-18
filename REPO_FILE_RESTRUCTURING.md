@@ -278,4 +278,34 @@ The codebase now has a consistent structure with:
 - No backward compatibility layers
 - Updated documentation
 
-By implementing these changes, we've achieved a more organized, consistent, and maintainable codebase that adheres to standard naming conventions and follows a clear structural pattern.
+## Validation and Automation Tools
+
+To support ongoing maintenance of these standards, we've implemented validation and automation tools:
+
+### Import Standards Validator
+
+The `validate_import_standards.py` script analyzes the codebase for:
+
+- Usage of legacy class names (`UnoModel`, `UnoRepository`, `UnoError`, etc.)
+- Imports from deprecated modules
+- Backward compatibility layers
+
+It generates detailed reports to guide cleanup efforts.
+
+### Automatic Import Modernizer
+
+The `modernize_imports.py` script automatically updates:
+
+- Legacy class names to their `Base`-prefixed versions
+- Deprecated import paths to the standardized ones
+- Adds missing imports as needed
+
+### Error Classes Modernizer
+
+The `modernize_error_classes.py` script specifically modernizes error handling code.
+
+For more details on these tools, see:
+- `src/scripts/README_MODERNIZATION.md`: Full documentation of the modernization tools
+- `MODERNIZATION_UPDATE.md`: Overview of the validation results and modernization process
+
+By implementing these changes and maintaining them with our validation tools, we've achieved a more organized, consistent, and maintainable codebase that adheres to standard naming conventions and follows a clear structural pattern.

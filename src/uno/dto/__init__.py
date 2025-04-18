@@ -5,8 +5,12 @@
 """
 DTO (Data Transfer Object) module for the Uno framework.
 
-This module provides the DTO (Data Transfer Object) functionality for the Uno framework,
-including base DTO classes, DTO configurations, and DTO managers.
+IMPORTANT: The primary DTO components have been moved to these standardized locations:
+- Base DTO classes: uno.core.base.dto (BaseDTO, PaginatedListDTO, etc.)
+- DTO Manager: uno.application.dto.manager (DTOManager)
+
+This module is maintained for backward compatibility and schema-specific functionality.
+For new code, please use the standardized imports above.
 
 The DTO module has been redesigned to follow domain-driven design principles,
 with clear separation of concerns into entities, repositories, services, and endpoints.

@@ -323,15 +323,19 @@ except ImportError:
         + event_store_components
     )
 
-# Display a warning to encourage using the new imports directly
+# Display a warning to encourage using the standardized imports directly
 warnings.warn(
     "For improved code organization, import domain model components directly from:\n"
-    "- uno.domain.models (Entity, ValueObject, etc.)\n"
-    "- uno.domain.protocols (EntityProtocol, ValueObjectProtocol, etc.)\n"
-    "- uno.domain.factories (EntityFactory, create_entity_factory, etc.)\n"
-    "- uno.domain.specifications (Specification, AttributeSpecification, etc.)\n"
-    "- uno.domain.specification_translators (PostgreSQLSpecificationTranslator, etc.)\n"
-    "- For repository pattern, use uno.infrastructure.repositories",
+    "- uno.domain.base.model: BaseModel (database model base class)\n"
+    "- uno.domain.entities.base_entity: Entity, AggregateRoot, ValueObject\n"
+    "- uno.domain.protocols: EntityProtocol, ValueObjectProtocol, etc.\n"
+    "- uno.domain.factories: EntityFactory, create_entity_factory, etc.\n"
+    "- uno.domain.specifications: Specification, AttributeSpecification, etc.\n"
+    "- uno.core.base.repository: BaseRepository and repository interfaces\n"
+    "- uno.core.base.service: BaseService\n"
+    "- For repository implementations, use uno.infrastructure.repositories\n"
+    "- For service implementations, use uno.infrastructure.services\n"
+    "- For DTOs, use uno.core.base.dto: BaseDTO, PaginatedListDTO, etc.",
     DeprecationWarning,
     stacklevel=2,
 )

@@ -172,3 +172,7 @@ class BaseModel(AsyncAttrs, DeclarativeBase):
             A new BaseModel subclass with the specified metadata
         """
         return type(f"{cls.__name__}WithCustomMetadata", (cls,), {"metadata": metadata})
+
+
+# For backward compatibility only - use BaseModel directly in new code
+UnoModel = BaseModel
