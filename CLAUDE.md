@@ -31,7 +31,39 @@ PROPOSALS/CODE_STANDARDIZATION_PROGRESS.md is an excellent example.
 
 ## Dependency Injection System
 
-uno implements a dependency injection system 
+uno implements a dependency injection system using the `inject` library. Key components include:
+
+- **Interfaces**: Protocol classes in `uno.dependencies.interfaces` like `ConfigProtocol` and `UnoDatabaseProviderProtocol`
+- **Container**: Configured in `uno.dependencies.container`, provides centralized dependency management
+- **Base Implementations**: `BaseRepository`, `BaseService`, and `CrudService` for common patterns
+- **FastAPI Integration**: Utilities in `uno.dependencies.fastapi` to integrate with FastAPI's dependency system
+
+### Configuration Interface
+
+For configuration management, use `ConfigProtocol` from `uno.dependencies.interfaces`:
+
+```python
+from uno.dependencies.interfaces import ConfigProtocol
+
+class MyService:
+    def __init__(self, config: ConfigProtocol):
+        self.config = config
+        
+    def get_feature_flag(self, feature_name: str) -> bool:
+        return self.config.get(f"features.{feature_name}", False)
+```
+
+The `ConfigProtocol` provides these methods:
+- `get(key, default=None)`: Get a configuration value by key
+- `all()`: Get all configuration values as a dictionary
+- `set(key, value)`: Set a configuration value (may not be supported by all implementations)
+- `load(path)`: Load configuration from a path
+- `reload()`: Reload configuration
+- `get_section(section)`: Get a section of configuration values
+
+Note: The legacy `UnoConfigProtocol` with `get_value()` method is deprecated but supported for backward compatibility. Always use `ConfigProtocol` and the `get()` method in new code.
+
+The validation script `src/scripts/validate_config_protocol.py` can help identify usage of deprecated interfaces.
 
 ## Naming Convention Rules
 
@@ -209,6 +241,7 @@ This project uses a Docker-first approach for all database interactions. We neve
 - `src/scripts/validate_reports.py`: Validates report generation
 - `src/scripts/validate_workflows.py`: Validates workflow definitions
 - `src/scripts/validate_import_standards.py`: Validates adherence to import standards and identifies legacy code
+- `src/scripts/validate_config_protocol.py`: Validates usage of configuration interfaces and identifies migration opportunities
 - `src/scripts/test_merge_function.py`: Tests merge function
 - `tests/integration/run_benchmarks.py`: Runs integration test benchmarks and generates reports
 - `benchmarks/dashboard/run_dashboard.sh`: Launches the benchmark visualization dashboard

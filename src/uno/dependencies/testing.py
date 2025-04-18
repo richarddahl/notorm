@@ -14,7 +14,8 @@ import inject
 
 from uno.dependencies.interfaces import (
     UnoServiceProtocol,
-    UnoConfigProtocol,
+    ConfigProtocol,
+    UnoConfigProtocol,  # Keep for backward compatibility
     UnoDBManagerProtocol,
 )
 from uno.domain.base.model import BaseModel
@@ -104,7 +105,7 @@ class MockConfig:
     """
 
     @classmethod
-    def create(cls, values: Optional[Dict[str, Any]] = None) -> UnoConfigProtocol:
+    def create(cls, values: Optional[Dict[str, Any]] = None) -> ConfigProtocol:
         """
         Create a mock configuration provider.
 
@@ -114,14 +115,24 @@ class MockConfig:
         Returns:
             A mock configuration provider
         """
-        config = MagicMock(spec=UnoConfigProtocol)
+        config = MagicMock(spec=ConfigProtocol)
         values = values or {}
 
-        def mock_get_value(key: str, default: Any = None) -> Any:
+        def mock_get(key: str, default: Any = None) -> Any:
             return values.get(key, default)
 
-        config.get_value.side_effect = mock_get_value
+        # Set up the new method
+        config.get.side_effect = mock_get
+        
+        # For backward compatibility
+        config.get_value.side_effect = mock_get
+        
+        # Other methods
         config.all.return_value = values
+        config.get_section.return_value = values
+        config.set = MagicMock()
+        config.load = MagicMock()
+        config.reload = MagicMock()
 
         return config
 
@@ -245,6 +256,8 @@ def configure_test_container(
     mock_session_provider = TestSessionProvider.create(mock_session)
 
     # Bind default mocks
+    container.bind(ConfigProtocol, mock_config)
+    # Also bind to the legacy interface for backward compatibility
     container.bind(UnoConfigProtocol, mock_config)
 
     # Bind to UnoDatabaseProviderProtocol instead (which is the actual interface we use)

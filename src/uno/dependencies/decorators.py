@@ -12,6 +12,8 @@ import logging
 from enum import Enum
 from typing import Dict, Any, Type, TypeVar, Optional, Union, Callable, Generic, cast, get_type_hints, List, Set
 
+from uno.dependencies.interfaces import ConfigProtocol
+
 from uno.dependencies.scoped_container import ServiceScope
 from uno.dependencies.modern_provider import get_service_provider
 
@@ -132,7 +134,7 @@ def inject(*dependencies: Type[Any]) -> Callable[[F], F]:
         A decorator function that injects dependencies
         
     Example:
-        @inject(UnoConfigProtocol, UnoDatabaseProviderProtocol)
+        @inject(ConfigProtocol, UnoDatabaseProviderProtocol)
         def my_function(config, db_provider):
             # Use config and db_provider
             pass
@@ -167,7 +169,7 @@ def inject_params() -> Callable[[F], F]:
         
     Example:
         @inject_params()
-        def my_function(config: UnoConfigProtocol, db_provider: UnoDatabaseProviderProtocol):
+        def my_function(config: ConfigProtocol, db_provider: UnoDatabaseProviderProtocol):
             # Use config and db_provider
             pass
     """
@@ -234,7 +236,7 @@ def injectable_class() -> Callable[[Type[T]], Type[T]]:
     Example:
         @injectable_class()
         class MyService:
-            def __init__(self, config: UnoConfigProtocol, db_provider: UnoDatabaseProviderProtocol):
+            def __init__(self, config: ConfigProtocol, db_provider: UnoDatabaseProviderProtocol):
                 self.config = config
                 self.db_provider = db_provider
     """
@@ -264,7 +266,7 @@ def injectable_endpoint() -> Callable[[F], F]:
         @injectable_endpoint()
         async def example_endpoint(
             request: Request,
-            config: UnoConfigProtocol,
+            config: ConfigProtocol,
             db_provider: UnoDatabaseProviderProtocol
         ):
             # Use request, config, and db_provider
