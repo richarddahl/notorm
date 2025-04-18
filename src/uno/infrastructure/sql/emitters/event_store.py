@@ -375,11 +375,11 @@ class CreateEventSnapshotsTable(SQLEmitter):
         return statements
 
 
-class CreateEventProjectionFunction(SQLEmitter):
-    """Emitter for creating event projection functions."""
+class CreateEventHandlerFunction(SQLEmitter):
+    """Emitter for creating event handler functions."""
 
     def generate_sql(self) -> List[SQLStatement]:
-        """Generate SQL statements for creating event projection functions.
+        """Generate SQL statements for creating event handler functions.
 
         Returns:
             List of SQL statements with metadata
@@ -393,19 +393,19 @@ class CreateEventProjectionFunction(SQLEmitter):
         reader_role = f"{db_name}_reader"
         writer_role = f"{db_name}_writer"
 
-        # Create the generic event projection function
-        event_projection_function_sql = f"""
+        # Create the generic event handler function
+        event_handler_function_sql = f"""
         SET ROLE {admin_role};
         
-        -- Create a function to handle event projections
-        CREATE OR REPLACE FUNCTION {schema}.project_event(
-            projection_name TEXT,
+        -- Create a function to handle events
+        CREATE OR REPLACE FUNCTION {schema}.process_event(
+            handler_name TEXT,
             event_data JSONB
         )
         RETURNS VOID AS $$
         DECLARE
-            projection_schema_name TEXT;
-            projection_table_name TEXT;
+            handler_schema_name TEXT;
+            handler_table_name TEXT;
             event_type TEXT;
             aggregate_id TEXT;
             sql_statement TEXT;
@@ -420,22 +420,22 @@ class CreateEventProjectionFunction(SQLEmitter):
                 RETURN;
             END IF;
             
-            -- Get projection schema and table names
-            projection_schema_name := split_part(projection_name, '.', 1);
-            IF projection_schema_name = projection_name THEN
-                projection_schema_name := '{schema}';
+            -- Get handler schema and table names
+            handler_schema_name := split_part(handler_name, '.', 1);
+            IF handler_schema_name = handler_name THEN
+                handler_schema_name := '{schema}';
             ELSE
-                projection_table_name := split_part(projection_name, '.', 2);
+                handler_table_name := split_part(handler_name, '.', 2);
             END IF;
             
-            -- Check if the projection exists
+            -- Check if the handler target exists
             PERFORM 1
             FROM information_schema.tables
-            WHERE table_schema = projection_schema_name
-            AND table_name = COALESCE(projection_table_name, projection_name);
+            WHERE table_schema = handler_schema_name
+            AND table_name = COALESCE(handler_table_name, handler_name);
             
             IF NOT FOUND THEN
-                RAISE NOTICE 'Projection table % does not exist', projection_name;
+                RAISE NOTICE 'Handler target % does not exist', handler_name;
                 RETURN;
             END IF;
             
@@ -443,32 +443,32 @@ class CreateEventProjectionFunction(SQLEmitter):
             -- This is a simplistic example - real implementations would have 
             -- specific handling for different event types and projections
             IF event_type LIKE '%Created' OR event_type LIKE '%Updated' THEN
-                -- For an insert or update event, call the projection's handler function if it exists
+                -- For an insert or update event, call the target's handler function if it exists
                 IF EXISTS (
                     SELECT 1 FROM pg_proc 
                     WHERE proname = 'handle_' || lower(replace(event_type, '.', '_')) 
-                    AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = projection_schema_name)
+                    AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = handler_schema_name)
                 ) THEN
                     -- Dynamic call to event handler function
-                    sql_statement := 'SELECT ' || projection_schema_name || '.handle_' || 
+                    sql_statement := 'SELECT ' || handler_schema_name || '.handle_' || 
                                     lower(replace(event_type, '.', '_')) || 
                                     '(' || quote_literal(event_data::text) || '::jsonb)';
                     EXECUTE sql_statement;
                 ELSE
-                    RAISE NOTICE 'No handler function for event type % in projection %', 
-                             event_type, projection_name;
+                    RAISE NOTICE 'No handler function for event type % in handler %', 
+                             event_type, handler_name;
                 END IF;
             END IF;
             
-            -- Record that this event has been processed for this projection
+            -- Record that this event has been processed for this handler
             INSERT INTO {schema}.event_processors 
                 (processor_id, last_processed_event_id, last_processed_timestamp, processor_type)
             VALUES 
                 (
-                    projection_name || ':' || event_type,
+                    handler_name || ':' || event_type,
                     event_data->>'event_id',
                     (event_data->>'timestamp')::TIMESTAMP,
-                    'projection'
+                    'event_handler'
                 )
             ON CONFLICT (processor_id) 
             DO UPDATE SET
@@ -479,12 +479,12 @@ class CreateEventProjectionFunction(SQLEmitter):
         $$ LANGUAGE plpgsql;
         """
 
-        # Add the projection function statement to the list
+        # Add the event handler function statement to the list
         statements.append(
             SQLStatement(
-                name="create_event_projection_function",
+                name="create_event_handler_function",
                 type=SQLStatementType.FUNCTION,
-                sql=event_projection_function_sql,
+                sql=event_handler_function_sql,
             )
         )
 

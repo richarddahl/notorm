@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 from uno.core.events import (
-    UnoEvent,
+    DomainEventProtocol as UnoEvent,
     EventPriority,
     event_handler,
     initialize_events,

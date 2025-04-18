@@ -59,7 +59,6 @@ from uno.dto.schema import (
 
 from uno.dto.dto_manager import (
     UnoDTOManager,
-    get_schema_manager,
 )
 
 from uno.dto.services import (
@@ -117,7 +116,6 @@ __all__ = [
     "PaginatedList",
     "WithMetadata",
     "UnoDTOManager",
-    "get_schema_manager",
     "LegacySchemaManagerService",
     "SchemaErrorCode",
     "SchemaNotFoundError",

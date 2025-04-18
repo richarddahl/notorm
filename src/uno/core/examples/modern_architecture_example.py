@@ -5,7 +5,7 @@ This example shows the integration of:
 1. Modern error handling with UnoError, Result pattern, and error catalog
 2. Dependency Injection with container and service lifetimes
 3. Event-driven architecture with events and handlers
-4. CQRS pattern with commands and queries
+4. Repository pattern for data access
 5. Unit of Work pattern for transaction management
 
 Note: This is a simplified version for demonstration purposes. The full implementation
@@ -140,7 +140,7 @@ async def simple_demonstration():
     # Future demonstrations would include:
     # 4. Dependency Injection
     # 5. Event-Driven Architecture
-    # 6. CQRS Pattern
+    # 6. Repository Pattern
     # 7. Unit of Work Pattern
     
     print("\nThis example demonstrates the foundation of the modern architecture.")

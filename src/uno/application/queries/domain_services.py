@@ -2,7 +2,7 @@
 from typing import Dict, List, Optional, Union, Any, Type, cast, Tuple
 import logging
 
-from uno.core.domain import UnoEntityService
+from uno.domain.service import UnoEntityService
 from uno.core.errors.result import Result, Success, Failure
 from uno.queries.entities import Query, QueryPath, QueryValue
 from uno.queries.domain_repositories import (

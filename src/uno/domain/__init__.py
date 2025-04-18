@@ -18,7 +18,7 @@ from uno.domain.models import (
     Entity,
     AggregateRoot,
 )
-from uno.domain.cqrs import CommandResult
+# Domain model components
 
 from uno.domain.protocols import (
     DomainEventProtocol,
@@ -206,7 +206,6 @@ try:
         "PrimitiveValueObject",
         "Entity",
         "AggregateRoot",
-        "CommandResult",
         "Email",
         "Money",
         "Address",
@@ -218,7 +217,6 @@ try:
         "AggregateRootProtocol",
         "SpecificationProtocol",
         "EntityFactoryProtocol",
-        "CommandResultProtocol",
         "DomainServiceProtocol",
         # Domain factories
         "EntityFactory",
@@ -344,7 +342,6 @@ except ImportError:
         "PrimitiveValueObject",
         "Entity",
         "AggregateRoot",
-        "CommandResult",
         "Email",
         "Money",
         "Address",
@@ -356,7 +353,6 @@ except ImportError:
         "AggregateRootProtocol",
         "SpecificationProtocol",
         "EntityFactoryProtocol",
-        "CommandResultProtocol",
         "DomainServiceProtocol",
         # Domain factories
         "EntityFactory",

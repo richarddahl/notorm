@@ -3,6 +3,7 @@ Enhanced query system for domain objects.
 
 This module extends the basic query system with optimizations for performance
 and flexibility, integrating with the graph database for complex queries.
+It provides efficient data retrieval capabilities for the domain model.
 """
 
 import logging
@@ -332,9 +333,9 @@ class EnhancedQueryExecutor(Generic[T, Q]):
             page = (query.offset or 0) // page_size + 1
             total_pages = (total_count + page_size - 1) // page_size
 
-        # Apply projections if needed
+        # Filter fields if needed
         if query.include or query.exclude:
-            items = self._apply_projection(items, query.include, query.exclude)
+            items = self._filter_entity_fields(items, query.include, query.exclude)
 
         return QueryResult(
             items=items,
@@ -410,9 +411,9 @@ class EnhancedQueryExecutor(Generic[T, Q]):
                     page = offset // page_size + 1
                     total_pages = (total_count + page_size - 1) // page_size
 
-                # Apply projections if needed
+                # Filter fields if needed
                 if query.include or query.exclude:
-                    items = self._apply_projection(items, query.include, query.exclude)
+                    items = self._filter_entity_fields(items, query.include, query.exclude)
 
                 return QueryResult(
                     items=items,
@@ -487,27 +488,27 @@ class EnhancedQueryExecutor(Generic[T, Q]):
         # Join all conditions with AND
         return " AND ".join(where_clauses)
 
-    def _apply_projection(
+    def _filter_entity_fields(
         self,
         items: List[T],
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> List[T]:
         """
-        Apply field projection to a list of entities.
+        Filter fields from a list of entities.
 
         Args:
-            items: List of entities to project
+            items: List of entities to filter fields from
             include: Optional list of fields to include
             exclude: Optional list of fields to exclude
 
         Returns:
-            Projected entities
+            Entities with filtered fields
         """
         if not (include or exclude):
             return items
 
-        projected_items = []
+        filtered_items = []
         for item in items:
             # Convert to dictionary
             item_dict = item.model_dump()
@@ -518,11 +519,11 @@ class EnhancedQueryExecutor(Generic[T, Q]):
             elif exclude:
                 item_dict = {k: v for k, v in item_dict.items() if k not in exclude}
 
-            # Create new entity with projected fields
-            projected_item = self.entity_type.model_validate(item_dict)
-            projected_items.append(projected_item)
+            # Create new entity with filtered fields
+            filtered_item = self.entity_type.model_validate(item_dict)
+            filtered_items.append(filtered_item)
 
-        return projected_items
+        return filtered_items
 
     def create_materialized_view(
         self, name: str, query: Q, refresh_interval: int = 3600

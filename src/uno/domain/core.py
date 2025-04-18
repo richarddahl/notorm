@@ -57,29 +57,7 @@ class DomainException(Exception):
 
 
 # Import the canonical domain event implementation
-import warnings
-from uno.core.events import UnoEvent as CanonicalUnoDomainEvent
-
-
-# Alias the canonical implementation with a deprecation warning
-class UnoEvent(CanonicalUnoDomainEvent):
-    """
-    Base class for domain events. (DEPRECATED)
-
-    This is a compatibility alias for UnoEvent from unified_events.
-    Domain events represent something significant that occurred within the domain.
-    They are immutable records of what happened, used to communicate between
-    different parts of the application.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        warnings.warn(
-            "UnoEvent in uno.domain.core is deprecated. "
-            "Please use UnoEvent from uno.core.unified_events instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return super().__new__(cls, *args, **kwargs)
+from uno.core.events import DomainEventProtocol as UnoEvent
 
 
 class ValueObject(BaseModel):

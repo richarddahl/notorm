@@ -189,29 +189,7 @@ class ValueObject(Protocol):
 
 
 # Import domain event protocol from the canonical implementation
-import warnings
 from uno.core.events import DomainEventProtocol
-
-
-# Protocol alias for backward compatibility, but with a deprecation warning
-@runtime_checkable
-class UnoEvent(DomainEventProtocol, Protocol):
-    """
-    Protocol for domain events. (DEPRECATED)
-
-    This is a compatibility alias for DomainEventProtocol from unified_events.
-    Domain events represent something that happened in the domain that
-    domain experts care about. They are immutable and named in the past tense.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        warnings.warn(
-            "UnoEvent in uno.core.protocols is deprecated. "
-            "Please use DomainEventProtocol from uno.core.unified_events instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return super().__new__(cls)
 
 
 @runtime_checkable
@@ -225,11 +203,11 @@ class AggregateRoot(Entity, Protocol):
     """
 
     @property
-    def events(self) -> list[UnoEvent]:
+    def events(self) -> list[DomainEventProtocol]:
         """Get the domain events raised by this aggregate."""
         ...
 
-    def add_event(self, event: UnoEvent) -> None:
+    def add_event(self, event: DomainEventProtocol) -> None:
         """
         Add a domain event to this aggregate.
 
@@ -238,7 +216,7 @@ class AggregateRoot(Entity, Protocol):
         """
         ...
 
-    def clear_events(self) -> list[UnoEvent]:
+    def clear_events(self) -> list[DomainEventProtocol]:
         """
         Clear all domain events from this aggregate.
 
@@ -404,89 +382,6 @@ class UnitOfWork(Protocol):
         ...
 
 
-# =============================================================================
-# Command and Query Protocols
-# =============================================================================
-
-
-class Command[T_Result](Protocol):
-    """
-    Protocol for commands in the CQRS pattern.
-
-    Commands represent intentions to change the state of the system.
-    They are named in the imperative and should be processed exactly once.
-
-    Type Parameters:
-        T_Result: The type of result after command execution
-    """
-
-    command_id: str
-    command_type: str
-
-
-class Query[T_Result](Protocol):
-    """
-    Protocol for queries in the CQRS pattern.
-
-    Queries represent intentions to retrieve data without changing state.
-    They are named as questions and can be processed multiple times.
-
-    Type Parameters:
-        T_Result: The type of result after query execution
-    """
-
-    query_id: str
-    query_type: str
-
-
-class CommandHandler[T_Command, T_Result](Protocol):
-    """
-    Protocol for command handlers in the CQRS pattern.
-
-    Command handlers process commands and produce results.
-
-    Type Parameters:
-        T_Command: The type of command this handler processes
-        T_Result: The type of result after command execution
-    """
-
-    @abstractmethod
-    async def handle(self, command: T_Command) -> T_Result:
-        """
-        Handle a command.
-
-        Args:
-            command: The command to handle
-
-        Returns:
-            Result of command execution
-        """
-        ...
-
-
-class QueryHandler[T_Query, T_Result](Protocol):
-    """
-    Protocol for query handlers in the CQRS pattern.
-
-    Query handlers process queries and produce results.
-
-    Type Parameters:
-        T_Query: The type of query this handler processes
-        T_Result: The type of result after query execution
-    """
-
-    @abstractmethod
-    async def handle(self, query: T_Query) -> T_Result:
-        """
-        Handle a query.
-
-        Args:
-            query: The query to handle
-
-        Returns:
-            Result of query execution
-        """
-        ...
 
 
 # =============================================================================

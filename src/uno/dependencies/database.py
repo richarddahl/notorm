@@ -145,7 +145,8 @@ def get_schema_manager() -> Any:
     Returns:
         The schema manager service
     """
-    return get_service(SchemaManagerProtocol)
+    from uno.dto import get_dto_manager
+    return get_dto_manager()
 
 
 def get_event_bus() -> Any:

@@ -64,7 +64,7 @@ def generate_service(
     
     # Add base class import
     if base_class == "UnoService":
-        import_statements.append("from uno.core.domain import UnoService")
+        import_statements.append("from uno.domain.service import UnoService")
     else:
         # If it's a custom base class, try to guess the import
         if "." in base_class:

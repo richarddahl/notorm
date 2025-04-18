@@ -2,8 +2,7 @@
 Query system for domain objects.
 
 This module provides a query system for retrieving domain objects with
-complex filtering and projection capabilities, following CQRS principles
-to separate read and write operations.
+complex filtering and projection capabilities.
 """
 
 import logging
@@ -26,7 +25,7 @@ class QuerySpecification(BaseModel):
     Base class for query specifications.
 
     Query specifications define the parameters for querying domain objects,
-    including filters, sorting, pagination, and projections.
+    including filters, sorting, pagination, and field selection.
     """
 
     filters: Optional[Dict[str, Any]] = None
@@ -83,17 +82,17 @@ class QueryExecutor(Generic[T, Q], ABC):
         """
         pass
 
-    def project(
+    def select_fields(
         self,
         entity: T,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
-        Project an entity to a dictionary, including or excluding specified fields.
+        Select specific fields from an entity.
 
         Args:
-            entity: The entity to project
+            entity: The entity to process
             include: Optional list of fields to include (if not specified, include all)
             exclude: Optional list of fields to exclude
 
@@ -169,15 +168,15 @@ class RepositoryQueryExecutor(QueryExecutor[T, Q]):
             page = (query.offset or 0) // page_size + 1
             total_pages = (total_count + page_size - 1) // page_size
 
-        # Project the items if includes or excludes are specified
+        # Select specific fields if includes or excludes are specified
         if query.include or query.exclude:
-            projected_items = []
+            filtered_items = []
             for item in items:
-                projected_item = self.project(item, query.include, query.exclude)
-                # Create a new entity with only the projected fields
-                projected_entity = self.entity_type.model_validate(projected_item)
-                projected_items.append(projected_entity)
-            items = projected_items
+                filtered_item = self.select_fields(item, query.include, query.exclude)
+                # Create a new entity with only the selected fields
+                filtered_entity = self.entity_type.model_validate(filtered_item)
+                filtered_items.append(filtered_entity)
+            items = filtered_items
 
         return QueryResult(
             items=items,
@@ -266,15 +265,15 @@ class FilterQueryExecutor(QueryExecutor[T, Q]):
             # Sort the items
             items.sort(key=lambda x: getattr(x, order_field), reverse=descending)
 
-        # Project the items if includes or excludes are specified
+        # Select specific fields if includes or excludes are specified
         if query.include or query.exclude:
-            projected_items = []
+            filtered_items = []
             for item in items:
-                projected_item = self.project(item, query.include, query.exclude)
-                # Create a new entity with only the projected fields
-                projected_entity = self.entity_type.model_validate(projected_item)
-                projected_items.append(projected_entity)
-            items = projected_items
+                filtered_item = self.select_fields(item, query.include, query.exclude)
+                # Create a new entity with only the selected fields
+                filtered_entity = self.entity_type.model_validate(filtered_item)
+                filtered_items.append(filtered_entity)
+            items = filtered_items
 
         return QueryResult(
             items=items,
@@ -364,22 +363,22 @@ class QueryService(Generic[T, Q]):
 
         return await self.executors[0].execute(query)
 
-    def create_projection_model(
+    def create_field_subset_model(
         self,
         name: str,
         include: Optional[List[str]] = None,
         exclude: Optional[List[str]] = None,
     ) -> Type[BaseModel]:
         """
-        Create a Pydantic model for a specific projection of the entity.
+        Create a Pydantic model with a subset of fields from the entity.
 
         Args:
-            name: The name for the projection model
+            name: The name for the field subset model
             include: Optional list of fields to include
             exclude: Optional list of fields to exclude
 
         Returns:
-            A Pydantic model class for the projection
+            A Pydantic model class with the specified fields
         """
         # Get the entity's field definitions
         entity_fields = self.entity_type.model_fields
@@ -393,4 +392,4 @@ class QueryService(Generic[T, Q]):
             fields = entity_fields
 
         # Create a new model
-        return create_model(f"{self.entity_type.__name__}{name}Projection", **fields)
+        return create_model(f"{self.entity_type.__name__}{name}Subset", **fields)

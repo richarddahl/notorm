@@ -395,7 +395,9 @@ class UnoServiceProvider:
         Returns:
             The schema manager service
         """
-        return self.get_service(SchemaManagerProtocol)
+        # Use the new DTO manager instead of the deprecated schema manager
+        from uno.dto import get_dto_manager
+        return get_dto_manager()
 
     def get_sql_emitter_factory(self) -> SQLEmitterFactoryProtocol:
         """

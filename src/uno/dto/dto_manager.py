@@ -296,28 +296,3 @@ class UnoDTOManager:
         return base_schema
 
 
-# Global schema manager instance (deprecated, using DTOManager internally)
-_schema_manager: Optional[UnoDTOManager] = None
-
-
-def get_schema_manager() -> UnoDTOManager:
-    """
-    DEPRECATED: This function is maintained for backward compatibility.
-    Please use get_dto_manager() from uno.dto instead.
-
-    Get the global schema manager instance.
-
-    This function returns the global schema manager instance, creating it
-    if it doesn't exist yet.
-
-    Returns:
-        The global schema manager instance
-    """
-    from uno.dto import get_dto_manager
-
-    global _schema_manager
-
-    if _schema_manager is None:
-        _schema_manager = UnoDTOManager()
-
-    return _schema_manager

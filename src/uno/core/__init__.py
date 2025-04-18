@@ -6,7 +6,6 @@ This module provides core functionality for the Uno framework, including:
 - Protocol validation utilities
 - Domain-driven design building blocks
 - Event-driven architecture
-- CQRS pattern
 - Unit of Work pattern
 - Result pattern for error handling
 - Configuration management
@@ -18,16 +17,10 @@ from uno.core.protocols import (
     # Domain model protocols
     Entity,
     ValueObject,
-    UnoEvent,
     AggregateRoot,
     # Repository and Unit of Work
     Repository,
     UnitOfWork,
-    # Command and Query
-    Command,
-    Query,
-    CommandHandler,
-    QueryHandler,
     # Event system
     EventHandler,
     EventBus,
@@ -57,32 +50,6 @@ from uno.core.protocols import (
     DatabaseSessionContextProtocol,
     DatabaseSessionFactoryProtocol,
     DatabaseRepository,
-)
-
-# CQRS Pattern
-from uno.core.cqrs import (
-    # Command and Query base implementations
-    BaseCommand,
-    BaseQuery,
-    # Command and Query handlers
-    BaseCommandHandler,
-    BaseQueryHandler,
-    EventSourcingCommandHandler,
-    # Command and Query buses
-    CommandBus,
-    QueryBus,
-    HandlerRegistry,
-    Mediator,
-    # Handler registration
-    command_handler,
-    query_handler,
-    # Mediator management
-    initialize_mediator,
-    reset_mediator,
-    get_mediator,
-    # API functions
-    execute_command,
-    execute_query,
 )
 
 # Error handling
@@ -151,33 +118,10 @@ __all__ = [
     # Domain model protocols
     "Entity",
     "ValueObject",
-    "UnoEvent",
     "AggregateRoot",
     # Repository and Unit of Work
     "Repository",
     "UnitOfWork",
-    # Command and Query protocols
-    "Command",
-    "Query",
-    "CommandHandler",
-    "QueryHandler",
-    # CQRS implementations
-    "BaseCommand",
-    "BaseQuery",
-    "BaseCommandHandler",
-    "BaseQueryHandler",
-    "EventSourcingCommandHandler",
-    "CommandBus",
-    "QueryBus",
-    "HandlerRegistry",
-    "Mediator",
-    "command_handler",
-    "query_handler",
-    "initialize_mediator",
-    "reset_mediator",
-    "get_mediator",
-    "execute_command",
-    "execute_query",
     # Event system
     "EventHandler",
     "EventBus",

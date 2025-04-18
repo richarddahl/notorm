@@ -144,7 +144,7 @@ def define_query_context():
     context.add_term("Filter", "A condition that restricts the results of a query")
     context.add_term("Sort", "The ordering of query results")
     context.add_term("Pagination", "The division of query results into pages")
-    context.add_term("Projection", "The selection of specific fields from query results")
+    context.add_term("Field Selection", "The selection of specific fields from query results")
     
     register_bounded_context(context)
     return context

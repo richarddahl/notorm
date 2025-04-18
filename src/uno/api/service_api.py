@@ -34,7 +34,6 @@ from uno.domain.application_services import (
     get_service_registry,
 )
 from uno.domain.models import Entity, AggregateRoot
-from uno.domain.cqrs import CommandResult, QueryResult
 from uno.core.errors.base import AuthorizationError, ValidationError
 
 
