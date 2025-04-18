@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, TypeVar, Generic, cast
 import logging
 from uuid import uuid4
 
-from uno.domain.repository import UnoDBRepository
+from uno.core.base.respository import UnoDBRepository
 from uno.core.errors.result import Result, Success, Failure
 from uno.workflows.entities import (
     WorkflowDef,

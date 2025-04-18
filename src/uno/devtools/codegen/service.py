@@ -17,7 +17,7 @@ def generate_service(
     fields: Optional[Dict[str, str]] = None,
     methods: Optional[List[Dict[str, Any]]] = None,
     dependencies: Optional[List[str]] = None,
-    base_class: str = "UnoService",
+    base_class: str = "BaseService",
     imports: Optional[List[str]] = None,
     output_dir: Optional[str] = None,
 ) -> Tuple[str, str]:
@@ -63,8 +63,8 @@ def generate_service(
     ]
 
     # Add base class import
-    if base_class == "UnoService":
-        import_statements.append("from uno.domain.service import UnoService")
+    if base_class == "BaseService":
+        import_statements.append("from uno.domain.service import BaseService")
     else:
         # If it's a custom base class, try to guess the import
         if "." in base_class:

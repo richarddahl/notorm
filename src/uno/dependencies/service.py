@@ -1,28 +1,32 @@
 """
-Base service implementation for Uno framework.
+Base service implementation for dependency injection in the Uno framework.
 
-This module provides base service implementations that can be
-injected via the DI container. Services encapsulate business logic
-and use repositories for data access.
+This module provides service implementations that integrate with the 
+dependency injection system, while following the standardized service pattern.
 """
 
-from typing import Dict, List, Optional, TypeVar, Generic, Any, Type
+from typing import Dict, List, Optional, TypeVar, Generic, Any, Type, cast
 import logging
 
 from uno.domain.base.model import BaseModel
-from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtocol
-from uno.dependencies.repository import UnoRepository
+from uno.core.base.service import BaseService as CoreBaseService, ServiceProtocol
+from uno.core.base.error import BaseError
+from uno.core.errors.result import Result, Success, Failure
+from uno.dependencies.interfaces import UnoRepositoryProtocol
 
-
+# Type variables
 ModelT = TypeVar("ModelT", bound=BaseModel)
 T = TypeVar("T")
+InputT = TypeVar("InputT")
+OutputT = TypeVar("OutputT")
 
 
-class UnoService(UnoServiceProtocol[T], Generic[ModelT, T]):
+class BaseService(CoreBaseService[Dict[str, Any], T], Generic[ModelT, T]):
     """
-    Base service implementation for Uno framework.
-
-    Services encapsulate business logic and use repositories for data access.
+    DI-compatible service implementation that extends the core BaseService.
+    
+    This service follows the standardized service pattern while providing
+    compatibility with the dependency injection system.
     """
 
     def __init__(
@@ -37,30 +41,33 @@ class UnoService(UnoServiceProtocol[T], Generic[ModelT, T]):
             repository: Repository for data access
             logger: Optional logger instance
         """
+        super().__init__(logger)
         self.repository = repository
-        self.logger = logger or logging.getLogger(__name__)
-
-    async def execute(self, *args, **kwargs) -> T:
+    
+    # Note: The execute method is inherited from CoreBaseService
+    # and automatically provides error handling
+    
+    async def _execute_internal(self, input_data: Dict[str, Any]) -> Result[T]:
         """
-        Execute the service operation.
-
-        This is a template method that should be overridden by subclasses.
-
+        Internal implementation of the service operation.
+        
+        This method must be overridden by subclasses to provide specific
+        service operation logic.
+        
         Args:
-            *args: Positional arguments
-            **kwargs: Keyword arguments
-
+            input_data: Dictionary of parameters for the operation
+            
         Returns:
-            The result of the service operation
+            Result containing the operation output
         """
-        raise NotImplementedError("Subclasses must implement execute()")
+        raise NotImplementedError("Subclasses must implement _execute_internal()")
 
 
 class CrudService(Generic[ModelT]):
     """
-    Generic CRUD service implementation.
+    Generic CRUD service implementation that uses the Result pattern.
 
-    Provides standard CRUD operations using a repository.
+    Provides standardized CRUD operations using a repository.
     """
 
     def __init__(
@@ -78,7 +85,7 @@ class CrudService(Generic[ModelT]):
         self.repository = repository
         self.logger = logger or logging.getLogger(__name__)
 
-    async def get(self, id: str) -> Optional[ModelT]:
+    async def get(self, id: str) -> Result[Optional[ModelT]]:
         """
         Get a model by ID.
 
@@ -86,16 +93,23 @@ class CrudService(Generic[ModelT]):
             id: The unique identifier of the model
 
         Returns:
-            The model instance if found, None otherwise
+            Result containing the model instance if found, None otherwise
         """
-        return await self.repository.get(id)
+        try:
+            result = await self.repository.get(id)
+            return Success(result)
+        except BaseError as e:
+            return Failure(str(e), error_code=getattr(e, "error_code", None))
+        except Exception as e:
+            self.logger.error(f"Error getting entity: {str(e)}")
+            return Failure(str(e))
 
     async def list(
         self,
         filters: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> List[ModelT]:
+    ) -> Result[List[ModelT]]:
         """
         List models with optional filtering and pagination.
 
@@ -105,11 +119,18 @@ class CrudService(Generic[ModelT]):
             offset: Number of results to skip
 
         Returns:
-            List of model instances
+            Result containing list of model instances
         """
-        return await self.repository.list(filters, limit, offset)
+        try:
+            result = await self.repository.list(filters, limit, offset)
+            return Success(result)
+        except BaseError as e:
+            return Failure(str(e), error_code=getattr(e, "error_code", None))
+        except Exception as e:
+            self.logger.error(f"Error listing entities: {str(e)}")
+            return Failure(str(e))
 
-    async def create(self, data: Dict[str, Any]) -> ModelT:
+    async def create(self, data: Dict[str, Any]) -> Result[ModelT]:
         """
         Create a new model instance.
 
@@ -117,11 +138,18 @@ class CrudService(Generic[ModelT]):
             data: Dictionary of field name to value pairs
 
         Returns:
-            The created model instance
+            Result containing the created model instance
         """
-        return await self.repository.create(data)
+        try:
+            result = await self.repository.create(data)
+            return Success(result)
+        except BaseError as e:
+            return Failure(str(e), error_code=getattr(e, "error_code", None))
+        except Exception as e:
+            self.logger.error(f"Error creating entity: {str(e)}")
+            return Failure(str(e))
 
-    async def update(self, id: str, data: Dict[str, Any]) -> Optional[ModelT]:
+    async def update(self, id: str, data: Dict[str, Any]) -> Result[Optional[ModelT]]:
         """
         Update an existing model by ID.
 
@@ -130,11 +158,18 @@ class CrudService(Generic[ModelT]):
             data: Dictionary of field name to value pairs to update
 
         Returns:
-            The updated model instance if found, None otherwise
+            Result containing the updated model instance if found, None otherwise
         """
-        return await self.repository.update(id, data)
+        try:
+            result = await self.repository.update(id, data)
+            return Success(result)
+        except BaseError as e:
+            return Failure(str(e), error_code=getattr(e, "error_code", None))
+        except Exception as e:
+            self.logger.error(f"Error updating entity: {str(e)}")
+            return Failure(str(e))
 
-    async def delete(self, id: str) -> bool:
+    async def delete(self, id: str) -> Result[bool]:
         """
         Delete a model by ID.
 
@@ -142,6 +177,62 @@ class CrudService(Generic[ModelT]):
             id: The unique identifier of the model
 
         Returns:
-            True if the model was deleted, False if it wasn't found
+            Result containing True if the model was deleted, False otherwise
         """
-        return await self.repository.delete(id)
+        try:
+            result = await self.repository.delete(id)
+            return Success(result)
+        except BaseError as e:
+            return Failure(str(e), error_code=getattr(e, "error_code", None))
+        except Exception as e:
+            self.logger.error(f"Error deleting entity: {str(e)}")
+            return Failure(str(e))
+
+
+# Legacy adapter for backward compatibility
+class LegacyServiceAdapter(ServiceProtocol[InputT, OutputT]):
+    """
+    Adapter to provide backward compatibility for legacy code.
+    
+    This adapter allows services using the new Result pattern to be used
+    with code expecting the older service interface.
+    """
+    
+    def __init__(self, service: ServiceProtocol[InputT, OutputT]):
+        """
+        Initialize the adapter.
+        
+        Args:
+            service: Modern service to adapt
+        """
+        self.service = service
+    
+    async def execute(self, *args, **kwargs) -> OutputT:
+        """
+        Execute the service operation, unwrapping Result.
+        
+        Args:
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+            
+        Returns:
+            The operation result
+            
+        Raises:
+            Exception: If the operation fails
+        """
+        # Convert args/kwargs to the expected input format for the service
+        input_data = kwargs if kwargs else args[0] if args else {}
+        
+        # Execute the service and handle the Result
+        result = await self.service.execute(input_data)
+        
+        if result.is_success():
+            return result.value
+        else:
+            # Recreate an exception from the failure
+            error_code = getattr(result, "error_code", None)
+            if error_code:
+                raise BaseError(result.error, error_code)
+            else:
+                raise Exception(result.error)

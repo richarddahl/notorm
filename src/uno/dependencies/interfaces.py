@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import asyncpg
 import psycopg
 
+import warnings
 T = TypeVar('T')
 ModelT = TypeVar('ModelT')
 SQLEmitterT = TypeVar('SQLEmitterT')
@@ -120,6 +121,19 @@ class UnoDBManagerProtocol(Protocol):
 class UnoServiceProtocol(Protocol, Generic[T]):
     """Protocol for service classes."""
     
+    .. deprecated:: 1.0.0
+        Use ServiceProtocol from uno.core.base.service instead.
+        This protocol is maintained for backward compatibility only.
+    
+    
+
+    def __new__(cls, *args, **kwargs):
+        warnings.warn(
+            "UnoServiceProtocol is deprecated. Use ServiceProtocol from uno.core.base.service instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__new__(cls)
     async def execute(self, *args, **kwargs) -> T:
         """Execute the service operation."""
         ...

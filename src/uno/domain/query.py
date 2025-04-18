@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel, create_model
 
 from uno.domain.core import Entity
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.queries.filter_manager import FilterManager
 
 

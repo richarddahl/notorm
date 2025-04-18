@@ -3,7 +3,7 @@
 from typing import Any, Dict, List, Optional, Sequence, TypeVar, cast
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.domain.repository import UnoDBRepository
+from uno.core.base.respository import UnoDBRepository
 from uno.reports.entities import (
     ReportFieldDefinition,
     ReportTemplate,

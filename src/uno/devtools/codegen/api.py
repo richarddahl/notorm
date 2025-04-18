@@ -174,7 +174,7 @@ def _generate_api_imports(
     else:
         imports.append(f"from uno.domain.base.model import {model_name}")
         imports.append(f"from uno.schema import {schema_name}")
-        imports.append(f"from uno.repository import {repository_name}")
+        imports.append(f"from uno.core.base.repository import {repository_name}")
 
     # Import session dependency
     imports.append("from uno.dependencies.database import get_db_session")

@@ -12,7 +12,7 @@ import functools
 from typing import Any, Dict, List, Optional, Set, Type, Union, Callable
 from dataclasses import dataclass, field
 
-from uno.dependencies.repository import UnoRepository
+from uno.dependencies.repository import BaseRepository
 
 
 logger = logging.getLogger("uno.debug.repository")
@@ -168,7 +168,7 @@ class RepositoryDebugger:
         """
         self.tracker = tracker or _repository_tracker
 
-    def patch_repository_class(self, repo_class: Type[UnoRepository]) -> None:
+    def patch_repository_class(self, repo_class: Type[BaseRepository]) -> None:
         """Patch a repository class to track operations.
 
         Args:
@@ -244,7 +244,7 @@ class RepositoryDebugger:
         import uno.database.repository
 
         # Get base repository class
-        base_repo = uno.database.repository.UnoRepository
+        base_repo = uno.database.repository.BaseRepository
 
         # Get all repository classes
         repo_classes = []
@@ -358,7 +358,7 @@ class RepositoryDebugger:
         return n_plus_one_patterns
 
 
-def debug_repository(repository: UnoRepository) -> None:
+def debug_repository(repository: BaseRepository) -> None:
     """Enable debugging for a specific repository instance.
 
     Args:

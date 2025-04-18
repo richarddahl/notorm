@@ -26,7 +26,7 @@ from uno.core.events import (
     get_event_bus,
 )
 from uno.domain.core import Entity, AggregateRoot, DomainException
-from uno.domain.repository import (
+from uno.core.base.respository import (
     Repository,
     InMemoryRepository,
     InMemoryAggregateRepository,

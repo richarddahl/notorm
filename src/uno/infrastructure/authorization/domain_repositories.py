@@ -8,7 +8,7 @@ authorization domain entities from the database, following the repository patter
 from typing import List, Dict, Any, Optional, Type, TypeVar, Generic, Set, cast
 import logging
 
-from uno.domain.repository import UnoDBRepository
+from uno.core.base.respository import UnoDBRepository
 from uno.core.errors.result import Result, Success, Failure
 from uno.authorization.entities import (
     User,

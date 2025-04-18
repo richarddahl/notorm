@@ -15,7 +15,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 
 from uno.domain.core import Entity
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.vector_search import (
     VectorSearchService,
     RAGService,

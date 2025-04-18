@@ -9,7 +9,7 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Optional
 
-from uno.core.async_manager import (
+from uno.core.async.task_manager import (
     get_async_manager,
     run_application,
     as_task,

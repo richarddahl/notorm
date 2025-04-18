@@ -577,7 +577,7 @@ async def create_graph_rag_service(
     Returns:
         Initialized GraphRAGService
     """
-    from uno.domain.repository import Repository
+    from uno.core.base.respository import Repository
     from uno.domain.vector_search import VectorSearchService
     from uno.ai.graph_integration.graph_navigator import create_graph_navigator
     from uno.ai.graph_integration.knowledge_constructor import (

@@ -11,7 +11,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.domain.repository import Repository, UnoDBRepository
+from uno.core.base.respository import Repository, UnoDBRepository
 from uno.database.db_manager import DBManager
 from uno.values.entities import (
     BaseValue,

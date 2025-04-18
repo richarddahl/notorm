@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, EmailStr
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.events import UnoEvent, event_handler
 from uno.domain.core import Entity, AggregateRoot
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.unit_of_work import UnitOfWork
 from uno.domain.unified_services import (
     DomainService,

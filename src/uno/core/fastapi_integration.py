@@ -12,7 +12,7 @@ import contextlib
 from fastapi import FastAPI, APIRouter, Depends, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from uno.core.async_manager import get_async_manager
+from uno.core.async.task_manager import get_async_manager
 from uno.core.resource_management import (
     get_resource_manager,
     initialize_resources,

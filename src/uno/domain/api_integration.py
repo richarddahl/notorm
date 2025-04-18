@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException, Body, Path, Query
 from pydantic import BaseModel, create_model
 
 from uno.domain.service import DomainService
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.core import Entity, AggregateRoot
 from uno.core.errors.result import Result, Success, Failure
 from uno.dependencies.scoped_container import get_service

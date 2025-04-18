@@ -26,7 +26,7 @@ def generate_repository(
     include_query_methods: bool = True,
     include_bulk_methods: bool = True,
     id_type: str = "str",
-    base_repository_class: str = "UnoRepository",
+    base_repository_class: str = "BaseRepository",
     filters: Optional[List[Dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:

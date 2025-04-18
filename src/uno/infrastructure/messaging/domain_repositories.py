@@ -5,12 +5,12 @@
 from typing import List, Optional, Protocol, Dict, Any, runtime_checkable
 from uuid import UUID
 
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.messaging.entities import Message, MessageUser
 from uno.messaging.models import MessageModel, MessageUserModel
 from uno.enums import MessageImportance
 from uno.core.errors import EntityNotFoundError
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.database.session import UnoSession, UnoAsyncSession
 
 

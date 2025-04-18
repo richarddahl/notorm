@@ -563,13 +563,13 @@ class {name.capitalize()}(BaseModel):
 
         # Create a sample repository
         repository_content = f"""from typing import List, Optional, Dict, Any, Union
-from uno.database.repository import UnoRepository
+from uno.database.repository import BaseRepository
 from uno.core.result import Result, Success, Failure
 
 from ..models.{name.lower()} import {name.capitalize()}
 
 
-class {name.capitalize()}Repository(UnoRepository):
+class {name.capitalize()}Repository(BaseRepository):
     \"\"\"
     Repository for {name.capitalize()} entities
     \"\"\"

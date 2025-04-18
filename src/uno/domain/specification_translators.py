@@ -609,7 +609,7 @@ class AsyncPostgreSQLRepository:
             model_class: The SQLAlchemy model class
             session_factory: Factory function for database sessions
         """
-        from uno.domain.repository import SQLAlchemyRepository
+        from uno.core.base.respository import SQLAlchemyRepository
         
         self.entity_type = entity_type
         self.model_class = model_class
@@ -621,7 +621,7 @@ class AsyncPostgreSQLRepository:
     
     async def _get_repository(self) -> Any:
         """Get the standardized repository instance."""
-        from uno.domain.repository import SQLAlchemyRepository
+        from uno.core.base.respository import SQLAlchemyRepository
         
         if self._repository is None:
             session = self.session_factory()

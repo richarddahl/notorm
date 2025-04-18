@@ -8,7 +8,7 @@ meta entities from the database.
 from typing import List, Dict, Any, Optional, Type, TypeVar, cast
 import logging
 
-from uno.domain.repository import UnoDBRepository
+from uno.core.base.respository import UnoDBRepository
 from uno.core.errors.result import Result, Success, Failure
 from uno.meta.entities import MetaType, MetaRecord
 

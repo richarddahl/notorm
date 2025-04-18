@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional, Type, Tuple
 from pydantic import BaseModel
 
 from uno.domain.core import Entity
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.enhanced_query import EnhancedQueryExecutor, QueryMetadata
 from uno.domain.graph_path_query import (
     GraphPathQuery,

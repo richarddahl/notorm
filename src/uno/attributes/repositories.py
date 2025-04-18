@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.database.repository import UnoBaseRepository as UnoRepository
+from uno.database.repository import UnoBaseRepository as BaseRepository
 from uno.database.db_manager import DBManager
 from uno.attributes.models import AttributeModel, AttributeTypeModel
 from uno.attributes.interfaces import (
@@ -31,7 +31,7 @@ class AttributeRepositoryError(Exception):
     pass
 
 
-class AttributeRepository(UnoRepository, AttributeRepositoryProtocol):
+class AttributeRepository(BaseRepository, AttributeRepositoryProtocol):
     """
     Repository implementation for attributes.
 
@@ -366,7 +366,7 @@ class AttributeRepository(UnoRepository, AttributeRepositoryProtocol):
             )
 
 
-class AttributeTypeRepository(UnoRepository, AttributeTypeRepositoryProtocol):
+class AttributeTypeRepository(BaseRepository, AttributeTypeRepositoryProtocol):
     """
     Repository implementation for attribute types.
 

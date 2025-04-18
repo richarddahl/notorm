@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from uno.database.session import async_session
 from uno.settings import uno_settings
 from uno.domain.core import Entity
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.sql.emitters.vector import VectorSearchEmitter
 
 T = TypeVar("T", bound=Entity)

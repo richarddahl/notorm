@@ -30,7 +30,7 @@ from sqlalchemy import text, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from uno.domain.core import Entity
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.query import QuerySpecification, QueryResult
 from uno.database.session import async_session
 from uno.domain.query_optimizer import (
@@ -413,7 +413,9 @@ class EnhancedQueryExecutor(Generic[T, Q]):
 
                 # Filter fields if needed
                 if query.include or query.exclude:
-                    items = self._filter_entity_fields(items, query.include, query.exclude)
+                    items = self._filter_entity_fields(
+                        items, query.include, query.exclude
+                    )
 
                 return QueryResult(
                     items=items,

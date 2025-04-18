@@ -16,7 +16,7 @@ from typing import List, Dict, Any
 import uvicorn
 from fastapi import FastAPI, Depends
 
-from uno.core.async_manager import get_async_manager, run_application
+from uno.core.async.task_manager import get_async_manager, run_application
 from uno.core.resource_management import (
     get_resource_manager,
     initialize_resources,

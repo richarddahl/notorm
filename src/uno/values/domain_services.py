@@ -10,7 +10,7 @@ import logging
 
 from uno.core.errors.result import Result, Success, Failure
 from uno.domain.service import DomainService, UnoEntityService
-from uno.domain.repository import Repository
+from uno.core.base.respository import Repository
 from uno.domain.core import Entity
 from uno.values.entities import (
     Attachment,
