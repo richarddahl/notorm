@@ -1,0 +1,82 @@
+name: Architecture Tests
+
+on:
+  push:
+    branches: [ main, master, major_refactor ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  protocol-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio mypy
+          pip install -e .
+      - name: Run protocol validation
+        run: |
+          python src/scripts/validate_protocol_compliance.py --report
+      - name: Run core tests
+        run: |
+          python -m pytest tests/core -v
+
+  core-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio mypy
+          pip install -e .
+      - name: Run tests
+        run: |
+          python -m pytest tests/core -v
+      - name: Check type hints
+        run: |
+          mypy src/uno/core
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio asyncpg psycopg[binary]
+          pip install -e .
+      - name: Setup test environment
+        run: |
+          python scripts/setup_test_env.sh
+      - name: Run integration tests
+        run: |
+          python -m pytest tests/integration -v

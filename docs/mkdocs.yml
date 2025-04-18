@@ -1,0 +1,108 @@
+site_name: UNO Framework Documentation
+site_description: Documentation for the UNO Framework
+site_author: UNO Team
+
+repo_url: https://github.com/username/notorm
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+      primary: indigo
+      accent: indigo
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+      primary: indigo
+      accent: indigo
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Overview: getting_started.md
+    - Installation: installation.md
+    - First Steps: first_steps.md
+  - Architecture:
+    - Overview: architecture/index.md
+    - New Architecture: architecture/new_architecture.md
+    - Repository Structure: architecture/repository_structure.md
+    - Implementation Plan: architecture/implementation_plan.md
+    - Migration Guide: architecture/migration_guide.md
+  - Core Concepts:
+    - Repositories: core/repositories.md
+    - Services: core/services.md
+    - Events: core/events.md
+    - Result Pattern: core/result.md
+  - Domain Modeling:
+    - Entities: domain/entities.md
+    - Value Objects: domain/value_objects.md
+    - Specifications: domain/specifications.md
+    - Domain Services: domain/services.md
+  - API Development:
+    - Endpoints: api/endpoints.md
+    - Request Handling: api/requests.md
+    - Response Formatting: api/responses.md
+    - Authentication: api/authentication.md
+    - Authorization: api/authorization.md
+  - Database Access:
+    - Connection Management: database/connections.md
+    - Transactions: database/transactions.md
+    - Query Building: database/queries.md
+    - Migrations: database/migrations.md
+  - Cross-Cutting Concerns:
+    - Logging: crosscutting/logging.md
+    - Monitoring: crosscutting/monitoring.md
+    - Error Handling: crosscutting/errors.md
+    - Configuration: crosscutting/configuration.md
+  - Testing:
+    - Unit Testing: testing/unit.md
+    - Integration Testing: testing/integration.md
+    - Mocking: testing/mocking.md
+  - Examples:
+    - Basic CRUD: examples/crud.md
+    - Domain Logic: examples/domain.md
+    - Event Processing: examples/events.md
+    - Complex Queries: examples/queries.md
+  - Roadmap: roadmap.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          selection:
+            docstring_style: google
+          rendering:
+            show_source: true
+  - git-revision-date-localized:
+      type: date
