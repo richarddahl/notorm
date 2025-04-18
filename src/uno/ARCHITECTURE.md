@@ -47,10 +47,74 @@ The core/base directory contains fundamental interfaces and base classes that ar
 /uno/core/base/
   ├── dto.py          # BaseDTO and related classes
   ├── repository.py   # BaseRepository and repository protocols
+  ├── service.py      # BaseService and service protocols
   └── ...
 ```
 
 These base classes provide consistent abstractions that the rest of the framework builds upon.
+
+## Domain Components
+
+### Domain Entities
+
+The domain layer contains entities, value objects, and aggregates:
+
+```
+/uno/domain/entities/
+  └── base_entity.py  # Entity, AggregateRoot, and ValueObject classes
+```
+
+```
+Entity                # Base entity class
+  └── AggregateRoot   # Aggregate root class
+
+ValueObject           # Value object class
+```
+
+### Domain Services
+
+Domain services implement business logic that doesn't fit naturally within entities:
+
+```
+/uno/domain/services/
+  └── base_domain_service.py  # DomainService and DomainServiceContext
+```
+
+```
+DomainService[InputT, T]  # Base domain service
+```
+
+### Domain Specifications
+
+Specifications encapsulate business rules and query criteria:
+
+```
+/uno/domain/specifications/
+  ├── base_specification.py     # Base Specification classes
+  ├── composite_specification.py  # Composite specification implementations
+  └── enhanced_specification.py   # Extended specification types
+```
+
+```
+Specification[T]              # Base specification
+  └── CompositeSpecification[T]  # Base for composite specifications
+      ├── AndSpecification[T]    # Logical AND of specifications
+      ├── OrSpecification[T]     # Logical OR of specifications
+      └── NotSpecification[T]    # Logical NOT of specification
+```
+
+### Domain Repositories
+
+Domain repositories provide the interface for data access:
+
+```
+/uno/domain/repositories/
+  └── repository_adapter.py  # Repository adapter pattern
+```
+
+```
+RepositoryAdapter[EntityT, ModelT, IDT]  # Adapter between domain entities and infrastructure repositories
+```
 
 ## Class Hierarchies
 

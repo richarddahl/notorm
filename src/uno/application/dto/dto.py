@@ -17,6 +17,4 @@ from uno.core.base.dto import (
     WithMetadataDTO,
 )
 
-# Provide backward compatibility type alias for UnoDTO
-# Ideally, all code should be migrated to use BaseDTO instead
-UnoDTO = BaseDTO
+# No backward compatibility needed

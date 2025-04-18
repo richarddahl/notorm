@@ -44,11 +44,7 @@ from uno.infrastructure.services.base_service import (
     DomainEventPublisherProtocol,
 )
 
-# Backward compatibility
-from uno.infrastructure.services.base_service import (
-    Service,
-    QueryService,
-)
+# No backward compatibility needed
 
 # Factory functions
 from uno.infrastructure.services.factory import (
@@ -114,9 +110,6 @@ __all__ = [
     "RepositoryQueryService",
     "EventPublisher",
     
-    # Backward compatibility
-    "Service",
-    "QueryService",
     
     # Factory functions
     "ServiceFactory",

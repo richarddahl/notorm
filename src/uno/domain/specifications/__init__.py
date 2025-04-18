@@ -4,7 +4,7 @@ Domain specifications package.
 This package contains specification pattern implementations for domain queries.
 """
 
-from uno.domain.specifications.base import (
+from uno.domain.specifications.base_specification import (
     Specification,
     AttributeSpecification,
     PredicateSpecification,
@@ -12,13 +12,13 @@ from uno.domain.specifications.base import (
     specification_factory,
 )
 
-from uno.domain.specifications.composite import (
+from uno.domain.specifications.composite_specification import (
     AndSpecification,
     OrSpecification,
     NotSpecification,
 )
 
-from uno.domain.specifications.enhanced import (
+from uno.domain.specifications.enhanced_specification import (
     RangeSpecification,
     DateRangeSpecification,
     TextMatchSpecification,

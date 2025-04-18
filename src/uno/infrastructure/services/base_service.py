@@ -537,6 +537,4 @@ class RepositoryQueryService(BaseQueryService[ParamsT, List[T]], Generic[T, ID, 
             return 0
 
 
-# For backward compatibility
-Service = BaseService
-QueryService = BaseQueryService
+# No backward compatibility needed

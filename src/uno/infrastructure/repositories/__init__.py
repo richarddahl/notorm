@@ -95,7 +95,6 @@ __all__ = [
     
     # Base implementations
     "BaseRepository",
-    "Repository",  # Alias for backward compatibility
     "SpecificationRepository",
     "BatchRepository",
     "StreamingRepository",
