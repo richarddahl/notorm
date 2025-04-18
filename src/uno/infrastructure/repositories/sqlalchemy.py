@@ -18,29 +18,24 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.expression import ColumnElement
 
-from uno.domain.core import Entity, AggregateRoot
-from uno.domain.specifications import Specification
-from uno.infrastructure.repositories.base import (
-    Repository,
+from uno.core.base.repository import (
+    BaseRepository,
     SpecificationRepository,
     BatchRepository,
     StreamingRepository,
-    EventCollectingRepository,
-    AggregateRepository,
     CompleteRepository,
-    FilterType
+    FilterType,
 )
+from uno.domain.base.model import BaseModel
 
 
 # Type variables
 T = TypeVar("T")  # Entity type
-E = TypeVar("E", bound=Entity)  # Entity type with Entity constraint
-A = TypeVar("A", bound=AggregateRoot)  # Aggregate type
 ID = TypeVar("ID")  # ID type
-M = TypeVar("M")  # Model type
+M = TypeVar("M", bound=BaseModel)  # Model type
 
 
-class SQLAlchemyRepository(Repository[T, ID], Generic[T, ID, M]):
+class SQLAlchemyRepository(BaseRepository[T, ID], Generic[T, ID, M]):
     """
     SQLAlchemy implementation of the repository pattern.
     
@@ -166,7 +161,7 @@ class SQLAlchemyRepository(Repository[T, ID], Generic[T, ID, M]):
             data = self._to_model_data(entity)
             
             # Check for optimistic concurrency control
-            if isinstance(entity, AggregateRoot):
+            if hasattr(entity, "version"):
                 # Use version for optimistic concurrency control
                 stmt = select(self.model_class).where(
                     self.model_class.id == entity_id,
@@ -414,7 +409,7 @@ class SQLAlchemySpecificationRepository(
         super().__init__(entity_type, session, model_class, logger)
         self.specification_translator = specification_translator
     
-    async def find(self, specification: Specification[T]) -> List[T]:
+    async def find(self, specification: Any) -> List[T]:
         """Find entities matching a specification."""
         try:
             # Convert specification to SQLAlchemy criteria
@@ -434,7 +429,7 @@ class SQLAlchemySpecificationRepository(
             self.logger.error(f"Error finding entities: {e}")
             raise
     
-    async def find_one(self, specification: Specification[T]) -> Optional[T]:
+    async def find_one(self, specification: Any) -> Optional[T]:
         """Find a single entity matching a specification."""
         try:
             # Convert specification to SQLAlchemy criteria
@@ -460,7 +455,7 @@ class SQLAlchemySpecificationRepository(
             self.logger.error(f"Error finding entity: {e}")
             raise
     
-    async def count(self, specification: Optional[Specification[T]] = None) -> int:
+    async def count(self, specification: Optional[Any] = None) -> int:
         """Count entities matching a specification."""
         try:
             # Build base query
@@ -481,7 +476,7 @@ class SQLAlchemySpecificationRepository(
             self.logger.error(f"Error counting entities: {e}")
             raise
     
-    def _specification_to_criteria(self, specification: Specification[T]) -> Optional[ColumnElement]:
+    def _specification_to_criteria(self, specification: Any) -> Optional[ColumnElement]:
         """
         Convert a specification to SQLAlchemy criteria.
         
@@ -588,7 +583,7 @@ class SQLAlchemyBatchRepository(
                     setattr(entity, "updated_at", datetime.now(UTC))
                 
                 # Check for optimistic concurrency
-                if isinstance(entity, AggregateRoot) and hasattr(model, "version"):
+                if hasattr(entity, "version") and hasattr(model, "version"):
                     if model.version != entity.version - 1:
                         raise ValueError(f"Concurrency conflict for entity {entity_id}")
                 
@@ -709,76 +704,10 @@ class SQLAlchemyStreamingRepository(
             raise
 
 
-class SQLAlchemyEventCollectingRepository(
-    SQLAlchemyRepository[T, ID, M],
-    EventCollectingRepository[T, ID],
-    Generic[T, ID, M]
-):
-    """
-    SQLAlchemy repository that collects domain events.
-    
-    Extends the base SQLAlchemy repository with support for event collection.
-    """
-    
-    async def add(self, entity: T) -> T:
-        """Add a new entity with event collection."""
-        # Collect events before adding
-        self._collect_events_from_entity(entity)
-        
-        # Use parent implementation for actual add
-        return await super().add(entity)
-    
-    async def update(self, entity: T) -> T:
-        """Update an entity with event collection."""
-        # Collect events before updating
-        self._collect_events_from_entity(entity)
-        
-        # Use parent implementation for actual update
-        return await super().update(entity)
-
-
-class SQLAlchemyAggregateRepository(
-    SQLAlchemyRepository[A, ID, M],
-    AggregateRepository[A, ID],
-    Generic[A, ID, M]
-):
-    """
-    SQLAlchemy repository for aggregate roots.
-    
-    Specializes the SQLAlchemy repository for working with aggregate roots,
-    including version checking and event collection.
-    """
-    
-    async def add(self, aggregate: A) -> A:
-        """Add a new aggregate with event collection."""
-        # Apply changes to ensure invariants if supported
-        if hasattr(aggregate, "apply_changes") and callable(aggregate.apply_changes):
-            aggregate.apply_changes()
-        
-        # Collect events before adding
-        self._collect_events_from_entity(aggregate)
-        
-        # Use parent implementation for actual add
-        return await super().add(aggregate)
-    
-    async def update(self, aggregate: A) -> A:
-        """Update an aggregate with event collection and version checking."""
-        # Apply changes to ensure invariants if supported
-        if hasattr(aggregate, "apply_changes") and callable(aggregate.apply_changes):
-            aggregate.apply_changes()
-        
-        # Collect events before updating
-        self._collect_events_from_entity(aggregate)
-        
-        # Use parent implementation for actual update
-        return await super().update(aggregate)
-
-
 class SQLAlchemyCompleteRepository(
     SQLAlchemySpecificationRepository[T, ID, M],
     SQLAlchemyBatchRepository[T, ID, M],
     SQLAlchemyStreamingRepository[T, ID, M],
-    SQLAlchemyEventCollectingRepository[T, ID, M],
     Generic[T, ID, M]
 ):
     """

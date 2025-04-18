@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uno.domain.core import Entity, AggregateRoot
 from uno.domain.specifications import Specification
 from uno.infrastructure.repositories.protocols import UnitOfWorkProtocol
-from uno.infrastructure.repositories.base import Repository, AggregateRepository
+from uno.core.base.repository import BaseRepository
+from uno.infrastructure.repositories.base import AggregateRepository
 from uno.infrastructure.repositories.sqlalchemy import (
     SQLAlchemyRepository,
     SQLAlchemySpecificationRepository,
@@ -102,7 +103,7 @@ class RepositoryFactory:
         include_streaming: bool = False,
         include_events: bool = False,
         is_aggregate: bool = False,
-    ) -> Repository[T, Any]:
+    ) -> BaseRepository[T, Any]:
         """
         Create a SQLAlchemy repository.
         
@@ -193,7 +194,7 @@ class RepositoryFactory:
         include_streaming: bool = False,
         include_events: bool = False,
         is_aggregate: bool = False,
-    ) -> Repository[T, Any]:
+    ) -> BaseRepository[T, Any]:
         """
         Create an in-memory repository.
         
@@ -262,7 +263,7 @@ class RepositoryFactory:
         include_batch: bool = False,
         include_streaming: bool = False,
         include_events: bool = False,
-    ) -> Repository[T, Any]:
+    ) -> BaseRepository[T, Any]:
         """
         Create a repository based on the provided options.
         

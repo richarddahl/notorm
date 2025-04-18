@@ -13,7 +13,7 @@ from uno.core.di import inject_dependency
 from uno.dependencies.database import get_async_session
 from uno.dependencies.modern_provider import register_provider
 from uno.domain.core import Entity, AggregateRoot
-from uno.infrastructure.repositories.base import Repository
+from uno.core.base.repository import BaseRepository
 from uno.infrastructure.repositories.factory import (
     initialize_factories,
     create_repository,
@@ -35,7 +35,7 @@ ID = TypeVar("ID")  # ID type
 
 
 # Repository cache to avoid creating multiple repositories for the same entity type
-_REPOSITORY_CACHE: Dict[Type, Repository] = {}
+_REPOSITORY_CACHE: Dict[Type, BaseRepository] = {}
 
 
 def init_repository_system(
@@ -68,7 +68,7 @@ async def get_repository(
     include_streaming: bool = False,
     include_events: bool = False,
     use_cache: bool = True,
-) -> Repository[T, Any]:
+) -> BaseRepository[T, Any]:
     """
     Get a repository for the specified entity type.
     
@@ -97,7 +97,7 @@ async def get_repository(
     )
     
     if use_cache and cache_key in _REPOSITORY_CACHE:
-        return cast(Repository[T, Any], _REPOSITORY_CACHE[cache_key])
+        return cast(BaseRepository[T, Any], _REPOSITORY_CACHE[cache_key])
     
     # Get session if not provided
     if session is None:

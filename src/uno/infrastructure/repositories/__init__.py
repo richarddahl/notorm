@@ -16,25 +16,41 @@ The implementation is designed to be flexible and extensible, with support for
 different persistence mechanisms (currently SQLAlchemy and in-memory).
 """
 
-from uno.infrastructure.repositories.protocols import (
+# Import from core base
+from uno.core.base.repository import (
+    BaseRepository,
+    SpecificationRepository,
+    BatchRepository,
+    StreamingRepository,
+    CompleteRepository,
     RepositoryProtocol,
     SpecificationRepositoryProtocol,
     BatchRepositoryProtocol,
     StreamingRepositoryProtocol,
+    FilterProtocol,
+    FilterType,
+)
+
+# Re-export protocols from infrastructure for backward compatibility
+from uno.infrastructure.repositories.protocols import (
     EventCollectingRepositoryProtocol,
     AggregateRootRepositoryProtocol,
     UnitOfWorkProtocol,
     RepositoryFactoryProtocol,
 )
 
+# For backward compatibility 
 from uno.infrastructure.repositories.base import (
-    Repository,
-    SpecificationRepository,
-    BatchRepository,
-    StreamingRepository,
     EventCollectingRepository,
     AggregateRepository,
-    CompleteRepository,
+)
+
+from uno.infrastructure.repositories.sqlalchemy import (
+    SQLAlchemyRepository,
+    SQLAlchemySpecificationRepository,
+    SQLAlchemyBatchRepository,
+    SQLAlchemyStreamingRepository,
+    SQLAlchemyCompleteRepository,
 )
 
 from uno.infrastructure.repositories.unit_of_work import (
@@ -59,26 +75,41 @@ from uno.infrastructure.repositories.di import (
     clear_repository_cache,
 )
 
+# Backward compatibility aliases
+Repository = BaseRepository
+
 # Export everything for convenient imports
 __all__ = [
-    # Protocols
+    # Core base protocols
     "RepositoryProtocol",
     "SpecificationRepositoryProtocol",
     "BatchRepositoryProtocol",
     "StreamingRepositoryProtocol",
+    "FilterProtocol",
+    "FilterType",
+    
+    # Infrastructure-specific protocols
     "EventCollectingRepositoryProtocol",
     "AggregateRootRepositoryProtocol",
     "UnitOfWorkProtocol",
     "RepositoryFactoryProtocol",
     
     # Base implementations
-    "Repository",
+    "BaseRepository",
+    "Repository",  # Alias for backward compatibility
     "SpecificationRepository",
     "BatchRepository",
     "StreamingRepository",
     "EventCollectingRepository",
     "AggregateRepository",
     "CompleteRepository",
+    
+    # SQLAlchemy implementations
+    "SQLAlchemyRepository",
+    "SQLAlchemySpecificationRepository",
+    "SQLAlchemyBatchRepository", 
+    "SQLAlchemyStreamingRepository",
+    "SQLAlchemyCompleteRepository",
     
     # Unit of Work
     "UnitOfWork",
