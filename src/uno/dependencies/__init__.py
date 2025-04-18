@@ -10,7 +10,6 @@ with proper scope handling and automatic discovery of injectable services.
 
 # Interfaces
 from uno.dependencies.interfaces import (
-    UnoRepositoryProtocol, 
     UnoServiceProtocol, 
     UnoConfigProtocol,
     UnoDatabaseProviderProtocol,
@@ -18,13 +17,11 @@ from uno.dependencies.interfaces import (
     SQLEmitterFactoryProtocol,
     SQLExecutionProtocol,
     SchemaManagerProtocol,
-    DomainRepositoryProtocol,
     DomainServiceProtocol,
     EventBusProtocol,
 )
 
 # Implementations
-from uno.dependencies.repository import UnoRepository
 from uno.dependencies.service import UnoService, CrudService
 
 # Modern FastAPI integration is imported separately
@@ -145,7 +142,6 @@ __all__ = [
     # Modern DI functionality uses decorator-based approach
     
     # Interfaces
-    "UnoRepositoryProtocol",
     "UnoServiceProtocol",
     "UnoConfigProtocol",
     "UnoDatabaseProviderProtocol",
@@ -153,7 +149,6 @@ __all__ = [
     "SQLEmitterFactoryProtocol",
     "SQLExecutionProtocol",
     "SchemaManagerProtocol",
-    "DomainRepositoryProtocol",
     "DomainServiceProtocol",
     "EventBusProtocol",
     
@@ -165,7 +160,6 @@ __all__ = [
     "VectorConfigServiceProtocol",
     
     # Implementations
-    "UnoRepository",
     "UnoService",
     "CrudService",
     
@@ -198,7 +192,6 @@ __all__ = [
 if os.environ.get('ENV') == 'test':
     __all__ += [
         "TestingContainer",
-        "MockRepository",
         "MockConfig",
         "MockService",
         "TestSession",

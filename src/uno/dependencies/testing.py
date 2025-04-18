@@ -13,7 +13,6 @@ from typing import AsyncIterator, cast
 import inject
 
 from uno.dependencies.interfaces import (
-    UnoRepositoryProtocol,
     UnoServiceProtocol,
     UnoConfigProtocol,
     UnoDBManagerProtocol
@@ -90,65 +89,8 @@ class TestingContainer:
             inject.configure(lambda binder: None)
 
 
-class MockRepository(Generic[ModelT]):
-    """
-    Factory for creating mock repositories.
-    
-    This class provides factory methods for creating mock repositories
-    with pre-configured return values.
-    """
-    
-    @classmethod
-    def create(cls, model_class: Optional[Type[ModelT]] = None) -> UnoRepositoryProtocol:
-        """
-        Create a basic mock repository.
-        
-        Args:
-            model_class: Optional model class the repository works with
-            
-        Returns:
-            A mock repository
-        """
-        repo = MagicMock(spec=UnoRepositoryProtocol)
-        
-        # Mock async methods with AsyncMock
-        repo.get = AsyncMock()
-        repo.list = AsyncMock(return_value=[])
-        repo.create = AsyncMock()
-        repo.update = AsyncMock()
-        repo.delete = AsyncMock(return_value=True)
-        
-        return repo
-    
-    @classmethod
-    def with_items(
-        cls, 
-        items: List[ModelT], 
-        model_class: Optional[Type[ModelT]] = None
-    ) -> UnoRepositoryProtocol:
-        """
-        Create a mock repository with predefined items.
-        
-        Args:
-            items: The items to return from list()
-            model_class: Optional model class the repository works with
-            
-        Returns:
-            A mock repository containing the specified items
-        """
-        repo = cls.create(model_class)
-        repo.list.return_value = items
-        
-        # Make get() return matching items by ID
-        async def mock_get(id: str) -> Optional[ModelT]:
-            for item in items:
-                if getattr(item, 'id', None) == id:
-                    return item
-            return None
-        
-        repo.get.side_effect = mock_get
-        
-        return repo
+# Repository pattern has been moved to uno.infrastructure.repositories
+# Use the infrastructure.repositories.in_memory for testing repositories
 
 
 class MockConfig:
@@ -294,13 +236,11 @@ def configure_test_container(config: Optional[Dict[Type, Any]] = None) -> Testin
     container = TestingContainer()
     
     # Create default mocks
-    mock_repo = MockRepository.create()
     mock_config = MockConfig.create()
     mock_session = TestSession.create()
     mock_session_provider = TestSessionProvider.create(mock_session)
     
     # Bind default mocks
-    container.bind(UnoRepositoryProtocol, mock_repo)
     container.bind(UnoConfigProtocol, mock_config)
     
     # Bind to UnoDatabaseProviderProtocol instead (which is the actual interface we use)

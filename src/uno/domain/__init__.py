@@ -62,46 +62,8 @@ from uno.domain.specification_translators import (
     AsyncPostgreSQLRepository,
 )
 
-# SQLAlchemy repositories
-from uno.domain.sqlalchemy_repositories import (
-    SQLAlchemyRepository,
-    SQLAlchemyUnitOfWork,
-)
-
-# Repository protocols
-from uno.domain.repository_protocols import (
-    ReadRepositoryProtocol,
-    WriteRepositoryProtocol,
-    RepositoryProtocol,
-    BatchRepositoryProtocol,
-    UnitOfWorkProtocol,
-    AsyncReadRepositoryProtocol,
-    AsyncWriteRepositoryProtocol,
-    AsyncRepositoryProtocol,
-    AsyncBatchRepositoryProtocol,
-    AsyncUnitOfWorkProtocol,
-)
-
-# Repository results
-from uno.domain.repository_results import (
-    RepositoryResult,
-    GetResult,
-    FindResult,
-    FindOneResult,
-    CountResult,
-    ExistsResult,
-    AddResult,
-    UpdateResult,
-    RemoveResult,
-)
-
-# Base repositories
-from uno.domain.repositories import (
-    Repository,
-    InMemoryRepository,
-    UnitOfWork,
-    InMemoryUnitOfWork,
-)
+# Repository pattern is now imported from infrastructure module
+# See uno.infrastructure.repositories for the unified repository implementation
 
 # Include compatibility imports for backward compatibility
 # These will be removed in a future version
@@ -242,35 +204,7 @@ try:
         "PostgreSQLSpecificationTranslator",
         "PostgreSQLRepository",
         "AsyncPostgreSQLRepository",
-        # SQLAlchemy repositories
-        "SQLAlchemyRepository",
-        "SQLAlchemyUnitOfWork",
-        # Repository protocols
-        "ReadRepositoryProtocol",
-        "WriteRepositoryProtocol",
-        "RepositoryProtocol",
-        "BatchRepositoryProtocol",
-        "UnitOfWorkProtocol",
-        "AsyncReadRepositoryProtocol",
-        "AsyncWriteRepositoryProtocol",
-        "AsyncRepositoryProtocol",
-        "AsyncBatchRepositoryProtocol",
-        "AsyncUnitOfWorkProtocol",
-        # Repository results
-        "RepositoryResult",
-        "GetResult",
-        "FindResult",
-        "FindOneResult",
-        "CountResult",
-        "ExistsResult",
-        "AddResult",
-        "UpdateResult",
-        "RemoveResult",
-        # Base repositories
-        "Repository",
-        "InMemoryRepository",
-        "UnitOfWork",
-        "InMemoryUnitOfWork",
+        # Repository pattern now in infrastructure module
     ]
 
     # Legacy for backward compatibility (will be removed)
@@ -376,35 +310,7 @@ except ImportError:
         "PostgreSQLSpecificationTranslator",
         "PostgreSQLRepository",
         "AsyncPostgreSQLRepository",
-        # SQLAlchemy repositories
-        "SQLAlchemyRepository",
-        "SQLAlchemyUnitOfWork",
-        # Repository protocols
-        "ReadRepositoryProtocol",
-        "WriteRepositoryProtocol",
-        "RepositoryProtocol",
-        "BatchRepositoryProtocol",
-        "UnitOfWorkProtocol",
-        "AsyncReadRepositoryProtocol",
-        "AsyncWriteRepositoryProtocol",
-        "AsyncRepositoryProtocol",
-        "AsyncBatchRepositoryProtocol",
-        "AsyncUnitOfWorkProtocol",
-        # Repository results
-        "RepositoryResult",
-        "GetResult",
-        "FindResult",
-        "FindOneResult",
-        "CountResult",
-        "ExistsResult",
-        "AddResult",
-        "UpdateResult",
-        "RemoveResult",
-        # Base repositories
-        "Repository",
-        "InMemoryRepository",
-        "UnitOfWork",
-        "InMemoryUnitOfWork",
+        # Repository pattern now in infrastructure module
     ]
 
     # Legacy for backward compatibility (will be removed)
@@ -430,9 +336,7 @@ warnings.warn(
     "- uno.domain.factories (EntityFactory, create_entity_factory, etc.)\n"
     "- uno.domain.specifications (Specification, AttributeSpecification, etc.)\n"
     "- uno.domain.specification_translators (PostgreSQLSpecificationTranslator, etc.)\n"
-    "- uno.domain.sqlalchemy_repositories (SQLAlchemyRepository, SQLAlchemyUnitOfWork, etc.)\n"
-    "- uno.domain.repository_protocols (RepositoryProtocol, etc.)\n"
-    "- uno.domain.repository_results (RepositoryResult, GetResult, etc.)",
+    "- For repository pattern, use uno.infrastructure.repositories",
     DeprecationWarning,
     stacklevel=2,
 )

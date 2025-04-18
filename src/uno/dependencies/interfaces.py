@@ -33,36 +33,8 @@ class UnoConfigProtocol(Protocol):
         ...
 
 
-class UnoRepositoryProtocol(Protocol, Generic[ModelT]):
-    """Protocol for data repositories."""
-    
-    async def get(self, id: str) -> Optional[ModelT]:
-        """Get a model by ID."""
-        ...
-    
-    async def list(self, 
-                  filters: Optional[Dict[str, Any]] = None, 
-                  order_by: Optional[List[str]] = None,
-                  limit: Optional[int] = None,
-                  offset: Optional[int] = None) -> List[ModelT]:
-        """List models with optional filtering, ordering, and pagination."""
-        ...
-    
-    async def create(self, data: Dict[str, Any]) -> ModelT:
-        """Create a new model instance."""
-        ...
-    
-    async def update(self, id: str, data: Dict[str, Any]) -> Optional[ModelT]:
-        """Update an existing model by ID."""
-        ...
-    
-    async def delete(self, id: str) -> bool:
-        """Delete a model by ID."""
-        ...
-    
-    async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
-        """Count models matching the given filters."""
-        ...
+# UnoRepositoryProtocol has been replaced by the unified repository pattern
+# in uno.infrastructure.repositories - see RepositoryProtocol and related protocols
 
 
 class UnoDatabaseProviderProtocol(Protocol):
@@ -217,46 +189,8 @@ class SchemaManagerProtocol(Protocol):
         ...
 
 
-class DomainRepositoryProtocol(Protocol, Generic[EntityT]):
-    """Protocol for domain repositories."""
-    
-    async def get(self, id: str) -> Optional[EntityT]:
-        """Get an entity by ID."""
-        ...
-    
-    async def list(
-        self, 
-        filters: Optional[Dict[str, Any]] = None, 
-        order_by: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None
-    ) -> List[EntityT]:
-        """List entities with filtering, ordering, and pagination."""
-        ...
-    
-    async def add(self, entity: EntityT) -> EntityT:
-        """Add a new entity."""
-        ...
-    
-    async def update(self, entity: EntityT) -> EntityT:
-        """Update an existing entity."""
-        ...
-    
-    async def remove(self, entity: EntityT) -> None:
-        """Remove an entity."""
-        ...
-    
-    async def remove_by_id(self, id: str) -> bool:
-        """Remove an entity by ID."""
-        ...
-    
-    async def exists(self, id: str) -> bool:
-        """Check if an entity exists."""
-        ...
-    
-    async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
-        """Count entities matching filters."""
-        ...
+# DomainRepositoryProtocol has been replaced by the unified repository pattern
+# in uno.infrastructure.repositories - see RepositoryProtocol and related protocols
 
 
 class DomainServiceProtocol(Protocol, Generic[EntityT]):
