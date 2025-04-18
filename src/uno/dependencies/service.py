@@ -1,7 +1,7 @@
 """
 Base service implementation for dependency injection in the Uno framework.
 
-This module provides service implementations that integrate with the 
+This module provides service implementations that integrate with the
 dependency injection system, while following the standardized service pattern.
 """
 
@@ -24,7 +24,7 @@ OutputT = TypeVar("OutputT")
 class BaseService(CoreBaseService[Dict[str, Any], T], Generic[ModelT, T]):
     """
     DI-compatible service implementation that extends the core BaseService.
-    
+
     This service follows the standardized service pattern while providing
     compatibility with the dependency injection system.
     """
@@ -43,20 +43,20 @@ class BaseService(CoreBaseService[Dict[str, Any], T], Generic[ModelT, T]):
         """
         super().__init__(logger)
         self.repository = repository
-    
+
     # Note: The execute method is inherited from CoreBaseService
     # and automatically provides error handling
-    
+
     async def _execute_internal(self, input_data: Dict[str, Any]) -> Result[T]:
         """
         Internal implementation of the service operation.
-        
+
         This method must be overridden by subclasses to provide specific
         service operation logic.
-        
+
         Args:
             input_data: Dictionary of parameters for the operation
-            
+
         Returns:
             Result containing the operation output
         """
@@ -187,52 +187,3 @@ class CrudService(Generic[ModelT]):
         except Exception as e:
             self.logger.error(f"Error deleting entity: {str(e)}")
             return Failure(str(e))
-
-
-# Legacy adapter for backward compatibility
-class LegacyServiceAdapter(ServiceProtocol[InputT, OutputT]):
-    """
-    Adapter to provide backward compatibility for legacy code.
-    
-    This adapter allows services using the new Result pattern to be used
-    with code expecting the older service interface.
-    """
-    
-    def __init__(self, service: ServiceProtocol[InputT, OutputT]):
-        """
-        Initialize the adapter.
-        
-        Args:
-            service: Modern service to adapt
-        """
-        self.service = service
-    
-    async def execute(self, *args, **kwargs) -> OutputT:
-        """
-        Execute the service operation, unwrapping Result.
-        
-        Args:
-            *args: Positional arguments
-            **kwargs: Keyword arguments
-            
-        Returns:
-            The operation result
-            
-        Raises:
-            Exception: If the operation fails
-        """
-        # Convert args/kwargs to the expected input format for the service
-        input_data = kwargs if kwargs else args[0] if args else {}
-        
-        # Execute the service and handle the Result
-        result = await self.service.execute(input_data)
-        
-        if result.is_success():
-            return result.value
-        else:
-            # Recreate an exception from the failure
-            error_code = getattr(result, "error_code", None)
-            if error_code:
-                raise BaseError(result.error, error_code)
-            else:
-                raise Exception(result.error)
