@@ -12,17 +12,13 @@ import warnings
 
 # Core domain models, protocols, and factories
 from uno.domain.models import (
-    UnoDomainEvent,
+    UnoEvent,
     ValueObject,
     PrimitiveValueObject,
     Entity,
     AggregateRoot,
-    CommandResult,
-    # Common value objects
-    Email,
-    Money,
-    Address,
 )
+from uno.domain.cqrs import CommandResult
 
 from uno.domain.protocols import (
     DomainEventProtocol,
@@ -116,7 +112,7 @@ from uno.domain.service import DomainService
 
 # Event sourcing and event store
 try:
-    from uno.core.unified_events import (
+    from uno.core.events import (
         EventHandler,
         EventBus,
         EventStore,
@@ -205,7 +201,7 @@ try:
     # New domain model components
     domain_model_components = [
         # Core domain models
-        "UnoDomainEvent",
+        "UnoEvent",
         "ValueObject",
         "PrimitiveValueObject",
         "Entity",
@@ -343,7 +339,7 @@ except ImportError:
     # New domain model components
     domain_model_components = [
         # Core domain models
-        "UnoDomainEvent",
+        "UnoEvent",
         "ValueObject",
         "PrimitiveValueObject",
         "Entity",

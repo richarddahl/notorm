@@ -45,8 +45,8 @@ LEGACY_PATTERNS = [
     ),
     # Legacy domain event usage
     (
-        r"class\s+(\w+)\s*\(\s*core\.UnoDomainEvent\s*\)",
-        r"class \1(models.UnoDomainEvent)",
+        r"class\s+(\w+)\s*\(\s*core\.UnoEvent\s*\)",
+        r"class \1(models.UnoEvent)",
     ),
     # Direct class usage (already imported)
     (r"class\s+(\w+)\s*\(\s*Entity\s*(\[\s*.*\s*\])?\s*\)", r"class \1(Entity\2)"),

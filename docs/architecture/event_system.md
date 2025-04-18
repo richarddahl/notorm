@@ -11,25 +11,29 @@ The event system is designed to facilitate loose coupling between components thr
 - Priority-based event execution
 - Topic-based event routing
 - Event persistence through event stores
+- Event sourcing for domain aggregates
+- Integration with PostgreSQL and Redis
 - Comprehensive error handling
 
 ## Core Components
 
-### DomainEvent
+### Event
 
-`DomainEvent` is the base class for all events in the system. It's a Pydantic model with frozen=True, meaning instances are immutable once created.
+`Event` is the base class for all events in the system. It's a Pydantic model with frozen=True, meaning instances are immutable once created.
 
 ```python
-class UserCreatedEvent(DomainEvent):
-    user_id: str
-    email: str
+from uno.events import Event
+
+class UserCreated(Event):
     username: str
+    email: str
+    roles: list[str] = []
 ```
 
 Key features:
 
-- Automatically assigned `event_id` and `timestamp`
-- `event_type` derived from the class name (snake_case)
+- Automatically assigned `id` and `timestamp`
+- `type` derived from the class name (snake_case)
 - Optional fields for `aggregate_id`, `aggregate_type`, `correlation_id`, `causation_id`, and `topic`
 - Serialization/deserialization methods: `to_dict()`, `from_dict()`, `to_json()`, `from_json()`
 - `with_metadata()` method to create a new instance with updated metadata
@@ -39,11 +43,13 @@ Key features:
 `EventBus` is responsible for routing events to their handlers:
 
 ```python
-# Get the global event bus
-event_bus = get_event_bus()
+from uno.events import EventBus, EventPriority
+
+# Create an event bus
+event_bus = EventBus()
 
 # Subscribe a handler to events
-event_bus.subscribe(UserCreatedEvent, handler, priority=EventPriority.NORMAL)
+event_bus.subscribe(UserCreated, handler, priority=EventPriority.NORMAL)
 
 # Publish an event
 await event_bus.publish(event)
@@ -62,11 +68,10 @@ Key features:
 `EventHandler` is a base class for creating class-based event handlers:
 
 ```python
-class UserEventHandler(EventHandler[UserCreatedEvent]):
-    def __init__(self):
-        super().__init__(UserCreatedEvent)
-        
-    async def handle(self, event: UserCreatedEvent) -> None:
+from uno.events import EventHandler
+
+class UserEventHandler(EventHandler[UserCreated]):
+    async def handle(self, event: UserCreated) -> None:
         # Handle the event...
 ```
 
@@ -75,29 +80,33 @@ class UserEventHandler(EventHandler[UserCreatedEvent]):
 `EventStore` is an abstract base class for event persistence implementations:
 
 ```python
-class MyEventStore(EventStore[DomainEvent]):
-    async def save_event(self, event: DomainEvent) -> None:
+from uno.events.core.store import EventStore
+
+class MyEventStore(EventStore[Event]):
+    async def save_event(self, event: Event) -> None:
         # Save the event...
         
     async def get_events_by_aggregate_id(
         self, aggregate_id: str, event_types: Optional[List[str]] = None
-    ) -> List[DomainEvent]:
+    ) -> List[Event]:
         # Retrieve events...
         
     async def get_events_by_type(
         self, event_type: str, since: Optional[datetime] = None
-    ) -> List[DomainEvent]:
+    ) -> List[Event]:
         # Retrieve events...
 ```
 
-The framework includes an `InMemoryEventStore` implementation for testing and small applications.
+The framework includes `InMemoryEventStore` and `PostgresEventStore` implementations.
 
 ### EventPublisher
 
 `EventPublisher` provides a convenient interface for publishing events:
 
 ```python
-publisher = get_event_publisher()
+from uno.events.core.publisher import EventPublisher
+
+publisher = EventPublisher(event_bus, event_store)
 
 # Publish a single event
 await publisher.publish(event)
@@ -115,51 +124,52 @@ await publisher.publish_collected()
 ### Class-based Handlers
 
 ```python
-class UserEventHandler(EventHandler[UserCreatedEvent]):
-    def __init__(self):
-        super().__init__(UserCreatedEvent)
-        
-    async def handle(self, event: UserCreatedEvent) -> None:
+from uno.events import EventHandler
+
+class UserEventHandler(EventHandler[UserCreated]):
+    async def handle(self, event: UserCreated) -> None:
         # Handle the event...
 ```
 
 ### Function-based Handlers
 
 ```python
-@event_handler(UserCreatedEvent)
-async def handle_user_created(event: UserCreatedEvent) -> None:
+from uno.events import event_handler
+
+@event_handler(UserCreated)
+async def handle_user_created(event: UserCreated) -> None:
     # Handle the event...
 ```
 
 ### Event Subscribers
 
 ```python
+from uno.events import EventSubscriber, event_handler, EventPriority
+
 class AnalyticsSubscriber(EventSubscriber):
-    def __init__(self, event_bus: EventBus):
-        self.events = []
-        super().__init__(event_bus)
-    
-    @event_handler(UserCreatedEvent)
-    async def track_user_created(self, event: UserCreatedEvent) -> None:
+    @event_handler(UserCreated)
+    async def on_user_created(self, event: UserCreated) -> None:
         # Handle user created event...
     
-    @event_handler(OrderPlacedEvent, priority=EventPriority.HIGH)
-    async def track_order_placed(self, event: OrderPlacedEvent) -> None:
+    @event_handler(OrderPlaced, priority=EventPriority.HIGH)
+    async def on_order_placed(self, event: OrderPlaced) -> None:
         # Handle order placed event with high priority...
 ```
 
 ### Priority-based Handling
 
 ```python
-@event_handler(UserCreatedEvent, priority=EventPriority.HIGH)
+from uno.events import event_handler, EventPriority
+
+@event_handler(UserCreated, priority=EventPriority.HIGH)
 async def high_priority_handler(event):
     # Executes before normal priority handlers...
 
-@event_handler(UserCreatedEvent)  # Default is NORMAL priority
+@event_handler(UserCreated)  # Default is NORMAL priority
 async def normal_priority_handler(event):
     # Executes after HIGH priority handlers...
 
-@event_handler(UserCreatedEvent, priority=EventPriority.LOW)
+@event_handler(UserCreated, priority=EventPriority.LOW)
 async def low_priority_handler(event):
     # Executes after normal priority handlers...
 ```
@@ -167,7 +177,9 @@ async def low_priority_handler(event):
 ### Topic-based Routing
 
 ```python
-@event_handler(OrderEvent, topic_pattern="orders.*.created")
+from uno.events import event_handler
+
+@event_handler(OrderEvent, topic="orders.*.created")
 async def handle_new_orders(event):
     # Only handles OrderEvents with topics matching the pattern...
 
@@ -181,6 +193,28 @@ publish_event(order_event)
 ```
 
 ## Publishing Events
+
+### Global API
+
+The event system provides a simplified global API for common operations:
+
+```python
+from uno.events import (
+    initialize_events,
+    publish_event,
+    publish_event_sync,
+    subscribe,
+)
+
+# Initialize the event system
+initialize_events()
+
+# Subscribe to events
+subscribe(UserCreated, on_user_created)
+
+# Publish an event
+publish_event(UserCreated(username="alice", email="alice@example.com"))
+```
 
 ### Asynchronous Publishing
 
@@ -216,13 +250,17 @@ clear_collected_events()
 
 ## Event Store Integration
 
-```python
-# Get the default store (if configured)
-store = get_event_store()
+### PostgreSQL Store
 
-# Create a custom store
-from uno.infrastructure.event_store import PostgresEventStore
-custom_store = PostgresEventStore(DomainEvent)
+```python
+from uno.events.adapters.postgres import PostgresEventStore
+
+# Create PostgreSQL event store
+store = PostgresEventStore(
+    event_type=Event,
+    schema="public",
+    table_name="events",
+)
 
 # Save an event
 await store.save_event(event)
@@ -231,19 +269,83 @@ await store.save_event(event)
 events = await store.get_events_by_aggregate_id("aggregate-123")
 
 # Get events by type
-events = await store.get_events_by_type("user_created_event", since=yesterday)
+events = await store.get_events_by_type("user_created", since=yesterday)
 ```
 
-## Automatic Handler Discovery
+### In-Memory Store
 
 ```python
-# Scan a module for event handlers
-import my_handlers_module
-scan_for_handlers(my_handlers_module)
+from uno.events.core.store import InMemoryEventStore
 
-# Scan an instance for event handlers
-analytics = AnalyticsService()
-scan_instance_for_handlers(analytics)
+# Create in-memory event store (useful for testing)
+store = InMemoryEventStore()
+```
+
+### Redis Integration
+
+```python
+from uno.events.adapters.redis import RedisEventPublisher, RedisEventSubscriber
+
+# Create Redis publisher
+redis_publisher = RedisEventPublisher(redis_url="redis://localhost:6379/0")
+
+# Publish event to Redis
+await redis_publisher.publish(event)
+
+# Create Redis subscriber
+redis_subscriber = RedisEventSubscriber(
+    event_bus=event_bus,
+    event_type=Event,
+    redis_url="redis://localhost:6379/0",
+)
+
+# Subscribe to event types
+await redis_subscriber.subscribe_by_type("user_created")
+
+# Start listening for events
+await redis_subscriber.start()
+```
+
+## Event Sourcing
+
+The event system includes built-in support for event sourcing:
+
+```python
+from uno.events.sourcing import AggregateRoot, apply_event
+
+class User(AggregateRoot):
+    def __init__(self, id: Optional[str] = None):
+        super().__init__(id)
+        self.username = None
+        self.email = None
+        self.is_active = False
+    
+    def create(self, username: str, email: str) -> None:
+        event = UserCreated(username=username, email=email)
+        self.apply(event)
+    
+    @apply_event
+    def apply_user_created(self, event: UserCreated) -> None:
+        self.username = event.username
+        self.email = event.email
+        self.is_active = True
+```
+
+And event-sourced repositories:
+
+```python
+from uno.events.sourcing import EventSourcedRepository
+
+# Create repository
+repository = EventSourcedRepository(User, event_store)
+
+# Create and save aggregate
+user = User()
+user.create(username="alice", email="alice@example.com")
+await repository.save(user)
+
+# Reconstitute aggregate from event history
+user = await repository.find_by_id("user-123")
 ```
 
 ## Error Handling
@@ -251,219 +353,63 @@ scan_instance_for_handlers(analytics)
 The event system includes comprehensive error handling:
 
 - Each handler is executed in a separate try/except block
-- Errors are enriched with event and handler context
+- Errors are logged with structured logging (using structlog)
 - Exceptions in one handler don't prevent others from executing
-- Errors are logged with detailed information
 
 ```python
-try:
-    await event_bus.publish(event)
-except UnoError as e:
-    print(f"Error: {e.message}")
-    print(f"Context: {e.context}")
-    print(f"Error code: {e.error_code}")
-```
+import structlog
 
-## Advanced Usage
+# Get a logger
+logger = structlog.get_logger("uno.events")
 
-### Event Sourcing
-
-For event sourcing patterns, combine the event store with event-sourced repositories:
-
-```python
-from uno.core.unified_events import DomainEvent
-from uno.infrastructure.event_store import PostgresEventStore, EventSourcedRepository
-from uno.domain.models import AggregateRoot
-
-# Create event store
-event_store = PostgresEventStore(DomainEvent)
-
-# Create event-sourced repository
-repository = EventSourcedRepository(UserAggregate, event_store)
-
-# Get aggregate by ID
-user = await repository.get("user-123")
-
-# Save aggregate (preserves and persists events)
-user.add_event(UserUpdatedEvent(...))
-await repository.save(user)
-```
-
-### Event Correlation and Causation
-
-For distributed tracing, use correlation and causation IDs:
-
-```python
-# Initial event
-initial_event = UserCreatedEvent(
-    user_id="user-123",
-    email="user@example.com",
-    username="testuser",
-    correlation_id="corr-123"  # Start a new correlation
-)
-
-# Event caused by the initial event
-follow_up_event = EmailSentEvent(
-    email="user@example.com",
-    template="welcome",
-    correlation_id=initial_event.correlation_id,  # Same correlation
-    causation_id=initial_event.event_id  # Caused by the initial event
-)
-```
-
-## Performance Considerations
-
-1. **Asynchronous Publishing**: Use for non-critical events to avoid blocking
-2. **Priority Control**: Use priorities to ensure critical handlers run first
-3. **Topic Filtering**: Use topics to reduce the number of events processed by handlers
-4. **Batch Processing**: Collect related events and publish them together
-5. **Event Store Selection**: Choose appropriate event store implementation for your scale
-
-## Integration with Other Framework Components
-
-### CQRS Integration
-
-```python
-from uno.core.unified_events import collect_event
-from uno.domain.cqrs import CommandHandler
-
-class CreateUserCommandHandler(CommandHandler[CreateUserCommand, str]):
-    async def _handle(self, command: CreateUserCommand, uow: UnitOfWork) -> str:
-        # Business logic...
-        
-        # Create user
-        user_id = str(uuid4())
-        
-        # Collect event (will be published after command completes)
-        collect_event(UserCreatedEvent(
-            user_id=user_id,
-            email=command.email,
-            username=command.username
-        ))
-        
-        return user_id
-```
-
-### Domain Model Integration
-
-```python
-from uno.domain.models import AggregateRoot
-from uno.core.unified_events import DomainEvent
-
-class User(AggregateRoot):
-    def __init__(self, id: str, email: str, username: str):
-        super().__init__(id=id)
-        self.email = email
-        self.username = username
-        
-        # Register event
-        self.register_event(UserCreatedEvent(
-            user_id=id,
-            email=email,
-            username=username,
-            aggregate_id=id,
-            aggregate_type="User"
-        ))
-    
-    def update_email(self, new_email: str) -> None:
-        """Update the user's email."""
-        self.email = new_email
-        self.update()  # Update timestamp
-        
-        # Register event
-        self.register_event(UserUpdatedEvent(
-            user_id=self.id,
-            fields_updated=["email"],
-            aggregate_id=self.id,
-            aggregate_type="User"
-        ))
-```
-
-### API Integration
-
-```python
-from fastapi import Depends
-from uno.core.unified_events import publish_event, DomainEvent
-from uno.api.endpoint import UnoEndpoint
-
-class UserEndpoints(UnoEndpoint):
-    @app.post("/users")
-    async def create_user(self, data: CreateUserRequest):
-        # Business logic...
-        
-        # Publish event
-        event = UserCreatedEvent(
-            user_id=user_id,
-            email=data.email,
-            username=data.username
-        )
-        publish_event(event)
-        
-        return {"id": user_id}
-```
-
-## Configuring the Event System
-
-The event system is initialized automatically when first used, but you can explicitly configure it:
-
-```python
-from uno.core.unified_events import initialize_events, reset_events
-from logging import getLogger
-
-# Reset the event system (useful for testing)
-reset_events()
-
-# Initialize with custom settings
-initialize_events(
-    logger=getLogger("events"),
-    max_concurrency=20,
-    in_memory_event_store=True
+# Log events with structured context
+logger.info(
+    "Event processed",
+    event_id=event.id,
+    event_type=event.type,
+    handler="UserEventHandler",
 )
 ```
 
 ## Testing with Events
 
+The event system includes tools for testing:
+
 ```python
-import pytest
-from uno.core.unified_events import reset_events, initialize_events, get_event_bus
+from uno.events.testing import MockEventStore, TestEventBus
 
-@pytest.fixture(autouse=True)
-def reset_event_system():
-    """Reset the event system before and after each test."""
-    reset_events()
-    initialize_events()
-    yield
-    reset_events()
+# Create test event bus
+event_bus = TestEventBus()
 
-def test_event_handler():
-    """Test that events are properly handled."""
-    # Arrange
-    handler = MockEventHandler()
-    get_event_bus().subscribe(TestEvent, handler)
-    
-    # Act
-    publish_event_sync(TestEvent(data="test"))
-    
-    # Assert
-    assert len(handler.handled_events) == 1
-    assert handler.handled_events[0].data == "test"
+# Create mock event store
+event_store = MockEventStore()
+
+# Check published events
+assert event_bus.has_published_event_type("user_created")
+assert len(event_bus.get_published_events(UserCreated)) == 1
+
+# Check stored events
+assert event_store.has_saved_event(event.id)
 ```
 
 ## Best Practices
 
 1. **Keep Events Immutable**: Never modify event properties after creation
-2. **Use Descriptive Names**: Name events in the past tense, e.g., `UserCreatedEvent`
+2. **Use Descriptive Names**: Name events in the past tense, e.g., `UserCreated`
 3. **Include Relevant Context**: Include all relevant data in events
 4. **Handle Failures Gracefully**: Event handlers should be resilient to failures
 5. **Control Handler Ordering**: Use priorities to control execution order
 6. **Use Correlation IDs**: For distributed tracing across services
 7. **Document Event Contracts**: Document the purpose and structure of events
-8. **Monitor Event Processing**: Use logging and metrics for monitoring
+8. **Monitor Event Processing**: Use structured logging for monitoring
 9. **Test Event Handling**: Write tests for event handlers
 10. **Consider Event Versioning**: For evolving event schemas over time
 
-## Summary
+## Examples
 
-The unified event system provides a flexible, type-safe, and performant way to implement event-driven architecture in your Uno applications. By separating event producers from consumers, it enables loose coupling between components while maintaining a clear flow of information.
+For more detailed examples, see the examples in the `uno.events.examples` package:
 
-For migration from previous event systems, see the [Event System Migration Guide](event_system_migration.md).
+- Basic usage: `uno.events.examples.basic_usage`
+- Event sourcing: `uno.events.examples.event_sourcing`
+- PostgreSQL integration: `uno.events.examples.postgres_integration`
+- Redis integration: `uno.events.examples.redis_integration`

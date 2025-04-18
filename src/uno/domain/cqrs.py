@@ -28,7 +28,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from uno.core.unified_events import UnoDomainEvent, EventBus, get_event_bus
+from uno.core.events import UnoEvent, EventBus, get_event_bus
 from uno.core.errors.base import UnoError
 from uno.domain.unit_of_work import UnitOfWork
 
@@ -64,7 +64,7 @@ class CommandResult:
     output: Optional[Any] = None
     error: Optional[str] = None
     error_code: Optional[str] = None
-    events: List[UnoDomainEvent] = field(default_factory=list)
+    events: List[UnoEvent] = field(default_factory=list)
 
     @property
     def is_success(self) -> bool:
@@ -82,7 +82,7 @@ class CommandResult:
         command_id: str,
         command_type: str,
         output: Any = None,
-        events: List[UnoDomainEvent] = None,
+        events: List[UnoEvent] = None,
     ) -> "CommandResult":
         """Create a successful command result."""
         return cls(

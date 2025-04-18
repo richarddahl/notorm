@@ -34,7 +34,7 @@ from uno.core.async_integration import (
     AsyncBatcher,
     AsyncCache,
 )
-from uno.core.async_utils import TaskGroup, timeout
+from uno.core.asynchronous import TaskGroup, timeout
 from uno.database.pg_error_handler import (
     with_pg_error_handling,
     is_deadlock_error,

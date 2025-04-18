@@ -16,7 +16,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from uno.core.unified_events import UnoDomainEvent
+from uno.core.events import UnoEvent
 
 
 class NotificationPriority(str, Enum):
@@ -67,7 +67,7 @@ class WorkflowNotification(BaseModel):
         self.read_at = datetime.utcnow()
 
 
-class WorkflowNotificationEvent(UnoDomainEvent):
+class WorkflowNotificationEvent(UnoEvent):
     """Base class for workflow notification events."""
 
     notification: ClassVar[str] = "workflow"

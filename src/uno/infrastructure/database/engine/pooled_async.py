@@ -26,7 +26,7 @@ from uno.core.resources import (
     ResourceRegistry,
     get_resource_registry,
 )
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     timeout,
     AsyncLock,
     Limiter,

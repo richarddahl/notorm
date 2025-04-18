@@ -17,7 +17,7 @@ from uno.jobs.scheduler.schedules import (
     DailySchedule, WeeklySchedule, MonthlySchedule, EventTrigger
 )
 from uno.jobs.storage.base import Storage
-from uno.core.async_utils import AsyncLock
+from uno.core.asynchronous import AsyncLock
 
 
 class SchedulerError(Exception):

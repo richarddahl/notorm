@@ -26,7 +26,7 @@ from uno.domain.models import (
     Entity,
     AggregateRoot,
     ValueObject,
-    UnoDomainEvent,
+    UnoEvent,
     CommandResult,
 )
 from uno.domain.protocols import (

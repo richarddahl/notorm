@@ -32,7 +32,7 @@ PrimitiveType = Union[str, int, float, bool, UUID, datetime, None]
 T_ID = TypeVar("T_ID")  # Entity ID type
 T = TypeVar("T", bound="Entity")  # Entity type
 T_Child = TypeVar("T_Child", bound="Entity")  # Child entity type
-E = TypeVar("E", bound="UnoDomainEvent")  # Event type
+E = TypeVar("E", bound="UnoEvent")  # Event type
 V = TypeVar("V")  # Value type for primitive value objects
 
 
@@ -58,25 +58,26 @@ class DomainException(Exception):
 
 # Import the canonical domain event implementation
 import warnings
-from uno.core.unified_events import UnoDomainEvent as CanonicalUnoDomainEvent
+from uno.core.events import UnoEvent as CanonicalUnoDomainEvent
+
 
 # Alias the canonical implementation with a deprecation warning
-class UnoDomainEvent(CanonicalUnoDomainEvent):
+class UnoEvent(CanonicalUnoDomainEvent):
     """
     Base class for domain events. (DEPRECATED)
-    
-    This is a compatibility alias for UnoDomainEvent from unified_events.
+
+    This is a compatibility alias for UnoEvent from unified_events.
     Domain events represent something significant that occurred within the domain.
     They are immutable records of what happened, used to communicate between
     different parts of the application.
     """
-    
+
     def __new__(cls, *args, **kwargs):
         warnings.warn(
-            "UnoDomainEvent in uno.domain.core is deprecated. "
-            "Please use UnoDomainEvent from uno.core.unified_events instead.",
+            "UnoEvent in uno.domain.core is deprecated. "
+            "Please use UnoEvent from uno.core.unified_events instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         return super().__new__(cls, *args, **kwargs)
 
@@ -208,7 +209,7 @@ class Entity(BaseModel, Generic[T_ID]):
     updated_at: Optional[datetime] = None
 
     # Domain events - excluded from serialization
-    _events: List[UnoDomainEvent] = Field(default_factory=list, exclude=True)
+    events: List[UnoEvent] = Field(default_factory=list, exclude=True)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -241,7 +242,7 @@ class Entity(BaseModel, Generic[T_ID]):
             values["updated_at"] = datetime.now(UTC)
         return values
 
-    def add_event(self, event: UnoDomainEvent) -> None:
+    def add_event(self, event: UnoEvent) -> None:
         """
         Add a domain event to this entity.
 
@@ -251,27 +252,27 @@ class Entity(BaseModel, Generic[T_ID]):
         Args:
             event: The domain event to add
         """
-        self._events.append(event)
+        self.events.append(event)
 
-    def clear_events(self) -> List[UnoDomainEvent]:
+    def clear_events(self) -> List[UnoEvent]:
         """
         Clear and return all domain events.
 
         Returns:
             The list of events that were cleared
         """
-        events = list(self._events)
-        self._events.clear()
+        events = list(self.events)
+        self.events.clear()
         return events
 
-    def get_events(self) -> List[UnoDomainEvent]:
+    def get_events(self) -> List[UnoEvent]:
         """
         Get all domain events without clearing them.
 
         Returns:
             The list of events
         """
-        return list(self._events)
+        return list(self.events)
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -281,7 +282,7 @@ class Entity(BaseModel, Generic[T_ID]):
             Dictionary representation of entity
         """
         # Exclude private fields and events
-        return self.model_dump(exclude={"_events"})
+        return self.model_dump(exclude={"events"})
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Entity":
@@ -317,7 +318,7 @@ class AggregateRoot(Entity[T_ID]):
     version: int = Field(default=1)
 
     # Child entities - excluded from serialization
-    _child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
+    child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
 
     def check_invariants(self) -> None:
         """
@@ -351,7 +352,7 @@ class AggregateRoot(Entity[T_ID]):
         Args:
             entity: The child entity to register
         """
-        self._child_entities.add(entity)
+        self.child_entities.add(entity)
 
     def remove_child_entity(self, entity: Entity) -> None:
         """
@@ -360,7 +361,7 @@ class AggregateRoot(Entity[T_ID]):
         Args:
             entity: The child entity to remove
         """
-        self._child_entities.discard(entity)
+        self.child_entities.discard(entity)
 
     def get_child_entities(self) -> Set[Entity]:
         """
@@ -369,4 +370,4 @@ class AggregateRoot(Entity[T_ID]):
         Returns:
             The set of child entities
         """
-        return self._child_entities.copy()
+        return self.child_entities.copy()

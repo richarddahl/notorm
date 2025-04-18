@@ -14,7 +14,7 @@ warnings.warn(
     "The domain service implementation in uno.domain.services is deprecated. "
     "Please use the unified implementation from uno.domain.unified_services instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
@@ -22,7 +22,7 @@ from abc import ABC, abstractmethod
 
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.uow import UnitOfWork
-from uno.core.unified_events import EventBus
+from uno.core.events import EventBus
 from uno.core.errors.base import UnoError
 
 

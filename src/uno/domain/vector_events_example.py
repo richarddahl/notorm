@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 
 from pydantic import Field
 
-from uno.domain.core import Entity, UnoDomainEvent
+from uno.domain.core import Entity, UnoEvent
 from uno.domain.event_dispatcher import (
     EventDispatcher,
     domain_event_handler,

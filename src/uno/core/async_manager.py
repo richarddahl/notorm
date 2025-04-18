@@ -17,7 +17,7 @@ import functools
 import time
 from datetime import datetime
 
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     TaskGroup,
     TaskManager,
     AsyncLock,

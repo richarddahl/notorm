@@ -13,7 +13,7 @@ import logging
 import contextlib
 from contextlib import AbstractAsyncContextManager
 
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     TaskManager,
     TaskGroup,
     AsyncLock,

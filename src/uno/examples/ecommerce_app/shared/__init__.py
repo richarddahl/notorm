@@ -1,0 +1,1 @@
+"""Shared components for the e-commerce application example."""

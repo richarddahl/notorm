@@ -2,13 +2,22 @@
 
 This example demonstrates a comprehensive e-commerce application built using the unified Domain-Driven Design approach in the Uno framework. It shows the complete stack from domain entities to API endpoints, with proper separation of concerns and integration between components.
 
+## Implementation Status
+
+- **Catalog Context**: ✅ Fully implemented with domain model, repositories, services, and API
+- **Order Context**: 🚧 Placeholder (to be implemented)
+- **Customer Context**: 🚧 Placeholder (to be implemented)
+- **Cart Context**: 🚧 Placeholder (to be implemented)
+- **Shipping Context**: 🚧 Placeholder (to be implemented)
+- **Payment Context**: 🚧 Placeholder (to be implemented)
+
 ## Domain Structure
 
 The example follows a clean domain-driven design architecture:
 
 - **Domain Layer**: Core business logic and domain entities
-- **Application Layer**: Application services and use cases
-- **Infrastructure Layer**: Database access and external services
+- **Repository Layer**: Database access and data persistence
+- **Services Layer**: Application services and use cases
 - **API Layer**: FastAPI endpoints for exposing the domain
 
 ## Key Features Demonstrated
@@ -17,9 +26,11 @@ The example follows a clean domain-driven design architecture:
    - Entity and aggregate design
    - Value objects for encapsulation
    - Domain events for communication
+   - Invariant enforcement
 
 2. **Repository Pattern**:
    - Standard repository implementation
+   - SQLAlchemy integration
    - Unit of work for transactions
    - Specification pattern for queries
 
@@ -31,20 +42,44 @@ The example follows a clean domain-driven design architecture:
 
 4. **Events**:
    - Domain event publishing and handling
-   - Cross-boundary communication
+   - Event collection from aggregates
    - Event-driven workflows
 
 5. **API Integration**:
    - Service endpoint factory
+   - Domain service adapters
    - Input/output model conversion
    - Error handling and status codes
-   - OpenAPI documentation
 
-6. **Advanced Features**:
-   - Authorization integration
-   - Attribute/value system integration
-   - Query optimization
-   - Repository caching
+## Catalog Context
+
+The catalog context demonstrates:
+
+- **Domain Entities**:
+  - `Product` aggregate root with variants and images
+  - `Category` entity for organizing products
+  - `ProductVariant` and `ProductImage` child entities
+  - Value objects: `Money`, `Weight`, `Dimensions`, `Inventory`
+
+- **Domain Events**:
+  - `ProductCreatedEvent`
+  - `ProductUpdatedEvent`
+  - `ProductPriceChangedEvent`
+  - `ProductInventoryUpdatedEvent`
+
+- **Repositories**:
+  - `ProductRepository` with specification support
+  - `CategoryRepository` with hierarchy management
+
+- **Services**:
+  - `ProductService` for product creation and updates
+  - `ProductQueryService` for querying products
+  - `CategoryService` for category management
+
+- **API Endpoints**:
+  - CRUD operations for products and categories
+  - Filtering and search capabilities
+  - Pagination support
 
 ## Running the Example
 
@@ -52,25 +87,31 @@ The example follows a clean domain-driven design architecture:
 2. Run the application: `python -m src.uno.examples.ecommerce_app.main`
 3. Open the API documentation: http://localhost:8000/docs
 
-## Example API Endpoints
+## API Endpoints
 
-- Products API: `/api/products`
-- Orders API: `/api/orders`
-- Customers API: `/api/customers`
-- Catalog API: `/api/catalog`
-- Cart API: `/api/cart`
-- Checkout API: `/api/checkout`
+- **Product Endpoints**:
+  - `GET /api/catalog/products` - List products with filtering and pagination
+  - `GET /api/catalog/products/{product_id}` - Get product details
+  - `POST /api/catalog/products` - Create a new product
+  - `PUT /api/catalog/products/{product_id}` - Update a product
+
+- **Category Endpoints**:
+  - `GET /api/catalog/categories` - List categories
+  - `GET /api/catalog/categories/hierarchy` - Get category hierarchy
+  - `GET /api/catalog/categories/{category_id}` - Get category details
+  - `POST /api/catalog/categories` - Create a new category
+  - `PUT /api/catalog/categories/{category_id}` - Update a category
 
 ## Code Organization
 
 The application is organized into bounded contexts:
 
-- **Catalog Context**: Products, categories, pricing
-- **Order Context**: Orders, order items, statuses
-- **Customer Context**: Customers, addresses, preferences
-- **Cart Context**: Shopping carts, cart items
-- **Shipping Context**: Shipping methods, rates
-- **Payment Context**: Payment methods, transactions
+- **Catalog Context**: Products, categories, variants, images
+- **Order Context**: Orders, order items, statuses (to be implemented)
+- **Customer Context**: Customers, addresses, preferences (to be implemented)
+- **Cart Context**: Shopping carts, cart items (to be implemented)
+- **Shipping Context**: Shipping methods, rates (to be implemented)
+- **Payment Context**: Payment methods, transactions (to be implemented)
 
 Each context follows the same structure:
 
@@ -82,12 +123,10 @@ context/
   └── api/           # API endpoints
 ```
 
-## Integration with Framework Features
+## Future Enhancements
 
-This example also demonstrates integration with other Uno framework features:
-
-- Attribute system for product characteristics
-- Values system for product specifications
-- Workflows for order processing
-- Reports for sales analytics
-- Vector search for product recommendations
+- Complete implementation of remaining contexts
+- Cross-context integration with domain events
+- Authentication and authorization
+- Workflow automation for orders
+- Search and recommendation features

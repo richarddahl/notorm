@@ -171,7 +171,7 @@ def get_event_publisher() -> Any:
     Returns:
         The event publisher service
     """
-    from uno.core.unified_events import EventPublisher
+    from uno.core.events import EventPublisher
 
     return get_service(EventPublisher)
 

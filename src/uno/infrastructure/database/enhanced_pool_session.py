@@ -34,7 +34,7 @@ from uno.database.enhanced_connection_pool import (
 from uno.database.enhanced_session import EnhancedAsyncSessionFactory, EnhancedAsyncSessionContext
 from uno.core.resources import ResourceRegistry, get_resource_registry
 from uno.core.protocols import DatabaseSessionProtocol, DatabaseSessionFactoryProtocol
-from uno.core.async_utils import AsyncLock, timeout, TaskGroup
+from uno.core.asynchronous import AsyncLock, timeout, TaskGroup
 from uno.core.async_integration import AsyncCache, retry, cancellable
 from uno.settings import uno_settings
 

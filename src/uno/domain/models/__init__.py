@@ -6,7 +6,7 @@ components defined in uno.domain.core.
 """
 
 from uno.domain.core import (
-    UnoDomainEvent,
+    UnoEvent,
     ValueObject,
     PrimitiveValueObject,
     Entity,
@@ -41,7 +41,7 @@ __all__ = [
     "AggregateRoot",
     "ValueObject",
     "PrimitiveValueObject",
-    "UnoDomainEvent",
+    "UnoEvent",
     # Common value objects
     "Email",
     "Money",

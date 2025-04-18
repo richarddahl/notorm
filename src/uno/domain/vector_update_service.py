@@ -14,7 +14,7 @@ import uuid
 from queue import PriorityQueue
 from dataclasses import dataclass, field
 
-from uno.domain.core import UnoDomainEvent
+from uno.domain.core import UnoEvent
 from uno.domain.event_dispatcher import EventDispatcher
 from uno.domain.vector_events import (
     VectorContentEvent,
@@ -147,7 +147,7 @@ class VectorUpdateService:
             f"Queued update for {entity_type} {entity_id} (priority: {priority})"
         )
 
-    async def process_event(self, event: UnoDomainEvent) -> None:
+    async def process_event(self, event: UnoEvent) -> None:
         """
         Process vector-related events.
 

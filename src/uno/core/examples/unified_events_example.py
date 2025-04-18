@@ -18,8 +18,8 @@ from datetime import datetime, UTC
 from typing import Dict, List, Any, Optional
 from uuid import uuid4
 
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     EventBus,
     EventHandler,
     EventPublisher,
@@ -44,7 +44,7 @@ from uno.core.unified_events import (
 # =============================================================================
 
 
-class UserEvent(UnoDomainEvent):
+class UserEvent(UnoEvent):
     """Base class for user-related events."""
 
     user_id: str
@@ -69,7 +69,7 @@ class UserDeletedEvent(UserEvent):
     reason: Optional[str] = None
 
 
-class OrderEvent(UnoDomainEvent):
+class OrderEvent(UnoEvent):
     """Base class for order-related events."""
 
     order_id: str

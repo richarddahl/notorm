@@ -33,8 +33,8 @@ from uno.core.cqrs import (
     execute_command,
     execute_query,
 )
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     EventPublisher,
     EventPriority,
     event_handler,
@@ -64,7 +64,7 @@ class OrderStatus(Enum):
 # =============================================================================
 
 
-class OrderCreatedEvent(UnoDomainEvent):
+class OrderCreatedEvent(UnoEvent):
     """Event raised when an order is created."""
 
     def __init__(
@@ -92,7 +92,7 @@ class OrderCreatedEvent(UnoDomainEvent):
         self.total_amount = total_amount
 
 
-class OrderStatusChangedEvent(UnoDomainEvent):
+class OrderStatusChangedEvent(UnoEvent):
     """Event raised when an order's status changes."""
 
     def __init__(
@@ -882,7 +882,7 @@ async def main():
     inventory_service = InventoryService()
 
     # Register event handlers
-    from uno.core.unified_events import EventHandlerScanner
+    from uno.core.events import EventHandlerScanner
 
     scanner = EventHandlerScanner(get_event_bus())
     scanner.scan_instance(notification_service)

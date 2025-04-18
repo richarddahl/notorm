@@ -145,7 +145,7 @@ class ValueObject(Protocol):
 
 
 @runtime_checkable
-class UnoDomainEvent(Protocol):
+class UnoEvent(Protocol):
     """
     Protocol for domain events.
 
@@ -191,11 +191,11 @@ class AggregateRoot(Entity, Protocol):
     """
 
     @property
-    def events(self) -> List[UnoDomainEvent]:
+    def events(self) -> List[UnoEvent]:
         """Get the domain events raised by this aggregate."""
         ...
 
-    def add_event(self, event: UnoDomainEvent) -> None:
+    def add_event(self, event: UnoEvent) -> None:
         """
         Add a domain event to this aggregate.
 
@@ -204,7 +204,7 @@ class AggregateRoot(Entity, Protocol):
         """
         ...
 
-    def clear_events(self) -> List[UnoDomainEvent]:
+    def clear_events(self) -> List[UnoEvent]:
         """
         Clear all domain events from this aggregate.
 

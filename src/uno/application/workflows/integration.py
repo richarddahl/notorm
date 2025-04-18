@@ -19,8 +19,8 @@ from uno.core.errors.result import Result, Success, Failure
 from uno.core.errors.base import UnoError
 from uno.workflows.errors import WorkflowErrorCode, WorkflowEventError
 
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     EventBus,
     get_event_bus,
     EventSubscription,
@@ -79,7 +79,7 @@ class WorkflowEventIntegration:
 
     def register_domain_event_handler(
         self,
-        event_types: Optional[List[Type[UnoDomainEvent]]] = None,
+        event_types: Optional[List[Type[UnoEvent]]] = None,
         priority: EventPriority = EventPriority.NORMAL,
     ) -> None:
         """
@@ -208,7 +208,7 @@ def get_workflow_integration(
 async def register_workflow_integrations(
     register_domain_events: bool = True,
     start_postgres_listener: bool = True,
-    event_types: Optional[List[Type[UnoDomainEvent]]] = None,
+    event_types: Optional[List[Type[UnoEvent]]] = None,
 ) -> Result[bool]:
     """
     Register all workflow integrations.

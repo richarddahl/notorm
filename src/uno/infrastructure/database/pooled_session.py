@@ -34,7 +34,7 @@ from uno.core.protocols import (
     DatabaseSessionProtocol,
     DatabaseSessionFactoryProtocol,
 )
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     AsyncLock,
     Limiter,
     timeout,

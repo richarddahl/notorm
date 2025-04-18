@@ -43,7 +43,7 @@ from uno.workflows.errors import (
     WorkflowExecutionError,
     WorkflowActionError,
 )
-from uno.core.unified_events import EventBus, UnoDomainEvent
+from uno.core.events import EventBus, UnoEvent
 
 from uno.workflows.models import WorkflowActionType
 from uno.workflows.entities import WorkflowAction, User
@@ -180,7 +180,7 @@ class NotificationExecutor:
         notification_type: str,
         context: ActionExecutionContext,
         link: Optional[str] = None,
-    ) -> UnoDomainEvent:
+    ) -> UnoEvent:
         """Create a notification event for the event bus"""
         # Import here to avoid circular imports
         from uno.workflows.notifications import SystemNotificationCreated

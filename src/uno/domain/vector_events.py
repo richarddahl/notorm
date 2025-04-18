@@ -13,7 +13,7 @@ import uuid
 
 from pydantic import Field
 
-from uno.domain.core import UnoDomainEvent, Entity
+from uno.domain.core import UnoEvent, Entity
 from uno.domain.event_dispatcher import (
     EventDispatcher,
     domain_event_handler,
@@ -22,7 +22,7 @@ from uno.domain.event_dispatcher import (
 from uno.sql.emitters.vector import VectorSQLEmitter, VectorConfig
 
 
-class VectorContentEvent(UnoDomainEvent):
+class VectorContentEvent(UnoEvent):
     """
     Base event for vector content changes.
 
@@ -70,7 +70,7 @@ class VectorContentEvent(UnoDomainEvent):
         )
 
 
-class EntityCreatedEvent(UnoDomainEvent):
+class EntityCreatedEvent(UnoEvent):
     """Event for entity creation."""
 
     entity_id: str
@@ -78,7 +78,7 @@ class EntityCreatedEvent(UnoDomainEvent):
     entity_data: Dict[str, Any]
 
 
-class EntityUpdatedEvent(UnoDomainEvent):
+class EntityUpdatedEvent(UnoEvent):
     """Event for entity updates."""
 
     entity_id: str
@@ -87,14 +87,14 @@ class EntityUpdatedEvent(UnoDomainEvent):
     changed_fields: List[str] = Field(default_factory=list)
 
 
-class EntityDeletedEvent(UnoDomainEvent):
+class EntityDeletedEvent(UnoEvent):
     """Event for entity deletion."""
 
     entity_id: str
     entity_type: str
 
 
-class VectorEmbeddingUpdateRequested(UnoDomainEvent):
+class VectorEmbeddingUpdateRequested(UnoEvent):
     """
     Event requesting an embedding update.
 
@@ -108,7 +108,7 @@ class VectorEmbeddingUpdateRequested(UnoDomainEvent):
     priority: int = 0  # Higher numbers = higher priority
 
 
-class VectorEmbeddingUpdated(UnoDomainEvent):
+class VectorEmbeddingUpdated(UnoEvent):
     """
     Event indicating an embedding was updated.
 
@@ -150,7 +150,7 @@ class VectorEventHandler(EventSubscriber):
         self.logger = logger or logging.getLogger(__name__)
 
     @domain_event_handler("*")
-    async def handle_entity_events(self, event: UnoDomainEvent) -> None:
+    async def handle_entity_events(self, event: UnoEvent) -> None:
         """
         Handle entity-related events.
 

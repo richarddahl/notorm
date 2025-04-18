@@ -18,7 +18,7 @@ from uno.domain.repository import (
     SQLAlchemyRepository, SQLAlchemyAggregateRepository,
     InMemoryRepository, InMemoryAggregateRepository
 )
-from uno.domain.unit_of_work_standardized import (
+from uno.domain.unit_of_work import (
     UnitOfWork, SQLAlchemyUnitOfWork, InMemoryUnitOfWork,
     UnitOfWorkManager
 )

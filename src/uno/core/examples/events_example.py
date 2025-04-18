@@ -14,8 +14,8 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     EventPriority,
     event_handler,
     initialize_events,
@@ -33,7 +33,7 @@ from uno.core.unified_events import (
 # =============================================================================
 
 
-class OrderCreatedEvent(UnoDomainEvent):
+class OrderCreatedEvent(UnoEvent):
     """Event raised when a new order is created."""
 
     def __init__(
@@ -61,7 +61,7 @@ class OrderCreatedEvent(UnoDomainEvent):
         self.total_amount = total_amount
 
 
-class OrderShippedEvent(UnoDomainEvent):
+class OrderShippedEvent(UnoEvent):
     """Event raised when an order is shipped."""
 
     def __init__(
@@ -82,7 +82,7 @@ class OrderShippedEvent(UnoDomainEvent):
         self.shipping_date = shipping_date
 
 
-class OrderCancelledEvent(UnoDomainEvent):
+class OrderCancelledEvent(UnoEvent):
     """Event raised when an order is cancelled."""
 
     def __init__(self, order_id: str, reason: Optional[str] = None, **kwargs):

@@ -1,7 +1,7 @@
 """
 Event protocol interfaces.
 
-This module defines protocol interfaces for UnoDomainEvent.
+This module defines protocol interfaces for UnoEvent.
 """
 
 from typing import Protocol, Dict, Any, Optional
@@ -9,7 +9,7 @@ from datetime import datetime
 
 
 class DomainEventProtocol(Protocol):
-    """Protocol interface for UnoDomainEvent."""
+    """Protocol interface for UnoEvent."""
 
     event_id: str
     event_type: str

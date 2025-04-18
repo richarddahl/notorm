@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime, UTC
 from typing import List, Optional, Dict, Any
 
-from uno.domain.core import Entity, ValueObject, AggregateRoot, UnoDomainEvent
+from uno.domain.core import Entity, ValueObject, AggregateRoot, UnoEvent
 from uno.dependencies import (
     get_domain_service,
     get_domain_repository,
@@ -49,7 +49,7 @@ class Money(ValueObject):
 
 
 # Domain Events - Represent something significant that occurred
-class UserCreatedEvent(UnoDomainEvent):
+class UserCreatedEvent(UnoEvent):
     """Event triggered when a user is created."""
 
     user_id: str
@@ -57,7 +57,7 @@ class UserCreatedEvent(UnoDomainEvent):
     email: str
 
 
-class UserAddressChangedEvent(UnoDomainEvent):
+class UserAddressChangedEvent(UnoEvent):
     """Event triggered when a user's address changes."""
 
     user_id: str

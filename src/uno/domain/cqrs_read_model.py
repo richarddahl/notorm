@@ -43,7 +43,7 @@ from uno.core.cqrs import (
     TransactionalCommandHandler,
 )
 from uno.domain.event_store import EventStore, EventSourcedRepository
-from uno.core.unified_events import UnoDomainEvent
+from uno.core.events import UnoEvent
 from uno.read_model.read_model import ReadModel, ReadModelRepository
 from uno.read_model.query_service import (
     ReadModelQueryService,
@@ -64,7 +64,7 @@ T = TypeVar("T")
 TCommand = TypeVar("TCommand", bound=Command)
 TQuery = TypeVar("TQuery", bound=Query)
 TReadModel = TypeVar("TReadModel", bound=ReadModel)
-TEvent = TypeVar("TEvent", bound=UnoDomainEvent)
+TEvent = TypeVar("TEvent", bound=UnoEvent)
 TResult = TypeVar("TResult")
 
 
@@ -732,7 +732,7 @@ class EventSourcingReadModelCommandHandler(
         unit_of_work_factory: Callable[[], AbstractUnitOfWork],
         event_store: EventStore,
         event_handlers: Optional[
-            Dict[Type[UnoDomainEvent], List[Callable[[UnoDomainEvent], Any]]]
+            Dict[Type[UnoEvent], List[Callable[[UnoEvent], Any]]]
         ] = None,
         config: Optional[ReadModelCommandHandlerConfig] = None,
         logger: Optional[logging.Logger] = None,
@@ -755,9 +755,9 @@ class EventSourcingReadModelCommandHandler(
             f"{__name__}.{self.__class__.__name__}"
         )
         self.metrics_enabled = self.config.enable_metrics
-        self.events: List[UnoDomainEvent] = []
+        self.events: List[UnoEvent] = []
 
-    def add_event(self, event: UnoDomainEvent) -> None:
+    def add_event(self, event: UnoEvent) -> None:
         """
         Add an event to be published after the command is handled.
 
@@ -811,7 +811,7 @@ class EventSourcingReadModelCommandHandler(
         """
         pass
 
-    async def _process_event(self, event: UnoDomainEvent) -> None:
+    async def _process_event(self, event: UnoEvent) -> None:
         """
         Process an event using registered handlers.
 
@@ -841,7 +841,7 @@ def register_projection_event_handlers(
     event_bus: Any,
     projections: List[
         Tuple[
-            Type[UnoDomainEvent],
+            Type[UnoEvent],
             Projection[TReadModel, Any],
             ReadModelRepository[TReadModel],
         ]

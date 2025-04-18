@@ -11,8 +11,8 @@ import pytest
 from datetime import datetime, UTC
 from typing import List, Dict, Any, Optional
 
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     EventBus,
     EventPublisher,
     EventStore,
@@ -40,14 +40,14 @@ from uno.core.unified_events import (
 # =============================================================================
 
 
-class TestEvent(UnoDomainEvent):
+class TestEvent(UnoEvent):
     """Test event for testing the event system."""
 
     data: str
     value: int = 0
 
 
-class UserCreatedEvent(UnoDomainEvent):
+class UserCreatedEvent(UnoEvent):
     """Event raised when a user is created."""
 
     user_id: str
@@ -55,14 +55,14 @@ class UserCreatedEvent(UnoDomainEvent):
     username: str
 
 
-class UserUpdatedEvent(UnoDomainEvent):
+class UserUpdatedEvent(UnoEvent):
     """Event raised when a user is updated."""
 
     user_id: str
     fields_updated: List[str]
 
 
-class OrderPlacedEvent(UnoDomainEvent):
+class OrderPlacedEvent(UnoEvent):
     """Event raised when an order is placed."""
 
     order_id: str
@@ -109,7 +109,7 @@ class AnalyticsSubscriber(EventSubscriber):
     """Event subscriber that handles multiple event types."""
 
     def __init__(self, event_bus: EventBus):
-        self.events: List[UnoDomainEvent] = []
+        self.events: List[UnoEvent] = []
         super().__init__(event_bus)
 
     @event_handler(UserCreatedEvent)

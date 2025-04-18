@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.errors.base import UnoError
-from uno.core.unified_events import UnoDomainEvent, EventHandler
+from uno.core.events import UnoEvent, EventHandler
 from uno.workflows.errors import (
     WorkflowErrorCode,
     WorkflowNotFoundError,
@@ -1066,7 +1066,7 @@ class WorkflowEventHandler(EventHandler):
         self.workflow_engine = workflow_engine
         self.logger = logger or logging.getLogger(__name__)
 
-    async def handle(self, event: UnoDomainEvent) -> None:
+    async def handle(self, event: UnoEvent) -> None:
         """Handle a domain event by finding and executing matching workflows."""
         self.logger.debug(f"Handling domain event: {event.__class__.__name__}")
 
@@ -1083,7 +1083,7 @@ class WorkflowEventHandler(EventHandler):
             self.logger.debug(f"Workflow processing result: {response}")
 
     def _convert_domain_event_to_workflow_event(
-        self, event: UnoDomainEvent
+        self, event: UnoEvent
     ) -> WorkflowEventModel:
         """Convert a domain event to a workflow event."""
         # Extract event metadata

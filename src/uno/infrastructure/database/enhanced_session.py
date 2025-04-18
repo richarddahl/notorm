@@ -29,7 +29,7 @@ from uno.database.engine.enhanced_async import (
 )
 from uno.settings import uno_settings
 from uno.core.protocols import DatabaseSessionProtocol, DatabaseSessionFactoryProtocol, DatabaseSessionContextProtocol
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     TaskGroup,
     AsyncLock,
     Limiter,

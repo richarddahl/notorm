@@ -45,7 +45,7 @@ from uno.domain.cqrs_read_model import (
     ReadModelCommandHandlerConfig,
     ReadModelIntegrationConfig,
 )
-from uno.core.unified_events import UnoDomainEvent, EventDispatcher
+from uno.core.events import UnoEvent, EventDispatcher
 from uno.read_model.query_service import PaginatedResult
 
 # Type variables
@@ -710,7 +710,7 @@ class CQRSEndpointFactory:
                 event_queue = asyncio.Queue()
 
                 # Create event handler
-                async def event_handler(event: UnoDomainEvent):
+                async def event_handler(event: UnoEvent):
                     # Create WebSocket message
                     message = WebSocketMessage(
                         type="event",

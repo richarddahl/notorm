@@ -16,7 +16,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update, delete, func, and_, or_, not_
 
-from uno.domain.core import Entity, AggregateRoot, UnoDomainEvent
+from uno.domain.core import Entity, AggregateRoot, UnoEvent
 from uno.domain.specifications import Specification
 from uno.core.errors.result import Result, Success, Failure
 
@@ -349,7 +349,7 @@ class AggregateRepository(Repository[A], Generic[A]):
             logger: Optional logger for diagnostic output
         """
         super().__init__(aggregate_type, logger)
-        self._pending_events: List[UnoDomainEvent] = []
+        self._pending_events: List[UnoEvent] = []
     
     async def save(self, aggregate: A) -> A:
         """
@@ -396,7 +396,7 @@ class AggregateRepository(Repository[A], Generic[A]):
             self.logger.error(f"Error saving aggregate: {e}")
             return Failure(str(e))
     
-    def collect_events(self) -> List[UnoDomainEvent]:
+    def collect_events(self) -> List[UnoEvent]:
         """
         Collect all pending domain events.
         
@@ -809,7 +809,7 @@ class SQLAlchemyRepository(Repository[T], Generic[T, M]):
         # Use model_dump or to_dict if available
         if hasattr(entity, "model_dump"):
             # Pydantic v2
-            return entity.model_dump(exclude={"_events", "_child_entities"})
+            return entity.model_dump(exclude={"events", "child_entities"})
         elif hasattr(entity, "to_dict"):
             # Custom to_dict method
             return entity.to_dict()
@@ -1127,7 +1127,7 @@ class InMemoryRepository(Repository[T], Generic[T]):
         # Use model_dump or to_dict if available
         if hasattr(entity, "model_dump"):
             # Pydantic v2
-            return entity.model_dump(exclude={"_events", "_child_entities"})
+            return entity.model_dump(exclude={"events", "child_entities"})
         elif hasattr(entity, "to_dict"):
             # Custom to_dict method
             return entity.to_dict()

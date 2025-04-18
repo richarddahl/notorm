@@ -5,7 +5,7 @@ This module provides composite classes for the specification pattern.
 """
 
 from typing import TypeVar, Generic
-from .base_specifications import Specification
+from .specifications import Specification
 
 T = TypeVar("T")
 

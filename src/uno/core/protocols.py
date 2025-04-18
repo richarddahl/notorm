@@ -190,11 +190,12 @@ class ValueObject(Protocol):
 
 # Import domain event protocol from the canonical implementation
 import warnings
-from uno.core.unified_events import DomainEventProtocol
+from uno.core.events import DomainEventProtocol
+
 
 # Protocol alias for backward compatibility, but with a deprecation warning
 @runtime_checkable
-class UnoDomainEvent(DomainEventProtocol, Protocol):
+class UnoEvent(DomainEventProtocol, Protocol):
     """
     Protocol for domain events. (DEPRECATED)
 
@@ -202,13 +203,13 @@ class UnoDomainEvent(DomainEventProtocol, Protocol):
     Domain events represent something that happened in the domain that
     domain experts care about. They are immutable and named in the past tense.
     """
-    
+
     def __new__(cls, *args, **kwargs):
         warnings.warn(
-            "UnoDomainEvent in uno.core.protocols is deprecated. "
+            "UnoEvent in uno.core.protocols is deprecated. "
             "Please use DomainEventProtocol from uno.core.unified_events instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         return super().__new__(cls)
 
@@ -224,11 +225,11 @@ class AggregateRoot(Entity, Protocol):
     """
 
     @property
-    def events(self) -> list[UnoDomainEvent]:
+    def events(self) -> list[UnoEvent]:
         """Get the domain events raised by this aggregate."""
         ...
 
-    def add_event(self, event: UnoDomainEvent) -> None:
+    def add_event(self, event: UnoEvent) -> None:
         """
         Add a domain event to this aggregate.
 
@@ -237,7 +238,7 @@ class AggregateRoot(Entity, Protocol):
         """
         ...
 
-    def clear_events(self) -> list[UnoDomainEvent]:
+    def clear_events(self) -> list[UnoEvent]:
         """
         Clear all domain events from this aggregate.
 

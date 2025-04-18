@@ -20,7 +20,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta, timezone
 
 from uno.database.db_manager import DBManager
-from uno.core.unified_events import UnoDomainEvent, EventDispatcher
+from uno.core.events import UnoEvent, EventDispatcher
 from uno.enums import WorkflowDBEvent
 from uno.dependencies.scoped_container import get_service
 
@@ -42,7 +42,7 @@ from uno.workflows.recipients import (
 from uno.workflows.provider import WorkflowService
 
 
-class ProductUpdateEvent(UnoDomainEvent):
+class ProductUpdateEvent(UnoEvent):
     """Example event for product updates."""
 
     def __init__(

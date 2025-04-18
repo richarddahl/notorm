@@ -24,16 +24,16 @@ from typing import (
     TYPE_CHECKING,
 )
 
-# Import UnoDomainEvent from the canonical implementation
+# Import UnoEvent from the canonical implementation
 import warnings
-from uno.core.unified_events import UnoDomainEvent, DomainEventProtocol
+from uno.core.events import UnoEvent, DomainEventProtocol
 
 # Provide a deprecation warning for direct usage of this module
 warnings.warn(
     "The domain event implementation in uno.core.domain is deprecated. "
     "Please use the canonical implementation from uno.core.unified_events instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 
@@ -52,10 +52,10 @@ class Entity(Protocol):
 class AggregateRoot(Entity, Protocol):
     """Protocol for aggregate roots."""
 
-    events: List["UnoDomainEvent"]
+    events: List["UnoEvent"]
 
-    def register_event(self, event: "UnoDomainEvent") -> None: ...
-    def clear_events(self) -> List["UnoDomainEvent"]: ...
+    def register_event(self, event: "UnoEvent") -> None: ...
+    def clear_events(self) -> List["UnoEvent"]: ...
 
 
 @runtime_checkable
@@ -108,7 +108,7 @@ class AggregateEntity(Generic[KeyT]):
     """Base class for aggregate entities."""
 
     id: KeyT
-    events: List[UnoDomainEvent] = field(default_factory=list, init=False, repr=False)
+    events: List[UnoEvent] = field(default_factory=list, init=False, repr=False)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -135,7 +135,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         return hash((self.__class__, self.id))
 
-    def register_event(self, event: "UnoDomainEvent") -> None:
+    def register_event(self, event: "UnoEvent") -> None:
         """
         Register a domain event to be published after the aggregate is saved.
 
@@ -144,7 +144,7 @@ class AggregateEntity(Generic[KeyT]):
         """
         self.events.append(event)
 
-    def clear_events(self) -> List["UnoDomainEvent"]:
+    def clear_events(self) -> List["UnoEvent"]:
         """
         Clear and return all registered events.
 

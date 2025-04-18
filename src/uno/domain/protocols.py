@@ -6,38 +6,48 @@ providing a clear, consistent foundation for domain-driven design.
 """
 
 from typing import (
-    Protocol, TypeVar, Generic, List, Set, Dict, Any, Optional, 
-    runtime_checkable, Self, ClassVar
+    Protocol,
+    TypeVar,
+    Generic,
+    List,
+    Set,
+    Dict,
+    Any,
+    Optional,
+    runtime_checkable,
+    Self,
+    ClassVar,
 )
 from datetime import datetime
 from uuid import UUID
 
 # Type variables
-IdT = TypeVar('IdT')  # Type for entity identifiers
-EventT = TypeVar('EventT', bound='DomainEventProtocol')  # Type for domain events
-ValueT = TypeVar('ValueT')  # Type for value object values
-EntityT = TypeVar('EntityT', bound='EntityProtocol')  # Type for entities
+IdT = TypeVar("IdT")  # Type for entity identifiers
+EventT = TypeVar("EventT", bound="DomainEventProtocol")  # Type for domain events
+ValueT = TypeVar("ValueT")  # Type for value object values
+EntityT = TypeVar("EntityT", bound="EntityProtocol")  # Type for entities
 
 
 # Import the canonical domain event protocol implementation
 import warnings
-from uno.core.unified_events import DomainEventProtocol as CanonicalDomainEventProtocol
+from uno.core.events import DomainEventProtocol as CanonicalDomainEventProtocol
+
 
 # Protocol alias for backward compatibility
 @runtime_checkable
 class DomainEventProtocol(CanonicalDomainEventProtocol, Protocol):
     """
     Protocol for domain events. (DEPRECATED)
-    
+
     This is a compatibility alias for DomainEventProtocol from unified_events.
     """
-    
+
     def __new__(cls, *args, **kwargs):
         warnings.warn(
             "DomainEventProtocol in uno.domain.protocols is deprecated. "
             "Please use DomainEventProtocol from uno.core.unified_events instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         return super().__new__(cls)
 
@@ -45,21 +55,21 @@ class DomainEventProtocol(CanonicalDomainEventProtocol, Protocol):
 @runtime_checkable
 class ValueObjectProtocol(Protocol):
     """Protocol for value objects."""
-    
+
     def equals(self, other: Any) -> bool:
         """Check if this value object equals another."""
         ...
-    
+
     def validate(self) -> None:
         """Validate the value object."""
         ...
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert value object to dictionary."""
         ...
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ValueObjectProtocol':
+    def from_dict(cls, data: Dict[str, Any]) -> "ValueObjectProtocol":
         """Create value object from dictionary."""
         ...
 
@@ -67,11 +77,11 @@ class ValueObjectProtocol(Protocol):
 @runtime_checkable
 class PrimitiveValueObjectProtocol(ValueObjectProtocol, Protocol[ValueT]):
     """Protocol for primitive value objects."""
-    
+
     value: ValueT
-    
+
     @classmethod
-    def create(cls, value: ValueT) -> 'PrimitiveValueObjectProtocol[ValueT]':
+    def create(cls, value: ValueT) -> "PrimitiveValueObjectProtocol[ValueT]":
         """Create a primitive value object."""
         ...
 
@@ -79,29 +89,29 @@ class PrimitiveValueObjectProtocol(ValueObjectProtocol, Protocol[ValueT]):
 @runtime_checkable
 class EntityProtocol(Protocol[IdT]):
     """Protocol for domain entities."""
-    
+
     id: IdT
     created_at: datetime
     updated_at: Optional[datetime]
-    
+
     def register_event(self, event: DomainEventProtocol) -> None:
         """Register a domain event."""
         ...
-    
+
     def clear_events(self) -> List[DomainEventProtocol]:
         """Clear and return all registered domain events."""
         ...
-    
+
     def update(self) -> None:
         """Update the entity."""
         ...
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert entity to dictionary."""
         ...
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'EntityProtocol':
+    def from_dict(cls, data: Dict[str, Any]) -> "EntityProtocol":
         """Create entity from dictionary."""
         ...
 
@@ -109,21 +119,21 @@ class EntityProtocol(Protocol[IdT]):
 @runtime_checkable
 class AggregateRootProtocol(EntityProtocol[IdT], Protocol):
     """Protocol for aggregate roots."""
-    
+
     version: int
-    
+
     def check_invariants(self) -> None:
         """Check that all aggregate invariants are satisfied."""
         ...
-    
+
     def apply_changes(self) -> None:
         """Apply changes and ensure consistency."""
         ...
-    
+
     def add_child_entity(self, entity: EntityProtocol) -> None:
         """Add a child entity."""
         ...
-    
+
     def get_child_entities(self) -> Set[EntityProtocol]:
         """Get all child entities."""
         ...
@@ -132,20 +142,24 @@ class AggregateRootProtocol(EntityProtocol[IdT], Protocol):
 @runtime_checkable
 class SpecificationProtocol(Protocol[EntityT]):
     """Protocol for specifications."""
-    
+
     def is_satisfied_by(self, entity: EntityT) -> bool:
         """Check if the entity satisfies this specification."""
         ...
-    
-    def and_(self, other: 'SpecificationProtocol[EntityT]') -> 'SpecificationProtocol[EntityT]':
+
+    def and_(
+        self, other: "SpecificationProtocol[EntityT]"
+    ) -> "SpecificationProtocol[EntityT]":
         """Combine with another specification using AND."""
         ...
-    
-    def or_(self, other: 'SpecificationProtocol[EntityT]') -> 'SpecificationProtocol[EntityT]':
+
+    def or_(
+        self, other: "SpecificationProtocol[EntityT]"
+    ) -> "SpecificationProtocol[EntityT]":
         """Combine with another specification using OR."""
         ...
-    
-    def not_(self) -> 'SpecificationProtocol[EntityT]':
+
+    def not_(self) -> "SpecificationProtocol[EntityT]":
         """Negate this specification."""
         ...
 
@@ -153,12 +167,12 @@ class SpecificationProtocol(Protocol[EntityT]):
 @runtime_checkable
 class EntityFactoryProtocol(Protocol[EntityT]):
     """Protocol for entity factories."""
-    
+
     @classmethod
     def create(cls, **kwargs: Any) -> EntityT:
         """Create a new entity."""
         ...
-    
+
     @classmethod
     def create_from_dict(cls, data: Dict[str, Any]) -> EntityT:
         """Create an entity from a dictionary."""
@@ -168,22 +182,24 @@ class EntityFactoryProtocol(Protocol[EntityT]):
 @runtime_checkable
 class CommandResultProtocol(Protocol):
     """Protocol for command results."""
-    
+
     is_success: bool
     events: List[DomainEventProtocol]
-    
+
     @property
     def is_failure(self) -> bool:
         """Check if the command result is a failure."""
         ...
-    
+
     @classmethod
-    def success(cls, events: Optional[List[DomainEventProtocol]] = None) -> 'CommandResultProtocol':
+    def success(
+        cls, events: Optional[List[DomainEventProtocol]] = None
+    ) -> "CommandResultProtocol":
         """Create a successful command result."""
         ...
-    
+
     @classmethod
-    def failure(cls, error: Exception) -> 'CommandResultProtocol':
+    def failure(cls, error: Exception) -> "CommandResultProtocol":
         """Create a failed command result."""
         ...
 
@@ -191,7 +207,7 @@ class CommandResultProtocol(Protocol):
 @runtime_checkable
 class DomainServiceProtocol(Protocol):
     """Protocol for domain services."""
-    
+
     def execute(self, **kwargs: Any) -> CommandResultProtocol:
         """Execute domain logic."""
         ...

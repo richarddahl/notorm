@@ -14,7 +14,7 @@ from uno.core.async_manager import (
     run_application,
     as_task,
 )
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     TaskGroup,
     timeout,
     AsyncLock,

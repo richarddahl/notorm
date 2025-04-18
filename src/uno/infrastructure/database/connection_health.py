@@ -26,7 +26,7 @@ from uno.database.errors import (
     DatabaseTransactionError,
     DatabaseQueryError
 )
-from uno.core.async_utils import (
+from uno.core.asynchronous import (
     AsyncLock, 
     timeout,
     TaskGroup

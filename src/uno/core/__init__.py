@@ -18,7 +18,7 @@ from uno.core.protocols import (
     # Domain model protocols
     Entity,
     ValueObject,
-    UnoDomainEvent,
+    UnoEvent,
     AggregateRoot,
     # Repository and Unit of Work
     Repository,
@@ -151,7 +151,7 @@ __all__ = [
     # Domain model protocols
     "Entity",
     "ValueObject",
-    "UnoDomainEvent",
+    "UnoEvent",
     "AggregateRoot",
     # Repository and Unit of Work
     "Repository",

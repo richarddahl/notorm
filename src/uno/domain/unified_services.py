@@ -23,8 +23,8 @@ from typing import (
 )
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.core.unified_events import (
-    UnoDomainEvent,
+from uno.core.events import (
+    UnoEvent,
     get_event_bus,
     collect_event,
     EventBus,
@@ -129,7 +129,7 @@ class DomainService(Generic[InputT, OutputT, UowT], ABC):
                 # If successful, commit transaction
                 if result.is_success:
                     # Collect events from repositories if they implement collect_events
-                    events: List[UnoDomainEvent] = []
+                    events: List[UnoEvent] = []
                     for repo in self.uow.repositories:
                         if hasattr(repo, "collect_events") and callable(
                             repo.collect_events
@@ -488,9 +488,9 @@ class EntityService(Generic[E]):
             # Publish deletion event if applicable
             if hasattr(entity, "id") and hasattr(entity, "__class__"):
                 # Create a generic deletion event
-                from uno.core.unified_events import UnoDomainEvent
+                from uno.core.events import UnoEvent
 
-                event = UnoDomainEvent(
+                event = UnoEvent(
                     event_type=f"{entity.__class__.__name__.lower()}_deleted",
                     aggregate_id=str(entity.id),
                     aggregate_type=entity.__class__.__name__,
@@ -696,9 +696,9 @@ class AggregateService(Generic[A]):
                     )
 
                 # Generate deletion event before removing
-                from uno.core.unified_events import UnoDomainEvent
+                from uno.core.events import UnoEvent
 
-                event = UnoDomainEvent(
+                event = UnoEvent(
                     event_type=f"{aggregate.__class__.__name__.lower()}_deleted",
                     aggregate_id=str(aggregate.id),
                     aggregate_type=aggregate.__class__.__name__,

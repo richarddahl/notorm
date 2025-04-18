@@ -34,7 +34,7 @@ from uno.database.enhanced_connection_pool import (
     EnhancedAsyncEnginePool,
     EnhancedAsyncConnectionManager,
 )
-from uno.core.async_utils import AsyncLock
+from uno.core.asynchronous import AsyncLock
 
 
 class HealthAwareConnectionPool(EnhancedConnectionPool):
