@@ -1,5 +1,6 @@
 import unittest
-from uno.core.async import context
+from uno.core.asynchronous import context
+
 
 class TestContext(unittest.TestCase):
     def test_module_import(self):

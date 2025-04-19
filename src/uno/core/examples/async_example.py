@@ -9,7 +9,7 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Optional
 
-from uno.core.async.task_manager import (
+from uno.core.asynchronous.task_manager import (
     get_async_manager,
     run_application,
     as_task,
@@ -40,7 +40,7 @@ from uno.database.enhanced_db import EnhancedUnoDb
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,11 @@ db = EnhancedUnoDb()
 async def make_api_call(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Make an API call with rate limiting and retry logic.
-    
+
     Args:
         endpoint: API endpoint
         data: Request data
-        
+
     Returns:
         API response
     """
@@ -80,26 +80,23 @@ async def make_api_call(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
 async def process_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Process a list of items with proper cancellation handling.
-    
+
     Args:
         items: List of items to process
-        
+
     Returns:
         Processed items
     """
     results = []
-    
+
     # Create a task group for concurrent processing
     async with TaskGroup(name="process_items") as group:
         # Create a task for each item
         tasks = [
-            group.create_task(
-                process_item(item),
-                name=f"process_item_{i}"
-            )
+            group.create_task(process_item(item), name=f"process_item_{i}")
             for i, item in enumerate(items)
         ]
-        
+
         # Wait for all tasks to complete
         for task in tasks:
             try:
@@ -107,7 +104,7 @@ async def process_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error processing item: {str(e)}")
-    
+
     return results
 
 
@@ -115,43 +112,45 @@ async def process_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 async def process_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Process a single item with concurrency limiting.
-    
+
     Args:
         item: Item to process
-        
+
     Returns:
         Processed item
     """
     # Simulate processing
     await asyncio.sleep(0.2)
-    
+
     # Make an API call
     response = await make_api_call("/process", item)
-    
+
     # Add the response to the item
     item["response"] = response
-    
+
     return item
 
 
 @as_task("database_operation")
-async def perform_database_operations(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def perform_database_operations(
+    items: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
     """
     Perform database operations with proper error handling.
-    
+
     Args:
         items: Items to process
-        
+
     Returns:
         Processed items
     """
     results = []
-    
+
     # Use a session operation group for coordinated transactions
     async with SessionOperationGroup() as op_group:
         # Create a session
         session = await op_group.create_session()
-        
+
         # Perform operations in a transaction
         async with session.begin():
             for item in items:
@@ -159,29 +158,31 @@ async def perform_database_operations(items: List[Dict[str, Any]]) -> List[Dict[
                 try:
                     # Simulate database operation
                     await asyncio.sleep(0.1)
-                    
+
                     # Add result
-                    results.append({
-                        **item,
-                        "processed": True,
-                    })
-                
+                    results.append(
+                        {
+                            **item,
+                            "processed": True,
+                        }
+                    )
+
                 except Exception as e:
                     logger.error(f"Error in database operation: {str(e)}")
                     # Transaction will be rolled back on error
                     raise
-    
+
     return results
 
 
 async def startup() -> None:
     """Initialize the application."""
     logger.info("Starting application")
-    
+
     # Register resources with the async manager
     manager = get_async_manager()
     await manager.register_resource(db, name="database")
-    
+
     # Start some background tasks
     manager.create_task(background_task(), name="background_task")
 
@@ -189,18 +190,18 @@ async def startup() -> None:
 async def background_task() -> None:
     """Run a background task with proper cancellation handling."""
     logger.info("Starting background task")
-    
+
     try:
         while True:
             # Do some work
             await asyncio.sleep(1)
-            
+
             # Check if shutting down
             manager = get_async_manager()
             if manager.is_shutting_down():
                 logger.info("Background task shutting down")
                 break
-    
+
     except asyncio.CancelledError:
         logger.info("Background task cancelled")
         raise
@@ -209,7 +210,7 @@ async def background_task() -> None:
 async def cleanup() -> None:
     """Clean up application resources."""
     logger.info("Cleaning up application resources")
-    
+
     # Clean up manually if needed
     # Most resources will be handled by the async manager
     pass
