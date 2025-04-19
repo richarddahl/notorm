@@ -65,7 +65,7 @@ from uno.values.domain_services import (
 )
 
 # Dependency injection provider
-from uno.values.domain_provider import (
+
     get_values_provider,
     configure_values_services,
 )

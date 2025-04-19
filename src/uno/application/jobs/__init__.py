@@ -85,7 +85,7 @@ from uno.jobs.domain_endpoints import (
 )
 
 # Domain provider
-from uno.jobs.domain_provider import (
+
     configure_jobs_dependencies,
     get_jobs_di_config
 )

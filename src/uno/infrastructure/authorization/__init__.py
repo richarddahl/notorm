@@ -57,7 +57,7 @@ from uno.authorization.domain_services import (
 )
 
 # Dependency provider
-from uno.authorization.domain_provider import (
+
     get_authorization_provider,
     configure_authorization_services,
 )

@@ -34,7 +34,7 @@ from uno.meta.domain_services import (
 )
 
 # Dependency provider
-from uno.meta.domain_provider import (
+
     get_meta_provider,
     configure_meta_services,
 )

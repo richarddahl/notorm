@@ -9,7 +9,7 @@ This package provides AI-enhanced features:
 """
 
 from uno.ai.domain_endpoints import ai_router
-from uno.ai.domain_provider import (
+
     configure_ai_dependencies,
     get_embedding_model_service,
     get_embedding_service,

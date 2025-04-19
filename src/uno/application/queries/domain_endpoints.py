@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from uno.api.endpoint import DomainRouter, domain_endpoint
 from uno.core.errors.result import Result
-from uno.queries.domain_provider import (
+
     get_query_path_service,
     get_query_value_service,
     get_query_service,

@@ -50,7 +50,7 @@ from uno.caching.domain_services import (
     CacheMonitoringService,
     CacheConfigurationService
 )
-from uno.caching.domain_provider import (
+
     configure_caching_dependencies,
     get_cache_provider_service,
     get_cache_region_service,

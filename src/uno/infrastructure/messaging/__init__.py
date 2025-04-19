@@ -35,7 +35,7 @@ from uno.messaging.api_integration import register_messaging_endpoints
 from uno.messaging.domain_endpoints import register_message_endpoints
 
 # Domain provider
-from uno.messaging.domain_provider import (
+
     configure_messaging_dependencies,
     get_messaging_di_config
 )

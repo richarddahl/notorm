@@ -37,7 +37,7 @@ endpoints = register_query_endpoints(
 
 # Using query service with dependency injection
 from fastapi import FastAPI, Depends
-from uno.queries.domain_provider import get_query_service
+
 from uno.queries.domain_services import QueryService
 
 app = FastAPI()
@@ -92,7 +92,7 @@ from uno.queries.domain_services import (
 )
 
 # Domain providers
-from uno.queries.domain_provider import (
+
     get_query_path_service,
     get_query_value_service,
     get_query_service,

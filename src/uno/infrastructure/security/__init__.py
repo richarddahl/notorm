@@ -37,7 +37,7 @@ from uno.security.domain_repositories import (
     JWTTokenRepositoryProtocol,
     MFACredentialRepositoryProtocol
 )
-from uno.security.domain_provider import (
+
     configure_security_dependencies,
     get_security_service,
     get_audit_service,

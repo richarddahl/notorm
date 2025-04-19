@@ -52,7 +52,7 @@ from uno.api.domain_services import (
 )
 
 # Domain provider
-from uno.api.domain_provider import ApiProvider, TestingApiProvider
+
 
 # Domain endpoints
 from uno.api.domain_endpoints import router as api_resource_router

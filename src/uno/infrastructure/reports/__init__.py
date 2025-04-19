@@ -60,7 +60,7 @@ from uno.reports.domain_services import (
 )
 
 # Domain provider and endpoints
-from uno.reports.domain_provider import (
+
     get_reports_provider,
     get_report_field_definition_service,
     get_report_template_service,
