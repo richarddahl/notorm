@@ -1,341 +1,146 @@
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+#
+# SPDX-License-Identifier: MIT
+
 """
-Domain module for domain-driven design patterns.
+The values module provides type-safe storage for different kinds of values
+used throughout the UNO framework, particularly as attribute values.
 
-This module implements a domain-driven design (DDD) approach for the Uno framework,
-providing a clear separation of concerns and a rich domain model.
+This module implements specialized storage for various data types, ensuring
+type safety, proper validation, and efficient querying. Each value type
+has appropriate lookup operations defined for filtering.
 
-It contains implementations of domain-driven design patterns including entities,
-value objects, aggregates, repositories, and specifications.
+Key components:
+- Domain Entities: Type-specific value objects following domain-driven design
+  - BooleanValue: True/False values
+  - TextValue: String text values
+  - IntegerValue: Integer numerical values
+  - DecimalValue: Decimal numerical values
+  - DateValue: Date values
+  - DateTimeValue: Date and time values
+  - TimeValue: Time values
+  - Attachment: File attachments
+- Repository Pattern: Follows domain-driven design for data access
+- Domain Services: Encapsulates business logic for values
+- API Integration: FastAPI endpoints for value operations
 """
 
-import warnings
-
-# Core domain models, protocols, and factories
-from uno.domain.models import (
-    UnoEvent,
-    ValueObject,
-    PrimitiveValueObject,
-    Entity,
-    AggregateRoot,
-)
-# Domain model components
-
-from uno.domain.protocols import (
-    DomainEventProtocol,
-    ValueObjectProtocol,
-    PrimitiveValueObjectProtocol,
-    EntityProtocol,
-    AggregateRootProtocol,
-    SpecificationProtocol,
-    EntityFactoryProtocol,
-    CommandResultProtocol,
-    DomainServiceProtocol,
+# Domain entities (DDD)
+from uno.values.entities import (
+    BaseValue,
+    Attachment,
+    BooleanValue,
+    DateTimeValue,
+    DateValue,
+    DecimalValue,
+    IntegerValue,
+    TextValue,
+    TimeValue,
 )
 
-from uno.domain.factories import (
-    EntityFactory,
-    AggregateFactory,
-    ValueObjectFactory,
-    FactoryRegistry,
-    create_entity_factory,
-    create_aggregate_factory,
-    create_value_factory,
+# Domain repositories (DDD)
+from uno.values.domain_repositories import (
+    ValueRepository,
+    AttachmentRepository,
+    BooleanValueRepository,
+    DateTimeValueRepository,
+    DateValueRepository,
+    DecimalValueRepository,
+    IntegerValueRepository,
+    TextValueRepository,
+    TimeValueRepository,
 )
 
-from uno.domain.specifications import (
-    Specification,
-    AndSpecification,
-    OrSpecification,
-    NotSpecification,
-    AttributeSpecification,
-    PredicateSpecification,
-    DictionarySpecification,
-    specification_factory,
-    specification_from_predicate,
+# Domain services (DDD)
+from uno.values.domain_services import (
+    ValueService,
+    AttachmentService,
+    BooleanValueService,
+    DateTimeValueService,
+    DateValueService,
+    DecimalValueService,
+    IntegerValueService,
+    TextValueService,
+    TimeValueService,
 )
 
-# Specification translators
-from uno.domain.specification_translators import (
-    SpecificationTranslator,
-    PostgreSQLSpecificationTranslator,
-    PostgreSQLRepository,
-    AsyncPostgreSQLRepository,
+# Dependency injection provider
+from uno.values.domain_provider import (
+    get_values_provider,
+    configure_values_services,
 )
 
-# Repository pattern is now imported from infrastructure module
-# See uno.infrastructure.repositories for the unified repository implementation
+# Domain API integration
+from uno.values.domain_api_integration import register_domain_value_endpoints_api
 
-# Include compatibility imports for backward compatibility
-# These will be removed in a future version
-from uno.domain.core import DomainException
+# Error types
+from uno.values.errors import (
+    ValueErrorCode,
+    ValueNotFoundError,
+    ValueInvalidDataError,
+    ValueTypeMismatchError,
+    ValueValidationError,
+    ValueServiceError,
+    ValueRepositoryError,
+    register_value_errors,
+)
 
-# Business logic now comes from the unified infrastructure.services module
-
-# Event sourcing and event store
+# Register value error codes in the catalog
 try:
-    from uno.core.events import (
-        EventHandler,
-        EventBus,
-        EventStore,
-        InMemoryEventStore,
-        EventPublisher,
-        get_event_bus,
-        get_event_store,
-        get_event_publisher,
-    )
+    register_value_errors()
+except Exception as e:
+    import logging
 
-    from uno.domain.event_store import (
-        EventStore as EventStoreBase,
-        PostgresEventStore,
-        EventSourcedRepository,
-    )
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to register value error codes: {e}")
 
-    from uno.domain.event_store_manager import EventStoreManager
-
-    from uno.domain.event_store_integration import (
-        EventStoreIntegration,
-        get_event_store_integration,
-        get_event_sourced_repository,
-    )
-
-    has_event_store = True
-except ImportError:
-    has_event_store = False
-
-# Query system
-try:
-    from uno.domain.query import (
-        QuerySpecification,
-        QueryResult,
-        QueryExecutor,
-        RepositoryQueryExecutor,
-        FilterQueryExecutor,
-        QueryService,
-    )
-
-    # Enhanced query system
-    from uno.domain.enhanced_query import QueryMetadata, EnhancedQueryExecutor
-
-    from uno.domain.query_optimizer import (
-        QueryPerformanceTracker,
-        QueryPerformanceMetric,
-        QueryResultCache,
-        GraphQueryOptimizer,
-        MaterializedQueryView,
-    )
-
-    from uno.domain.selective_updater import (
-        GraphChangeEvent,
-        SelectiveGraphUpdater,
-        GraphSynchronizer,
-    )
-
-    from uno.domain.graph_path_query import (
-        PathQuerySpecification,
-        GraphPathQuery,
-        GraphPathQueryService,
-    )
-
-    event_store_components = []
-    if has_event_store:
-        event_store_components = [
-            # Event sourcing
-            "EventHandler",
-            "EventBus",
-            "EventStore",
-            "InMemoryEventStore",
-            "EventPublisher",
-            "get_event_bus",
-            "get_event_store",
-            "get_event_publisher",
-            # Event store
-            "EventStoreBase",
-            "PostgresEventStore",
-            "EventSourcedRepository",
-            "EventStoreManager",
-            # Event store integration
-            "EventStoreIntegration",
-            "get_event_store_integration",
-            "get_event_sourced_repository",
-        ]
-
-    # New domain model components
-    domain_model_components = [
-        # Core domain models
-        "UnoEvent",
-        "ValueObject",
-        "PrimitiveValueObject",
-        "Entity",
-        "AggregateRoot",
-        "Email",
-        "Money",
-        "Address",
-        # Domain protocols
-        "DomainEventProtocol",
-        "ValueObjectProtocol",
-        "PrimitiveValueObjectProtocol",
-        "EntityProtocol",
-        "AggregateRootProtocol",
-        "SpecificationProtocol",
-        "EntityFactoryProtocol",
-        "DomainServiceProtocol",
-        # Domain factories
-        "EntityFactory",
-        "AggregateFactory",
-        "ValueObjectFactory",
-        "FactoryRegistry",
-        "create_entity_factory",
-        "create_aggregate_factory",
-        "create_value_factory",
-        # Specifications
-        "Specification",
-        "AndSpecification",
-        "OrSpecification",
-        "NotSpecification",
-        "AttributeSpecification",
-        "PredicateSpecification",
-        "DictionarySpecification",
-        "specification_factory",
-        "specification_from_predicate",
-        "specification_from_predicate",
-        # Specification translators
-        "SpecificationTranslator",
-        "PostgreSQLSpecificationTranslator",
-        "PostgreSQLRepository",
-        "AsyncPostgreSQLRepository",
-        # Repository pattern now in infrastructure module
-    ]
-
-    # Legacy for backward compatibility (will be removed)
-    legacy_components = [
-        "DomainException",
-    ]
-
-    __all__ = (
-        domain_model_components
-        + legacy_components
-        + [
-            # Query system
-            "QuerySpecification",
-            "QueryResult",
-            "QueryExecutor",
-            "RepositoryQueryExecutor",
-            "FilterQueryExecutor",
-            "QueryService",
-            # Enhanced query system
-            "QueryMetadata",
-            "EnhancedQueryExecutor",
-            "QueryPerformanceTracker",
-            "QueryPerformanceMetric",
-            "QueryResultCache",
-            "GraphQueryOptimizer",
-            "MaterializedQueryView",
-            "GraphChangeEvent",
-            "SelectiveGraphUpdater",
-            "GraphSynchronizer",
-            "PathQuerySpecification",
-            "GraphPathQuery",
-            "GraphPathQueryService",
-        ]
-        + event_store_components
-    )
-
-except ImportError:
-    # In case some enhanced query components aren't available yet
-    event_store_components = []
-    if has_event_store:
-        event_store_components = [
-            # Event sourcing
-            "EventHandler",
-            "EventBus",
-            "EventStore",
-            "InMemoryEventStore",
-            "EventPublisher",
-            "get_event_bus",
-            "get_event_store",
-            "get_event_publisher",
-            # Event store
-            "EventStoreBase",
-            "PostgresEventStore",
-            "EventSourcedRepository",
-            "EventStoreManager",
-            # Event store integration
-            "EventStoreIntegration",
-            "get_event_store_integration",
-            "get_event_sourced_repository",
-        ]
-
-    # New domain model components
-    domain_model_components = [
-        # Core domain models
-        "UnoEvent",
-        "ValueObject",
-        "PrimitiveValueObject",
-        "Entity",
-        "AggregateRoot",
-        "Email",
-        "Money",
-        "Address",
-        # Domain protocols
-        "DomainEventProtocol",
-        "ValueObjectProtocol",
-        "PrimitiveValueObjectProtocol",
-        "EntityProtocol",
-        "AggregateRootProtocol",
-        "SpecificationProtocol",
-        "EntityFactoryProtocol",
-        "DomainServiceProtocol",
-        # Domain factories
-        "EntityFactory",
-        "AggregateFactory",
-        "ValueObjectFactory",
-        "FactoryRegistry",
-        "create_entity_factory",
-        "create_aggregate_factory",
-        "create_value_factory",
-        # Specifications
-        "Specification",
-        "AndSpecification",
-        "OrSpecification",
-        "NotSpecification",
-        "AttributeSpecification",
-        "PredicateSpecification",
-        "DictionarySpecification",
-        "specification_factory",
-        # Specification translators
-        "SpecificationTranslator",
-        "PostgreSQLSpecificationTranslator",
-        "PostgreSQLRepository",
-        "AsyncPostgreSQLRepository",
-        # Repository pattern now in infrastructure module
-    ]
-
-    # Legacy for backward compatibility (will be removed)
-    legacy_components = [
-        "DomainException",
-    ]
-
-    __all__ = (
-        domain_model_components
-        + legacy_components
-        + [
-        ]
-        + event_store_components
-    )
-
-# Display a warning to encourage using the standardized imports directly
-warnings.warn(
-    "For improved code organization, import domain model components directly from:\n"
-    "- uno.domain.base.model: BaseModel (database model base class)\n"
-    "- uno.domain.entities.base_entity: Entity, AggregateRoot, ValueObject\n"
-    "- uno.domain.protocols: EntityProtocol, ValueObjectProtocol, etc.\n"
-    "- uno.domain.factories: EntityFactory, create_entity_factory, etc.\n"
-    "- uno.domain.specifications: Specification, AttributeSpecification, etc.\n"
-    "- uno.core.base.repository: BaseRepository and repository interfaces\n"
-    "- uno.core.base.service: BaseService\n"
-    "- For repository implementations, use uno.infrastructure.repositories\n"
-    "- For service implementations, use uno.infrastructure.services\n"
-    "- For DTOs, use uno.core.base.dto: BaseDTO, PaginatedListDTO, etc.",
-    DeprecationWarning,
-    stacklevel=2,
-)
+__all__ = [
+    # Domain Entities (DDD)
+    "BaseValue",
+    "Attachment",
+    "BooleanValue",
+    "DateTimeValue",
+    "DateValue",
+    "DecimalValue",
+    "IntegerValue",
+    "TextValue",
+    "TimeValue",
+    
+    # Domain Repositories (DDD)
+    "ValueRepository",
+    "AttachmentRepository",
+    "BooleanValueRepository",
+    "DateTimeValueRepository",
+    "DateValueRepository",
+    "DecimalValueRepository",
+    "IntegerValueRepository",
+    "TextValueRepository",
+    "TimeValueRepository",
+    
+    # Domain Services (DDD)
+    "ValueService",
+    "AttachmentService",
+    "BooleanValueService",
+    "DateTimeValueService",
+    "DateValueService",
+    "DecimalValueService",
+    "IntegerValueService",
+    "TextValueService",
+    "TimeValueService",
+    
+    # Dependency Injection
+    "get_values_provider",
+    "configure_values_services",
+    
+    # API integration
+    "register_domain_value_endpoints_api",
+    
+    # Error types
+    "ValueErrorCode",
+    "ValueNotFoundError",
+    "ValueInvalidDataError",
+    "ValueTypeMismatchError",
+    "ValueValidationError",
+    "ValueServiceError",
+    "ValueRepositoryError",
+]

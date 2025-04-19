@@ -7,26 +7,32 @@ This document outlines the remaining tasks for completing the unified endpoint f
 We've successfully implemented:
 
 ✅ **Endpoint Base Classes**
+
 - Created BaseEndpoint, CrudEndpoint, QueryEndpoint, CommandEndpoint
 - Implemented consistent router registration
 
 ✅ **Response Formatting**
+
 - Standardized response format with DataResponse, ErrorResponse
 - Implemented pagination support with PaginatedResponse
 
 ✅ **Error Middleware**
+
 - Created ErrorHandlerMiddleware for consistent error handling
 - Implemented standardized error response format
 
 ✅ **CQRS Implementation**
+
 - Created QueryHandler and CommandHandler for CQRS pattern
 - Implemented CqrsEndpoint for combining queries and commands
 
 ✅ **Input Validation**
+
 - Integrated Pydantic validation with endpoint framework
 - Standardized validation error handling
 
 ✅ **DTO Mapping**
+
 - Created factory for generating DTOs from schemas
 - Implemented consistent mapping between DTOs and domain entities
 
@@ -83,15 +89,10 @@ We've successfully implemented:
   - Support field selection and projection
   - Implement complex search operations
 
-## Integration with Legacy Code
-
-- [ ] **Legacy Endpoint Adapters**
-  - Create adapters for legacy endpoint patterns
-  - Add deprecation warnings to legacy endpoints
-  - Document migration path for application code
+## Module Integration
 
 - [ ] **Module-Specific Endpoints**
-  - Update module-specific endpoints to use the unified framework
+  - Update module endpoints to use the unified framework
   - Integrate with domain entity repositories and services
   - Standardize error handling and response formatting
 
@@ -136,22 +137,17 @@ We've successfully implemented:
    - Verify filtering, pagination, and authentication
    - Document test patterns and best practices
 
-### Week 3: Legacy Integration and Documentation
+### Week 3: Module Integration and Documentation
 
-1. **Day 1-2: Legacy Integration**
-   - Create adapters for legacy endpoints
-   - Add deprecation warnings
-   - Test compatibility with existing code
-
-2. **Day 3-4: Module-Specific Endpoints**
-   - Update module-specific endpoints
+1. **Day 1-3: Module Integration**
+   - Update module endpoints
    - Standardize response formatting
    - Ensure consistent error handling
 
-3. **Day 5: Documentation**
+2. **Day 4-5: Documentation**
    - Complete comprehensive documentation
    - Create examples for common use cases
-   - Document migration paths for legacy code
+   - Document best practices and patterns
 
 ## Validation and Testing
 
@@ -182,7 +178,7 @@ For each component, we will:
 2. **Developer Guides**
    - Create step-by-step guides for common tasks
    - Document best practices for endpoint design
-   - Provide migration guides for legacy code
+   - Document architectural patterns and usage
 
 3. **Examples**
    - Create example applications

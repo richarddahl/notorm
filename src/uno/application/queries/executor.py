@@ -9,48 +9,37 @@ This module provides functionality to execute saved QueryModel instances
 against the database to determine if records match the query criteria.
 """
 
-import logging
-import json
-import time
+import asyncio
 import functools
 import hashlib
-import asyncio
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    TypeVar,
-    Type,
-    cast,
-    Awaitable,
-    Callable,
-)
+import json
+import logging
+import time
+from collections.abc import Callable
+from typing import Any, Optional
 
-from sqlalchemy import (
-    select,
-    and_,
-    or_,
-    not_,
-    text,
-)
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, text
 
-from uno.database.enhanced_session import enhanced_async_session
-from uno.enums import Include, Match
-from uno.queries.models import QueryModel
-from uno.core.errors.result import Result, Success, Failure
 from uno.core.caching import QueryCache, get_cache_manager
+from uno.core.errors.result import Failure, Result, Success
+from uno.enums import Include, Match
 from uno.queries.errors import (
     QueryExecutionError,
     QueryPathError,
     QueryValueError,
-    FilterError,
-    QueryNotFoundError,
 )
+from uno.queries.models import Query
+from uno.queries.types import QueryPath, QueryValue
+
+try:
+    from sqlalchemy.ext.asyncio import AsyncSession
+except ImportError:
+    AsyncSession = Any
+
+# Stub for enhanced_async_session if undefined (remove if defined elsewhere)
+def enhanced_async_session():
+    raise NotImplementedError('enhanced_async_session is not implemented')
+
 
 
 class QueryExecutor:
@@ -64,7 +53,7 @@ class QueryExecutor:
 
     def __init__(
         self,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         cache_enabled: bool = True,
         cache_ttl: int = 300,
     ):  # 5 minutes default TTL
@@ -80,63 +69,9 @@ class QueryExecutor:
         self.cache_enabled = cache_enabled
         self.cache_ttl = cache_ttl
 
-        # Use the advanced caching system
+        # Initialize cache names
         self._query_cache_name = "query_results"
         self._record_cache_name = "query_record_matches"
-
-        # Legacy cache for backward compatibility
-        self._legacy_result_cache = (
-            {}
-        )  # {query_id: {'result': [...], 'expires': timestamp}}
-        self._legacy_record_match_cache = (
-            {}
-        )  # {(query_id, record_id): {'result': bool, 'expires': timestamp}}
-
-    def _is_cache_valid(self, cache_entry):
-        """Check if a cache entry is still valid."""
-        if not cache_entry or "expires" not in cache_entry:
-            return False
-        return cache_entry["expires"] > time.time()
-
-    def _get_from_cache(self, cache_dict, key):
-        """Get a value from a cache dictionary if it's valid."""
-        if not self.cache_enabled:
-            return None
-
-        cache_entry = cache_dict.get(key)
-        if self._is_cache_valid(cache_entry):
-            self.logger.debug(f"Cache hit for legacy key {key}")
-            return cache_entry["result"]
-
-        # Clean up expired entry
-        if key in cache_dict:
-            del cache_dict[key]
-
-        return None
-
-    def _add_to_cache(self, cache_dict, key, value):
-        """Add a value to a cache dictionary with expiration."""
-        if not self.cache_enabled:
-            return
-
-        cache_dict[key] = {"result": value, "expires": time.time() + self.cache_ttl}
-
-        # Simple cache size management - clean up if too large
-        # This is a basic approach; a production system might use LRU or other strategies
-        if len(cache_dict) > 1000:  # Arbitrary limit
-            # Remove expired entries
-            now = time.time()
-            expired_keys = [k for k, v in cache_dict.items() if v["expires"] < now]
-            for k in expired_keys:
-                del cache_dict[k]
-
-            # If still too large, remove oldest entries (simplified approach)
-            if len(cache_dict) > 800:  # 80% of the limit
-                sorted_keys = sorted(
-                    cache_dict.keys(), key=lambda k: cache_dict[k]["expires"]
-                )
-                for k in sorted_keys[:200]:  # Remove oldest 20%
-                    del cache_dict[k]
 
     async def get_query_cache(self) -> QueryCache:
         """
@@ -223,9 +158,9 @@ class QueryExecutor:
     async def execute_query(
         self,
         query: Query,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         force_refresh: bool = False,
-    ) -> Result[List[str]]:
+    ) -> Result[list[str]]:
         """
         Execute a query and return matching record IDs.
 
@@ -256,15 +191,7 @@ class QueryExecutor:
         except Exception as e:
             self.logger.warning(f"Error accessing modern cache: {e}")
 
-            # Try legacy cache as fallback
-            if query.id:
-                cached_result = self._get_from_cache(
-                    self._legacy_result_cache, query.id
-                )
-                if cached_result is not None:
-                    return Success(cached_result)
-
-        # Cache miss or error, execute the query
+        # Not cached, execute fresh query
         result = await self._execute_query_fresh(query, session)
 
         # Cache successful results
@@ -302,19 +229,13 @@ class QueryExecutor:
             except Exception as e:
                 self.logger.warning(f"Error storing in modern cache: {e}")
 
-                # Use legacy cache as fallback
-                if query.id:
-                    self._add_to_cache(
-                        self._legacy_result_cache, query.id, result.value
-                    )
-
         return result
 
     async def _execute_query_fresh(
         self,
         query: Query,
         session: Optional[AsyncSession] = None,
-    ) -> Result[List[str]]:
+    ) -> Result[list[str]]:
         """
         Execute a query without using the cache.
 
@@ -336,7 +257,7 @@ class QueryExecutor:
         self,
         query: Query,
         session: AsyncSession,
-    ) -> Result[List[str]]:
+    ) -> Result[list[str]]:
         """
         Implementation of query execution.
 
@@ -400,11 +321,11 @@ class QueryExecutor:
     async def _execute_query_values(
         self,
         query_id: str,
-        query_values: List[QueryValue],
+        query_values: list[QueryValue],
         include: Include,
         match: Match,
         session: AsyncSession,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Execute query values and return matching record IDs.
 
@@ -431,23 +352,62 @@ class QueryExecutor:
         if not query_values:
             return []
 
-        # Get results for each query value
-        value_results: List[Set[str]] = []
-
-        # Optimization: Batch-load all query paths in a single database query
-        # This reduces the number of round-trips to the database
         path_ids = [qv.query_path_id for qv in query_values if qv.query_path_id]
         if not path_ids:
             return []
 
-        # Batch-load all paths at once
         paths_result = await session.execute(
             select(QueryPath).where(QueryPath.id.in_(path_ids))
         )
         paths = {path.id: path for path in paths_result.scalars().all()}
 
-        # Optimization: Check for single value equality with standard ID pattern
-        # This is one of the most common query patterns and can be highly optimized
+        # Try optimized single-value equality
+        optimized = await self._try_optimized_single_value(query_values, paths, session)
+        if optimized is not None:
+            return optimized
+
+        value_results: list[set[str]] = []
+        for qv in query_values:
+            if not qv.query_path_id or qv.query_path_id not in paths:
+                continue
+            path = paths[qv.query_path_id]
+            value_ids = [v.id for v in qv.values or []]
+            if not value_ids:
+                continue
+            query_strategy = self._choose_query_strategy(qv, path, value_ids)
+            lookup_condition = self._build_lookup_condition(qv.lookup, value_ids)
+            if query_strategy == "direct":
+                cypher_query = self._build_direct_join_query(path, qv, value_ids)
+            elif query_strategy == "exists":
+                cypher_query = self._build_exists_query(
+                    path, qv, lookup_condition, value_ids
+                )
+            else:
+                cypher_query = self._build_standard_cypher_query(
+                    path, qv, lookup_condition, value_ids
+                )
+            self.logger.debug(
+                f"Executing {query_strategy} query for path {path.cypher_path} with {len(value_ids)} values"
+            )
+            try:
+                query_params = {"value_ids_param": value_ids}
+                if query_strategy == "direct" and len(value_ids) == 1:
+                    query_params["value_id"] = value_ids[0]
+                result = await session.execute(
+                    text(cypher_query),
+                    query_params,
+                )
+                result_ids = {row[0] for row in result.fetchall()}
+                self.logger.debug(
+                    f"Found {len(result_ids)} matching records for query value {qv.id}"
+                )
+                value_results.append(result_ids)
+            except Exception as e:
+                self._log_query_value_error(e, qv, path, value_ids, query_id, query_strategy)
+                continue
+        return self._combine_query_value_results(value_results, match)
+
+    async def _try_optimized_single_value(self, query_values, paths, session):
         if (
             len(query_values) == 1
             and query_values[0].query_path_id in paths
@@ -457,12 +417,8 @@ class QueryExecutor:
             qv = query_values[0]
             path = paths[qv.query_path_id]
             value_ids = [v.id for v in qv.values or []]
-
             if len(value_ids) == 1:
-                # Optimize for single-value equality (very common case)
-                # Use direct foreign key lookup when possible
                 if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
-                    # This looks like a direct relationship - try optimized SQL
                     optimized_query = f"""
                     SELECT DISTINCT s.id
                     FROM {path.source_meta_type_id} s
@@ -470,7 +426,6 @@ class QueryExecutor:
                     WHERE t.id = :value_id
                     """
                     try:
-                        # Try the optimized query approach
                         result = await session.execute(
                             text(optimized_query),
                             {"value_id": value_ids[0]},
@@ -481,124 +436,52 @@ class QueryExecutor:
                         )
                         return list(result_ids)
                     except Exception as e:
-                        # If the optimized approach fails, log and fall back to standard path
                         self.logger.debug(
                             f"Optimized query failed, falling back to standard path: {e}"
                         )
-                        # Continue with normal execution below
+        return None
 
-        # Process each query value
-        for qv in query_values:
-            # Skip if no path
-            if not qv.query_path_id or qv.query_path_id not in paths:
-                continue
+    def _log_query_value_error(self, e, qv, path, value_ids, query_id, query_strategy):
+        self.logger.error(
+            f"Error executing query for path {path.cypher_path}: {e}"
+        )
+        error_context = {
+            "path_id": qv.query_path_id,
+            "cypher_path": path.cypher_path,
+            "value_count": len(value_ids),
+            "lookup_type": qv.lookup,
+            "query_id": query_id,
+            "value_id": qv.id,
+            "query_strategy": query_strategy,
+            "error": str(e),
+        }
+        self.logger.warning(
+            f"Path {qv.query_path_id} execution error in query {query_id}",
+            extra=error_context,
+        )
 
-            # Get the path from our preloaded dictionary
-            path = paths[qv.query_path_id]
-
-            # Extract value IDs
-            value_ids = [v.id for v in qv.values or []]
-
-            if not value_ids:
-                continue
-
-            # Optimization: Choose query strategy based on number of values and lookup type
-            query_strategy = self._choose_query_strategy(qv, path, value_ids)
-
-            # Build lookup condition based on the lookup type
-            lookup_condition = self._build_lookup_condition(qv.lookup, value_ids)
-
-            # Optimize query based on strategy
-            if query_strategy == "direct":
-                # For small value sets with equality conditions, use direct join
-                cypher_query = self._build_direct_join_query(path, qv, value_ids)
-            elif query_strategy == "exists":
-                # For exclusion patterns, use EXISTS for better performance
-                cypher_query = self._build_exists_query(
-                    path, qv, lookup_condition, value_ids
-                )
-            elif query_strategy == "standard":
-                # Standard path-based query using cypher
-                cypher_query = self._build_standard_cypher_query(
-                    path, qv, lookup_condition, value_ids
-                )
-            else:
-                # Fallback to standard query
-                cypher_query = self._build_standard_cypher_query(
-                    path, qv, lookup_condition, value_ids
-                )
-
-            self.logger.debug(
-                f"Executing {query_strategy} query for path {path.cypher_path} with {len(value_ids)} values"
-            )
-
-            try:
-                # Execute query with parameters
-                query_params = {"value_ids_param": value_ids}
-
-                # Add additional parameters if needed
-                if query_strategy == "direct" and len(value_ids) == 1:
-                    query_params["value_id"] = value_ids[0]
-
-                result = await session.execute(
-                    text(cypher_query),
-                    query_params,
-                )
-
-                # Get result IDs as a set
-                result_ids = {row[0] for row in result.fetchall()}
-                self.logger.debug(
-                    f"Found {len(result_ids)} matching records for query value {qv.id}"
-                )
-                value_results.append(result_ids)
-            except Exception as e:
-                self.logger.error(
-                    f"Error executing query for path {path.cypher_path}: {e}"
-                )
-                # Log the error with structured context for better troubleshooting
-                error_context = {
-                    "path_id": qv.query_path_id,
-                    "cypher_path": path.cypher_path,
-                    "value_count": len(value_ids),
-                    "lookup_type": qv.lookup,
-                    "query_id": query_id,
-                    "value_id": qv.id,
-                    "query_strategy": query_strategy,
-                    "error": str(e),
-                }
-                self.logger.warning(
-                    f"Path {qv.query_path_id} execution error in query {query_id}",
-                    extra=error_context,
-                )
-                # Continue processing other values even if one fails
-                continue
-
-        # Optimization: For AND with empty results, return early
+    def _combine_query_value_results(self, value_results, match):
+        """
+        Combine the sets of record IDs from each query value according to the match type.
+        For AND: intersection, for OR: union. Handles edge cases for empty results.
+        """
         if match == Match.AND and not value_results:
             return []
-
-        # Optimization: For OR with single result set, return directly
         if match == Match.OR and len(value_results) == 1:
             return list(value_results[0])
-
-        # Combine results based on match type
         if match == Match.AND:
-            # Return intersection of all results
             result = value_results[0]
             for r in value_results[1:]:
                 result &= r
-
             return list(result)
-        else:
-            # Return union of all results
-            result = set()
-            for r in value_results:
-                result |= r
-
-            return list(result)
+        # OR or fallback
+        result = set()
+        for r in value_results:
+            result |= r
+        return list(result)
 
     def _choose_query_strategy(
-        self, query_value: QueryValue, path: QueryPath, value_ids: List[str]
+        self, query_value: QueryValue, path: QueryPath, value_ids: list[str]
     ) -> str:
         """
         Choose the best query strategy based on the query value and path.
@@ -612,11 +495,13 @@ class QueryExecutor:
             The query strategy: "direct", "exists", or "standard"
         """
         # For single-value equality on direct relationships, use direct join
-        if (query_value.lookup is None or query_value.lookup == "equal") and len(
-            value_ids
-        ) == 1:
-            if "(:s)" in path.cypher_path and "(t:" in path.cypher_path:
-                return "direct"
+        if (
+            (query_value.lookup is None or query_value.lookup == "equal")
+            and len(value_ids) == 1
+            and "(:s)" in path.cypher_path
+            and "(t:" in path.cypher_path
+        ):
+            return "direct"
 
         # For exclusion patterns, use EXISTS for better performance
         if query_value.include == Include.EXCLUDE:
@@ -626,7 +511,7 @@ class QueryExecutor:
         return "standard"
 
     def _build_lookup_condition(
-        self, lookup: Optional[str], value_ids: List[str]
+        self, lookup: Optional[str], value_ids: list[str]
     ) -> str:
         """
         Build a lookup condition based on the lookup type.
@@ -682,7 +567,7 @@ class QueryExecutor:
         return lookup_conditions.get(lookup, "t.id IN $value_ids$")
 
     def _build_direct_join_query(
-        self, path: QueryPath, query_value: QueryValue, value_ids: List[str]
+        self, path: QueryPath, query_value: QueryValue, value_ids: list[str]
     ) -> str:
         """
         Build a direct join query for a single value.
@@ -715,7 +600,7 @@ class QueryExecutor:
         path: QueryPath,
         query_value: QueryValue,
         lookup_condition: str,
-        value_ids: List[str],
+        value_ids: list[str],
     ) -> str:
         """
         Build an EXISTS-based query for exclusion patterns.
@@ -751,7 +636,7 @@ class QueryExecutor:
         path: QueryPath,
         query_value: QueryValue,
         lookup_condition: str,
-        value_ids: List[str],
+        value_ids: list[str],
     ) -> str:
         """
         Build a standard cypher-based query.
@@ -795,11 +680,11 @@ class QueryExecutor:
     async def _execute_sub_queries(
         self,
         query_id: str,
-        sub_queries: List[Query],
+        sub_queries: list[Query],
         include: Include,
         match: Match,
         session: AsyncSession,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Execute sub-queries and return matching record IDs.
 
@@ -841,9 +726,9 @@ class QueryExecutor:
     async def _execute_and_subqueries(
         self,
         query_id: str,
-        sub_queries: List[Query],
+        sub_queries: list[Query],
         session: AsyncSession,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Execute sub-queries with AND logic, optimized with early termination.
 
@@ -857,7 +742,7 @@ class QueryExecutor:
         """
         # For AND logic, we can optimize by executing sequentially
         # and terminating early if any sub-query returns empty results
-        current_result: Optional[Set[str]] = None
+        current_result: Optional[set[str]] = None
 
         # Sort sub-queries by estimated complexity to execute simpler ones first
         # This increases chances of early termination
@@ -906,9 +791,9 @@ class QueryExecutor:
     async def _execute_or_subqueries(
         self,
         query_id: str,
-        sub_queries: List[Query],
+        sub_queries: list[Query],
         session: AsyncSession,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Execute sub-queries with OR logic, optimized with parallel execution.
 
@@ -953,10 +838,10 @@ class QueryExecutor:
 
     def _combine_results(
         self,
-        value_ids: List[str],
-        subquery_ids: List[str],
+        value_ids: list[str],
+        subquery_ids: list[str],
         match: Match,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Combine results from query values and sub-queries.
 
@@ -991,7 +876,7 @@ class QueryExecutor:
         self,
         query: Query,
         record_id: str,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         force_refresh: bool = False,
     ) -> Result[bool]:
         """
@@ -1028,16 +913,7 @@ class QueryExecutor:
         except Exception as e:
             self.logger.warning(f"Error accessing modern cache for record match: {e}")
 
-            # Try legacy cache as fallback
-            if query.id:
-                legacy_key = (query.id, record_id)
-                cached_result = self._get_from_cache(
-                    self._legacy_record_match_cache, legacy_key
-                )
-                if cached_result is not None:
-                    return Success(cached_result)
-
-        # Cache miss or error, do the check
+        # Not cached, execute fresh query
         result = await self._check_record_matches_fresh(query, record_id, session)
 
         # Cache successful results
@@ -1054,13 +930,6 @@ class QueryExecutor:
 
             except Exception as e:
                 self.logger.warning(f"Error storing record match in modern cache: {e}")
-
-                # Use legacy cache as fallback
-                if query.id:
-                    legacy_key = (query.id, record_id)
-                    self._add_to_cache(
-                        self._legacy_record_match_cache, legacy_key, result.value
-                    )
 
         return result
 
@@ -1294,7 +1163,7 @@ class QueryExecutor:
                         )
                         return Success(matched)
                     except Exception as e:
-                        # If optimization fails, continue with normal path
+                        # If optimization fails, log and fall back to standard path
                         self.logger.debug(
                             f"Direct join optimization failed: {e}, using standard check"
                         )
@@ -1415,7 +1284,7 @@ class QueryExecutor:
             )
 
     def _choose_check_strategy(
-        self, query_value: QueryValue, path: QueryPath, value_ids: List[str]
+        self, query_value: QueryValue, path: QueryPath, value_ids: list[str]
     ) -> str:
         """
         Choose the best query strategy for a direct record check.
@@ -1510,12 +1379,12 @@ class QueryExecutor:
         condition = f"""
         EXISTS (
             SELECT 1
-            FROM cypher('graph', $subq{index}$
+            FROM cypher('graph', $cypher_{index}$
                 MATCH {path.cypher_path}
                 WHERE {lookup_condition}
                 AND s.id = '{record_id}'
                 RETURN DISTINCT s.id
-            $subq{index}$, $value_ids$:=:{param_name}) AS (id TEXT)
+            $cypher_{index}$, $value_ids$:=:{param_name}) AS (id TEXT)
         )
         """
 
@@ -1528,7 +1397,7 @@ class QueryExecutor:
     async def _check_record_matches_subqueries(
         self,
         query_id: str,
-        sub_queries: List[Query],
+        sub_queries: list[Query],
         record_id: str,
         include: Include,
         match: Match,
@@ -1783,7 +1652,7 @@ class QueryExecutor:
                 )
             )
 
-    def _build_count_query(self, query: Query) -> Dict[str, Any]:
+    def _build_count_query(self, query: Query) -> dict[str, Any]:
         """
         Build an optimized COUNT query for the given Query object.
 
@@ -1830,9 +1699,9 @@ class QueryExecutor:
                 EXISTS (
                     SELECT 1
                     FROM cypher('graph', $cypher_{idx}$
-                        MATCH (s:{query.query_meta_type_id})-[:{qv.query_path_id}]->(t)
+                        MATCH {qv.query_path_id}
                         WHERE t.id = ANY(:value_ids_{idx})
-                        RETURN s.id
+                        RETURN DISTINCT s.id
                     $cypher_{idx}$, value_ids_{idx}:=:value_ids_{idx}) AS (id TEXT)
                     WHERE id = s.id
                 )
@@ -1961,28 +1830,13 @@ class QueryExecutor:
 
             # Invalidate record match cache
             record_cache = await self.get_record_cache()
-            count += await record_cache.invalidate(tag=f"query:{query_id}")
+            count2 = await record_cache.invalidate(key_prefix=f"record:{query_id}")
 
-            # Invalidate count cache
-            count += await query_cache.invalidate(key=f"count:query:{query_id}")
-
-            # Clean up legacy cache
-            if query_id in self._legacy_result_cache:
-                del self._legacy_result_cache[query_id]
-                count += 1
-
-            # Clean up legacy record match cache
-            legacy_record_keys = [
-                k for k in self._legacy_record_match_cache.keys() if k[0] == query_id
-            ]
-            for k in legacy_record_keys:
-                del self._legacy_record_match_cache[k]
-                count += 1
-
+            total = count + count2
             self.logger.debug(
-                f"Invalidated {count} cache entries for query: {query_id}"
+                f"Invalidated {total} cache entries for query {query_id}"
             )
-            return count
+            return total
 
         except Exception as e:
             self.logger.warning(f"Error invalidating cache for query {query_id}: {e}")
@@ -2018,29 +1872,15 @@ class QueryExecutor:
             count1 = await query_cache.cache.clear()
             count2 = await record_cache.cache.clear()
 
-            # Clear legacy caches
-            count3 = len(self._legacy_result_cache)
-            count4 = len(self._legacy_record_match_cache)
-            self._legacy_result_cache.clear()
-            self._legacy_record_match_cache.clear()
-
-            total = count1 + count2 + count3 + count4
+            total = count1 + count2
             self.logger.debug(f"Cleared {total} cache entries")
             return total
 
         except Exception as e:
             self.logger.warning(f"Error clearing query caches: {e}")
+            return 0
 
-            # Try to clear legacy caches as fallback
-            count = len(self._legacy_result_cache) + len(
-                self._legacy_record_match_cache
-            )
-            self._legacy_result_cache.clear()
-            self._legacy_record_match_cache.clear()
-
-            return count
-
-    async def get_cache_stats(self) -> Dict[str, Any]:
+    async def get_cache_stats(self) -> dict[str, Any]:
         """
         Get statistics for the query caches.
 
@@ -2050,10 +1890,6 @@ class QueryExecutor:
         stats = {
             "query_cache": {},
             "record_cache": {},
-            "legacy_cache": {
-                "result_size": len(self._legacy_result_cache),
-                "record_match_size": len(self._legacy_record_match_cache),
-            },
         }
 
         try:
