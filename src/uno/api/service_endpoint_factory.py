@@ -3,7 +3,20 @@ Endpoint factory for creating FastAPI endpoints from domain services.
 
 This module provides a factory that creates standardized FastAPI endpoints from domain services,
 providing a consistent integration between domain-driven design and API endpoints.
+
+DEPRECATED: This module is deprecated and will be removed in a future version.
+Use the unified endpoint framework in `uno.api.endpoint` instead.
 """
+
+import warnings
+
+# Display deprecation warning
+warnings.warn(
+    "The uno.api.service_endpoint_factory module is deprecated and will be removed in a future version. "
+    "Use the unified endpoint framework in uno.api.endpoint instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import logging
 import inspect

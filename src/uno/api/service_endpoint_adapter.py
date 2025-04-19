@@ -3,7 +3,20 @@ Domain service endpoint adapter for the uno framework API.
 
 This module provides adapter classes that integrate domain services with the API endpoint system,
 allowing endpoints to work with domain services in a consistent way.
+
+DEPRECATED: This module is deprecated and will be removed in a future version.
+Use the unified endpoint framework in `uno.api.endpoint` instead.
 """
+
+import warnings
+
+# Display deprecation warning
+warnings.warn(
+    "The uno.api.service_endpoint_adapter module is deprecated and will be removed in a future version. "
+    "Use the unified endpoint framework in uno.api.endpoint instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import logging
 import inspect
