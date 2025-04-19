@@ -1,5 +1,7 @@
 """
 Tests for domain service integration with API endpoints.
+
+This module contains tests for the newer unified endpoint framework.
 """
 
 import pytest
@@ -12,10 +14,9 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.domain.unified_services import DomainService
-from uno.domain.unit_of_work import UnitOfWork
-from uno.api.service_endpoint_adapter import DomainServiceAdapter
-from uno.api.service_endpoint_factory import DomainServiceEndpointFactory
+from uno.domain.entity.service import ApplicationService, CrudService, DomainService
+from uno.domain.entity.uow import UnitOfWork
+from uno.api.endpoint import BaseEndpoint, CommandEndpoint, QueryEndpoint, CrudEndpoint
 
 
 # Mock models for testing
@@ -51,8 +52,11 @@ class MockUnitOfWork(UnitOfWork):
 
 
 # Mock domain service for testing
-class TestDomainService(DomainService[TestInput, TestOutput, MockUnitOfWork]):
-    async def _execute_internal(self, input_data: TestInput) -> Result[TestOutput]:
+class TestDomainService(DomainService):
+    def __init__(self, uow=None):
+        self.uow = uow or MockUnitOfWork()
+    
+    async def execute(self, input_data: TestInput) -> Result[TestOutput]:
         # Success case
         if input_data.value >= 0:
             return Success(TestOutput(
@@ -69,13 +73,6 @@ class TestDomainService(DomainService[TestInput, TestOutput, MockUnitOfWork]):
             )
 
 
-# Mock service factory that returns our test service with a mock UoW
-class MockServiceFactory:
-    def create_domain_service(self, service_class, **kwargs):
-        uow = MockUnitOfWork()
-        return service_class(uow=uow)
-
-
 @pytest.fixture
 def test_app():
     """Create a test FastAPI application."""
@@ -83,82 +80,129 @@ def test_app():
     return app
 
 
-@pytest.fixture
-def endpoint_factory():
-    """Create endpoint factory with mock service factory."""
-    service_factory = MockServiceFactory()
-    return DomainServiceEndpointFactory(service_factory=service_factory)
-
-
-def test_service_adapter_success():
-    """Test that service adapter handles success cases correctly."""
-    # Create mock service
-    service = AsyncMock()
-    service.execute = AsyncMock(return_value=Success({"id": "test-id", "name": "test"}))
+def test_command_endpoint_success(test_app):
+    """Test that a command endpoint handles success cases correctly."""
+    # Create service
+    service = TestDomainService()
     
-    # Create adapter
-    adapter = DomainServiceAdapter(service=service)
-    
-    # Call execute (run in an event loop)
-    import asyncio
-    result = asyncio.run(adapter.execute({"name": "test", "value": 123}))
-    
-    # Verify result
-    assert result == {"id": "test-id", "name": "test"}
-    service.execute.assert_called_once()
-
-
-def test_service_adapter_failure():
-    """Test that service adapter handles failure cases correctly."""
-    # Create mock service
-    service = AsyncMock()
-    service.execute = AsyncMock(return_value=Failure("Test error", error_code="TEST_ERROR"))
-    
-    # Create adapter
-    adapter = DomainServiceAdapter(service=service)
-    
-    # Call execute (run in an event loop)
-    import asyncio
-    from fastapi import HTTPException
-    with pytest.raises(HTTPException) as excinfo:
-        asyncio.run(adapter.execute({"name": "test", "value": -1}))
-    
-    # Verify error details
-    assert excinfo.value.status_code == 400
-    assert "TEST_ERROR" in str(excinfo.value.detail)
-
-
-def test_create_domain_service_endpoint(test_app, endpoint_factory):
-    """Test creating an endpoint for a domain service."""
-    router = APIRouter()
-    
-    # Create an endpoint
-    endpoint_factory.create_domain_service_endpoint(
-        router=router,
-        service_class=TestDomainService,
-        path="/test",
-        method="POST",
+    # Create endpoint
+    endpoint = CommandEndpoint(
+        service=service,
+        command_model=TestInput,
         response_model=TestOutput,
+        path="/test",
+        method="post"
     )
     
-    # Add router to app
-    test_app.include_router(router)
+    # Register with app
+    endpoint.register(test_app)
     
     # Create test client
     client = TestClient(test_app)
     
     # Test successful request
     response = client.post("/test", json={"name": "test", "value": 42})
-    assert response.status_code == 200
+    assert response.status_code == 201  # Created status code
     data = response.json()
     assert data["name"] == "test"
     assert data["value"] == 42
     assert "id" in data
     assert "created_at" in data
+
+
+def test_command_endpoint_failure(test_app):
+    """Test that a command endpoint handles failure cases correctly."""
+    # Create service
+    service = TestDomainService()
+    
+    # Create endpoint
+    endpoint = CommandEndpoint(
+        service=service,
+        command_model=TestInput,
+        response_model=TestOutput,
+        path="/test",
+        method="post"
+    )
+    
+    # Register with app
+    endpoint.register(test_app)
+    
+    # Create test client
+    client = TestClient(test_app)
     
     # Test error case
     response = client.post("/test", json={"name": "test", "value": -1})
     assert response.status_code == 400
     data = response.json()
-    assert data["error"] == "INVALID_VALUE"
+    assert "message" in data
     assert "Value cannot be negative" in data["message"]
+    assert "code" in data
+    assert data["code"] == "INVALID_VALUE"
+
+
+def test_crud_endpoint(test_app):
+    """Test that a CRUD endpoint works correctly."""
+    # Create mock CRUD service
+    service = MagicMock(spec=CrudService)
+    service.create = AsyncMock(return_value=Success(TestOutput(
+        id="test-id",
+        name="test",
+        value=42,
+        created_at=datetime.now(UTC)
+    )))
+    service.get_by_id = AsyncMock(return_value=Success(TestOutput(
+        id="test-id",
+        name="test",
+        value=42,
+        created_at=datetime.now(UTC)
+    )))
+    service.get_all = AsyncMock(return_value=Success([
+        TestOutput(
+            id="test-id",
+            name="test",
+            value=42,
+            created_at=datetime.now(UTC)
+        )
+    ]))
+    service.update = AsyncMock(return_value=Success(TestOutput(
+        id="test-id",
+        name="updated",
+        value=43,
+        created_at=datetime.now(UTC)
+    )))
+    service.delete = AsyncMock(return_value=Success(None))
+    
+    # Create endpoint
+    endpoint = CrudEndpoint(
+        service=service,
+        create_model=TestInput,
+        response_model=TestOutput,
+        path="/tests"
+    )
+    
+    # Register with app
+    endpoint.register(test_app)
+    
+    # Create test client
+    client = TestClient(test_app)
+    
+    # Test create
+    response = client.post("/tests", json={"name": "test", "value": 42})
+    assert response.status_code == 201
+    
+    # Test get by ID
+    response = client.get("/tests/test-id")
+    assert response.status_code == 200
+    
+    # Test list
+    response = client.get("/tests")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+    
+    # Test update
+    response = client.put("/tests/test-id", json={"name": "updated", "value": 43})
+    assert response.status_code == 200
+    
+    # Test delete
+    response = client.delete("/tests/test-id")
+    assert response.status_code == 204
