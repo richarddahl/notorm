@@ -7,13 +7,11 @@ providing common functionality for all concrete implementations.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import (
-    Dict, Any, Type, TypeVar, Optional, Generic, Set, List,
-    Protocol, Callable, Awaitable, cast, runtime_checkable,
-)
+from typing import TypeVar, cast
 
-from uno.core.protocols import UnitOfWork, Repository
-from uno.core.events import Event, AsyncEventBus
+from uno.core.errors.result import Failure, Result, Success
+from uno.core.events import AsyncEventBus, Event
+from uno.core.protocols import Repository, UnitOfWork
 
 # Type variables
 T = TypeVar("T")
@@ -30,8 +28,8 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
     
     def __init__(
         self,
-        event_bus: Optional[AsyncEventBus] = None,
-        logger: Optional[logging.Logger] = None,
+        event_bus: AsyncEventBus | None = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the Unit of Work.
@@ -42,10 +40,10 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         self._event_bus = event_bus
         self._logger = logger or logging.getLogger(__name__)
-        self._repositories: Dict[Type[Repository], Repository] = {}
-        self._events: List[Event] = []
+        self._repositories: dict[type[Repository], Repository] = {}
+        self._events: list[Event] = []
     
-    def register_repository(self, repo_type: Type[RepoT], repo: RepoT) -> None:
+    def register_repository(self, repo_type: type[RepoT], repo: RepoT) -> None:
         """
         Register a repository with this Unit of Work.
         
@@ -55,7 +53,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         self._repositories[repo_type] = repo
     
-    def get_repository(self, repo_type: Type[RepoT]) -> RepoT:
+    def get_repository(self, repo_type: type[RepoT]) -> Result[RepoT, str]:
         """
         Get a repository by its type.
         
@@ -63,14 +61,11 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
             repo_type: The repository type/interface
             
         Returns:
-            The repository implementation
-            
-        Raises:
-            KeyError: If the repository is not registered
+            Result containing the repository implementation or an error
         """
         if repo_type not in self._repositories:
-            raise KeyError(f"Repository not found: {repo_type.__name__}")
-        return cast(RepoT, self._repositories[repo_type])
+            return Failure(f"Repository not found: {repo_type.__name__}")
+        return Success(cast(RepoT, self._repositories[repo_type]))
     
     def add_event(self, event: Event) -> None:
         """
@@ -81,7 +76,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         self._events.append(event)
     
-    def add_events(self, events: List[Event]) -> None:
+    def add_events(self, events: list[Event]) -> None:
         """
         Add multiple domain events to be published after commit.
         
@@ -90,7 +85,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         self._events.extend(events)
     
-    def collect_new_events(self) -> List[Event]:
+    def collect_new_events(self) -> list[Event]:
         """
         Collect new domain events from all registered repositories.
         
@@ -99,48 +94,68 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         # Collect events from all repositories that support event collection
         for repo in self._repositories.values():
-            if hasattr(repo, "collect_events") and callable(getattr(repo, "collect_events")):
+            if hasattr(repo, "collect_events") and callable(repo.collect_events):
                 events = repo.collect_events()
                 if events:
                     self._events.extend(events)
         
         return self._events
     
-    async def publish_events(self) -> None:
+    async def publish_events(self) -> Result[None, str]:
         """
         Publish all collected domain events.
         
         This is called automatically after a successful commit.
+        
+        Returns:
+            Result indicating success or an error message
         """
         if not self._event_bus:
             self._logger.warning("No event bus configured, events will not be published")
             self._events.clear()
-            return
+            return Success(None)
         
-        # Get all events to publish
-        events = self.collect_new_events()
-        
-        # Publish each event
-        self._logger.debug(f"Publishing {len(events)} events")
-        for event in events:
-            await self._event_bus.publish(event)
-        
-        # Clear the events after publishing
-        self._events.clear()
+        try:
+            # Get all events to publish
+            events = self.collect_new_events()
+            
+            # Publish each event
+            self._logger.debug(f"Publishing {len(events)} events")
+            for event in events:
+                await self._event_bus.publish(event)
+            
+            # Clear the events after publishing
+            self._events.clear()
+            return Success(None)
+        except Exception as e:
+            self._logger.error(f"Error publishing events: {e}")
+            return Failure(f"Failed to publish events: {str(e)}")
     
     @abstractmethod
-    async def begin(self) -> None:
-        """Begin a new transaction."""
+    async def begin(self) -> Result[None, str]:
+        """Begin a new transaction.
+        
+        Returns:
+            Result indicating success or an error message
+        """
         pass
     
     @abstractmethod
-    async def commit(self) -> None:
-        """Commit the current transaction."""
+    async def commit(self) -> Result[None, str]:
+        """Commit the current transaction.
+        
+        Returns:
+            Result indicating success or an error message
+        """
         pass
     
     @abstractmethod
-    async def rollback(self) -> None:
-        """Rollback the current transaction."""
+    async def rollback(self) -> Result[None, str]:
+        """Rollback the current transaction.
+        
+        Returns:
+            Result indicating success or an error message
+        """
         pass
     
     async def __aenter__(self) -> "AbstractUnitOfWork":
@@ -149,8 +164,13 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         
         Returns:
             The Unit of Work instance
+        
+        Raises:
+            RuntimeError: If the transaction could not be started
         """
-        await self.begin()
+        result = await self.begin()
+        if result.is_failure():
+            raise RuntimeError(f"Failed to begin transaction: {result.error()}")
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -164,18 +184,34 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
             exc_type: Exception type, if an exception was raised
             exc_val: Exception value, if an exception was raised
             exc_tb: Exception traceback, if an exception was raised
+        
+        Raises:
+            RuntimeError: If both commit and rollback fail
         """
-        try:
-            if exc_type:
-                self._logger.debug(
-                    f"Rolling back transaction due to {exc_type.__name__}: {exc_val}"
-                )
-                await self.rollback()
-            else:
-                self._logger.debug("Committing transaction")
-                await self.commit()
-                await self.publish_events()
-        except Exception as e:
-            self._logger.error(f"Error in unit of work exit: {e}")
-            await self.rollback()
-            raise
+        if exc_type:
+            self._logger.debug(
+                f"Rolling back transaction due to {exc_type.__name__}: {exc_val}"
+            )
+            rollback_result = await self.rollback()
+            if rollback_result.is_failure():
+                self._logger.error("Failed to rollback transaction: %s", rollback_result.error())
+                # We don't re-raise here as we're already handling an exception
+        else:
+            self._logger.debug("Committing transaction")
+            commit_result = await self.commit()
+            
+            if commit_result.is_failure():
+                self._logger.error("Failed to commit transaction: %s", commit_result.error())
+                rollback_result = await self.rollback()
+                if rollback_result.is_failure():
+                    self._logger.error("Failed to rollback after commit failure: %s", rollback_result.error())
+                    raise RuntimeError(
+                        f"Failed to commit and rollback: {commit_result.error()}, {rollback_result.error()}"
+                    )
+                raise RuntimeError(f"Failed to commit transaction: {commit_result.error()}")
+            
+            # Only publish events if commit succeeded
+            publish_result = await self.publish_events()
+            if publish_result.is_failure():
+                self._logger.error("Failed to publish events: %s", publish_result.error())
+                # We don't rollback here as the transaction was already committed

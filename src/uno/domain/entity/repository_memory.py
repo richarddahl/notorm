@@ -5,22 +5,21 @@ This module provides an in-memory repository implementation that is useful
 for testing and prototyping.
 """
 
-import logging
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar, AsyncIterator, cast
+from typing import Any, Generic, TypeVar
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.entity import ID
+from uno.core.errors.result import Failure, Result, Success
 from uno.domain.entity.base import EntityBase
-from uno.domain.entity.specification.base import Specification
 from uno.domain.entity.repository import EntityRepository
+from uno.domain.entity.specification.base import Specification
 
-# Type variables
 T = TypeVar("T", bound=EntityBase)  # Entity type
-ID = TypeVar("ID")  # ID type
 
 
-class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
+class InMemoryRepository(EntityRepository[T], Generic[T]):
     """
     In-memory repository implementation for domain entities.
     
@@ -28,22 +27,18 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
     that stores entities in memory. It is useful for testing and prototyping.
     """
     
-    def __init__(
-        self, 
-        entity_type: Type[T], 
-        logger: Optional[logging.Logger] = None
-    ):
+    def __init__(self, entity_type: type[T], optional_fields: list[str] | None = None):
         """
         Initialize the repository.
         
         Args:
             entity_type: The type of entity this repository manages
-            logger: Optional logger for diagnostic output
+            optional_fields: Optional list of fields that can be None
         """
-        super().__init__(entity_type, logger)
-        self._entities: Dict[ID, T] = {}
+        super().__init__(entity_type, optional_fields)
+        self._entities: dict[ID, T] = {}
     
-    async def get(self, id: ID) -> Optional[T]:
+    async def get(self, id: ID) -> Result[T | None, str]:
         """
         Get an entity by ID.
         
@@ -51,17 +46,20 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
             id: Entity ID
             
         Returns:
-            The entity if found, None otherwise
+            Result containing the entity if found or None, or a Failure with error message
         """
-        return deepcopy(self._entities.get(id))
+        try:
+            return Success[T | None, str](deepcopy(self._entities.get(id)), convert=True)
+        except Exception as e:
+            return Failure[T | None, str](f"Error retrieving entity with ID {id}: {str(e)}", convert=True)
     
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = 0,
-    ) -> List[T]:
+        filters: dict[str, Any] | None = None,
+        order_by: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = 0,
+    ) -> Result[list[T], str]:
         """
         List entities matching filter criteria.
         
@@ -72,45 +70,49 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
             offset: Optional offset for pagination
             
         Returns:
-            List of entities matching criteria
+            Result containing list of entities matching criteria or an error message
         """
-        # Convert values to list
-        entities = list(self._entities.values())
-        
-        # Apply filters if provided
-        if filters:
-            entities = [
-                e for e in entities 
-                if all(
-                    getattr(e, key) == value 
-                    for key, value in filters.items() 
-                    if hasattr(e, key)
-                )
-            ]
-        
-        # Apply ordering if provided
-        if order_by:
-            for field in reversed(order_by):
-                reverse = False
-                if field.startswith('-'):
-                    field = field[1:]
-                    reverse = True
-                
-                entities.sort(
-                    key=lambda e: getattr(e, field) if hasattr(e, field) else None,
-                    reverse=reverse
-                )
-        
-        # Apply pagination
-        if offset:
-            entities = entities[offset:]
-        if limit:
-            entities = entities[:limit]
-        
-        # Return deep copies to prevent modification
-        return [deepcopy(e) for e in entities]
+        try:
+            # Convert values to list
+            entities = list(self._entities.values())
+            
+            # Apply filters if provided
+            if filters:
+                entities = [
+                    e for e in entities 
+                    if all(
+                        getattr(e, key) == value 
+                        for key, value in filters.items() 
+                        if hasattr(e, key)
+                    )
+                ]
+            
+            # Apply ordering if provided
+            if order_by:
+                for field in reversed(order_by):
+                    reverse = False
+                    sort_field = field
+                    if field.startswith('-'):
+                        sort_field = field[1:]
+                        reverse = True
+                    
+                    entities.sort(
+                        key=lambda e: getattr(e, sort_field) if hasattr(e, sort_field) else None,
+                        reverse=reverse
+                    )
+            
+            # Apply pagination
+            if offset:
+                entities = entities[offset:]
+            if limit:
+                entities = entities[:limit]
+            
+            # Return deep copies to prevent modification
+            return Success[list[T], str]([deepcopy(e) for e in entities], convert=True)
+        except Exception as e:
+            return Failure[list[T], str](f"Error listing entities: {str(e)}", convert=True)
     
-    async def add(self, entity: T) -> T:
+    async def add(self, entity: T) -> Result[T, str]:
         """
         Add a new entity.
         
@@ -118,29 +120,33 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
             entity: The entity to add
             
         Returns:
-            The added entity with any generated values
+            Result containing the added entity with any generated values or an error message
         """
-        # Ensure entity has an ID
-        if entity.id is None:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if entity already exists
-        if entity.id in self._entities:
-            raise ValueError(f"Entity with ID {entity.id} already exists")
-        
-        # Set created/updated timestamps if not set
-        now = datetime.now()
-        if not hasattr(entity, 'created_at') or entity.created_at is None:
-            entity.created_at = now
-        if not hasattr(entity, 'updated_at') or entity.updated_at is None:
-            entity.updated_at = now
-        
-        # Store a deep copy to prevent modification of the original
-        self._entities[entity.id] = deepcopy(entity)
-        
-        return deepcopy(entity)
+        try:
+            # Ensure entity has an ID
+            if entity.id is None:
+                return Failure[T, str]("Entity must have an ID", convert=True)
+            
+            # Check if entity already exists
+            if entity.id in self._entities:
+                return Failure[T, str](f"Entity with ID {entity.id} already exists", convert=True)
+            
+            # Set created/updated timestamps if not set
+            now = datetime.now()
+            if hasattr(entity, "created_at") and entity.created_at is None:
+                entity.created_at = now
+            if hasattr(entity, "updated_at"):
+                entity.updated_at = now
+            
+            # Store a deep copy to prevent modification of original
+            self._entities[entity.id] = deepcopy(entity)
+            
+            # Return a copy of the stored entity
+            return Success[T, str](deepcopy(self._entities[entity.id]), convert=True)
+        except Exception as e:
+            return Failure[T, str](f"Error adding entity: {str(e)}", convert=True)
     
-    async def update(self, entity: T) -> T:
+    async def update(self, entity: T) -> Result[T, str]:
         """
         Update an existing entity.
         
@@ -148,43 +154,55 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
             entity: The entity to update
             
         Returns:
-            The updated entity
+            Result containing the updated entity or an error message
         """
-        # Ensure entity has an ID
-        if entity.id is None:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if entity exists
-        if entity.id not in self._entities:
-            raise ValueError(f"Entity with ID {entity.id} does not exist")
-        
-        # Update timestamp
-        entity.updated_at = datetime.now()
-        
-        # Store a deep copy to prevent modification of the original
-        self._entities[entity.id] = deepcopy(entity)
-        
-        return deepcopy(entity)
+        try:
+            # Ensure entity has an ID
+            if entity.id is None:
+                return Failure[T, str]("Entity must have an ID", convert=True)
+            
+            # Check if entity exists
+            if entity.id not in self._entities:
+                return Failure[T, str](f"Entity with ID {entity.id} not found", convert=True)
+            
+            # Set updated timestamp if not set
+            if hasattr(entity, "updated_at"):
+                entity.updated_at = datetime.now()
+            
+            # Store a deep copy to prevent modification of original
+            self._entities[entity.id] = deepcopy(entity)
+            
+            # Return a copy of the stored entity
+            return Success[T, str](deepcopy(self._entities[entity.id]), convert=True)
+        except Exception as e:
+            return Failure[T, str](f"Error updating entity: {str(e)}", convert=True)
     
-    async def delete(self, entity: T) -> None:
+    async def delete(self, entity: T) -> Result[bool, str]:
         """
         Delete an entity.
         
         Args:
             entity: The entity to delete
+            
+        Returns:
+            Result indicating success (True) or failure with an error message
         """
-        # Ensure entity has an ID
-        if entity.id is None:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if entity exists
-        if entity.id not in self._entities:
-            raise ValueError(f"Entity with ID {entity.id} does not exist")
-        
-        # Remove entity
-        del self._entities[entity.id]
+        try:
+            # Ensure entity has an ID
+            if entity.id is None:
+                return Failure[bool, str]("Entity must have an ID", convert=True)
+            
+            # Check if entity exists
+            if entity.id not in self._entities:
+                return Failure[bool, str](f"Entity with ID {entity.id} not found", convert=True)
+            
+            # Delete the entity
+            del self._entities[entity.id]
+            return Success[bool, str](True, convert=True)
+        except Exception as e:
+            return Failure[bool, str](f"Error deleting entity: {str(e)}", convert=True)
     
-    async def exists(self, id: ID) -> bool:
+    async def exists(self, id: ID) -> Result[bool, str]:
         """
         Check if an entity with the given ID exists.
         
@@ -192,120 +210,169 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
             id: Entity ID
             
         Returns:
-            True if exists, False otherwise
+            Result containing True if entity exists, False otherwise
         """
-        return id in self._entities
+        try:
+            return Success[bool, str](id in self._entities, convert=True)
+        except Exception as e:
+            return Failure[bool, str](f"Error checking if entity exists: {str(e)}", convert=True)
     
-    async def find(self, specification: Specification[T]) -> List[T]:
+    async def find(self, specification: Specification | None = None) -> Result[list[T], str]:
         """
         Find entities matching a specification.
-        
-        Args:
-            specification: The specification to match against
-            
-        Returns:
-            List of entities matching the specification
-        """
-        return [
-            deepcopy(e) 
-            for e in self._entities.values() 
-            if specification.is_satisfied_by(e)
-        ]
-    
-    async def find_one(self, specification: Specification[T]) -> Optional[T]:
-        """
-        Find a single entity matching a specification.
-        
-        Args:
-            specification: The specification to match against
-            
-        Returns:
-            The first entity matching the specification, or None if none found
-        """
-        for entity in self._entities.values():
-            if specification.is_satisfied_by(entity):
-                return deepcopy(entity)
-        return None
-    
-    async def count(self, specification: Optional[Specification[T]] = None) -> int:
-        """
-        Count entities matching a specification.
         
         Args:
             specification: Optional specification to match against
             
         Returns:
-            Number of entities matching the specification
+            Result containing list of entities matching the specification or an error message
         """
-        if specification is None:
-            return len(self._entities)
-        
-        return len([
-            e for e in self._entities.values() 
-            if specification.is_satisfied_by(e)
-        ])
+        try:
+            if specification is None:
+                # If no specification is provided, return all entities
+                return Success[list[T], str]([deepcopy(entity) for entity in self._entities.values()], convert=True)
+            
+            matching_entities = [
+                deepcopy(entity) for entity in self._entities.values()
+                if specification.is_satisfied_by(entity)
+            ]
+            return Success[list[T], str](matching_entities, convert=True)
+        except Exception as e:
+            return Failure[list[T], str](f"Error finding entities: {str(e)}", convert=True)
     
-    async def add_many(self, entities: Iterable[T]) -> List[T]:
+    async def find_one(self, specification: Specification | None = None) -> Result[T | None, str]:
         """
-        Add multiple entities.
+        Find a single entity matching a specification.
         
         Args:
-            entities: Iterable of entities to add
+            specification: Optional specification to match against
             
         Returns:
-            List of added entities with any generated values
+            Result containing the first matching entity or None if none found
         """
-        added = []
-        for entity in entities:
-            added.append(await self.add(entity))
-        return added
+        try:
+            if specification is None:
+                # If no specification is provided, return the first entity (if any)
+                if not self._entities:
+                    return Success[T | None, str](None, convert=True)
+                return Success[T | None, str](deepcopy(next(iter(self._entities.values()))), convert=True)
+            
+            for entity in self._entities.values():
+                if specification.is_satisfied_by(entity):
+                    return Success[T | None, str](deepcopy(entity), convert=True)
+            
+            return Success[T | None, str](None, convert=True)
+        except Exception as e:
+            return Failure[T | None, str](f"Error finding entity: {str(e)}", convert=True)
     
-    async def update_many(self, entities: Iterable[T]) -> List[T]:
+    async def count(self, specification: Specification | None = None) -> Result[int, str]:
         """
-        Update multiple entities.
+        Count entities matching the specification.
         
         Args:
-            entities: Iterable of entities to update
+            specification: Optional specification to filter entities
             
         Returns:
-            List of updated entities
+            Result containing count of matching entities or an error message
         """
-        updated = []
-        for entity in entities:
-            updated.append(await self.update(entity))
-        return updated
+        try:
+            if specification is None:
+                return Success[int, str](len(self._entities), convert=True)
+            
+            count = len([
+                e for e in self._entities.values() 
+                if specification.is_satisfied_by(e)
+            ])
+            
+            return Success[int, str](count, convert=True)
+        except Exception as e:
+            return Failure[int, str](f"Error counting entities: {str(e)}", convert=True)
     
-    async def delete_many(self, entities: Iterable[T]) -> None:
+    async def bulk_add(self, entities: list[T]) -> Result[list[T], str]:
         """
-        Delete multiple entities.
+        Add multiple entities in bulk.
         
         Args:
-            entities: Iterable of entities to delete
-        """
-        for entity in entities:
-            await self.delete(entity)
-    
-    async def delete_by_ids(self, ids: Iterable[ID]) -> int:
-        """
-        Delete entities by their IDs.
-        
-        Args:
-            ids: Iterable of entity IDs to delete
+            entities: List of entities to add
             
         Returns:
-            Number of entities deleted
+            Result containing list of added entities with generated values or an error message
         """
-        count = 0
-        for id in ids:
-            if id in self._entities:
-                del self._entities[id]
-                count += 1
-        return count
+        try:
+            added_entities = []
+            for entity in entities:
+                result = await self.add(entity)
+                if result.is_failure():
+                    return Failure[list[T], str](f"Failed to add entity: {result.error()}", convert=True)
+                added_entities.append(result.value())
+            return Success[list[T], str](added_entities, convert=True)
+        except Exception as e:
+            return Failure[list[T], str](f"Error adding entities in bulk: {str(e)}", convert=True)
+    
+    async def bulk_update(self, entities: list[T]) -> Result[list[T], str]:
+        """
+        Update multiple entities in bulk.
+        
+        Args:
+            entities: List of entities to update
+            
+        Returns:
+            Result containing list of updated entities or an error message
+        """
+        try:
+            updated_entities = []
+            for entity in entities:
+                result = await self.update(entity)
+                if result.is_failure():
+                    return Failure[list[T], str](f"Failed to update entity: {result.error()}", convert=True)
+                updated_entities.append(result.value())
+            return Success[list[T], str](updated_entities, convert=True)
+        except Exception as e:
+            return Failure[list[T], str](f"Error updating entities in bulk: {str(e)}", convert=True)
+    
+    async def bulk_delete(self, entities: list[T]) -> Result[bool, str]:
+        """
+        Delete multiple entities in bulk.
+        
+        Args:
+            entities: List of entities to delete
+            
+        Returns:
+            Result indicating success (True) or failure with an error message
+        """
+        try:
+            for entity in entities:
+                result = await self.delete(entity)
+                if result.is_failure():
+                    return Failure[bool, str](f"Failed to delete entity: {result.error()}", convert=True)
+            return Success[bool, str](True, convert=True)
+        except Exception as e:
+            return Failure[bool, str](f"Error deleting entities in bulk: {str(e)}", convert=True)
+    
+    async def bulk_delete_by_ids(self, ids: list[ID]) -> Result[list[ID], str]:
+        """
+        Delete multiple entities by their IDs.
+        
+        Args:
+            ids: List of entity IDs to delete
+            
+        Returns:
+            Result containing list of IDs that were successfully deleted or an error message
+        """
+        try:
+            deleted_ids = []
+            for id in ids:
+                if id in self._entities:
+                    del self._entities[id]
+                    deleted_ids.append(id)
+            return Success[list[ID], str](deleted_ids, convert=True)
+        except Exception as e:
+            return Failure[list[ID], str](f"Error deleting entities by IDs: {str(e)}", convert=True)
     
     async def stream(
         self,
-        specification: Optional[Specification[T]] = None,
-        order_by: Optional[List[str]] = None,
+        specification: Specification | None = None,
+        order_by: list[str] | None = None,
         batch_size: int = 100,
     ) -> AsyncIterator[T]:
         """
@@ -319,6 +386,9 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
         Returns:
             Async iterator of entities matching the specification
         """
+        # This method doesn't return a Result type since it's an async iterator.
+        # Error handling should be done by the caller when consuming the iterator.
+        
         # Get entities matching specification
         entities = list(self._entities.values())
         if specification:
@@ -328,12 +398,13 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
         if order_by:
             for field in reversed(order_by):
                 reverse = False
+                sort_field = field
                 if field.startswith('-'):
-                    field = field[1:]
+                    sort_field = field[1:]
                     reverse = True
                 
                 entities.sort(
-                    key=lambda e: getattr(e, field) if hasattr(e, field) else None,
+                    key=lambda e: getattr(e, sort_field) if hasattr(e, sort_field) else None,
                     reverse=reverse
                 )
         
@@ -341,10 +412,17 @@ class InMemoryRepository(EntityRepository[T, ID], Generic[T, ID]):
         for entity in entities:
             yield deepcopy(entity)
     
-    def clear(self) -> None:
+    async def clear(self) -> Result[bool, str]:
         """
         Clear all entities from the repository.
         
         This method is useful for testing to reset the repository state.
+        
+        Returns:
+            Result indicating success (True) or failure with an error message
         """
-        self._entities.clear()
+        try:
+            self._entities.clear()
+            return Success[bool, str](True, convert=True)
+        except Exception as e:
+            return Failure[bool, str](f"Error clearing repository: {str(e)}", convert=True)

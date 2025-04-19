@@ -5,31 +5,10 @@ This module defines the service pattern protocols used throughout the system.
 Services encapsulate business logic and orchestrate domain operations.
 """
 
-from typing import Protocol, Generic, TypeVar, List, Optional, Any, Dict, runtime_checkable
+from collections.abc import Protocol
+from typing import Any, TypeVar, runtime_checkable
 
-# Import Result type reference - this will be fully implemented later
-# but we define the type signature here for the protocol
-from typing import TypeVar, Generic, Optional, List, Callable, Any
-
-T = TypeVar('T')  # Result value type
-E = TypeVar('E')  # Error type
-
-class Result(Generic[T, E]):
-    """Type definition for Result pattern - implementation will be in errors module."""
-    @property
-    def is_success(self) -> bool: ...
-    
-    @property
-    def is_failure(self) -> bool: ...
-    
-    @property
-    def value(self) -> Optional[T]: ...
-    
-    @property
-    def error(self) -> Optional[E]: ...
-    
-    @property
-    def errors(self) -> List[E]: ...
+from uno.core.errors.result import Result
 
 # Type variables for service protocols
 T = TypeVar('T')  # Entity/Domain object type
@@ -51,7 +30,7 @@ class ServiceProtocol(Protocol[T, ID]):
         ID: The type of the entity's identifier
     """
     
-    async def get_by_id(self, id: ID) -> Result[Optional[T], Any]:
+    async def get_by_id(self, id: ID) -> Result[T | None, Any]:
         """
         Retrieve an entity by its unique identifier.
         
@@ -63,7 +42,7 @@ class ServiceProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def get_all(self) -> Result[List[T], Any]:
+    async def get_all(self) -> Result[list[T], Any]:
         """
         Retrieve all entities of this type.
         
@@ -150,7 +129,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         """
         ...
     
-    async def to_dto(self, entity: T) -> DTO:
+    async def to_dto(self, entity: T) -> Result[DTO, Any]:
         """
         Convert an entity to a DTO.
         
@@ -162,7 +141,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         """
         ...
     
-    async def to_entity(self, dto: DTO) -> T:
+    async def to_entity(self, dto: DTO) -> Result[T, Any]:
         """
         Convert a DTO to an entity.
         
@@ -188,7 +167,7 @@ class QueryServiceProtocol(Protocol[T]):
         T: The entity/domain object type this service queries
     """
     
-    async def query(self, query_params: Dict[str, Any]) -> Result[List[T], Any]:
+    async def query(self, query_params: dict[str, Any]) -> Result[list[T], Any]:
         """
         Execute a query with the given parameters.
         
@@ -200,7 +179,7 @@ class QueryServiceProtocol(Protocol[T]):
         """
         ...
     
-    async def query_single(self, query_params: Dict[str, Any]) -> Result[Optional[T], Any]:
+    async def query_single(self, query_params: dict[str, Any]) -> Result[T | None, Any]:
         """
         Execute a query expecting a single result.
         
@@ -212,7 +191,7 @@ class QueryServiceProtocol(Protocol[T]):
         """
         ...
     
-    async def count(self, query_params: Dict[str, Any]) -> Result[int, Any]:
+    async def count(self, query_params: dict[str, Any]) -> Result[int, Any]:
         """
         Count the results of a query.
         

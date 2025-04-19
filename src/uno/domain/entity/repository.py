@@ -5,47 +5,29 @@ This module provides concrete repository implementations that work with domain e
 and support the Specification pattern for querying.
 """
 
-import logging
-from abc import ABC, abstractmethod
-from typing import (
-    Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar, 
-    AsyncIterator, Protocol, runtime_checkable, cast
-)
+from abc import abstractmethod
+from collections.abc import AsyncIterator
+from typing import Any, Generic, TypeVar
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.entity import ID
+from uno.core.errors.result import Failure, Result, Success
 from uno.domain.entity.base import EntityBase
 from uno.domain.entity.specification.base import Specification
 
-# Type variables
 T = TypeVar("T", bound=EntityBase)  # Entity type
-ID = TypeVar("ID")  # ID type
 
 
-class EntityRepository(Generic[T, ID], ABC):
+class EntityRepository(Generic[T]):
     """
-    Repository implementation for domain entities.
-    
-    This class provides base functionality for repositories that work with domain entities,
-    including support for specifications.
+    Base repository implementation for entity operations.
     """
     
-    def __init__(
-        self, 
-        entity_type: Type[T], 
-        logger: Optional[logging.Logger] = None
-    ):
-        """
-        Initialize the repository.
-        
-        Args:
-            entity_type: The type of entity this repository manages
-            logger: Optional logger for diagnostic output
-        """
+    def __init__(self, entity_type: type[T], optional_fields: list[str] | None = None):
         self.entity_type = entity_type
-        self.logger = logger or logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.optional_fields = optional_fields or []
     
     @abstractmethod
-    async def get(self, id: ID) -> Optional[T]:
+    async def get(self, id: ID) -> Result[T | None, str]:
         """
         Get an entity by ID.
         
@@ -53,11 +35,11 @@ class EntityRepository(Generic[T, ID], ABC):
             id: Entity ID
             
         Returns:
-            The entity if found, None otherwise
+            Result containing the entity if found or None, or a Failure with error message
         """
         pass
     
-    async def get_or_fail(self, id: ID) -> Result[T]:
+    async def get_or_fail(self, id: ID) -> Result[T, str]:
         """
         Get an entity by ID or return a failure result.
         
@@ -67,19 +49,24 @@ class EntityRepository(Generic[T, ID], ABC):
         Returns:
             Success result with entity or Failure if not found
         """
-        entity = await self.get(id)
+        result = await self.get(id)
+        if result.is_failure():
+            return Failure[T, str](result.error())
+            
+        entity = result.value()
         if entity is None:
-            return Failure(f"Entity with ID {id} not found")
-        return Success(entity)
+            return Failure[T, str](f"Entity with ID {id} not found")
+            
+        return Success[T, str](entity)
     
     @abstractmethod
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = 0,
-    ) -> List[T]:
+        filters: dict[str, Any] | None = None,
+        order_by: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = 0,
+    ) -> Result[list[T], str]:
         """
         List entities matching filter criteria.
         
@@ -90,12 +77,12 @@ class EntityRepository(Generic[T, ID], ABC):
             offset: Optional offset for pagination
             
         Returns:
-            List of entities matching criteria
+            Result containing a list of entities matching criteria or an error message
         """
         pass
     
     @abstractmethod
-    async def add(self, entity: T) -> T:
+    async def add(self, entity: T) -> Result[T, str]:
         """
         Add a new entity.
         
@@ -103,12 +90,12 @@ class EntityRepository(Generic[T, ID], ABC):
             entity: The entity to add
             
         Returns:
-            The added entity with any generated values (e.g., ID)
+            Result containing the added entity with any generated values (e.g., ID) or an error message
         """
         pass
     
     @abstractmethod
-    async def update(self, entity: T) -> T:
+    async def update(self, entity: T) -> Result[T, str]:
         """
         Update an existing entity.
         
@@ -116,22 +103,25 @@ class EntityRepository(Generic[T, ID], ABC):
             entity: The entity to update
             
         Returns:
-            The updated entity
+            Result containing the updated entity or an error message
         """
         pass
     
     @abstractmethod
-    async def delete(self, entity: T) -> None:
+    async def delete(self, entity: T) -> Result[bool, str]:
         """
         Delete an entity.
         
         Args:
             entity: The entity to delete
+            
+        Returns:
+            Result indicating success (True) or failure with an error message
         """
         pass
     
     @abstractmethod
-    async def exists(self, id: ID) -> bool:
+    async def exists(self, id: ID) -> Result[bool, str]:
         """
         Check if an entity with the given ID exists.
         
@@ -139,28 +129,34 @@ class EntityRepository(Generic[T, ID], ABC):
             id: Entity ID
             
         Returns:
-            True if exists, False otherwise
+            Result containing True if entity exists, False otherwise
         """
         pass
     
-    async def delete_by_id(self, id: ID) -> bool:
+    async def delete_by_id(self, id: ID) -> Result[bool, str]:
         """
         Delete an entity by ID.
         
         Args:
-            id: Entity ID
+            id: ID of the entity to delete
             
         Returns:
-            True if deleted, False if not found
+            Result containing True if entity was deleted or an error message
         """
-        entity = await self.get(id)
-        if entity is None:
-            return False
+        result = await self.get(id)
+        if result.is_failure():
+            return Failure[bool, str](result.error())
         
-        await self.delete(entity)
-        return True
+        if result.value() is None:
+            return Failure[bool, str](f"Entity with ID {id} not found")
+        
+        result = await self.delete(result.value())
+        if result.is_failure():
+            return Failure[bool, str](result.error())
+        
+        return Success[bool, str](result.value())
     
-    async def save(self, entity: T) -> T:
+    async def save(self, entity: T) -> Result[T, str]:
         """
         Save an entity (create or update).
         
@@ -168,108 +164,115 @@ class EntityRepository(Generic[T, ID], ABC):
             entity: The entity to save
             
         Returns:
-            The saved entity
+            Result containing the saved entity with any generated values or an error message
         """
-        # Check if entity exists by ID
-        entity_id = getattr(entity, "id", None)
-        if entity_id and await self.exists(entity_id):
+        if hasattr(entity, "id") and entity.id is not None:
             return await self.update(entity)
         else:
             return await self.add(entity)
     
     @abstractmethod
-    async def find(self, specification: Specification[T]) -> List[T]:
+    async def find(
+        self, specification: Specification | None = None
+    ) -> Result[list[T], str]:
         """
-        Find entities matching a specification.
+        Find all entities matching the specification.
         
         Args:
-            specification: The specification to match against
+            specification: Optional specification to filter entities
             
         Returns:
-            List of entities matching the specification
+            Result containing list of matching entities or an error message
         """
         pass
     
     @abstractmethod
-    async def find_one(self, specification: Specification[T]) -> Optional[T]:
+    async def find_one(
+        self, specification: Specification | None = None
+    ) -> Result[T | None, str]:
         """
-        Find a single entity matching a specification.
+        Find a single entity matching the specification.
         
         Args:
-            specification: The specification to match against
+            specification: Optional specification to filter entities
             
         Returns:
-            The first entity matching the specification, or None if none found
+            Result containing matching entity or None if not found
         """
         pass
     
     @abstractmethod
-    async def count(self, specification: Optional[Specification[T]] = None) -> int:
+    async def count(
+        self, specification: Specification | None = None
+    ) -> Result[int, str]:
         """
-        Count entities matching a specification.
+        Count entities matching the specification.
         
         Args:
-            specification: Optional specification to match against
+            specification: Optional specification to filter entities
             
         Returns:
-            Number of entities matching the specification
+            Result containing count of matching entities or an error message
         """
         pass
     
     @abstractmethod
-    async def add_many(self, entities: Iterable[T]) -> List[T]:
+    async def bulk_add(self, entities: list[T]) -> Result[list[T], str]:
         """
-        Add multiple entities.
+        Add multiple entities in bulk.
         
         Args:
-            entities: Iterable of entities to add
+            entities: List of entities to add
             
         Returns:
-            List of added entities with any generated values
+            Result containing list of added entities with generated values or an error message
         """
         pass
     
     @abstractmethod
-    async def update_many(self, entities: Iterable[T]) -> List[T]:
+    async def bulk_update(self, entities: list[T]) -> Result[list[T], str]:
         """
-        Update multiple entities.
+        Update multiple entities in bulk.
         
         Args:
-            entities: Iterable of entities to update
+            entities: List of entities to update
             
         Returns:
-            List of updated entities
+            Result containing list of updated entities or an error message
         """
         pass
     
     @abstractmethod
-    async def delete_many(self, entities: Iterable[T]) -> None:
+    async def bulk_delete(self, entities: list[T]) -> Result[bool, str]:
         """
-        Delete multiple entities.
+        Delete multiple entities in bulk.
         
         Args:
-            entities: Iterable of entities to delete
+            entities: List of entities to delete
+            
+        Returns:
+            Result indicating success (True) or failure with an error message
         """
         pass
     
     @abstractmethod
-    async def delete_by_ids(self, ids: Iterable[ID]) -> int:
+    async def bulk_delete_by_ids(self, ids: list[ID]) -> Result[list[ID], str]:
         """
-        Delete entities by their IDs.
+        Delete multiple entities by their IDs.
         
         Args:
-            ids: Iterable of entity IDs to delete
+            ids: List of entity IDs to delete
             
         Returns:
-            Number of entities deleted
+            Result containing list of IDs that were successfully deleted or an error message
         """
         pass
     
     @abstractmethod
     async def stream(
         self,
-        specification: Optional[Specification[T]] = None,
-        order_by: Optional[List[str]] = None,
+        specification: Specification | None = None,
+        order_by: list[str] | None = None,
         batch_size: int = 100,
     ) -> AsyncIterator[T]:
         """

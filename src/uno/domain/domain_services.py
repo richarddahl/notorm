@@ -5,13 +5,10 @@ This module provides domain services that implement business logic for values en
 coordinating entity validation and persistence through repositories.
 """
 
-from typing import List, Dict, Any, Optional, Type, TypeVar, Generic, cast
-import logging
+from typing import Any, TypeVar, Generic, cast
 
 from uno.core.errors.result import Result, Success, Failure
-from uno.domain.service import DomainService, UnoEntityService
-from uno.core.base.respository import Repository
-from uno.domain.core import Entity
+from uno.domain.service import UnoEntityService
 from uno.values.entities import (
     Attachment,
     BooleanValue,
@@ -42,7 +39,7 @@ class ValueService(UnoEntityService[T], Generic[T]):
     with appropriate type safety through generics.
     """
 
-    async def find_by_name(self, name: str) -> Result[Optional[T]]:
+    async def find_by_name(self, name: str) -> Result[T | None, str]:
         """
         Find a value entity by name.
 
@@ -55,16 +52,17 @@ class ValueService(UnoEntityService[T], Generic[T]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_name
             result = await repository.find_by_name(name)
-            return Success(result)
+            return Success(result, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding {self.entity_type.__name__} by name: {e}")
             return Failure(
                 ValueServiceError(
                     f"Error finding {self.entity_type.__name__} by name: {str(e)}"
-                )
+                ),
+                convert=True
             )
 
-    async def find_by_value(self, value: Any) -> Result[Optional[T]]:
+    async def find_by_value(self, value: Any) -> Result[T | None, str]:
         """
         Find a value entity by its value field.
 
@@ -77,7 +75,7 @@ class ValueService(UnoEntityService[T], Generic[T]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_value
             result = await repository.find_by_value(value)
-            return Success(result)
+            return Success(result, convert=True)
         except Exception as e:
             self.logger.error(
                 f"Error finding {self.entity_type.__name__} by value: {e}"
@@ -85,10 +83,11 @@ class ValueService(UnoEntityService[T], Generic[T]):
             return Failure(
                 ValueServiceError(
                     f"Error finding {self.entity_type.__name__} by value: {str(e)}"
-                )
+                ),
+                convert=True
             )
 
-    async def search(self, search_term: str, limit: int = 20) -> Result[List[T]]:
+    async def search(self, search_term: str, limit: int = 20) -> Result[list[T], str]:
         """
         Search for value entities matching a term.
 
@@ -103,7 +102,7 @@ class ValueService(UnoEntityService[T], Generic[T]):
             # Repository doesn't have search directly, so implement it here
             # For text-based values, search by name or value
             if hasattr(self.entity_type, "value") and isinstance(
-                getattr(self.entity_type, "value"), str
+                self.entity_type.value, str
             ):
                 filters = {
                     "or": [
@@ -116,13 +115,14 @@ class ValueService(UnoEntityService[T], Generic[T]):
                 filters = {"name": {"lookup": "ilike", "val": f"%{search_term}%"}}
 
             results = await self.repository.list(filters=filters, limit=limit)
-            return Success(results)
+            return Success(results, convert=True)
         except Exception as e:
             self.logger.error(f"Error searching {self.entity_type.__name__}: {e}")
             return Failure(
                 ValueServiceError(
                     f"Error searching {self.entity_type.__name__}: {str(e)}"
-                )
+                ),
+                convert=True
             )
 
 
@@ -132,7 +132,7 @@ class ValueService(UnoEntityService[T], Generic[T]):
 class AttachmentService(ValueService[Attachment]):
     """Service for Attachment entities."""
 
-    async def find_by_file_path(self, file_path: str) -> Result[Optional[Attachment]]:
+    async def find_by_file_path(self, file_path: str) -> Result[Attachment | None, str]:
         """
         Find an attachment by file path.
 
@@ -145,11 +145,12 @@ class AttachmentService(ValueService[Attachment]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_file_path
             result = await repository.find_by_file_path(file_path)
-            return Success(result)
+            return Success(result, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding Attachment by file path: {e}")
             return Failure(
-                ValueServiceError(f"Error finding Attachment by file path: {str(e)}")
+                ValueServiceError(f"Error finding Attachment by file path: {str(e)}"),
+                convert=True
             )
 
 

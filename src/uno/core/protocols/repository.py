@@ -5,12 +5,14 @@ This module defines the repository pattern protocols used throughout the system.
 Repositories provide a collection-like interface for accessing domain entities.
 """
 
-from typing import Protocol, Generic, TypeVar, List, Optional, Any, Dict, runtime_checkable
-from uuid import UUID
+from typing import Any, Protocol, TypeVar, runtime_checkable
+
+from uno.core.errors.result import Result
 
 # Type variables for entity types and ID types
 T = TypeVar('T')  # Entity type
 ID = TypeVar('ID')  # ID type (typically str, UUID, or int)
+E = TypeVar('E', bound=Exception)  # Error type for Result
 
 
 @runtime_checkable
@@ -27,7 +29,7 @@ class RepositoryProtocol(Protocol[T, ID]):
         ID: The type of the entity's identifier
     """
     
-    async def get_by_id(self, id: ID) -> Optional[T]:
+    async def get_by_id(self, id: ID) -> Result[T | None, E]:
         """
         Retrieve an entity by its unique identifier.
         
@@ -39,7 +41,7 @@ class RepositoryProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def find_all(self) -> List[T]:
+    async def find_all(self) -> Result[list[T], E]:
         """
         Retrieve all entities of this type.
         
@@ -48,7 +50,7 @@ class RepositoryProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def save(self, entity: T) -> T:
+    async def save(self, entity: T) -> Result[T, E]:
         """
         Save an entity (create or update).
         
@@ -60,7 +62,7 @@ class RepositoryProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def delete(self, entity: T) -> None:
+    async def delete(self, entity: T) -> Result[bool, E]:
         """
         Delete an entity.
         
@@ -69,7 +71,7 @@ class RepositoryProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def delete_by_id(self, id: ID) -> None:
+    async def delete_by_id(self, id: ID) -> Result[bool, E]:
         """
         Delete an entity by its unique identifier.
         
@@ -92,7 +94,7 @@ class QueryableRepositoryProtocol(RepositoryProtocol[T, ID], Protocol[T, ID]):
         ID: The type of the entity's identifier
     """
     
-    async def find_by(self, criteria: Dict[str, Any]) -> List[T]:
+    async def find_by(self, criteria: dict[str, Any]) -> Result[list[T], E]:
         """
         Find entities matching the given criteria.
         
@@ -104,7 +106,7 @@ class QueryableRepositoryProtocol(RepositoryProtocol[T, ID], Protocol[T, ID]):
         """
         ...
     
-    async def find_one_by(self, criteria: Dict[str, Any]) -> Optional[T]:
+    async def find_one_by(self, criteria: dict[str, Any]) -> Result[T | None, E]:
         """
         Find a single entity matching the given criteria.
         
@@ -116,7 +118,7 @@ class QueryableRepositoryProtocol(RepositoryProtocol[T, ID], Protocol[T, ID]):
         """
         ...
     
-    async def count(self, criteria: Optional[Dict[str, Any]] = None) -> int:
+    async def count(self, criteria: dict[str, Any] | None = None) -> Result[int, E]:
         """
         Count entities matching the given criteria.
         
@@ -128,7 +130,7 @@ class QueryableRepositoryProtocol(RepositoryProtocol[T, ID], Protocol[T, ID]):
         """
         ...
     
-    async def exists(self, id: ID) -> bool:
+    async def exists(self, id: ID) -> Result[bool, E]:
         """
         Check if an entity with the given ID exists.
         
@@ -158,9 +160,9 @@ class PageableRepositoryProtocol(QueryableRepositoryProtocol[T, ID], Protocol[T,
         self,
         page: int = 0,
         size: int = 20,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_order: str = "asc"
-    ) -> Dict[str, Any]:
+    ) -> Result[dict[str, Any], E]:
         """
         Retrieve a page of entities.
         
@@ -177,12 +179,12 @@ class PageableRepositoryProtocol(QueryableRepositoryProtocol[T, ID], Protocol[T,
     
     async def find_by_paged(
         self,
-        criteria: Dict[str, Any],
+        criteria: dict[str, Any],
         page: int = 0,
         size: int = 20,
-        sort_by: Optional[str] = None,
+        sort_by: str | None = None,
         sort_order: str = "asc"
-    ) -> Dict[str, Any]:
+    ) -> Result[dict[str, Any], E]:
         """
         Retrieve a page of entities matching the given criteria.
         

@@ -6,16 +6,14 @@ Domain services represent the operations and business logic that don't naturally
 """
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Generic, Type, TypeVar, Optional, List, Dict, Any, cast
+from abc import ABC
+from typing import Any, Generic, TypeVar, cast, type
 
-from pydantic import BaseModel
-
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Failure, Result, Success
+from uno.core.uow.base import AbstractUnitOfWork
 from uno.domain.entity.base import EntityBase
 from uno.domain.entity.repository import EntityRepository
 from uno.domain.entity.specification.base import Specification
-from uno.core.uow.base import AbstractUnitOfWork
 
 ID = TypeVar("ID")  # ID type variable
 T = TypeVar("T", bound=EntityBase)  # Entity type variable
@@ -33,9 +31,9 @@ class DomainService(Generic[T, ID], ABC):
     
     def __init__(
         self,
-        entity_type: Type[T],
+        entity_type: type[T],
         repository: EntityRepository[T, ID],
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         """
         Initialize the domain service.
@@ -61,16 +59,16 @@ class DomainService(Generic[T, ID], ABC):
         """
         entity = await self.repository.get(id)
         if entity is None:
-            return Failure(f"Entity with ID {id} not found")
-        return Success(entity)
+            return Failure[T, str](f"Entity with ID {id} not found", convert=True)
+        return Success[T, str](entity, convert=True)
     
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = 0,
-    ) -> Result[List[T], str]:
+        filters: dict[str, Any] | None = None,
+        order_by: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = 0,
+    ) -> Result[list[T], str]:
         """
         List entities matching filter criteria.
         
@@ -85,12 +83,12 @@ class DomainService(Generic[T, ID], ABC):
         """
         try:
             entities = await self.repository.list(filters, order_by, limit, offset)
-            return Success(entities)
+            return Success[list[T], str](entities, convert=True)
         except Exception as e:
             self.logger.error(f"Error listing entities: {e}", exc_info=True)
-            return Failure(f"Error listing entities: {str(e)}")
+            return Failure[list[T], str](f"Error listing entities: {str(e)}")
     
-    async def find(self, specification: Specification[T]) -> Result[List[T], str]:
+    async def find(self, specification: Specification[T]) -> Result[list[T], str]:
         """
         Find entities matching a specification.
         
@@ -102,12 +100,12 @@ class DomainService(Generic[T, ID], ABC):
         """
         try:
             entities = await self.repository.find(specification)
-            return Success(entities)
+            return Success[list[T], str](entities, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding entities: {e}", exc_info=True)
-            return Failure(f"Error finding entities: {str(e)}")
+            return Failure[list[T], str](f"Error finding entities: {str(e)}")
     
-    async def find_one(self, specification: Specification[T]) -> Result[Optional[T], str]:
+    async def find_one(self, specification: Specification[T]) -> Result[T | None, str]:
         """
         Find a single entity matching a specification.
         
@@ -119,12 +117,12 @@ class DomainService(Generic[T, ID], ABC):
         """
         try:
             entity = await self.repository.find_one(specification)
-            return Success(entity)
+            return Success[T | None, str](entity, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding entity: {e}", exc_info=True)
-            return Failure(f"Error finding entity: {str(e)}")
+            return Failure[T | None, str](f"Error finding entity: {str(e)}", convert=True)
     
-    async def count(self, specification: Optional[Specification[T]] = None) -> Result[int, str]:
+    async def count(self, specification: Specification[T] | None = None) -> Result[int, str]:
         """
         Count entities matching a specification.
         
@@ -136,10 +134,10 @@ class DomainService(Generic[T, ID], ABC):
         """
         try:
             count = await self.repository.count(specification)
-            return Success(count)
+            return Success[int, str](count, convert=True)
         except Exception as e:
             self.logger.error(f"Error counting entities: {e}", exc_info=True)
-            return Failure(f"Error counting entities: {str(e)}")
+            return Failure[int, str](f"Error counting entities: {str(e)}", convert=True)
 
 
 class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
@@ -152,9 +150,9 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
     
     def __init__(
         self,
-        entity_type: Type[T],
+        entity_type: type[T],
         unit_of_work: AbstractUnitOfWork,
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         """
         Initialize the domain service with a unit of work.
@@ -169,47 +167,42 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
         self.logger = logger or logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         
         # Repository will be initialized when the UoW is started
-        self._repository: Optional[EntityRepository[T, ID]] = None
+        self._repository: EntityRepository[T, ID] | None = None
     
     @property
-    def repository(self) -> EntityRepository[T, ID]:
+    def repository(self) -> Result[EntityRepository[T, ID], str]:
         """
         Get the repository from the unit of work.
         
         Returns:
-            Repository for the entity type
-        
-        Raises:
-            ValueError: If the unit of work is not active
+            Result containing the repository for the entity type or an error message
         """
         if self._repository is None:
-            raise ValueError(
-                "Repository not available. The unit of work must be started first."
-            )
-        return self._repository
+            return Failure("Repository not available. The unit of work must be started first.")
+        return Success(self._repository)
     
-    async def _ensure_repository(self) -> None:
+    async def _ensure_repository(self) -> Result[EntityRepository[T, ID], str]:
         """
         Ensure that the repository is initialized.
         
-        If the unit of work is not active, this method will get or create it.
+        If the unit of work is not active, this method will try to get it.
+        
+        Returns:
+            Result containing the repository or an error message
         """
-        if self._repository is None:
-            # Try to get the repository from the unit of work
-            try:
-                self._repository = cast(
-                    EntityRepository[T, ID],
-                    self.unit_of_work.get_repository(self.entity_type)
-                )
-            except KeyError:
-                self.logger.warning(
-                    f"Repository for {self.entity_type.__name__} not found in unit of work. "
-                    f"Creating a new one."
-                )
-                raise ValueError(
-                    f"Repository for {self.entity_type.__name__} not found in unit of work. "
-                    f"Make sure to register the repository with the unit of work."
-                )
+        if self._repository is not None:
+            return Success[EntityRepository[T, ID], str](self._repository)
+            
+        # Try to get the repository from the unit of work
+        repo_result = self.unit_of_work.get_repository(self.entity_type)
+        
+        if repo_result.is_failure():
+            error_msg = f"Repository for {self.entity_type.__name__} not found in unit of work. Make sure to register the repository."
+            self.logger.warning(error_msg)
+            return Failure[EntityRepository[T, ID], str](error_msg)
+            
+        self._repository = cast('EntityRepository[T, ID]', repo_result.value())
+        return Success(self._repository)
     
     async def with_uow(self, action_name: str) -> AbstractUnitOfWork:
         """
@@ -237,13 +230,22 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
             Success with created entity or Failure if an error occurs
         """
         async with self.with_uow(f"create_{self.entity_type.__name__}"):
-            await self._ensure_repository()
+            # Ensure repository is available
+            repo_result = await self._ensure_repository()
+            if repo_result.is_failure():
+                return Failure(f"Could not create entity: {repo_result.error()}")
+                
+            repository = repo_result.value()
+            
+            # Use the repository to add the entity
             try:
-                created = await self.repository.add(entity)
-                return Success(created)
+                created = await repository.add(entity)
+                if isinstance(created, Result):
+                    return created
+                return Success[T, str](created)
             except Exception as e:
-                self.logger.error(f"Error creating entity: {e}", exc_info=True)
-                return Failure(f"Error creating entity: {str(e)}")
+                self.logger.error("Error creating entity: %s", e, exc_info=True)
+                return Failure[T, str](f"Error creating entity: {str(e)}")
     
     async def update(self, entity: T) -> Result[T, str]:
         """
@@ -256,13 +258,22 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
             Success with updated entity or Failure if an error occurs
         """
         async with self.with_uow(f"update_{self.entity_type.__name__}"):
-            await self._ensure_repository()
+            # Ensure repository is available
+            repo_result = await self._ensure_repository()
+            if repo_result.is_failure():
+                return Failure(f"Could not update entity: {repo_result.error()}")
+                
+            repository = repo_result.value()
+            
+            # Use the repository to update the entity
             try:
-                updated = await self.repository.update(entity)
-                return Success(updated)
+                updated = await repository.update(entity)
+                if isinstance(updated, Result):
+                    return updated
+                return Success[T, str](updated)
             except Exception as e:
-                self.logger.error(f"Error updating entity: {e}", exc_info=True)
-                return Failure(f"Error updating entity: {str(e)}")
+                self.logger.error("Error updating entity: %s", e, exc_info=True)
+                return Failure[T, str](f"Error updating entity: {str(e)}")
     
     async def delete(self, entity: T) -> Result[None, str]:
         """
@@ -275,13 +286,22 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
             Success or Failure if an error occurs
         """
         async with self.with_uow(f"delete_{self.entity_type.__name__}"):
-            await self._ensure_repository()
+            # Ensure repository is available
+            repo_result = await self._ensure_repository()
+            if repo_result.is_failure():
+                return Failure[None, str](f"Could not delete entity: {repo_result.error()}")
+                
+            repository = repo_result.value()
+            
+            # Use the repository to delete the entity
             try:
-                await self.repository.delete(entity)
-                return Success(None)
+                result = await repository.delete(entity)
+                if isinstance(result, Result):
+                    return result
+                return Success[None, str](None)
             except Exception as e:
-                self.logger.error(f"Error deleting entity: {e}", exc_info=True)
-                return Failure(f"Error deleting entity: {str(e)}")
+                self.logger.error("Error deleting entity: %s", e, exc_info=True)
+                return Failure[None, str](f"Error deleting entity: {str(e)}", convert=True)
     
     async def delete_by_id(self, id: ID) -> Result[bool, str]:
         """
@@ -294,13 +314,23 @@ class DomainServiceWithUnitOfWork(DomainService[T, ID], Generic[T, ID]):
             Success with True if deleted, False if not found, or Failure if an error occurs
         """
         async with self.with_uow(f"delete_{self.entity_type.__name__}_by_id"):
-            await self._ensure_repository()
+            # Ensure repository is available
+            repo_result = await self._ensure_repository()
+            if repo_result.is_failure():
+                return Failure[bool, str](f"Could not delete entity by ID: {repo_result.error()}")
+                
+            repository = repo_result.value()
+            
             try:
-                deleted = await self.repository.delete_by_id(id)
-                return Success(deleted)
+                # Use the repository to delete the entity by ID
+                result = await repository.delete_by_id(id)
+                if isinstance(result, Result):
+                    return result
+                # If the repository doesn't return a Result yet, convert it
+                return Success[bool, str](bool(result))
             except Exception as e:
-                self.logger.error(f"Error deleting entity by ID: {e}", exc_info=True)
-                return Failure(f"Error deleting entity by ID: {str(e)}")
+                self.logger.error("Error deleting entity by ID: %s", e, exc_info=True)
+                return Failure[bool, str](f"Error deleting entity by ID: {str(e)}")
 
 
 class ApplicationService(Generic[R, E]):
@@ -312,7 +342,7 @@ class ApplicationService(Generic[R, E]):
     of the application, orchestrating the use of domain objects and infrastructure.
     """
     
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the application service.
         
@@ -366,7 +396,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
     def __init__(
         self,
         domain_service: DomainService[T, ID],
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         """
         Initialize the CRUD service.
@@ -395,15 +425,15 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("get", e)
-            return Failure(f"Error getting entity: {str(e)}")
+            return Failure[T | None, str](f"Error getting entity: {str(e)}")
     
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = 0,
-    ) -> Result[List[T], str]:
+        filters: dict[str, Any] | None = None,
+        order_by: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = 0,
+    ) -> Result[list[T], str]:
         """
         List entities matching filter criteria.
         
@@ -423,9 +453,9 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("list", e)
-            return Failure(f"Error listing entities: {str(e)}")
+            return Failure[list[T], str](f"Error listing entities: {str(e)}")
     
-    async def find(self, specification: Specification[T]) -> Result[List[T], str]:
+    async def find(self, specification: Specification[T]) -> Result[list[T], str]:
         """
         Find entities matching a specification.
         
@@ -442,7 +472,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("find", e)
-            return Failure(f"Error finding entities: {str(e)}")
+            return Failure[list[T], str](f"Error finding entities: {str(e)}")
     
     async def create(self, entity: T) -> Result[T, str]:
         """
@@ -461,7 +491,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             validation_result = await self.domain_service.validate(entity)
             if not validation_result.is_success():
                 self.logger.warning(f"Validation failed: {validation_result.error}")
-                return cast(Result[T, str], validation_result)
+                return cast('Result[T, str]', validation_result)
         
         try:
             # Use domain service with UoW if available
@@ -476,7 +506,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("create", e)
-            return Failure(f"Error creating entity: {str(e)}")
+            return Failure[T, str](f"Error creating entity: {str(e)}")
     
     async def update(self, entity: T) -> Result[T, str]:
         """
@@ -495,7 +525,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             validation_result = await self.domain_service.validate(entity)
             if not validation_result.is_success():
                 self.logger.warning(f"Validation failed: {validation_result.error}")
-                return cast(Result[T, str], validation_result)
+                return cast('Result[T, str]', validation_result)
         
         try:
             # Use domain service with UoW if available
@@ -510,7 +540,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("update", e)
-            return Failure(f"Error updating entity: {str(e)}")
+            return Failure[T, str](f"Error updating entity: {str(e)}")
     
     async def delete(self, id: ID) -> Result[bool, str]:
         """
@@ -536,7 +566,7 @@ class CrudService(ApplicationService[T, str], Generic[T, ID]):
             return result
         except Exception as e:
             self.log_error("delete", e)
-            return Failure(f"Error deleting entity: {str(e)}")
+            return Failure[bool, str](f"Error deleting entity: {str(e)}")
 
 
 class ServiceFactory(Generic[T, ID]):
@@ -549,10 +579,10 @@ class ServiceFactory(Generic[T, ID]):
     
     def __init__(
         self,
-        entity_type: Type[T],
-        repository_factory: Optional[callable] = None,
-        unit_of_work_factory: Optional[callable] = None,
-        logger: Optional[logging.Logger] = None
+        entity_type: type[T],
+        repository_factory: callable | None = None,
+        unit_of_work_factory: callable | None = None,
+        logger: logging.Logger | None = None
     ):
         """
         Initialize the service factory.
@@ -570,8 +600,8 @@ class ServiceFactory(Generic[T, ID]):
     
     def create_domain_service(
         self,
-        repository: Optional[EntityRepository[T, ID]] = None,
-        logger: Optional[logging.Logger] = None
+        repository: EntityRepository[T, ID] | None = None,
+        logger: logging.Logger | None = None
     ) -> DomainService[T, ID]:
         """
         Create a domain service.
@@ -596,8 +626,8 @@ class ServiceFactory(Generic[T, ID]):
     
     def create_domain_service_with_uow(
         self,
-        unit_of_work: Optional[AbstractUnitOfWork] = None,
-        logger: Optional[logging.Logger] = None
+        unit_of_work: AbstractUnitOfWork | None = None,
+        logger: logging.Logger | None = None
     ) -> DomainServiceWithUnitOfWork[T, ID]:
         """
         Create a domain service with unit of work.
@@ -622,8 +652,8 @@ class ServiceFactory(Generic[T, ID]):
     
     def create_crud_service(
         self,
-        domain_service: Optional[DomainService[T, ID]] = None,
-        logger: Optional[logging.Logger] = None
+        domain_service: DomainService[T, ID] | None = None,
+        logger: logging.Logger | None = None
     ) -> CrudService[T, ID]:
         """
         Create a CRUD service.
