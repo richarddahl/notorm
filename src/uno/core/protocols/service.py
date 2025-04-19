@@ -8,6 +8,7 @@ Services encapsulate business logic and orchestrate domain operations.
 from collections.abc import Protocol
 from typing import Any, TypeVar, runtime_checkable
 
+# NOTE: Result is always imported from uno.core.errors.result - this is the canonical implementation for the Result monad pattern.
 from uno.core.errors.result import Result
 
 # Type variables for service protocols

@@ -7,6 +7,7 @@ Repositories provide a collection-like interface for accessing domain entities.
 
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
+# NOTE: Result is always imported from uno.core.errors.result - this is the canonical implementation for the Result monad pattern.
 from uno.core.errors.result import Result
 
 # Type variables for entity types and ID types
