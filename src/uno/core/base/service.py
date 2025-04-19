@@ -1,16 +1,27 @@
 """
 Base service protocols and classes for the Uno framework.
 
+DEPRECATED: This module has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity.service. Please use the new implementation instead.
+
 This module defines the core service interfaces and base implementation classes
 that form the foundation of the service pattern in the Uno framework.
 """
 
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
 from uno.core.errors.result import Result, Success, Failure
 from uno.core.base.error import BaseError
+
+warnings.warn(
+    "The uno.core.base.service module is deprecated. "
+    "Use uno.domain.entity.service instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Type variables
 T = TypeVar("T")  # Entity type

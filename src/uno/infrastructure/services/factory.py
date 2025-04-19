@@ -1,12 +1,16 @@
 """
 Service factory for the Uno framework.
 
+DEPRECATED: This module has been deprecated and replaced by the ServiceFactory class
+in uno.domain.entity.service. Please use the new implementation instead.
+
 This module provides factory functions for creating and configuring services
 according to the unified service pattern. The factory supports different service
 types, dependency injection, and configuration.
 """
 
 import logging
+import warnings
 from typing import (
     Dict,
     Any,
@@ -20,6 +24,13 @@ from typing import (
     List,
     Tuple,
     Union,
+)
+
+warnings.warn(
+    "The uno.infrastructure.services.factory module is deprecated. "
+    "Use uno.domain.entity.service.ServiceFactory instead.",
+    DeprecationWarning,
+    stacklevel=2
 )
 
 from uno.core.base.error import BaseError

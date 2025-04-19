@@ -23,6 +23,10 @@ from uno.domain.entity.protocols import EntityProtocol, AggregateRootProtocol, V
 from uno.domain.entity.repository import EntityRepository
 from uno.domain.entity.repository_memory import InMemoryRepository
 from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository, EntityMapper
+from uno.domain.entity.service import (
+    DomainService, DomainServiceWithUnitOfWork, 
+    ApplicationService, CrudService, ServiceFactory
+)
 
 # Import specification subpackage
 from uno.domain.entity.specification import (
@@ -58,6 +62,13 @@ __all__ = [
     'InMemoryRepository',
     'SQLAlchemyRepository',
     'EntityMapper',
+    
+    # Service
+    'DomainService',
+    'DomainServiceWithUnitOfWork',
+    'ApplicationService',
+    'CrudService',
+    'ServiceFactory',
     
     # Specification pattern
     'Specification',

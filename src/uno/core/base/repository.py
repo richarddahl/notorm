@@ -1,11 +1,15 @@
 """
 Base repository protocols and classes for the Uno framework.
 
+DEPRECATED: This module has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity.repository. Please use the new implementation instead.
+
 This module defines the core repository interfaces and base implementation classes
 that form the foundation of the repository pattern in the Uno framework.
 """
 
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import (
     Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar, 
@@ -13,6 +17,13 @@ from typing import (
 )
 
 from uno.core.errors.result import Result, Success, Failure
+
+warnings.warn(
+    "The uno.core.base.repository module is deprecated. "
+    "Use uno.domain.entity.repository instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Type variables
 T = TypeVar("T")  # Entity type

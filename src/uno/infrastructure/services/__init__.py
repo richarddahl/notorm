@@ -1,6 +1,9 @@
 """
 Service pattern implementation for the Uno framework.
 
+DEPRECATED: This package has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity.service. Please use the new implementation instead.
+
 This package provides a comprehensive implementation of the service pattern,
 with support for various service capabilities, including:
 
@@ -15,6 +18,16 @@ with support for various service capabilities, including:
 The implementation is designed to integrate with the repository pattern,
 dependency injection system, and event system of the Uno framework.
 """
+
+import warnings
+
+warnings.warn(
+    "The uno.infrastructure.services package is deprecated. "
+    "Use uno.domain.entity.service instead for DomainService, ApplicationService, "
+    "CrudService, and ServiceFactory implementations.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Core protocols
 from uno.core.base.service import (

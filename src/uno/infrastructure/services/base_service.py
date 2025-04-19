@@ -1,11 +1,15 @@
 """
 Extended service implementations for the Uno framework.
 
+DEPRECATED: This module has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity.service. Please use the new implementation instead.
+
 This module provides concrete service implementations that build upon the
 core base service classes.
 """
 
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
@@ -20,6 +24,14 @@ from uno.core.base.service import (
 )
 from uno.core.base.repository import RepositoryProtocol
 from uno.infrastructure.repositories.unit_of_work import UnitOfWork
+
+warnings.warn(
+    "The uno.infrastructure.services module is deprecated. "
+    "Use uno.domain.entity.service instead for DomainService, ApplicationService, "
+    "CrudService, and ServiceFactory implementations.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 # Type variables

@@ -27,6 +27,14 @@ warnings.warn(
     stacklevel=2
 )
 
+warnings.warn(
+    "The repository implementations in uno.infrastructure.repositories are deprecated. "
+    "Use EntityRepository, InMemoryRepository, SQLAlchemyRepository, and related classes "
+    "from uno.domain.entity package instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 # Import from core base
 from uno.core.base.repository import (
     BaseRepository,
