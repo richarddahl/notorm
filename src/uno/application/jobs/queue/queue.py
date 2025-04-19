@@ -3,7 +3,7 @@
 This module defines the core JobQueue class for managing job queues.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Any, Dict, List, Optional, Union, cast
 import logging
 
@@ -550,7 +550,7 @@ class JobQueue:
         if isinstance(older_than, datetime):
             cutoff = older_than
         elif isinstance(older_than, timedelta):
-            cutoff = datetime.utcnow() - older_than
+            cutoff = datetime.now(datetime.UTC) - older_than
         
         try:
             count = await self.storage.prune_jobs(status_enums, cutoff)
@@ -605,7 +605,7 @@ class JobQueue:
         if isinstance(older_than, datetime):
             cutoff = older_than
         else:  # timedelta
-            cutoff = datetime.utcnow() - older_than
+            cutoff = datetime.now(datetime.UTC) - older_than
         
         try:
             count = await self.storage.requeue_stuck(cutoff, status_enums)

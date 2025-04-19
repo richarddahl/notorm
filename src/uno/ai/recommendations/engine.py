@@ -9,7 +9,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Union, Type, TypeVar, Generic, Set
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import numpy as np
 
@@ -215,7 +215,7 @@ class ContentBasedRecommender(RecommendationAlgorithm[T]):
         content = interaction.get(self.item_content_field)
         timestamp = interaction.get(
             self.timestamp_field, 
-            datetime.utcnow().isoformat()
+            datetime.now(datetime.UTC).isoformat()
         )
         
         # Create user entry if not exists
@@ -299,7 +299,7 @@ class ContentBasedRecommender(RecommendationAlgorithm[T]):
             # Store user profile
             self.user_profiles[user_id] = {
                 "embedding": profile_embedding,
-                "updated_at": datetime.utcnow().isoformat()
+                "updated_at": datetime.now(datetime.UTC).isoformat()
             }
     
     async def recommend(

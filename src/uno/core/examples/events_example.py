@@ -11,7 +11,7 @@ architecture patterns, including:
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Any, Optional
 
 from uno.core.events import (
@@ -175,7 +175,7 @@ class AnalyticsService:
                 "order_id": event.order_id,
                 "customer_id": event.customer_id,
                 "total_amount": event.total_amount,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(datetime.UTC).isoformat(),
             }
         )
 
@@ -194,7 +194,7 @@ class AnalyticsService:
                 "order_id": event.order_id,
                 "tracking_number": event.tracking_number,
                 "shipping_date": event.shipping_date.isoformat(),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(datetime.UTC).isoformat(),
             }
         )
 
@@ -212,7 +212,7 @@ class AnalyticsService:
                 "event_type": "order_cancelled",
                 "order_id": event.order_id,
                 "reason": event.reason,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(datetime.UTC).isoformat(),
             }
         )
 
@@ -283,7 +283,7 @@ class OrderService:
             "items": items,
             "total_amount": total_amount,
             "status": "created",
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(datetime.UTC),
         }
 
         self.logger.info(f"Created order {order_id} for customer {customer_id}")
@@ -313,7 +313,7 @@ class OrderService:
         # Update order status
         self.orders[order_id]["status"] = "shipped"
         self.orders[order_id]["tracking_number"] = tracking_number
-        self.orders[order_id]["shipped_at"] = datetime.utcnow()
+        self.orders[order_id]["shipped_at"] = datetime.now(datetime.UTC)
 
         self.logger.info(
             f"Shipped order {order_id} with tracking number {tracking_number}"
@@ -342,7 +342,7 @@ class OrderService:
         self.orders[order_id]["status"] = "cancelled"
         if reason:
             self.orders[order_id]["cancel_reason"] = reason
-        self.orders[order_id]["cancelled_at"] = datetime.utcnow()
+        self.orders[order_id]["cancelled_at"] = datetime.now(datetime.UTC)
 
         self.logger.info(f"Cancelled order {order_id}")
 

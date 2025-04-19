@@ -1,25 +1,19 @@
 """
 Tests for the Result pattern implementation.
 
-This module tests the Result, Success, and Failure classes that implement
-the Result pattern for functional error handling without exceptions.
+This module tests the Result class that implements the Result pattern
+for functional error handling without exceptions.
 """
 
 import pytest
-from typing import List, Dict, Any, Optional, Generic, TypeVar, cast
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 from uno.core.errors.result import (
-    Success,
-    Failure,
     Result,
-    of,
-    failure,
-    from_exception,
-    combine,
-    from_awaitable,
+    ValidationError,
+    ErrorSeverity
 )
-from uno.core.base.error import BaseError
 
 
 # Test Data and Classes
@@ -53,12 +47,10 @@ class TestResultPattern:
     """Tests for the Result pattern implementation."""
 
     def test_success_creation(self):
-        """Test creating a Success result."""
-        # Arrange
+        """Test creating a successful Result."""
+        # Arrange & Act
         data = TestData("test_success")
-
-        # Act
-        result = Success(data)
+        result = Result.success(data)
 
         # Assert
         assert result.is_success
@@ -67,10 +59,10 @@ class TestResultPattern:
         assert result.error is None
 
     def test_failure_creation(self):
-        """Test creating a Failure result."""
+        """Test creating a failure Result."""
         # Arrange & Act
         error = TestError("Test error")
-        result = Failure(error)
+        result = Result.failure(error)
 
         # Assert
         assert not result.is_success
@@ -78,332 +70,299 @@ class TestResultPattern:
         assert result.value is None
         assert result.error == error
 
-    def test_success_map(self):
-        """Test map method on Success."""
-        # Arrange
-        success = Success(TestData("test"))
-
-        # Act
-        result = success.map(lambda data: data.value.upper())
+    def test_failures_creation(self):
+        """Test creating a Result with multiple errors."""
+        # Arrange & Act
+        errors = [TestError("Error 1"), TestError("Error 2")]
+        result = Result.failures(errors)
 
         # Assert
-        assert result.is_success
-        assert result.value == "TEST"
+        assert not result.is_success
+        assert result.is_failure
+        assert result.value is None
+        assert len(result.errors) == 2
+        assert str(result.errors[0]) == "Error 1"
+        assert str(result.errors[1]) == "Error 2"
+
+    def test_success_map(self):
+        """Test map method on a successful Result."""
+        # Arrange
+        result = Result.success(TestData("test"))
+
+        # Act
+        mapped = result.map(lambda data: data.value.upper())
+
+        # Assert
+        assert mapped.is_success
+        assert mapped.value == "TEST"
 
     def test_failure_map(self):
-        """Test map method on Failure."""
+        """Test map method on a failure Result."""
         # Arrange
         error = TestError("Error")
-        failure = Failure(error)
+        result = Result.failure(error)
 
         # Act
-        result = failure.map(lambda data: data.value.upper())
+        mapped = result.map(lambda data: data.value.upper())
 
         # Assert
-        assert result.is_failure
-        assert result.error == error
-        assert result.value is None
+        assert mapped.is_failure
+        assert mapped.error == error
+        assert mapped.value is None
 
-    def test_success_flat_map(self):
-        """Test flat_map method on Success."""
+    def test_success_map_error(self):
+        """Test map_error method on a successful Result."""
         # Arrange
-        success = Success(TestData("test"))
+        result = Result.success(TestData("test"))
 
         # Act
-        result = success.flat_map(lambda data: Success(data.value.upper()))
+        mapped = result.map_error(lambda err: TestError("Transformed"))
 
         # Assert
-        assert result.is_success
-        assert result.value == "TEST"
+        assert mapped.is_success
+        assert mapped.value.value == "test"
 
-    def test_success_flat_map_to_failure(self):
-        """Test flat_map method on Success that returns Failure."""
-        # Arrange
-        success = Success(TestData("test"))
-
-        # Act
-        result = success.flat_map(
-            lambda data: Failure(TestError(f"Failed with {data.value}"))
-        )
-
-        # Assert
-        assert result.is_failure
-        assert isinstance(result.error, TestError)
-        assert str(result.error) == "Failed with test"
-
-    def test_failure_flat_map(self):
-        """Test flat_map method on Failure."""
+    def test_failure_map_error(self):
+        """Test map_error method on a failure Result."""
         # Arrange
         error = TestError("Error")
-        failure = Failure(error)
+        result = Result.failure(error)
 
         # Act
-        result = failure.flat_map(lambda data: Success(data.value.upper()))
+        mapped = result.map_error(lambda err: TestError("Transformed"))
 
         # Assert
-        assert result.is_failure
-        assert result.error == error
+        assert mapped.is_failure
+        assert str(mapped.error) == "Transformed"
 
-    def test_success_on_success(self):
-        """Test on_success method on Success."""
+    def test_success_bind(self):
+        """Test bind method on a successful Result."""
         # Arrange
-        success = Success(TestData("test"))
-        results = []
+        result = Result.success(TestData("test"))
 
         # Act
-        result = success.on_success(lambda data: results.append(data.value))
+        bound = result.bind(lambda data: Result.success(data.value.upper()))
 
         # Assert
-        assert result is success
-        assert results == ["test"]
+        assert bound.is_success
+        assert bound.value == "TEST"
 
-    def test_failure_on_success(self):
-        """Test on_success method on Failure."""
-        # Arrange
-        error = TestError("Error")
-        failure = Failure(error)
-        results = []
-
-        # Act
-        result = failure.on_success(lambda data: results.append(data.value))
-
-        # Assert
-        assert result is failure
-        assert results == []  # Handler not called
-
-    def test_success_on_failure(self):
-        """Test on_failure method on Success."""
-        # Arrange
-        success = Success(TestData("test"))
-        errors = []
-
-        # Act
-        result = success.on_failure(lambda err: errors.append(str(err)))
-
-        # Assert
-        assert result is success
-        assert errors == []  # Handler not called
-
-    def test_failure_on_failure(self):
-        """Test on_failure method on Failure."""
+    def test_failure_bind(self):
+        """Test bind method on a failure Result."""
         # Arrange
         error = TestError("Error")
-        failure = Failure(error)
-        errors = []
+        result = Result.failure(error)
 
         # Act
-        result = failure.on_failure(lambda err: errors.append(str(err)))
+        bound = result.bind(lambda data: Result.success(data.value.upper()))
 
         # Assert
-        assert result is failure
-        assert errors == ["Error"]  # Handler called
+        assert bound.is_failure
+        assert bound.error == error
 
-    def test_success_unwrap(self):
-        """Test unwrap method on Success."""
+    def test_success_value(self):
+        """Test value property on a successful Result."""
         # Arrange
-        success = Success(TestData("test"))
+        data = TestData("test")
+        result = Result.success(data)
 
         # Act
-        value = success.unwrap()
+        value = result.value
+
+        # Assert
+        assert value == data
+
+    def test_failure_value(self):
+        """Test value property on a failure Result."""
+        # Arrange
+        error = TestError("Error")
+        result = Result.failure(error)
+
+        # Act
+        value = result.value
+
+        # Assert
+        assert value is None
+
+    def test_success_value_or(self):
+        """Test value_or method on a successful Result."""
+        # Arrange
+        result = Result.success(TestData("test"))
+
+        # Act
+        value = result.value_or(TestData("default"))
 
         # Assert
         assert value.value == "test"
 
-    def test_failure_unwrap(self):
-        """Test unwrap method on Failure."""
+    def test_failure_value_or(self):
+        """Test value_or method on a failure Result."""
         # Arrange
         error = TestError("Error")
-        failure = Failure(error)
-
-        # Act & Assert
-        with pytest.raises(RuntimeError) as exc_info:
-            failure.unwrap()
-
-        assert "Error" in str(exc_info.value)
-
-    def test_success_unwrap_or(self):
-        """Test unwrap_or method on Success."""
-        # Arrange
-        success = Success(TestData("test"))
+        result = Result.failure(error)
 
         # Act
-        value = success.unwrap_or(TestData("default"))
-
-        # Assert
-        assert value.value == "test"
-
-    def test_failure_unwrap_or(self):
-        """Test unwrap_or method on Failure."""
-        # Arrange
-        error = TestError("Error")
-        failure = Failure(error)
-
-        # Act
-        value = failure.unwrap_or(TestData("default"))
+        value = result.value_or(TestData("default"))
 
         # Assert
         assert value.value == "default"
 
-    def test_success_unwrap_or_else(self):
-        """Test unwrap_or_else method on Success."""
+    def test_success_value_or_raise(self):
+        """Test value_or_raise method on a successful Result."""
         # Arrange
-        success = Success(TestData("test"))
+        result = Result.success(TestData("test"))
 
         # Act
-        value = success.unwrap_or_else(lambda: TestData("computed"))
+        value = result.value_or_raise()
 
         # Assert
         assert value.value == "test"
 
-    def test_failure_unwrap_or_else(self):
-        """Test unwrap_or_else method on Failure."""
+    def test_failure_value_or_raise(self):
+        """Test value_or_raise method on a failure Result."""
         # Arrange
         error = TestError("Error")
-        failure = Failure(error)
+        result = Result.failure(error)
 
-        # Act
-        value = failure.unwrap_or_else(lambda: TestData("computed"))
+        # Act & Assert
+        with pytest.raises(ValueError) as exc_info:
+            result.value_or_raise()
 
-        # Assert
-        assert value.value == "computed"
+        assert "Error" in str(exc_info.value)
 
-    def test_success_to_dict(self):
-        """Test to_dict method on Success."""
-        # Arrange
-        success = Success(TestData("test"))
-
-        # Act
-        result_dict = success.to_dict()
-
-        # Assert
-        assert result_dict["status"] == "success"
-        assert result_dict["data"]["value"] == "test"
-
-    def test_failure_to_dict(self):
-        """Test to_dict method on Failure."""
-        # Arrange
-        error = TestError("Error", "TEST_CODE")
-        failure = Failure(error)
-
-        # Act
-        result_dict = failure.to_dict()
-
-        # Assert
-        assert result_dict["status"] == "error"
-        assert "error" in result_dict
-
-    def test_of_factory_function(self):
-        """Test the of factory function."""
-        # Arrange & Act
-        result = of(TestData("test"))
-
-        # Assert
-        assert result.is_success
-        assert result.value.value == "test"
-
-    def test_failure_factory_function(self):
-        """Test the failure factory function."""
+    def test_error_property(self):
+        """Test error property on a Result."""
         # Arrange
         error = TestError("Error")
+        result = Result.failure(error)
 
         # Act
-        result = failure(error)
+        result_error = result.error
+
+        # Assert
+        assert result_error == error
+
+    def test_error_on_success(self):
+        """Test error property on a successful Result."""
+        # Arrange
+        result = Result.success(TestData("test"))
+
+        # Act
+        result_error = result.error
+
+        # Assert
+        assert result_error is None
+
+    def test_errors_property(self):
+        """Test errors property on a Result."""
+        # Arrange
+        errors = [TestError("Error 1"), TestError("Error 2")]
+        result = Result.failures(errors)
+
+        # Act
+        result_errors = result.errors
+
+        # Assert
+        assert len(result_errors) == 2
+        assert str(result_errors[0]) == "Error 1"
+        assert str(result_errors[1]) == "Error 2"
+
+    def test_add_metadata(self):
+        """Test adding metadata to a Result."""
+        # Arrange
+        result = Result.success(TestData("test"))
+
+        # Act
+        result.add_metadata("key", "value")
+
+        # Assert
+        assert result.metadata["key"] == "value"
+
+    def test_combine_results(self):
+        """Test combining Results."""
+        # Arrange
+        result1 = Result.success(TestData("test1"))
+        result2 = Result.success(TestData("test2"))
+        result1.add_metadata("key1", "value1")
+        result2.add_metadata("key2", "value2")
+
+        # Act
+        combined = result1.combine(result2)
+
+        # Assert
+        assert combined.is_success
+        assert combined.metadata["key1"] == "value1"
+        assert combined.metadata["key2"] == "value2"
+
+    def test_combine_with_failure(self):
+        """Test combining a success with a failure."""
+        # Arrange
+        result1 = Result.success(TestData("test1"))
+        error = TestError("Error")
+        result2 = Result.failure(error)
+
+        # Act
+        combined = result1.combine(result2)
+
+        # Assert
+        assert combined.is_failure
+        assert combined.error == error
+
+    def test_from_exception(self):
+        """Test Result.from_exception method."""
+        # Arrange
+        error = TestError("Test exception")
+
+        # Act
+        result = Result.from_exception(error)
 
         # Assert
         assert result.is_failure
         assert result.error == error
 
-    def test_from_exception_decorator_success(self):
-        """Test the from_exception decorator with success."""
-
-        # Arrange
-        @from_exception
-        def func(value):
-            return TestData(value)
-
-        # Act
-        result = func("test")
+    def test_try_catch(self):
+        """Test Result.try_catch method."""
+        # Arrange & Act
+        success_result = Result.try_catch(lambda: TestData("test"))
+        failure_result = Result.try_catch(lambda: 1/0)
 
         # Assert
-        assert result.is_success
-        assert result.value.value == "test"
+        assert success_result.is_success
+        assert success_result.value.value == "test"
+        assert failure_result.is_failure
+        assert isinstance(failure_result.error, ZeroDivisionError)
 
-    def test_from_exception_decorator_failure(self):
-        """Test the from_exception decorator with failure."""
-
-        # Arrange
-        @from_exception
-        def func(value):
-            if value == "error":
-                raise TestError("Error from func")
-            return TestData(value)
-
-        # Act
-        result = func("error")
-
-        # Assert
-        assert result.is_failure
-        assert str(result.error) == "Error from func"
-
-    @pytest.mark.asyncio
-    async def test_from_awaitable_success(self):
-        """Test the from_awaitable function with success."""
-
-        # Arrange
-        async def async_func():
-            return TestData("async")
-
-        # Act
-        result = await from_awaitable(async_func())
-
-        # Assert
-        assert result.is_success
-        assert result.value.value == "async"
-
-    @pytest.mark.asyncio
-    async def test_from_awaitable_failure(self):
-        """Test the from_awaitable function with failure."""
-
-        # Arrange
-        async def async_func():
-            raise TestError("Async error")
-
-        # Act
-        result = await from_awaitable(async_func())
-
-        # Assert
-        assert result.is_failure
-        assert str(result.error) == "Async error"
-
-    def test_combine_all_success(self):
-        """Test the combine function with all successful results."""
+    def test_all_method_success(self):
+        """Test Result.all method with successful results."""
         # Arrange
         results = [
-            Success(TestData("one")),
-            Success(TestData("two")),
-            Success(TestData("three")),
+            Result.success(TestData("one")),
+            Result.success(TestData("two")),
+            Result.success(TestData("three"))
         ]
 
         # Act
-        combined = combine(results)
+        combined = Result.all(results)
 
         # Assert
         assert combined.is_success
         assert len(combined.value) == 3
-        assert [r.value for r in combined.value] == ["one", "two", "three"]
+        assert combined.value[0].value == "one"
+        assert combined.value[1].value == "two"
+        assert combined.value[2].value == "three"
 
-    def test_combine_with_failure(self):
-        """Test the combine function with a failure result."""
+    def test_all_method_with_failure(self):
+        """Test Result.all method with a failure result."""
         # Arrange
-        error = TestError("Error in result")
+        error = TestError("Error in list")
         results = [
-            Success(TestData("one")),
-            Failure(error),
-            Success(TestData("three")),
+            Result.success(TestData("one")),
+            Result.failure(error),
+            Result.success(TestData("three"))
         ]
 
         # Act
-        combined = combine(results)
+        combined = Result.all(results)
 
         # Assert
         assert combined.is_failure

@@ -786,8 +786,8 @@ def health_check(
                     )
                 elif isinstance(result, Result):
                     # Function returns a Result object
-                    if result.is_error():
-                        error = result.unwrap_error()
+                    if result.is_failure:
+                        error = result.error
                         return HealthCheckResult(
                             status=HealthStatus.UNHEALTHY,
                             message=str(error),
@@ -795,7 +795,7 @@ def health_check(
                             check_duration_ms=duration_ms
                         )
                     else:
-                        value = result.unwrap()
+                        value = result.value
                         message = "Health check passed"
                         if isinstance(value, str):
                             message = value

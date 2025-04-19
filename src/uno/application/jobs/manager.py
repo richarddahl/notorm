@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Set, Type, Union, Any, Callable
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from uno.core.errors.result import Result
 from uno.jobs.queue.job import Job
@@ -221,7 +221,7 @@ class JobManager:
             return Result.failure(f"Job {job_id} cannot be cancelled in status {job.status.name}")
             
         job.status = JobStatus.CANCELLED
-        job.updated_at = datetime.utcnow()
+        job.updated_at = datetime.now(datetime.UTC)
         
         return await self.storage.update_job(job)
     
@@ -246,7 +246,7 @@ class JobManager:
             return Result.failure(f"Job {job_id} cannot be retried in status {job.status.name}")
             
         job.status = JobStatus.PENDING
-        job.updated_at = datetime.utcnow()
+        job.updated_at = datetime.now(datetime.UTC)
         job.error = None
         
         return await self.storage.update_job(job)
@@ -398,20 +398,20 @@ class JobManager:
         # Run the task
         try:
             job.status = JobStatus.RUNNING
-            job.started_at = datetime.utcnow()
+            job.started_at = datetime.now(datetime.UTC)
             
             # Execute the task
             result = await task.execute(job)
             
             # Update the job
             job.status = JobStatus.COMPLETED
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(datetime.UTC)
             job.result = result
             
             return Result.success(result)
         except Exception as e:
             job.status = JobStatus.FAILED
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(datetime.UTC)
             job.error = {
                 "message": str(e),
                 "type": type(e).__name__,

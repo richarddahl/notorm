@@ -10,7 +10,7 @@ import logging
 import random
 from typing import Dict, Any, List, Optional
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, UTC
 
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -33,7 +33,7 @@ class Product(BaseModel):
     description: str = Field(..., description="Product description")
     price: float = Field(..., description="Product price")
     category: str = Field(..., description="Product category")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
 
 
 # Sample user entity
@@ -43,7 +43,7 @@ class User(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     username: str = Field(..., description="Username")
     email: str = Field(..., description="Email address")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
 
 
 # Sample interaction entity
@@ -54,7 +54,7 @@ class Interaction(BaseModel):
     user_id: UUID = Field(..., description="User ID")
     product_id: UUID = Field(..., description="Product ID")
     interaction_type: str = Field(..., description="Interaction type")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
 
 
 # Repositories

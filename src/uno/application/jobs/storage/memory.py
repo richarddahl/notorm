@@ -4,7 +4,7 @@ This module provides an in-memory implementation of the Storage interface,
 primarily for development and testing purposes.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Dict, List, Optional, Set, Tuple, AsyncContextManager, cast
 import asyncio
 import contextlib
@@ -236,7 +236,7 @@ class InMemoryStorage(Storage):
                     continue
                 
                 # Skip jobs that aren't due yet
-                if job.scheduled_for and job.scheduled_for > datetime.utcnow():
+                if job.scheduled_for and job.scheduled_for > datetime.now(datetime.UTC):
                     heapq.heappop(queue)  # Remove from queue for now
                     continue
                 
@@ -302,7 +302,7 @@ class InMemoryStorage(Storage):
                 job.mark_retry(error)
                 
                 # Calculate next execution time
-                next_run = datetime.utcnow() + timedelta(seconds=job.retry_delay)
+                next_run = datetime.now(datetime.UTC) + timedelta(seconds=job.retry_delay)
                 job.scheduled_for = next_run
                 
                 # Add back to queue
@@ -748,7 +748,7 @@ class InMemoryStorage(Storage):
         try:
             # Try to acquire the lock
             async with self.locks_lock:
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 
                 # Check if lock exists and is expired
                 if lock_name in self.locks:
@@ -878,7 +878,7 @@ class InMemoryStorage(Storage):
             )
         
         # Calculate next run time
-        now = datetime.utcnow()
+        now = datetime.now(datetime.UTC)
         next_run: Optional[datetime] = None
         
         if cron_expression:
@@ -1009,7 +1009,7 @@ class InMemoryStorage(Storage):
                 schedule["interval_seconds"] = None
                 
                 # Recalculate next run time
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 cron = croniter(cron_expression, now)
                 schedule["next_run"] = cron.get_next(datetime)
             
@@ -1018,7 +1018,7 @@ class InMemoryStorage(Storage):
                 schedule["cron_expression"] = None
                 
                 # Recalculate next run time
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 schedule["next_run"] = now + timedelta(seconds=interval_seconds)
             
             if queue is not None:
@@ -1051,7 +1051,7 @@ class InMemoryStorage(Storage):
                 schedule["status"] = status
             
             # Update the updated_at timestamp
-            schedule["updated_at"] = datetime.utcnow()
+            schedule["updated_at"] = datetime.now(datetime.UTC)
             
             return True
     
@@ -1083,7 +1083,7 @@ class InMemoryStorage(Storage):
             List of (schedule_id, job_data) tuples for due jobs
         """
         due_jobs: List[Tuple[str, Dict[str, Any]]] = []
-        now = datetime.utcnow()
+        now = datetime.now(datetime.UTC)
         
         async with self.schedules_lock:
             # Find due schedules

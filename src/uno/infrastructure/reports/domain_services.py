@@ -1,6 +1,6 @@
 """Domain services for the Reports module."""
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Optional, Union, Any, cast
 
 from uno.domain.service import UnoEntityService
@@ -322,7 +322,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
             # This is where you would actually generate the report
             # For this example, we'll just mark it as completed with some dummy data
             execution.status = ReportExecutionStatus.COMPLETED
-            execution.completed_at = datetime.utcnow()
+            execution.completed_at = datetime.now(datetime.UTC)
             execution.row_count = 100
             execution.execution_time_ms = 1000
             execution.result_hash = "dummy_hash"
@@ -342,7 +342,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
                         report_execution_id=execution.id,
                         report_output_id=output.id,
                         status=ReportExecutionStatus.COMPLETED,
-                        completed_at=datetime.utcnow(),
+                        completed_at=datetime.now(datetime.UTC),
                         output_location=f"/reports/{template.name}/{execution.id}.{output.format.lower()}",
                         output_size_bytes=1024,
                     )
@@ -473,7 +473,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
                     processed_count += 1
                     
                     # Update the trigger's last_triggered timestamp
-                    trigger.last_triggered = datetime.utcnow()
+                    trigger.last_triggered = datetime.now(datetime.UTC)
                     await self.repository.update(trigger)
             
             return Success(processed_count)

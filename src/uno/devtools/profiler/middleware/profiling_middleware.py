@@ -10,7 +10,7 @@ import logging
 import json
 import uuid
 from typing import Dict, List, Any, Optional, Callable, Union, Set
-from datetime import datetime
+from datetime import datetime, UTC
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -321,7 +321,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
                 
                 # Create report
                 report = {
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(datetime.UTC).isoformat(),
                     "queries": query_analysis,
                     "endpoints": endpoint_analysis,
                     "resources": resource_analysis,
@@ -459,7 +459,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
         # Create report
         return {
             "enabled": True,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(datetime.UTC).isoformat(),
             "queries": query_analysis,
             "endpoints": endpoint_analysis,
             "resources": resource_analysis,

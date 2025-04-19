@@ -10,7 +10,7 @@ This module provides dedicated models and events for workflow-generated
 notifications, enabling seamless integration with the notification system.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List, ClassVar
 from enum import Enum
 
@@ -51,7 +51,7 @@ class WorkflowNotification(BaseModel):
     recipient_id: str
     workflow_id: str
     action_id: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
     notification_type: NotificationType = NotificationType.INFO
     priority: NotificationPriority = NotificationPriority.NORMAL
     link: Optional[str] = None
@@ -64,7 +64,7 @@ class WorkflowNotification(BaseModel):
     def mark_as_read(self) -> None:
         """Mark the notification as read."""
         self.read = True
-        self.read_at = datetime.utcnow()
+        self.read_at = datetime.now(datetime.UTC)
 
 
 class WorkflowNotificationEvent(UnoEvent):
@@ -120,7 +120,7 @@ class NotificationRead(WorkflowNotificationEvent):
         super().__init__()
         self.notification_id = notification_id
         self.recipient_id = recipient_id
-        self.read_at = read_at or datetime.utcnow()
+        self.read_at = read_at or datetime.now(datetime.UTC)
         self.aggregate_id = notification_id
         self.aggregate_type = "notification"
 

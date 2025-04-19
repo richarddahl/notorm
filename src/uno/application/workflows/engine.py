@@ -7,7 +7,7 @@ import json
 import inspect
 import asyncio
 from typing import Dict, Any, List, Optional, Callable, Set, Union, Type, Tuple
-from datetime import datetime
+from datetime import datetime, UTC
 
 from pydantic import BaseModel
 
@@ -409,11 +409,11 @@ class WorkflowEngine:
             "trigger_id": trigger.id,
             "event": event.dict(),
             "execution_id": execution_record.id,
-            "start_time": datetime.utcnow().isoformat(),
+            "start_time": datetime.now(datetime.UTC).isoformat(),
         }
 
         try:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(datetime.UTC)
 
             # Check if conditions are met
             conditions_result = await self._evaluate_conditions(
@@ -459,7 +459,7 @@ class WorkflowEngine:
                 return Failure(error)
 
             # Calculate execution time
-            end_time = datetime.utcnow()
+            end_time = datetime.now(datetime.UTC)
             execution_time = (
                 end_time - start_time
             ).total_seconds() * 1000  # in milliseconds
@@ -527,7 +527,7 @@ class WorkflowEngine:
         async with self.db_manager.get_enhanced_session() as session:
             update_data = {
                 "status": status,
-                "completed_at": datetime.utcnow(),
+                "completed_at": datetime.now(datetime.UTC),
                 "result": result,
             }
 
@@ -551,7 +551,7 @@ class WorkflowEngine:
                 {
                     "id": execution_id,
                     "status": status,
-                    "completed_at": datetime.utcnow(),
+                    "completed_at": datetime.now(datetime.UTC),
                     "result": json.dumps(result),
                     "error": error,
                     "execution_time": execution_time,
@@ -1113,7 +1113,7 @@ class WorkflowEventHandler(EventHandler):
             timestamp=(
                 event.timestamp
                 if hasattr(event, "timestamp")
-                else datetime.utcnow().timestamp()
+                else datetime.now(datetime.UTC).timestamp()
             ),
             payload=event_data,
             context={

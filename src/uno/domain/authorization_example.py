@@ -7,7 +7,7 @@ including RBAC and multi-tenant authorization.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Optional, Any
 
 from uno.domain.authorization import (
@@ -44,7 +44,7 @@ class Product(Entity):
     owner_id: str
     tenant_id: str
     active: bool = True
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     updated_at: Optional[datetime] = None
 
 
@@ -58,7 +58,7 @@ class Order(AggregateRoot):
     owner_id: str
     tenant_id: str
     status: str = "pending"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     updated_at: Optional[datetime] = None
 
 

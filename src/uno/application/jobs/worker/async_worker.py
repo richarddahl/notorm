@@ -4,7 +4,7 @@ This module provides an asynchronous worker implementation that processes
 jobs concurrently using asyncio tasks.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 import asyncio
 import logging
@@ -66,7 +66,7 @@ class AsyncWorker(Worker):
         
         self.logger.info(f"Starting async worker {self.worker_id} for queue {self.queue_name}")
         self.running = True
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(datetime.UTC)
         
         # Start background tasks
         self.main_task = asyncio.create_task(self._process_loop())
@@ -400,7 +400,7 @@ class AsyncWorker(Worker):
         
         # Add uptime if available
         if self.start_time:
-            health["uptime"] = (datetime.utcnow() - self.start_time).total_seconds()
+            health["uptime"] = (datetime.now(datetime.UTC) - self.start_time).total_seconds()
         
         # Check if shutting down
         if self.shutdown_event.is_set():
@@ -455,7 +455,7 @@ class AsyncWorker(Worker):
         
         # Calculate throughput (jobs per minute)
         if self.start_time:
-            uptime_seconds = (datetime.utcnow() - self.start_time).total_seconds()
+            uptime_seconds = (datetime.now(datetime.UTC) - self.start_time).total_seconds()
             if uptime_seconds > 0:
                 metrics["throughput_jobs_per_minute"] = (
                     metrics["jobs_processed_total"] / uptime_seconds * 60

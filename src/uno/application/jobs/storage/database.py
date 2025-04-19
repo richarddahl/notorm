@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Any, Set
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import uuid
 
 from sqlalchemy import Table, Column, String, DateTime, Integer, JSON, Boolean, ForeignKey
@@ -176,7 +176,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                     'status': job.status.value,
                     'result': job.result,
                     'error': job.error,
-                    'updated_at': datetime.utcnow(),
+                    'updated_at': datetime.now(datetime.UTC),
                     'started_at': job.started_at,
                     'completed_at': job.completed_at,
                     'retries': job.retries,
@@ -228,7 +228,7 @@ class DatabaseJobStorage(JobStorageProtocol):
         """
         try:
             job.status = JobStatus.PENDING
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(datetime.UTC)
             
             # Check if job already exists
             get_result = await self.get_job(job.id)
@@ -273,7 +273,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                             self.jobs_table.c.status.in_(status_values),
                             or_(
                                 self.jobs_table.c.scheduled_at.is_(None),
-                                self.jobs_table.c.scheduled_at <= datetime.utcnow(),
+                                self.jobs_table.c.scheduled_at <= datetime.now(datetime.UTC),
                             ),
                         )
                     )
@@ -295,8 +295,8 @@ class DatabaseJobStorage(JobStorageProtocol):
                 
                 # Update the job status to RUNNING
                 job.status = JobStatus.RUNNING
-                job.started_at = datetime.utcnow()
-                job.updated_at = datetime.utcnow()
+                job.started_at = datetime.now(datetime.UTC)
+                job.updated_at = datetime.now(datetime.UTC)
                 
                 update_result = await self.update_job(job)
                 if not update_result.is_success:
@@ -394,7 +394,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                 session = await self._get_session()
                 
                 schedule_id = str(uuid.uuid4())
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 
                 # Calculate the next run time based on the schedule
                 next_run = schedule_def.schedule.next_run_time(now)
@@ -487,7 +487,7 @@ class DatabaseJobStorage(JobStorageProtocol):
             async with self._lock:
                 session = await self._get_session()
                 
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 next_run = schedule_def.schedule.next_run_time(now)
                 
                 schedule_data = {
@@ -550,7 +550,7 @@ class DatabaseJobStorage(JobStorageProtocol):
         try:
             session = await self._get_session()
             
-            now = datetime.utcnow()
+            now = datetime.now(datetime.UTC)
             
             query = (
                 select([self.schedules_table])
@@ -592,7 +592,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                     .values(
                         last_run_at=last_run,
                         next_run_at=next_run,
-                        updated_at=datetime.utcnow(),
+                        updated_at=datetime.now(datetime.UTC),
                     )
                 )
                 
@@ -677,7 +677,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                     )
                     .values(
                         status=JobStatus.PAUSED.value,
-                        updated_at=datetime.utcnow(),
+                        updated_at=datetime.now(datetime.UTC),
                     )
                 )
                 
@@ -711,7 +711,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                     )
                     .values(
                         status=JobStatus.PENDING.value,
-                        updated_at=datetime.utcnow(),
+                        updated_at=datetime.now(datetime.UTC),
                     )
                 )
                 
@@ -752,7 +752,7 @@ class DatabaseJobStorage(JobStorageProtocol):
             async with self._lock:
                 session = await self._get_session()
                 
-                cutoff_date = datetime.utcnow() - max_age
+                cutoff_date = datetime.now(datetime.UTC) - max_age
                 
                 # Only delete completed, failed, or cancelled jobs
                 terminal_statuses = [
@@ -793,8 +793,8 @@ class DatabaseJobStorage(JobStorageProtocol):
             async with self._lock:
                 session = await self._get_session()
                 
-                cutoff_date = datetime.utcnow() - stall_timeout
-                now = datetime.utcnow()
+                cutoff_date = datetime.now(datetime.UTC) - stall_timeout
+                now = datetime.now(datetime.UTC)
                 
                 # Find and update stalled jobs
                 query = (

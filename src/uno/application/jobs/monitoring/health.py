@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Any, Callable
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import logging
 
 from uno.core.monitoring.health import HealthCheck, HealthStatus
@@ -77,7 +77,7 @@ class JobQueueHealthCheck(HealthCheck):
             if self.alert_on_stalled_jobs:
                 running_jobs_result = await self.job_manager.get_running_jobs(self.queue_name)
                 if running_jobs_result.is_success:
-                    now = datetime.utcnow()
+                    now = datetime.now(datetime.UTC)
                     stall_threshold = now - self.job_manager.stall_timeout
                     
                     for job in running_jobs_result.value:
@@ -354,7 +354,7 @@ class JobSystemHealthChecker:
                     pass  # Continue with health checks
                 
                 # Run health checks that are due
-                now = datetime.utcnow()
+                now = datetime.now(datetime.UTC)
                 for check in self.health_checks:
                     if not hasattr(check, 'last_check_time') or now - check.last_check_time >= check.check_interval:
                         result = await check.check_health()
@@ -397,5 +397,5 @@ class JobSystemHealthChecker:
             "status": overall_status,
             "message": f"Job system is {overall_status.value}",
             "checks": results,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(datetime.UTC).isoformat(),
         }

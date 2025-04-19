@@ -9,7 +9,7 @@ import asyncio
 import logging
 from typing import Dict, Any, List, Optional
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, UTC
 
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -35,7 +35,7 @@ class Product(BaseModel):
     description: str = Field(..., description="Product description")
     price: float = Field(..., description="Product price")
     category: str = Field(..., description="Product category")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
     updated_at: Optional[datetime] = None
 
     def update(self, **kwargs: Any) -> None:
@@ -44,7 +44,7 @@ class Product(BaseModel):
             if hasattr(self, key):
                 setattr(self, key, value)
 
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(datetime.UTC)
 
 
 # Events for product lifecycle

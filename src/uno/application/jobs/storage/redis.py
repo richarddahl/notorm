@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Set, Any
 import asyncio
 import json
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import aioredis
 
@@ -223,8 +223,8 @@ class RedisJobStorage(JobStorageProtocol):
             "max_retries": schedule_def.max_retries,
             "retry_delay": schedule_def.retry_delay.total_seconds() if schedule_def.retry_delay else None,
             "timeout": schedule_def.timeout.total_seconds() if schedule_def.timeout else None,
-            "created_at": schedule_def.created_at.isoformat() if schedule_def.created_at else datetime.utcnow().isoformat(),
-            "updated_at": schedule_def.updated_at.isoformat() if schedule_def.updated_at else datetime.utcnow().isoformat(),
+            "created_at": schedule_def.created_at.isoformat() if schedule_def.created_at else datetime.now(datetime.UTC).isoformat(),
+            "updated_at": schedule_def.updated_at.isoformat() if schedule_def.updated_at else datetime.now(datetime.UTC).isoformat(),
             "last_run_at": schedule_def.last_run_at.isoformat() if schedule_def.last_run_at else None,
             "next_run_at": schedule_def.next_run_at.isoformat() if schedule_def.next_run_at else None,
             "metadata": json.dumps(schedule_def.metadata or {}),
@@ -296,9 +296,9 @@ class RedisJobStorage(JobStorageProtocol):
             
             # Set default values for timestamps if not provided
             if not job.created_at:
-                job.created_at = datetime.utcnow()
+                job.created_at = datetime.now(datetime.UTC)
             if not job.updated_at:
-                job.updated_at = datetime.utcnow()
+                job.updated_at = datetime.now(datetime.UTC)
                 
             job_data = self._serialize_job(job)
             job_key = self._get_job_key(job.id)
@@ -364,7 +364,7 @@ class RedisJobStorage(JobStorageProtocol):
             await self.initialize()
             
             # Update the updated_at timestamp
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(datetime.UTC)
             
             job_data = self._serialize_job(job)
             job_key = self._get_job_key(job.id)
@@ -406,7 +406,7 @@ class RedisJobStorage(JobStorageProtocol):
                     if new_status == JobStatus.PENDING:
                         # Add to queue if it's now pending
                         new_queue_key = self._get_queue_key(job.queue_name, job.priority)
-                        score = datetime.utcnow().timestamp()
+                        score = datetime.now(datetime.UTC).timestamp()
                         pipeline.zadd(new_queue_key, {job.id: score})
                 
                 await pipeline.execute()
@@ -472,7 +472,7 @@ class RedisJobStorage(JobStorageProtocol):
             await self.initialize()
             
             job.status = JobStatus.PENDING
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(datetime.UTC)
             
             # Check if job already exists
             job_exists_result = await self.get_job(job.id)
@@ -506,7 +506,7 @@ class RedisJobStorage(JobStorageProtocol):
         try:
             await self.initialize()
             
-            now = datetime.utcnow().timestamp()
+            now = datetime.now(datetime.UTC).timestamp()
             
             # Try each priority queue in order (highest to lowest)
             for priority in sorted(Priority, key=lambda p: p.value):
@@ -542,8 +542,8 @@ class RedisJobStorage(JobStorageProtocol):
                         
                     # Update the job status to RUNNING
                     job.status = JobStatus.RUNNING
-                    job.started_at = datetime.utcnow()
-                    job.updated_at = datetime.utcnow()
+                    job.started_at = datetime.now(datetime.UTC)
+                    job.updated_at = datetime.now(datetime.UTC)
                     
                     # Remove the job from the pending queue
                     await self._redis.zrem(queue_key, job_id)
@@ -684,7 +684,7 @@ class RedisJobStorage(JobStorageProtocol):
                 schedule_def.id = str(uuid.uuid4())
             
             # Set timestamps if not provided
-            now = datetime.utcnow()
+            now = datetime.now(datetime.UTC)
             if not schedule_def.created_at:
                 schedule_def.created_at = now
             if not schedule_def.updated_at:
@@ -777,7 +777,7 @@ class RedisJobStorage(JobStorageProtocol):
             await self.initialize()
             
             # Update the updated_at timestamp
-            schedule_def.updated_at = datetime.utcnow()
+            schedule_def.updated_at = datetime.now(datetime.UTC)
             
             # Get current schedule to check if enabled status changed
             current_schedule_result = await self.get_schedule(schedule_def.id)
@@ -792,7 +792,7 @@ class RedisJobStorage(JobStorageProtocol):
             if (schedule_def.schedule.schedule_type != current_schedule.schedule.schedule_type or
                 schedule_def.schedule.to_dict() != current_schedule.schedule.to_dict() or
                 schedule_def.next_run_at is None):
-                schedule_def.next_run_at = schedule_def.schedule.next_run_time(datetime.utcnow())
+                schedule_def.next_run_at = schedule_def.schedule.next_run_time(datetime.now(datetime.UTC))
                 
             schedule_data = self._serialize_schedule(schedule_def)
             schedule_key = self._get_schedule_key(schedule_def.id)
@@ -879,7 +879,7 @@ class RedisJobStorage(JobStorageProtocol):
         try:
             await self.initialize()
             
-            now = datetime.utcnow().timestamp()
+            now = datetime.now(datetime.UTC).timestamp()
             due_key = self._get_schedule_due_key()
             
             # Get all schedules with a next run time <= now
@@ -921,12 +921,12 @@ class RedisJobStorage(JobStorageProtocol):
             # Update the schedule
             schedule.last_run_at = last_run
             schedule.next_run_at = next_run
-            schedule.updated_at = datetime.utcnow()
+            schedule.updated_at = datetime.now(datetime.UTC)
             
             schedule_data = {
                 "last_run_at": last_run.isoformat(),
                 "next_run_at": next_run.isoformat(),
-                "updated_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.now(datetime.UTC).isoformat(),
             }
             
             schedule_key = self._get_schedule_key(schedule_id)
@@ -1002,7 +1002,7 @@ class RedisJobStorage(JobStorageProtocol):
                         for job_id in job_ids:
                             job_key = self._get_job_key(job_id)
                             pipeline.hset(job_key, "status", JobStatus.CANCELLED.value)
-                            pipeline.hset(job_key, "updated_at", datetime.utcnow().isoformat())
+                            pipeline.hset(job_key, "updated_at", datetime.now(datetime.UTC).isoformat())
                             
                             # Remove from PENDING status set
                             pipeline.srem(self._get_status_index_key(JobStatus.PENDING), job_id)
@@ -1048,7 +1048,7 @@ class RedisJobStorage(JobStorageProtocol):
                             # Update job status
                             job_key = self._get_job_key(job_id)
                             pipeline.hset(job_key, "status", JobStatus.PAUSED.value)
-                            pipeline.hset(job_key, "updated_at", datetime.utcnow().isoformat())
+                            pipeline.hset(job_key, "updated_at", datetime.now(datetime.UTC).isoformat())
                             
                             # Update status sets
                             pipeline.srem(self._get_status_index_key(JobStatus.PENDING), job_id)
@@ -1094,7 +1094,7 @@ class RedisJobStorage(JobStorageProtocol):
                             # Update job status
                             job_key = self._get_job_key(job_id)
                             pipeline.hset(job_key, "status", JobStatus.PENDING.value)
-                            pipeline.hset(job_key, "updated_at", datetime.utcnow().isoformat())
+                            pipeline.hset(job_key, "updated_at", datetime.now(datetime.UTC).isoformat())
                             
                             # Update status sets
                             pipeline.srem(self._get_status_index_key(JobStatus.PAUSED), job_id)
@@ -1137,7 +1137,7 @@ class RedisJobStorage(JobStorageProtocol):
         try:
             await self.initialize()
             
-            cutoff_time = datetime.utcnow() - max_age
+            cutoff_time = datetime.now(datetime.UTC) - max_age
             cutoff_str = cutoff_time.isoformat()
             
             # Get all jobs with terminal statuses
@@ -1185,9 +1185,9 @@ class RedisJobStorage(JobStorageProtocol):
         try:
             await self.initialize()
             
-            cutoff_time = datetime.utcnow() - stall_timeout
+            cutoff_time = datetime.now(datetime.UTC) - stall_timeout
             cutoff_str = cutoff_time.isoformat()
-            now = datetime.utcnow()
+            now = datetime.now(datetime.UTC)
             
             # Get all running jobs
             running_key = self._get_status_index_key(JobStatus.RUNNING)

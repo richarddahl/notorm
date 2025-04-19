@@ -11,7 +11,7 @@ import threading
 import statistics
 from typing import Dict, List, Optional, Any, Callable, Union, Set
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class QueryMetric:
     
     query: str
     duration: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     source: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
     stacktrace: Optional[List[str]] = None
@@ -58,7 +58,7 @@ class EndpointMetric:
     method: str
     duration: float
     status_code: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     user_id: Optional[str] = None
     request_id: Optional[str] = None
     params: Optional[Dict[str, Any]] = None
@@ -94,7 +94,7 @@ class MemoryMetric:
     percent: float
     used: int
     free: int
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     process_rss: Optional[int] = None
     process_vms: Optional[int] = None
     process_percent: Optional[float] = None
@@ -119,7 +119,7 @@ class CPUMetric:
     """Metric for CPU usage."""
     
     percent: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     system: Optional[float] = None
     user: Optional[float] = None
     idle: Optional[float] = None
@@ -143,7 +143,7 @@ class FunctionMetric:
     
     name: str
     duration: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     module: Optional[str] = None
     args: Optional[List[Any]] = None
     kwargs: Optional[Dict[str, Any]] = None
@@ -581,13 +581,13 @@ class EndpointCollector(MetricCollector):
                     "count": 0,
                     "durations": [],
                     "status_codes": {},
-                    "last_accessed": datetime.utcnow(),
+                    "last_accessed": datetime.now(datetime.UTC),
                 }
             
             stats = self.endpoint_stats[key]
             stats["count"] += 1
             stats["durations"].append(duration)
-            stats["last_accessed"] = datetime.utcnow()
+            stats["last_accessed"] = datetime.now(datetime.UTC)
             
             # Keep only the last 100 durations
             if len(stats["durations"]) > 100:
@@ -906,13 +906,13 @@ class FunctionCollector(MetricCollector):
                     "module": module,
                     "count": 0,
                     "durations": [],
-                    "last_called": datetime.utcnow(),
+                    "last_called": datetime.now(datetime.UTC),
                 }
             
             stats = self.function_stats[key]
             stats["count"] += 1
             stats["durations"].append(duration)
-            stats["last_called"] = datetime.utcnow()
+            stats["last_called"] = datetime.now(datetime.UTC)
             
             # Keep only the last 100 durations
             if len(stats["durations"]) > 100:

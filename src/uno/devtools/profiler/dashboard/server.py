@@ -10,7 +10,7 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from fastapi import FastAPI, HTTPException, Request, Depends, Query
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -303,7 +303,7 @@ async def get_resource_metrics(
     # Convert to time series
     memory_series = []
     cpu_series = []
-    cutoff_time = datetime.utcnow() - delta
+    cutoff_time = datetime.now(datetime.UTC) - delta
     
     for metric in memory_metrics:
         if metric.timestamp >= cutoff_time:

@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional, Any, Set
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from pydantic import BaseModel, Field
@@ -777,7 +777,7 @@ async def get_metrics(
     """Get job system metrics."""
     return MetricsResponse(
         metrics=metrics.get_metrics(),
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(datetime.UTC),
     )
 
 
@@ -824,5 +824,5 @@ async def get_health(
         status=health_status,
         message=f"Job system is {health_status}",
         checks=health_checks,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(datetime.UTC),
     )

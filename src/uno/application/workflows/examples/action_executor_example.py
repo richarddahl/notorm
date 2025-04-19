@@ -16,7 +16,7 @@ import asyncio
 import logging
 import uuid
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, UTC
 
 from uno.database.db_manager import DBManager
 from uno.core.events import UnoEvent, EventDispatcher
@@ -52,7 +52,7 @@ class OrderCreatedEvent(UnoEvent):
         self.customer_id = customer_id
         self.total_amount = total_amount
         self.items = items
-        self.created_at = datetime.utcnow().isoformat()
+        self.created_at = datetime.now(datetime.UTC).isoformat()
         self.aggregate_id = order_id
         self.aggregate_type = "order"
 
@@ -269,7 +269,7 @@ async def track_order_analytics(
         "event_type": "order_created",
         "category": category,
         "order_id": order_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(datetime.UTC).isoformat(),
         "total_amount": total_amount,
         "workflow_id": context.workflow_id,
     }

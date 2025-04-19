@@ -10,7 +10,7 @@ defined in the interfaces module, using the UnoBaseRepository as a foundation.
 """
 
 from typing import List, Optional, Dict, Any, Type, cast
-from datetime import datetime
+from datetime import datetime, UTC
 import logging
 from enum import Enum
 
@@ -1132,7 +1132,7 @@ class ReportExecutionRepository(
 
             # If status is completed or failed, set completed_at
             if status in ["completed", "failed"]:
-                existing_execution.completed_at = datetime.utcnow()
+                existing_execution.completed_at = datetime.now(datetime.UTC)
 
             await session.flush()
 
@@ -1172,7 +1172,7 @@ class ReportExecutionRepository(
 
             # Update execution details
             existing_execution.status = "completed"
-            existing_execution.completed_at = datetime.utcnow()
+            existing_execution.completed_at = datetime.now(datetime.UTC)
             existing_execution.row_count = row_count
             existing_execution.execution_time_ms = execution_time_ms
             if result_hash:
@@ -1375,7 +1375,7 @@ class ReportOutputExecutionRepository(
 
             # Update output execution details
             existing_output_execution.status = "completed"
-            existing_output_execution.completed_at = datetime.utcnow()
+            existing_output_execution.completed_at = datetime.now(datetime.UTC)
             existing_output_execution.output_location = output_location
             existing_output_execution.output_size_bytes = output_size_bytes
 
