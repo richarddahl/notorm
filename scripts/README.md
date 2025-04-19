@@ -57,7 +57,9 @@ This directory contains scripts used for development, deployment, and maintenanc
 |--------|---------|-------|-------|
 | `benchmarks/run_vector_benchmarks.sh` | Runs vector search benchmarks | `./scripts/benchmarks/run_vector_benchmarks.sh` | |
 
-## Legacy Scripts
+## Scripts
+
+All scripts now follow the new standards. No legacy scripts or test providers remain.
 
 These scripts are being migrated to the new structure:
 
@@ -90,7 +92,7 @@ All scripts should include help information. Run any script with `-h` or `--help
 
 ## Known Issues
 
-- Some scripts are marked as legacy and redirect to newer versions
+- All scripts are now up to date and follow the new standards.
 - Docker scripts assume Docker is installed and running
 - Database scripts assume PostgreSQL is running in Docker
 - Vector search scripts assume pgvector extension is installed

@@ -197,7 +197,7 @@ __all__ = [
     "get_report_trigger_service",
     "get_report_output_service",
     "get_report_execution_service",
-    "get_report_output_execution_service",
+
     
     # Schema Managers
     "ReportFieldDefinitionSchemaManager",

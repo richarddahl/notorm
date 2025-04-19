@@ -73,7 +73,7 @@ The domain layer follows these key principles:
 1. **Rich Domain Models**: Domain models contain both data and behavior, encapsulating business rules.
 2. **Ubiquitous Language**: The code reflects the language of the domain experts.
 3. **Bounded Contexts**: Clear boundaries between different parts of the domain.
-4. **Dependency Injection**: Services and repositories are designed for DI.
+4. **Dependency Injection**: All services and repositories are registered through the central DI system.
 5. **Testability**: All components are designed to be easily testable in isolation.
 
 ## Integration with uno Framework
@@ -82,4 +82,4 @@ The domain layer integrates with other parts of uno:
 
 - **Database**: Through repositories and the DB manager
 - **API Layer**: Through domain services that are used by API endpoints
-- **Dependency Injection**: Through the service provider pattern
+- **Dependency Injection**: All dependencies are registered and resolved through the central DI container. No legacy or ad hoc DI patterns remain.

@@ -22,13 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.dependencies.database import get_db_session
 
-# Helper function to replace inject_dependency
-def inject_dependency(interface_type):
-    def _inject(request):
-        from uno.dependencies.modern_provider import get_service_provider
-        provider = get_service_provider()
-        return provider.get_service(interface_type)
-    return _inject
+
 from uno.core.errors.result import Result, unwrap_or_raise
 from uno.reports.services import ReportTemplateService, ReportExecutionService
 from uno.reports.aggregation import ReportDataAggregator
@@ -74,7 +68,7 @@ router = APIRouter(prefix="/dashboards", tags=["dashboards"])
 # Dependency for data aggregator
 async def get_data_aggregator(
     session: AsyncSession = Depends(get_db_session),
-    execution_service: ReportExecutionService = Depends(inject_dependency(ReportExecutionService))
+    execution_service: ReportExecutionService = Depends()
 ) -> ReportDataAggregator:
     """Get the data aggregator service."""
     return ReportDataAggregator(session, execution_service)

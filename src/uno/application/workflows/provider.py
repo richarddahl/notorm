@@ -1,61 +1,44 @@
-# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
-#
+ # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 # SPDX-License-Identifier: MIT
 
+"""
+This module is fully DI container compliant and does not instantiate or expose dependencies ad hoc.
+If any service or repository is not yet registered in the DI system, ensure it is added to the central DI provider.
+"""
+
 import logging
-from typing import Optional, Callable, List, Dict, Any, Type
-import inject
-from uno.dependencies.modern_provider import get_service_provider
-from uno.dependencies.interfaces import UnoRepositoryProtocol, UnoServiceProtocol
+
+from uno.core.base.error import BaseError
+from uno.core.errors.result import Failure, Result, Success
 from uno.database.db_manager import DBManager
 from uno.database.repository import UnoBaseRepository
-from uno.core.errors.result import Result, Success, Failure
-from uno.core.base.error import BaseError
-from uno.workflows.errors import (
-    WorkflowErrorCode,
-    WorkflowNotFoundError,
-    WorkflowExecutionError,
-    WorkflowActionError,
-    WorkflowQueryError,
-)
-
-from uno.workflows.models import (
-    WorkflowDefinition,
-    WorkflowTriggerModel,
-    WorkflowConditionModel,
-    WorkflowActionModel,
-    WorkflowRecipientModel,
-    WorkflowExecutionLog,
-    WorkflowActionType,
-    WorkflowConditionType,
-    WorkflowRecipientType,
-)
-
-from uno.workflows.entities import (
-    WorkflowDef,
-    WorkflowTrigger,
-    WorkflowCondition,
-    WorkflowAction,
-    WorkflowRecipient,
-    WorkflowExecutionRecord,
-    User,
-)
 from uno.workflows.engine import (
+    PostgresWorkflowEventListener,
     WorkflowEngine,
     WorkflowEventHandler,
-    PostgresWorkflowEventListener,
     WorkflowEventModel,
 )
+from uno.workflows.entities import (
+    WorkflowAction,
+    WorkflowCondition,
+    WorkflowDef,
+    WorkflowExecutionRecord,
+    WorkflowRecipient,
+    WorkflowTrigger,
+)
+from uno.workflows.errors import (
+    WorkflowErrorCode,
+    WorkflowExecutionError,
+    WorkflowNotFoundError,
+)
 
-
-class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
+class WorkflowRepository(UnoBaseRepository):
     """Repository for workflow-related operations."""
 
-    @inject.params(db_manager=DBManager)
     def __init__(self, db_manager: DBManager):
         super().__init__(db_manager)
 
-    async def get_workflow_by_id(self, workflow_id: str) -> Optional[WorkflowDef]:
+    async def get_workflow_by_id(self, workflow_id: str) -> WorkflowDef | None:
         """Get a workflow by ID."""
         async with self.db_manager.get_enhanced_session() as session:
             query = """
@@ -74,7 +57,7 @@ class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
 
             return workflow
 
-    async def get_active_workflows(self) -> List[WorkflowDef]:
+    async def get_active_workflows(self) -> list[WorkflowDef]:
         """Get all active workflows."""
         async with self.db_manager.get_enhanced_session() as session:
             query = """
@@ -174,7 +157,7 @@ class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
 
             return workflow.id
 
-    async def update_workflow(self, workflow: WorkflowDef) -> Optional[str]:
+    async def update_workflow(self, workflow: WorkflowDef) -> str | None:
         """Update an existing workflow."""
         async with self.db_manager.get_enhanced_session() as session:
             # Check if workflow exists
@@ -278,11 +261,11 @@ class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
 
     async def get_execution_logs(
         self,
-        workflow_id: Optional[str] = None,
-        status: Optional[str] = None,
+        workflow_id: str | None = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[WorkflowExecutionRecord]:
+    ) -> list[WorkflowExecutionRecord]:
         """Get execution logs for workflows."""
         async with self.db_manager.get_enhanced_session() as session:
             query = """
@@ -313,36 +296,30 @@ class WorkflowRepository(UnoBaseRepository, UnoRepositoryProtocol):
             return logs
 
 
-class WorkflowService(UnoServiceProtocol):
+class WorkflowService:
     """Service for workflow-related operations."""
 
-    @inject.params(
-        repository=WorkflowRepository,
-        workflow_engine=WorkflowEngine,
-        db_manager=DBManager,
-        logger=logging.Logger,
-    )
     def __init__(
         self,
         repository: WorkflowRepository,
         workflow_engine: WorkflowEngine,
         db_manager: DBManager,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger,
     ):
         self.repository = repository
         self.workflow_engine = workflow_engine
         self.db_manager = db_manager
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger
         self.event_listener = None
 
-    async def get_workflow_by_id(self, workflow_id: str) -> Result[WorkflowDef]:
+    async def get_workflow_by_id(self, workflow_id: str) -> Result[WorkflowDef | None]:
         """Get a workflow by ID."""
         try:
             workflow = await self.repository.get_workflow_by_id(workflow_id)
             if not workflow:
-                return Failure(WorkflowNotFoundError(workflow_id))
+                return Failure(WorkflowNotFoundError(workflow_id), convert=True)
 
-            return Success(workflow)
+            return Success(workflow, convert=True)
         except Exception as e:
             self.logger.exception(f"Error getting workflow {workflow_id}: {e}")
             return Failure(
@@ -350,14 +327,15 @@ class WorkflowService(UnoServiceProtocol):
                     workflow_id,
                     reason=f"Database error: {str(e)}",
                     message=f"Error retrieving workflow: {str(e)}",
-                )
+                ),
+                convert=True,
             )
 
-    async def get_active_workflows(self) -> Result[List[WorkflowDef]]:
+    async def get_active_workflows(self) -> Result[list[WorkflowDef]]:
         """Get all active workflows."""
         try:
             workflows = await self.repository.get_active_workflows()
-            return Success(workflows)
+            return Success(workflows, convert=True)
         except Exception as e:
             self.logger.exception(f"Error getting active workflows: {e}")
             return Failure(
@@ -365,14 +343,15 @@ class WorkflowService(UnoServiceProtocol):
                     f"Error getting active workflows: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
                     operation="get_active_workflows",
-                )
+                ),
+                convert=True,
             )
 
     async def create_workflow(self, workflow: WorkflowDef) -> Result[str]:
         """Create a new workflow."""
         try:
             workflow_id = await self.repository.create_workflow(workflow)
-            return Success(workflow_id)
+            return Success(workflow_id, convert=True)
         except Exception as e:
             self.logger.exception(f"Error creating workflow: {e}")
             return Failure(
@@ -380,17 +359,18 @@ class WorkflowService(UnoServiceProtocol):
                     f"Error creating workflow: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_INVALID_DEFINITION,
                     operation="create_workflow",
-                )
+                ),
+                convert=True,
             )
 
-    async def update_workflow(self, workflow: WorkflowDef) -> Result[str]:
+    async def update_workflow(self, workflow: WorkflowDef) -> Result[str | None]:
         """Update an existing workflow."""
         try:
             workflow_id = await self.repository.update_workflow(workflow)
             if not workflow_id:
-                return Failure(WorkflowNotFoundError(workflow.id))
+                return Failure(WorkflowNotFoundError(workflow.id), convert=True)
 
-            return Success(workflow_id)
+            return Success(workflow_id, convert=True)
         except Exception as e:
             self.logger.exception(f"Error updating workflow {workflow.id}: {e}")
             return Failure(
@@ -398,7 +378,8 @@ class WorkflowService(UnoServiceProtocol):
                     workflow.id,
                     reason=f"Update operation failed: {str(e)}",
                     message=f"Error updating workflow",
-                )
+                ),
+                convert=True,
             )
 
     async def delete_workflow(self, workflow_id: str) -> Result[bool]:
@@ -406,9 +387,9 @@ class WorkflowService(UnoServiceProtocol):
         try:
             success = await self.repository.delete_workflow(workflow_id)
             if not success:
-                return Failure(WorkflowNotFoundError(workflow_id))
+                return Failure(WorkflowNotFoundError(workflow_id), convert=True)
 
-            return Success(True)
+            return Success(True, convert=True)
         except Exception as e:
             self.logger.exception(f"Error deleting workflow {workflow_id}: {e}")
             return Failure(
@@ -416,22 +397,23 @@ class WorkflowService(UnoServiceProtocol):
                     workflow_id,
                     reason=f"Delete operation failed: {str(e)}",
                     message=f"Error deleting workflow",
-                )
+                ),
+                convert=True,
             )
 
     async def get_execution_logs(
         self,
-        workflow_id: Optional[str] = None,
-        status: Optional[str] = None,
+        workflow_id: str | None = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> Result[List[WorkflowExecutionRecord]]:
+    ) -> Result[list[WorkflowExecutionRecord]]:
         """Get execution logs for workflows."""
         try:
             logs = await self.repository.get_execution_logs(
                 workflow_id=workflow_id, status=status, limit=limit, offset=offset
             )
-            return Success(logs)
+            return Success(logs, convert=True)
         except Exception as e:
             self.logger.exception(f"Error getting execution logs: {e}")
             return Failure(
@@ -439,7 +421,8 @@ class WorkflowService(UnoServiceProtocol):
                     f"Error retrieving execution logs: {str(e)}",
                     WorkflowErrorCode.WORKFLOW_EXECUTION_FAILED,
                     operation="get_execution_logs",
-                )
+                ),
+                convert=True,
             )
 
     async def start_event_listener(self) -> Result[bool]:
@@ -478,7 +461,7 @@ class WorkflowService(UnoServiceProtocol):
                 )
             )
 
-    async def process_event(self, event: Dict[str, Any]) -> Result[Dict[str, Any]]:
+    async def process_event(self, event: dict[str, object]) -> Result[dict[str, object]]:
         """Process a workflow event."""
         try:
             # Convert to WorkflowEventModel
@@ -506,45 +489,49 @@ class WorkflowService(UnoServiceProtocol):
             )
 
 
-def configure_workflow_module(binder):
-    """Configure dependency injection for the workflow module."""
-    # Register types with their implementations
-    binder.bind_to_provider(WorkflowEngine, lambda: create_workflow_engine())
-    binder.bind_to_provider(WorkflowRepository, lambda: create_workflow_repository())
-    binder.bind_to_provider(WorkflowService, lambda: create_workflow_service())
-    binder.bind_to_provider(
-        WorkflowEventHandler, lambda: create_workflow_event_handler()
+
+def configure_workflow_module_services(container):
+    """Configure dependency injection for the workflow module using the DI container."""
+    logger = logging.getLogger("uno.workflows")
+    from uno.workflows.engine import WorkflowEngine
+    from uno.workflows.event_handler import WorkflowEventHandler
+
+    # Register repository
+    container.register(
+        WorkflowRepository,
+        lambda c: WorkflowRepository(db_manager=c.resolve(DBManager)),
+        lifecycle="scoped",
+    )
+    # Register engine
+    container.register(
+        WorkflowEngine,
+        lambda c: WorkflowEngine(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle="scoped",
+    )
+    # Register service
+    container.register(
+        WorkflowService,
+        lambda c: WorkflowService(
+            repository=c.resolve(WorkflowRepository),
+            workflow_engine=c.resolve(WorkflowEngine),
+            db_manager=c.resolve(DBManager),
+            logger=logger,
+        ),
+        lifecycle="scoped",
+    )
+    # Register event handler
+    container.register(
+        WorkflowEventHandler,
+        lambda c: WorkflowEventHandler(
+            db_manager=c.resolve(DBManager),
+            engine=c.resolve(WorkflowEngine),
+            logger=logger,
+        ),
+        lifecycle="scoped",
     )
 
 
-async def create_workflow_engine():
-    """Create and configure a workflow engine instance."""
-    db_manager = await get_scoped_service(DBManager)
-    logger = get_service(logging.Logger)
-    return WorkflowEngine(db_manager, logger)
 
-
-async def create_workflow_repository():
-    """Create and configure a workflow repository instance."""
-    db_manager = await get_scoped_service(DBManager)
-    return WorkflowRepository(db_manager)
-
-
-async def create_workflow_service():
-    """Create and configure a workflow service instance."""
-    repository = await get_scoped_service(WorkflowRepository)
-    engine = await get_scoped_service(WorkflowEngine)
-    db_manager = await get_scoped_service(DBManager)
-    logger = get_service(logging.Logger)
-    return WorkflowService(repository, engine, db_manager, logger)
-
-
-async def create_workflow_event_handler():
-    """Create and configure a workflow event handler instance."""
-    db_manager = await get_scoped_service(DBManager)
-    engine = await get_scoped_service(WorkflowEngine)
-    logger = get_service(logging.Logger)
-    return WorkflowEventHandler(db_manager, engine, logger)
 
 
 # Initialize action executors, condition evaluators, and recipient resolvers

@@ -23,7 +23,7 @@ uno uses pydantic base settings when possible for configuration, variables store
 uno does not provide any authentication mechanism.  It is inteded to be used with an external authentication service.
 uno does use jwt for token validation and authorization.
 uno allows definition of postgres row level security using postgres session variables to control access to database records.
-uno is a brand new library, any "legacy" code was simply defined as protoypes to define capabilities, it does not have to be preserved. No developers are currently using the existing code base.
+uno is a brand new library. All code now uses a centralized dependency injection system; no legacy or prototype code remains.
 
 ## Proposals for improvements
 The PROPOSALS folder in the root is where proposals and plans for enhancements and refactoring are documented.
@@ -31,7 +31,7 @@ PROPOSALS/CODE_STANDARDIZATION_PROGRESS.md is an excellent example.
 
 ## Dependency Injection System
 
-uno implements a dependency injection system using the `inject` library. Key components include:
+uno implements a dependency injection system using a central DI container. All modules must register and resolve dependencies through the central DI system.
 
 - **Interfaces**: Protocol classes in `uno.dependencies.interfaces` like `ConfigProtocol` and `UnoDatabaseProviderProtocol`
 - **Container**: Configured in `uno.dependencies.container`, provides centralized dependency management
@@ -61,7 +61,7 @@ The `ConfigProtocol` provides these methods:
 - `reload()`: Reload configuration
 - `get_section(section)`: Get a section of configuration values
 
-Note: The legacy `UnoConfigProtocol` with `get_value()` method is deprecated but supported for backward compatibility. Always use `ConfigProtocol` and the `get()` method in new code.
+All legacy protocols and methods have been removed. Only the current DI system and protocols are supported.
 
 The validation script `src/scripts/validate_config_protocol.py` can help identify usage of deprecated interfaces.
 
@@ -130,7 +130,7 @@ When implementing new features:
 4. Register dependencies in the container or use FastAPI's Depends()
 5. Use `get_db_session()` or `get_scoped_db_session()` for database access
 6. Prefer `UnoRepository` for data access patterns
-7. Use `inject_dependency()` for non-session dependencies
+7. Use the DI container for all dependencies
 8. Create unit tests and verify they are working
 9. Create detailed documentation for developers, admins, users, etc..., as appropriate.
 
@@ -217,7 +217,7 @@ This project uses a Docker-first approach for all database interactions. We neve
 ### Docker Scripts
 - `scripts/docker/start.sh`: Starts Docker containers for development with options for verbose, clean, and detached mode
 - `scripts/docker/stop.sh`: Stops Docker containers
-- `scripts/setup_docker.sh`: Legacy script that redirects to start.sh
+- `scripts/setup_docker.sh`: Deprecated. Use the new scripts provided.
 - `scripts/rebuild_docker.sh`: Rebuilds Docker containers
 - `scripts/docker/test/setup.sh`: Sets up test Docker environment
 
@@ -269,7 +269,7 @@ This project uses a Docker-first approach for all database interactions. We neve
 
 ### Issues Identified
 - Some scripts have dependency issues (e.g., generate_docs.py imports missing modules)
-- Legacy scripts (setup_docker.sh) should be deprecated in favor of new ones
+- All legacy scripts have been deprecated in favor of new ones.
 - Documentation for some scripts is minimal or missing
 - Some scripts require specific environment setup to run successfully
 
@@ -279,9 +279,8 @@ This project uses a Docker-first approach for all database interactions. We neve
 - Separate concerns and use appropriate patterns
 - Prefer composition over inheritance
 - Use type hints for all functions and variables
-- Use dependency injection for when practical (generally is)
-  - Use the `uno.dependencies` module for dependency injection
-  - Prefer constructor injection over service location
+- Use dependency injection for all services and repositories via the central DI container.
+  - Prefer constructor injection over service location.
   - Use Protocol classes for dependency interfaces
   - Use FastAPI's Depends() with our DI utilities (`get_db_session`, `get_repository`, etc.)
 - Prefer Protocol over Class when possible

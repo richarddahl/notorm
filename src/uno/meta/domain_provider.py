@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Type
 
 from uno.database.db_manager import DBManager
 from uno.dependencies.modern_provider import (
-    UnoServiceProvider,
+    ServiceProvider,
     ServiceLifecycle,
 )
 from uno.meta.entities import (
@@ -28,64 +28,36 @@ from uno.meta.domain_services import (
 )
 
 
-@lru_cache(maxsize=1)
-def get_meta_provider() -> UnoServiceProvider:
-    """
-    Get the Meta module service provider.
-    
-    Returns:
-        A configured service provider for the Meta module
-    """
-    provider = UnoServiceProvider("meta")
-    logger = logging.getLogger("uno.meta")
-    
-    # Register repositories with their dependencies
-    provider.register(
-        MetaTypeRepository,
-        lambda container: MetaTypeRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        MetaRecordRepository,
-        lambda container: MetaRecordRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register MetaTypeService with its repository dependency
-    provider.register(
-        MetaTypeService,
-        lambda container: MetaTypeService(
-            repository=container.resolve(MetaTypeRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register MetaRecordService with its repository and MetaTypeService dependencies
-    provider.register(
-        MetaRecordService,
-        lambda container: MetaRecordService(
-            repository=container.resolve(MetaRecordRepository),
-            meta_type_service=container.resolve(MetaTypeService),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    return provider
-
-
 def configure_meta_services(container):
-    """
-    Configure meta services in the dependency container.
-    
-    Args:
-        container: The dependency container to configure
-    """
-    provider = get_meta_provider()
-    provider.configure_container(container)
+    """Configure meta services in the DI container."""
+    logger = logging.getLogger("uno.meta")
+
+    # Register repositories
+    container.register(
+        MetaTypeRepository,
+        lambda c: MetaTypeRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        MetaRecordRepository,
+        lambda c: MetaRecordRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+    # Register services
+    container.register(
+        MetaTypeService,
+        lambda c: MetaTypeService(repository=c.resolve(MetaTypeRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        MetaRecordService,
+        lambda c: MetaRecordService(
+            repository=c.resolve(MetaRecordRepository),
+            meta_type_service=c.resolve(MetaTypeService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+

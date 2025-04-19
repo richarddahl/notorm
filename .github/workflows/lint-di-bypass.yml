@@ -1,0 +1,41 @@
+# .github/workflows/lint-di-bypass.yml
+name: "Lint for DI Bypass Patterns"
+on:
+  push:
+    paths:
+      - '**/*.py'
+  pull_request:
+    paths:
+      - '**/*.py'
+
+jobs:
+  di-bypass-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install grep
+        run: sudo apt-get install -y grep
+      - name: Check for DI bypass patterns
+        run: |
+          set -e
+          echo "Scanning for DI bypass patterns..."
+          # Fail if any usage of inject.instance is found
+          if grep -R 'inject.instance' src/uno/*.py; then
+            echo '❌ DI bypass pattern detected: inject.instance found.'
+            exit 1
+          fi
+          # Fail if any static get_* provider methods are found in provider modules
+          if grep -RP 'def get_\w+\s*\(' src/uno/*provider.py; then
+            echo '❌ DI bypass pattern detected: static get_* method in provider module.'
+            exit 1
+          fi
+          # Fail if any configure_with_mocks methods are found
+          if grep -R 'def configure_with_mocks' src/uno/*provider.py; then
+            echo '❌ DI bypass pattern detected: configure_with_mocks found.'
+            exit 1
+          fi
+          echo '✅ No DI bypass patterns detected.'

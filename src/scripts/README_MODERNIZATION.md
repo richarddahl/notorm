@@ -1,12 +1,12 @@
 # Modernization Scripts
 
-This directory contains scripts designed to help modernize the codebase by automatically updating legacy patterns, enforcing standards, and providing validation tools.
+This directory contains scripts designed to help modernize the codebase by enforcing current standards and providing validation tools.
 
 ## Import Standards Scripts
 
 ### `validate_import_standards.py`
 
-Validates the codebase for adherence to the uno framework import standards and identifies legacy code patterns.
+Validates the codebase for adherence to the uno framework import standards.
 
 **Usage:**
 ```
@@ -14,7 +14,7 @@ python -m src.scripts.validate_import_standards
 ```
 
 **Features:**
-- Identifies usage of legacy class names (`UnoModel`, `UnoRepository`, etc.)
+- Identifies usage of outdated class names and updates them to current standards.
 - Detects imports from deprecated modules
 - Finds potential backward compatibility layers
 - Generates a comprehensive validation report
@@ -26,7 +26,7 @@ python -m src.scripts.validate_import_standards
 
 ### `modernize_imports.py`
 
-Automatically updates legacy imports and class names to follow the uno framework standards.
+Automatically updates imports and class names to follow the uno framework standards.
 
 **Usage:**
 ```
@@ -40,7 +40,7 @@ python -m src.scripts.modernize_imports [options]
 - `--auto-fix`: Apply all changes without confirmation
 
 **Features:**
-- Replaces legacy class names with their Base-prefixed versions (`UnoModel` → `BaseModel`)
+- Replaces outdated class names with their Base-prefixed versions (`UnoModel` → `BaseModel`)
 - Updates deprecated import paths to standardized ones
 - Adds missing imports for replaced classes
 - Optionally removes backward compatibility layers and aliases

@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Type
 
 from uno.database.db_manager import DBManager
 from uno.dependencies.modern_provider import (
-    UnoServiceProvider,
+    ServiceProvider,
     ServiceLifecycle,
 )
 from uno.values.entities import (
@@ -46,174 +46,93 @@ from uno.values.domain_services import (
 )
 
 
-@lru_cache(maxsize=1)
-def get_values_provider() -> UnoServiceProvider:
-    """
-    Get the Values module service provider.
-    
-    Returns:
-        A configured service provider for the Values module
-    """
-    provider = UnoServiceProvider("values")
-    logger = logging.getLogger("uno.values")
-    
-    # Register dependencies
-    
-    # Register repositories with their dependencies
-    provider.register(
-        AttachmentRepository,
-        lambda container: AttachmentRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        BooleanValueRepository,
-        lambda container: BooleanValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DateTimeValueRepository,
-        lambda container: DateTimeValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DateValueRepository,
-        lambda container: DateValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DecimalValueRepository,
-        lambda container: DecimalValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        IntegerValueRepository,
-        lambda container: IntegerValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        TextValueRepository,
-        lambda container: TextValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        TimeValueRepository,
-        lambda container: TimeValueRepository(
-            db_manager=container.resolve(DBManager),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register services with their repository dependencies
-    provider.register(
-        AttachmentService,
-        lambda container: AttachmentService(
-            repository=container.resolve(AttachmentRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        BooleanValueService,
-        lambda container: BooleanValueService(
-            repository=container.resolve(BooleanValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DateTimeValueService,
-        lambda container: DateTimeValueService(
-            repository=container.resolve(DateTimeValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DateValueService,
-        lambda container: DateValueService(
-            repository=container.resolve(DateValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        DecimalValueService,
-        lambda container: DecimalValueService(
-            repository=container.resolve(DecimalValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        IntegerValueService,
-        lambda container: IntegerValueService(
-            repository=container.resolve(IntegerValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        TextValueService,
-        lambda container: TextValueService(
-            repository=container.resolve(TextValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
-        TimeValueService,
-        lambda container: TimeValueService(
-            repository=container.resolve(TimeValueRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    return provider
-
 
 def configure_values_services(container):
-    """
-    Configure values services in the dependency container.
-    
-    Args:
-        container: The dependency container to configure
-    """
-    provider = get_values_provider()
-    provider.configure_container(container)
+    """Configure values services in the DI container."""
+    logger = logging.getLogger("uno.values")
+
+    # Register repositories
+    container.register(
+        AttachmentRepository,
+        lambda c: AttachmentRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        BooleanValueRepository,
+        lambda c: BooleanValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DateTimeValueRepository,
+        lambda c: DateTimeValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DateValueRepository,
+        lambda c: DateValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DecimalValueRepository,
+        lambda c: DecimalValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        IntegerValueRepository,
+        lambda c: IntegerValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        TextValueRepository,
+        lambda c: TextValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        TimeValueRepository,
+        lambda c: TimeValueRepository(db_manager=c.resolve(DBManager), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+    # Register services
+    container.register(
+        AttachmentService,
+        lambda c: AttachmentService(repository=c.resolve(AttachmentRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        BooleanValueService,
+        lambda c: BooleanValueService(repository=c.resolve(BooleanValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DateTimeValueService,
+        lambda c: DateTimeValueService(repository=c.resolve(DateTimeValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DateValueService,
+        lambda c: DateValueService(repository=c.resolve(DateValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        DecimalValueService,
+        lambda c: DecimalValueService(repository=c.resolve(DecimalValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        IntegerValueService,
+        lambda c: IntegerValueService(repository=c.resolve(IntegerValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        TextValueService,
+        lambda c: TextValueService(repository=c.resolve(TextValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        TimeValueService,
+        lambda c: TimeValueService(repository=c.resolve(TimeValueRepository), logger=logger),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+

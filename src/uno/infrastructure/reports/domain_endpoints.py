@@ -462,7 +462,7 @@ async def update_execution_status(
 @output_execution_router.get("/{output_execution_id}", response_model=ReportOutputExecutionResponse)
 async def get_output_execution(
     output_execution_id: str = Path(..., description="The ID of the output execution"),
-    service: ReportOutputExecutionService = Depends(get_report_output_execution_service),
+    service: ReportOutputExecutionService = Depends(FromDI(ReportOutputExecutionService)),
 ):
     """Get an output execution by ID."""
     result = await service.get(output_execution_id)
@@ -474,7 +474,7 @@ async def get_output_execution(
 @output_execution_router.get("/by-execution/{execution_id}", response_model=List[ReportOutputExecutionResponse])
 async def find_output_executions_by_execution(
     execution_id: str = Path(..., description="The ID of the execution"),
-    service: ReportOutputExecutionService = Depends(get_report_output_execution_service),
+    service: ReportOutputExecutionService = Depends(FromDI(ReportOutputExecutionService)),
 ):
     """Find output executions by execution ID."""
     result = await service.find_by_execution_id(execution_id)
@@ -487,7 +487,7 @@ async def find_output_executions_by_execution(
 async def update_output_execution_status(
     output_execution_id: str = Path(..., description="The ID of the output execution"),
     status_update: ReportOutputExecutionUpdateStatus = Body(...),
-    service: ReportOutputExecutionService = Depends(get_report_output_execution_service),
+    service: ReportOutputExecutionService = Depends(FromDI(ReportOutputExecutionService)),
 ):
     """Update the status of an output execution."""
     result = await service.update_output_execution_status(

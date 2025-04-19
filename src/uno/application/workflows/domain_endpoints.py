@@ -13,7 +13,7 @@ from uno.domain.api_integration import (
     create_domain_router,
     domain_endpoint,
 )
-from uno.dependencies.scoped_container import get_service
+from uno.dependencies.scoped_container import container
 from uno.workflows.entities import (
     WorkflowDef,
     WorkflowTrigger,
@@ -92,7 +92,7 @@ async def create_workflow(
     description: str = Body(..., description="The description of the workflow"),
     status: WorkflowStatus = Body(WorkflowStatus.DRAFT, description="The initial status of the workflow"),
     version: str = Body("1.0.0", description="The version of the workflow"),
-    service: WorkflowDefService = Depends(lambda: get_service(WorkflowDefService))
+    service: WorkflowDefService = Depends(container.resolve(WorkflowDefService))
 ):
     """Create a new workflow definition."""
     result = await service.create_workflow(name, description, status, version)
@@ -106,7 +106,7 @@ async def create_workflow(
 @workflow_def_router.get("/active")
 @domain_endpoint(entity_type=WorkflowDef, service_type=WorkflowDefService)
 async def get_active_workflows(
-    service: WorkflowDefService = Depends(lambda: get_service(WorkflowDefService))
+    service: WorkflowDefService = Depends(container.resolve(WorkflowDefService))
 ):
     """Get all active workflows."""
     result = await service.find_active_workflows()
@@ -121,7 +121,7 @@ async def get_active_workflows(
 @domain_endpoint(entity_type=WorkflowDef, service_type=WorkflowDefService)
 async def get_workflow_with_relationships(
     id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowDefService = Depends(lambda: get_service(WorkflowDefService))
+    service: WorkflowDefService = Depends(container.resolve(WorkflowDefService))
 ):
     """Get a workflow with all its relationships loaded."""
     result = await service.get_workflow_with_relationships(id)
@@ -136,7 +136,7 @@ async def get_workflow_with_relationships(
 @domain_endpoint(entity_type=WorkflowDef, service_type=WorkflowDefService)
 async def activate_workflow(
     id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowDefService = Depends(lambda: get_service(WorkflowDefService))
+    service: WorkflowDefService = Depends(container.resolve(WorkflowDefService))
 ):
     """Activate a workflow."""
     result = await service.activate_workflow(id)
@@ -151,7 +151,7 @@ async def activate_workflow(
 @domain_endpoint(entity_type=WorkflowDef, service_type=WorkflowDefService)
 async def deactivate_workflow(
     id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowDefService = Depends(lambda: get_service(WorkflowDefService))
+    service: WorkflowDefService = Depends(container.resolve(WorkflowDefService))
 ):
     """Deactivate a workflow."""
     result = await service.deactivate_workflow(id)
@@ -173,7 +173,7 @@ async def create_trigger(
     field_conditions: Dict[str, Any] = Body({}, description="Optional conditions on fields"),
     priority: int = Body(100, description="The priority of the trigger"),
     is_active: bool = Body(True, description="Whether the trigger is active"),
-    service: WorkflowTriggerService = Depends(lambda: get_service(WorkflowTriggerService))
+    service: WorkflowTriggerService = Depends(container.resolve(WorkflowTriggerService))
 ):
     """Create a new workflow trigger."""
     result = await service.create_trigger(
@@ -195,7 +195,7 @@ async def create_trigger(
 @domain_endpoint(entity_type=WorkflowTrigger, service_type=WorkflowTriggerService)
 async def get_triggers_by_workflow(
     workflow_id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowTriggerService = Depends(lambda: get_service(WorkflowTriggerService))
+    service: WorkflowTriggerService = Depends(container.resolve(WorkflowTriggerService))
 ):
     """Get triggers for a specific workflow."""
     result = await service.find_by_workflow(workflow_id)
@@ -218,7 +218,7 @@ async def create_condition(
     name: str = Body("", description="Optional name for the condition"),
     description: Optional[str] = Body(None, description="Optional description"),
     order: int = Body(0, description="The order of the condition"),
-    service: WorkflowConditionService = Depends(lambda: get_service(WorkflowConditionService))
+    service: WorkflowConditionService = Depends(container.resolve(WorkflowConditionService))
 ):
     """Create a new workflow condition."""
     result = await service.create_condition(
@@ -241,7 +241,7 @@ async def create_condition(
 @domain_endpoint(entity_type=WorkflowCondition, service_type=WorkflowConditionService)
 async def get_conditions_by_workflow(
     workflow_id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowConditionService = Depends(lambda: get_service(WorkflowConditionService))
+    service: WorkflowConditionService = Depends(container.resolve(WorkflowConditionService))
 ):
     """Get conditions for a specific workflow."""
     result = await service.find_by_workflow(workflow_id)
@@ -265,7 +265,7 @@ async def create_action(
     order: int = Body(0, description="The order of the action"),
     is_active: bool = Body(True, description="Whether the action is active"),
     retry_policy: Optional[Dict[str, Any]] = Body(None, description="Optional retry policy"),
-    service: WorkflowActionService = Depends(lambda: get_service(WorkflowActionService))
+    service: WorkflowActionService = Depends(container.resolve(WorkflowActionService))
 ):
     """Create a new workflow action."""
     result = await service.create_action(
@@ -289,7 +289,7 @@ async def create_action(
 @domain_endpoint(entity_type=WorkflowAction, service_type=WorkflowActionService)
 async def get_actions_by_workflow(
     workflow_id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowActionService = Depends(lambda: get_service(WorkflowActionService))
+    service: WorkflowActionService = Depends(container.resolve(WorkflowActionService))
 ):
     """Get actions for a specific workflow."""
     result = await service.find_by_workflow(workflow_id)
@@ -304,7 +304,7 @@ async def get_actions_by_workflow(
 @domain_endpoint(entity_type=WorkflowAction, service_type=WorkflowActionService)
 async def get_action_with_recipients(
     id: str = Path(..., description="The ID of the action"),
-    service: WorkflowActionService = Depends(lambda: get_service(WorkflowActionService))
+    service: WorkflowActionService = Depends(container.resolve(WorkflowActionService))
 ):
     """Get an action with its recipients loaded."""
     result = await service.get_with_recipients(id)
@@ -326,7 +326,7 @@ async def create_recipient(
     name: Optional[str] = Body(None, description="Optional name for the recipient"),
     action_id: Optional[str] = Body(None, description="Optional action ID if this recipient is for a specific action"),
     notification_config: Dict[str, Any] = Body({}, description="Optional notification configuration"),
-    service: WorkflowRecipientService = Depends(lambda: get_service(WorkflowRecipientService))
+    service: WorkflowRecipientService = Depends(container.resolve(WorkflowRecipientService))
 ):
     """Create a new workflow recipient."""
     result = await service.create_recipient(
@@ -348,7 +348,7 @@ async def create_recipient(
 @domain_endpoint(entity_type=WorkflowRecipient, service_type=WorkflowRecipientService)
 async def get_recipients_by_workflow(
     workflow_id: str = Path(..., description="The ID of the workflow"),
-    service: WorkflowRecipientService = Depends(lambda: get_service(WorkflowRecipientService))
+    service: WorkflowRecipientService = Depends(container.resolve(WorkflowRecipientService))
 ):
     """Get recipients for a specific workflow."""
     result = await service.find_by_workflow(workflow_id)
@@ -363,7 +363,7 @@ async def get_recipients_by_workflow(
 @domain_endpoint(entity_type=WorkflowRecipient, service_type=WorkflowRecipientService)
 async def get_recipients_by_action(
     action_id: str = Path(..., description="The ID of the action"),
-    service: WorkflowRecipientService = Depends(lambda: get_service(WorkflowRecipientService))
+    service: WorkflowRecipientService = Depends(container.resolve(WorkflowRecipientService))
 ):
     """Get recipients for a specific action."""
     result = await service.find_by_action(action_id)
@@ -383,7 +383,7 @@ async def create_execution_record(
     trigger_event_id: str = Body(..., description="The ID of the trigger event"),
     status: WorkflowExecutionStatus = Body(WorkflowExecutionStatus.PENDING, description="The initial status of the execution"),
     context: Optional[Dict[str, Any]] = Body(None, description="Optional execution context"),
-    service: WorkflowExecutionService = Depends(lambda: get_service(WorkflowExecutionService))
+    service: WorkflowExecutionService = Depends(container.resolve(WorkflowExecutionService))
 ):
     """Create a new workflow execution record."""
     result = await service.create_execution_record(
@@ -406,7 +406,7 @@ async def update_execution_status(
     status: WorkflowExecutionStatus = Body(..., description="The new status"),
     result: Optional[Dict[str, Any]] = Body(None, description="Optional result data"),
     error: Optional[str] = Body(None, description="Optional error message"),
-    service: WorkflowExecutionService = Depends(lambda: get_service(WorkflowExecutionService))
+    service: WorkflowExecutionService = Depends(container.resolve(WorkflowExecutionService))
 ):
     """Update the status of a workflow execution."""
     result = await service.update_execution_status(
@@ -427,7 +427,7 @@ async def update_execution_status(
 async def get_executions_by_workflow(
     workflow_id: str = Path(..., description="The ID of the workflow"),
     limit: int = Query(100, description="Maximum number of records to return"),
-    service: WorkflowExecutionService = Depends(lambda: get_service(WorkflowExecutionService))
+    service: WorkflowExecutionService = Depends(container.resolve(WorkflowExecutionService))
 ):
     """Get execution records for a specific workflow."""
     result = await service.find_by_workflow(workflow_id, limit)

@@ -3,25 +3,15 @@ Dependency injection provider for the Workflows domain services.
 
 This module integrates the workflows domain services and repositories with
 the dependency injection system, making them available throughout the application.
+
+All dependency resolution and service exposure is now done via the central DI container/provider.
+This module is fully DI container compliant and does not instantiate or expose dependencies ad hoc.
 """
 
 import logging
 from functools import lru_cache
-from typing import Dict, Any, Optional, Type
-
 from uno.database.db_manager import DBManager
-from uno.dependencies.modern_provider import (
-    UnoServiceProvider,
-    ServiceLifecycle,
-)
-from uno.workflows.entities import (
-    WorkflowDef,
-    WorkflowTrigger,
-    WorkflowCondition,
-    WorkflowAction,
-    WorkflowRecipient,
-    WorkflowExecutionRecord,
-)
+from uno.dependencies.modern_provider import ServiceProvider, ServiceLifecycle
 from uno.workflows.domain_repositories import (
     WorkflowDefRepository,
     WorkflowTriggerRepository,
@@ -40,159 +30,130 @@ from uno.workflows.domain_services import (
 )
 
 
-@lru_cache(maxsize=1)
-def get_workflows_provider() -> UnoServiceProvider:
+def configure_workflows_services(container):
+    """Configure workflows services in the DI container."""
+    Args:
+        container: The dependency container to configure
     """
-    Get the Workflows module service provider.
-    
-    Returns:
-        A configured service provider for the Workflows module
-    """
-    provider = UnoServiceProvider("workflows")
-    logger = logging.getLogger("uno.workflows")
-    
-    # Register repositories with their dependencies
-    provider.register(
+    import logging
+    from uno.database.db_manager import DBManager
+    from uno.dependencies.modern_provider import ServiceLifecycle
+    from uno.workflows.domain_repositories import (
         WorkflowDefRepository,
-        lambda container: WorkflowDefRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
         WorkflowTriggerRepository,
-        lambda container: WorkflowTriggerRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
         WorkflowConditionRepository,
-        lambda container: WorkflowConditionRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
         WorkflowActionRepository,
-        lambda container: WorkflowActionRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
         WorkflowRecipientRepository,
-        lambda container: WorkflowRecipientRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    provider.register(
         WorkflowExecutionRepository,
-        lambda container: WorkflowExecutionRepository(
-            db_factory=container.resolve(DBManager),
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
     )
-    
-    # Register services with their dependencies
-    # Note: We register services in order of dependency (services with fewer dependencies first)
-    
-    # WorkflowDefService depends on repositories for relationships but can be registered first
-    provider.register(
+    from uno.workflows.domain_services import (
         WorkflowDefService,
-        lambda container: WorkflowDefService(
-            repository=container.resolve(WorkflowDefRepository),
-            trigger_repository=container.resolve(WorkflowTriggerRepository),
-            condition_repository=container.resolve(WorkflowConditionRepository),
-            action_repository=container.resolve(WorkflowActionRepository),
-            recipient_repository=container.resolve(WorkflowRecipientRepository),
-            execution_repository=container.resolve(WorkflowExecutionRepository),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register trigger service
-    provider.register(
         WorkflowTriggerService,
-        lambda container: WorkflowTriggerService(
-            repository=container.resolve(WorkflowTriggerRepository),
-            workflow_service=container.resolve(WorkflowDefService),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register condition service
-    provider.register(
         WorkflowConditionService,
-        lambda container: WorkflowConditionService(
-            repository=container.resolve(WorkflowConditionRepository),
-            workflow_service=container.resolve(WorkflowDefService),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register recipient service
-    # Note: This has a circular dependency with ActionService, so we'll handle that carefully
-    provider.register(
-        WorkflowRecipientService,
-        lambda container: WorkflowRecipientService(
-            repository=container.resolve(WorkflowRecipientRepository),
-            workflow_service=container.resolve(WorkflowDefService),
-            # action_service will be set later
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register action service
-    provider.register(
         WorkflowActionService,
-        lambda container: WorkflowActionService(
-            repository=container.resolve(WorkflowActionRepository),
-            workflow_service=container.resolve(WorkflowDefService),
-            recipient_service=container.resolve(WorkflowRecipientService),
-            logger=logger,
-        ),
-        lifecycle=ServiceLifecycle.SCOPED,
-    )
-    
-    # Register execution service
-    provider.register(
+        WorkflowRecipientService,
         WorkflowExecutionService,
-        lambda container: WorkflowExecutionService(
-            repository=container.resolve(WorkflowExecutionRepository),
-            workflow_service=container.resolve(WorkflowDefService),
+    )
+
+    logger = logging.getLogger("uno.workflows")
+
+    # Register repositories
+    container.register(
+        WorkflowDefRepository,
+        lambda c: WorkflowDefRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowTriggerRepository,
+        lambda c: WorkflowTriggerRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowConditionRepository,
+        lambda c: WorkflowConditionRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowActionRepository,
+        lambda c: WorkflowActionRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowRecipientRepository,
+        lambda c: WorkflowRecipientRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowExecutionRepository,
+        lambda c: WorkflowExecutionRepository(db_factory=c.resolve(DBManager)),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+    # Register services
+    container.register(
+        WorkflowDefService,
+        lambda c: WorkflowDefService(
+            repository=c.resolve(WorkflowDefRepository),
+            trigger_repository=c.resolve(WorkflowTriggerRepository),
+            condition_repository=c.resolve(WorkflowConditionRepository),
+            action_repository=c.resolve(WorkflowActionRepository),
+            recipient_repository=c.resolve(WorkflowRecipientRepository),
+            execution_repository=c.resolve(WorkflowExecutionRepository),
             logger=logger,
         ),
         lifecycle=ServiceLifecycle.SCOPED,
     )
-    
-    # Handle circular dependency: Set action_service on recipient_service
+    container.register(
+        WorkflowTriggerService,
+        lambda c: WorkflowTriggerService(
+            repository=c.resolve(WorkflowTriggerRepository),
+            workflow_service=c.resolve(WorkflowDefService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowConditionService,
+        lambda c: WorkflowConditionService(
+            repository=c.resolve(WorkflowConditionRepository),
+            workflow_service=c.resolve(WorkflowDefService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowRecipientService,
+        lambda c: WorkflowRecipientService(
+            repository=c.resolve(WorkflowRecipientRepository),
+            workflow_service=c.resolve(WorkflowDefService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowActionService,
+        lambda c: WorkflowActionService(
+            repository=c.resolve(WorkflowActionRepository),
+            workflow_service=c.resolve(WorkflowDefService),
+            recipient_service=c.resolve(WorkflowRecipientService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+    container.register(
+        WorkflowExecutionService,
+        lambda c: WorkflowExecutionService(
+            repository=c.resolve(WorkflowExecutionRepository),
+            workflow_service=c.resolve(WorkflowDefService),
+            logger=logger,
+        ),
+        lifecycle=ServiceLifecycle.SCOPED,
+    )
+
+    # Handle circular dependency: Set action_service on recipient_service after container config
     def configure_circular_dependencies(container):
         recipient_service = container.resolve(WorkflowRecipientService)
         action_service = container.resolve(WorkflowActionService)
         recipient_service.action_service = action_service
-    
-    provider.add_container_configured_callback(configure_circular_dependencies)
-    
-    return provider
 
-
-def configure_workflows_services(container):
-    """
-    Configure workflows services in the dependency container.
-    
-    Args:
-        container: The dependency container to configure
-    """
-    provider = get_workflows_provider()
-    provider.configure_container(container)
+    container.add_container_configured_callback(configure_circular_dependencies)

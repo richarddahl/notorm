@@ -65,7 +65,6 @@ from uno.workflows.errors import (
 from uno.workflows.provider import (
     WorkflowRepository,
     WorkflowService,
-    configure_workflow_module,
 )
 
 from uno.workflows.executor import (
@@ -140,7 +139,7 @@ from uno.workflows.app_integration import (
 
 # We'll configure the workflow module later, when main application dependencies are set up
 # This prevents "No injector is configured" errors during import
-# inject.configure_once(configure_workflow_module)
+
 
 # Import schemas and registration function
 from uno.workflows.schemas import register_workflow_schemas

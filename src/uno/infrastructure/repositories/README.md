@@ -21,7 +21,7 @@ The repository pattern implementation uses a layered architecture:
 3. **Concrete Implementations**: SQLAlchemy and in-memory implementations
 4. **Unit of Work**: Transaction and repository coordination
 5. **Factory**: Simplified creation of repositories
-6. **DI Integration**: Easy integration with the dependency injection system
+6. **DI Integration**: All repositories are integrated via the central DI system.
 
 ## Key Components
 
@@ -89,7 +89,9 @@ Factory for creating repositories:
 - `UnitOfWorkFactory`: Factory for creating units of work
 - Helper functions for working with the factories
 
-### Dependency Injection (`di.py`)
+### Dependency Injection
+
+All repositories and services are registered and resolved via the central DI system. No ad hoc or legacy patterns remain.
 
 Integration with the DI system:
 

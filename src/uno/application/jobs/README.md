@@ -218,7 +218,9 @@ app.include_router(jobs_router)
 
 ## Dependency Injection
 
-The system integrates with uno's dependency injection system:
+All job services and repositories are registered and resolved via the central DI system. No legacy or ad hoc DI patterns remain.
+
+The system integrates exclusively with uno's central dependency injection system:
 
 ```python
 from uno.dependencies.fastapi import get_job_manager, get_job_metrics
