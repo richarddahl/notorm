@@ -9,22 +9,18 @@ import pytest
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from uno.core.errors.result import (
-    Result,
-    ValidationError,
-    ErrorSeverity
-)
+from uno.core.errors.result import Result, ValidationError, ErrorSeverity
 
 
 # Test Data and Classes
-class TestData:
+class MockData:
     """Test data class for result values."""
 
     def __init__(self, value: str):
         self.value = value
 
     def __eq__(self, other):
-        if not isinstance(other, TestData):
+        if not isinstance(other, MockData):
             return False
         return self.value == other.value
 
@@ -33,7 +29,7 @@ class TestData:
         return {"value": self.value}
 
 
-class TestError(Exception):
+class MockError(Exception):
     """Test error for testing failure results."""
 
     def __init__(self, message: str, code: str = "TEST_ERROR"):
@@ -49,7 +45,7 @@ class TestResultPattern:
     def test_success_creation(self):
         """Test creating a successful Result."""
         # Arrange & Act
-        data = TestData("test_success")
+        data = MockData("test_success")
         result = Result.success(data)
 
         # Assert
@@ -61,7 +57,7 @@ class TestResultPattern:
     def test_failure_creation(self):
         """Test creating a failure Result."""
         # Arrange & Act
-        error = TestError("Test error")
+        error = MockError("Test error")
         result = Result.failure(error)
 
         # Assert
@@ -73,7 +69,7 @@ class TestResultPattern:
     def test_failures_creation(self):
         """Test creating a Result with multiple errors."""
         # Arrange & Act
-        errors = [TestError("Error 1"), TestError("Error 2")]
+        errors = [MockError("Error 1"), MockError("Error 2")]
         result = Result.failures(errors)
 
         # Assert
@@ -87,7 +83,7 @@ class TestResultPattern:
     def test_success_map(self):
         """Test map method on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
         mapped = result.map(lambda data: data.value.upper())
@@ -99,7 +95,7 @@ class TestResultPattern:
     def test_failure_map(self):
         """Test map method on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
@@ -113,10 +109,10 @@ class TestResultPattern:
     def test_success_map_error(self):
         """Test map_error method on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
-        mapped = result.map_error(lambda err: TestError("Transformed"))
+        mapped = result.map_error(lambda err: MockError("Transformed"))
 
         # Assert
         assert mapped.is_success
@@ -125,11 +121,11 @@ class TestResultPattern:
     def test_failure_map_error(self):
         """Test map_error method on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
-        mapped = result.map_error(lambda err: TestError("Transformed"))
+        mapped = result.map_error(lambda err: MockError("Transformed"))
 
         # Assert
         assert mapped.is_failure
@@ -138,7 +134,7 @@ class TestResultPattern:
     def test_success_bind(self):
         """Test bind method on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
         bound = result.bind(lambda data: Result.success(data.value.upper()))
@@ -150,7 +146,7 @@ class TestResultPattern:
     def test_failure_bind(self):
         """Test bind method on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
@@ -163,7 +159,7 @@ class TestResultPattern:
     def test_success_value(self):
         """Test value property on a successful Result."""
         # Arrange
-        data = TestData("test")
+        data = MockData("test")
         result = Result.success(data)
 
         # Act
@@ -175,7 +171,7 @@ class TestResultPattern:
     def test_failure_value(self):
         """Test value property on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
@@ -187,10 +183,10 @@ class TestResultPattern:
     def test_success_value_or(self):
         """Test value_or method on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
-        value = result.value_or(TestData("default"))
+        value = result.value_or(MockData("default"))
 
         # Assert
         assert value.value == "test"
@@ -198,11 +194,11 @@ class TestResultPattern:
     def test_failure_value_or(self):
         """Test value_or method on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
-        value = result.value_or(TestData("default"))
+        value = result.value_or(MockData("default"))
 
         # Assert
         assert value.value == "default"
@@ -210,7 +206,7 @@ class TestResultPattern:
     def test_success_value_or_raise(self):
         """Test value_or_raise method on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
         value = result.value_or_raise()
@@ -221,7 +217,7 @@ class TestResultPattern:
     def test_failure_value_or_raise(self):
         """Test value_or_raise method on a failure Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act & Assert
@@ -233,7 +229,7 @@ class TestResultPattern:
     def test_error_property(self):
         """Test error property on a Result."""
         # Arrange
-        error = TestError("Error")
+        error = MockError("Error")
         result = Result.failure(error)
 
         # Act
@@ -245,7 +241,7 @@ class TestResultPattern:
     def test_error_on_success(self):
         """Test error property on a successful Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
         result_error = result.error
@@ -256,7 +252,7 @@ class TestResultPattern:
     def test_errors_property(self):
         """Test errors property on a Result."""
         # Arrange
-        errors = [TestError("Error 1"), TestError("Error 2")]
+        errors = [MockError("Error 1"), MockError("Error 2")]
         result = Result.failures(errors)
 
         # Act
@@ -270,7 +266,7 @@ class TestResultPattern:
     def test_add_metadata(self):
         """Test adding metadata to a Result."""
         # Arrange
-        result = Result.success(TestData("test"))
+        result = Result.success(MockData("test"))
 
         # Act
         result.add_metadata("key", "value")
@@ -281,8 +277,8 @@ class TestResultPattern:
     def test_combine_results(self):
         """Test combining Results."""
         # Arrange
-        result1 = Result.success(TestData("test1"))
-        result2 = Result.success(TestData("test2"))
+        result1 = Result.success(MockData("test1"))
+        result2 = Result.success(MockData("test2"))
         result1.add_metadata("key1", "value1")
         result2.add_metadata("key2", "value2")
 
@@ -297,8 +293,8 @@ class TestResultPattern:
     def test_combine_with_failure(self):
         """Test combining a success with a failure."""
         # Arrange
-        result1 = Result.success(TestData("test1"))
-        error = TestError("Error")
+        result1 = Result.success(MockData("test1"))
+        error = MockError("Error")
         result2 = Result.failure(error)
 
         # Act
@@ -311,7 +307,7 @@ class TestResultPattern:
     def test_from_exception(self):
         """Test Result.from_exception method."""
         # Arrange
-        error = TestError("Test exception")
+        error = MockError("Test exception")
 
         # Act
         result = Result.from_exception(error)
@@ -323,8 +319,8 @@ class TestResultPattern:
     def test_try_catch(self):
         """Test Result.try_catch method."""
         # Arrange & Act
-        success_result = Result.try_catch(lambda: TestData("test"))
-        failure_result = Result.try_catch(lambda: 1/0)
+        success_result = Result.try_catch(lambda: MockData("test"))
+        failure_result = Result.try_catch(lambda: 1 / 0)
 
         # Assert
         assert success_result.is_success
@@ -336,9 +332,9 @@ class TestResultPattern:
         """Test Result.all method with successful results."""
         # Arrange
         results = [
-            Result.success(TestData("one")),
-            Result.success(TestData("two")),
-            Result.success(TestData("three"))
+            Result.success(MockData("one")),
+            Result.success(MockData("two")),
+            Result.success(MockData("three")),
         ]
 
         # Act
@@ -354,11 +350,11 @@ class TestResultPattern:
     def test_all_method_with_failure(self):
         """Test Result.all method with a failure result."""
         # Arrange
-        error = TestError("Error in list")
+        error = MockError("Error in list")
         results = [
-            Result.success(TestData("one")),
+            Result.success(MockData("one")),
             Result.failure(error),
-            Result.success(TestData("three"))
+            Result.success(MockData("three")),
         ]
 
         # Act

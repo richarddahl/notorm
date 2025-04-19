@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import BaseModel
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.events import (
     UnoEvent,
     EventBus,
@@ -145,7 +145,7 @@ class CreateEntityService(DomainService[CreateEntityInput, EntityOutput, UnitOfW
         collect_event(event)
 
         # Return success
-        return Success(
+        return Result.success(
             EntityOutput(
                 id=str(saved_entity.id),
                 name=saved_entity.name,
@@ -169,10 +169,10 @@ class GetEntityService(ReadOnlyDomainService[str, EntityOutput, UnitOfWork]):
 
         # Check if entity exists
         if entity is None:
-            return Failure(f"Entity with ID {input_data} not found")
+            return Result.failure(f"Entity with ID {input_data} not found")
 
         # Return success
-        return Success(
+        return Result.success(
             EntityOutput(
                 id=str(entity.id), name=entity.name, description=entity.description
             )
@@ -251,7 +251,7 @@ class TestDomainService:
 
         # Add validation that rejects "Invalid" names
         service.validate = lambda data: (
-            Failure("Invalid name") if data.name == "Invalid" else None
+            Result.failure("Invalid name") if data.name == "Invalid" else None
         )
 
         # Act
