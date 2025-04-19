@@ -3,15 +3,28 @@ Unit of Work pattern implementation for the Uno framework.
 
 This module provides implementations of the Unit of Work pattern, which
 manages transaction boundaries and coordinates the work of multiple repositories.
+
+DEPRECATED: This implementation is deprecated in favor of the new unified
+implementation in uno.core.uow. Use AbstractUnitOfWork, DatabaseUnitOfWork, and
+related classes from uno.core.uow instead.
 """
 
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.infrastructure.repositories.protocols import UnitOfWorkProtocol
+
+
+warnings.warn(
+    "The UnitOfWork implementation in uno.infrastructure.repositories.unit_of_work is deprecated. "
+    "Use AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 # Type variables
@@ -25,6 +38,8 @@ class UnitOfWork(UnitOfWorkProtocol, ABC):
     
     The Unit of Work pattern maintains a list of objects affected by a business
     transaction and coordinates the writing out of changes and resolving concurrency problems.
+    
+    DEPRECATED: Use AbstractUnitOfWork from uno.core.uow instead.
     """
     
     def __init__(self, logger: Optional[logging.Logger] = None):
@@ -84,6 +99,8 @@ class InMemoryUnitOfWork(UnitOfWork):
     
     This implementation is useful for testing and does not provide actual
     transaction boundaries since in-memory repositories don't support transactions.
+    
+    DEPRECATED: Use InMemoryUnitOfWork from uno.core.uow instead.
     """
     
     async def begin(self) -> None:
@@ -118,6 +135,8 @@ class SQLAlchemyUnitOfWork(UnitOfWork):
     SQLAlchemy implementation of the Unit of Work pattern.
     
     This implementation provides transaction boundaries using SQLAlchemy sessions.
+    
+    DEPRECATED: Use SqlAlchemyUnitOfWork from uno.core.uow instead.
     """
     
     def __init__(

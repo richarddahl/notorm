@@ -10,11 +10,22 @@ with support for various repository capabilities, including:
 - Streaming for large datasets
 - Event collection for domain events
 - Aggregate root support
-- Unit of Work pattern for transaction management
 
 The implementation is designed to be flexible and extensible, with support for
 different persistence mechanisms (currently SQLAlchemy and in-memory).
+
+NOTE: The Unit of Work pattern has been moved to uno.core.uow and all code
+in this package that references UnitOfWork is deprecated.
 """
+
+import warnings
+
+warnings.warn(
+    "The UnitOfWork implementation in uno.infrastructure.repositories is deprecated. "
+    "Use AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow package instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Import from core base
 from uno.core.base.repository import (
@@ -31,14 +42,6 @@ from uno.core.base.repository import (
     FilterType,
 )
 
-# Re-export protocols from infrastructure for backward compatibility
-from uno.infrastructure.repositories.protocols import (
-    EventCollectingRepositoryProtocol,
-    AggregateRootRepositoryProtocol,
-    UnitOfWorkProtocol,
-    RepositoryFactoryProtocol,
-)
-
 # For backward compatibility 
 from uno.infrastructure.repositories.base import (
     EventCollectingRepository,
@@ -53,6 +56,7 @@ from uno.infrastructure.repositories.sqlalchemy import (
     SQLAlchemyCompleteRepository,
 )
 
+# These are deprecated, but we keep them for backward compatibility
 from uno.infrastructure.repositories.unit_of_work import (
     UnitOfWork,
     SQLAlchemyUnitOfWork,
@@ -75,8 +79,6 @@ from uno.infrastructure.repositories.di import (
     clear_repository_cache,
 )
 
-# No backward compatibility needed
-
 # Export everything for convenient imports
 __all__ = [
     # Core base protocols
@@ -86,12 +88,6 @@ __all__ = [
     "StreamingRepositoryProtocol",
     "FilterProtocol",
     "FilterType",
-    
-    # Infrastructure-specific protocols
-    "EventCollectingRepositoryProtocol",
-    "AggregateRootRepositoryProtocol",
-    "UnitOfWorkProtocol",
-    "RepositoryFactoryProtocol",
     
     # Base implementations
     "BaseRepository",
@@ -109,7 +105,7 @@ __all__ = [
     "SQLAlchemyStreamingRepository",
     "SQLAlchemyCompleteRepository",
     
-    # Unit of Work
+    # Unit of Work (deprecated)
     "UnitOfWork",
     "SQLAlchemyUnitOfWork",
     "InMemoryUnitOfWork",

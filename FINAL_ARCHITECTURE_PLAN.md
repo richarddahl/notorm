@@ -304,7 +304,7 @@ This document outlines the comprehensive plan to unify all interfaces and remove
 1. **Repository Pattern**
    - `uno/domain/repositories` vs `uno/dependencies/repository`
    - `uno/domain/repositories` vs `uno/domain/sqlalchemy_repositories`
-   - Multiple unit-of-work implementations
+   - Multiple unit-of-work implementations (now consolidated)
 
 2. **Service Pattern**
    - `uno/domain/service` vs `uno/dependencies/service`

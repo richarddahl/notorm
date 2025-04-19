@@ -3,10 +3,15 @@ Unit of Work pattern implementation for the Uno framework.
 
 This module implements the Unit of Work pattern, which provides a way to
 maintain a consistent state across a business transaction.
+
+DEPRECATED: This module is deprecated in favor of the new unified implementation
+in the uno.core.uow package. Use AbstractUnitOfWork, DatabaseUnitOfWork, and
+related classes from uno.core.uow package instead.
 """
 
 import inspect
 import logging
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from typing import (
@@ -21,6 +26,13 @@ from typing import (
     AsyncContextManager,
 )
 
+warnings.warn(
+    "The UnitOfWork implementation in uno.core.uow module is deprecated. "
+    "Use AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow package instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from uno.core.protocols import Repository, UnitOfWork, UnoEvent
 from uno.core.events import EventBus
 
@@ -29,7 +41,11 @@ RepoT = TypeVar("RepoT", bound=Repository)
 
 
 class AbstractUnitOfWork(UnitOfWork, ABC):
-    """Abstract base class for unit of work implementations."""
+    """
+    Abstract base class for unit of work implementations.
+    
+    DEPRECATED: Use AbstractUnitOfWork from uno.core.uow package instead.
+    """
 
     def __init__(
         self,
@@ -139,7 +155,11 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
 
 
 class DatabaseUnitOfWork(AbstractUnitOfWork):
-    """Unit of work implementation for database operations."""
+    """
+    Unit of work implementation for database operations.
+    
+    DEPRECATED: Use DatabaseUnitOfWork from uno.core.uow package instead.
+    """
 
     def __init__(
         self,
@@ -188,6 +208,8 @@ class ContextUnitOfWork:
     A decorator that provides a unit of work context.
 
     This decorator is used to wrap coroutine methods to provide a unit of work context.
+    
+    DEPRECATED: Use unit_of_work decorator from uno.core.uow package instead.
     """
 
     def __init__(self, uow_factory: Any):  # Callable that returns a UnitOfWork
@@ -224,6 +246,8 @@ class ContextUnitOfWork:
 async def transaction(uow_factory: Any) -> AsyncContextManager[UnitOfWork]:
     """
     Context manager for a unit of work transaction.
+    
+    DEPRECATED: Use transaction context manager from uno.core.uow package instead.
 
     Args:
         uow_factory: A factory that creates a unit of work
