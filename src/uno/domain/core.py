@@ -57,7 +57,14 @@ class DomainException(Exception):
 
 
 # Import the canonical domain event implementation
-from uno.core.events import DomainEventProtocol as UnoEvent
+from uno.core.events import Event as UnoEvent
+import warnings
+
+warnings.warn(
+    "UnoEvent is deprecated and will be removed. Use uno.core.events.Event directly.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class ValueObject(BaseModel):

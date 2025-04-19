@@ -11,11 +11,10 @@ from uno.core.base.respository import Repository
 from uno.domain.service import DomainService
 from uno.domain.factory import Factory
 
-# Event handling
-from uno.domain.event_store import EventStore
-from uno.domain.event_dispatcher import EventDispatcher, EventHandler
-from uno.domain.event_store_manager import EventStoreManager
-from uno.core.events import register_event_handler
+# Event handling - using the new unified event system
+from uno.core.events import Event, AsyncEventBus as EventBus, EventStore, EventPublisher
+from uno.core.protocols.event import EventHandler, EventBusProtocol, EventStoreProtocol
+from uno.domain.event_import_fix import EventDispatcher, domain_event_handler
 
 # Query system
 from uno.domain.query import (
@@ -64,11 +63,15 @@ __all__ = [
     "DomainService",
     "Factory",
     # Event handling
-    "EventStore",
-    "EventDispatcher",
+    "Event",
+    "EventBus",
+    "EventStore", 
+    "EventPublisher",
     "EventHandler",
-    "EventStoreManager",
-    "register_event_handler",
+    "EventBusProtocol",
+    "EventStoreProtocol",
+    "EventDispatcher",
+    "domain_event_handler",
     # Query system
     "QuerySpecification",
     "QueryResult",
