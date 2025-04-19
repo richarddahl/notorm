@@ -1,113 +1,56 @@
 """
-Legacy endpoint classes for the UNO API.
+Unified Endpoint Framework for UNO API.
 
-DEPRECATED: This module is deprecated and will be removed in a future version.
-Use the unified endpoint framework in `uno.api.endpoint` instead.
+This module re-exports all the main components of the unified endpoint framework
+for convenient import without requiring users to know the internal structure.
 """
 
-import warnings
-from typing import Any, Dict, List, Optional, TypeVar, Union
-
-from fastapi import FastAPI, APIRouter, Depends
-
-# Display deprecation warning
-warnings.warn(
-    "The uno.api.endpoint module is deprecated and will be removed in a future version. "
-    "Use the unified endpoint framework in uno.api.endpoint instead.",
-    DeprecationWarning,
-    stacklevel=2,
+# Re-export everything from the unified endpoint framework
+from uno.api.endpoint.base import BaseEndpoint, CrudEndpoint, QueryEndpoint, CommandEndpoint
+from uno.api.endpoint.cqrs import CommandHandler, CqrsEndpoint, QueryHandler
+from uno.api.endpoint.factory import CrudEndpointFactory, EndpointFactory
+from uno.api.endpoint.integration import create_api, setup_api
+from uno.api.endpoint.middleware import ErrorHandlerMiddleware, setup_error_handlers
+from uno.api.endpoint.response import (
+    DataResponse,
+    ErrorDetail,
+    ErrorResponse,
+    PaginatedResponse,
+    PaginationMetadata,
+    paginated_response,
+    response_handler,
 )
 
-# Import from the new location for backward compatibility
-from uno.api.endpoint.compatibility import (
-    LegacyUnoEndpoint as UnoEndpoint,
-    LegacyEndpointAdapter,
-    LegacyServiceEndpointAdapter,
-    LegacyEntityEndpointAdapter,
-    create_legacy_endpoint,
-)
-
-# Legacy endpoint classes
-class CreateEndpoint(UnoEndpoint):
-    """
-    Legacy endpoint for creating resources.
+__all__ = [
+    # Base endpoint classes
+    "BaseEndpoint",
+    "CrudEndpoint",
+    "QueryEndpoint",
+    "CommandEndpoint",
     
-    DEPRECATED: Use CrudEndpoint from uno.api.endpoint.base instead.
-    """
+    # CQRS components
+    "CqrsEndpoint",
+    "QueryHandler",
+    "CommandHandler",
     
-    def __init__(self, **kwargs):
-        """Initialize a legacy create endpoint."""
-        warnings.warn(
-            "CreateEndpoint is deprecated. Use CrudEndpoint from uno.api.endpoint.base instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
-
-
-class ViewEndpoint(UnoEndpoint):
-    """
-    Legacy endpoint for viewing resources.
+    # Factory components
+    "EndpointFactory",
+    "CrudEndpointFactory",
     
-    DEPRECATED: Use CrudEndpoint from uno.api.endpoint.base instead.
-    """
+    # Integration utilities
+    "setup_api",
+    "create_api",
     
-    def __init__(self, **kwargs):
-        """Initialize a legacy view endpoint."""
-        warnings.warn(
-            "ViewEndpoint is deprecated. Use CrudEndpoint from uno.api.endpoint.base instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
-
-
-class ListEndpoint(UnoEndpoint):
-    """
-    Legacy endpoint for listing resources.
+    # Middleware components
+    "ErrorHandlerMiddleware",
+    "setup_error_handlers",
     
-    DEPRECATED: Use CrudEndpoint from uno.api.endpoint.base instead.
-    """
-    
-    def __init__(self, **kwargs):
-        """Initialize a legacy list endpoint."""
-        warnings.warn(
-            "ListEndpoint is deprecated. Use CrudEndpoint from uno.api.endpoint.base instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
-
-
-class UpdateEndpoint(UnoEndpoint):
-    """
-    Legacy endpoint for updating resources.
-    
-    DEPRECATED: Use CrudEndpoint from uno.api.endpoint.base instead.
-    """
-    
-    def __init__(self, **kwargs):
-        """Initialize a legacy update endpoint."""
-        warnings.warn(
-            "UpdateEndpoint is deprecated. Use CrudEndpoint from uno.api.endpoint.base instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
-
-
-class DeleteEndpoint(UnoEndpoint):
-    """
-    Legacy endpoint for deleting resources.
-    
-    DEPRECATED: Use CrudEndpoint from uno.api.endpoint.base instead.
-    """
-    
-    def __init__(self, **kwargs):
-        """Initialize a legacy delete endpoint."""
-        warnings.warn(
-            "DeleteEndpoint is deprecated. Use CrudEndpoint from uno.api.endpoint.base instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
+    # Response components
+    "DataResponse",
+    "ErrorResponse",
+    "ErrorDetail",
+    "PaginatedResponse",
+    "PaginationMetadata",
+    "response_handler",
+    "paginated_response",
+]
