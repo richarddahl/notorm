@@ -2,6 +2,9 @@
 Dependency injection integration for repositories.
 
 This module provides utilities for integrating repositories with the DI container.
+
+NOTE: The UnitOfWork functionality in this module is deprecated. Use the 
+AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow instead.
 """
 
 import logging
@@ -128,6 +131,8 @@ async def get_unit_of_work(
     """
     Get a unit of work instance.
     
+    DEPRECATED: Use the UnitOfWork implementations from uno.core.uow instead.
+    
     Args:
         session: SQLAlchemy session (injected if not provided)
         in_memory: Whether to create an in-memory unit of work
@@ -135,6 +140,14 @@ async def get_unit_of_work(
     Returns:
         A unit of work instance
     """
+    import warnings
+    warnings.warn(
+        "get_unit_of_work is deprecated. Use the UnitOfWork implementations from "
+        "uno.core.uow instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
     # Get session if not provided and not using in-memory
     if session is None and not in_memory:
         session = await inject_dependency(get_async_session)

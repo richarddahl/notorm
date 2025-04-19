@@ -1,9 +1,20 @@
 """
 Core domain components for the Uno framework.
 
+DEPRECATED: This module is deprecated. Use the new domain entity framework in 
+uno.domain.entity instead.
+
 This module provides the foundational classes for implementing a domain-driven design
 approach in the Uno framework, including entities, value objects, aggregates, and events.
 """
+
+import warnings
+
+warnings.warn(
+    "This module is deprecated. Use uno.domain.entity instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import uuid
 from abc import ABC, abstractmethod
@@ -71,6 +82,8 @@ class ValueObject(BaseModel):
     """
     Base class for value objects.
 
+    DEPRECATED: Use uno.domain.entity.ValueObject instead.
+
     Value objects:
     - Are immutable objects defined by their attributes
     - Have no identity
@@ -81,6 +94,15 @@ class ValueObject(BaseModel):
     """
 
     model_config = ConfigDict(frozen=True)
+
+    def __init__(self, **kwargs):
+        """Initialize the value object with deprecation warning."""
+        warnings.warn(
+            "This ValueObject class is deprecated. Use uno.domain.entity.ValueObject instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(**kwargs)
 
     @model_validator(mode="after")
     def validate_value_object(self) -> "ValueObject":
@@ -178,6 +200,8 @@ class Entity(BaseModel, Generic[T_ID]):
     """
     Base class for domain entities.
 
+    DEPRECATED: Use uno.domain.entity.EntityBase instead.
+
     Entities:
     - Have a distinct identity that persists through state changes
     - Are equatable by their identity, not their attributes
@@ -195,6 +219,15 @@ class Entity(BaseModel, Generic[T_ID]):
 
     # Domain events - excluded from serialization
     events: List[UnoEvent] = Field(default_factory=list, exclude=True)
+
+    def __init__(self, **kwargs):
+        """Initialize the entity with deprecation warning."""
+        warnings.warn(
+            "This Entity class is deprecated. Use uno.domain.entity.EntityBase instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(**kwargs)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -287,6 +320,8 @@ class AggregateRoot(Entity[T_ID]):
     """
     Base class for aggregate roots.
 
+    DEPRECATED: Use uno.domain.entity.AggregateRoot instead.
+
     Aggregate Roots:
     - Are entities that are the root of an aggregate
     - Maintain consistency boundaries
@@ -304,6 +339,15 @@ class AggregateRoot(Entity[T_ID]):
 
     # Child entities - excluded from serialization
     child_entities: Set[Entity] = Field(default_factory=set, exclude=True)
+
+    def __init__(self, **kwargs):
+        """Initialize the aggregate root with deprecation warning."""
+        warnings.warn(
+            "This AggregateRoot class is deprecated. Use uno.domain.entity.AggregateRoot instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(**kwargs)
 
     def check_invariants(self) -> None:
         """

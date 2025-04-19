@@ -3,16 +3,19 @@ Repository factory for the Uno framework.
 
 This module provides factory functions for creating repositories and unit of work
 instances, simplifying the creation and configuration of repositories.
+
+DEPRECATED: The UnitOfWork functionality in this module is deprecated. Use the 
+AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow instead.
 """
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional, Type, TypeVar, Generic, Union, Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.domain.core import Entity, AggregateRoot
 from uno.domain.specifications import Specification
-from uno.infrastructure.repositories.protocols import UnitOfWorkProtocol
 from uno.core.base.repository import BaseRepository
 from uno.infrastructure.repositories.base import AggregateRepository
 from uno.infrastructure.repositories.sqlalchemy import (
@@ -33,12 +36,28 @@ from uno.infrastructure.repositories.in_memory import (
     InMemoryAggregateRepository,
     InMemoryCompleteRepository
 )
+
+# Legacy imports marked for deprecation
 from uno.infrastructure.repositories.unit_of_work import (
     UnitOfWork,
     SQLAlchemyUnitOfWork,
     InMemoryUnitOfWork
 )
 
+# Import the modern UnitOfWork implementations
+from uno.core.uow import (
+    AbstractUnitOfWork,
+    DatabaseUnitOfWork,
+    SqlAlchemyUnitOfWork as ModernSqlAlchemyUnitOfWork,
+    InMemoryUnitOfWork as ModernInMemoryUnitOfWork,
+)
+
+warnings.warn(
+    "The UnitOfWork functionality in this module is deprecated. "
+    "Use AbstractUnitOfWork, DatabaseUnitOfWork, and related classes from uno.core.uow instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Type variables
 T = TypeVar("T")  # Entity type
@@ -318,6 +337,9 @@ class UnitOfWorkFactory:
     """
     Factory for creating unit of work instances.
     
+    DEPRECATED: This class is deprecated. Use the UnitOfWork implementations from
+    uno.core.uow instead.
+    
     This class provides methods for creating various types of unit of work,
     configured for different persistence mechanisms.
     """
@@ -334,6 +356,12 @@ class UnitOfWorkFactory:
             session_factory: Optional factory for creating SQLAlchemy sessions
             logger: Optional logger for diagnostic output
         """
+        warnings.warn(
+            "UnitOfWorkFactory is deprecated. Use the UnitOfWork implementations from "
+            "uno.core.uow instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.session_factory = session_factory
         self.logger = logger or logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
@@ -343,12 +371,20 @@ class UnitOfWorkFactory:
         """
         Create a SQLAlchemy unit of work.
         
+        DEPRECATED: Use SqlAlchemyUnitOfWork from uno.core.uow instead.
+        
         Args:
             session: Optional SQLAlchemy session (created from factory if not provided)
             
         Returns:
             SQLAlchemy unit of work
         """
+        warnings.warn(
+            "create_sqlalchemy_unit_of_work is deprecated. Use SqlAlchemyUnitOfWork from "
+            "uno.core.uow instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if session is None:
             if self.session_factory is None:
                 raise ValueError(
@@ -363,9 +399,17 @@ class UnitOfWorkFactory:
         """
         Create an in-memory unit of work.
         
+        DEPRECATED: Use InMemoryUnitOfWork from uno.core.uow instead.
+        
         Returns:
             In-memory unit of work
         """
+        warnings.warn(
+            "create_in_memory_unit_of_work is deprecated. Use InMemoryUnitOfWork from "
+            "uno.core.uow instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         return InMemoryUnitOfWork(logger=self.logger)
     
     def create_unit_of_work(
@@ -374,6 +418,8 @@ class UnitOfWorkFactory:
         """
         Create a unit of work based on the provided options.
         
+        DEPRECATED: Use uno.core.uow instead.
+        
         Args:
             in_memory: Whether to create an in-memory unit of work
             session: Optional SQLAlchemy session (created from factory if not provided)
@@ -381,6 +427,12 @@ class UnitOfWorkFactory:
         Returns:
             The created unit of work
         """
+        warnings.warn(
+            "create_unit_of_work is deprecated. Use the UnitOfWork implementations from "
+            "uno.core.uow instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if in_memory:
             return self.create_in_memory_unit_of_work()
         else:
@@ -411,9 +463,17 @@ def get_unit_of_work_factory() -> UnitOfWorkFactory:
     """
     Get the default unit of work factory.
     
+    DEPRECATED: Use uno.core.uow instead.
+    
     Returns:
         The default unit of work factory
     """
+    warnings.warn(
+        "get_unit_of_work_factory is deprecated. Use the UnitOfWork implementations from "
+        "uno.core.uow instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     global _unit_of_work_factory
     
     if _unit_of_work_factory is None:
@@ -451,7 +511,7 @@ def create_repository(
     include_batch: bool = False,
     include_streaming: bool = False,
     include_events: bool = False,
-) -> Repository[T, Any]:
+) -> BaseRepository[T, Any]:
     """
     Create a repository using the default factory.
     
@@ -486,6 +546,8 @@ def create_unit_of_work(
     """
     Create a unit of work using the default factory.
     
+    DEPRECATED: Use uno.core.uow instead.
+    
     Args:
         in_memory: Whether to create an in-memory unit of work
         session: Optional SQLAlchemy session
@@ -493,6 +555,12 @@ def create_unit_of_work(
     Returns:
         The created unit of work
     """
+    warnings.warn(
+        "create_unit_of_work is deprecated. Use the UnitOfWork implementations from "
+        "uno.core.uow instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     return get_unit_of_work_factory().create_unit_of_work(
         in_memory=in_memory,
         session=session

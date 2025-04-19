@@ -1,15 +1,22 @@
-# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
-#
-# SPDX-License-Identifier: MIT
-
 """
-Domain entities package.
+Legacy domain entities module.
 
-This package contains domain entity definitions.
+This module has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity. Please use the new implementation instead.
 """
 
-from uno.domain.entities.base_entity import (
-    Entity,
+import warnings
+
+warnings.warn(
+    "The uno.domain.entities module is deprecated. "
+    "Use uno.domain.entity instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export the new implementations for backward compatibility
+from uno.domain.entity import (
+    EntityBase as Entity,
     AggregateRoot,
     ValueObject,
 )
