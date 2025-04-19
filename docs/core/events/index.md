@@ -1,152 +1,277 @@
 # Event System
 
-The UNO framework includes a comprehensive event system that provides an implementation of the event-driven architecture pattern. The event system allows components to communicate through events, decoupling the sender from the receiver.
+The Event System is a core component of the Uno framework, providing a robust foundation for event-driven architecture.
 
-## Components
+## Overview
 
-- [**Event**](./event.md) - Base class for defining domain events
-- [**Event Bus**](./bus.md) - Central hub for publishing and subscribing to events
-- [**Event Store**](./store.md) - Persistence layer for events, supporting event sourcing
-- [**Event Publisher**](./publisher.md) - High-level API for publishing events
-- [**Postgres Event Store**](./postgres.md) - PostgreSQL implementation of the event store
-- [**Subscription Management**](./subscription_management.md) - Management of event subscriptions with UI
+Uno's event system enables loosely coupled communication between components through domain events. Events represent meaningful occurrences in the domain that other components might want to react to. The event system follows a publish-subscribe pattern, allowing multiple subscribers to react to the same event.
 
-## Key Features
+## Key Components
 
-- **Event Sourcing** - Use events as the source of truth for application state
-- **Domain Events** - Represent business events in your domain
-- **Decoupled Architecture** - Decouple components by using events for communication
-- **Event Persistence** - Store events for later retrieval and replay
-- **Asynchronous Processing** - Process events asynchronously
-- **Event Subscriptions** - Subscribe to events with configurable handlers
-- **Metrics and Monitoring** - Track event processing performance and success rates
-- **Management UI** - Web-based UI for managing event subscriptions
+### Event
 
-## Example Usage
+`Event` is the foundation of the event system, representing domain events:
 
 ```python
-from uno.core.events import AsyncEventBus, Event, EventPublisher
+from uno.core.events import Event
+from uuid import UUID
+from datetime import datetime
 
-# Define an event
 class UserCreated(Event):
-    user_id: str
+    """Event triggered when a new user is created."""
+    
+    user_id: UUID
     username: str
     email: str
-    
-    @property
-    def aggregate_id(self) -> str:
-        return self.user_id
+```
+
+Events are immutable value objects with built-in metadata:
+- Event ID: Unique identifier for the event
+- Event Type: Automatically derived from the class name
+- Timestamp: When the event was created
+- Aggregate ID: Optional identifier of the domain entity that triggered the event
+- Correlation ID: For tracking related events
+- Causation ID: For tracking event chains
+
+### EventBus
+
+The `EventBus` handles event publishing and subscription:
+
+```python
+from uno.core.events import AsyncEventBus, Event
 
 # Create an event bus
-event_bus = AsyncEventBus()
+event_bus = AsyncEventBus(max_concurrency=10)
 
-# Define a handler
-async def send_welcome_email(event: UserCreated):
-    print(f"Sending welcome email to {event.email}")
+# Subscribe to events
+async def handle_user_created(event: UserCreated):
+    print(f"User created: {event.username}")
 
-# Subscribe to the event
-await event_bus.subscribe("UserCreated", send_welcome_email)
+await event_bus.subscribe("user_created", handle_user_created)
 
-# Create and publish an event
+# Publish an event
 event = UserCreated(
-    user_id="user-123",
-    username="johndoe",
-    email="john@example.com"
+    user_id=user.id, 
+    username=user.username, 
+    email=user.email
 )
 await event_bus.publish(event)
 ```
 
-## Advanced Example with Event Store
+The `AsyncEventBus` features:
+- Fully asynchronous event handling
+- Concurrency control
+- Error isolation between handlers
+- Type-based routing
+
+### EventStore
+
+The `EventStore` provides persistent storage for events:
 
 ```python
-from uno.core.events import AsyncEventBus, Event, PostgresEventStore, PostgresEventStoreConfig, EventPublisher
+from uno.core.events import EventStore, PostgresEventStore
 
-# Configure event store
-config = PostgresEventStoreConfig(
-    connection_string="postgresql+asyncpg://user:password@localhost/events",
-    schema="events",
-    table_name="events"
-)
-event_store = PostgresEventStore(config=config)
+# Create a persistent event store
+event_store = PostgresEventStore(connection_factory)
 
-# Initialize event store
-await event_store.initialize()
+# Store events
+await event_store.append_events([event], aggregate_id=user.id)
 
-# Create event bus
-event_bus = AsyncEventBus()
+# Retrieve events by aggregate
+events = await event_store.get_events_by_aggregate(user.id)
 
-# Create event publisher
-publisher = EventPublisher(
-    event_bus=event_bus,
-    event_store=event_store
-)
-
-# Publish event with persistence
-event = UserCreated(
-    user_id="user-123",
-    username="johndoe",
-    email="john@example.com"
-)
-await publisher.publish(event)
-
-# Retrieve events
-events = await event_store.get_events_by_aggregate("user-123")
+# Retrieve events by type
+user_created_events = await event_store.get_events_by_type("user_created")
 ```
 
-## Subscription Management Example
+The `EventStore` enables:
+- Event persistence
+- Optimistic concurrency control
+- Support for event sourcing patterns
+- Temporal querying (events by time range)
+
+### EventPublisher
+
+The `EventPublisher` provides a high-level interface for publishing events:
 
 ```python
-from uno.core.events import (
-    AsyncEventBus, 
-    SubscriptionManager, 
-    SubscriptionRepository,
-    SubscriptionConfig
-)
+from uno.core.events import EventPublisher
 
-# Create a subscription repository
-repository = SubscriptionRepository(config_path="subscriptions.json")
+# Create a publisher with bus and store
+publisher = EventPublisher(event_bus, event_store)
 
-# Create a subscription manager
-subscription_manager = SubscriptionManager(
-    event_bus=event_bus,
-    repository=repository
-)
+# Collect events for batch publishing
+publisher.collect(event1)
+publisher.collect(event2)
 
-# Initialize the manager
-await subscription_manager.initialize()
+# Publish collected events
+await publisher.publish_collected()
 
-# Create a subscription
-subscription = await subscription_manager.create_subscription(
-    SubscriptionConfig(
-        event_type="UserCreated",
-        handler_name="send_welcome_email",
-        handler_module="your.module.path",
-        description="Sends a welcome email to newly registered users"
-    )
-)
+# Or publish immediately
+await publisher.publish(event3)
 ```
 
-## FastAPI Integration
+## Integration with Unit of Work
+
+Events integrate seamlessly with the Unit of Work pattern:
 
 ```python
-from fastapi import FastAPI
-from uno.core.events import create_subscription_router
+from uno.core.uow import UnitOfWork
+from uno.domain.entity import AggregateRoot
 
-app = FastAPI()
-
-# Include the subscription router
-subscription_router = create_subscription_router(subscription_manager)
-app.include_router(subscription_router, prefix="/api/events")
+class OrderService:
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+    
+    async def place_order(self, user_id: UUID, items: List[UUID]) -> Order:
+        async with self.uow:
+            # Create order
+            order = Order.create(user_id, items)
+            
+            # Add to repository (entity events are automatically collected)
+            order_repo = self.uow.get_repository(OrderRepository)
+            await order_repo.add(order)
+            
+            # Add an explicit event if needed
+            from myapp.domain.events import OrderPlaced
+            self.uow.add_event(OrderPlaced(
+                order_id=order.id,
+                user_id=user_id,
+                item_count=len(items)
+            ))
+            
+            # Events are automatically published after successful commit
+            return order
 ```
 
-## Web UI Component
+## Subscription Management
 
-```html
-<wa-event-subscription-manager baseUrl="/api/events"></wa-event-subscription-manager>
+Event subscriptions can be managed through the subscription system:
+
+```python
+from uno.core.events import SubscriptionManager, EventHandlerFunc
+
+# Register handlers with the subscription manager
+subscription_manager = SubscriptionManager(event_bus)
+
+@subscription_manager.subscribe("user_created")
+async def send_welcome_email(event: UserCreated):
+    # Send welcome email logic
+    pass
+
+@subscription_manager.subscribe("user_created")
+async def update_analytics(event: UserCreated):
+    # Update analytics logic
+    pass
+
+# Later, start all subscriptions
+await subscription_manager.start_all()
+
+# Or stop all subscriptions
+await subscription_manager.stop_all()
 ```
 
-## Learn More
+## Implementing Event Handlers
 
-- [Event Sourcing Pattern](https://martinfowler.com/eaaDev/EventSourcing.html)
-- [Domain Events Pattern](https://martinfowler.com/eaaDev/DomainEvent.html)
-- [Command Query Responsibility Segregation (CQRS)](https://martinfowler.com/bliki/CQRS.html)
+Event handlers should be focused and follow these best practices:
+
+```python
+async def handle_user_created(event: UserCreated):
+    # 1. Keep handlers small and focused
+    # 2. Make handlers idempotent when possible
+    # 3. Handle errors properly
+    try:
+        # Main handler logic
+        await send_welcome_email(event.email, event.username)
+    except Exception as e:
+        # Log the error but don't break the event flow
+        logger.error(f"Failed to send welcome email: {e}")
+```
+
+## Event Design Patterns
+
+### Event Sourcing
+
+Events can be used as the primary source of truth:
+
+```python
+class Order(AggregateRoot[UUID]):
+    @classmethod
+    def create(cls, user_id: UUID, items: List[UUID]) -> "Order":
+        order = cls(id=uuid4(), user_id=user_id, items=items, status="created")
+        order.record_event(OrderCreated(
+            order_id=order.id,
+            user_id=user_id,
+            items=items
+        ))
+        return order
+    
+    def cancel(self, reason: str) -> None:
+        if self.status == "completed":
+            raise ValueError("Cannot cancel completed order")
+            
+        self.status = "cancelled"
+        self.cancel_reason = reason
+        
+        self.record_event(OrderCancelled(
+            order_id=self.id,
+            reason=reason
+        ))
+    
+    @classmethod
+    def from_events(cls, events: List[Event]) -> "Order":
+        """Reconstruct order state from events."""
+        # Implementation details...
+```
+
+### CQRS with Events
+
+Events can drive query model updates:
+
+```python
+@subscription_manager.subscribe("order_created")
+async def update_order_summary(event: OrderCreated):
+    # Update a read model in response to the event
+    await order_summary_repo.add(OrderSummary(
+        order_id=event.order_id,
+        user_id=event.user_id,
+        item_count=len(event.items),
+        created_at=event.timestamp
+    ))
+```
+
+## Best Practices
+
+1. **Event Naming**: Use past tense verbs (e.g., `UserCreated`, `OrderPlaced`)
+2. **Event Content**: Include all necessary data for handlers in the event
+3. **Handler Isolation**: Keep handlers independent and focused
+4. **Idempotency**: Design handlers to be idempotent when possible
+5. **Error Handling**: Catch and log errors in handlers to prevent cascade failures
+6. **Versioning**: Consider versioning for long-lived events
+7. **Performance**: Be mindful of event size and handler performance
+
+## Implementation Details
+
+### AsyncEventBus
+
+The `AsyncEventBus` implementation:
+
+1. Maintains a dictionary of event type → set of handlers
+2. Uses a semaphore to control concurrency
+3. Catches and logs exceptions from handlers
+4. Supports both sequential and concurrent event publishing
+
+### EventStore
+
+The `EventStore` interface defines methods for:
+
+1. Appending events (with optional optimistic concurrency)
+2. Retrieving events by aggregate ID
+3. Retrieving events by type
+4. Filtering events by time range
+
+## Related Components
+
+- [Unit of Work](../uow/index.md): Transaction management with event coordination
+- [Domain Events](../../domain/domain_events.md): Using events in the domain layer
+- [Event-Driven Architecture](../../architecture/event_driven_architecture.md): Architectural patterns

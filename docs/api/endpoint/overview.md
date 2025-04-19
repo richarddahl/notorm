@@ -1,225 +1,444 @@
-# Unified Endpoint Framework
+# API Endpoint Framework Overview
 
-The UNO Unified Endpoint Framework provides a standardized approach to creating API endpoints that integrate seamlessly with the domain entity framework. This framework simplifies the creation of REST APIs that follow best practices for API design, including CQRS pattern, standardized responses, proper error handling, and integration with OpenAPI documentation.
+The Uno API Endpoint Framework provides a comprehensive, unified approach to creating API endpoints that integrate seamlessly with domain services.
+
+## Introduction
+
+Building a modern API requires balancing several concerns:
+
+- **Consistent interface**: Standardized response formats and error handling
+- **Domain integration**: Clean connection to business logic
+- **Security**: Authentication and authorization controls
+- **Documentation**: Clear API documentation
+- **Validation**: Input data validation
+
+The Uno API Endpoint Framework addresses these concerns with a layered architecture that separates the interface from the application and domain logic.
 
 ## Key Features
 
-- **Standardized Endpoint Classes**: BaseEndpoint, CrudEndpoint, QueryEndpoint, CommandEndpoint
-- **CQRS Support**: Separation of query and command operations with CqrsEndpoint
-- **Automated CRUD Operations**: Automatic generation of CRUD endpoints for domain entities
-- **Standardized Response Format**: Consistent response format for all API endpoints
-- **Robust Error Handling**: Middleware and error handlers for standardized error responses
-- **FastAPI Integration**: Seamless integration with FastAPI applications
-- **OpenAPI Documentation**: Automatic generation of OpenAPI documentation
+- **Clean architecture integration**: Seamless connection to domain and application services
+- **Declarative endpoints**: Define endpoints with minimal boilerplate
+- **CQRS pattern support**: Separate command (write) and query (read) endpoints
+- **Standardized responses**: Consistent response formatting
+- **Comprehensive error handling**: Automatic error translation
+- **Authentication & authorization**: Built-in security controls
+- **Enhanced OpenAPI documentation**: Rich API documentation
+- **Filtering & pagination**: Powerful data querying capabilities
+- **Factory pattern**: Generate endpoints from schemas
+- **Customization**: Extend and override default behaviors
 
-## Core Components
+## Base Endpoint Types
+
+The framework provides several endpoint types to match different use cases:
 
 ### BaseEndpoint
 
-The foundation of all endpoints, providing common functionality for registering routes and handling responses.
+The foundation for all endpoint types:
 
 ```python
-class BaseEndpoint(Generic[RequestModel, ResponseModel, IdType]):
-    """Base class for all API endpoints."""
-    
-    def __init__(
-        self,
-        *,
-        router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
-    ):
-        """Initialize a new endpoint instance."""
-        self.router = router or APIRouter()
-        self.tags = tags or []
-    
-    def register(self, app: FastAPI, prefix: str = "") -> None:
-        """Register this endpoint with a FastAPI application."""
-        app.include_router(self.router, prefix=prefix, tags=self.tags)
+from uno.api.endpoint import BaseEndpoint
+from fastapi import APIRouter
+
+router = APIRouter()
+
+# Create a basic endpoint
+endpoint = BaseEndpoint(
+    router=router,
+    prefix="/api",
+    tags=["General"]
+)
+
+# Add custom routes
+@endpoint.router.get("/health")
+async def health_check():
+    return {"status": "ok"}
 ```
 
 ### CrudEndpoint
 
-Provides standardized implementation of CRUD operations for domain entities.
+Standard CRUD operations for entity types:
 
 ```python
-class CrudEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
-    """Base class for CRUD endpoints that work with domain entities."""
-    
-    def __init__(
-        self,
-        *,
-        service: CrudService,
-        create_model: Type[RequestModel],
-        response_model: Type[ResponseModel],
-        update_model: Optional[Type[RequestModel]] = None,
-        router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
-        path: str = "",
-        id_field: str = "id",
-    ):
-        """Initialize a new CRUD endpoint instance."""
-        # Implementation details...
+from uno.api.endpoint import CrudEndpoint
+from uno.core.di import get_dependency
+from myapp.domain.services import ProductService
+from myapp.api.dtos import ProductCreateDTO, ProductResponseDTO, ProductUpdateDTO
+
+# Create a CRUD endpoint
+product_endpoint = CrudEndpoint(
+    service=get_dependency(ProductService),
+    create_model=ProductCreateDTO,
+    response_model=ProductResponseDTO,
+    update_model=ProductUpdateDTO,
+    path="/products",
+    tags=["Products"]
+)
 ```
 
-### CQRS Components
+This will create:
+- GET `/products` - List all products
+- GET `/products/{id}` - Get a single product
+- POST `/products` - Create a new product
+- PUT `/products/{id}` - Update a product
+- DELETE `/products/{id}` - Delete a product
 
-The framework provides support for the Command Query Responsibility Segregation (CQRS) pattern:
+### QueryEndpoint
 
-- **QueryHandler**: Handles read operations
-- **CommandHandler**: Handles write operations
-- **CqrsEndpoint**: Combines query and command handlers into a single endpoint
+Read-only operations with filtering:
 
 ```python
-class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
-    """Endpoint that implements the CQRS pattern."""
-    
-    def __init__(
-        self,
-        *,
-        queries: List[QueryHandler] = None,
-        commands: List[CommandHandler] = None,
-        router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
-        base_path: str = "",
-    ):
-        """Initialize a new CQRS endpoint instance."""
-        # Implementation details...
+from uno.api.endpoint import QueryEndpoint
+from pydantic import BaseModel
+from typing import List, Optional
+
+class ProductQueryDTO(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    min_price: Optional[float] = None
+
+# Create a query endpoint
+product_query_endpoint = QueryEndpoint(
+    service=get_dependency(ProductQueryService),
+    query_model=ProductQueryDTO,
+    response_model=List[ProductResponseDTO],
+    path="/products/search",
+    method="get",
+    tags=["Products"]
+)
 ```
 
-### Factories
+### CommandEndpoint
 
-The framework includes factories for creating endpoints:
-
-- **EndpointFactory**: Creates various endpoint types
-- **CrudEndpointFactory**: Simplifies creation of CRUD endpoints for domain entities
+Write operations with side effects:
 
 ```python
-class CrudEndpointFactory(Generic[RequestModel, ResponseModel, IdType]):
-    """Factory for creating CRUD endpoints."""
-    
-    @classmethod
-    def from_schema(
-        cls,
-        *,
-        service_factory: ServiceFactory,
-        entity_name: str,
-        schema: Type[BaseModel],
-        tags: Optional[List[str]] = None,
-        path_prefix: str = "/api",
-        exclude_fields: Optional[List[str]] = None,
-        readonly_fields: Optional[List[str]] = None,
-    ) -> "CrudEndpointFactory":
-        """Create a CrudEndpointFactory from a Pydantic schema."""
-        # Implementation details...
+from uno.api.endpoint import CommandEndpoint
+from pydantic import BaseModel
+
+class OrderPlacementDTO(BaseModel):
+    customer_id: str
+    product_ids: List[str]
+    shipping_address: str
+
+class OrderResultDTO(BaseModel):
+    order_id: str
+    status: str
+    total: float
+
+# Create a command endpoint
+place_order_endpoint = CommandEndpoint(
+    service=get_dependency(OrderService),
+    command_model=OrderPlacementDTO,
+    response_model=OrderResultDTO,
+    path="/orders/place",
+    method="post",
+    tags=["Orders"]
+)
 ```
 
-### Response Formatting
+## CQRS Pattern
+
+The Command-Query Responsibility Segregation (CQRS) pattern separates operations that read data (queries) from operations that modify data (commands):
+
+```python
+from uno.api.endpoint import CqrsEndpoint, CommandHandler, QueryHandler
+from uno.core.di import get_dependency
+from myapp.domain.services import OrderQueryService, OrderCommandService
+
+# Create command and query handlers
+get_orders_handler = QueryHandler(
+    service=get_dependency(OrderQueryService),
+    query_model=OrderQueryDTO,
+    response_model=List[OrderResponseDTO],
+    path="/search",
+    method="get"
+)
+
+place_order_handler = CommandHandler(
+    service=get_dependency(OrderCommandService),
+    command_model=OrderPlacementDTO,
+    response_model=OrderResultDTO,
+    path="/place",
+    method="post"
+)
+
+cancel_order_handler = CommandHandler(
+    service=get_dependency(OrderCommandService),
+    command_model=OrderCancellationDTO,
+    response_model=OrderResultDTO,
+    path="/cancel",
+    method="post"
+)
+
+# Combine in a CQRS endpoint
+order_endpoint = CqrsEndpoint(
+    queries=[get_orders_handler],
+    commands=[place_order_handler, cancel_order_handler],
+    base_path="/orders",
+    tags=["Orders"]
+)
+```
+
+## Response Formatting
 
 The framework provides standardized response formatting:
 
-- **DataResponse**: Standard format for data responses
-- **ErrorResponse**: Standard format for error responses
-- **PaginatedResponse**: Standard format for paginated data responses
-
 ```python
-class DataResponse(BaseModel, Generic[T]):
-    """Standard response format for data."""
-    
-    data: T = Field(..., description="Response data")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+from uno.api.endpoint.response import DataResponse, ErrorResponse, PaginatedResponse, PaginationMetadata
+from fastapi import APIRouter
+from typing import List
+
+router = APIRouter()
+
+@router.get("/items")
+async def get_items() -> DataResponse[List[Item]]:
+    items = await item_service.get_all()
+    return DataResponse(data=items)
+
+@router.get("/items/paged")
+async def get_paged_items(page: int = 1, page_size: int = 20) -> PaginatedResponse[Item]:
+    result = await item_service.get_paged(page, page_size)
+    return PaginatedResponse(
+        data=result.items,
+        metadata=PaginationMetadata(
+            page=page,
+            page_size=page_size,
+            total=result.total,
+            pages=result.pages
+        )
+    )
 ```
 
-## Usage Examples
+Response format examples:
 
-### Basic CRUD Endpoint
+```json
+// DataResponse
+{
+  "data": [...],
+  "success": true
+}
+
+// PaginatedResponse
+{
+  "data": [...],
+  "metadata": {
+    "page": 1,
+    "page_size": 20,
+    "total": 157,
+    "pages": 8
+  },
+  "success": true
+}
+
+// ErrorResponse
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "The requested resource was not found",
+    "details": {
+      "resource_id": "123",
+      "resource_type": "product"
+    }
+  },
+  "success": false
+}
+```
+
+## Error Handling
+
+Comprehensive error handling is built into the framework:
 
 ```python
-from uno.api.endpoint.base import CrudEndpoint
-from uno.domain.entity.service import CrudService
+from uno.api.endpoint.middleware import setup_error_handlers
+from fastapi import FastAPI, HTTPException
+from uno.core.errors import NotFoundError, ValidationError
 
-# Create the service
-service = ProductService()
+# In your FastAPI app setup
+app = FastAPI()
+setup_error_handlers(app)
 
-# Create the endpoint
-endpoint = CrudEndpoint(
-    service=service,
-    create_model=CreateProductRequest,
-    response_model=ProductResponse,
-    update_model=UpdateProductRequest,
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    user = await user_service.get_user_by_id(user_id)
+    if not user:
+        # This will be converted to a proper error response
+        raise NotFoundError(f"User with ID {user_id} not found")
+    return user
+```
+
+Error handlers automatically convert various error types to appropriate HTTP responses:
+
+| Error Type | HTTP Status | Description |
+|------------|-------------|-------------|
+| `NotFoundError` | 404 | Resource not found |
+| `ValidationError` | 422 | Input validation failed |
+| `AuthenticationError` | 401 | Authentication required |
+| `AuthorizationError` | 403 | Permission denied |
+| `ConflictError` | 409 | Resource conflict |
+| `BusinessRuleError` | 422 | Business rule violation |
+| `ExternalServiceError` | 502 | External service failure |
+| `TimeoutError` | 504 | Operation timeout |
+
+## Authentication
+
+The framework includes comprehensive authentication support:
+
+```python
+from uno.api.endpoint.auth import SecureCrudEndpoint, JwtAuthBackend
+from uno.core.di import get_dependency
+from myapp.domain.services import ProductService
+from myapp.api.dtos import ProductCreateDTO, ProductResponseDTO
+
+# Create auth backend
+auth_backend = JwtAuthBackend(
+    secret_key=settings.jwt_secret,
+    token_url="/api/auth/token"
+)
+
+# Create secure endpoint
+secure_product_endpoint = SecureCrudEndpoint(
+    service=get_dependency(ProductService),
+    create_model=ProductCreateDTO,
+    response_model=ProductResponseDTO,
+    auth_backend=auth_backend,
+    create_permissions=["products.create"],
+    read_permissions=["products.read"],
+    update_permissions=["products.update"],
+    delete_permissions=["products.delete"],
+    path="/products",
+    tags=["Products"]
+)
+```
+
+Authentication features:
+- JWT token support
+- Role-based access control
+- Permission-based authorization
+- Multiple auth backend support
+- Integration with FastAPI security
+
+## Filtering
+
+The framework supports powerful filtering capabilities:
+
+```python
+from uno.api.endpoint.filter import FilterableCrudEndpoint
+from uno.core.di import get_dependency
+from myapp.domain.services import ProductService
+from myapp.api.dtos import ProductCreateDTO, ProductResponseDTO
+
+# Create filterable endpoint
+product_endpoint = FilterableCrudEndpoint(
+    service=get_dependency(ProductService),
+    create_model=ProductCreateDTO,
+    response_model=ProductResponseDTO,
+    filter_fields=["name", "category", "price"],
+    sort_fields=["name", "price", "created_at"],
+    use_graph_backend=True,  # Optional Apache AGE support
+    path="/products",
+    tags=["Products"]
+)
+```
+
+This enables query parameters like:
+- `?name=Product+Name` - Exact field match
+- `?name__contains=product` - Field contains text
+- `?price__gt=100&price__lt=200` - Range queries
+- `?category__in=A,B,C` - Multiple options
+- `?sort=price` - Sort by field (ascending)
+- `?sort=-price` - Sort by field (descending)
+
+## OpenAPI Documentation
+
+Built-in support for enhanced OpenAPI documentation:
+
+```python
+from uno.api.endpoint.openapi import OpenApiEnhancer, ResponseExample
+from uno.api.endpoint.openapi_extensions import DocumentedCrudEndpoint
+from fastapi import FastAPI
+
+# Create app
+app = FastAPI()
+
+# Enhance app documentation
+enhancer = OpenApiEnhancer(app)
+enhancer.setup_jwt_auth(description="JWT authentication")
+enhancer.apply()
+
+# Create documented endpoint
+endpoint = DocumentedCrudEndpoint(
+    service=get_dependency(ProductService),
+    create_model=ProductCreateDTO,
+    response_model=ProductResponseDTO,
+    path="/products",
     tags=["Products"],
-    path="/api/products",
+    summary="Product management endpoints",
+    description="Endpoints for creating, retrieving, updating, and deleting products",
+    operation_examples={
+        "create": {
+            "201": {
+                "content": {"id": "123", "name": "Example Product"},
+                "description": "Product created successfully"
+            }
+        }
+    }
 )
-
-# Register the endpoint
-endpoint.register(app)
 ```
 
-### CQRS Endpoint
+## Factory Pattern
+
+The framework provides factory classes to simplify endpoint creation:
 
 ```python
-from uno.api.endpoint.cqrs import CommandHandler, CqrsEndpoint, QueryHandler
+from uno.api.endpoint.factory import CrudEndpointFactory, EndpointFactory
+from uno.core.di import get_dependency
+from myapp.domain.services import ServiceFactory
 
-# Create query and command handlers
-search_query = QueryHandler(
-    service=search_service,
-    response_model=List[ProductSearchResult],
-    query_model=ProductSearchQuery,
-    path="/search",
-    method="get",
+# Create a service factory
+service_factory = ServiceFactory()
+
+# Create a CRUD endpoint factory
+factory = CrudEndpointFactory(
+    service_factory=service_factory.get_service,
+    path_prefix="/api",
+    tags=["Products"]
 )
 
-create_command = CommandHandler(
-    service=create_service,
-    command_model=CreateProductCommand,
-    response_model=ProductCreatedResult,
-    path="",
-    method="post",
-)
-
-# Create CQRS endpoint
-endpoint = CqrsEndpoint(
-    queries=[search_query],
-    commands=[create_command],
-    tags=["Products"],
-    base_path="/api/products",
-)
-
-# Register the endpoint
-endpoint.register(app)
-```
-
-### Using the Factory
-
-```python
-from uno.api.endpoint.factory import CrudEndpointFactory
-
-# Create a factory from a schema
-factory = CrudEndpointFactory.from_schema(
-    service_factory=service_factory,
+# Create endpoints from a schema
+endpoints = factory.from_schema(
     entity_name="Product",
     schema=ProductSchema,
-    tags=["Products"],
-    path_prefix="/api",
+    exclude_fields=["created_at", "updated_at"],
+    readonly_fields=["id"]
 )
 
-# Create and register endpoints
-factory.create_endpoints(app)
+# Register with FastAPI app
+for endpoint in endpoints:
+    endpoint.register(app)
 ```
 
-### Setting Up the API
+## Integration with FastAPI
+
+The framework seamlessly integrates with FastAPI:
 
 ```python
-from uno.api.endpoint.integration import create_api
+from fastapi import FastAPI
+from uno.api.endpoint.integration import create_api, setup_api
 
-# Create the API
+# Create a FastAPI app with API configuration
 app = create_api(
-    title="Product API",
-    description="API for managing products",
-    version="1.0.0",
+    title="My API",
+    description="My API description",
+    version="1.0.0"
 )
 
-# Register endpoints
-# ...
+# Set up API with endpoints
+setup_api(
+    app,
+    endpoints=[product_endpoint, order_endpoint],
+    include_auth=True,
+    error_handling=True
+)
 ```
 
 ## Integration with Domain Entity Framework
@@ -231,10 +450,83 @@ The Unified Endpoint Framework integrates seamlessly with the domain entity fram
 - **Entity Layer**: Repositories work with domain entities
 - **Result Pattern**: Consistent error handling across all layers
 
-## Next Steps
+## Best Practices
 
-- [CRUD Endpoints](crud_endpoints.md)
-- [CQRS Pattern](cqrs_pattern.md)
-- [Response Formatting](response_formatting.md)
-- [Error Handling](error_handling.md)
-- [OpenAPI Integration](openapi_integration.md)
+1. **Prefer CQRS for Complex Operations**: Use the CQRS pattern for operations with complex business logic or side effects
+2. **Use Factories for Repetitive Endpoints**: Use factories to create multiple endpoints with similar patterns
+3. **Standardize Response Formats**: Use the provided response classes for consistent API responses
+4. **Leverage Domain Services**: Build endpoint functionality on top of domain and application services
+5. **Document with Examples**: Use the OpenAPI utilities to provide comprehensive documentation
+6. **Follow RESTful Conventions**: Use appropriate HTTP methods and status codes
+7. **Implement Proper Error Handling**: Return appropriate error responses with meaningful messages and codes
+8. **Use Authentication for Secure Resources**: Implement authentication for sensitive operations
+9. **Consider Performance**: Use filtering, pagination, and projection to optimize API performance
+10. **Test Thoroughly**: Write comprehensive tests for all endpoints and edge cases
+
+## Example Implementation
+
+```python
+from fastapi import FastAPI
+from uno.api.endpoint import CrudEndpoint
+from uno.api.endpoint.middleware import setup_error_handlers
+from uno.api.endpoint.openapi import OpenApiEnhancer
+from uno.core.di import configure_container, get_dependency
+from pydantic import BaseModel
+from uuid import UUID
+from typing import Optional, List
+
+# DTOs
+class ProductCreateDTO(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    category: str
+
+class ProductResponseDTO(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    price: float
+    category: str
+
+class ProductUpdateDTO(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    category: Optional[str] = None
+
+# App setup
+app = FastAPI(title="Product API")
+setup_error_handlers(app)
+configure_container()
+
+# OpenAPI enhancements
+enhancer = OpenApiEnhancer(app)
+enhancer.apply()
+
+# Create endpoints
+product_endpoint = CrudEndpoint(
+    service=get_dependency(ProductService),
+    create_model=ProductCreateDTO,
+    response_model=ProductResponseDTO,
+    update_model=ProductUpdateDTO,
+    path="/products",
+    tags=["Products"]
+)
+
+# Register endpoints
+product_endpoint.register(app)
+
+# Run the app
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+## Further Reading
+
+- [Unified Endpoint Framework](unified_endpoint_framework.md): Detailed framework architecture
+- [CQRS Pattern](cqrs_pattern.md): Command-Query Responsibility Segregation
+- [Authentication](authentication.md): Authentication and authorization
+- [Filtering](filtering.md): Advanced filtering capabilities
+- [OpenAPI Extensions](openapi.md): Enhanced OpenAPI documentation
