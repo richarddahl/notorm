@@ -56,10 +56,10 @@ from sqlalchemy.sql.expression import ColumnElement, BinaryExpression, TextClaus
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
 from uno.database.streaming import stream_query, StreamingMode
-from uno.domain.base.model import BaseModel as Model
+from uno.domain.base.model import ModelBase
 
 
-T = TypeVar("T", bound=Model)
+T = TypeVar("T", bound=ModelBase)
 
 
 @dataclass
@@ -276,9 +276,9 @@ class OptimizedQuery:
 
 class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     """
-    Optimized query for Model objects.
+    Optimized query for ModelBase objects.
 
-    This class provides optimized queries for common operations on Model objects,
+    This class provides optimized queries for common operations on ModelBase objects,
     with support for caching, batching, and streaming.
     """
 
@@ -294,7 +294,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
         Initialize the optimized model query.
 
         Args:
-            model_class: Model class
+            model_class: ModelBase class
             session: Optional session to use
             use_cache: Whether to cache query results
             cache_ttl: Time-to-live for cache entries
@@ -815,7 +815,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
             use_cache: Whether to cache query results
 
         Returns:
-            Model instance or None
+            ModelBase instance or None
         """
         # Use provided cache setting or class default
         should_cache = use_cache if use_cache is not None else self.use_cache

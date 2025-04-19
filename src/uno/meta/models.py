@@ -5,7 +5,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
-from uno.domain.base.model import BaseModel, PostgresTypes
+from uno.domain.base.model import ModelBase, PostgresTypes
 
 
 class MetaTypeModel(BaseModel):

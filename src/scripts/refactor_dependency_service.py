@@ -24,28 +24,38 @@ class DependencyServiceRefactorer:
     def __init__(self, base_dir: Path):
         self.base_dir = base_dir
         self.service_path = base_dir / "src" / "uno" / "dependencies" / "service.py"
-        self.interfaces_path = base_dir / "src" / "uno" / "dependencies" / "interfaces.py"
-        self.modern_service_path = base_dir / "src" / "uno" / "core" / "base" / "service.py"
-        self.repository_path = base_dir / "src" / "uno" / "dependencies" / "repository.py"
-        
+        self.interfaces_path = (
+            base_dir / "src" / "uno" / "dependencies" / "interfaces.py"
+        )
+        self.modern_service_path = (
+            base_dir / "src" / "uno" / "core" / "base" / "service.py"
+        )
+        self.repository_path = (
+            base_dir / "src" / "uno" / "dependencies" / "repository.py"
+        )
+
         # Check if files exist
         if not self.service_path.exists():
             raise FileNotFoundError(f"Service file not found at {self.service_path}")
         if not self.interfaces_path.exists():
-            raise FileNotFoundError(f"Interfaces file not found at {self.interfaces_path}")
+            raise FileNotFoundError(
+                f"Interfaces file not found at {self.interfaces_path}"
+            )
         if not self.modern_service_path.exists():
-            raise FileNotFoundError(f"Modern service file not found at {self.modern_service_path}")
-    
+            raise FileNotFoundError(
+                f"Modern service file not found at {self.modern_service_path}"
+            )
+
     def update_service_file(self) -> str:
         """
         Update the dependencies/service.py file to use the standardized BaseService.
-        
+
         Returns:
             Updated content for the service.py file
         """
-        with open(self.service_path, 'r') as f:
+        with open(self.service_path, "r") as f:
             content = f.read()
-        
+
         # Create the refactored content
         new_content = '''"""
 Base service implementation for dependency injection in the Uno framework.
@@ -57,7 +67,7 @@ dependency injection system, while following the standardized service pattern.
 from typing import Dict, List, Optional, TypeVar, Generic, Any, Type, cast
 import logging
 
-from uno.domain.base.model import BaseModel
+from uno.domain.base.model import ModelBase
 from uno.core.base.service import BaseService as CoreBaseService, ServiceProtocol
 from uno.core.base.error import BaseError
 from uno.core.errors.result import Result, Success, Failure
@@ -286,30 +296,34 @@ class LegacyServiceAdapter(ServiceProtocol[InputT, OutputT]):
             else:
                 raise Exception(result.error)
 '''
-        
+
         return new_content
-    
+
     def update_interfaces_file(self) -> str:
         """
         Update the dependencies/interfaces.py file to modify the UnoServiceProtocol.
-        
+
         Returns:
             Updated content for the interfaces.py file
         """
-        with open(self.interfaces_path, 'r') as f:
+        with open(self.interfaces_path, "r") as f:
             content = f.read()
-        
+
         # Add deprecation warning to UnoServiceProtocol
         import_section_end = content.find("T = TypeVar('T')")
         if import_section_end == -1:
             import_section_end = content.find("import psycopg")
             if import_section_end != -1:
                 import_section_end = content.find("\n", import_section_end) + 1
-        
+
         if import_section_end != -1:
             # Add import for warnings
-            content = content[:import_section_end] + "import warnings\n" + content[import_section_end:]
-        
+            content = (
+                content[:import_section_end]
+                + "import warnings\n"
+                + content[import_section_end:]
+            )
+
         # Find the UnoServiceProtocol definition
         protocol_start = content.find("class UnoServiceProtocol(Protocol, Generic[T]):")
         if protocol_start != -1:
@@ -326,8 +340,10 @@ class LegacyServiceAdapter(ServiceProtocol[InputT, OutputT]):
         Use ServiceProtocol from uno.core.base.service instead.
         This protocol is maintained for backward compatibility only.
     """
-                    content = content[:insert_pos] + deprecation_note + content[insert_pos:]
-                    
+                    content = (
+                        content[:insert_pos] + deprecation_note + content[insert_pos:]
+                    )
+
                     # Add deprecation warning to class definition
                     warning_code = """
     def __new__(cls, *args, **kwargs):
@@ -341,14 +357,18 @@ class LegacyServiceAdapter(ServiceProtocol[InputT, OutputT]):
                     # Find position to insert the warning (after the class definition and docstring)
                     method_start = content.find("    async def execute", insert_pos)
                     if method_start != -1:
-                        content = content[:method_start] + warning_code + content[method_start:]
-        
+                        content = (
+                            content[:method_start]
+                            + warning_code
+                            + content[method_start:]
+                        )
+
         return content
-    
+
     def create_migration_guide(self) -> str:
         """
         Create a migration guide for transitioning from the old service pattern to the new one.
-        
+
         Returns:
             Content for the migration guide
         """
@@ -496,68 +516,74 @@ else:
 If you have questions about migrating your services, please contact the development team.
 """
         return guide
-    
+
     def run(self, auto_apply=False, dry_run=False):
         """
         Execute the refactoring process.
-        
+
         Args:
             auto_apply: If True, apply changes without prompting
             dry_run: If True, don't apply changes, just show what would change
         """
         print("Starting refactoring of dependency service...")
-        
+
         # Update service.py
         new_service_content = self.update_service_file()
         print(f"Updated content for {self.service_path}")
-        
+
         # Update interfaces.py
         new_interfaces_content = self.update_interfaces_file()
         print(f"Updated content for {self.interfaces_path}")
-        
+
         # Create migration guide
         guide_content = self.create_migration_guide()
-        guide_path = self.base_dir / "docs" / "dependencies" / "service_migration_guide.md"
+        guide_path = (
+            self.base_dir / "docs" / "dependencies" / "service_migration_guide.md"
+        )
         os.makedirs(guide_path.parent, exist_ok=True)
         print(f"Created migration guide at {guide_path}")
-        
+
         # Write updated files
         print("\nFiles to update:")
         print(f"1. {self.service_path}")
         print(f"2. {self.interfaces_path}")
         print(f"3. {guide_path}")
-        
+
         apply_changes = auto_apply
-        
+
         if dry_run:
             print("\nDry run mode - no changes will be applied.")
             apply_changes = False
         elif not auto_apply:
             try:
                 choice = input("\nDo you want to apply these changes? (y/n): ")
-                apply_changes = choice.lower() == 'y'
+                apply_changes = choice.lower() == "y"
             except (EOFError, KeyboardInterrupt):
-                print("\nInteractive input failed. Use --apply or --dry-run for non-interactive mode.")
+                print(
+                    "\nInteractive input failed. Use --apply or --dry-run for non-interactive mode."
+                )
                 apply_changes = False
-        
+
         if apply_changes:
             # Write service.py
-            with open(self.service_path, 'w') as f:
+            with open(self.service_path, "w") as f:
                 f.write(new_service_content)
-            
+
             # Write interfaces.py
-            with open(self.interfaces_path, 'w') as f:
+            with open(self.interfaces_path, "w") as f:
                 f.write(new_interfaces_content)
-            
+
             # Write migration guide
-            with open(guide_path, 'w') as f:
+            with open(guide_path, "w") as f:
                 f.write(guide_content)
-            
+
             print("\nRefactoring completed successfully!")
             print(f"Migration guide written to {guide_path}")
             print("\nNext steps:")
             print("1. Test the changes to ensure backward compatibility")
-            print("2. Identify and update service implementations to use the new pattern")
+            print(
+                "2. Identify and update service implementations to use the new pattern"
+            )
             print("3. Plan for removing the legacy adapter in the future")
         else:
             print("\nRefactoring canceled. No files were modified.")
@@ -565,16 +591,24 @@ If you have questions about migrating your services, please contact the developm
 
 def main():
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Refactor the BaseService in dependencies/service.py")
-    parser.add_argument("--apply", action="store_true", help="Apply the changes without prompting")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be changed without applying")
-    
+
+    parser = argparse.ArgumentParser(
+        description="Refactor the BaseService in dependencies/service.py"
+    )
+    parser.add_argument(
+        "--apply", action="store_true", help="Apply the changes without prompting"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be changed without applying",
+    )
+
     args = parser.parse_args()
-    
+
     base_dir = Path(__file__).parent.parent.parent
     refactorer = DependencyServiceRefactorer(base_dir)
-    
+
     if args.apply:
         refactorer.run(auto_apply=True)
     elif args.dry_run:

@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship
 from decimal import Decimal
 from datetime import datetime, UTC
 
-from uno.domain.base.model import BaseModel
+from uno.domain.base.model import ModelBase
 
 # Base model class
 Base = declarative_base()
@@ -74,7 +74,11 @@ class ProductModel(BaseModel, Base):
 
     # Timestamps
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Version for optimistic concurrency
     version = Column(Integer, default=1)
@@ -117,7 +121,11 @@ class ProductVariantModel(BaseModel, Base):
 
     # Timestamps
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Relationships
     product = relationship("ProductModel", back_populates="variants")
@@ -137,7 +145,11 @@ class ProductImageModel(BaseModel, Base):
 
     # Timestamps
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Relationships
     product = relationship("ProductModel", back_populates="images")
@@ -159,7 +171,11 @@ class CategoryModel(BaseModel, Base):
 
     # Timestamps
     created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(datetime.UTC),
+        onupdate=lambda: datetime.now(datetime.UTC),
+    )
 
     # Relationships
     children = relationship(

@@ -25,7 +25,7 @@ from sqlalchemy.dialects.postgresql import (
     JSONB,
 )
 
-from uno.domain.base.model import BaseModel, PostgresTypes
+from uno.domain.base.model import ModelBase, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import RecordAuditModelMixin
 from uno.enums import (

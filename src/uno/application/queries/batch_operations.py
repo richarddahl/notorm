@@ -59,12 +59,12 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
 from uno.database.streaming import stream_query, StreamingMode
-from uno.domain.base.model import BaseModel as Model
+from uno.domain.base.model import ModelBase
 from uno.queries.optimized_queries import OptimizedModelQuery, QueryHints
 from uno.queries.common_patterns import CommonQueryPatterns, QueryPattern
 
 
-T = TypeVar("T", bound=Model)
+T = TypeVar("T", bound=ModelBase)
 
 
 class BatchSize(Enum):
@@ -605,7 +605,7 @@ class BatchOperations(Generic[T]):
         Initialize batch operations.
 
         Args:
-            model_class: Model class
+            model_class: ModelBase class
             session: Database session
             use_cache: Whether to use caching
             cache_ttl: Cache TTL in seconds

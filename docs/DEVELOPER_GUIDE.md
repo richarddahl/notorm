@@ -22,7 +22,7 @@ Use these import paths for the primary building blocks of the framework:
 
 ```python
 # Base model for database tables
-from uno.domain.base.model import BaseModel
+from uno.domain.base.model import ModelBase
 
 # Core domain entities
 from uno.domain.entities.base_entity import Entity, AggregateRoot, ValueObject

@@ -58,11 +58,11 @@ from sqlalchemy.sql.expression import ColumnElement, BinaryExpression, TextClaus
 # )
 from uno.database.enhanced_session import enhanced_async_session
 from uno.database.pooled_session import pooled_async_session
-from uno.domain.base.model import BaseModel as Model
+from uno.domain.base.model import ModelBase
 from uno.queries.optimized_queries import OptimizedModelQuery, QueryHints
 
 
-T = TypeVar("T", bound=Model)
+T = TypeVar("T", bound=ModelBase)
 
 
 class QueryPattern(Enum):
@@ -179,7 +179,7 @@ class QueryPlan:
 
         Args:
             pattern: Query pattern
-            model_class: Model class
+            model_class: ModelBase class
             metrics: Optional metrics for tracking
             logger: Optional logger
         """
@@ -423,7 +423,7 @@ class CommonQueryPatterns:
         Initialize the common query patterns.
 
         Args:
-            model_class: Model class
+            model_class: ModelBase class
             session: Optional session to use
             use_cache: Whether to cache query results
             cache_ttl: Time-to-live for cache entries
@@ -467,7 +467,7 @@ class CommonQueryPatterns:
                 - List[str]: Load only specified relationships
 
         Returns:
-            Model instance or None
+            ModelBase instance or None
         """
         # Create query plan
         plan = QueryPlan(

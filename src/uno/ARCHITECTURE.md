@@ -164,7 +164,7 @@ BaseDTO
 ### Domain Models
 
 ```
-BaseModel
+ModelBase
   ├── [Domain-specific models]
   ├── Entity
   │   └── AggregateRoot

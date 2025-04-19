@@ -8,7 +8,7 @@ Base classes for the domain layer of the Uno framework.
 This module provides base classes, interfaces, and utilities for the domain layer.
 """
 
-from uno.domain.base.model import BaseModel, PostgresTypes, MetadataFactory
+from uno.domain.base.model import ModelBase, PostgresTypes, MetadataFactory
 
 __all__ = [
     "BaseModel",

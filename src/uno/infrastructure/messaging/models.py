@@ -12,7 +12,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.domain.base.model import BaseModel, PostgresTypes
+from uno.domain.base.model import ModelBase, PostgresTypes
 from uno.mixins import ModelMixin
 from uno.authorization.mixins import GroupModelMixin
 from uno.enums import MessageImportance

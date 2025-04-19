@@ -8,7 +8,7 @@ dependency injection system, while following the standardized service pattern.
 from typing import Dict, List, Optional, TypeVar, Generic, Any, Type, cast
 import logging
 
-from uno.domain.base.model import BaseModel
+from uno.domain.base.model import ModelBase
 from uno.core.base.service import BaseService as CoreBaseService, ServiceProtocol
 from uno.core.base.error import BaseError
 from uno.core.errors.result import Result, Success, Failure

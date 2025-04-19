@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
-from uno.domain.base.model import BaseModel, PostgresTypes
+from uno.domain.base.model import ModelBase, PostgresTypes
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.models import QueryModel

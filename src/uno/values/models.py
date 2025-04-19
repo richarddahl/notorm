@@ -12,7 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import VARCHAR, ARRAY
 
-from uno.domain.base.model import BaseModel, PostgresTypes
+from uno.domain.base.model import ModelBase, PostgresTypes
 from uno.authorization.mixins import DefaultModelMixin
 from uno.queries.filter import (
     boolean_lookups,

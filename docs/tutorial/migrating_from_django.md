@@ -182,9 +182,9 @@ class User(EntityBase[UUID]):
 # uno_app/domain/models/user_model.py
 from sqlalchemy import Column, String, Boolean, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID
-from uno.domain.base.model import BaseModel
+from uno.domain.base.model import ModelBase
 
-class UserModel(BaseModel):
+class UserModel(ModelBase):
     __tablename__ = 'users'
     
     id = Column(UUID(as_uuid=True), primary_key=True)
