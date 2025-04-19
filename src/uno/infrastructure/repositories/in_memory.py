@@ -7,24 +7,17 @@ which is useful for testing and prototyping.
 
 import logging
 from copy import deepcopy
-from datetime import datetime, UTC
-from typing import (
-    Any, Dict, Generic, Iterable, List, Optional, Type, TypeVar, Union, cast,
-    AsyncIterator
-)
+from datetime import datetime, timezone
+from collections.abc import AsyncIterator, Iterable
+from typing import Any, Generic, Optional, Sequence, Tuple, TypeVar, cast
 
 from uno.domain.core import Entity, AggregateRoot
 from uno.domain.specifications import Specification
-from uno.infrastructure.repositories.base import (
-    Repository,
-    SpecificationRepository,
-    BatchRepository,
-    StreamingRepository,
-    EventCollectingRepository,
-    AggregateRepository,
-    CompleteRepository,
-    FilterType
+from uno.domain.entity import (
+    InMemoryRepository,
 )
+
+# Only modern in-memory repository implementations are retained. Legacy or deprecated classes have been removed.
 
 
 # Type variables

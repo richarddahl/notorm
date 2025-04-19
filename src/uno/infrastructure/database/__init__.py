@@ -5,7 +5,7 @@
 """
 Database package for the Uno framework.
 
-This package provides database connectivity, ORM integration, and session management.
+This package provides modern database connectivity, ORM integration, and session management. All legacy and deprecated APIs have been removed in favor of the current architecture.
 """
 
 # Import the enhanced connection pool components
@@ -19,6 +19,7 @@ from uno.database.enhanced_connection_pool import (
     enhanced_async_engine,
     enhanced_async_connection,
 )
+# All legacy pool implementations have been removed.
 
 # Import the enhanced pool session components
 from uno.database.enhanced_pool_session import (

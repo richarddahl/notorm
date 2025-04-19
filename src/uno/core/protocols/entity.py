@@ -5,16 +5,7 @@ This module defines the entity protocols used for domain modeling.
 Entities are objects with a distinct identity that persists over time.
 """
 
-from typing import (
-    Protocol,
-    Generic,
-    TypeVar,
-    List,
-    Optional,
-    Any,
-    Dict,
-    runtime_checkable,
-)
+from typing import Protocol, Generic, TypeVar, Any, runtime_checkable
 from datetime import datetime
 
 

@@ -842,6 +842,7 @@ class WorkflowDefFilterParams(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra = {"example": {"status": "active", "entity_type": "user"}}
+    )
 
 
 # Workflow Event DTOs

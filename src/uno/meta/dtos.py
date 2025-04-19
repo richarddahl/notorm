@@ -6,8 +6,7 @@ providing a clear contract for the API and a clean separation of concerns follow
 the domain-driven design approach.
 """
 
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 

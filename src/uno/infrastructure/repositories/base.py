@@ -6,15 +6,10 @@ repository classes, particularly for event collection and aggregate handling.
 """
 
 import logging
-from typing import (
-    Any, Dict, Generic, List, Optional, Type, TypeVar
-)
-
+from typing import Any, TypeVar, Generic
+from uno.core.base.repository import BaseRepository
 from uno.core.events import DomainEventProtocol
 from uno.domain.core import AggregateRoot
-from uno.core.base.repository import BaseRepository
-
-# Type variables
 T = TypeVar("T")  # Entity type
 A = TypeVar("A", bound=AggregateRoot)  # Aggregate type
 ID = TypeVar("ID")  # ID type
@@ -26,17 +21,17 @@ class EventCollectingRepository(BaseRepository[T, ID], Generic[T, ID]):
     
     Useful for aggregate repositories that need to track domain events.
     """
-    
+
     def __init__(
-        self, 
-        entity_type: Type[T], 
-        logger: Optional[logging.Logger] = None
+        self,
+        entity_type: type[T],
+        logger: logging.Logger | None = None
     ):
         """Initialize with empty events collection."""
         super().__init__(entity_type, logger)
-        self._pending_events: List[DomainEventProtocol] = []
-    
-    def collect_events(self) -> List[DomainEventProtocol]:
+        self._pending_events: list[DomainEventProtocol] = []
+
+    def collect_events(self) -> list[DomainEventProtocol]:
         """
         Collect and clear pending domain events.
         
@@ -46,7 +41,7 @@ class EventCollectingRepository(BaseRepository[T, ID], Generic[T, ID]):
         events = list(self._pending_events)
         self._pending_events.clear()
         return events
-    
+
     def _collect_events_from_entity(self, entity: Any) -> None:
         """
         Collect events from an entity that supports event collection.
@@ -57,7 +52,7 @@ class EventCollectingRepository(BaseRepository[T, ID], Generic[T, ID]):
         if hasattr(entity, "clear_events") and callable(entity.clear_events):
             events = entity.clear_events()
             self._pending_events.extend(events)
-        
+
         # Collect from child entities if this is an aggregate
         if hasattr(entity, "get_child_entities") and callable(entity.get_child_entities):
             for child in entity.get_child_entities():

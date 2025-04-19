@@ -5,13 +5,12 @@ This module provides a Result class for handling errors without exceptions.
 The Result pattern is a way to represent either a successful value or an error.
 """
 
-from typing import (
-    Any, Callable, Dict, Generic, Iterator, List, 
-    Optional, Set, Tuple, TypeVar, Union, cast, overload
-)
+from collections.abc import Callable
+from contextlib import suppress
+from dataclasses import dataclass, field
 from datetime import datetime, UTC
 from enum import Enum, auto
-from dataclasses import dataclass, field
+from typing import Any, Generic, TypeVar
 
 T = TypeVar('T')  # Success value type
 E = TypeVar('E')  # Error type
@@ -37,13 +36,13 @@ class ValidationError:
     """
     
     message: str
-    path: Optional[str] = None
-    code: Optional[str] = None
+    path: str | None = None
+    code: str | None = None
     severity: ErrorSeverity = ErrorSeverity.ERROR
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the validation error to a dictionary representation."""
         return {
             "message": self.message,
@@ -55,7 +54,7 @@ class ValidationError:
         }
     
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> 'ValidationError':
+    def from_dict(data: dict[str, Any]) -> 'ValidationError':
         """Create a validation error from a dictionary representation."""
         severity_str = data.get("severity", "ERROR")
         severity = ErrorSeverity[severity_str] if isinstance(severity_str, str) else ErrorSeverity.ERROR
@@ -90,11 +89,11 @@ class Result(Generic[T, E]):
     
     def __init__(
         self, 
-        value: Optional[T] = None, 
-        error: Optional[E] = None,
-        errors: Optional[List[E]] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ):
+        value: T | None = None, 
+        error: E | None = None,
+        errors: list[E] | None = None,
+        metadata: dict[str, Any] | None = None
+    ): 
         """
         Create a new Result.
         
@@ -134,7 +133,7 @@ class Result(Generic[T, E]):
         return not self._is_success
     
     @property
-    def value(self) -> Optional[T]:
+    def value(self) -> T | None:
         """
         Get the success value, if any.
         
@@ -143,7 +142,7 @@ class Result(Generic[T, E]):
         """
         return self._value
     
-    def value_or(self, default: R) -> Union[T, R]:
+    def value_or(self, default: R) -> T | R:
         """
         Get the success value or a default value.
         
@@ -155,7 +154,7 @@ class Result(Generic[T, E]):
         """
         return self._value if self.is_success and self._value is not None else default
     
-    def value_or_raise(self, exception_factory: Optional[Callable[[List[E]], Exception]] = None) -> T:
+    def value_or_raise(self, exception_factory: Callable[[list[E]], Exception] | None = None) -> T:
         """
         Get the success value or raise an exception.
         
@@ -179,7 +178,7 @@ class Result(Generic[T, E]):
         return self._value
     
     @property
-    def error(self) -> Optional[E]:
+    def error(self) -> E | None:
         """
         Get the first error, if any.
         
@@ -189,7 +188,7 @@ class Result(Generic[T, E]):
         return self._errors[0] if self._errors else None
     
     @property
-    def errors(self) -> List[E]:
+    def errors(self) -> list[E]:
         """
         Get all errors.
         
@@ -199,7 +198,7 @@ class Result(Generic[T, E]):
         return self._errors.copy()
     
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """
         Get the metadata associated with this result.
         
@@ -238,10 +237,10 @@ class Result(Generic[T, E]):
                 new_value = fn(self._value)
                 return Result(value=new_value, metadata=self._metadata)
             except Exception as e:
-                return Result(error=cast(E, e), metadata=self._metadata)
+                return Result(error=e, metadata=self._metadata)
         return Result(errors=self._errors, metadata=self._metadata)
     
-    def map_error(self, fn: Callable[[E], R]) -> Union['Result[T, R]', 'Result[T, E]']:
+    def map_error(self, fn: Callable[[E], R]) -> 'Result[T, R]':
         """
         Apply a function to the error(s).
         
@@ -255,9 +254,9 @@ class Result(Generic[T, E]):
         if self.is_failure:
             try:
                 new_errors = [fn(error) for error in self._errors]
-                return Result(errors=cast(List[R], new_errors), metadata=self._metadata)
+                return Result(errors=new_errors, metadata=self._metadata)
             except Exception as e:
-                return Result(error=cast(E, e), metadata=self._metadata)
+                return Result(error=e, metadata=self._metadata)
         return self
     
     def bind(self, fn: Callable[[T], 'Result[R, E]']) -> 'Result[R, E]':
@@ -280,7 +279,7 @@ class Result(Generic[T, E]):
                         result._metadata[key] = value
                 return result
             except Exception as e:
-                return Result(error=cast(E, e), metadata=self._metadata)
+                return Result(error=e, metadata=self._metadata)
         return Result(errors=self._errors, metadata=self._metadata)
     
     def combine(self, other: 'Result[Any, E]') -> 'Result[T, E]':
@@ -318,14 +317,11 @@ class Result(Generic[T, E]):
             The original result
         """
         if self.is_success and self._value is not None:
-            try:
+            with suppress(Exception):
                 fn(self._value)
-            except Exception:
-                # Ignore exceptions in tap functions
-                pass
         return self
     
-    def tap_error(self, fn: Callable[[List[E]], None]) -> 'Result[T, E]':
+    def tap_error(self, fn: Callable[[list[E]], None]) -> 'Result[T, E]':
         """
         Execute a function with the errors without changing the result.
         
@@ -336,15 +332,12 @@ class Result(Generic[T, E]):
             The original result
         """
         if self.is_failure:
-            try:
+            with suppress(Exception):
                 fn(self._errors)
-            except Exception:
-                # Ignore exceptions in tap functions
-                pass
         return self
     
     @staticmethod
-    def success(value: T, metadata: Optional[Dict[str, Any]] = None) -> 'Result[T, Any]':
+    def success(value: T, metadata: dict[str, Any] | None = None) -> 'Result[T, Any]':
         """
         Create a successful result.
         
@@ -358,7 +351,7 @@ class Result(Generic[T, E]):
         return Result(value=value, metadata=metadata)
     
     @staticmethod
-    def failure(error: E, metadata: Optional[Dict[str, Any]] = None) -> 'Result[Any, E]':
+    def failure(error: E, metadata: dict[str, Any] | None = None) -> 'Result[Any, E]':
         """
         Create a failed result.
         
@@ -372,7 +365,7 @@ class Result(Generic[T, E]):
         return Result(error=error, metadata=metadata)
     
     @staticmethod
-    def failures(errors: List[E], metadata: Optional[Dict[str, Any]] = None) -> 'Result[Any, E]':
+    def failures(errors: list[E], metadata: dict[str, Any] | None = None) -> 'Result[Any, E]':
         """
         Create a failed result with multiple errors.
         
@@ -386,7 +379,7 @@ class Result(Generic[T, E]):
         return Result(errors=errors, metadata=metadata)
     
     @staticmethod
-    def from_exception(e: Exception, metadata: Optional[Dict[str, Any]] = None) -> 'Result[Any, Exception]':
+    def from_exception(e: Exception, metadata: dict[str, Any] | None = None) -> 'Result[Any, Exception]':
         """
         Create a failed result from an exception.
         
@@ -400,7 +393,7 @@ class Result(Generic[T, E]):
         return Result(error=e, metadata=metadata)
     
     @staticmethod
-    def try_catch(fn: Callable[[], T], metadata: Optional[Dict[str, Any]] = None) -> 'Result[T, Exception]':
+    def try_catch(fn: Callable[[], T], metadata: dict[str, Any] | None = None) -> 'Result[T, Exception]':
         """
         Execute a function and return a Result.
         
@@ -417,7 +410,7 @@ class Result(Generic[T, E]):
             return Result.failure(e, metadata=metadata)
     
     @staticmethod
-    def all(results: List['Result[T, E]']) -> 'Result[List[T], E]':
+    def all(results: list['Result[T, E]']) -> 'Result[list[T], E]':
         """
         Combine multiple results into a single result.
         

@@ -94,18 +94,22 @@ class MessageModel(GroupModelMixin, ModelMixin, BaseModel):
         "MessageUserModel",
         back_populates="message",
         doc="Users associated with the message",
+    )
     meta_records: Mapped[list["MetaRecordModel"]] = relationship(
         "MetaRecordModel",
         secondary=message__meta_record,
         doc="Meta records associated with the message",
+    )
     parent: Mapped["MessageModel"] = relationship(
         "MessageModel",
         foreign_keys=[parent_id],
         back_populates="children",
         doc="The parent attribute type",
+    )
     children: Mapped[list["MessageModel"]] = relationship(
         "MessageModel",
         back_populates="parent",
+    )
         remote_side=[id],
         doc="The child attribute types",
     )

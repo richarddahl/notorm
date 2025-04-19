@@ -1,79 +1,73 @@
 """
 Core Protocol Definitions
 
-This package contains the core protocol interfaces that define
+This package contains the modern core protocol interfaces that define
 the contracts for the major components of the system.
 
-Protocols defined in this package form the foundation of the architecture
-and should be used as the primary abstraction for dependency injection
-and component design.
+All legacy protocol interfaces have been removed in favor of the current architecture.
 """
 
-from uno.core.protocols.repository import (
-    RepositoryProtocol,
-    QueryableRepositoryProtocol,
-    PageableRepositoryProtocol
-)
-from uno.core.protocols.service import (
-    ServiceProtocol,
-    CrudServiceProtocol,
-    QueryServiceProtocol,
-    Result
+from uno.core.protocols.entity import (
+    AggregateRootProtocol,
+    EntityProtocol,
+    ValueObjectProtocol,
 )
 from uno.core.protocols.event import (
-    EventProtocol,
     EventBusProtocol,
-    EventStoreProtocol,
+    EventHandler,
+    EventProtocol,
     EventPublisherProtocol,
-    EventHandler
+    EventStoreProtocol,
 )
-from uno.core.protocols.entity import (
-    EntityProtocol,
-    AggregateRootProtocol,
-    ValueObjectProtocol
+from uno.core.protocols.repository import (
+    PageableRepositoryProtocol,
+    QueryableRepositoryProtocol,
+    RepositoryProtocol,
 )
-from uno.core.protocols.database import (
-    DatabaseProviderProtocol,
-    DatabaseConnectionProtocol,
-    DatabaseSessionProtocol,
-    TransactionManagerProtocol,
+from uno.core.protocols.service import (
+    CrudServiceProtocol,
+    QueryServiceProtocol,
+    Result,
+    ServiceProtocol,
+)
+from uno.infrastructure.database.provider import (
     ConnectionPoolProtocol,
+    DatabaseConnectionProtocol,
     DatabaseManagerProtocol,
+    DatabaseProviderProtocol,
+    DatabaseSessionProtocol,
     QueryExecutorProtocol,
-    UnoDatabaseProviderProtocol
+    TransactionManagerProtocol,
+    UnoDatabaseProviderProtocol,
 )
 
 __all__ = [
     # Repository protocols
-    'RepositoryProtocol',
-    'QueryableRepositoryProtocol',
-    'PageableRepositoryProtocol',
-    
+    "RepositoryProtocol",
+    "QueryableRepositoryProtocol",
+    "PageableRepositoryProtocol",
     # Service protocols
-    'ServiceProtocol',
-    'CrudServiceProtocol',
-    'QueryServiceProtocol',
-    'Result',
-    
+    "ServiceProtocol",
+    "CrudServiceProtocol",
+    "QueryServiceProtocol",
+    "Result",
     # Event protocols
-    'EventProtocol',
-    'EventBusProtocol',
-    'EventStoreProtocol',
-    'EventPublisherProtocol',
-    'EventHandler',
-    
+    "EventProtocol",
+    "EventBusProtocol",
+    "EventStoreProtocol",
+    "EventPublisherProtocol",
+    "EventHandler",
     # Entity protocols
-    'EntityProtocol',
-    'AggregateRootProtocol',
-    'ValueObjectProtocol',
-    
+    "EntityProtocol",
+    "AggregateRootProtocol",
+    "ValueObjectProtocol",
     # Database protocols
-    'DatabaseProviderProtocol',
-    'DatabaseConnectionProtocol',
-    'DatabaseSessionProtocol',
-    'TransactionManagerProtocol',
-    'ConnectionPoolProtocol',
-    'DatabaseManagerProtocol',
-    'QueryExecutorProtocol',
-    'UnoDatabaseProviderProtocol',
+    "DatabaseProviderProtocol",
+    "DatabaseConnectionProtocol",
+    "DatabaseSessionProtocol",
+    "TransactionManagerProtocol",
+    "ConnectionPoolProtocol",
+    "DatabaseManagerProtocol",
+    "QueryExecutorProtocol",
+    "UnoDatabaseProviderProtocol",
 ]

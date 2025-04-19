@@ -10,7 +10,7 @@ These types are designed to break circular dependencies and provide a consistent
 type system across the codebase.
 """
 
-from typing import Dict, Type, List, Optional, TypeVar, Generic, Any, Tuple, Union
+from typing import TypeVar, Generic, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 # Type variables

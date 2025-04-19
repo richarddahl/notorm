@@ -20,8 +20,7 @@ from uno.core.errors.result import Result, Success, Failure
 from uno.domain.core import Entity, AggregateRoot
 from uno.domain.specifications import Specification, AndSpecification
 from uno.infrastructure.repositories.di import get_repository, get_unit_of_work
-from uno.infrastructure.repositories.protocols import RepositoryProtocol, UnitOfWorkProtocol
-from uno.infrastructure.repositories.base import Repository
+# Only modern repository and unit of work APIs are demonstrated below. All legacy references have been removed.
 
 
 # Domain model examples
