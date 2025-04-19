@@ -10,6 +10,24 @@ from .cqrs import CommandHandler, CqrsEndpoint, QueryHandler
 from .factory import CrudEndpointFactory, EndpointFactory
 from .integration import create_api, setup_api
 from .middleware import ErrorHandlerMiddleware, setup_error_handlers
+from .openapi import (
+    ApiDocumentation,
+    OpenApiEnhancer,
+    ResponseExample,
+    add_operation_id,
+    add_response_example,
+    add_security_schema,
+    document_operation,
+)
+from .openapi_extensions import (
+    DocumentedBaseEndpoint,
+    DocumentedCommandEndpoint,
+    DocumentedCqrsEndpoint,
+    DocumentedCrudEndpoint,
+    DocumentedFilterableCqrsEndpoint,
+    DocumentedFilterableCrudEndpoint,
+    DocumentedQueryEndpoint,
+)
 from .response import (
     DataResponse,
     ErrorDetail,
@@ -52,4 +70,22 @@ __all__ = [
     "PaginationMetadata",
     "response_handler",
     "paginated_response",
+    
+    # OpenAPI documentation components
+    "ApiDocumentation",
+    "OpenApiEnhancer",
+    "ResponseExample",
+    "add_operation_id",
+    "add_response_example",
+    "add_security_schema",
+    "document_operation",
+    
+    # Documented endpoint classes
+    "DocumentedBaseEndpoint",
+    "DocumentedCrudEndpoint",
+    "DocumentedQueryEndpoint",
+    "DocumentedCommandEndpoint",
+    "DocumentedCqrsEndpoint",
+    "DocumentedFilterableCrudEndpoint",
+    "DocumentedFilterableCqrsEndpoint",
 ]

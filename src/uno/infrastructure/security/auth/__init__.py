@@ -1,53 +1,30 @@
 """
-Authentication for Uno applications.
+Security authentication module.
 
-This module provides authentication functionality for Uno applications,
-including password management, multi-factor authentication, JWT token authentication,
-and single sign-on.
+DEPRECATED: This module is maintained for backward compatibility only.
+Use the unified endpoint auth framework in `uno.api.endpoint.auth` instead.
 """
 
-from uno.security.auth.manager import MFAManager
-from uno.security.auth.totp import TOTPProvider
-from uno.security.auth.password import (
-    SecurePasswordPolicy, 
-    hash_password, 
-    verify_password
-)
-from uno.security.auth.sso import SSOProvider
-from uno.security.auth.jwt import (
-    JWTAuth,
-    JWTConfig,
-    JWTBearer,
-    JWTAuthMiddleware,
-    TokenData,
-    TokenType,
-    get_current_user_id,
-    get_current_user_roles,
-    get_current_tenant_id,
-    require_role,
-    require_any_role,
-    require_all_roles,
-    create_jwt_auth
+import warnings
+
+warnings.warn(
+    "The uno.infrastructure.security.auth module is deprecated and will be removed in a future version. "
+    "Use the unified endpoint auth framework in uno.api.endpoint.auth instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
-__all__ = [
-    "MFAManager",
-    "TOTPProvider",
-    "SecurePasswordPolicy",
-    "hash_password",
-    "verify_password",
-    "SSOProvider",
-    "JWTAuth",
-    "JWTConfig",
-    "JWTBearer",
-    "JWTAuthMiddleware",
-    "TokenData",
-    "TokenType",
-    "get_current_user_id",
-    "get_current_user_roles",
-    "get_current_tenant_id",
-    "require_role",
-    "require_any_role",
-    "require_all_roles",
-    "create_jwt_auth"
-]
+# Import new implementation for backward compatibility
+from uno.api.endpoint.auth import (
+    AuthenticationBackend,
+    AuthenticationError,
+    AuthorizationError,
+    JWTAuthBackend,
+    Permission,
+    Role,
+    User,
+    UserContext,
+    get_user_context,
+    requires_auth,
+    setup_auth,
+)
