@@ -11,18 +11,65 @@ Key components:
 - AggregateRoot: Base class for aggregate roots
 - ValueObject: Base class for value objects
 - Identity: Utilities for entity identity management
-- DomainEvent: Base class for domain events
+- Specification: Classes for implementing the Specification pattern
+- Repository: Implementation of the Repository pattern with specification support
 """
 
 from uno.domain.entity.base import EntityBase
 from uno.domain.entity.identity import Identity, IdentityGenerator
 from uno.domain.entity.value_object import ValueObject
 from uno.domain.entity.aggregate import AggregateRoot
+from uno.domain.entity.protocols import EntityProtocol, AggregateRootProtocol, ValueObjectProtocol
+from uno.domain.entity.repository import EntityRepository
+from uno.domain.entity.repository_memory import InMemoryRepository
+from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository, EntityMapper
+
+# Import specification subpackage
+from uno.domain.entity.specification import (
+    Specification,
+    PredicateSpecification,
+    AttributeSpecification,
+    CompositeSpecification,
+    AndSpecification,
+    OrSpecification,
+    NotSpecification,
+    AllSpecification,
+    AnySpecification,
+    SpecificationTranslator,
+    SQLSpecificationTranslator,
+    PostgreSQLSpecificationTranslator
+)
 
 __all__ = [
+    # Entity framework
     'EntityBase',
     'Identity',
     'IdentityGenerator',
     'ValueObject',
     'AggregateRoot',
+    
+    # Protocols
+    'EntityProtocol',
+    'AggregateRootProtocol',
+    'ValueObjectProtocol',
+    
+    # Repository
+    'EntityRepository',
+    'InMemoryRepository',
+    'SQLAlchemyRepository',
+    'EntityMapper',
+    
+    # Specification pattern
+    'Specification',
+    'PredicateSpecification',
+    'AttributeSpecification',
+    'CompositeSpecification',
+    'AndSpecification',
+    'OrSpecification',
+    'NotSpecification',
+    'AllSpecification',
+    'AnySpecification',
+    'SpecificationTranslator',
+    'SQLSpecificationTranslator',
+    'PostgreSQLSpecificationTranslator'
 ]

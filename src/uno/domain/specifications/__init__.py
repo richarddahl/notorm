@@ -1,8 +1,20 @@
 """
 Domain specifications package.
 
+DEPRECATED: This module has been deprecated and replaced by the new domain entity framework
+in uno.domain.entity.specification. Please use the new implementation instead.
+
 This package contains specification pattern implementations for domain queries.
 """
+
+import warnings
+
+warnings.warn(
+    "The uno.domain.specifications module is deprecated. "
+    "Use uno.domain.entity.specification instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from uno.domain.specifications.base_specification import (
     Specification,
