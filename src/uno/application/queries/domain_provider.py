@@ -15,6 +15,14 @@ from uno.queries.domain_services import (
     QueryValueService,
     QueryService,
 )
+from uno.application.queries.queries_interfaces import (
+    IQueryPathRepository,
+    IQueryValueRepository,
+    IQueryRepository,
+    IQueryPathService,
+    IQueryValueService,
+    IQueryService,
+)
 from uno.queries.filter_manager import get_filter_manager
 from uno.queries.executor import get_query_executor
 
@@ -23,35 +31,40 @@ def configure_queries_services(container):
     """Configure Queries module services in the DI container."""
     logger = logging.getLogger("uno.queries")
 
-    # Register repositories
-    container.register(QueryPathRepository, lifecycle=ServiceLifecycle.SCOPED)
-    container.register(QueryValueRepository, lifecycle=ServiceLifecycle.SCOPED)
-    container.register(QueryRepository, lifecycle=ServiceLifecycle.SCOPED)
+    # Register repositories by interface
+    container.register(IQueryPathRepository, QueryPathRepository, lifecycle=ServiceLifecycle.SCOPED)
+    container.register(IQueryValueRepository, QueryValueRepository, lifecycle=ServiceLifecycle.SCOPED)
+    container.register(IQueryRepository, QueryRepository, lifecycle=ServiceLifecycle.SCOPED)
 
-    # Register services
+    # Register services by interface
     container.register(
-        QueryPathService,
+        IQueryPathService,
         lambda c: QueryPathService(
-            repository=c.resolve(QueryPathRepository)
+            repository=c.resolve(IQueryPathRepository)
         ),
         lifecycle=ServiceLifecycle.SCOPED,
     )
     container.register(
-        QueryValueService,
+        IQueryValueService,
         lambda c: QueryValueService(
-            repository=c.resolve(QueryValueRepository)
+            repository=c.resolve(IQueryValueRepository)
         ),
         lifecycle=ServiceLifecycle.SCOPED,
     )
     container.register(
-        QueryService,
+        IQueryService,
         lambda c: QueryService(
-            repository=c.resolve(QueryRepository),
-            query_value_service=c.resolve(QueryValueService),
-            query_path_service=c.resolve(QueryPathService),
+            repository=c.resolve(IQueryRepository),
+            query_value_service=c.resolve(IQueryValueService),
+            query_path_service=c.resolve(IQueryPathService),
             logger=logger,
         ),
         lifecycle=ServiceLifecycle.SCOPED,
     )
+
+    # Optionally, keep registering concrete classes for legacy compatibility (if needed)
+    # container.register(QueryPathRepository, ...)
+    # container.register(QueryPathService, ...)
+    # etc.
 
 
