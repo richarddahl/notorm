@@ -438,16 +438,5 @@ async def get_executions_by_workflow(
     return [record.to_dict() for record in result.value]
 
 
-def register_workflow_routers(app):
+
     """
-    Register all workflow routers with a FastAPI application.
-    
-    Args:
-        app: The FastAPI application
-    """
-    app.include_router(workflow_def_router)
-    app.include_router(workflow_trigger_router)
-    app.include_router(workflow_condition_router)
-    app.include_router(workflow_action_router)
-    app.include_router(workflow_recipient_router)
-    app.include_router(workflow_execution_router)

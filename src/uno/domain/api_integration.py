@@ -62,39 +62,39 @@ from uno.values.domain_services import (
 
 
 def register_domain_value_endpoints_api(
-    app_or_router: Union[FastAPI, APIRouter],
+    app_or_router: FastAPI | APIRouter,
     path_prefix: str = "/api/v1/values",
-    dependencies: List[Any] = None,
+    dependencies: list[Any] | None = None,
     include_auth: bool = True,
-) -> Dict[str, List[Any]]:
+) -> dict[str, list[Any]]:
     """
     Register value endpoints with the FastAPI app or router using domain-driven design.
-    
+
     This function creates RESTful API endpoints for the Values module, including
     CRUD operations for different value types following DDD principles.
-    
+
     Args:
         app_or_router: The FastAPI application or router to register the endpoints with
         path_prefix: Prefix for all endpoint URLs
         dependencies: List of dependencies to apply to all endpoints
         include_auth: Whether to include authentication dependencies
-        
+
     Returns:
         A dictionary containing the registered endpoints
-        
+
     Raises:
         ValueError: If app_or_router is neither a FastAPI app nor an APIRouter
     """
     # Determine if app_or_router is a FastAPI app or an APIRouter
     is_app = isinstance(app_or_router, FastAPI)
     is_router = isinstance(app_or_router, APIRouter)
-    
+
     if not (is_app or is_router):
         raise ValueError("app_or_router must be either a FastAPI app or an APIRouter")
-    
+
     # Set up endpoint factory
     endpoint_factory = UnoEndpointFactory()
-    
+
     # Create repositories
     repositories = {
         "text": TextValueRepository(),
@@ -106,7 +106,7 @@ def register_domain_value_endpoints_api(
         "decimal": DecimalValueRepository(),
         "attachment": AttachmentRepository(),
     }
-    
+
     # Create schema managers
     schema_managers = {
         "text": TextValueSchemaManager(),
@@ -118,7 +118,7 @@ def register_domain_value_endpoints_api(
         "decimal": DecimalValueSchemaManager(),
         "attachment": AttachmentSchemaManager(),
     }
-    
+
     # Entity types
     entity_types = {
         "text": TextValue,
@@ -130,26 +130,26 @@ def register_domain_value_endpoints_api(
         "decimal": DecimalValue,
         "attachment": Attachment,
     }
-    
+
     # Create default dependencies if none provided
     if dependencies is None:
         dependencies = []
-        
+
         # Add authentication dependencies if requested
         if include_auth:
             # This would typically check for auth providers and add appropriate dependencies
             pass
-    
+
     # Create endpoint target
     target = app_or_router
-    
+
     endpoints = {}
-    
+
     # Create endpoints for each value type
     for value_type, repository in repositories.items():
         entity_type = entity_types[value_type]
         schema_manager = schema_managers[value_type]
-        
+
         endpoints[value_type] = endpoint_factory.create_endpoints(
             app=target if is_app else None,
             router=target if is_router else None,
@@ -161,5 +161,5 @@ def register_domain_value_endpoints_api(
             endpoint_tags=["Values", value_type.capitalize()],
             dependencies=dependencies,
         )
-    
+
     return endpoints

@@ -170,13 +170,3 @@ async def add_meta_record_to_attribute(
     
     return result.value.to_dict()
 
-
-def register_attribute_routers(app):
-    """
-    Register all attribute routers with a FastAPI application.
-    
-    Args:
-        app: The FastAPI application
-    """
-    app.include_router(attribute_router)
-    app.include_router(attribute_type_router)

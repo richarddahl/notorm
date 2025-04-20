@@ -71,6 +71,9 @@ from uno.core.feature_factory import FeatureFactory
 # Add modern lifespan event handlers for FastAPI
 from contextlib import asynccontextmanager
 
+# Centralized router registration
+from uno.api.router import register_all_routers
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -103,27 +106,8 @@ async def lifespan(app: FastAPI):
 
         # Set up API routers
         logger.info("Setting up API routers")
-
-        # Dynamically include feature routers based on Domain-Driven layouts
-        for feat in [
-            "authorization",
-            "meta",
-            "database",
-            "messaging",
-            "queries",
-            "reports",
-            "values",
-            "workflows",
-        ]:
-            try:
-                ff = FeatureFactory(feat)
-                for router in ff.get_routers():
-                    api_app.include_router(router)
-                    logger.info(f"{feat} router included")
-            except ModuleNotFoundError:
-                logger.debug(f"{feat} module not available")
-            except AttributeError as e:
-                logger.debug(f"{feat} domain_endpoints missing router: {e}")
+        register_all_routers(api_app)
+        logger.info("All routers registered via central module")
 
         # Example domain endpoints using modern dependency injection
         # try:
