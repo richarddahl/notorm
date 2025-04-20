@@ -12,7 +12,6 @@ architecture patterns, including:
 import asyncio
 import logging
 from datetime import datetime, UTC
-from typing import Dict, List, Any, Optional
 
 from uno.core.events import (
     DomainEventProtocol as UnoEvent,
@@ -40,7 +39,7 @@ class OrderCreatedEvent(UnoEvent):
         self,
         order_id: str,
         customer_id: str,
-        items: List[Dict[str, Any]],
+        items: list[dict[str, object]],
         total_amount: float,
         **kwargs,
     ):
@@ -85,7 +84,7 @@ class OrderShippedEvent(UnoEvent):
 class OrderCancelledEvent(UnoEvent):
     """Event raised when an order is cancelled."""
 
-    def __init__(self, order_id: str, reason: Optional[str] = None, **kwargs):
+    def __init__(self, order_id: str, reason: str | None = None, **kwargs):
         """
         Initialize an order cancelled event.
 

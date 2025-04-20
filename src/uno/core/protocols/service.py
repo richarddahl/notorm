@@ -5,8 +5,7 @@ This module defines the service pattern protocols used throughout the system.
 Services encapsulate business logic and orchestrate domain operations.
 """
 
-from collections.abc import Protocol
-from typing import Any, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 # NOTE: Result is always imported from uno.core.errors.result - this is the canonical implementation for the Result monad pattern.
 from uno.core.errors.result import Result
@@ -31,7 +30,7 @@ class ServiceProtocol(Protocol[T, ID]):
         ID: The type of the entity's identifier
     """
     
-    async def get_by_id(self, id: ID) -> Result[T | None, Any]:
+    async def get_by_id(self, id: ID) -> Result[T | None, object]:
         """
         Retrieve an entity by its unique identifier.
         
@@ -43,7 +42,7 @@ class ServiceProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def get_all(self) -> Result[list[T], Any]:
+    async def get_all(self) -> Result[list[T], object]:
         """
         Retrieve all entities of this type.
         
@@ -52,7 +51,7 @@ class ServiceProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def create(self, data: Any) -> Result[T, Any]:
+    async def create(self, data: object) -> Result[T, object]:
         """
         Create a new entity.
         
@@ -64,7 +63,7 @@ class ServiceProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def update(self, id: ID, data: Any) -> Result[T, Any]:
+    async def update(self, id: ID, data: object) -> Result[T, object]:
         """
         Update an existing entity.
         
@@ -77,7 +76,7 @@ class ServiceProtocol(Protocol[T, ID]):
         """
         ...
     
-    async def delete(self, id: ID) -> Result[None, Any]:
+    async def delete(self, id: ID) -> Result[None, object]:
         """
         Delete an entity.
         
@@ -105,7 +104,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         DTO: The Data Transfer Object type for input/output
     """
     
-    async def create_from_dto(self, dto: DTO) -> Result[T, Any]:
+    async def create_from_dto(self, dto: DTO) -> Result[T, object]:
         """
         Create a new entity from a DTO.
         
@@ -117,7 +116,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         """
         ...
     
-    async def update_from_dto(self, id: ID, dto: DTO) -> Result[T, Any]:
+    async def update_from_dto(self, id: ID, dto: DTO) -> Result[T, object]:
         """
         Update an existing entity using a DTO.
         
@@ -130,7 +129,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         """
         ...
     
-    async def to_dto(self, entity: T) -> Result[DTO, Any]:
+    async def to_dto(self, entity: T) -> Result[DTO, object]:
         """
         Convert an entity to a DTO.
         
@@ -142,7 +141,7 @@ class CrudServiceProtocol(ServiceProtocol[T, ID], Protocol[T, ID, DTO]):
         """
         ...
     
-    async def to_entity(self, dto: DTO) -> Result[T, Any]:
+    async def to_entity(self, dto: DTO) -> Result[T, object]:
         """
         Convert a DTO to an entity.
         
@@ -168,7 +167,7 @@ class QueryServiceProtocol(Protocol[T]):
         T: The entity/domain object type this service queries
     """
     
-    async def query(self, query_params: dict[str, Any]) -> Result[list[T], Any]:
+    async def query(self, query_params: dict[str, object]) -> Result[list[T], object]:
         """
         Execute a query with the given parameters.
         
@@ -180,7 +179,7 @@ class QueryServiceProtocol(Protocol[T]):
         """
         ...
     
-    async def query_single(self, query_params: dict[str, Any]) -> Result[T | None, Any]:
+    async def query_single(self, query_params: dict[str, object]) -> Result[T | None, object]:
         """
         Execute a query expecting a single result.
         
@@ -192,7 +191,7 @@ class QueryServiceProtocol(Protocol[T]):
         """
         ...
     
-    async def count(self, query_params: dict[str, Any]) -> Result[int, Any]:
+    async def count(self, query_params: dict[str, object]) -> Result[int, object]:
         """
         Count the results of a query.
         

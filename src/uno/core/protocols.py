@@ -13,24 +13,12 @@ from abc import abstractmethod
 from datetime import datetime
 import uuid
 import logging
-from typing import (
-    Protocol,
-    runtime_checkable,
-    Any,
-    TypeVar,
-    Self,
-    ClassVar,
-    TypedDict,
-    NotRequired,
-    TypeGuard,
-    cast,
-    Literal,
-    overload,
-    get_origin,
-    get_args,
-    get_type_hints,
-    Annotated,
-)
+from typing import TypeVar, runtime_checkable, cast
+from collections.abc import Protocol
+from typing_extensions import NotRequired, TypeGuard, Self
+from typing import Literal, ClassVar, TypedDict, overload, get_origin, get_args, get_type_hints, Annotated
+import uuid
+import logging
 
 
 # =============================================================================
@@ -76,7 +64,7 @@ class QueryOptions(TypedDict, total=False):
 # =============================================================================
 
 
-def is_entity(obj: Any) -> TypeGuard["Entity"]:
+def is_entity(obj: object) -> TypeGuard["Entity"]:
     """
     Type guard to check if an object is an Entity.
 
@@ -94,7 +82,7 @@ def is_entity(obj: Any) -> TypeGuard["Entity"]:
     )
 
 
-def is_aggregate_root(obj: Any) -> TypeGuard["AggregateRoot"]:
+def is_aggregate_root(obj: object) -> TypeGuard["AggregateRoot"]:
     """
     Type guard to check if an object is an AggregateRoot.
 
@@ -112,7 +100,7 @@ def is_aggregate_root(obj: Any) -> TypeGuard["AggregateRoot"]:
     )
 
 
-def is_value_object(obj: Any) -> TypeGuard["ValueObject"]:
+def is_value_object(obj: object) -> TypeGuard["ValueObject"]:
     """
     Type guard to check if an object is a ValueObject.
 
@@ -145,7 +133,7 @@ class Entity(Protocol):
     their attributes.
     """
 
-    id: Any
+    id: object
     created_at: datetime
     updated_at: datetime | None
 

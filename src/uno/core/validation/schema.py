@@ -5,21 +5,19 @@ This module provides utilities for validating data against Pydantic schemas,
 integrating Pydantic validation with the Uno validation framework.
 """
 
-import inspect
-from functools import wraps
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast, get_type_hints, overload
+from collections.abc import Callable
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, ValidationError as PydanticValidationError
-from pydantic.fields import FieldInfo
 
-from uno.core.errors.result import ValidationResult, ValidationError, ErrorSeverity
-from uno.core.validation.validator import Validator, ValidationContext
+from uno.core.errors.result import ErrorSeverity, ValidationError, ValidationResult
+from uno.core.validation.validator import ValidationContext, Validator
 
 T = TypeVar('T', bound=BaseModel)
 D = TypeVar('D')  # Data type
 
 
-class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
+class SchemaValidator(Validator[dict[str, object] | BaseModel]):
     """
     Validator for Pydantic schemas.
     
@@ -27,7 +25,7 @@ class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
     Pydantic validation errors to Uno ValidationErrors.
     """
     
-    def __init__(self, schema_type: Type[BaseModel], strict: bool = False):
+    def __init__(self, schema_type: type[BaseModel], strict: bool = False):
         """
         Initialize a schema validator.
         
@@ -39,8 +37,8 @@ class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
         self.strict = strict
     
     def _validate(
-        self, 
-        obj: Union[Dict[str, Any], BaseModel], 
+        self,
+        obj: dict[str, object] | BaseModel,
         context: ValidationContext
     ) -> None:
         """
@@ -63,8 +61,8 @@ class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
             self._convert_errors(e, context)
     
     def _convert_errors(
-        self, 
-        error: PydanticValidationError, 
+        self,
+        error: PydanticValidationError,
         context: ValidationContext
     ) -> None:
         """
@@ -76,8 +74,8 @@ class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
         """
         for err in error.errors():
             # Extract field path, message, and type
-            loc = err.get("loc", [])
-            field_path = ".".join(str(l) for l in loc)
+            loc: tuple[str, ...] = err.get("loc", [])
+            field_path = ".".join(str(loc_item) for loc_item in loc)
             msg = err.get("msg", "Validation error")
             error_type = err.get("type", "")
             
@@ -91,7 +89,7 @@ class SchemaValidator(Validator[Union[Dict[str, Any], BaseModel]]):
             )
 
 
-def schema_validator(schema_type: Type[T], strict: bool = False) -> SchemaValidator:
+def schema_validator(schema_type: type[T], strict: bool = False) -> SchemaValidator:
     """
     Create a schema validator for a Pydantic schema.
     
@@ -105,7 +103,7 @@ def schema_validator(schema_type: Type[T], strict: bool = False) -> SchemaValida
     return SchemaValidator(schema_type, strict=strict)
 
 
-def validate_schema(schema_type: Type[T], strict: bool = False) -> Callable[[Dict[str, Any]], ValidationResult[T]]:
+def validate_schema(schema_type: type[T], strict: bool = False) -> Callable[[dict[str, object]], ValidationResult[T]]:
     """
     Create a function that validates data against a Pydantic schema.
     
@@ -118,7 +116,7 @@ def validate_schema(schema_type: Type[T], strict: bool = False) -> Callable[[Dic
     """
     validator = schema_validator(schema_type, strict=strict)
     
-    def validate(data: Dict[str, Any]) -> ValidationResult[T]:
+    def validate(data: dict[str, object]) -> ValidationResult[T]:
         """
         Validate data against a Pydantic schema.
         

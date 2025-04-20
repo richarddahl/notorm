@@ -23,7 +23,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
 from enum import Enum
-from typing import Any, Dict, List, Optional, Callable, TypeVar, Generic, Union, Set, Awaitable, cast
+from typing import Any, TypeVar, Generic, Awaitable, cast
+# NOTE: Use built-in generics (list, dict, etc.) and | for unions. Callable/Union/Optional/List/Dict/Set imports removed.
 
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -36,10 +37,11 @@ from uno.dependencies.interfaces import ConfigProtocol
 # Type variables
 T = TypeVar('T')
 N = TypeVar('N', int, float)
+from collections.abc import Callable
 F = TypeVar('F', bound=Callable[..., Any])
 
 # Context variable for metrics context
-_metrics_context = contextvars.ContextVar[Dict[str, Any]]("metrics_context", default={})
+_metrics_context = contextvars.ContextVar[dict[str, Any]]("metrics_context", default={})
 
 
 class MetricType(str, Enum):
@@ -78,14 +80,14 @@ class MetricValue:
     """Value of a metric with metadata."""
     
     name: str
-    value: Union[int, float, List[float]]
+    value: int | float | list[float]
     type: MetricType
     unit: MetricUnit = MetricUnit.NONE
-    tags: Dict[str, str] = field(default_factory=dict)
-    description: Optional[str] = None
+    tags: dict[str, str] = field(default_factory=dict)
+    description: str | None = None
     timestamp: float = field(default_factory=lambda: time.time())
     
-    def with_tags(self, **tags: str) -> 'MetricValue':
+    def with_tags(self, **tags: str) -> MetricValue:
         """Add tags to the metric value."""
         combined_tags = {**self.tags, **tags}
         return MetricValue(
@@ -108,16 +110,18 @@ class MetricsContext:
     are collected, which can be helpful for filtering and analysis.
     """
     
-    trace_id: Optional[str] = None
-    service_name: Optional[str] = None
-    environment: Optional[str] = None
-    component: Optional[str] = None
-    instance_id: Optional[str] = None
-    region: Optional[str] = None
-    zone: Optional[str] = None
-    additional_tags: Dict[str, str] = field(default_factory=dict)
+    trace_id: str | None = None
+    service_name: str | None = None
+    environment: str | None = None
+    component: str | None = None
+    instance_id: str | None = None
+    region: str | None = None
+    zone: str | None = None
+    export_interval: float = 60.0
+    export_timeout: float = 10.0
+    additional_tags: dict[str, str] = field(default_factory=dict)
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         """Convert context to a dictionary."""
         result = {}
         
@@ -131,7 +135,7 @@ class MetricsContext:
         
         return result
     
-    def merge(self, other: Union["MetricsContext", Dict[str, Any]]) -> "MetricsContext":
+    def merge(self, other: "MetricsContext" | dict[str, object]) -> "MetricsContext":
         """
         Merge with another context.
         
@@ -154,7 +158,7 @@ class MetricsContext:
         
         # Set direct properties
         for key in ["trace_id", "service_name", "environment", "component", 
-                    "instance_id", "region", "zone"]:
+                    "instance_id", "region", "zone", "export_interval", "export_timeout"]:
             if key in merged:
                 setattr(result, key, merged.pop(key))
         
@@ -175,16 +179,17 @@ class MetricsConfig:
     
     enabled: bool = True
     service_name: str = "uno"
-    environment: str = "development"
-    export_interval: float = 60.0  # seconds
+    environment: str = "production"
+    export_interval: float = 60.0
+    export_timeout: float = 10.0
     console_export: bool = True
     prometheus_export: bool = True
     prometheus_namespace: str = "uno"
     include_trace_id: bool = True
-    default_tags: Dict[str, str] = field(default_factory=dict)
+    default_tags: dict[str, str] = field(default_factory=dict)
     
     @classmethod
-    def from_config(cls, config: ConfigProtocol) -> "MetricsConfig":
+    def from_config(cls, config: ConfigProtocol) -> MetricsConfig:
         """
         Create MetricsConfig from ConfigProtocol.
         
@@ -204,8 +209,9 @@ class MetricsConfig:
         return cls(
             enabled=config.get("metrics.enabled", True),
             service_name=config.get("service.name", "uno"),
-            environment=config.get("environment", "development"),
+            environment=config.get("environment", "production"),
             export_interval=config.get("metrics.export_interval", 60.0),
+            export_timeout=config.get("metrics.export_timeout", 10.0),
             console_export=config.get("metrics.console_export", True),
             prometheus_export=config.get("metrics.prometheus_export", True),
             prometheus_namespace=config.get("metrics.prometheus_namespace", "uno"),
@@ -214,15 +220,15 @@ class MetricsConfig:
         )
 
 
-class Metric(ABC, Generic[T]):
+class Metric(ABC):
     """Base class for all metrics."""
     
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ):
         """
         Initialize a metric.
@@ -245,7 +251,7 @@ class Metric(ABC, Generic[T]):
         pass
 
 
-class Counter(Metric[int]):
+class Counter(Metric):
     """
     Counter metric that can only increase.
     
@@ -256,9 +262,9 @@ class Counter(Metric[int]):
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         unit: MetricUnit = MetricUnit.COUNT,
-        tags: Optional[Dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ):
         """
         Initialize a counter.

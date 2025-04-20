@@ -14,19 +14,15 @@ import asyncio
 import time
 import statistics
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import Dict, List, Any, Optional, Set, Tuple, Union, Callable
+# from datetime import datetime, UTC  # Unused imports removed
+from typing import Any
+# NOTE: Callable is not used; if needed, use from collections.abc import Callable for runtime checks
+
 
 from uno.core.logging.framework import get_logger
 from uno.core.metrics.framework import (
-    MetricType, 
-    MetricUnit,
-    MetricValue,
     MetricsRegistry,
     get_metrics_registry,
-    Timer,
-    Counter,
-    Histogram,
 )
 
 
@@ -41,14 +37,14 @@ class TransactionMetrics:
     
     transaction_id: str
     start_time: float = field(default_factory=time.time)
-    end_time: Optional[float] = None
+    end_time: float | None = None
     success: bool = False
     query_count: int = 0
     row_count: int = 0
     isolation_level: str = "READ COMMITTED"
     savepoints: int = 0
     rollbacks_to_savepoint: int = 0
-    error_message: Optional[str] = None
+    error_message: str | None = None
     
     @property
     def duration_ms(self) -> float:
@@ -80,7 +76,7 @@ class TransactionMetrics:
         """Record a rollback to savepoint."""
         self.rollbacks_to_savepoint += 1
     
-    def complete(self, success: bool, error: Optional[str] = None) -> None:
+    def complete(self, success: bool, error: str | None = None) -> None:
         """
         Mark the transaction as complete.
         
@@ -92,7 +88,7 @@ class TransactionMetrics:
         self.success = success
         self.error_message = error
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert transaction metrics to a dictionary."""
         return {
             "transaction_id": self.transaction_id,
@@ -119,7 +115,7 @@ class TransactionMetricsTracker:
     
     def __init__(
         self,
-        registry: Optional[MetricsRegistry] = None,
+        registry: MetricsRegistry | None = None,
     ):
         """
         Initialize the transaction metrics tracker.
@@ -129,8 +125,8 @@ class TransactionMetricsTracker:
         """
         self.registry = registry or get_metrics_registry()
         self.logger = get_logger("uno.metrics.transaction")
-        self._current_transactions: Dict[str, TransactionMetrics] = {}
-        self._transaction_history: List[TransactionMetrics] = []
+        self._current_transactions: dict[str, TransactionMetrics] = {}
+        self._transaction_history: list[TransactionMetrics] = []
         self._max_history_size = 1000
         self._lock = asyncio.Lock()
         
@@ -217,7 +213,7 @@ class TransactionMetricsTracker:
         self,
         transaction_id: str,
         success: bool,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> Optional[TransactionMetrics]:
         """
         End tracking a transaction.
@@ -225,8 +221,8 @@ class TransactionMetricsTracker:
         Args:
             transaction_id: Unique identifier for the transaction
             success: Whether the transaction succeeded
-            error: Optional error message for failed transactions
-            
+            error: Error message for failed transactions (if any)
+        
         Returns:
             Transaction metrics object or None if not found
         """
@@ -314,7 +310,7 @@ class TransactionMetricsTracker:
     async def get_transaction_metrics(
         self,
         transaction_id: str,
-    ) -> Optional[TransactionMetrics]:
+    ) -> TransactionMetrics | None:
         """
         Get metrics for a specific transaction.
         
@@ -335,7 +331,7 @@ class TransactionMetricsTracker:
         
         return None
     
-    async def get_active_transactions(self) -> List[TransactionMetrics]:
+    async def get_active_transactions(self) -> list[TransactionMetrics]:
         """
         Get metrics for all active transactions.
         
@@ -345,7 +341,7 @@ class TransactionMetricsTracker:
         async with self._lock:
             return list(self._current_transactions.values())
     
-    async def get_recent_transactions(self, limit: int = 100) -> List[TransactionMetrics]:
+    async def get_recent_transactions(self, limit: int = 100) -> list[TransactionMetrics]:
         """
         Get metrics for recent transactions.
         
@@ -358,7 +354,7 @@ class TransactionMetricsTracker:
         async with self._lock:
             return self._transaction_history[-limit:]
     
-    async def get_transaction_statistics(self) -> Dict[str, Any]:
+    async def get_transaction_statistics(self) -> dict[str, float | int]:
         """
         Get statistics for all tracked transactions.
         
@@ -434,9 +430,9 @@ class TransactionContext:
     def __init__(
         self,
         session: Any,
-        transaction_id: Optional[str] = None,
+        transaction_id: str | None = None,
         isolation_level: str = "READ COMMITTED",
-        tracker: Optional[TransactionMetricsTracker] = None,
+        tracker: TransactionMetricsTracker | None = None,
     ):
         """
         Initialize a transaction context.
@@ -457,7 +453,7 @@ class TransactionContext:
         self.error = None
         self.logger = get_logger("uno.db.transaction")
     
-    async def __aenter__(self) -> 'TransactionContext':
+    async def __aenter__(self) -> "TransactionContext":
         """Start the transaction and metrics tracking."""
         # Start transaction
         self.transaction = await self.session.begin()
@@ -519,7 +515,7 @@ class TransactionContext:
             rows=rows,
         )
     
-    async def savepoint(self, name: Optional[str] = None) -> Any:
+    async def savepoint(self, name: str | None = None) -> Any:
         """
         Create a savepoint.
         

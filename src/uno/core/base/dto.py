@@ -10,16 +10,8 @@ throughout the framework for transferring data between layers, including
 validation, serialization, and API documentation.
 """
 
-from typing import (
-    Set,
-    Dict,
-    Any,
-    Type,
-    TypeVar,
-    Generic,
-    List,
-    Optional,
-)
+from typing import TypeVar, Generic
+
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +31,7 @@ class BaseDTO(BaseModel):
     """
 
     @classmethod
-    def create_field_dict(cls, field_name: str) -> Dict[str, Any]:
+    def create_field_dict(cls, field_name: str) -> dict[str, object]:
         """
         Create a field dictionary for a given field name.
 
@@ -64,7 +56,7 @@ class BaseDTO(BaseModel):
         }
 
     @classmethod
-    def get_field_annotations(cls) -> Dict[str, Any]:
+    def get_field_annotations(cls) -> dict[str, object]:
         """
         Get a dictionary of field names to their annotations.
 
@@ -82,11 +74,11 @@ class DTOConfig(BaseModel):
     include or exclude and the base class to use.
     """
 
-    dto_base: Type[BaseDTO] = BaseDTO
-    exclude_fields: Set[str] = Field(default_factory=set)
-    include_fields: Set[str] = Field(default_factory=set)
+    dto_base: type[BaseDTO] = BaseDTO
+    exclude_fields: set[str] = Field(default_factory=set)
+    include_fields: set[str] = Field(default_factory=set)
 
-    def create_dto(self, dto_name: str, model: Type[BaseModel]) -> Type[BaseDTO]:
+    def create_dto(self, dto_name: str, model: type[BaseModel]) -> type[BaseDTO]:
         """
         Create a DTO for a model based on this configuration.
 
@@ -180,7 +172,7 @@ class PaginatedListDTO(BaseDTO, Generic[T]):
         T: The type of items in the list
     """
 
-    items: List[T] = Field(..., description="The list of items")
+    items: list[T] = Field(..., description="The list of items")
     total: int = Field(..., description="The total number of items")
     page: int = Field(1, description="The current page number")
     page_size: int = Field(25, description="The number of items per page")
@@ -195,7 +187,7 @@ class WithMetadataDTO(BaseDTO):
     such as created_at, updated_at, and version information.
     """
 
-    created_at: Optional[str] = Field(None, description="The creation timestamp")
-    updated_at: Optional[str] = Field(None, description="The last update timestamp")
-    version: Optional[int] = Field(None, description="The object version number")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    created_at: str | None = Field(None, description="The creation timestamp")
+    updated_at: str | None = Field(None, description="The last update timestamp")
+    version: int | None = Field(None, description="The object version number")
+    metadata: dict[str, object] | None = Field(None, description="Additional metadata")
