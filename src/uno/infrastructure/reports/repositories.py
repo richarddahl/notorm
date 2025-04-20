@@ -9,7 +9,6 @@ This module provides concrete implementations of the repository interfaces
 defined in the interfaces module, using the UnoBaseRepository as a foundation.
 """
 
-from typing import List, Optional, Dict, Any, Type, cast
 from datetime import datetime, UTC
 import logging
 from enum import Enum
@@ -59,13 +58,13 @@ class ReportTemplateRepository(
 ):
     """Repository implementation for ReportTemplate."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportTemplateModel, logger)
 
     async def get_by_id(
-        self, template_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTemplate]]:
+        self, template_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportTemplate | None]:
         """Get a report template by ID."""
         try:
             session = session or self.session
@@ -86,17 +85,11 @@ class ReportTemplateRepository(
 
             return Success(ReportTemplate.from_orm(model))
         except Exception as e:
-            return Failure(
-                ReportError(
-                    f"Failed to get report template: {str(e)}",
-                    ErrorCode.DATABASE_ERROR,
-                    template_id=template_id,
-                )
-            )
+            return Failure(Exception(f"Failed to get report template: {str(e)}"))
 
     async def get_by_name(
-        self, name: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTemplate]]:
+        self, name: str, session: AsyncSession | None = None
+    ) -> Result[ReportTemplate | None]:
         """Get a report template by name."""
         try:
             session = session or self.session
@@ -127,9 +120,9 @@ class ReportTemplateRepository(
 
     async def list_templates(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[ReportTemplate]]:
+        filters: dict[str, Any] | None = None,
+        session: AsyncSession | None = None,
+    ) -> Result[list[ReportTemplate]]:
         """List report templates, optionally filtered."""
         try:
             session = session or self.session
@@ -163,7 +156,7 @@ class ReportTemplateRepository(
             )
 
     async def create(
-        self, template: ReportTemplate, session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: AsyncSession | None = None
     ) -> Result[ReportTemplate]:
         """Create a new report template."""
         try:
@@ -197,7 +190,7 @@ class ReportTemplateRepository(
             )
 
     async def update(
-        self, template: ReportTemplate, session: Optional[AsyncSession] = None
+        self, template: ReportTemplate, session: AsyncSession | None = None
     ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         try:
@@ -248,7 +241,7 @@ class ReportTemplateRepository(
             )
 
     async def delete(
-        self, template_id: str, session: Optional[AsyncSession] = None
+        self, template_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """Delete a report template by ID."""
         try:
@@ -286,13 +279,13 @@ class ReportFieldDefinitionRepository(
 ):
     """Repository implementation for ReportFieldDefinition."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportFieldDefinitionModel, logger)
 
     async def get_by_id(
-        self, field_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportFieldDefinition]]:
+        self, field_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportFieldDefinition | None]:
         """Get a report field definition by ID."""
         try:
             session = session or self.session
@@ -321,8 +314,8 @@ class ReportFieldDefinitionRepository(
             )
 
     async def list_by_template(
-        self, template_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportFieldDefinition]]:
+        self, template_id: str, session: AsyncSession | None = None
+    ) -> Result[list[ReportFieldDefinition]]:
         """List field definitions for a template."""
         try:
             session = session or self.session
@@ -359,12 +352,14 @@ class ReportFieldDefinitionRepository(
             )
 
     async def create(
-        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: AsyncSession | None = None
     ) -> Result[ReportFieldDefinition]:
         """Create a new field definition."""
         try:
             session = session or self.session
-            model_data = field.model_dump(exclude={"id"} if field.id is None else set())
+            model_data = field.model_dump(
+                exclude={"id"} if field.id is None else set()
+            )
 
             # Remove relationship fields from data
             model_data.pop("parent_field", None)
@@ -391,7 +386,7 @@ class ReportFieldDefinitionRepository(
             )
 
     async def update(
-        self, field: ReportFieldDefinition, session: Optional[AsyncSession] = None
+        self, field: ReportFieldDefinition, session: AsyncSession | None = None
     ) -> Result[ReportFieldDefinition]:
         """Update an existing field definition."""
         try:
@@ -442,7 +437,7 @@ class ReportFieldDefinitionRepository(
             )
 
     async def delete(
-        self, field_id: str, session: Optional[AsyncSession] = None
+        self, field_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """Delete a field definition by ID."""
         try:
@@ -475,9 +470,9 @@ class ReportFieldDefinitionRepository(
 
     async def bulk_create(
         self,
-        fields: List[ReportFieldDefinition],
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[ReportFieldDefinition]]:
+        fields: list[ReportFieldDefinition],
+        session: AsyncSession | None = None,
+    ) -> Result[list[ReportFieldDefinition]]:
         """Create multiple field definitions."""
         try:
             session = session or self.session
@@ -506,13 +501,13 @@ class ReportTriggerRepository(
 ):
     """Repository implementation for ReportTrigger."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportTriggerModel, logger)
 
     async def get_by_id(
-        self, trigger_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportTrigger]]:
+        self, trigger_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportTrigger | None]:
         """Get a report trigger by ID."""
         try:
             session = session or self.session
@@ -538,8 +533,8 @@ class ReportTriggerRepository(
             )
 
     async def list_by_template(
-        self, template_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger]]:
+        self, template_id: str, session: AsyncSession | None = None
+    ) -> Result[list[ReportTrigger]]:
         """List triggers for a template."""
         try:
             session = session or self.session
@@ -561,8 +556,8 @@ class ReportTriggerRepository(
             )
 
     async def list_by_event_type(
-        self, event_type: str, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger]]:
+        self, event_type: str, session: AsyncSession | None = None
+    ) -> Result[list[ReportTrigger]]:
         """List triggers for an event type."""
         try:
             session = session or self.session
@@ -591,8 +586,8 @@ class ReportTriggerRepository(
             )
 
     async def list_active_scheduled_triggers(
-        self, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportTrigger]]:
+        self, session: AsyncSession | None = None
+    ) -> Result[list[ReportTrigger]]:
         """List all active scheduled triggers."""
         try:
             session = session or self.session
@@ -620,7 +615,7 @@ class ReportTriggerRepository(
             )
 
     async def create(
-        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: AsyncSession | None = None
     ) -> Result[ReportTrigger]:
         """Create a new trigger."""
         try:
@@ -652,7 +647,7 @@ class ReportTriggerRepository(
             )
 
     async def update(
-        self, trigger: ReportTrigger, session: Optional[AsyncSession] = None
+        self, trigger: ReportTrigger, session: AsyncSession | None = None
     ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         try:
@@ -701,7 +696,7 @@ class ReportTriggerRepository(
             )
 
     async def delete(
-        self, trigger_id: str, session: Optional[AsyncSession] = None
+        self, trigger_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """Delete a trigger by ID."""
         try:
@@ -736,7 +731,7 @@ class ReportTriggerRepository(
         self,
         trigger_id: str,
         timestamp: datetime,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """Update the last_triggered timestamp for a trigger."""
         try:
@@ -773,13 +768,13 @@ class ReportOutputRepository(
 ):
     """Repository implementation for ReportOutput."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportOutputModel, logger)
 
     async def get_by_id(
-        self, output_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportOutput]]:
+        self, output_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportOutput | None]:
         """Get a report output by ID."""
         try:
             session = session or self.session
@@ -805,8 +800,8 @@ class ReportOutputRepository(
             )
 
     async def list_by_template(
-        self, template_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportOutput]]:
+        self, template_id: str, session: AsyncSession | None = None
+    ) -> Result[list[ReportOutput]]:
         """List outputs for a template."""
         try:
             session = session or self.session
@@ -828,7 +823,7 @@ class ReportOutputRepository(
             )
 
     async def create(
-        self, output: ReportOutput, session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: AsyncSession | None = None
     ) -> Result[ReportOutput]:
         """Create a new output."""
         try:
@@ -861,7 +856,7 @@ class ReportOutputRepository(
             )
 
     async def update(
-        self, output: ReportOutput, session: Optional[AsyncSession] = None
+        self, output: ReportOutput, session: AsyncSession | None = None
     ) -> Result[ReportOutput]:
         """Update an existing output."""
         try:
@@ -912,7 +907,7 @@ class ReportOutputRepository(
             )
 
     async def delete(
-        self, output_id: str, session: Optional[AsyncSession] = None
+        self, output_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """Delete an output by ID."""
         try:
@@ -949,13 +944,13 @@ class ReportExecutionRepository(
 ):
     """Repository implementation for ReportExecution."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportExecutionModel, logger)
 
     async def get_by_id(
-        self, execution_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportExecution]]:
+        self, execution_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportExecution | None]:
         """Get a report execution by ID."""
         try:
             session = session or self.session
@@ -986,10 +981,10 @@ class ReportExecutionRepository(
     async def list_by_template(
         self,
         template_id: str,
-        status: Optional[str] = None,
+        status: str | None = None,
         limit: int = 100,
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[ReportExecution]]:
+        session: AsyncSession | None = None,
+    ) -> Result[list[ReportExecution]]:
         """List executions for a template."""
         try:
             session = session or self.session
@@ -1020,7 +1015,7 @@ class ReportExecutionRepository(
             )
 
     async def create(
-        self, execution: ReportExecution, session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: AsyncSession | None = None
     ) -> Result[ReportExecution]:
         """Create a new execution."""
         try:
@@ -1053,7 +1048,7 @@ class ReportExecutionRepository(
             )
 
     async def update(
-        self, execution: ReportExecution, session: Optional[AsyncSession] = None
+        self, execution: ReportExecution, session: AsyncSession | None = None
     ) -> Result[ReportExecution]:
         """Update an existing execution."""
         try:
@@ -1107,8 +1102,8 @@ class ReportExecutionRepository(
         self,
         execution_id: str,
         status: str,
-        error_details: Optional[str] = None,
-        session: Optional[AsyncSession] = None,
+        error_details: str | None = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """Update the status of an execution."""
         try:
@@ -1152,8 +1147,8 @@ class ReportExecutionRepository(
         execution_id: str,
         row_count: int,
         execution_time_ms: int,
-        result_hash: Optional[str] = None,
-        session: Optional[AsyncSession] = None,
+        result_hash: str | None = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """Mark an execution as completed with result information."""
         try:
@@ -1197,13 +1192,13 @@ class ReportOutputExecutionRepository(
 ):
     """Repository implementation for ReportOutputExecution."""
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a session and optional logger."""
         super().__init__(session, ReportOutputExecutionModel, logger)
 
     async def get_by_id(
-        self, output_execution_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[Optional[ReportOutputExecution]]:
+        self, output_execution_id: str, session: AsyncSession | None = None
+    ) -> Result[ReportOutputExecution | None]:
         """Get a report output execution by ID."""
         try:
             session = session or self.session
@@ -1232,8 +1227,8 @@ class ReportOutputExecutionRepository(
             )
 
     async def list_by_execution(
-        self, execution_id: str, session: Optional[AsyncSession] = None
-    ) -> Result[List[ReportOutputExecution]]:
+        self, execution_id: str, session: AsyncSession | None = None
+    ) -> Result[list[ReportOutputExecution]]:
         """List output executions for a report execution."""
         try:
             session = session or self.session
@@ -1261,7 +1256,7 @@ class ReportOutputExecutionRepository(
     async def create(
         self,
         output_execution: ReportOutputExecution,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[ReportOutputExecution]:
         """Create a new output execution."""
         try:
@@ -1296,7 +1291,7 @@ class ReportOutputExecutionRepository(
     async def update(
         self,
         output_execution: ReportOutputExecution,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[ReportOutputExecution]:
         """Update an existing output execution."""
         try:
@@ -1354,7 +1349,7 @@ class ReportOutputExecutionRepository(
         output_execution_id: str,
         output_location: str,
         output_size_bytes: int,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """Mark an output execution as completed with result information."""
         try:

@@ -1,9 +1,10 @@
 """Domain services for the Reports module."""
 import logging
 from datetime import datetime, UTC
-from typing import Dict, List, Optional, Union, Any, cast
+from typing import Any
+import logging
 
-from uno.domain.service import UnoEntityService
+from uno.domain.service import EntityService
 from uno.core.errors.result import Result, Success, Failure
 from uno.reports.entities import (
     ReportFieldDefinition,
@@ -25,7 +26,7 @@ from uno.reports.domain_repositories import (
 )
 
 
-class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
+class ReportFieldDefinitionService(EntityService[ReportFieldDefinition]):
     """Service for report field definition entities."""
 
     def __init__(self, repository: ReportFieldDefinitionRepository):
@@ -38,7 +39,7 @@ class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
         self.repository = repository
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_name(self, name: str) -> Result[Optional[ReportFieldDefinition]]:
+    async def find_by_name(self, name: str) -> Result[ReportFieldDefinition | None, Exception]:
         """Find a field definition by name.
         
         Args:
@@ -55,7 +56,7 @@ class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
             self.logger.error(f"Error finding field definition by name: {e}")
             return Failure(str(e))
 
-    async def find_by_field_type(self, field_type: str) -> Result[List[ReportFieldDefinition]]:
+    async def find_by_field_type(self, field_type: str) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by field type.
         
         Args:
@@ -72,7 +73,7 @@ class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
             self.logger.error(f"Error finding field definitions by field type: {e}")
             return Failure(str(e))
     
-    async def find_by_parent_field_id(self, parent_field_id: str) -> Result[List[ReportFieldDefinition]]:
+    async def find_by_parent_field_id(self, parent_field_id: str) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by parent field ID.
         
         Args:
@@ -89,7 +90,7 @@ class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
             self.logger.error(f"Error finding field definitions by parent field ID: {e}")
             return Failure(str(e))
     
-    async def find_by_template_id(self, template_id: str) -> Result[List[ReportFieldDefinition]]:
+    async def find_by_template_id(self, template_id: str) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by template ID.
         
         Args:
@@ -107,7 +108,7 @@ class ReportFieldDefinitionService(UnoEntityService[ReportFieldDefinition]):
             return Failure(str(e))
 
 
-class ReportTemplateService(UnoEntityService[ReportTemplate]):
+class ReportTemplateService(EntityService[ReportTemplate]):
     """Service for report template entities."""
 
     def __init__(
@@ -132,7 +133,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
         self.output_service = output_service
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_name(self, name: str) -> Result[Optional[ReportTemplate]]:
+    async def find_by_name(self, name: str) -> Result[ReportTemplate | None, Exception]:
         """Find a template by name.
         
         Args:
@@ -149,7 +150,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
             self.logger.error(f"Error finding template by name: {e}")
             return Failure(str(e))
 
-    async def find_by_base_object_type(self, base_object_type: str) -> Result[List[ReportTemplate]]:
+    async def find_by_base_object_type(self, base_object_type: str) -> Result[list[ReportTemplate], Exception]:
         """Find templates by base object type.
         
         Args:
@@ -166,7 +167,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
             self.logger.error(f"Error finding templates by base object type: {e}")
             return Failure(str(e))
     
-    async def get_with_relationships(self, template_id: str) -> Result[ReportTemplate]:
+    async def get_with_relationships(self, template_id: str) -> Result[ReportTemplate, Exception]:
         """Get a template with all relationships loaded.
         
         Args:
@@ -180,8 +181,8 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
     async def create_with_relationships(
         self,
         template: ReportTemplate,
-        field_ids: Optional[List[str]] = None,
-    ) -> Result[ReportTemplate]:
+        field_ids: list[str] | None = None,
+    ) -> Result[ReportTemplate, Exception]:
         """Create a template with field relationships.
         
         Args:
@@ -221,9 +222,9 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
     async def update_fields(
         self,
         template_id: str,
-        field_ids_to_add: Optional[List[str]] = None,
-        field_ids_to_remove: Optional[List[str]] = None,
-    ) -> Result[ReportTemplate]:
+        field_ids_to_add: list[str] | None = None,
+        field_ids_to_remove: list[str] | None = None,
+    ) -> Result[ReportTemplate, Exception]:
         """Update the fields associated with a template.
         
         Args:
@@ -279,8 +280,8 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
         template_id: str,
         triggered_by: str,
         trigger_type: str,
-        parameters: Optional[Dict[str, Any]] = None,
-    ) -> Result[ReportExecution]:
+        parameters: dict[str, Any] | None = None,
+    ) -> Result[ReportExecution, Exception]:
         """Execute a report template.
         
         Args:
@@ -322,7 +323,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
             # This is where you would actually generate the report
             # For this example, we'll just mark it as completed with some dummy data
             execution.status = ReportExecutionStatus.COMPLETED
-            execution.completed_at = datetime.now(datetime.UTC)
+            execution.completed_at = datetime.now(UTC)
             execution.row_count = 100
             execution.execution_time_ms = 1000
             execution.result_hash = "dummy_hash"
@@ -342,7 +343,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
                         report_execution_id=execution.id,
                         report_output_id=output.id,
                         status=ReportExecutionStatus.COMPLETED,
-                        completed_at=datetime.now(datetime.UTC),
+                        completed_at=datetime.now(UTC),
                         output_location=f"/reports/{template.name}/{execution.id}.{output.format.lower()}",
                         output_size_bytes=1024,
                     )
@@ -359,7 +360,7 @@ class ReportTemplateService(UnoEntityService[ReportTemplate]):
             return Failure(str(e))
 
 
-class ReportTriggerService(UnoEntityService[ReportTrigger]):
+class ReportTriggerService(EntityService[ReportTrigger]):
     """Service for report trigger entities."""
 
     def __init__(self, repository: ReportTriggerRepository):
@@ -372,7 +373,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
         self.repository = repository
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_template_id(self, template_id: str) -> Result[List[ReportTrigger]]:
+    async def find_by_template_id(self, template_id: str) -> Result[list[ReportTrigger], Exception]:
         """Find triggers by template ID.
         
         Args:
@@ -389,7 +390,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
             self.logger.error(f"Error finding triggers by template ID: {e}")
             return Failure(str(e))
 
-    async def find_by_trigger_type(self, trigger_type: str) -> Result[List[ReportTrigger]]:
+    async def find_by_trigger_type(self, trigger_type: str) -> Result[list[ReportTrigger], Exception]:
         """Find triggers by trigger type.
         
         Args:
@@ -406,7 +407,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
             self.logger.error(f"Error finding triggers by trigger type: {e}")
             return Failure(str(e))
     
-    async def find_active_triggers(self) -> Result[List[ReportTrigger]]:
+    async def find_active_triggers(self) -> Result[list[ReportTrigger], Exception]:
         """Find all active triggers.
         
         Returns:
@@ -420,7 +421,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
             self.logger.error(f"Error finding active triggers: {e}")
             return Failure(str(e))
     
-    async def find_active_scheduled_triggers(self) -> Result[List[ReportTrigger]]:
+    async def find_active_scheduled_triggers(self) -> Result[list[ReportTrigger], Exception]:
         """Find active scheduled triggers.
         
         Returns:
@@ -434,7 +435,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
             self.logger.error(f"Error finding active scheduled triggers: {e}")
             return Failure(str(e))
     
-    async def process_due_triggers(self) -> Result[int]:
+    async def process_due_triggers(self) -> Result[int, Exception]:
         """Process all due scheduled triggers.
         
         This method would typically be called by a scheduler to execute reports
@@ -473,7 +474,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
                     processed_count += 1
                     
                     # Update the trigger's last_triggered timestamp
-                    trigger.last_triggered = datetime.now(datetime.UTC)
+                    trigger.last_triggered = datetime.now(UTC)
                     await self.repository.update(trigger)
             
             return Success(processed_count)
@@ -482,7 +483,7 @@ class ReportTriggerService(UnoEntityService[ReportTrigger]):
             return Failure(str(e))
 
 
-class ReportOutputService(UnoEntityService[ReportOutput]):
+class ReportOutputService(EntityService[ReportOutput]):
     """Service for report output entities."""
 
     def __init__(self, repository: ReportOutputRepository):
@@ -495,7 +496,7 @@ class ReportOutputService(UnoEntityService[ReportOutput]):
         self.repository = repository
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_template_id(self, template_id: str) -> Result[List[ReportOutput]]:
+    async def find_by_template_id(self, template_id: str) -> Result[list[ReportOutput], Exception]:
         """Find outputs by template ID.
         
         Args:
@@ -512,7 +513,7 @@ class ReportOutputService(UnoEntityService[ReportOutput]):
             self.logger.error(f"Error finding outputs by template ID: {e}")
             return Failure(str(e))
 
-    async def find_by_output_type(self, output_type: str) -> Result[List[ReportOutput]]:
+    async def find_by_output_type(self, output_type: str) -> Result[list[ReportOutput], Exception]:
         """Find outputs by output type.
         
         Args:
@@ -529,7 +530,7 @@ class ReportOutputService(UnoEntityService[ReportOutput]):
             self.logger.error(f"Error finding outputs by output type: {e}")
             return Failure(str(e))
     
-    async def find_active_outputs(self) -> Result[List[ReportOutput]]:
+    async def find_active_outputs(self) -> Result[list[ReportOutput], Exception]:
         """Find all active outputs.
         
         Returns:
@@ -544,7 +545,7 @@ class ReportOutputService(UnoEntityService[ReportOutput]):
             return Failure(str(e))
 
 
-class ReportExecutionService(UnoEntityService[ReportExecution]):
+class ReportExecutionService(EntityService[ReportExecution]):
     """Service for report execution entities."""
 
     def __init__(self, repository: ReportExecutionRepository):
@@ -557,7 +558,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
         self.repository = repository
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_template_id(self, template_id: str) -> Result[List[ReportExecution]]:
+    async def find_by_template_id(self, template_id: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by template ID.
         
         Args:
@@ -574,7 +575,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
             self.logger.error(f"Error finding executions by template ID: {e}")
             return Failure(str(e))
 
-    async def find_by_status(self, status: str) -> Result[List[ReportExecution]]:
+    async def find_by_status(self, status: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by status.
         
         Args:
@@ -591,7 +592,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
             self.logger.error(f"Error finding executions by status: {e}")
             return Failure(str(e))
     
-    async def find_by_triggered_by(self, triggered_by: str) -> Result[List[ReportExecution]]:
+    async def find_by_triggered_by(self, triggered_by: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by triggered by.
         
         Args:
@@ -608,7 +609,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
             self.logger.error(f"Error finding executions by triggered by: {e}")
             return Failure(str(e))
     
-    async def find_with_output_executions(self, execution_id: str) -> Result[ReportExecution]:
+    async def find_with_output_executions(self, execution_id: str) -> Result[ReportExecution, Exception]:
         """Find an execution with output executions loaded.
         
         Args:
@@ -619,7 +620,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
         """
         return await self.repository.find_with_output_executions(execution_id)
     
-    async def find_recent_executions(self, limit: int = 10) -> Result[List[ReportExecution]]:
+    async def find_recent_executions(self, limit: int = 10) -> Result[list[ReportExecution], Exception]:
         """Find recent executions.
         
         Args:
@@ -640,8 +641,8 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
         self,
         execution_id: str,
         status: str,
-        error_details: Optional[str] = None,
-    ) -> Result[ReportExecution]:
+        error_details: str | None = None,
+    ) -> Result[ReportExecution, Exception]:
         """Update the status of an execution.
         
         Args:
@@ -673,7 +674,7 @@ class ReportExecutionService(UnoEntityService[ReportExecution]):
             return Failure(str(e))
 
 
-class ReportOutputExecutionService(UnoEntityService[ReportOutputExecution]):
+class ReportOutputExecutionService(EntityService[ReportOutputExecution]):
     """Service for report output execution entities."""
 
     def __init__(self, repository: ReportOutputExecutionRepository):
@@ -686,7 +687,7 @@ class ReportOutputExecutionService(UnoEntityService[ReportOutputExecution]):
         self.repository = repository
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_execution_id(self, execution_id: str) -> Result[List[ReportOutputExecution]]:
+    async def find_by_execution_id(self, execution_id: str) -> Result[list[ReportOutputExecution]]:
         """Find output executions by execution ID.
         
         Args:
@@ -703,7 +704,7 @@ class ReportOutputExecutionService(UnoEntityService[ReportOutputExecution]):
             self.logger.error(f"Error finding output executions by execution ID: {e}")
             return Failure(str(e))
 
-    async def find_by_output_id(self, output_id: str) -> Result[List[ReportOutputExecution]]:
+    async def find_by_output_id(self, output_id: str) -> Result[list[ReportOutputExecution]]:
         """Find output executions by output ID.
         
         Args:
@@ -720,7 +721,7 @@ class ReportOutputExecutionService(UnoEntityService[ReportOutputExecution]):
             self.logger.error(f"Error finding output executions by output ID: {e}")
             return Failure(str(e))
     
-    async def find_by_status(self, status: str) -> Result[List[ReportOutputExecution]]:
+    async def find_by_status(self, status: str) -> Result[list[ReportOutputExecution]]:
         """Find output executions by status.
         
         Args:
@@ -741,7 +742,7 @@ class ReportOutputExecutionService(UnoEntityService[ReportOutputExecution]):
         self,
         output_execution_id: str,
         status: str,
-        error_details: Optional[str] = None,
+        error_details: str | None = None,
     ) -> Result[ReportOutputExecution]:
         """Update the status of an output execution.
         

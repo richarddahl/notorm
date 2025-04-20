@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
@@ -66,7 +66,7 @@ class ReportFieldDefinitionBaseDto(BaseModel):
     name: str = Field(..., description="Field name")
     display: str = Field(..., description="Display name for the field")
     field_type: ReportFieldTypeEnum = Field(..., description="Type of field")
-    field_config: Dict[str, Any] = Field(
+    field_config: dict[str, Any] = Field(
         default_factory=dict, description="Configuration for the field"
     )
     description: Optional[str] = Field(None, description="Field description")
@@ -108,7 +108,7 @@ class ReportFieldDefinitionUpdateDto(BaseModel):
     name: Optional[str] = Field(None, description="Field name")
     display: Optional[str] = Field(None, description="Display name for the field")
     field_type: Optional[ReportFieldTypeEnum] = Field(None, description="Type of field")
-    field_config: Optional[Dict[str, Any]] = Field(
+    field_config: dict[str, Any] | None = Field(
         None, description="Configuration for the field"
     )
     description: Optional[str] = Field(None, description="Field description")
@@ -298,7 +298,7 @@ class ReportTriggerBaseDto(BaseModel):
 
     report_template_id: str = Field(..., description="Associated template ID")
     trigger_type: ReportTriggerTypeEnum = Field(..., description="Type of trigger")
-    trigger_config: Dict[str, Any] = Field(
+    trigger_config: dict[str, Any] = Field(
         default_factory=dict, description="Trigger configuration"
     )
     schedule: Optional[str] = Field(
@@ -314,28 +314,22 @@ class ReportTriggerBaseDto(BaseModel):
     @model_validator(mode="before")
     def validate_schedule(cls, values):
         """Validate that schedule is provided for scheduled triggers."""
-        if values.get(
-            "trigger_type"
-        ) == ReportTriggerTypeEnum.SCHEDULED and not values.get("schedule"):
-            raise ValueError("Schedule is required for scheduled triggers")
+        if values.get("trigger_type") == ReportTriggerTypeEnum.SCHEDULED and not values.get("schedule"):
+            return Failure("Schedule is required for scheduled triggers", convert=True)
         return values
 
     @model_validator(mode="before")
     def validate_event_type(cls, values):
         """Validate that event_type is provided for event triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not values.get(
-            "event_type"
-        ):
-            raise ValueError("Event type is required for event triggers")
+        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not values.get("event_type"):
+            return Failure("Event type is required for event triggers", convert=True)
         return values
 
     @model_validator(mode="before")
     def validate_query_id(cls, values):
         """Validate that query_id is provided for query triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not values.get(
-            "query_id"
-        ):
-            raise ValueError("Query ID is required for query triggers")
+        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not values.get("query_id"):
+            return Failure("Query ID is required for query triggers", convert=True)
         return values
 
     model_config = ConfigDict(

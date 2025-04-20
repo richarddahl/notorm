@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from collections.abc import AsyncIterator, Iterable
 from typing import Any, Generic, Optional, Sequence, Tuple, TypeVar, cast
 
+from uno.core.errors.result import Result, Success, Failure
 from uno.domain.core import Entity, AggregateRoot
 from uno.domain.specifications import Specification
 from uno.domain.entity import (
@@ -45,9 +46,15 @@ class InMemoryRepository(Repository[T, ID], Generic[T, ID]):
         super().__init__(entity_type, logger)
         self.entities: Dict[ID, T] = {}
     
-    async def get(self, id: ID) -> Optional[T]:
-        """Get an entity by ID."""
-        return self.entities.get(id)
+    async def get(self, id: ID) -> Result[T, Exception]:
+        """Get an entity by ID. Returns Result."""
+        try:
+            entity = self.entities.get(id)
+            if entity is None:
+                return Failure(ValueError(f"Entity with ID {id} not found"))
+            return Success(entity)
+        except Exception as e:
+            return Failure(e)
     
     async def list(
         self,
@@ -80,45 +87,45 @@ class InMemoryRepository(Repository[T, ID], Generic[T, ID]):
         
         return filtered_entities
     
-    async def add(self, entity: T) -> T:
-        """Add a new entity."""
-        # Get entity ID
-        entity_id = getattr(entity, "id", None)
-        if not entity_id:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if already exists
-        if entity_id in self.entities:
-            raise ValueError(f"Entity with ID {entity_id} already exists")
-        
-        # Set created_at if supported
-        if hasattr(entity, "created_at") and not getattr(entity, "created_at", None):
-            setattr(entity, "created_at", datetime.now(UTC))
-        
-        # Create a copy to avoid reference issues
-        entity_copy = self._clone_entity(entity)
-        
-        # Store the entity
-        self.entities[entity_id] = entity_copy
-        
-        return entity_copy
+    async def add(self, entity: T) -> Result[T, Exception]:
+        """Add a new entity. Returns Result."""
+        try:
+            entity_id = getattr(entity, "id", None)
+            if not entity_id:
+                return Failure(ValueError("Entity must have an ID"))
+            if entity_id in self.entities:
+                return Failure(ValueError(f"Entity with ID {entity_id} already exists"))
+            if hasattr(entity, "created_at") and not getattr(entity, "created_at", None):
+                setattr(entity, "created_at", datetime.now(timezone.utc))
+            entity_copy = self._clone_entity(entity)
+            self.entities[entity_id] = entity_copy
+            return Success(entity_copy)
+        except Exception as e:
+            return Failure(e)
     
-    async def update(self, entity: T) -> T:
-        """Update an existing entity."""
-        # Get entity ID
-        entity_id = getattr(entity, "id", None)
-        if not entity_id:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if entity exists
-        if entity_id not in self.entities:
-            raise ValueError(f"Entity with ID {entity_id} not found")
-        
-        # Check for optimistic concurrency
-        if isinstance(entity, AggregateRoot):
-            existing_entity = self.entities[entity_id]
-            if (
-                isinstance(existing_entity, AggregateRoot)
+    async def update(self, entity: T) -> Result[T, Exception]:
+        """Update an existing entity. Returns Result."""
+        try:
+            entity_id = getattr(entity, "id", None)
+            if not entity_id:
+                return Failure(ValueError("Entity must have an ID"))
+            if entity_id not in self.entities:
+                return Failure(ValueError(f"Entity with ID {entity_id} not found"))
+            # Check for optimistic concurrency
+            if isinstance(entity, AggregateRoot):
+                existing_entity = self.entities[entity_id]
+                if (
+                    isinstance(existing_entity, AggregateRoot)
+                    and hasattr(entity, "version")
+                    and hasattr(existing_entity, "version")
+                    and getattr(entity, "version") != getattr(existing_entity, "version")
+                ):
+                    return Failure(ValueError("Version conflict for entity update"))
+            entity_copy = self._clone_entity(entity)
+            self.entities[entity_id] = entity_copy
+            return Success(entity_copy)
+        except Exception as e:
+            return Failure(e)
                 and existing_entity.version != entity.version - 1
             ):
                 raise ValueError(
@@ -132,29 +139,26 @@ class InMemoryRepository(Repository[T, ID], Generic[T, ID]):
         
         # Create a copy to avoid reference issues
         entity_copy = self._clone_entity(entity)
-        
-        # Update the entity
-        self.entities[entity_id] = entity_copy
-        
-        return entity_copy
     
-    async def delete(self, entity: T) -> None:
-        """Delete an entity."""
-        # Get entity ID
-        entity_id = getattr(entity, "id", None)
-        if not entity_id:
-            raise ValueError("Entity must have an ID")
-        
-        # Check if entity exists
-        if entity_id not in self.entities:
-            raise ValueError(f"Entity with ID {entity_id} not found")
-        
-        # Remove the entity
-        del self.entities[entity_id]
+    async def delete(self, entity: T) -> Result[None, Exception]:
+        """Delete an entity. Returns Result."""
+        try:
+            entity_id = getattr(entity, "id", None)
+            if not entity_id:
+                return Failure(ValueError("Entity must have an ID"))
+            if entity_id in self.entities:
+                del self.entities[entity_id]
+                return Success(None)
+            return Failure(ValueError(f"Entity with ID {entity_id} not found"))
+        except Exception as e:
+            return Failure(e)
     
-    async def exists(self, id: ID) -> bool:
-        """Check if an entity exists."""
-        return id in self.entities
+    async def exists(self, id: ID) -> Result[bool, Exception]:
+        """Check if an entity exists. Returns Result."""
+        try:
+            return Success(id in self.entities)
+        except Exception as e:
+            return Failure(e)
     
     def _entity_matches_filters(self, entity: T, filters: FilterType) -> bool:
         """

@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Union
+from typing import Any
+
 
 from uno.domain.core import Entity, AggregateRoot, safe_dataclass
 from uno.core.errors.result import Result, Success, Failure
@@ -68,18 +69,18 @@ class ReportFieldDefinition(Entity[str]):
     name: str
     display: str
     field_type: str
-    field_config: Dict[str, Any] = field(default_factory=dict)
-    description: Optional[str] = None
+    field_config: dict[str, Any] = field(default_factory=dict)
+    description: str | None = None
     order: int = 0
-    format_string: Optional[str] = None
-    conditional_formats: Optional[Dict[str, Any]] = None
+    format_string: str | None = None
+    conditional_formats: dict[str, Any] | None = None
     is_visible: bool = True
-    parent_field_id: Optional[str] = None
+    parent_field_id: str | None = None
 
     # Relationships
-    parent_field: Optional["ReportFieldDefinition"] = None
-    child_fields: List["ReportFieldDefinition"] = field(default_factory=list)
-    report_templates: List["ReportTemplate"] = field(default_factory=list)
+    parent_field: "ReportFieldDefinition" | None = None
+    child_fields: list["ReportFieldDefinition"] = field(default_factory=list)
+    report_templates: list["ReportTemplate"] = field(default_factory=list)
 
     # ORM mapping
     __uno_model__ = "ReportFieldDefinitionModel"
@@ -93,8 +94,8 @@ class ReportFieldDefinition(Entity[str]):
         if self.report_templates is None:
             self.report_templates = []
 
-    def validate(self) -> Result[None]:
-        """Validate the field definition."""
+    def validate(self) -> Result[None, Exception]:
+        """Validate the field definition. Returns Result[None, Exception]."""
         # Validate field_type
         allowed_types = [
             ReportFieldType.DB_COLUMN,
@@ -107,42 +108,40 @@ class ReportFieldDefinition(Entity[str]):
         ]
 
         if self.field_type not in allowed_types:
-            return Failure(f"Field type must be one of: {', '.join(allowed_types)}")
+            return Failure(ValueError(f"Field type must be one of: {', '.join(allowed_types)}"))
 
         # Validate field_config based on field_type
         if self.field_type == ReportFieldType.DB_COLUMN:
             required_props = ["table", "column"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(f"Field config for DB_COLUMN must include {prop}")
+                    return Failure(ValueError(f"Field config for DB_COLUMN must include {prop}"))
 
         elif self.field_type == ReportFieldType.ATTRIBUTE:
             if "attribute_type_id" not in self.field_config:
-                return Failure(
-                    "Field config for ATTRIBUTE must include attribute_type_id"
-                )
+                return Failure(ValueError("Field config for ATTRIBUTE must include attribute_type_id"))
 
         elif self.field_type == ReportFieldType.METHOD:
             required_props = ["method", "module"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(f"Field config for METHOD must include {prop}")
+                    return Failure(ValueError(f"Field config for METHOD must include {prop}"))
 
         elif self.field_type == ReportFieldType.QUERY:
             if "query_id" not in self.field_config:
-                return Failure("Field config for QUERY must include query_id")
+                return Failure(ValueError("Field config for QUERY must include query_id"))
 
         elif self.field_type == ReportFieldType.AGGREGATE:
             required_props = ["function", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(f"Field config for AGGREGATE must include {prop}")
+                    return Failure(ValueError(f"Field config for AGGREGATE must include {prop}"))
 
         elif self.field_type == ReportFieldType.RELATED:
             required_props = ["relation", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(f"Field config for RELATED must include {prop}")
+                    return Failure(ValueError(f"Field config for RELATED must include {prop}"))
 
         return Success(None)
 
@@ -292,15 +291,15 @@ class ReportTrigger(Entity[str]):
     report_template_id: str
     trigger_type: str
     trigger_config: Dict[str, Any] = field(default_factory=dict)
-    schedule: Optional[str] = None
-    event_type: Optional[str] = None
-    entity_type: Optional[str] = None
-    query_id: Optional[str] = None
+    schedule: str | None = None
+    event_type: str | None = None
+    entity_type: str | None = None
+    query_id: str | None = None
     is_active: bool = True
-    last_triggered: Optional[datetime] = None
+    last_triggered: datetime | None = None
 
     # Relationships
-    report_template: Optional[ReportTemplate] = None
+    report_template: ReportTemplate | None = None
 
     # ORM mapping
     __uno_model__ = "ReportTriggerModel"
@@ -312,8 +311,8 @@ class ReportTrigger(Entity[str]):
         if self.trigger_config is None:
             self.trigger_config = {}
 
-    def validate(self) -> Result[None]:
-        """Validate the trigger configuration based on type."""
+    def validate(self) -> Result[None, Exception]:
+        """Validate the trigger configuration based on type. Returns Result[None, Exception]."""
         # Validate trigger_type
         allowed_types = [
             ReportTriggerType.MANUAL,
@@ -323,20 +322,20 @@ class ReportTrigger(Entity[str]):
         ]
 
         if self.trigger_type not in allowed_types:
-            return Failure(f"Trigger type must be one of: {', '.join(allowed_types)}")
+            return Failure(ValueError(f"Trigger type must be one of: {', '.join(allowed_types)}"))
 
         # Validate type-specific requirements
         if self.trigger_type == ReportTriggerType.SCHEDULED:
             if not self.schedule:
-                return Failure("Scheduled triggers must include a schedule")
+                return Failure(ValueError("Scheduled triggers must include a schedule"))
 
         elif self.trigger_type == ReportTriggerType.EVENT:
             if not self.event_type:
-                return Failure("Event triggers must include an event_type")
+                return Failure(ValueError("Event triggers must include an event_type"))
 
         elif self.trigger_type == ReportTriggerType.QUERY:
             if not self.query_id:
-                return Failure("Query triggers must include a query_id")
+                return Failure(ValueError("Query triggers must include a query_id"))
 
         return Success(None)
 
@@ -349,13 +348,13 @@ class ReportOutput(Entity[str]):
     report_template_id: str
     output_type: str
     format: str
-    output_config: Dict[str, Any] = field(default_factory=dict)
-    format_config: Dict[str, Any] = field(default_factory=dict)
+    output_config: dict[str, Any] = field(default_factory=dict)
+    format_config: dict[str, Any] = field(default_factory=dict)
     is_active: bool = True
 
     # Relationships
-    report_template: Optional[ReportTemplate] = None
-    output_executions: List["ReportOutputExecution"] = field(default_factory=list)
+    report_template: ReportTemplate | None = None
+    output_executions: list["ReportOutputExecution"] = field(default_factory=list)
 
     # ORM mapping
     __uno_model__ = "ReportOutputModel"
@@ -371,8 +370,8 @@ class ReportOutput(Entity[str]):
         if self.output_executions is None:
             self.output_executions = []
 
-    def validate(self) -> Result[None]:
-        """Validate the output configuration based on type."""
+    def validate(self) -> Result[None, Exception]:
+        """Validate the output configuration based on type. Returns Result[None, Exception]."""
         # Validate output_type
         allowed_types = [
             ReportOutputType.FILE,
@@ -382,7 +381,7 @@ class ReportOutput(Entity[str]):
         ]
 
         if self.output_type not in allowed_types:
-            return Failure(f"Output type must be one of: {', '.join(allowed_types)}")
+            return Failure(ValueError(f"Output type must be one of: {', '.join(allowed_types)}"))
 
         # Validate format
         allowed_formats = [
@@ -395,20 +394,20 @@ class ReportOutput(Entity[str]):
         ]
 
         if self.format not in allowed_formats:
-            return Failure(f"Format must be one of: {', '.join(allowed_formats)}")
+            return Failure(ValueError(f"Format must be one of: {', '.join(allowed_formats)}"))
 
         # Validate type-specific requirements
         if self.output_type == ReportOutputType.FILE:
             if "path" not in self.output_config:
-                return Failure("File output must include a path in output_config")
+                return Failure(ValueError("File output must include a path in output_config"))
 
         elif self.output_type == ReportOutputType.EMAIL:
             if "recipients" not in self.output_config:
-                return Failure("Email output must include recipients in output_config")
+                return Failure(ValueError("Email output must include recipients in output_config"))
 
         elif self.output_type == ReportOutputType.WEBHOOK:
             if "url" not in self.output_config:
-                return Failure("Webhook output must include a URL in output_config")
+                return Failure(ValueError("Webhook output must include a URL in output_config"))
 
         return Success(None)
 
@@ -428,14 +427,14 @@ class ReportExecution(Entity[str]):
     report_template_id: str
     triggered_by: str
     trigger_type: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     status: str = ReportExecutionStatus.PENDING
     started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
-    error_details: Optional[str] = None
-    row_count: Optional[int] = None
-    execution_time_ms: Optional[int] = None
-    result_hash: Optional[str] = None
+    completed_at: datetime | None = None
+    error_details: str | None = None
+    row_count: int | None = None
+    execution_time_ms: int | None = None
+    result_hash: str | None = None
 
     # Relationships
     report_template: Optional[ReportTemplate] = None
@@ -531,8 +530,8 @@ class ReportOutputExecution(Entity[str]):
     output_size_bytes: Optional[int] = None
 
     # Relationships
-    report_execution: Optional[ReportExecution] = None
-    report_output: Optional[ReportOutput] = None
+    report_execution: ReportExecution | None = None
+    report_output: ReportOutput | None = None
 
     # ORM mapping
     __uno_model__ = "ReportOutputExecutionModel"
@@ -541,8 +540,8 @@ class ReportOutputExecution(Entity[str]):
         """Initialize after dataclass creation."""
         super().__post_init__()
 
-    def validate(self) -> Result[None]:
-        """Validate the output execution record."""
+    def validate(self) -> Result[None, Exception]:
+        """Validate the output execution record. Returns Result[None, Exception]."""
         # Validate status
         allowed_statuses = [
             ReportExecutionStatus.PENDING,
@@ -553,14 +552,14 @@ class ReportOutputExecution(Entity[str]):
         ]
 
         if self.status not in allowed_statuses:
-            return Failure(f"Status must be one of: {', '.join(allowed_statuses)}")
+            return Failure(ValueError(f"Status must be one of: {', '.join(allowed_statuses)}"))
 
         return Success(None)
 
     def update_status(
-        self, status: str, error_details: Optional[str] = None
-    ) -> Result[None]:
-        """Update the output execution status."""
+        self, status: str, error_details: str | None = None
+    ) -> Result[None, Exception]:
+        """Update the output execution status. Returns Result[None, Exception]."""
         allowed_statuses = [
             ReportExecutionStatus.PENDING,
             ReportExecutionStatus.RUNNING,
@@ -570,7 +569,7 @@ class ReportOutputExecution(Entity[str]):
         ]
 
         if status not in allowed_statuses:
-            return Failure(f"Status must be one of: {', '.join(allowed_statuses)}")
+            return Failure(ValueError(f"Status must be one of: {', '.join(allowed_statuses)}"))
 
         self.status = status
 

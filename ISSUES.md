@@ -49,6 +49,12 @@
 - Add linting/tests to enforce `Result` return types and prohibit bare exceptions.
 - Document error-handling conventions for contributors.
 
+**Progress (2025-04-20):**
+- Auditing infrastructure modules (e.g., aggregation.py, dtos.py) for exception-raising code and raw returns.
+- Converting helper/infrastructure functions to use `Result` instead of raising exceptions where feasible.
+- Verifying `convert=True` flags and modern type annotations in all Success/Failure calls.
+- Drafting error-handling conventions for contributors (to be added in docs).
+
 ---
 
 ## 3. DDD Patterns & Aggregate Boundaries

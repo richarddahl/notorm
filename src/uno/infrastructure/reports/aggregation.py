@@ -322,7 +322,7 @@ class ReportDataAggregator:
         if not all(col in df.columns for col in all_columns):
             available_cols = list(df.columns)
             missing_cols = [col for col in all_columns if col not in available_cols]
-            raise AggregationError(f"Missing columns in data: {missing_cols}. Available: {available_cols}")
+            return Failure(f"Missing columns in data: {missing_cols}. Available: {available_cols}", convert=True)
         
         # Build aggregation dictionary
         agg_dict = {}
@@ -393,7 +393,7 @@ class ReportDataAggregator:
         if not all(col in df.columns for col in required_cols):
             available_cols = list(df.columns)
             missing_cols = [col for col in required_cols if col not in available_cols]
-            raise AggregationError(f"Missing columns in data: {missing_cols}. Available: {available_cols}")
+            return Failure(f"Missing columns in data: {missing_cols}. Available: {available_cols}", convert=True)
         
         # Get aggregation function
         agg_func = config.get("aggfunc", "sum")
@@ -468,13 +468,13 @@ class ReportDataAggregator:
         if not all(col in df.columns for col in required_cols):
             available_cols = list(df.columns)
             missing_cols = [col for col in required_cols if col not in available_cols]
-            raise AggregationError(f"Missing columns in data: {missing_cols}. Available: {available_cols}")
+            return Failure(f"Missing columns in data: {missing_cols}. Available: {available_cols}", convert=True)
         
         # Ensure date column is datetime
         try:
             df[date_column] = pd.to_datetime(df[date_column])
         except Exception as e:
-            raise AggregationError(f"Failed to convert {date_column} to datetime: {str(e)}")
+            return Failure(f"Failed to convert {date_column} to datetime: {str(e)}", convert=True)
         
         # Resample the time series
         if group_by:
