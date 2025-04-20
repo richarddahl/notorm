@@ -9,19 +9,14 @@ This module provides utilities for structured event logging, allowing
 tracking of significant events across the application.
 """
 
-from typing import Dict, List, Any, Optional, Callable, TypeVar, Generic, Set, Union, Protocol
-import asyncio
-import time
 import logging
+import time
 import uuid
-import json
-import contextvars
-from enum import Enum, auto
 from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Any, Protocol, TypeVar
 
-from uno.core.errors import get_error_context, add_error_context
-from uno.core.monitoring.tracing import get_current_trace_id, get_current_span_id
-
+from uno.core.events.event import Event as BaseEvent
 
 T = TypeVar('T')
 
@@ -89,15 +84,13 @@ class EventType(Enum):
 @dataclass
 class EventContext:
     """Context for an event."""
-    user_id: Optional[str] = None
-    source: Optional[str] = None
-    request_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    user_id: str | None = None
+    source: str | None = None
+    request_id: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    attributes: dict[str, Any] = field(default_factory=dict)
 
-
-from uno.core.events.event import Event as BaseEvent
 
 class MonitoringEvent(BaseEvent):
     """
@@ -107,7 +100,8 @@ class MonitoringEvent(BaseEvent):
     """
     level: EventLevel
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize MonitoringEvent to a dictionary, including the level field."""
         base = super().to_dict()
         base["level"] = self.level.name if hasattr(self.level, 'name') else str(self.level)
         return base
@@ -123,7 +117,7 @@ class EventFilter(Protocol):
     Event filters determine which events to process.
     """
     
-    def __call__(self, event: Event) -> bool:
+    def __call__(self, event: BaseEvent) -> bool:
         """
         Check if an event should be processed.
         
@@ -144,7 +138,7 @@ class EventHandler(Protocol):
     or sending them to an observability system.
     """
     
-    async def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: BaseEvent) -> None:
         """
         Handle an event.
         
@@ -161,7 +155,7 @@ class LoggingEventHandler:
     This handler logs events to a Python logger.
     """
     
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the logging event handler.
         
@@ -170,7 +164,7 @@ class LoggingEventHandler:
         """
         self.logger = logger or logging.getLogger("events")
     
-    async def handle_event(self, event: Event) -> None:
+    async def handle_event(self, event: BaseEvent) -> None:
         """
         Log an event.
         
@@ -213,7 +207,8 @@ class EventLogger:
     def __init__(
         self,
         service_name: str,
-        logger: Optional[logging.Logger] = None,
+        *,
+        logger: logging.Logger | None = None,
         min_level: EventLevel = EventLevel.INFO,
     ):
         """
@@ -227,8 +222,8 @@ class EventLogger:
         self.service_name = service_name
         self.logger = logger or logging.getLogger(__name__)
         self.min_level = min_level
-        self._handlers: List[EventHandler] = []
-        self._filters: List[EventFilter] = []
+        self._handlers: list[EventHandler] = []
+        self._filters: list[EventFilter] = []
         
         # Add default handler
         self._handlers.append(LoggingEventHandler())
@@ -251,33 +246,29 @@ class EventLogger:
         """
         self._filters.append(filter_func)
     
-    def _create_context(self) -> EventContext:
+    def get_event_context(
+        self,
+        *,
+        user_id: str | None = None,
+        source: str | None = None,
+        request_id: str | None = None,
+        trace_id: str | None = None,
+        span_id: str | None = None,
+        attributes: dict[str, Any] | None = None,
+    ) -> EventContext:
         """
-        Create an event context from current execution context.
-        
-        Returns:
-            Event context with trace, request, and error context
+        Create an EventContext object.
         """
-        # Get trace context
-        trace_id = get_current_trace_id()
-        span_id = get_current_span_id()
-        
-        # Get error context
-        error_context = get_error_context()
-        
-        # Create event context
-        context = EventContext(
-            source=self.service_name,
+        return EventContext(
+            user_id=user_id,
+            source=source,
+            request_id=request_id,
             trace_id=trace_id,
             span_id=span_id,
-            request_id=error_context.get("request_id"),
-            user_id=error_context.get("user_id"),
-            attributes=error_context
+            attributes=attributes or {},
         )
-        
-        return context
     
-    async def _should_log(self, event: Event) -> bool:
+    async def _should_log(self, event: BaseEvent) -> bool:
         """
         Check if an event should be logged.
         
@@ -297,21 +288,73 @@ class EventLogger:
                 if not filter_func(event):
                     return False
             except Exception as e:
-                self.logger.warning(f"Error in event filter: {str(e)}")
+                self.logger.warning(f"Error in event filter: {e}")
         
         return True
+    
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        id: str | None = None,
+        name: str | None = None,
+        message: str | None = None,
+        timestamp: float | None = None,
+        level: EventLevel | None = None,
+        event_type: EventType | None = None,
+        user_id: str | None = None,
+        source: str | None = None,
+        context: EventContext | None = None,
+    ) -> BaseEvent:
+        """
+        Create a BaseEvent object from a dictionary.
+        
+        Args:
+            data: Dictionary containing event data
+            id: Event ID
+            name: Event name
+            message: Event message
+            timestamp: Event timestamp
+            level: Event level
+            event_type: Event type
+            user_id: User ID
+            source: Event source
+            context: Event context
+            
+        Returns:
+            BaseEvent object
+        """
+        return BaseEvent(
+            id=id or data.get("id"),
+            name=name or data.get("name"),
+            message=message or data.get("message"),
+            timestamp=timestamp or data.get("timestamp"),
+            level=level or EventLevel.from_string(data.get("level")),
+            type=event_type or EventType.from_string(data.get("type")),
+            context=context or EventContext(
+                user_id=user_id or data.get("user_id"),
+                source=source or data.get("source"),
+                request_id=data.get("request_id"),
+                trace_id=data.get("trace_id"),
+                span_id=data.get("span_id"),
+                attributes=data.get("attributes", {}),
+            ),
+            data=data.get("data", {}),
+        )
     
     async def log_event(
         self,
         name: str,
         message: str,
+        *,
         level: EventLevel = EventLevel.INFO,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
-        context: Optional[EventContext] = None,
+        data: dict[str, Any] | None = None,
+        context: EventContext | None = None,
     ) -> str:
         """
-        Log an event.
+        Log an event with the specified parameters.
         
         Args:
             name: Name of the event
@@ -326,14 +369,14 @@ class EventLogger:
         """
         # Create the event
         event_id = str(uuid.uuid4())
-        event = Event(
+        event = BaseEvent(
             id=event_id,
             name=name,
             message=message,
             timestamp=time.time(),
             level=level,
             type=event_type,
-            context=context or self._create_context(),
+            context=context or self.get_event_context(),
             data=data or {}
         )
         
@@ -347,25 +390,26 @@ class EventLogger:
                 await handler.handle_event(event)
             except Exception as e:
                 self.logger.warning(f"Error in event handler: {str(e)}")
-        
+
         return event_id
-    
-    async def debug(
+
+    async def log_debug(
         self,
         name: str,
         message: str,
+        *,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Log a debug event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             event_type: Type of event
             data: Additional event data
-            
+
         Returns:
             ID of the logged event
         """
@@ -376,23 +420,24 @@ class EventLogger:
             event_type=event_type,
             data=data
         )
-    
-    async def info(
+
+    async def log_info(
         self,
         name: str,
         message: str,
+        *,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Log an info event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             event_type: Type of event
             data: Additional event data
-            
+
         Returns:
             ID of the logged event
         """
@@ -403,23 +448,24 @@ class EventLogger:
             event_type=event_type,
             data=data
         )
-    
-    async def warning(
+
+    async def log_warning(
         self,
         name: str,
         message: str,
+        *,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Log a warning event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             event_type: Type of event
             data: Additional event data
-            
+
         Returns:
             ID of the logged event
         """
@@ -430,43 +476,44 @@ class EventLogger:
             event_type=event_type,
             data=data
         )
-    
-    async def error(
+
+    async def log_error(
         self,
         name: str,
         message: str,
+        *,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
-        exception: Optional[Exception] = None,
+        data: dict[str, Any] | None = None,
+        exception: Exception | None = None,
     ) -> str:
         """
         Log an error event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             event_type: Type of event
             data: Additional event data
             exception: Optional exception that caused the error
-            
+
         Returns:
             ID of the logged event
         """
         event_data = data or {}
-        
+
         # Add exception details if provided
         if exception:
             event_data["exception"] = {
                 "type": type(exception).__name__,
                 "message": str(exception)
             }
-            
+
             # Add exception attributes
             if hasattr(exception, "__dict__"):
                 for key, value in exception.__dict__.items():
-                    if isinstance(value, (str, int, float, bool, type(None))):
+                    if isinstance(value, (str | int | float | bool | type(None))):
                         event_data["exception"][key] = value
-        
+
         return await self.log_event(
             name=name,
             message=message,
@@ -474,43 +521,44 @@ class EventLogger:
             event_type=event_type,
             data=event_data
         )
-    
-    async def critical(
+
+    async def log_critical(
         self,
         name: str,
         message: str,
+        *,
         event_type: EventType = EventType.SYSTEM,
-        data: Optional[Dict[str, Any]] = None,
-        exception: Optional[Exception] = None,
+        data: dict[str, Any] | None = None,
+        exception: Exception | None = None,
     ) -> str:
         """
         Log a critical event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             event_type: Type of event
             data: Additional event data
             exception: Optional exception that caused the error
-            
+
         Returns:
             ID of the logged event
         """
         event_data = data or {}
-        
+
         # Add exception details if provided
         if exception:
             event_data["exception"] = {
                 "type": type(exception).__name__,
                 "message": str(exception)
             }
-            
+
             # Add exception attributes
             if hasattr(exception, "__dict__"):
                 for key, value in exception.__dict__.items():
-                    if isinstance(value, (str, int, float, bool, type(None))):
+                    if isinstance(value, (str | int | float | bool | type(None))):
                         event_data["exception"][key] = value
-        
+
         return await self.log_event(
             name=name,
             message=message,
@@ -518,21 +566,22 @@ class EventLogger:
             event_type=event_type,
             data=event_data
         )
-    
-    async def audit(
+
+    async def log_audit(
         self,
         name: str,
         message: str,
-        data: Optional[Dict[str, Any]] = None,
+        *,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Log an audit event.
-        
+
         Args:
             name: Name of the event
             message: Event message
             data: Additional event data
-            
+
         Returns:
             ID of the logged event
         """
@@ -543,17 +592,18 @@ class EventLogger:
             event_type=EventType.AUDIT,
             data=data
         )
-    
-    async def security(
+
+    async def log_security(
         self,
         name: str,
         message: str,
+        *,
         level: EventLevel = EventLevel.INFO,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> str:
         """
         Log a security event.
-        
+
         Args:
             name: Name of the event
             message: Event message
@@ -571,30 +621,75 @@ class EventLogger:
             data=data
         )
 
+    async def get_events_by_time_range(
+        self,
+        start_time: float,
+        end_time: float,
+        *,
+        event_type: str | None = None,
+        user_id: str | None = None,
+    ) -> list[BaseEvent]:
+        """
+        Get events by time range.
 
-# Global event logger
-event_logger: Optional[EventLogger] = None
+        Args:
+            start_time: Start time of the range
+            end_time: End time of the range
+            event_type: Type of event
+            user_id: User ID
+
+        Returns:
+            List of events
+        """
+        # TO DO: implement this method
+        return []
+
+    async def get_events(
+        self,
+        *,
+        filter_by: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        sort_by: str | None = None,
+        sort_desc: bool = False,
+    ) -> list[BaseEvent]:
+        """
+        Filter a list of events based on criteria.
+        
+        Args:
+            filter_by: Filter by field
+            limit: Maximum number of events
+            offset: Offset for pagination
+            sort_by: Field to sort by
+            sort_desc: Sort in descending order
+            
+        Returns:
+            List of events
+        """
+        # TO DO: implement this method
+        return []
+
+
+
+# Module-level singleton pattern for event logger
+_event_logger: EventLogger | None = None
 
 
 def get_event_logger() -> EventLogger:
     """
-    Get the global event logger.
-    
-    Returns:
-        The global event logger
+    Get the singleton event logger instance.
     """
-    global event_logger
-    if event_logger is None:
-        event_logger = EventLogger(service_name="uno")
-    return event_logger
+    if not hasattr(get_event_logger, "_instance"):
+        get_event_logger._instance = EventLogger()
+    return get_event_logger._instance
 
 
 async def log_event(
     name: str,
     message: str,
-    level: Union[EventLevel, str] = EventLevel.INFO,
-    event_type: Union[EventType, str] = EventType.SYSTEM,
-    data: Optional[Dict[str, Any]] = None,
+    level: EventLevel | str = EventLevel.INFO,
+    event_type: EventType | str = EventType.SYSTEM,
+    data: dict[str, Any] | None = None,
 ) -> str:
     """
     Log an event using the global event logger.
