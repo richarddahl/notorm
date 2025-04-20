@@ -18,6 +18,8 @@ from uno.domain.authorization import (
 from uno.domain.rbac import RbacService, User, Role
 from uno.domain.application_services import ServiceContext
 from uno.core.base.error import AuthorizationError
+from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.framework import FrameworkError
 
 
 @dataclass
@@ -87,7 +89,7 @@ class TenantRbacService(RbacService):
 
     def create_tenant(
         self, tenant_id: str, name: str, metadata: dict[str, Any] | None = None
-    ) -> Tenant:
+    ) -> Result[Tenant, FrameworkError]:
         """
         Create a new tenant.
 
@@ -103,7 +105,13 @@ class TenantRbacService(RbacService):
             ValueError: If a tenant with the same ID already exists
         """
         if tenant_id in self._tenants:
-            raise ValueError(f"Tenant already exists: {tenant_id}")
+            return Failure(
+                FrameworkError(
+                    code="TENANT_EXISTS",
+                    message=f"Tenant already exists: {tenant_id}",
+                    details={"tenant_id": tenant_id}
+                )
+            )
 
         # Create the tenant
         tenant = Tenant(id=tenant_id, name=name, metadata=metadata or {})
@@ -172,13 +180,19 @@ class TenantRbacService(RbacService):
             tenant_id: The tenant ID
 
         Returns:
-            True if the tenant was deleted, False if not found
+            The deleted tenant if found, None otherwise
         """
         if tenant_id not in self._tenants:
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TENANT_NOT_FOUND",
+                    message=f"Tenant not found: {tenant_id}",
+                    details={"tenant_id": tenant_id}
+                )
+            )
 
         # Remove the tenant
-        del self._tenants[tenant_id]
+        tenant = self._tenants[tenant_id]
 
         # Remove tenant-specific roles and users
         if tenant_id in self._tenant_roles:
@@ -193,15 +207,18 @@ class TenantRbacService(RbacService):
             if not tenants:
                 del self._user_tenants[user_id]
 
+        del self._tenants[tenant_id]
+
         self._logger.debug(f"Deleted tenant: {tenant_id}")
-        return True
+        return Success(tenant)
 
     def create_role(
         self,
+        tenant_id: str,
         name: str,
         permissions: list[str] | None = None,
-        tenant_id: str | None = None,
-    ) -> Role:
+        metadata: dict[str, Any] | None = None,
+    ) -> Result[Role, FrameworkError]:
         """
         Create a new role, optionally tenant-specific.
 
@@ -209,6 +226,7 @@ class TenantRbacService(RbacService):
             name: The role name
             permissions: Optional list of permission strings
             tenant_id: Optional tenant ID for tenant-specific roles
+            metadata: Optional role metadata
 
         Returns:
             The created role
@@ -216,34 +234,41 @@ class TenantRbacService(RbacService):
         Raises:
             ValueError: If a role with the same name already exists in the tenant
         """
-        if tenant_id is not None:
-            # Tenant-specific role
-            if tenant_id not in self._tenants:
-                raise ValueError(f"Tenant not found: {tenant_id}")
+        if tenant_id not in self._tenants:
+            return Failure(
+                FrameworkError(
+                    code="TENANT_NOT_FOUND",
+                    message=f"Tenant not found: {tenant_id}",
+                    details={"tenant_id": tenant_id}
+                )
+            )
 
-            if tenant_id not in self._tenant_roles:
-                self._tenant_roles[tenant_id] = {}
+        if tenant_id not in self._tenant_roles:
+            self._tenant_roles[tenant_id] = {}
 
-            if name in self._tenant_roles[tenant_id]:
-                raise ValueError(f"Role already exists in tenant {tenant_id}: {name}")
+        if name in self._tenant_roles[tenant_id]:
+            return Failure(
+                FrameworkError(
+                    code="ROLE_EXISTS",
+                    message=f"Role already exists in tenant {tenant_id}: {name}",
+                    details={"tenant_id": tenant_id, "role_name": name}
+                )
+            )
 
-            # Convert permission strings to Permission objects
-            permission_objects = []
-            if permissions:
-                for permission_str in permissions:
-                    permission_objects.append(Permission.from_string(permission_str))
+        # Convert permission strings to Permission objects
+        permission_objects = []
+        if permissions:
+            for permission_str in permissions:
+                permission_objects.append(Permission.from_string(permission_str))
 
-            # Create the role
-            role = Role(name, permission_objects)
+        # Create the role
+        role = Role(name, permission_objects, metadata)
 
-            # Store the role
-            self._tenant_roles[tenant_id][name] = role
-            self._logger.debug(f"Created role {name} in tenant {tenant_id}")
+        # Store the role
+        self._tenant_roles[tenant_id][name] = role
+        self._logger.debug(f"Created role {name} in tenant {tenant_id}")
 
-            return role
-        else:
-            # Global role (use parent implementation)
-            return super().create_role(name, permissions)
+        return Success(role)
 
     def get_role(self, name: str, tenant_id: str | None = None) -> Optional[Role]:
         """
@@ -297,7 +322,7 @@ class TenantRbacService(RbacService):
             # Global role
             return super().update_role(name, permissions)
 
-    def delete_role(self, name: str, tenant_id: str | None = None) -> bool:
+    def delete_role(self, name: str, tenant_id: str | None = None) -> Result[None, FrameworkError]:
         """
         Delete a role, optionally from a specific tenant.
 
@@ -312,7 +337,13 @@ class TenantRbacService(RbacService):
             # Tenant-specific role
             tenant_roles = self._tenant_roles.get(tenant_id, {})
             if name not in tenant_roles:
-                return False
+                return Failure(
+                    FrameworkError(
+                        code="ROLE_NOT_FOUND",
+                        message=f"Role not found in tenant {tenant_id}: {name}",
+                        details={"tenant_id": tenant_id, "role_name": name}
+                    )
+                )
 
             # Remove the role
             del tenant_roles[name]
@@ -323,7 +354,7 @@ class TenantRbacService(RbacService):
             for user in tenant_users.values():
                 user.remove_role(name)
 
-            return True
+            return Success(None)
         else:
             # Global role
             return super().delete_role(name)
@@ -331,18 +362,22 @@ class TenantRbacService(RbacService):
     def create_user(
         self,
         user_id: str,
+        username: str,
+        email: str,
+        tenant_ids: list[str] | None = None,
         roles: list[str] | None = None,
-        permissions: list[str] | None = None,
-        tenant_id: str | None = None,
-    ) -> User:
+        metadata: dict[str, Any] | None = None,
+    ) -> Result[User, FrameworkError]:
         """
         Create a new user, optionally in a specific tenant.
 
         Args:
             user_id: The user ID
+            username: The username
+            email: The email
+            tenant_ids: Optional list of tenant IDs for tenant-specific users
             roles: Optional list of role names
-            permissions: Optional list of direct permission strings
-            tenant_id: Optional tenant ID for tenant-specific users
+            metadata: Optional user metadata
 
         Returns:
             The created user
@@ -350,46 +385,51 @@ class TenantRbacService(RbacService):
         Raises:
             ValueError: If a user with the same ID already exists in the tenant
         """
-        if tenant_id is not None:
-            # Tenant-specific user
-            if tenant_id not in self._tenants:
-                raise ValueError(f"Tenant not found: {tenant_id}")
+        if tenant_ids:
+            for tenant_id in tenant_ids:
+                if tenant_id not in self._tenants:
+                    return Failure(
+                        FrameworkError(
+                            code="TENANT_NOT_FOUND",
+                            message=f"Tenant not found: {tenant_id}",
+                            details={"tenant_id": tenant_id}
+                        )
+                    )
 
             if tenant_id not in self._tenant_users:
                 self._tenant_users[tenant_id] = {}
 
             if user_id in self._tenant_users[tenant_id]:
-                raise ValueError(
-                    f"User already exists in tenant {tenant_id}: {user_id}"
+                return Failure(
+                    FrameworkError(
+                        code="USER_EXISTS_IN_TENANT",
+                        message=f"User {user_id} already exists in tenant {tenant_id}",
+                        details={"user_id": user_id, "tenant_id": tenant_id}
+                    )
                 )
 
-            # Create the user
-            user = User(id=user_id)
+        # Create the user
+        user = User(id=user_id, username=username, email=email, metadata=metadata)
 
-            # Add roles
-            if roles:
-                for role_name in roles:
-                    user.add_role(role_name)
+        # Add roles
+        if roles:
+            for role_name in roles:
+                user.add_role(role_name)
 
-            # Add direct permissions
-            if permissions:
-                for permission in permissions:
-                    user.add_permission(permission)
+        # Store the user
+        if tenant_ids:
+            for tenant_id in tenant_ids:
+                self._tenant_users[tenant_id][user_id] = user
 
-            # Store the user
-            self._tenant_users[tenant_id][user_id] = user
+        # Add user to tenant memberships
+        if user_id not in self._user_tenants:
+            self._user_tenants[user_id] = set()
+        if tenant_ids:
+            for tenant_id in tenant_ids:
+                self._user_tenants[user_id].add(tenant_id)
 
-            # Add user to tenant memberships
-            if user_id not in self._user_tenants:
-                self._user_tenants[user_id] = set()
-            self._user_tenants[user_id].add(tenant_id)
-
-            self._logger.debug(f"Created user {user_id} in tenant {tenant_id}")
-
-            return user
-        else:
-            # Global user (use parent implementation)
-            return super().create_user(user_id, roles, permissions)
+        self._logger.debug(f"Created user {user_id}")
+        return Success(user)
 
     def get_user(self, user_id: str, tenant_id: str | None = None) -> Optional[User]:
         """
@@ -423,20 +463,14 @@ class TenantRbacService(RbacService):
         return list(self._user_tenants.get(user_id, set()))
 
     def add_user_to_tenant(
-        self,
-        user_id: str,
-        tenant_id: str,
-        roles: list[str] | None = None,
-        permissions: list[str] | None = None,
-    ) -> bool:
+        self, user_id: str, tenant_id: str
+    ) -> Result[None, FrameworkError]:
         """
         Add a user to a tenant.
 
         Args:
             user_id: The user ID
             tenant_id: The tenant ID
-            roles: Optional list of role names to assign
-            permissions: Optional list of direct permissions to assign
 
         Returns:
             True if the user was added, False if the tenant doesn't exist
@@ -446,23 +480,37 @@ class TenantRbacService(RbacService):
         """
         # Check if tenant exists
         if tenant_id not in self._tenants:
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TENANT_NOT_FOUND",
+                    message=f"Tenant not found: {tenant_id}",
+                    details={"tenant_id": tenant_id}
+                )
+            )
 
         # Check if user already exists in tenant
         if tenant_id in self._tenant_users and user_id in self._tenant_users[tenant_id]:
-            raise ValueError(f"User {user_id} already exists in tenant {tenant_id}")
+            return Failure(
+                FrameworkError(
+                    code="USER_EXISTS_IN_TENANT",
+                    message=f"User {user_id} already exists in tenant {tenant_id}",
+                    details={"user_id": user_id, "tenant_id": tenant_id}
+                )
+            )
 
         # Create or get user
         global_user = self.get_user(user_id)
 
         if global_user:
             # User exists globally, create tenant-specific user with same ID
-            return self.create_user(user_id, roles, permissions, tenant_id) is not None
+            return self.create_user(user_id, global_user.username, global_user.email, [tenant_id]) is not None
         else:
             # Create new user in tenant
-            return self.create_user(user_id, roles, permissions, tenant_id) is not None
+            return self.create_user(user_id, None, None, [tenant_id]) is not None
 
-    def remove_user_from_tenant(self, user_id: str, tenant_id: str) -> bool:
+    def remove_user_from_tenant(
+        self, user_id: str, tenant_id: str
+    ) -> Result[None, FrameworkError]:
         """
         Remove a user from a tenant.
 
@@ -478,7 +526,13 @@ class TenantRbacService(RbacService):
             tenant_id not in self._tenant_users
             or user_id not in self._tenant_users[tenant_id]
         ):
-            return False
+            return Failure(
+                FrameworkError(
+                    code="USER_NOT_FOUND_IN_TENANT",
+                    message=f"User {user_id} not found in tenant {tenant_id}",
+                    details={"user_id": user_id, "tenant_id": tenant_id}
+                )
+            )
 
         # Remove user from tenant
         del self._tenant_users[tenant_id][user_id]
@@ -490,7 +544,7 @@ class TenantRbacService(RbacService):
                 del self._user_tenants[user_id]
 
         self._logger.debug(f"Removed user {user_id} from tenant {tenant_id}")
-        return True
+        return Success(None)
 
     def has_permission(
         self, user_id: str, permission: str, tenant_id: str | None = None

@@ -14,12 +14,27 @@ from datetime import UTC, datetime
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .result import Result
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .result import Result, ValidationError
-from .result import ValidationError as Error
+# Import error types from types.py
+from .base import (
+    ErrorCategory,
+    ErrorSeverity,
+    FrameworkError,
+    ValidationError,
+    DatabaseError,
+    AuthenticationError,
+    AuthorizationError,
+    ResourceNotFoundError as NotFoundError,
+    ConflictError,
+    RateLimitError,
+    ServerError,
+)
 
 __all__ = [
     "AuthenticationError",
@@ -43,31 +58,6 @@ __all__ = [
     "log_error",
     "register_error",
 ]
-
-
-# Error classification enums
-class ErrorSeverity(str, Enum):
-    """Error severity levels."""
-
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-
-
-class ErrorCategory(str, Enum):
-    """Error categories for classification."""
-
-    VALIDATION = "validation"
-    AUTHENTICATION = "authentication"
-    AUTHORIZATION = "authorization"
-    DATABASE = "database"
-    NETWORK = "network"
-    RESOURCE = "resource"
-    BUSINESS = "business"
-    SYSTEM = "system"
-    EXTERNAL = "external"
-    UNKNOWN = "unknown"
 
 
 # Error context collection
@@ -156,8 +146,9 @@ class ErrorDetail(BaseModel):
         default_factory=lambda: datetime.now(UTC), description="When the error occurred"
     )
 
+    @classmethod
     @field_validator("code")
-    def validate_code(self, v: str) -> str:
+    def validate_code(cls, v: str) -> str:
         """Validate that the error code is in the expected format."""
         v_upper = v.upper()
         if v != v_upper:
@@ -315,7 +306,7 @@ class ErrorCatalog:
         details: dict[str, Any] | None = None,
         field: str | None = None,
         source: str | None = None,
-    ) -> Result[Any, ValidationError]:
+    ) -> "Result[Any, ValidationError]":
         """
         Create a Failure result with an error from the catalog.
 
@@ -329,6 +320,8 @@ class ErrorCatalog:
         Returns:
             Failure result with the error
         """
+        from .result import Result
+
         error = cls.create(code, params, details, field, source)
         return Result.failure(
             error,
@@ -337,313 +330,6 @@ class ErrorCatalog:
                 "details": error.details,
                 "context": {"field": error.field, "source": error.source},
             },
-        )
-
-
-# Base error classes that extend the standard Exception hierarchy
-class FrameworkError(Exception):
-    """
-    Base class for all framework-specific errors.
-
-    This class extends the standard Exception class with additional properties
-    and utilities for working with the UNO error framework.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "FRAMEWORK_ERROR",
-        details: dict[str, Any] | None = None,
-        category: ErrorCategory = ErrorCategory.SYSTEM,
-        severity: ErrorSeverity = ErrorSeverity.ERROR,
-        http_status_code: int | None = None,
-        context: ErrorContext | None = None,
-        original_exception: Exception | None = None,
-    ):
-        """
-        Initialize a framework error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            category: Error category
-            severity: Error severity
-            http_status_code: HTTP status code for API responses
-            context: Error context information
-            original_exception: Original exception that caused this error
-        """
-        super().__init__(message)
-        self.code = code.upper()
-        self.details = details or {}
-        self.category = category
-        self.severity = severity
-        self.http_status_code = http_status_code
-        self.context = context or get_error_context()
-        self.original_exception = original_exception
-
-    def to_error_detail(self) -> ErrorDetail:
-        """Convert to ErrorDetail model."""
-        return ErrorDetail(
-            code=self.code,
-            message=str(self),
-            category=self.category,
-            severity=self.severity,
-            details=self.details,
-            trace_id=getattr(self.context, "trace_id", None),
-        )
-
-    def to_result(self) -> Result[Any, ValidationError]:
-        """Convert to a Failure result."""
-        return Result.failure(
-            str(self),
-            error_code=self.code,
-            details=self.details,
-        )
-
-    def with_context(self, context: ErrorContext) -> "FrameworkError":
-        """Create a new instance with updated context."""
-        return self.__class__(
-            message=str(self),
-            code=self.code,
-            details=self.details,
-            category=self.category,
-            severity=self.severity,
-            http_status_code=self.http_status_code,
-            context=context,
-            original_exception=self.original_exception,
-        )
-
-
-class ValidationError(FrameworkError):
-    """Error raised when validation fails."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "VALIDATION_ERROR",
-        details: dict[str, Any] | None = None,
-        field: str | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a validation error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            field: Field that failed validation
-            **kwargs: Additional error properties
-        """
-        details = details or {}
-        if field:
-            details["field"] = field
-
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.VALIDATION,
-            **kwargs,
-        )
-        self.field = field
-
-
-class DatabaseError(FrameworkError):
-    """Error raised for database-related issues."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "DATABASE_ERROR",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a database error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.DATABASE,
-            **kwargs,
-        )
-
-
-class AuthenticationError(FrameworkError):
-    """Error raised for authentication failures."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "AUTHENTICATION_ERROR",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize an authentication error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.AUTHENTICATION,
-            **kwargs,
-        )
-
-
-class AuthorizationError(FrameworkError):
-    """Error raised for authorization failures."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "AUTHORIZATION_ERROR",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize an authorization error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.AUTHORIZATION,
-            **kwargs,
-        )
-
-
-class NotFoundError(FrameworkError):
-    """Error raised when a resource is not found."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "NOT_FOUND",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a not found error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.RESOURCE,
-            **kwargs,
-        )
-
-
-class ConflictError(FrameworkError):
-    """Error raised when a conflict occurs (e.g., duplicate key)."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "CONFLICT",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a conflict error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.RESOURCE,
-            **kwargs,
-        )
-
-
-class RateLimitError(FrameworkError):
-    """Error raised when a rate limit is exceeded."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "RATE_LIMIT_EXCEEDED",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a rate limit error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.RESOURCE,
-            **kwargs,
-        )
-
-
-class ServerError(FrameworkError):
-    """Error raised for server-side issues."""
-
-    def __init__(
-        self,
-        message: str,
-        code: str = "SERVER_ERROR",
-        details: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        """
-        Initialize a server error.
-
-        Args:
-            message: Error message
-            code: Error code
-            details: Additional error details
-            **kwargs: Additional error properties
-        """
-        super().__init__(
-            message=message,
-            code=code,
-            details=details,
-            category=ErrorCategory.SYSTEM,
-            severity=ErrorSeverity.CRITICAL,
-            **kwargs,
         )
 
 
@@ -733,7 +419,7 @@ def get_error_context() -> ErrorContext:
 
 
 def log_error(
-    error: Union[Exception, ErrorDetail, Error],
+    error: Union[Exception, ErrorDetail, "Error"],
     logger: logging.Logger | None = None,
     level: int = logging.ERROR,
     include_traceback: bool = True,
@@ -767,7 +453,8 @@ def log_error(
         )
     elif isinstance(error, FrameworkError):
         error_detail = error.to_error_detail()
-    elif isinstance(error, Error):
+    else:
+        # Handle generic Error type
         error_detail = ErrorDetail(
             code=getattr(error, "code", "ERROR"),
             message=str(error),
@@ -776,8 +463,6 @@ def log_error(
             details=getattr(error, "details", {}),
             trace_id=context.trace_id,
         )
-    else:
-        error_detail = error
 
     # Create log entry
     log_entry = ErrorLog(
@@ -803,7 +488,7 @@ def log_error(
     return log_entry
 
 
-def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> dict[str, Any]:
+def error_to_dict(error: Union[Exception, ErrorDetail, "Error"]) -> dict[str, Any]:
     """
     Convert an error to a dictionary representation.
 
@@ -823,7 +508,10 @@ def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> dict[str, Any]
             "severity": ErrorSeverity.ERROR.value,
             "details": {"exception_type": error.__class__.__name__},
         }
-    elif isinstance(error, Error):
+    else:
+        # Handle generic Error type
+        if hasattr(error, "model_dump"):
+            return error.model_dump()
         return {
             "code": getattr(error, "code", "ERROR"),
             "message": str(error),
@@ -831,17 +519,11 @@ def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> dict[str, Any]
             "severity": ErrorSeverity.ERROR.value,
             "details": getattr(error, "details", {}),
         }
-    else:
-        return error.model_dump()
-
-
-# Type variable for Result generic
-T = TypeVar("T")
 
 
 def error_to_result(
     error: Union[Exception, ErrorDetail],
-) -> Result[Any, ValidationError]:
+) -> "Result[Any, ValidationError]":
     """
     Convert an error to a Failure result.
 
@@ -851,6 +533,8 @@ def error_to_result(
     Returns:
         Failure result
     """
+    from .result import Result
+
     if isinstance(error, FrameworkError):
         return error.to_result()
     elif isinstance(error, Exception):
@@ -868,65 +552,78 @@ def error_to_result(
 
 
 # Register common errors
-register_error(
-    code="VALIDATION_ERROR",
-    message_template="Validation error: {message}",
-    category=ErrorCategory.VALIDATION,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=400,
-    help_text="Check the request data and ensure it meets the validation requirements.",
-)
+def register_common_errors():
+    """
+    Register common error types with the ErrorCatalog.
+    """
+    # Validation errors
+    ErrorCatalog.register(
+        code="VALIDATION_ERROR",
+        message_template="Validation error: {message}",
+        category=ErrorCategory.VALIDATION,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=400,
+        help_text="Check the request data and ensure it meets the validation requirements.",
+    )
 
-register_error(
-    code="AUTHENTICATION_ERROR",
-    message_template="Authentication error: {message}",
-    category=ErrorCategory.AUTHENTICATION,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=401,
-    help_text="Check your authentication credentials and try again.",
-)
+    # Authentication errors
+    ErrorCatalog.register(
+        code="AUTHENTICATION_ERROR",
+        message_template="Authentication error: {message}",
+        category=ErrorCategory.AUTHENTICATION,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=401,
+        help_text="Check your authentication credentials and try again.",
+    )
 
-register_error(
-    code="AUTHORIZATION_ERROR",
-    message_template="Authorization error: {message}",
-    category=ErrorCategory.AUTHORIZATION,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=403,
-    help_text="You do not have permission to perform this action.",
-)
+    # Authorization errors
+    ErrorCatalog.register(
+        code="AUTHORIZATION_ERROR",
+        message_template="Authorization error: {message}",
+        category=ErrorCategory.AUTHORIZATION,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=403,
+        help_text="You do not have permission to perform this action.",
+    )
 
-register_error(
-    code="NOT_FOUND",
-    message_template="{entity} not found: {id}",
-    category=ErrorCategory.RESOURCE,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=404,
-    help_text="The requested resource does not exist.",
-)
+    # Resource errors
+    ErrorCatalog.register(
+        code="NOT_FOUND",
+        message_template="{entity} not found: {id}",
+        category=ErrorCategory.RESOURCE,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=404,
+        help_text="The requested resource does not exist.",
+    )
 
-register_error(
-    code="CONFLICT",
-    message_template="{message}",
-    category=ErrorCategory.RESOURCE,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=409,
-    help_text="The request conflicts with the current state of the resource.",
-)
+    ErrorCatalog.register(
+        code="CONFLICT",
+        message_template="{message}",
+        category=ErrorCategory.RESOURCE,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=409,
+        help_text="The request conflicts with the current state of the resource.",
+    )
 
-register_error(
-    code="RATE_LIMIT_EXCEEDED",
-    message_template="Rate limit exceeded: {message}",
-    category=ErrorCategory.RESOURCE,
-    severity=ErrorSeverity.ERROR,
-    http_status_code=429,
-    help_text="You have exceeded the maximum number of requests. Please try again later.",
-)
+    ErrorCatalog.register(
+        code="RATE_LIMIT_EXCEEDED",
+        message_template="Rate limit exceeded: {message}",
+        category=ErrorCategory.RESOURCE,
+        severity=ErrorSeverity.ERROR,
+        http_status_code=429,
+        help_text="You have exceeded the maximum number of requests. Please try again later.",
+    )
 
-register_error(
-    code="SERVER_ERROR",
-    message_template="Server error: {message}",
-    category=ErrorCategory.SYSTEM,
-    severity=ErrorSeverity.CRITICAL,
-    http_status_code=500,
-    help_text="An internal server error occurred. Please try again later.",
-)
+    # Server errors
+    ErrorCatalog.register(
+        code="SERVER_ERROR",
+        message_template="Server error: {message}",
+        category=ErrorCategory.SYSTEM,
+        severity=ErrorSeverity.CRITICAL,
+        http_status_code=500,
+        help_text="An internal server error occurred. Please try again later.",
+    )
+
+
+# Register common errors at module import time
+register_common_errors()

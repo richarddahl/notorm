@@ -237,7 +237,16 @@ async def create_query(
     result = await query_service.create_with_values(query, query_data.values)
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return result.value
 
@@ -251,7 +260,16 @@ async def list_queries(
     result = await query_service.list_with_values(meta_type_id)
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return result.value
 
@@ -265,7 +283,16 @@ async def get_query(
     result = await query_service.get_with_values(query_id)
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return result.value
 
@@ -283,7 +310,16 @@ async def update_query(
     result = await query_service.update_with_values(query_id, data_dict, values)
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return result.value
 
@@ -297,7 +333,16 @@ async def delete_query(
     result = await query_service.delete_with_values(query_id)
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return {"status": "success", "message": "Query deleted"}
 
@@ -316,7 +361,16 @@ async def execute_query(
     )
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     # Return the results with a count
     record_ids = result.value
@@ -340,7 +394,16 @@ async def count_query_matches(
     )
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return QueryCountResponse(count=result.value)
 
@@ -359,7 +422,16 @@ async def check_record_matches_query(
     )
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return QueryCheckRecordResponse(matches=result.value)
 
@@ -375,7 +447,16 @@ async def invalidate_cache(
     )
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     return QueryCacheInvalidateResponse(invalidated_count=result.value)
 
@@ -392,7 +473,16 @@ async def execute_query_with_filters(
     )
     
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
     
     entities, count = result.value
     return QueryWithFiltersResponse(results=entities, count=count)
@@ -415,10 +505,37 @@ async def generate_query_paths(
         result = await query_path_service.generate_for_model(model_class)
         
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
         
         return result.value
     except ImportError as e:
-        raise HTTPException(status_code=400, detail=f"Could not import model: {str(e)}")
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "IMPORT_ERROR",
+                    "message": "Could not import model",
+                    "details": str(e)
+                }
+            }
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating query paths: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "Error generating query paths",
+                    "details": str(e)
+                }
+            }
+        )

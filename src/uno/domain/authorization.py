@@ -24,6 +24,8 @@ from typing import (
 )
 
 from uno.core.base.error import AuthorizationError
+from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.framework import FrameworkError
 from uno.domain.application_services import ServiceContext
 from uno.domain.models import AggregateRoot, Entity
 
@@ -236,7 +238,7 @@ class AuthorizationPolicy(ABC, Generic[T]):
 
     async def authorize(
         self, context: ServiceContext, target: Optional[T] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Check if the user is authorized to perform the action.
 
@@ -250,14 +252,26 @@ class AuthorizationPolicy(ABC, Generic[T]):
         # Check if the user is authenticated
         if not context.is_authenticated:
             self.logger.warning("Authorization failed: User is not authenticated")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="AUTHENTICATION_REQUIRED",
+                    message="User is not authenticated",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Check if the user has the required permission
         if not self._check_permission(context):
             self.logger.warning(
                 f"Authorization failed: Missing permission {self.permission}"
             )
-            return False
+            return Failure(
+                FrameworkError(
+                    code="NOT_AUTHORIZED",
+                    message=f"Not authorized to {self.action} {self.resource}",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Perform additional authorization logic
         return await self._authorize_internal(context, target)
@@ -307,7 +321,7 @@ class AuthorizationPolicy(ABC, Generic[T]):
     @abstractmethod
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[T] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Perform internal authorization logic.
 
@@ -334,7 +348,7 @@ class SimplePolicy(AuthorizationPolicy[T]):
 
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[T] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Simply return True as the permission check was already done.
 
@@ -345,7 +359,7 @@ class SimplePolicy(AuthorizationPolicy[T]):
         Returns:
             True always
         """
-        return True
+        return Success(True)
 
 
 class OwnershipPolicy(AuthorizationPolicy[EntityT]):
@@ -376,7 +390,7 @@ class OwnershipPolicy(AuthorizationPolicy[EntityT]):
 
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[EntityT] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Check if the user is the owner of the target entity.
 
@@ -390,18 +404,30 @@ class OwnershipPolicy(AuthorizationPolicy[EntityT]):
         # If no target is provided, we can't check ownership
         if target is None:
             self.logger.warning("Ownership check failed: No target provided")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TARGET_REQUIRED",
+                    message="Target entity is required for ownership check",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Check if the target has the owner field
         if not hasattr(target, self.owner_field):
             self.logger.warning(
                 f"Ownership check failed: Target has no {self.owner_field} field"
             )
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TARGET_INVALID",
+                    message=f"Target entity is invalid: missing {self.owner_field} field",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Check if the user has admin privileges (*:*)
         if "*:*" in context.permissions:
-            return True
+            return Success(True)
 
         # Check if the user is the owner
         owner_id = getattr(target, self.owner_field)
@@ -411,8 +437,15 @@ class OwnershipPolicy(AuthorizationPolicy[EntityT]):
             self.logger.warning(
                 f"Ownership check failed: User {context.user_id} is not owner {owner_id}"
             )
+            return Failure(
+                FrameworkError(
+                    code="NOT_AUTHORIZED",
+                    message=f"Not authorized to {self.action} {self.resource}",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
-        return is_owner
+        return Success(True)
 
 
 class TenantPolicy(AuthorizationPolicy[EntityT]):
@@ -443,7 +476,7 @@ class TenantPolicy(AuthorizationPolicy[EntityT]):
 
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[EntityT] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Check if the entity belongs to the user's tenant.
 
@@ -457,23 +490,41 @@ class TenantPolicy(AuthorizationPolicy[EntityT]):
         # If no target is provided, we can't check tenant
         if target is None:
             self.logger.warning("Tenant check failed: No target provided")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TARGET_REQUIRED",
+                    message="Target entity is required for tenant check",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # If no tenant_id in context, we can't check tenant
         if context.tenant_id is None:
             self.logger.warning("Tenant check failed: No tenant_id in context")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="CONTEXT_INVALID",
+                    message="Context is invalid: missing tenant_id",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Check if the target has the tenant field
         if not hasattr(target, self.tenant_field):
             self.logger.warning(
                 f"Tenant check failed: Target has no {self.tenant_field} field"
             )
-            return False
+            return Failure(
+                FrameworkError(
+                    code="TARGET_INVALID",
+                    message=f"Target entity is invalid: missing {self.tenant_field} field",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         # Check if the user has admin privileges (*:*)
         if "*:*" in context.permissions:
-            return True
+            return Success(True)
 
         # Check if the entity belongs to the user's tenant
         entity_tenant_id = getattr(target, self.tenant_field)
@@ -483,8 +534,15 @@ class TenantPolicy(AuthorizationPolicy[EntityT]):
             self.logger.warning(
                 f"Tenant check failed: Entity tenant {entity_tenant_id} != user tenant {context.tenant_id}"
             )
+            return Failure(
+                FrameworkError(
+                    code="NOT_AUTHORIZED",
+                    message=f"Not authorized to {self.action} {self.resource}",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
-        return same_tenant
+        return Success(True)
 
 
 class FunctionPolicy(AuthorizationPolicy[T]):
@@ -515,7 +573,7 @@ class FunctionPolicy(AuthorizationPolicy[T]):
 
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[T] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Delegate authorization to the function.
 
@@ -527,10 +585,17 @@ class FunctionPolicy(AuthorizationPolicy[T]):
             True if authorized, False otherwise
         """
         try:
-            return self.func(context, target)
+            result = self.func(context, target)
+            return Success(result)
         except Exception as e:
             self.logger.error(f"Authorization function failed: {str(e)}")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="AUTHORIZATION_FAILED",
+                    message=f"Authorization function failed: {str(e)}",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
 
 class CompositePolicy(AuthorizationPolicy[T]):
@@ -570,7 +635,7 @@ class CompositePolicy(AuthorizationPolicy[T]):
 
     async def _authorize_internal(
         self, context: ServiceContext, target: Optional[T] = None
-    ) -> bool:
+    ) -> Result[bool, FrameworkError]:
         """
         Apply all policies according to the combination mode.
 
@@ -583,10 +648,17 @@ class CompositePolicy(AuthorizationPolicy[T]):
         """
         # Check if the user has admin privileges (*:*)
         if "*:*" in context.permissions:
-            return True
+            return Success(True)
+
         if not self.policies:
             self.logger.warning("No policies to apply")
-            return False
+            return Failure(
+                FrameworkError(
+                    code="NO_AUTHORIZATION_POLICIES",
+                    message="No authorization policies configured",
+                    details={"resource": self.resource, "action": self.action}
+                )
+            )
 
         results = []
         for policy in self.policies:
@@ -594,7 +666,9 @@ class CompositePolicy(AuthorizationPolicy[T]):
                 f"Applying policy {policy.__class__.__name__} for {self.resource}:{self.action}"
             )
             result = await policy.authorize(context, target)
-            results.append(result)
+            if result.is_failure:
+                return Failure(result.error)
+            results.append(result.value)
             self.logger.info(f"Policy {policy.__class__.__name__} result: {result}")
 
             # Short-circuit evaluation

@@ -111,9 +111,15 @@ def create_recommendation_router(
             return {"status": "success"}
         except Exception as e:
             logger.error(f"Error creating interaction: {str(e)}")
-            raise HTTPException(
-                status_code=500, detail=f"Failed to create interaction: {str(e)}"
-            )
+            return {
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Failed to create interaction",
+                    "details": {
+                        "error": str(e)
+                    }
+                }
+            }
 
     @router.post("/interactions/batch", status_code=201)
     async def create_interactions_batch(request: BatchInteractionCreate):
@@ -133,7 +139,18 @@ def create_recommendation_router(
             return {"status": "success", "count": len(interactions)}
         except Exception as e:
             logger.error(f"Error creating interactions batch: {str(e)}")
-            raise HTTPException(
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Invalid input",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
                 status_code=500, detail=f"Failed to create interactions batch: {str(e)}"
             )
 
@@ -163,7 +180,18 @@ def create_recommendation_router(
             }
         except Exception as e:
             logger.error(f"Error generating recommendations: {str(e)}")
-            raise HTTPException(
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Invalid input",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
                 status_code=500, detail=f"Failed to generate recommendations: {str(e)}"
             )
 
@@ -201,7 +229,18 @@ def create_recommendation_router(
             }
         except Exception as e:
             logger.error(f"Error generating recommendations: {str(e)}")
-            raise HTTPException(
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "VALIDATION_ERROR",
+                        "message": "Invalid input",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
                 status_code=500, detail=f"Failed to generate recommendations: {str(e)}"
             )
 

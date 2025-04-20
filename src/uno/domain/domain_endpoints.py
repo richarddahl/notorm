@@ -6,12 +6,15 @@ design approach with domain services and entities.
 """
 
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
+from fastapi import APIRouter, Depends, Path, Query, Body
+from fastapi.responses import JSONResponse
 
 from uno.domain.api_integration import (
     create_domain_router,
     domain_endpoint,
 )
+from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.framework import FrameworkError
 from uno.dependencies.scoped_container import get_service
 from uno.attributes.domain_services import (
     AttributeService,
@@ -53,12 +56,33 @@ async def get_attribute_type_by_name(
     result = await service.find_by_name(name, group_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
     if not result.value:
-        raise HTTPException(status_code=404, detail="Attribute type not found")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": {
+                    "code": "ATTRIBUTE_TYPE_NOT_FOUND",
+                    "message": "Attribute type not found",
+                    "details": {"name": name, "group_id": group_id}
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )
 
 
 @attribute_type_router.get("/{id}/hierarchy")
@@ -71,9 +95,21 @@ async def get_attribute_type_hierarchy(
     result = await service.get_hierarchy(id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return [attr_type.to_dict() for attr_type in result.value]
+    return JSONResponse(
+        status_code=200,
+        content=[attr_type.to_dict() for attr_type in result.value]
+    )
 
 
 @attribute_type_router.post("/{id}/value-types/{meta_type_id}")
@@ -87,9 +123,21 @@ async def add_value_type(
     result = await service.add_value_type(id, meta_type_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )
 
 
 @attribute_type_router.post("/{id}/describes/{meta_type_id}")
@@ -103,9 +151,21 @@ async def add_describable_type(
     result = await service.add_describable_type(id, meta_type_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )
 
 
 # Add custom endpoints for attributes
@@ -121,7 +181,16 @@ async def get_attributes_by_type(
     result = await service.find_by_attribute_type(attribute_type_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
     return [attr.to_dict() for attr in result.value]
 
@@ -136,9 +205,21 @@ async def get_attribute_with_related(
     result = await service.get_with_related_data(id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )
 
 
 @attribute_router.post("/{id}/values/{value_id}")
@@ -152,9 +233,21 @@ async def add_value_to_attribute(
     result = await service.add_value(id, value_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )
 
 
 @attribute_router.post("/{id}/meta-records/{meta_record_id}")
@@ -168,6 +261,18 @@ async def add_meta_record_to_attribute(
     result = await service.add_meta_record(id, meta_record_id)
 
     if result.is_failure:
-        raise HTTPException(status_code=400, detail=str(result.error))
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": result.error.code,
+                    "message": result.error.message,
+                    "details": result.error.details
+                }
+            }
+        )
 
-    return result.value.to_dict()
+    return JSONResponse(
+        status_code=200,
+        content=result.value.to_dict()
+    )

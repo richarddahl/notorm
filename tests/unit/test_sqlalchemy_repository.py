@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository, EntityMapper
 from uno.domain.entity.base import EntityBase
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.framework import Result, Success, Failure, ErrorDetail
 
 # Example entity and model for testing
 class DummyEntity(EntityBase):

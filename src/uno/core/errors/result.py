@@ -1,443 +1,204 @@
-"""
-Result Pattern Implementation
+from typing import Generic, TypeVar, Callable, cast
+from uno.core.errors.base import FrameworkError
+from uno.core.errors.framework import ErrorDetail
 
-This module provides a Result class for handling errors without exceptions.
-The Result pattern is a way to represent either a successful value or an error.
-"""
-
-from collections.abc import Callable
-from contextlib import suppress
-from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from enum import Enum, auto
-from typing import Any, Generic, TypeVar
-
-T = TypeVar('T')  # Success value type
-E = TypeVar('E')  # Error type
-R = TypeVar('R')  # Return type for functions
+T = TypeVar("T")
+E = TypeVar("E", bound=FrameworkError)
 
 
-class ErrorSeverity(Enum):
-    """Defines the severity levels for validation errors."""
-    
-    CRITICAL = auto()
-    ERROR = auto()
-    WARNING = auto()
-    INFO = auto()
+class Success(Generic[T]):
+    """Represents a successful operation."""
+
+    def __init__(self, value: T):
+        """
+        Initialize a success result.
+
+        Args:
+            value: The successful value
+        """
+        self._value = value
+
+    def is_success(self) -> bool:
+        return True
+
+    def is_failure(self) -> bool:
+        return False
+
+    def value(self) -> T:
+        return self._value
 
 
-@dataclass
-class ValidationError:
-    """
-    Represents a validation error with context information.
-    
-    This class contains detailed information about a validation error,
-    including field path, error message, error code, and severity.
-    """
-    
-    message: str
-    path: str | None = None
-    code: str | None = None
-    severity: ErrorSeverity = ErrorSeverity.ERROR
-    context: dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
-    
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the validation error to a dictionary representation."""
-        return {
-            "message": self.message,
-            "path": self.path,
-            "code": self.code,
-            "severity": self.severity.name,
-            "context": self.context,
-            "timestamp": self.timestamp.isoformat()
-        }
-    
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> 'ValidationError':
-        """Create a validation error from a dictionary representation."""
-        severity_str = data.get("severity", "ERROR")
-        severity = ErrorSeverity[severity_str] if isinstance(severity_str, str) else ErrorSeverity.ERROR
-        
-        timestamp_str = data.get("timestamp")
-        if timestamp_str and isinstance(timestamp_str, str):
-            try:
-                timestamp = datetime.fromisoformat(timestamp_str)
-            except ValueError:
-                timestamp = datetime.now(UTC)
-        else:
-            timestamp = datetime.now(UTC)
-        
-        return ValidationError(
-            message=data["message"],
-            path=data.get("path"),
-            code=data.get("code"),
-            severity=severity,
-            context=data.get("context", {}),
-            timestamp=timestamp
-        )
+class Failure(Generic[E]):
+    """Represents a failed operation."""
+
+    def __init__(self, error: E):
+        """
+        Initialize a failure result.
+
+        Args:
+            error: The error that occurred
+        """
+        if not isinstance(error, FrameworkError):
+            raise TypeError("Error must be a FrameworkError subclass")
+
+        self._error = error
+
+    def is_success(self) -> bool:
+        return False
+
+    def is_failure(self) -> bool:
+        return True
+
+    def error(self) -> E:
+        return self._error
 
 
 class Result(Generic[T, E]):
-    """
-    A container for return values or errors.
-    
-    This class implements the Result pattern, providing a way to
-    handle errors without exceptions. It can be used for validation
-    results, service operation results, or any operation that can fail.
-    """
-    
-    @classmethod
-    def success(cls, value: T, metadata: dict[str, Any] | None = None) -> 'Result[T, E]':
+    """Represents the result of an operation that may succeed or fail."""
+
+    def __init__(self, value: Success[T] | Failure[E]):
         """
-        Create a successful Result.
-        
+        Initialize a Result instance.
+
         Args:
-            value: The success value
-            metadata: Additional metadata
-            
-        Returns:
-            A successful Result instance
+            value: The success or failure value
         """
-        return cls(value=value, metadata=metadata)
-    
-    @classmethod
-    def failure(cls, error: E | list[E], metadata: dict[str, Any] | None = None) -> 'Result[T, E]':
-        """
-        Create a failed Result.
-        
-        Args:
-            error: The error or list of errors
-            metadata: Additional metadata
-            
-        Returns:
-            A failed Result instance
-        """
-        if isinstance(error, list):
-            return cls(errors=error, metadata=metadata)
-        return cls(error=error, metadata=metadata)
-    
-    def __init__(
-        self, 
-        value: T | None = None, 
-        error: E | None = None,
-        errors: list[E] | None = None,
-        metadata: dict[str, Any] | None = None
-    ): 
-        """
-        Create a new Result.
-        
-        Args:
-            value: The success value, if any
-            error: The error, if any
-            errors: A list of errors, if any
-            metadata: Additional metadata about the result
-        """
+        if isinstance(value, Failure) and not isinstance(value.error(), FrameworkError):
+            raise TypeError("Error must be a FrameworkError subclass")
+
         self._value = value
-        self._errors = errors or []
-        self._metadata = metadata or {}
-        
-        if error is not None:
-            self._errors.append(error)
-        
-        self._is_success = not self._errors
-    
-    @property
+
     def is_success(self) -> bool:
-        """
-        Check if the operation was successful.
-        
-        Returns:
-            True if successful, False otherwise
-        """
-        return self._is_success
-    
-    @property
+        """Check if this is a success result."""
+        return isinstance(self._value, Success)
+
     def is_failure(self) -> bool:
+        """Check if this is a failure result."""
+        return isinstance(self._value, Failure)
+
+    def value(self) -> T:
+        """Get the success value if this is a success result."""
+        if self.is_success():
+            return self._value.value()
+        raise ValueError("Cannot get value from a failure Result")
+
+    def error(self) -> E:
+        """Get the error if this is a failure result."""
+        if self.is_failure():
+            return self._value.error()
+        raise ValueError("Cannot get error from a success Result")
+
+    @classmethod
+    def success(cls, value: T) -> "Result[T, E]":
+        """Create a success result."""
+        return cls(Success(value))
+
+    @classmethod
+    def failure(cls, error: E) -> "Result[T, E]":
+        """Create a failure result with an error."""
+        if not isinstance(error, FrameworkError):
+            raise TypeError("Error must be a FrameworkError subclass")
+
+        return cls(Failure(error))
+
+    def map(self, func: Callable[[T], T]) -> "Result[T, E]":
         """
-        Check if the operation failed.
-        
-        Returns:
-            True if failed, False otherwise
-        """
-        return not self._is_success
-    
-    @property
-    def value(self) -> T | None:
-        """
-        Get the success value, if any.
-        
-        Returns:
-            The success value, or None if the operation failed
-        """
-        return self._value
-    
-    def value_or(self, default: R) -> T | R:
-        """
-        Get the success value or a default value.
-        
+        Apply a function to the success value if this is a success result.
+
         Args:
-            default: The default value to return if the operation failed
-            
+            func: The function to apply
+
+        Returns:
+            A new Result with the transformed value
+        """
+        if self.is_success():
+            return Result.success(func(self.value()))
+        return self
+
+    def flat_map(self, func: Callable[[T], "Result[T, E]"]) -> "Result[T, E]":
+        """
+        Apply a function that returns a Result to the success value.
+
+        Args:
+            func: The function to apply
+
+        Returns:
+            The result of applying the function
+        """
+        if self.is_success():
+            return func(self.value())
+        return self
+
+    def recover(self, func: Callable[[E], T]) -> "Result[T, E]":
+        """
+        Apply a recovery function to the error if this is a failure result.
+
+        Args:
+            func: The recovery function
+
+        Returns:
+            A new Result with the recovered value
+        """
+        if self.is_failure():
+            return Result.success(func(self.error()))
+        return self
+
+    def or_else(self, default: T) -> T:
+        """
+        Get the success value or a default value if this is a failure result.
+
+        Args:
+            default: The default value to return
+
         Returns:
             The success value if successful, or the default value if failed
         """
-        return self._value if self.is_success and self._value is not None else default
-    
-    def value_or_raise(self, exception_factory: Callable[[list[E]], Exception] | None = None) -> T:
+        return self.value() if self.is_success() else default
+
+    def to_error_detail(self) -> "ErrorDetail":
         """
-        Get the success value or raise an exception.
-        
-        Args:
-            exception_factory: A function that takes the errors and returns an exception
-            
+        Convert the error to an ErrorDetail if this is a failure result.
+
         Returns:
-            The success value
-            
+            The error as an ErrorDetail
+
         Raises:
-            Exception: If the operation failed
+            ValueError: If this is a success result
         """
-        if self.is_failure:
-            if exception_factory:
-                raise exception_factory(self._errors)
-            raise ValueError(f"Operation failed with errors: {self._errors}")
-        
-        if self._value is None:
-            raise ValueError("Operation succeeded but returned None")
-            
-        return self._value
-    
-    @property
-    def error(self) -> E | None:
-        """
-        Get the first error, if any.
-        
-        Returns:
-            The first error, or None if the operation succeeded
-        """
-        return self._errors[0] if self._errors else None
-    
-    @property
-    def errors(self) -> list[E]:
-        """
-        Get all errors.
-        
-        Returns:
-            A list of all errors
-        """
-        return self._errors.copy()
-    
-    @property
-    def metadata(self) -> dict[str, Any]:
-        """
-        Get the metadata associated with this result.
-        
-        Returns:
-            A dictionary of metadata
-        """
-        return self._metadata.copy()
-    
-    def add_metadata(self, key: str, value: Any) -> 'Result[T, E]':
-        """
-        Add metadata to the result.
-        
-        Args:
-            key: The metadata key
-            value: The metadata value
-            
-        Returns:
-            Self for chaining
-        """
-        self._metadata[key] = value
-        return self
-    
-    def map(self, fn: Callable[[T], R]) -> 'Result[R, E]':
-        """
-        Apply a function to the success value.
-        
-        Args:
-            fn: The function to apply to the success value
-            
-        Returns:
-            A new Result with the function applied to the success value,
-            or the original error if the operation failed
-        """
-        if self.is_success:
-            try:
-                new_value = fn(self._value)
-                return Result(value=new_value, metadata=self._metadata)
-            except Exception as e:
-                return Result(error=e, metadata=self._metadata)
-        return Result(errors=self._errors, metadata=self._metadata)
-    
-    def map_error(self, fn: Callable[[E], R]) -> 'Result[T, R]':
-        """
-        Apply a function to the error(s).
-        
-        Args:
-            fn: The function to apply to each error
-            
-        Returns:
-            A new Result with the function applied to the errors,
-            or the original success value if the operation succeeded
-        """
-        if self.is_failure:
-            try:
-                new_errors = [fn(error) for error in self._errors]
-                return Result(errors=new_errors, metadata=self._metadata)
-            except Exception as e:
-                return Result(error=e, metadata=self._metadata)
-        return self
-    
-    def bind(self, fn: Callable[[T], 'Result[R, E]']) -> 'Result[R, E]':
-        """
-        Chain operations that might fail.
-        
-        Args:
-            fn: A function that takes the success value and returns a new Result
-            
-        Returns:
-            The new Result from the function, or the original error
-            if the operation failed
-        """
-        if self.is_success:
-            try:
-                result = fn(self._value)
-                # Merge metadata
-                for key, value in self._metadata.items():
-                    if key not in result._metadata:
-                        result._metadata[key] = value
-                return result
-            except Exception as e:
-                return Result(error=e, metadata=self._metadata)
-        return Result(errors=self._errors, metadata=self._metadata)
-    
-    def combine(self, other: 'Result[Any, E]') -> 'Result[T, E]':
-        """
-        Combine this result with another result, accumulating errors.
-        
-        Args:
-            other: Another result to combine with this one
-            
-        Returns:
-            A new result with all errors from both results
-        """
-        if self.is_success and other.is_success:
-            return self
-        
-        combined_errors = self._errors.copy()
-        combined_errors.extend(other._errors)
-        
-        # Merge metadata
-        combined_metadata = self._metadata.copy()
-        for key, value in other._metadata.items():
-            if key not in combined_metadata:
-                combined_metadata[key] = value
-        
-        return Result(errors=combined_errors, metadata=combined_metadata)
-    
-    def tap(self, fn: Callable[[T], None]) -> 'Result[T, E]':
-        """
-        Execute a function with the success value without changing the result.
-        
-        Args:
-            fn: The function to execute with the success value
-            
-        Returns:
-            The original result
-        """
-        if self.is_success and self._value is not None:
-            with suppress(Exception):
-                fn(self._value)
-        return self
-    
-    def tap_error(self, fn: Callable[[list[E]], None]) -> 'Result[T, E]':
-        """
-        Execute a function with the errors without changing the result.
-        
-        Args:
-            fn: The function to execute with the errors
-            
-        Returns:
-            The original result
-        """
-        if self.is_failure:
-            with suppress(Exception):
-                fn(self._errors)
-        return self
-    
-    
-    
-    @staticmethod
-    def from_exception(e: Exception, metadata: dict[str, Any] | None = None) -> 'Result[Any, Exception]':
-        """
-        Create a failed result from an exception.
-        
-        Args:
-            e: The exception
-            metadata: Additional metadata about the result
-            
-        Returns:
-            A failed Result with the exception as the error
-        """
-        return Result(error=e, metadata=metadata)
-    
-    @staticmethod
-    def try_catch(fn: Callable[[], T], metadata: dict[str, Any] | None = None) -> 'Result[T, Exception]':
-        """
-        Execute a function and return a Result.
-        
-        Args:
-            fn: The function to execute
-            metadata: Additional metadata about the result
-            
-        Returns:
-            A Result containing either the function's return value or any exception raised
-        """
-        try:
-            return Result.success(fn(), metadata=metadata)
-        except Exception as e:
-            return Result.failure(e, metadata=metadata)
-    
-    @staticmethod
-    def all(results: list['Result[T, E]']) -> 'Result[list[T], E]':
-        """
-        Combine multiple results into a single result.
-        
-        This method returns a success result with a list of all success values
-        if all results are successful, or a failure result with all errors if
-        any result is a failure.
-        
-        Args:
-            results: The results to combine
-            
-        Returns:
-            A combined result
-        """
-        if not results:
-            return Result.success([])
-        
-        success_values = []
-        all_errors = []
-        combined_metadata = {}
-        
-        for result in results:
-            if result.is_success:
-                if result.value is not None:
-                    success_values.append(result.value)
-            else:
-                all_errors.extend(result.errors)
-            
-            # Merge metadata
-            for key, value in result.metadata.items():
-                if key not in combined_metadata:
-                    combined_metadata[key] = value
-        
-        if all_errors:
-            return Result.failures(all_errors, metadata=combined_metadata)
-        
-        return Result.success(success_values, metadata=combined_metadata)
+        from uno.core.errors.framework import ErrorDetail
 
+        if self.is_failure():
+            error = self.error()
+            return ErrorDetail(
+                code=error.code,
+                message=error.message,
+                category=error.category,
+                severity=error.severity,
+                details=error.details,
+                timestamp=error.timestamp,
+                trace_id=error.context.trace_id if error.context else None,
+            )
+        raise ValueError("Cannot convert success result to error detail")
 
-# Type alias for validation results
-ValidationResult = Result[T, ValidationError]
+    @classmethod
+    def from_error_detail(cls, detail: ErrorDetail) -> "Result[T, E]":
+        """
+        Create a failure result from an ErrorDetail.
+
+        Args:
+            detail: The error detail
+
+        Returns:
+            A failure result with the error
+        """
+        error = cast(
+            E,
+            FrameworkError(
+                message=detail.message,
+                code=detail.code,
+                details=detail.details,
+                category=detail.category,
+                severity=detail.severity,
+            ),
+        )
+        return cls.failure(error)

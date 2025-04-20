@@ -9,7 +9,6 @@ This module maintains a registry of all error codes with their
 descriptions, categories, and other metadata.
 """
 
-from typing import Dict, List, Optional
 from uno.core.base.error import ErrorInfo, ErrorCategory, ErrorSeverity
 
 # Global registry of error codes
@@ -54,7 +53,7 @@ def register_error(
     )
 
 
-def get_error_code_info(code: str) -> Optional[ErrorInfo]:
+def get_error_code_info(code: str) -> ErrorInfo | None:
     """
     Get information about an error code.
 

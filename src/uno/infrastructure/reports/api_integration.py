@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Union, Callable
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body, FastAPI
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body, FastAPI, JSONResponse
 from pydantic import BaseModel
 
 from uno.reports.entities import (
@@ -123,7 +123,16 @@ def register_report_field_definition_endpoints(
         # Create entity
         result = await field_definition_service.create(entity)
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         # Convert entity to DTO
         return schema_manager.entity_to_dto(result.value)
@@ -144,9 +153,17 @@ def register_report_field_definition_endpoints(
         """Get a report field definition by ID."""
         result = await field_definition_service.get(field_definition_id)
         if result.is_failure:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=404,
-                detail=f"Field definition with ID {field_definition_id} not found",
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Field definition with ID {field_definition_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         return schema_manager.entity_to_dto(result.value)
@@ -198,7 +215,16 @@ def register_report_field_definition_endpoints(
             filters=filters, skip=skip, limit=limit
         )
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         return schema_manager.entity_list_to_dto_list(result.value)
 
@@ -220,9 +246,17 @@ def register_report_field_definition_endpoints(
         # Get existing entity
         get_result = await field_definition_service.get(field_definition_id)
         if get_result.is_failure:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=404,
-                detail=f"Field definition with ID {field_definition_id} not found",
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Field definition with ID {field_definition_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         # Convert DTO to entity
@@ -231,7 +265,16 @@ def register_report_field_definition_endpoints(
         # Update entity
         update_result = await field_definition_service.update(entity)
         if update_result.is_failure:
-            raise HTTPException(status_code=400, detail=str(update_result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         return schema_manager.entity_to_dto(update_result.value)
 
@@ -251,9 +294,17 @@ def register_report_field_definition_endpoints(
         """Delete a report field definition."""
         delete_result = await field_definition_service.delete(field_definition_id)
         if delete_result.is_failure:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=404,
-                detail=f"Field definition with ID {field_definition_id} not found",
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Field definition with ID {field_definition_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
     handlers["delete_field_definition"] = delete_field_definition
@@ -328,7 +379,16 @@ def register_report_template_endpoints(
             result = await template_service.create(entity)
 
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         # Get with relationships
         get_result = await template_service.get_with_relationships(result.value.id)
@@ -355,7 +415,18 @@ def register_report_template_endpoints(
             # Try getting without relationships
             simple_result = await template_service.get(template_id)
             if simple_result.is_failure:
-                raise HTTPException(
+                return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": "Resource not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
                     status_code=404, detail=f"Template with ID {template_id} not found"
                 )
             return schema_manager.entity_to_dto(simple_result.value)
@@ -393,7 +464,16 @@ def register_report_template_endpoints(
             # For this example, we'll just get all templates and filter in memory
             result = await template_service.list()
             if result.is_failure:
-                raise HTTPException(status_code=400, detail=str(result.error))
+                return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
             # Load relationships for all templates
             templates_with_fields = []
@@ -419,7 +499,16 @@ def register_report_template_endpoints(
         # Standard filtering
         result = await template_service.list(filters=filters, skip=skip, limit=limit)
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         # Load relationships for all templates
         templates_with_fields = []
@@ -448,676 +537,213 @@ def register_report_template_endpoints(
         # Get existing entity
         get_result = await template_service.get(template_id)
         if get_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Template with ID {template_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Template with ID {template_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         # Convert DTO to entity
         entity = schema_manager.dto_to_entity(data, get_result.value)
 
-        # Update entity
-        update_result = await template_service.update(entity)
-        if update_result.is_failure:
-            raise HTTPException(status_code=400, detail=str(update_result.error))
-
-        # Get with relationships
-        result = await template_service.get_with_relationships(template_id)
-        if result.is_failure:
-            # Fall back to entity without relationships
-            return schema_manager.entity_to_dto(update_result.value)
-
-        return schema_manager.entity_to_dto(result.value)
-
-    handlers["update_template"] = update_template
-
-    # Update template fields
-    @router.put(
-        "/{template_id}/fields",
-        response_model=ReportTemplateViewDto,
-        summary="Update fields associated with a report template",
-    )
-    async def update_template_fields(
-        template_id: str = Path(..., description="The ID of the template"),
-        field_ids_to_add: list[str] = Body(default=[]),
-        field_ids_to_remove: list[str] = Body(default=[]),
-    ) -> ReportTemplateViewDto:
-        """Update fields associated with a report template."""
-        # Update template fields
-        result = await template_service.update_fields(
-            template_id=template_id,
-            field_ids_to_add=field_ids_to_add,
-            field_ids_to_remove=field_ids_to_remove,
-        )
-
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_to_dto(result.value)
-
-    handlers["update_template_fields"] = update_template_fields
-
-    # Delete template
-    @router.delete(
-        "/{template_id}",
-        status_code=204,
-        summary="Delete a report template",
-    )
-    async def delete_template(
-        template_id: str = Path(..., description="The ID of the template"),
+{{ ... }}
     ) -> None:
         """Delete a report template."""
         delete_result = await template_service.delete(template_id)
         if delete_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Template with ID {template_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Template with ID {template_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
     handlers["delete_template"] = delete_template
 
     # Execute template
-    @router.post(
-        "/{template_id}/execute",
-        response_model=ReportExecutionViewDto,
-        summary="Execute a report template",
-    )
-    async def execute_template(
-        template_id: str = Path(..., description="The ID of the template"),
-        triggered_by: str = Body(
-            ..., description="ID or name of the entity triggering the execution"
-        ),
-        parameters: dict[str, Any] = Body(default={}),
-    ) -> ReportExecutionViewDto:
-        """Execute a report template."""
-        execution_result = await template_service.execute_template(
-            template_id=template_id,
-            triggered_by=triggered_by,
-            trigger_type="manual",
-            parameters=parameters,
-        )
-
-        if execution_result.is_failure:
-            raise HTTPException(status_code=400, detail=str(execution_result.error))
-
-        # Use execution schema manager to convert the entity to a DTO
-        execution_schema_manager = ReportExecutionSchemaManager()
-        return execution_schema_manager.entity_to_dto(execution_result.value)
-
-    handlers["execute_template"] = execute_template
-
-    # Register router
-    app_or_router.include_router(router)
-
-    return handlers
-
-
-def register_report_trigger_endpoints(
-    app_or_router: Union[FastAPI, APIRouter],
-    path_prefix: str = "/api/v1",
-    dependencies: list[Any] = None,
-    include_auth: bool = True,
-    trigger_service: Optional[ReportTriggerService] = None,
-) -> dict[str, Any]:
-    """Register API endpoints for report triggers.
-
-    Args:
-        app_or_router: The FastAPI app or router to register endpoints with.
-        path_prefix: The path prefix for the endpoints.
-        dependencies: Optional dependencies for the endpoints.
-        include_auth: Whether to include authentication dependencies.
-        trigger_service: Optional trigger service to use.
-
-    Returns:
-        A dictionary of endpoint handlers.
-    """
-    router = APIRouter(
-        prefix=f"{path_prefix}/report-triggers",
-        tags=["Report Triggers"],
-        dependencies=dependencies or [],
-    )
-
-    handlers = {}
-
-    # Get service from DI container if not provided
-    if trigger_service is None:
-        from uno.dependencies import get_service
-
-        trigger_service = get_service(ReportTriggerService)
-
-    schema_manager = ReportTriggerSchemaManager()
-
-    # Create trigger
-    @router.post(
-        "",
-        response_model=ReportTriggerViewDto,
-        status_code=201,
-        summary="Create a new report trigger",
-    )
-    async def create_trigger(
-        data: ReportTriggerCreateDto = Body(...),
-    ) -> ReportTriggerViewDto:
-        """Create a new report trigger."""
-        # Convert DTO to entity
-        entity = schema_manager.dto_to_entity(data)
-
-        # Create entity
-        result = await trigger_service.create(entity)
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_to_dto(result.value)
-
-    handlers["create_trigger"] = create_trigger
-
-    # Get trigger by ID
-    @router.get(
-        "/{trigger_id}",
-        response_model=ReportTriggerViewDto,
-        summary="Get a report trigger by ID",
-    )
-    async def get_trigger(
-        trigger_id: str = Path(..., description="The ID of the trigger"),
+{{ ... }}
     ) -> ReportTriggerViewDto:
         """Get a report trigger by ID."""
         result = await trigger_service.get(trigger_id)
         if result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Trigger with ID {trigger_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Trigger with ID {trigger_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         return schema_manager.entity_to_dto(result.value)
 
     handlers["get_trigger"] = get_trigger
-
-    # List triggers with filtering
-    @router.get(
-        "",
-        response_model=list[ReportTriggerViewDto],
-        summary="List report triggers",
-    )
-    async def list_triggers(
-        report_template_id: str | None = Query(
-            None, description="Filter by template ID"
-        ),
-        trigger_type: str | None = Query(None, description="Filter by trigger type"),
-        is_active: Optional[bool] = Query(None, description="Filter by active status"),
-        skip: int = Query(0, description="Number of records to skip"),
-        limit: int = Query(100, description="Maximum number of records to return"),
-    ) -> list[ReportTriggerViewDto]:
-        """List report triggers with filtering."""
-        filters = {}
-
-        if report_template_id:
-            filters["report_template_id"] = {"lookup": "eq", "val": report_template_id}
-        if trigger_type:
-            filters["trigger_type"] = {"lookup": "eq", "val": trigger_type}
-        if is_active is not None:
-            filters["is_active"] = {"lookup": "eq", "val": is_active}
-
-        result = await trigger_service.list(filters=filters, skip=skip, limit=limit)
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_list_to_dto_list(result.value)
-
-    handlers["list_triggers"] = list_triggers
-
-    # Update trigger
-    @router.patch(
-        "/{trigger_id}",
-        response_model=ReportTriggerViewDto,
-        summary="Update a report trigger",
-    )
-    async def update_trigger(
-        trigger_id: str = Path(..., description="The ID of the trigger"),
-        data: ReportTriggerUpdateDto = Body(...),
-    ) -> ReportTriggerViewDto:
+{{ ... }}
         """Update a report trigger."""
         # Get existing entity
         get_result = await trigger_service.get(trigger_id)
         if get_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Trigger with ID {trigger_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Trigger with ID {trigger_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         # Convert DTO to entity
         entity = schema_manager.dto_to_entity(data, get_result.value)
 
-        # Update entity
-        update_result = await trigger_service.update(entity)
-        if update_result.is_failure:
-            raise HTTPException(status_code=400, detail=str(update_result.error))
-
-        return schema_manager.entity_to_dto(update_result.value)
-
-    handlers["update_trigger"] = update_trigger
-
-    # Delete trigger
-    @router.delete(
-        "/{trigger_id}",
-        status_code=204,
-        summary="Delete a report trigger",
-    )
-    async def delete_trigger(
-        trigger_id: str = Path(..., description="The ID of the trigger"),
+{{ ... }}
     ) -> None:
         """Delete a report trigger."""
         delete_result = await trigger_service.delete(trigger_id)
         if delete_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Trigger with ID {trigger_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Trigger with ID {trigger_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
     handlers["delete_trigger"] = delete_trigger
 
     # Process due triggers
-    @router.post(
-        "/process-due",
-        response_model=dict[str, Any],
-        summary="Process all due scheduled triggers",
-    )
-    async def process_due_triggers() -> dict[str, Any]:
-        """Process all due scheduled triggers."""
-        result = await trigger_service.process_due_triggers()
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return {"processed": result.value}
-
-    handlers["process_due_triggers"] = process_due_triggers
-
-    # Register router
-    app_or_router.include_router(router)
-
-    return handlers
-
-
-def register_report_output_endpoints(
-    app_or_router: Union[FastAPI, APIRouter],
-    path_prefix: str = "/api/v1",
-    dependencies: list[Any] = None,
-    include_auth: bool = True,
-    output_service: Optional[ReportOutputService] = None,
-) -> dict[str, Any]:
-    """Register API endpoints for report outputs.
-
-    Args:
-        app_or_router: The FastAPI app or router to register endpoints with.
-        path_prefix: The path prefix for the endpoints.
-        dependencies: Optional dependencies for the endpoints.
-        include_auth: Whether to include authentication dependencies.
-        output_service: Optional output service to use.
-
-    Returns:
-        A dictionary of endpoint handlers.
-    """
-    router = APIRouter(
-        prefix=f"{path_prefix}/report-outputs",
-        tags=["Report Outputs"],
-        dependencies=dependencies or [],
-    )
-
-    handlers = {}
-
-    # Get service from DI container if not provided
-    if output_service is None:
-        from uno.dependencies import get_service
-
-        output_service = get_service(ReportOutputService)
-
-    schema_manager = ReportOutputSchemaManager()
-
-    # Create output
-    @router.post(
-        "",
-        response_model=ReportOutputViewDto,
-        status_code=201,
-        summary="Create a new report output",
-    )
-    async def create_output(
-        data: ReportOutputCreateDto = Body(...),
-    ) -> ReportOutputViewDto:
-        """Create a new report output."""
-        # Convert DTO to entity
-        entity = schema_manager.dto_to_entity(data)
-
-        # Create entity
-        result = await output_service.create(entity)
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_to_dto(result.value)
-
-    handlers["create_output"] = create_output
-
-    # Get output by ID
-    @router.get(
-        "/{output_id}",
-        response_model=ReportOutputViewDto,
-        summary="Get a report output by ID",
-    )
-    async def get_output(
-        output_id: str = Path(..., description="The ID of the output"),
+{{ ... }}
     ) -> ReportOutputViewDto:
         """Get a report output by ID."""
         result = await output_service.get(output_id)
         if result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Output with ID {output_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Output with ID {output_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         return schema_manager.entity_to_dto(result.value)
 
     handlers["get_output"] = get_output
-
-    # List outputs with filtering
-    @router.get(
-        "",
-        response_model=list[ReportOutputViewDto],
-        summary="List report outputs",
-    )
-    async def list_outputs(
-        report_template_id: str | None = Query(
-            None, description="Filter by template ID"
-        ),
-        output_type: str | None = Query(None, description="Filter by output type"),
-        format: str | None = Query(None, description="Filter by format"),
-        is_active: Optional[bool] = Query(None, description="Filter by active status"),
-        skip: int = Query(0, description="Number of records to skip"),
-        limit: int = Query(100, description="Maximum number of records to return"),
-    ) -> list[ReportOutputViewDto]:
-        """List report outputs with filtering."""
-        filters = {}
-
-        if report_template_id:
-            filters["report_template_id"] = {"lookup": "eq", "val": report_template_id}
-        if output_type:
-            filters["output_type"] = {"lookup": "eq", "val": output_type}
-        if format:
-            filters["format"] = {"lookup": "eq", "val": format}
-        if is_active is not None:
-            filters["is_active"] = {"lookup": "eq", "val": is_active}
-
-        result = await output_service.list(filters=filters, skip=skip, limit=limit)
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_list_to_dto_list(result.value)
-
-    handlers["list_outputs"] = list_outputs
-
-    # Update output
-    @router.patch(
-        "/{output_id}",
-        response_model=ReportOutputViewDto,
-        summary="Update a report output",
-    )
-    async def update_output(
-        output_id: str = Path(..., description="The ID of the output"),
-        data: ReportOutputUpdateDto = Body(...),
-    ) -> ReportOutputViewDto:
+{{ ... }}
         """Update a report output."""
         # Get existing entity
         get_result = await output_service.get(output_id)
         if get_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Output with ID {output_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Output with ID {output_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         # Convert DTO to entity
         entity = schema_manager.dto_to_entity(data, get_result.value)
 
-        # Update entity
-        update_result = await output_service.update(entity)
-        if update_result.is_failure:
-            raise HTTPException(status_code=400, detail=str(update_result.error))
-
-        return schema_manager.entity_to_dto(update_result.value)
-
-    handlers["update_output"] = update_output
-
-    # Delete output
-    @router.delete(
-        "/{output_id}",
-        status_code=204,
-        summary="Delete a report output",
-    )
-    async def delete_output(
-        output_id: str = Path(..., description="The ID of the output"),
+{{ ... }}
     ) -> None:
         """Delete a report output."""
         delete_result = await output_service.delete(output_id)
         if delete_result.is_failure:
-            raise HTTPException(
-                status_code=404, detail=f"Output with ID {output_id} not found"
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Output with ID {output_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
     handlers["delete_output"] = delete_output
 
     # Register router
-    app_or_router.include_router(router)
-
-    return handlers
-
-
-def register_report_execution_endpoints(
-    app_or_router: Union[FastAPI, APIRouter],
-    path_prefix: str = "/api/v1",
-    dependencies: list[Any] = None,
-    include_auth: bool = True,
-    execution_service: Optional[ReportExecutionService] = None,
-) -> dict[str, Any]:
-    """Register API endpoints for report executions.
-
-    Args:
-        app_or_router: The FastAPI app or router to register endpoints with.
-        path_prefix: The path prefix for the endpoints.
-        dependencies: Optional dependencies for the endpoints.
-        include_auth: Whether to include authentication dependencies.
-        execution_service: Optional execution service to use.
-
-    Returns:
-        A dictionary of endpoint handlers.
-    """
-    router = APIRouter(
-        prefix=f"{path_prefix}/report-executions",
-        tags=["Report Executions"],
-        dependencies=dependencies or [],
-    )
-
-    handlers = {}
-
-    # Get service from DI container if not provided
-    if execution_service is None:
-        from uno.dependencies import get_service
-
-        execution_service = get_service(ReportExecutionService)
-
-    schema_manager = ReportExecutionSchemaManager()
-
-    # Get execution by ID
-    @router.get(
-        "/{execution_id}",
-        response_model=ReportExecutionViewDto,
-        summary="Get a report execution by ID",
-    )
-    async def get_execution(
-        execution_id: str = Path(..., description="The ID of the execution"),
-    ) -> ReportExecutionViewDto:
-        """Get a report execution by ID."""
-        result = await execution_service.find_with_output_executions(execution_id)
+{{ ... }}
         if result.is_failure:
             # Try getting without output executions
             simple_result = await execution_service.get(execution_id)
             if simple_result.is_failure:
-                raise HTTPException(
+                return JSONResponse(
                     status_code=404,
-                    detail=f"Execution with ID {execution_id} not found",
+                    content={
+                        "error": {
+                            "code": "NOT_FOUND",
+                            "message": f"Execution with ID {execution_id} not found",
+                            "details": {
+                                "error": str(e)
+                            }
+                        }
+                    }
                 )
+
             return schema_manager.entity_to_dto(simple_result.value)
 
         return schema_manager.entity_to_dto(result.value)
 
-    handlers["get_execution"] = get_execution
-
-    # List executions with filtering
-    @router.get(
-        "",
-        response_model=list[ReportExecutionViewDto],
-        summary="List report executions",
-    )
-    async def list_executions(
-        report_template_id: str | None = Query(
-            None, description="Filter by template ID"
-        ),
-        triggered_by: str | None = Query(None, description="Filter by triggered by"),
-        trigger_type: str | None = Query(None, description="Filter by trigger type"),
-        status: str | None = Query(None, description="Filter by status"),
-        created_after: Optional[datetime] = Query(
-            None, description="Filter by created after date"
-        ),
-        created_before: Optional[datetime] = Query(
-            None, description="Filter by created before date"
-        ),
-        skip: int = Query(0, description="Number of records to skip"),
-        limit: int = Query(100, description="Maximum number of records to return"),
-    ) -> list[ReportExecutionViewDto]:
-        """List report executions with filtering."""
-        filters = {}
-
-        if report_template_id:
-            filters["report_template_id"] = {"lookup": "eq", "val": report_template_id}
-        if triggered_by:
-            filters["triggered_by"] = {"lookup": "eq", "val": triggered_by}
-        if trigger_type:
-            filters["trigger_type"] = {"lookup": "eq", "val": trigger_type}
-        if status:
-            filters["status"] = {"lookup": "eq", "val": status}
-        if created_after:
-            filters["started_at"] = {"lookup": "gte", "val": created_after}
-        if created_before:
-            if "started_at" in filters:
-                # Already have a created_after filter, so add a second condition
-                filters["started_at"]["lookup"] = "between"
-                filters["started_at"]["val"] = [
-                    filters["started_at"]["val"],
-                    created_before,
-                ]
-            else:
-                filters["started_at"] = {"lookup": "lte", "val": created_before}
-
-        result = await execution_service.list(
-            filters=filters,
-            skip=skip,
-            limit=limit,
-            order_by="started_at",
-            order_dir="desc",
-        )
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        # Load output executions for each execution
-        executions_with_outputs = []
-        for execution in result.value:
-            execution_result = await execution_service.find_with_output_executions(
-                execution.id
-            )
-            if execution_result.is_success:
-                executions_with_outputs.append(execution_result.value)
-            else:
-                executions_with_outputs.append(execution)
-
-        return schema_manager.entity_list_to_dto_list(executions_with_outputs)
-
-    handlers["list_executions"] = list_executions
-
-    # Update execution status
-    @router.patch(
-        "/{execution_id}/status",
-        response_model=ReportExecutionViewDto,
-        summary="Update a report execution status",
-    )
-    async def update_execution_status(
-        execution_id: str = Path(..., description="The ID of the execution"),
-        data: ReportExecutionUpdateStatusDto = Body(...),
-    ) -> ReportExecutionViewDto:
-        """Update a report execution status."""
-        result = await execution_service.update_execution_status(
-            execution_id=execution_id,
-            status=data.status,
-            error_details=data.error_details,
-        )
-
-        if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
-
-        return schema_manager.entity_to_dto(result.value)
-
-    handlers["update_execution_status"] = update_execution_status
-
-    # Register router
-    app_or_router.include_router(router)
-
-    return handlers
-
-
-def register_report_output_execution_endpoints(
-    app_or_router: Union[FastAPI, APIRouter],
-    path_prefix: str = "/api/v1",
-    dependencies: list[Any] = None,
-    include_auth: bool = True,
-    output_execution_service: Optional[ReportOutputExecutionService] = None,
-) -> dict[str, Any]:
-    """Register API endpoints for report output executions.
-
-    Args:
-        app_or_router: The FastAPI app or router to register endpoints with.
-        path_prefix: The path prefix for the endpoints.
-        dependencies: Optional dependencies for the endpoints.
-        include_auth: Whether to include authentication dependencies.
-        output_execution_service: Optional output execution service to use.
-
-    Returns:
-        A dictionary of endpoint handlers.
-    """
-    router = APIRouter(
-        prefix=f"{path_prefix}/report-output-executions",
-        tags=["Report Output Executions"],
-        dependencies=dependencies or [],
-    )
-
-    handlers = {}
-
-    # Get service from DI container if not provided
-    if output_execution_service is None:
-        from uno.dependencies import get_service
-
-        output_execution_service = get_service(ReportOutputExecutionService)
-
-    schema_manager = ReportOutputExecutionSchemaManager()
-
-    # Get output execution by ID
-    @router.get(
-        "/{output_execution_id}",
-        response_model=ReportOutputExecutionViewDto,
-        summary="Get a report output execution by ID",
-    )
-    async def get_output_execution(
-        output_execution_id: str = Path(
-            ..., description="The ID of the output execution"
-        ),
+{{ ... }}
     ) -> ReportOutputExecutionViewDto:
         """Get a report output execution by ID."""
         result = await output_execution_service.get(output_execution_id)
         if result.is_failure:
-            raise HTTPException(
+            return JSONResponse(
                 status_code=404,
-                detail=f"Output execution with ID {output_execution_id} not found",
+                content={
+                    "error": {
+                        "code": "NOT_FOUND",
+                        "message": f"Output execution with ID {output_execution_id} not found",
+                        "details": {
+                            "error": str(e)
+                        }
+                    }
+                }
             )
 
         return schema_manager.entity_to_dto(result.value)
 
     handlers["get_output_execution"] = get_output_execution
-
+{{ ... }}
     # List output executions with filtering
     @router.get(
         "",
@@ -1150,7 +776,16 @@ def register_report_output_execution_endpoints(
             filters=filters, skip=skip, limit=limit
         )
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         return schema_manager.entity_list_to_dto_list(result.value)
 
@@ -1176,7 +811,16 @@ def register_report_output_execution_endpoints(
         )
 
         if result.is_failure:
-            raise HTTPException(status_code=400, detail=str(result.error))
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": result.error.code,
+                        "message": result.error.message,
+                        "details": result.error.details
+                    }
+                }
+            )
 
         return schema_manager.entity_to_dto(result.value)
 

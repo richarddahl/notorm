@@ -16,9 +16,7 @@ from typing import (
     Protocol,
     TypeVar,
     List,
-    Dict,
     Any,
-    Optional,
     Union,
     Type,
     AsyncIterator,
@@ -49,7 +47,8 @@ from sqlalchemy.engine import Result, Row, Connection, Engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql.expression import Select
 
-from uno.core.errors.result import Result as UnoResult, Success, Failure, ErrorDetails
+from uno.core.errors.result import Success, Failure
+from uno.core.errors.framework import FrameworkError
 from uno.database.entities import (
     DatabaseId,
     ConnectionConfig,
@@ -101,7 +100,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
 
     async def execute_query(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[Result, ErrorDetails]:
+    ) -> Result[Result, FrameworkError]:
         """
         Execute a database query.
 
@@ -116,7 +115,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
 
     async def fetch_all(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[list[dict[str, Any]], ErrorDetails]:
+    ) -> Result[List[dict[str, Any]], FrameworkError]:
         """
         Fetch all rows as dictionaries.
 
@@ -131,7 +130,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
 
     async def fetch_one(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[dict[str, Any] | None, ErrorDetails]:
+    ) -> Result[dict[str, Any] | None, FrameworkError]:
         """
         Fetch a single row as a dictionary.
 
@@ -146,7 +145,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
 
     async def execute(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> int | FrameworkError:
         """
         Execute a query and return the number of affected rows.
 
@@ -167,7 +166,7 @@ class DatabaseTransactionRepositoryProtocol(Protocol):
         self,
         isolation_level: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
         read_only: bool = False,
-    ) -> UnoResult[Transaction, ErrorDetails]:
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Begin a new transaction.
 
@@ -181,8 +180,8 @@ class DatabaseTransactionRepositoryProtocol(Protocol):
         ...
 
     async def commit_transaction(
-        self, transaction_id: TransactionId
-    ) -> UnoResult[Transaction, ErrorDetails]:
+        self, transaction_id: TransactionId | None
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Commit a transaction.
 
@@ -195,8 +194,8 @@ class DatabaseTransactionRepositoryProtocol(Protocol):
         ...
 
     async def rollback_transaction(
-        self, transaction_id: TransactionId
-    ) -> UnoResult[Transaction, ErrorDetails]:
+        self, transaction_id: TransactionId | None
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Rollback a transaction.
 
@@ -213,7 +212,7 @@ class DatabaseTransactionRepositoryProtocol(Protocol):
         self,
         isolation_level: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
         read_only: bool = False,
-    ) -> AsyncIterator[Transaction]:
+    ) -> AsyncIterator[Transaction | None]:
         """
         Context manager for transaction management.
 
@@ -232,7 +231,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
 
     async def get_by_id(
         self, id: Union[str, DatabaseId]
-    ) -> UnoResult[Optional[EntityT], ErrorDetails]:
+    ) -> EntityT | None | FrameworkError:
         """
         Get an entity by ID.
 
@@ -250,7 +249,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
         order_by: list[str] | None = None,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> UnoResult[list[EntityT], ErrorDetails]:
+    ) -> Result[list[EntityT | None], FrameworkError]:
         """
         List entities with optional filtering.
 
@@ -265,7 +264,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
         """
         ...
 
-    async def create(self, entity: EntityT) -> UnoResult[EntityT, ErrorDetails]:
+    async def create(self, entity: EntityT) -> EntityT | FrameworkError:
         """
         Create a new entity.
 
@@ -277,7 +276,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
         """
         ...
 
-    async def update(self, entity: EntityT) -> UnoResult[EntityT, ErrorDetails]:
+    async def update(self, entity: EntityT) -> EntityT | FrameworkError:
         """
         Update an existing entity.
 
@@ -289,7 +288,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
         """
         ...
 
-    async def delete(self, id: Union[str, DatabaseId]) -> UnoResult[bool, ErrorDetails]:
+    async def delete(self, id: Union[str, DatabaseId]) -> bool | FrameworkError:
         """
         Delete an entity.
 
@@ -303,7 +302,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
 
     async def count(
         self, filters: dict[str, Any] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> int | FrameworkError:
         """
         Count entities with optional filtering.
 
@@ -321,7 +320,7 @@ class QueryStatisticsRepositoryProtocol(Protocol):
 
     async def save_statistics(
         self, statistics: QueryStatistics
-    ) -> UnoResult[QueryStatistics, ErrorDetails]:
+    ) -> Result[QueryStatistics, FrameworkError]:
         """
         Save query statistics.
 
@@ -335,7 +334,7 @@ class QueryStatisticsRepositoryProtocol(Protocol):
 
     async def get_statistics(
         self, query_id: QueryId
-    ) -> UnoResult[Optional[QueryStatistics], ErrorDetails]:
+    ) -> QueryStatistics | None | FrameworkError:
         """
         Get query statistics by ID.
 
@@ -349,7 +348,7 @@ class QueryStatisticsRepositoryProtocol(Protocol):
 
     async def list_statistics(
         self, limit: int = 100, offset: int = 0
-    ) -> UnoResult[list[QueryStatistics], ErrorDetails]:
+    ) -> list[QueryStatistics] | FrameworkError:
         """
         List query statistics.
 
@@ -364,7 +363,7 @@ class QueryStatisticsRepositoryProtocol(Protocol):
 
     async def get_slow_queries(
         self, threshold: float = 1.0, limit: int = 100  # seconds
-    ) -> UnoResult[list[QueryStatistics], ErrorDetails]:
+    ) -> list[QueryStatistics] | FrameworkError:
         """
         Get slow queries.
 
@@ -381,7 +380,7 @@ class QueryStatisticsRepositoryProtocol(Protocol):
 class QueryPlanRepositoryProtocol(Protocol):
     """Repository protocol for query plans."""
 
-    async def save_plan(self, plan: QueryPlan) -> UnoResult[QueryPlan, ErrorDetails]:
+    async def save_plan(self, plan: QueryPlan) -> Result[QueryPlan, FrameworkError]:
         """
         Save a query plan.
 
@@ -395,7 +394,7 @@ class QueryPlanRepositoryProtocol(Protocol):
 
     async def get_plan(
         self, query_id: QueryId
-    ) -> UnoResult[Optional[QueryPlan], ErrorDetails]:
+    ) -> QueryPlan | None | FrameworkError:
         """
         Get a query plan by ID.
 
@@ -413,7 +412,7 @@ class IndexRecommendationRepositoryProtocol(Protocol):
 
     async def save_recommendation(
         self, recommendation: IndexRecommendation
-    ) -> UnoResult[IndexRecommendation, ErrorDetails]:
+    ) -> Result[IndexRecommendation, FrameworkError]:
         """
         Save an index recommendation.
 
@@ -427,7 +426,7 @@ class IndexRecommendationRepositoryProtocol(Protocol):
 
     async def list_recommendations(
         self, table_name: str | None = None, limit: int = 100
-    ) -> UnoResult[list[IndexRecommendation], ErrorDetails]:
+    ) -> list[IndexRecommendation] | FrameworkError:
         """
         List index recommendations.
 
@@ -446,7 +445,7 @@ class QueryCacheRepositoryProtocol(Protocol):
 
     async def get_cached_result(
         self, key: CacheKey
-    ) -> UnoResult[Optional[CachedResult], ErrorDetails]:
+    ) -> CachedResult | None | FrameworkError:
         """
         Get a cached query result.
 
@@ -460,7 +459,7 @@ class QueryCacheRepositoryProtocol(Protocol):
 
     async def set_cached_result(
         self, result: CachedResult
-    ) -> UnoResult[CachedResult, ErrorDetails]:
+    ) -> Result[CachedResult, FrameworkError]:
         """
         Set a cached query result.
 
@@ -473,8 +472,8 @@ class QueryCacheRepositoryProtocol(Protocol):
         ...
 
     async def invalidate_cache(
-        self, key: Optional[CacheKey] = None
-    ) -> UnoResult[int, ErrorDetails]:
+        self, key: CacheKey | None = None
+    ) -> int | FrameworkError:
         """
         Invalidate cache entries.
 
@@ -486,7 +485,7 @@ class QueryCacheRepositoryProtocol(Protocol):
         """
         ...
 
-    async def get_cache_size(self) -> UnoResult[int, ErrorDetails]:
+    async def get_cache_size(self) -> int | FrameworkError:
         """
         Get the current cache size.
 
@@ -501,7 +500,7 @@ class PoolStatisticsRepositoryProtocol(Protocol):
 
     async def save_statistics(
         self, statistics: PoolStatistics
-    ) -> UnoResult[PoolStatistics, ErrorDetails]:
+    ) -> Result[PoolStatistics, FrameworkError]:
         """
         Save pool statistics.
 
@@ -515,7 +514,7 @@ class PoolStatisticsRepositoryProtocol(Protocol):
 
     async def get_recent_statistics(
         self, limit: int = 100
-    ) -> UnoResult[list[PoolStatistics], ErrorDetails]:
+    ) -> list[PoolStatistics] | FrameworkError:
         """
         Get recent pool statistics.
 
@@ -635,7 +634,7 @@ class SqlAlchemyDatabaseSessionRepository:
 
     async def execute_query(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[Result, ErrorDetails]:
+    ) -> Result[Result, FrameworkError]:
         """
         Execute a database query.
 
@@ -657,7 +656,7 @@ class SqlAlchemyDatabaseSessionRepository:
         except Exception as e:
             self.logger.error(f"Query execution error: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error executing query: {str(e)}",
                 )
@@ -665,7 +664,7 @@ class SqlAlchemyDatabaseSessionRepository:
 
     async def fetch_all(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[list[dict[str, Any]], ErrorDetails]:
+    ) -> Result[List[dict[str, Any]], FrameworkError]:
         """
         Fetch all rows as dictionaries.
 
@@ -686,7 +685,7 @@ class SqlAlchemyDatabaseSessionRepository:
         except Exception as e:
             self.logger.error(f"Error converting query results: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_RESULT_ERROR",
                     message=f"Error converting query results: {str(e)}",
                 )
@@ -694,7 +693,7 @@ class SqlAlchemyDatabaseSessionRepository:
 
     async def fetch_one(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[dict[str, Any] | None, ErrorDetails]:
+    ) -> Result[dict[str, Any] | None, FrameworkError]:
         """
         Fetch a single row as a dictionary.
 
@@ -715,7 +714,7 @@ class SqlAlchemyDatabaseSessionRepository:
         except Exception as e:
             self.logger.error(f"Error converting query result: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_RESULT_ERROR",
                     message=f"Error converting query result: {str(e)}",
                 )
@@ -723,7 +722,7 @@ class SqlAlchemyDatabaseSessionRepository:
 
     async def execute(
         self, query: Union[str, Select], parameters: dict[str, Any] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> int | FrameworkError:
         """
         Execute a query and return the number of affected rows.
 
@@ -747,7 +746,7 @@ class SqlAlchemyDatabaseSessionRepository:
         except Exception as e:
             self.logger.error(f"Query execution error: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error executing query: {str(e)}",
                 )
@@ -779,7 +778,7 @@ class SqlAlchemyDatabaseTransactionRepository:
         self,
         isolation_level: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
         read_only: bool = False,
-    ) -> UnoResult[Transaction, ErrorDetails]:
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Begin a new transaction.
 
@@ -822,15 +821,15 @@ class SqlAlchemyDatabaseTransactionRepository:
         except Exception as e:
             self.logger.error(f"Error beginning transaction: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_TRANSACTION_ERROR",
                     message=f"Error beginning transaction: {str(e)}",
                 )
             )
 
     async def commit_transaction(
-        self, transaction_id: TransactionId
-    ) -> UnoResult[Transaction, ErrorDetails]:
+        self, transaction_id: TransactionId | None
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Commit a transaction.
 
@@ -845,7 +844,7 @@ class SqlAlchemyDatabaseTransactionRepository:
             transaction_key = str(transaction_id)
             if transaction_key not in self._active_transactions:
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="TRANSACTION_NOT_FOUND",
                         message=f"Transaction {transaction_id} not found",
                     )
@@ -877,15 +876,15 @@ class SqlAlchemyDatabaseTransactionRepository:
                 pass
 
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_TRANSACTION_COMMIT_ERROR",
                     message=f"Error committing transaction: {str(e)}",
                 )
             )
 
     async def rollback_transaction(
-        self, transaction_id: TransactionId
-    ) -> UnoResult[Transaction, ErrorDetails]:
+        self, transaction_id: TransactionId | None
+    ) -> Result[Transaction | None, FrameworkError]:
         """
         Rollback a transaction.
 
@@ -900,7 +899,7 @@ class SqlAlchemyDatabaseTransactionRepository:
             transaction_key = str(transaction_id)
             if transaction_key not in self._active_transactions:
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="TRANSACTION_NOT_FOUND",
                         message=f"Transaction {transaction_id} not found",
                     )
@@ -923,7 +922,7 @@ class SqlAlchemyDatabaseTransactionRepository:
         except Exception as e:
             self.logger.error(f"Error rolling back transaction: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_TRANSACTION_ROLLBACK_ERROR",
                     message=f"Error rolling back transaction: {str(e)}",
                 )
@@ -934,7 +933,7 @@ class SqlAlchemyDatabaseTransactionRepository:
         self,
         isolation_level: TransactionIsolationLevel = TransactionIsolationLevel.READ_COMMITTED,
         read_only: bool = False,
-    ) -> AsyncIterator[Transaction]:
+    ) -> AsyncIterator[Transaction | None]:
         """
         Context manager for transaction management.
 
@@ -982,7 +981,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         self,
         session_repository: DatabaseSessionRepositoryProtocol,
         model_class: Type[ModelT],
-        entity_class: Type[EntityT],
+        entity_class: type[EntityT],
         id_field: str = "id",
         logger: logging.Logger | None = None,
     ):
@@ -1043,7 +1042,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
 
     async def get_by_id(
         self, id: Union[str, DatabaseId]
-    ) -> UnoResult[Optional[EntityT], ErrorDetails]:
+    ) -> EntityT | None | FrameworkError:
         """
         Get an entity by ID.
 
@@ -1071,7 +1070,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error getting entity by ID: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error getting entity by ID: {str(e)}",
                 )
@@ -1083,7 +1082,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         order_by: list[str] | None = None,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> UnoResult[list[EntityT], ErrorDetails]:
+    ) -> Result[list[EntityT | None], FrameworkError]:
         """
         List entities with optional filtering.
 
@@ -1133,13 +1132,13 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error listing entities: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error listing entities: {str(e)}",
                 )
             )
 
-    async def create(self, entity: EntityT) -> UnoResult[EntityT, ErrorDetails]:
+    async def create(self, entity: EntityT) -> EntityT | FrameworkError:
         """
         Create a new entity.
 
@@ -1171,13 +1170,13 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error creating entity: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error creating entity: {str(e)}",
                 )
             )
 
-    async def update(self, entity: EntityT) -> UnoResult[EntityT, ErrorDetails]:
+    async def update(self, entity: EntityT) -> EntityT | FrameworkError:
         """
         Update an existing entity.
 
@@ -1195,7 +1194,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
             id_value = data.get(self.id_field)
             if id_value is None:
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="INVALID_ENTITY", message=f"Entity has no ID value"
                     )
                 )
@@ -1210,7 +1209,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
 
                 if model is None:
                     return Failure(
-                        ErrorDetails(
+                        FrameworkError(
                             code="ENTITY_NOT_FOUND",
                             message=f"Entity with ID {id_value} not found",
                         )
@@ -1230,13 +1229,13 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error updating entity: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error updating entity: {str(e)}",
                 )
             )
 
-    async def delete(self, id: Union[str, DatabaseId]) -> UnoResult[bool, ErrorDetails]:
+    async def delete(self, id: Union[str, DatabaseId]) -> bool | FrameworkError:
         """
         Delete an entity.
 
@@ -1268,7 +1267,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error deleting entity: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error deleting entity: {str(e)}",
                 )
@@ -1276,7 +1275,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
 
     async def count(
         self, filters: dict[str, Any] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> int | FrameworkError:
         """
         Count entities with optional filtering.
 
@@ -1306,7 +1305,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         except Exception as e:
             self.logger.error(f"Error counting entities: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_QUERY_ERROR",
                     message=f"Error counting entities: {str(e)}",
                 )
@@ -1328,7 +1327,7 @@ class InMemoryQueryStatisticsRepository:
 
     async def save_statistics(
         self, statistics: QueryStatistics
-    ) -> UnoResult[QueryStatistics, ErrorDetails]:
+    ) -> Result[QueryStatistics, FrameworkError]:
         """
         Save query statistics.
 
@@ -1358,7 +1357,7 @@ class InMemoryQueryStatisticsRepository:
 
     async def get_statistics(
         self, query_id: QueryId
-    ) -> UnoResult[Optional[QueryStatistics], ErrorDetails]:
+    ) -> QueryStatistics | None | FrameworkError:
         """
         Get query statistics by ID.
 
@@ -1373,7 +1372,7 @@ class InMemoryQueryStatisticsRepository:
 
     async def list_statistics(
         self, limit: int = 100, offset: int = 0
-    ) -> UnoResult[list[QueryStatistics], ErrorDetails]:
+    ) -> list[QueryStatistics] | FrameworkError:
         """
         List query statistics.
 
@@ -1395,7 +1394,7 @@ class InMemoryQueryStatisticsRepository:
 
     async def get_slow_queries(
         self, threshold: float = 1.0, limit: int = 100  # seconds
-    ) -> UnoResult[list[QueryStatistics], ErrorDetails]:
+    ) -> list[QueryStatistics] | FrameworkError:
         """
         Get slow queries.
 
@@ -1432,7 +1431,7 @@ class InMemoryQueryPlanRepository:
         self._plans: dict[str, QueryPlan] = {}
         self.max_entries = max_entries
 
-    async def save_plan(self, plan: QueryPlan) -> UnoResult[QueryPlan, ErrorDetails]:
+    async def save_plan(self, plan: QueryPlan) -> Result[QueryPlan, FrameworkError]:
         """
         Save a query plan.
 
@@ -1462,7 +1461,7 @@ class InMemoryQueryPlanRepository:
 
     async def get_plan(
         self, query_id: QueryId
-    ) -> UnoResult[Optional[QueryPlan], ErrorDetails]:
+    ) -> QueryPlan | None | FrameworkError:
         """
         Get a query plan by ID.
 
@@ -1485,7 +1484,7 @@ class InMemoryIndexRecommendationRepository:
 
     async def save_recommendation(
         self, recommendation: IndexRecommendation
-    ) -> UnoResult[IndexRecommendation, ErrorDetails]:
+    ) -> Result[IndexRecommendation, FrameworkError]:
         """
         Save an index recommendation.
 
@@ -1514,7 +1513,7 @@ class InMemoryIndexRecommendationRepository:
 
     async def list_recommendations(
         self, table_name: str | None = None, limit: int = 100
-    ) -> UnoResult[list[IndexRecommendation], ErrorDetails]:
+    ) -> list[IndexRecommendation] | FrameworkError:
         """
         List index recommendations.
 
@@ -1556,7 +1555,7 @@ class InMemoryQueryCacheRepository:
 
     async def get_cached_result(
         self, key: CacheKey
-    ) -> UnoResult[Optional[CachedResult], ErrorDetails]:
+    ) -> CachedResult | None | FrameworkError:
         """
         Get a cached query result.
 
@@ -1581,7 +1580,7 @@ class InMemoryQueryCacheRepository:
 
     async def set_cached_result(
         self, result: CachedResult
-    ) -> UnoResult[CachedResult, ErrorDetails]:
+    ) -> Result[CachedResult, FrameworkError]:
         """
         Set a cached query result.
 
@@ -1610,8 +1609,8 @@ class InMemoryQueryCacheRepository:
         return Success(result)
 
     async def invalidate_cache(
-        self, key: Optional[CacheKey] = None
-    ) -> UnoResult[int, ErrorDetails]:
+        self, key: CacheKey | None = None
+    ) -> int | FrameworkError:
         """
         Invalidate cache entries.
 
@@ -1633,7 +1632,7 @@ class InMemoryQueryCacheRepository:
             self._cache.clear()
             return Success(count)
 
-    async def get_cache_size(self) -> UnoResult[int, ErrorDetails]:
+    async def get_cache_size(self) -> int | FrameworkError:
         """
         Get the current cache size.
 
@@ -1658,7 +1657,7 @@ class InMemoryPoolStatisticsRepository:
 
     async def save_statistics(
         self, statistics: PoolStatistics
-    ) -> UnoResult[PoolStatistics, ErrorDetails]:
+    ) -> Result[PoolStatistics, FrameworkError]:
         """
         Save pool statistics.
 
@@ -1679,7 +1678,7 @@ class InMemoryPoolStatisticsRepository:
 
     async def get_recent_statistics(
         self, limit: int = 100
-    ) -> UnoResult[list[PoolStatistics], ErrorDetails]:
+    ) -> list[PoolStatistics] | FrameworkError:
         """
         Get recent pool statistics.
 

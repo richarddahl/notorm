@@ -37,10 +37,11 @@ import hashlib
 from sqlalchemy import text, Select, Table, Column, MetaData
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from sqlalchemy.engine import Result, Row
+from sqlalchemy.engine import Row
 import asyncpg
 
-from uno.core.errors.result import Result as UnoResult, Success, Failure, ErrorDetails
+from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.framework import FrameworkError
 from uno.database.entities import (
     DatabaseId,
     ConnectionConfig,
@@ -91,7 +92,7 @@ class DatabaseManagerServiceProtocol(Protocol):
 
     async def test_connection(
         self, config: ConnectionConfig
-    ) -> UnoResult[ConnectionTestResponse, ErrorDetails]:
+    ) -> Result[ConnectionTestResponse, FrameworkError]:
         """
         Test a database connection.
 
@@ -105,7 +106,7 @@ class DatabaseManagerServiceProtocol(Protocol):
 
     async def create_database(
         self, config: ConnectionConfig
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Create a new database.
 
@@ -119,7 +120,7 @@ class DatabaseManagerServiceProtocol(Protocol):
 
     async def drop_database(
         self, config: ConnectionConfig
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Drop a database.
 
@@ -131,7 +132,7 @@ class DatabaseManagerServiceProtocol(Protocol):
         """
         ...
 
-    async def execute_script(self, script: str) -> UnoResult[None, ErrorDetails]:
+    async def execute_script(self, script: str) -> Result[None, FrameworkError]:
         """
         Execute a SQL script.
 
@@ -145,7 +146,7 @@ class DatabaseManagerServiceProtocol(Protocol):
 
     async def create_extension(
         self, extension_name: str, schema: str | None = None
-    ) -> UnoResult[None, ErrorDetails]:
+    ) -> Result[None, FrameworkError]:
         """
         Create a database extension.
 
@@ -164,7 +165,7 @@ class QueryExecutionServiceProtocol(Protocol):
 
     async def execute_query(
         self, request: QueryRequest
-    ) -> UnoResult[QueryResponse, ErrorDetails]:
+    ) -> Result[QueryResponse, FrameworkError]:
         """
         Execute a database query.
 
@@ -178,7 +179,7 @@ class QueryExecutionServiceProtocol(Protocol):
 
     async def execute_batch_queries(
         self, requests: list[QueryRequest]
-    ) -> UnoResult[list[QueryResponse], ErrorDetails]:
+    ) -> Result[list[QueryResponse], FrameworkError]:
         """
         Execute multiple queries in batch.
 
@@ -196,7 +197,7 @@ class QueryOptimizerServiceProtocol(Protocol):
 
     async def optimize_query(
         self, request: OptimizationRequest
-    ) -> UnoResult[OptimizationResponse, ErrorDetails]:
+    ) -> Result[OptimizationResponse, FrameworkError]:
         """
         Optimize a query.
 
@@ -210,7 +211,7 @@ class QueryOptimizerServiceProtocol(Protocol):
 
     async def analyze_query(
         self, query: str, parameters: dict[str, Any] | None = None
-    ) -> UnoResult[QueryPlan, ErrorDetails]:
+    ) -> Result[QueryPlan, FrameworkError]:
         """
         Analyze a query to get its execution plan.
 
@@ -225,7 +226,7 @@ class QueryOptimizerServiceProtocol(Protocol):
 
     async def get_index_recommendations(
         self, table_name: str | None = None, limit: int = 10
-    ) -> UnoResult[list[IndexRecommendation], ErrorDetails]:
+    ) -> Result[list[IndexRecommendation], FrameworkError]:
         """
         Get index recommendations.
 
@@ -240,7 +241,7 @@ class QueryOptimizerServiceProtocol(Protocol):
 
     async def apply_index_recommendation(
         self, recommendation: IndexRecommendation
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Apply an index recommendation.
 
@@ -254,7 +255,7 @@ class QueryOptimizerServiceProtocol(Protocol):
 
     async def get_optimizer_metrics(
         self,
-    ) -> UnoResult[OptimizerMetricsSnapshot, ErrorDetails]:
+    ) -> Result[OptimizerMetricsSnapshot, FrameworkError]:
         """
         Get optimizer metrics.
 
@@ -269,7 +270,7 @@ class QueryCacheServiceProtocol(Protocol):
 
     async def get_cached_result(
         self, query: str, parameters: dict[str, Any] | None = None
-    ) -> UnoResult[Optional[Any], ErrorDetails]:
+    ) -> Result[Optional[Any], FrameworkError]:
         """
         Get a cached query result.
 
@@ -288,7 +289,7 @@ class QueryCacheServiceProtocol(Protocol):
         parameters: dict[str, Any] | None,
         result: Any,
         ttl_seconds: int | None = None,
-    ) -> UnoResult[None, ErrorDetails]:
+    ) -> Result[None, FrameworkError]:
         """
         Cache a query result.
 
@@ -305,7 +306,7 @@ class QueryCacheServiceProtocol(Protocol):
 
     async def invalidate_cache(
         self, table_names: list[str] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> Result[int, FrameworkError]:
         """
         Invalidate cache entries.
 
@@ -317,7 +318,7 @@ class QueryCacheServiceProtocol(Protocol):
         """
         ...
 
-    async def get_cache_statistics(self) -> UnoResult[dict[str, Any], ErrorDetails]:
+    async def get_cache_statistics(self) -> Result[dict[str, Any], FrameworkError]:
         """
         Get cache statistics.
 
@@ -332,7 +333,7 @@ class TransactionServiceProtocol(Protocol):
 
     async def begin_transaction(
         self, request: TransactionRequest
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Begin a new transaction.
 
@@ -346,7 +347,7 @@ class TransactionServiceProtocol(Protocol):
 
     async def commit_transaction(
         self, transaction_id: TransactionId
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Commit a transaction.
 
@@ -360,7 +361,7 @@ class TransactionServiceProtocol(Protocol):
 
     async def rollback_transaction(
         self, transaction_id: TransactionId
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Rollback a transaction.
 
@@ -394,7 +395,7 @@ class TransactionServiceProtocol(Protocol):
 class ConnectionPoolServiceProtocol(Protocol):
     """Service protocol for connection pool management."""
 
-    async def get_pool_statistics(self) -> UnoResult[PoolStatistics, ErrorDetails]:
+    async def get_pool_statistics(self) -> Result[PoolStatistics, FrameworkError]:
         """
         Get current pool statistics.
 
@@ -405,7 +406,7 @@ class ConnectionPoolServiceProtocol(Protocol):
 
     async def get_historical_statistics(
         self, limit: int = 100
-    ) -> UnoResult[list[PoolStatistics], ErrorDetails]:
+    ) -> Result[list[PoolStatistics], FrameworkError]:
         """
         Get historical pool statistics.
 
@@ -417,7 +418,7 @@ class ConnectionPoolServiceProtocol(Protocol):
         """
         ...
 
-    async def optimize_pool_size(self) -> UnoResult[ConnectionPoolConfig, ErrorDetails]:
+    async def optimize_pool_size(self) -> Result[ConnectionPoolConfig, FrameworkError]:
         """
         Optimize the connection pool size based on usage.
 
@@ -426,7 +427,7 @@ class ConnectionPoolServiceProtocol(Protocol):
         """
         ...
 
-    async def reset_pool(self) -> UnoResult[None, ErrorDetails]:
+    async def reset_pool(self) -> Result[None, FrameworkError]:
         """
         Reset the connection pool.
 
@@ -459,7 +460,7 @@ class DatabaseManagerService:
 
     async def test_connection(
         self, config: ConnectionConfig
-    ) -> UnoResult[ConnectionTestResponse, ErrorDetails]:
+    ) -> Result[ConnectionTestResponse, FrameworkError]:
         """
         Test a database connection.
 
@@ -517,7 +518,7 @@ class DatabaseManagerService:
 
     async def create_database(
         self, config: ConnectionConfig
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Create a new database.
 
@@ -592,7 +593,7 @@ class DatabaseManagerService:
         except Exception as e:
             self.logger.error(f"Error creating database: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_CREATION_ERROR",
                     message=f"Error creating database: {str(e)}",
                 )
@@ -600,7 +601,7 @@ class DatabaseManagerService:
 
     async def drop_database(
         self, config: ConnectionConfig
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Drop a database.
 
@@ -646,13 +647,13 @@ class DatabaseManagerService:
         except Exception as e:
             self.logger.error(f"Error dropping database: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="DATABASE_DROP_ERROR",
                     message=f"Error dropping database: {str(e)}",
                 )
             )
 
-    async def execute_script(self, script: str) -> UnoResult[None, ErrorDetails]:
+    async def execute_script(self, script: str) -> Result[None, FrameworkError]:
         """
         Execute a SQL script.
 
@@ -673,7 +674,7 @@ class DatabaseManagerService:
         except Exception as e:
             self.logger.error(f"Error executing script: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="SCRIPT_EXECUTION_ERROR",
                     message=f"Error executing script: {str(e)}",
                 )
@@ -681,7 +682,7 @@ class DatabaseManagerService:
 
     async def create_extension(
         self, extension_name: str, schema: str | None = None
-    ) -> UnoResult[None, ErrorDetails]:
+    ) -> Result[None, FrameworkError]:
         """
         Create a database extension.
 
@@ -708,7 +709,7 @@ class DatabaseManagerService:
         except Exception as e:
             self.logger.error(f"Error creating extension: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="EXTENSION_CREATION_ERROR",
                     message=f"Error creating extension {extension_name}: {str(e)}",
                 )
@@ -744,7 +745,7 @@ class QueryExecutionService:
 
     async def execute_query(
         self, request: QueryRequest
-    ) -> UnoResult[QueryResponse, ErrorDetails]:
+    ) -> Result[QueryResponse, FrameworkError]:
         """
         Execute a database query.
 
@@ -884,7 +885,7 @@ class QueryExecutionService:
 
     async def execute_batch_queries(
         self, requests: list[QueryRequest]
-    ) -> UnoResult[list[QueryResponse], ErrorDetails]:
+    ) -> Result[list[QueryResponse], FrameworkError]:
         """
         Execute multiple queries in batch.
 
@@ -942,7 +943,7 @@ class QueryOptimizerService:
 
     async def optimize_query(
         self, request: OptimizationRequest
-    ) -> UnoResult[OptimizationResponse, ErrorDetails]:
+    ) -> Result[OptimizationResponse, FrameworkError]:
         """
         Optimize a query.
 
@@ -1044,7 +1045,7 @@ class QueryOptimizerService:
 
     async def analyze_query(
         self, query: str, parameters: dict[str, Any] | None = None
-    ) -> UnoResult[QueryPlan, ErrorDetails]:
+    ) -> Result[QueryPlan, FrameworkError]:
         """
         Analyze a query to get its execution plan.
 
@@ -1066,7 +1067,7 @@ class QueryOptimizerService:
 
             if isinstance(result, Failure):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="EXPLAIN_ERROR",
                         message=f"Error explaining query: {result.error.message}",
                     )
@@ -1076,7 +1077,7 @@ class QueryOptimizerService:
             explain_output = result.value
             if not explain_output or not isinstance(explain_output, dict):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="INVALID_EXPLAIN_OUTPUT", message="Invalid EXPLAIN output"
                     )
                 )
@@ -1104,7 +1105,7 @@ class QueryOptimizerService:
         except Exception as e:
             self.logger.error(f"Error analyzing query: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="QUERY_ANALYSIS_ERROR",
                     message=f"Error analyzing query: {str(e)}",
                 )
@@ -1112,7 +1113,7 @@ class QueryOptimizerService:
 
     async def get_index_recommendations(
         self, table_name: str | None = None, limit: int = 10
-    ) -> UnoResult[list[IndexRecommendation], ErrorDetails]:
+    ) -> Result[list[IndexRecommendation], FrameworkError]:
         """
         Get index recommendations.
 
@@ -1133,7 +1134,7 @@ class QueryOptimizerService:
 
     async def apply_index_recommendation(
         self, recommendation: IndexRecommendation
-    ) -> UnoResult[bool, ErrorDetails]:
+    ) -> Result[bool, FrameworkError]:
         """
         Apply an index recommendation.
 
@@ -1152,7 +1153,7 @@ class QueryOptimizerService:
 
             if isinstance(result, Failure):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="INDEX_CREATION_ERROR",
                         message=f"Error creating index: {result.error.message}",
                     )
@@ -1162,7 +1163,7 @@ class QueryOptimizerService:
         except Exception as e:
             self.logger.error(f"Error applying index recommendation: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="INDEX_CREATION_ERROR",
                     message=f"Error applying index recommendation: {str(e)}",
                 )
@@ -1170,7 +1171,7 @@ class QueryOptimizerService:
 
     async def get_optimizer_metrics(
         self,
-    ) -> UnoResult[OptimizerMetricsSnapshot, ErrorDetails]:
+    ) -> Result[OptimizerMetricsSnapshot, FrameworkError]:
         """
         Get optimizer metrics.
 
@@ -1521,7 +1522,7 @@ class QueryCacheService:
 
     async def get_cached_result(
         self, query: str, parameters: dict[str, Any] | None = None
-    ) -> UnoResult[Optional[Any], ErrorDetails]:
+    ) -> Result[Optional[Any], FrameworkError]:
         """
         Get a cached query result.
 
@@ -1562,7 +1563,7 @@ class QueryCacheService:
         parameters: dict[str, Any] | None,
         result: Any,
         ttl_seconds: int | None = None,
-    ) -> UnoResult[None, ErrorDetails]:
+    ) -> Result[None, FrameworkError]:
         """
         Cache a query result.
 
@@ -1599,7 +1600,7 @@ class QueryCacheService:
 
     async def invalidate_cache(
         self, table_names: list[str] | None = None
-    ) -> UnoResult[int, ErrorDetails]:
+    ) -> Result[int, FrameworkError]:
         """
         Invalidate cache entries.
 
@@ -1630,7 +1631,7 @@ class QueryCacheService:
 
         return result
 
-    async def get_cache_statistics(self) -> UnoResult[dict[str, Any], ErrorDetails]:
+    async def get_cache_statistics(self) -> Result[dict[str, Any], FrameworkError]:
         """
         Get cache statistics.
 
@@ -1670,7 +1671,7 @@ class QueryCacheService:
         except Exception as e:
             self.logger.error(f"Error getting cache statistics: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="CACHE_STATISTICS_ERROR",
                     message=f"Error getting cache statistics: {str(e)}",
                 )
@@ -1744,7 +1745,7 @@ class TransactionService:
 
     async def begin_transaction(
         self, request: TransactionRequest
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Begin a new transaction.
 
@@ -1767,7 +1768,7 @@ class TransactionService:
 
     async def commit_transaction(
         self, transaction_id: TransactionId
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Commit a transaction.
 
@@ -1786,7 +1787,7 @@ class TransactionService:
 
     async def rollback_transaction(
         self, transaction_id: TransactionId
-    ) -> UnoResult[TransactionResponse, ErrorDetails]:
+    ) -> Result[TransactionResponse, FrameworkError]:
         """
         Rollback a transaction.
 
@@ -1849,7 +1850,7 @@ class ConnectionPoolService:
         self.engine_factory = engine_factory
         self.logger = logger or logging.getLogger(__name__)
 
-    async def get_pool_statistics(self) -> UnoResult[PoolStatistics, ErrorDetails]:
+    async def get_pool_statistics(self) -> Result[PoolStatistics, FrameworkError]:
         """
         Get current pool statistics.
 
@@ -1859,7 +1860,7 @@ class ConnectionPoolService:
         try:
             if not self.engine_factory or not hasattr(self.engine_factory, "engine"):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="NO_ENGINE", message="No SQLAlchemy engine available"
                     )
                 )
@@ -1868,7 +1869,7 @@ class ConnectionPoolService:
 
             if not hasattr(engine, "pool"):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="NO_POOL", message="Engine does not have a connection pool"
                     )
                 )
@@ -1897,7 +1898,7 @@ class ConnectionPoolService:
         except Exception as e:
             self.logger.error(f"Error getting pool statistics: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="POOL_STATISTICS_ERROR",
                     message=f"Error getting pool statistics: {str(e)}",
                 )
@@ -1905,7 +1906,7 @@ class ConnectionPoolService:
 
     async def get_historical_statistics(
         self, limit: int = 100
-    ) -> UnoResult[list[PoolStatistics], ErrorDetails]:
+    ) -> Result[list[PoolStatistics], FrameworkError]:
         """
         Get historical pool statistics.
 
@@ -1920,7 +1921,7 @@ class ConnectionPoolService:
 
         return await self.stats_repository.get_recent_statistics(limit)
 
-    async def optimize_pool_size(self) -> UnoResult[ConnectionPoolConfig, ErrorDetails]:
+    async def optimize_pool_size(self) -> Result[ConnectionPoolConfig, FrameworkError]:
         """
         Optimize the connection pool size based on usage.
 
@@ -1961,13 +1962,13 @@ class ConnectionPoolService:
         except Exception as e:
             self.logger.error(f"Error optimizing pool size: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="POOL_OPTIMIZATION_ERROR",
                     message=f"Error optimizing pool size: {str(e)}",
                 )
             )
 
-    async def reset_pool(self) -> UnoResult[None, ErrorDetails]:
+    async def reset_pool(self) -> Result[None, FrameworkError]:
         """
         Reset the connection pool.
 
@@ -1977,7 +1978,7 @@ class ConnectionPoolService:
         try:
             if not self.engine_factory or not hasattr(self.engine_factory, "engine"):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="NO_ENGINE", message="No SQLAlchemy engine available"
                     )
                 )
@@ -1986,7 +1987,7 @@ class ConnectionPoolService:
 
             if not hasattr(engine, "pool") or not hasattr(engine.pool, "dispose"):
                 return Failure(
-                    ErrorDetails(
+                    FrameworkError(
                         code="NO_POOL",
                         message="Engine does not have a connection pool or pool cannot be disposed",
                     )
@@ -2000,7 +2001,7 @@ class ConnectionPoolService:
         except Exception as e:
             self.logger.error(f"Error resetting pool: {str(e)}")
             return Failure(
-                ErrorDetails(
+                FrameworkError(
                     code="POOL_RESET_ERROR", message=f"Error resetting pool: {str(e)}"
                 )
             )
