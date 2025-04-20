@@ -12,13 +12,16 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, create_model
 
 from uno.core.errors.result import Result, Success
+from uno.core.errors.framework import ErrorDetail as FrameworkErrorDetail
 
 __all__ = [
     "PaginatedResponse",
     "DataResponse",
+    "ApiErrorDetail",
     "ErrorResponse",
     "response_handler",
     "paginated_response",
+    "framework_error_to_api_error",
 ]
 
 T = TypeVar("T")
@@ -35,8 +38,8 @@ class PaginationMetadata(BaseModel):
     has_previous: bool = Field(..., description="Whether there is a previous page")
 
 
-class ErrorDetail(BaseModel):
-    """Details for an error response."""
+class ApiErrorDetail(BaseModel):
+    """API-friendly representation of error details."""
 
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
@@ -61,7 +64,7 @@ class DataResponse(BaseModel, Generic[T]):
 class ErrorResponse(BaseModel):
     """Standard response format for errors."""
 
-    error: ErrorDetail = Field(..., description="Error details")
+    error: ApiErrorDetail = Field(..., description="Error details")
     meta: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
@@ -101,7 +104,7 @@ def response_handler(
             error_status_code = status.HTTP_409_CONFLICT
 
     # Create error detail
-    error_detail = ErrorDetail(
+    error_detail = ApiErrorDetail(
         code=getattr(error, "code", "ERROR"),
         message=str(error),
         field=getattr(error, "field", None),

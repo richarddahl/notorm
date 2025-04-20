@@ -9,8 +9,9 @@ This module defines error types, error codes, and error catalog entries
 specific to the queries functionality.
 """
 
-from typing import Any, Optional, Dict, List, Union
-from uno.core.base.error import BaseError, ErrorCategory, ErrorSeverity
+from typing import Any
+from uno.core.base.error import BaseError
+from uno.core.errors.framework import ErrorCategory, ErrorSeverity
 from uno.core.errors.catalog import register_error
 
 

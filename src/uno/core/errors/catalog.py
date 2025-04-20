@@ -9,7 +9,7 @@ This module maintains a registry of all error codes with their
 descriptions, categories, and other metadata.
 """
 
-from uno.core.base.error import ErrorInfo, ErrorCategory, ErrorSeverity
+from uno.core.errors.framework import ErrorCategory, ErrorSeverity, ErrorInfo
 
 # Global registry of error codes
 _ERROR_CATALOG: dict[str, ErrorInfo] = {}

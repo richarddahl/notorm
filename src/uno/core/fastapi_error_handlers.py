@@ -18,12 +18,8 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
-from uno.core.base.error import BaseError, ErrorCode, ErrorCategory, ErrorSeverity
-from uno.core.errors.result import (
-    ValidationError as ResultValidationError,
-    ValidationResult,
-    ErrorSeverity as ValidationSeverity,
-)
+from uno.core.base.error import BaseError
+from uno.core.errors.framework import ErrorCategory, ErrorSeverity
 
 # Setup logging
 logger = logging.getLogger(__name__)

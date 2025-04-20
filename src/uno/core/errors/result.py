@@ -1,5 +1,5 @@
 from typing import Generic, TypeVar, Callable, cast
-from uno.core.errors.base import FrameworkError
+from uno.core.errors.framework import FrameworkError
 from uno.core.errors.framework import ErrorDetail
 
 T = TypeVar("T")
