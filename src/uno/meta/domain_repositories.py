@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, Type, TypeVar, cast
 import logging
 
 from uno.core.base.respository import UnoDBRepository
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.meta.entities import MetaType, MetaRecord
 
 
@@ -31,7 +31,7 @@ class MetaTypeRepository(UnoDBRepository[MetaType]):
         super().__init__(entity_type=MetaType, db_factory=db_factory)
 
     async def create_meta_type(
-        self, id: str, name: Optional[str] = None, description: Optional[str] = None
+        self, id: str, name: str | None = None, description: str | None = None
     ) -> MetaType:
         """
         Create a new meta type.
@@ -52,7 +52,7 @@ class MetaTypeRepository(UnoDBRepository[MetaType]):
         # Save to database
         return await self.add(meta_type)
 
-    async def get_all_meta_types(self) -> List[MetaType]:
+    async def get_all_meta_types(self) -> list[MetaType]:
         """
         Get all meta types in the system.
 
@@ -114,7 +114,7 @@ class MetaRecordRepository(UnoDBRepository[MetaRecord]):
 
     async def find_by_meta_type(
         self, meta_type_id: str, limit: int = 100
-    ) -> List[MetaRecord]:
+    ) -> list[MetaRecord]:
         """
         Find meta records by meta type ID.
 

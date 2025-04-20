@@ -28,7 +28,7 @@ class UserService(DomainService[User, UUID]):
     def __init__(
         self,
         repository: EntityRepository[User, UUID],
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         super().__init__(User, repository, logger)
     
@@ -67,12 +67,12 @@ class OrderService(DomainServiceWithUnitOfWork[Order, UUID]):
     def __init__(
         self,
         unit_of_work: AbstractUnitOfWork,
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         super().__init__(Order, unit_of_work, logger)
     
     async def create_order(
-        self, customer_id: UUID, items: List[Dict[str, Any]]
+        self, customer_id: UUID, items: list[dict[str, Any]]
     ) -> Result[Order, str]:
         async with self.with_uow("create_order"):
             await self._ensure_repository()
@@ -144,7 +144,7 @@ class OrderingService(ApplicationService[Dict[str, Any], str]):
         product_service: ProductService,
         order_service: OrderService,
         notification_service: NotificationService,
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         super().__init__(logger)
         self.user_service = user_service
@@ -153,7 +153,7 @@ class OrderingService(ApplicationService[Dict[str, Any], str]):
         self.notification_service = notification_service
     
     async def place_order(
-        self, customer_id: UUID, items: List[Dict[str, Any]]
+        self, customer_id: UUID, items: list[dict[str, Any]]
     ) -> Result[Dict[str, Any], str]:
         self.log_request("place_order", {"customer_id": customer_id, "items": items})
         
@@ -303,7 +303,7 @@ Here's a complete example showing domain and application services working togeth
 ```python
 # Define domain services
 class ProductService(DomainService[Product, UUID]):
-    async def get_available_products(self) -> Result[List[Product], str]:
+    async def get_available_products(self) -> Result[list[Product], str]:
         from uno.domain.entity.specification import AttributeSpecification
         active_spec = AttributeSpecification("is_active", True)
         in_stock_spec = AttributeSpecification("inventory_count", 0, lambda a, b: a > b)
@@ -316,7 +316,7 @@ class ProductService(DomainService[Product, UUID]):
             return Failure(f"Error getting available products: {str(e)}")
 
 class OrderService(DomainServiceWithUnitOfWork[Order, UUID]):
-    async def place_order(self, user_id: UUID, product_ids: List[UUID]) -> Result[Order, str]:
+    async def place_order(self, user_id: UUID, product_ids: list[UUID]) -> Result[Order, str]:
         async with self.with_uow("place_order"):
             # Implementation details omitted for brevity
             # ...
@@ -335,7 +335,7 @@ class ShoppingService(ApplicationService[Dict[str, Any], str]):
         self.order_service = order_service
     
     async def checkout(
-        self, user_id: UUID, product_ids: List[UUID]
+        self, user_id: UUID, product_ids: list[UUID]
     ) -> Result[Dict[str, Any], str]:
         self.log_request("checkout", {"user_id": user_id, "product_ids": product_ids})
         

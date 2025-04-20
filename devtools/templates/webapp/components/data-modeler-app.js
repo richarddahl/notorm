@@ -1,20 +1,20 @@
 /**
  * Data Modeler Application component
- * 
+ *
  * A web component that serves as the main application shell for the data modeling tool.
  */
 
-import { LitElement, html, css } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
-import './entity-model-editor.js';
-import './model-code-view.js';
+import { LitElement, html, css } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
+import "./entity-model-editor.js";
+import "./model-code-view.js";
 
 /**
  * Data Modeler Application
- * 
+ *
  * @element data-modeler-app
  */
-@customElement('data-modeler-app')
+@customElement("data-modeler-app")
 export class DataModelerApp extends LitElement {
   static styles = css`
     :host {
@@ -22,15 +22,16 @@ export class DataModelerApp extends LitElement {
       height: 100vh;
       width: 100%;
       box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     }
-    
+
     .app-container {
       display: flex;
       flex-direction: column;
       height: 100%;
     }
-    
+
     .app-header {
       display: flex;
       align-items: center;
@@ -40,59 +41,59 @@ export class DataModelerApp extends LitElement {
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       z-index: 1;
     }
-    
+
     .app-title {
       font-size: 1.2rem;
       margin: 0;
       flex: 1;
     }
-    
+
     .app-content {
       flex: 1;
       display: flex;
       overflow: hidden;
     }
-    
+
     .model-panel {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
-    
+
     .tabs {
       display: flex;
       background-color: #f5f5f5;
       border-bottom: 1px solid #ddd;
     }
-    
+
     .tab {
       padding: 10px 15px;
       cursor: pointer;
       border-right: 1px solid #ddd;
     }
-    
+
     .tab.active {
       background-color: white;
       border-bottom: 2px solid #0078d7;
     }
-    
+
     .tab-content {
       flex: 1;
       overflow: hidden;
       background-color: white;
     }
-    
+
     .project-info {
       display: flex;
       align-items: center;
     }
-    
+
     .project-name {
       margin-right: 15px;
       color: rgba(255, 255, 255, 0.9);
     }
-    
+
     button {
       padding: 8px 12px;
       border: none;
@@ -102,11 +103,11 @@ export class DataModelerApp extends LitElement {
       cursor: pointer;
       margin-left: 10px;
     }
-    
+
     button:hover {
       background-color: #004275;
     }
-    
+
     input {
       padding: 8px;
       border: 1px solid rgba(255, 255, 255, 0.3);
@@ -114,74 +115,76 @@ export class DataModelerApp extends LitElement {
       background-color: rgba(255, 255, 255, 0.1);
       color: white;
     }
-    
+
     input::placeholder {
       color: rgba(255, 255, 255, 0.6);
     }
   `;
 
-  @property({ type: String }) projectName = 'New Project';
+  @property({ type: String }) projectName = "New Project";
   @property({ type: Array }) entities = [];
   @property({ type: Array }) relationships = [];
-  
-  @state() activeTab = 'visual';
+
+  @state() activeTab = "visual";
   @state() generatedCode = null;
-  
+
   handleModelSaved(event) {
     const { entities, relationships } = event.detail;
-    
+
     // Generate code using API call
-    this.generateCode(entities, relationships)
-      .then(code => {
-        this.generatedCode = code;
-        this.activeTab = 'code';
-      });
+    this.generateCode(entities, relationships).then((code) => {
+      this.generatedCode = code;
+      this.activeTab = "code";
+    });
   }
-  
+
   async generateCode(entities, relationships) {
     try {
-      const response = await fetch('/api/devtools/model/generate', {
-        method: 'POST',
+      const response = await fetch("/api/devtools/model/generate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           projectName: this.projectName,
           entities,
-          relationships
-        })
+          relationships,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-      
+
       return await response.json();
     } catch (error) {
-      console.error('Error generating code:', error);
+      console.error("Error generating code:", error);
       // Fallback to client-side code generation
       return this.generateCodeLocally(entities, relationships);
     }
   }
-  
+
   generateCodeLocally(entities, relationships) {
     // Simple client-side code generation as fallback
     const code = {
       entities: {},
       repositories: {},
-      services: {}
+      services: {},
     };
-    
+
     // Generate entity models
-    entities.forEach(entity => {
-      code.entities[entity.name] = this.generateEntityCode(entity, relationships);
+    entities.forEach((entity) => {
+      code.entities[entity.name] = this.generateEntityCode(
+        entity,
+        relationships
+      );
       code.repositories[entity.name] = this.generateRepositoryCode(entity);
       code.services[entity.name] = this.generateServiceCode(entity);
     });
-    
+
     return code;
   }
-  
+
   generateEntityCode(entity, relationships) {
     // Template for entity model
     return `"""
@@ -201,7 +204,9 @@ class ${entity.name}(BaseModel):
     This class represents the domain entity for ${entity.name}.
     """
     
-    ${entity.fields.map(field => `${field.name}: ${this.getPythonType(field)}`).join('\n    ')}
+    ${entity.fields
+      .map((field) => `${field.name}: ${this.getPythonType(field)}`)
+      .join("\n    ")}
     ${this.generateRelationshipFields(entity, relationships)}
     
     class Config:
@@ -222,81 +227,94 @@ class ${entity.name}(BaseModel):
         
         self.updated_at = datetime.utcnow()`;
   }
-  
+
   generateImportsForRelationships(entity, relationships) {
     // Generate import statements for related entities
     const relatedEntities = relationships
-      .filter(rel => 
-        (rel.source.id || rel.source) === entity.id || 
-        (rel.target.id || rel.target) === entity.id
+      .filter(
+        (rel) =>
+          (rel.source.id || rel.source) === entity.id ||
+          (rel.target.id || rel.target) === entity.id
       )
-      .map(rel => {
-        const relatedEntityId = (rel.source.id || rel.source) === entity.id 
-          ? (rel.target.id || rel.target)
-          : (rel.source.id || rel.source);
-          
-        return this.entities.find(e => e.id === relatedEntityId);
+      .map((rel) => {
+        const relatedEntityId =
+          (rel.source.id || rel.source) === entity.id
+            ? rel.target.id || rel.target
+            : rel.source.id || rel.source;
+
+        return this.entities.find((e) => e.id === relatedEntityId);
       })
       .filter(Boolean);
-    
-    if (relatedEntities.length === 0) return '';
-    
+
+    if (relatedEntities.length === 0) return "";
+
     return `from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    ${relatedEntities.map(e => `from .${e.name.toLowerCase()} import ${e.name}`).join('\n    ')}`;
+    ${relatedEntities
+      .map((e) => `from .${e.name.toLowerCase()} import ${e.name}`)
+      .join("\n    ")}`;
   }
-  
+
   generateRelationshipFields(entity, relationships) {
     const relationshipFields = relationships
-      .filter(rel => (rel.source.id || rel.source) === entity.id || (rel.target.id || rel.target) === entity.id)
-      .map(rel => {
+      .filter(
+        (rel) =>
+          (rel.source.id || rel.source) === entity.id ||
+          (rel.target.id || rel.target) === entity.id
+      )
+      .map((rel) => {
         const isSource = (rel.source.id || rel.source) === entity.id;
-        const relatedEntityId = isSource ? (rel.target.id || rel.target) : (rel.source.id || rel.source);
-        const relatedEntity = this.entities.find(e => e.id === relatedEntityId);
-        
-        if (!relatedEntity) return '';
-        
-        const fieldName = relatedEntity.name.toLowerCase() + (isSource ? 's' : '');
-        
+        const relatedEntityId = isSource
+          ? rel.target.id || rel.target
+          : rel.source.id || rel.source;
+        const relatedEntity = this.entities.find(
+          (e) => e.id === relatedEntityId
+        );
+
+        if (!relatedEntity) return "";
+
+        const fieldName =
+          relatedEntity.name.toLowerCase() + (isSource ? "s" : "");
+
         // Determine type based on relationship type and direction
         let fieldType;
-        if (rel.type === 'one-to-many' && isSource) {
-          fieldType = `List['${relatedEntity.name}'] = Field(default_factory=list)`;
-        } else if (rel.type === 'many-to-one' && !isSource) {
-          fieldType = `List['${relatedEntity.name}'] = Field(default_factory=list)`;
-        } else if (rel.type === 'many-to-many') {
-          fieldType = `List['${relatedEntity.name}'] = Field(default_factory=list)`;
+        if (rel.type === "one-to-many" && isSource) {
+          fieldType = `list['${relatedEntity.name}'] = Field(default_factory=list)`;
+        } else if (rel.type === "many-to-one" && !isSource) {
+          fieldType = `list['${relatedEntity.name}'] = Field(default_factory=list)`;
+        } else if (rel.type === "many-to-many") {
+          fieldType = `list['${relatedEntity.name}'] = Field(default_factory=list)`;
         } else {
           fieldType = `Optional['${relatedEntity.name}'] = None`;
         }
-        
+
         return `${fieldName}: ${fieldType}`;
       })
       .filter(Boolean)
-      .join('\n    ');
-      
+      .join("\n    ");
+
     return relationshipFields;
   }
-  
+
   getPythonType(field) {
     // Map field types to Python types
     const typeMap = {
-      'string': 'str',
-      'integer': 'int',
-      'float': 'float',
-      'boolean': 'bool',
-      'datetime': 'datetime = Field(default_factory=datetime.utcnow)',
-      'date': 'date',
-      'uuid': 'UUID = Field(default_factory=uuid4)',
-      'json': 'dict',
-      'array': 'List',
-      'relation': 'Any'
+      string: "str",
+      integer: "int",
+      float: "float",
+      boolean: "bool",
+      datetime: "datetime = Field(default_factory=datetime.utcnow)",
+      date: "date",
+      uuid: "UUID = Field(default_factory=uuid4)",
+      json: "dict",
+      array: "List",
+      relation: "Any",
     };
-    
-    return typeMap[field.type] || 'Any';
+
+    return typeMap[field.type] || "Any";
   }
-  
+
   generateRepositoryCode(entity) {
     return `"""
 ${entity.name} repository module.
@@ -341,7 +359,9 @@ class ${entity.name}Repository:
             # Implementation depends on your ORM approach
             pass
     
-    async def list(self, filters: Optional[Dict[str, Any]] = None) -> List[${entity.name}]:
+    async def list(self, filters: Optional[Dict[str, Any]] = None) -> list[${
+      entity.name
+    }]:
         """
         List ${entity.name} entities with optional filtering.
         
@@ -397,7 +417,7 @@ class ${entity.name}Repository:
             # Implementation depends on your ORM approach
             pass`;
   }
-  
+
   generateServiceCode(entity) {
     return `"""
 ${entity.name} service module.
@@ -410,7 +430,9 @@ from uno.dependencies import inject
 from uno.core.errors import NotFoundError
 
 from ..domain.${entity.name.toLowerCase()}_entity import ${entity.name}
-from ..infrastructure.repositories.${entity.name.toLowerCase()}_repository import ${entity.name}Repository
+from ..infrastructure.repositories.${entity.name.toLowerCase()}_repository import ${
+      entity.name
+    }Repository
 
 
 class ${entity.name}Service:
@@ -446,7 +468,9 @@ class ${entity.name}Service:
             raise NotFoundError(f"${entity.name} with ID {id} not found")
         return entity
     
-    async def list(self, filters: Optional[Dict[str, Any]] = None) -> List[${entity.name}]:
+    async def list(self, filters: Optional[Dict[str, Any]] = None) -> list[${
+      entity.name
+    }]:
         """
         List ${entity.name} entities with optional filtering.
         
@@ -505,15 +529,15 @@ class ${entity.name}Service:
         entity = await self.get_by_id(id)
         return await self.repository.delete(id)`;
   }
-  
+
   changeTab(tab) {
     this.activeTab = tab;
   }
-  
+
   updateProjectName(event) {
     this.projectName = event.target.value;
   }
-  
+
   render() {
     return html`
       <div class="app-container">
@@ -521,44 +545,49 @@ class ${entity.name}Service:
           <h1 class="app-title">Uno Data Modeler</h1>
           <div class="project-info">
             <span class="project-name">Project:</span>
-            <input 
-              type="text" 
-              .value=${this.projectName} 
-              @input=${this.updateProjectName} 
+            <input
+              type="text"
+              .value=${this.projectName}
+              @input=${this.updateProjectName}
               placeholder="Project name"
             />
-            <button @click=${() => this.activeTab = 'visual'}>Edit Model</button>
-            <button @click=${() => this.activeTab = 'code'}>View Code</button>
+            <button @click=${() => (this.activeTab = "visual")}>
+              Edit Model
+            </button>
+            <button @click=${() => (this.activeTab = "code")}>View Code</button>
           </div>
         </header>
         <main class="app-content">
           <div class="model-panel">
             <div class="tabs">
-              <div class="tab ${this.activeTab === 'visual' ? 'active' : ''}" 
-                   @click=${() => this.changeTab('visual')}>
+              <div
+                class="tab ${this.activeTab === "visual" ? "active" : ""}"
+                @click=${() => this.changeTab("visual")}
+              >
                 Visual Editor
               </div>
-              <div class="tab ${this.activeTab === 'code' ? 'active' : ''}" 
-                   @click=${() => this.changeTab('code')}>
+              <div
+                class="tab ${this.activeTab === "code" ? "active" : ""}"
+                @click=${() => this.changeTab("code")}
+              >
                 Generated Code
               </div>
             </div>
             <div class="tab-content">
-              ${this.activeTab === 'visual' 
+              ${this.activeTab === "visual"
                 ? html`
-                  <entity-model-editor 
-                    .entities=${this.entities}
-                    .relationships=${this.relationships}
-                    .projectName=${this.projectName}
-                    @model-saved=${this.handleModelSaved}
-                  ></entity-model-editor>
-                ` 
+                    <entity-model-editor
+                      .entities=${this.entities}
+                      .relationships=${this.relationships}
+                      .projectName=${this.projectName}
+                      @model-saved=${this.handleModelSaved}
+                    ></entity-model-editor>
+                  `
                 : html`
-                  <model-code-view 
-                    .code=${this.generatedCode}
-                  ></model-code-view>
-                `
-              }
+                    <model-code-view
+                      .code=${this.generatedCode}
+                    ></model-code-view>
+                  `}
             </div>
           </div>
         </main>

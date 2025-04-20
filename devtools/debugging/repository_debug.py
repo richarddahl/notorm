@@ -29,8 +29,8 @@ class RepositoryOperation:
     error: Optional[Exception] = None
     duration_ms: float = 0.0
     timestamp: float = 0.0
-    repository_class: Optional[str] = None
-    source_location: Optional[str] = None
+    repository_class: str | None = None
+    source_location: str | None = None
 
 
 class RepositoryTracker:
@@ -38,7 +38,7 @@ class RepositoryTracker:
 
     def __init__(self):
         """Initialize the repository tracker."""
-        self.operations: List[RepositoryOperation] = []
+        self.operations: list[RepositoryOperation] = []
         self.enabled = True
         self.track_source = True
 
@@ -55,7 +55,7 @@ class RepositoryTracker:
         if self.enabled:
             self.operations.append(operation)
 
-    def get_operations_by_method(self, method: str) -> List[RepositoryOperation]:
+    def get_operations_by_method(self, method: str) -> list[RepositoryOperation]:
         """Get operations by method name.
 
         Args:
@@ -68,7 +68,7 @@ class RepositoryTracker:
 
     def get_operations_by_repository(
         self, repository_class: str
-    ) -> List[RepositoryOperation]:
+    ) -> list[RepositoryOperation]:
         """Get operations by repository class.
 
         Args:
@@ -81,7 +81,7 @@ class RepositoryTracker:
 
     def get_slow_operations(
         self, threshold_ms: float = 100.0
-    ) -> List[RepositoryOperation]:
+    ) -> list[RepositoryOperation]:
         """Get operations that took longer than the threshold.
 
         Args:
@@ -304,7 +304,7 @@ class RepositoryDebugger:
 
         return analysis
 
-    def _identify_n_plus_one_queries(self) -> List[Dict[str, Any]]:
+    def _identify_n_plus_one_queries(self) -> list[dict[str, Any]]:
         """Identify potential N+1 query patterns in repository operations.
 
         Returns:

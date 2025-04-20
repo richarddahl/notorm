@@ -26,11 +26,11 @@ _error_context = contextvars.ContextVar[ErrorContext]("error_context", default={
 
 def get_error_context() -> ErrorContext:
     """
-from uno.core.base.error import BaseError
-    Get the current error context.
+    from uno.core.base.error import BaseError
+        Get the current error context.
 
-    Returns:
-        The current error context dictionary
+        Returns:
+            The current error context dictionary
     """
     return _error_context.get().copy()
 
@@ -410,7 +410,7 @@ class ValidationError(BaseError):
     def __init__(
         self,
         message: str,
-        field: Optional[str] = None,
+        field: str | None = None,
         value: Optional[Any] = None,
         validation_errors: Optional[list] = None,
         **context: Any,
@@ -435,11 +435,11 @@ class ValidationError(BaseError):
             message=message, error_code=ErrorCode.VALIDATION_ERROR, **context_dict
         )
         self.validation_errors = validation_errors or []
-        
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the error to a dictionary.
-        
+
         Returns:
             A dictionary representation of the error
         """
@@ -477,9 +477,9 @@ class AuthorizationError(BaseError):
     def __init__(
         self,
         message: str = "User is not authorized to perform this operation",
-        resource_type: Optional[str] = None,
+        resource_type: str | None = None,
         resource_id: Optional[Any] = None,
-        permission: Optional[str] = None,
+        permission: str | None = None,
         **context: Any,
     ):
         """
@@ -507,18 +507,18 @@ class AuthorizationError(BaseError):
 
 class DatabaseError(BaseError):
     """Error raised for database-related issues."""
-    
+
     def __init__(
         self,
         message: str,
         error_code: str = ErrorCode.DB_QUERY_ERROR,
-        query: Optional[str] = None,
+        query: str | None = None,
         params: Optional[Dict[str, Any]] = None,
         **context: Any,
     ):
         """
         Initialize a DatabaseError.
-        
+
         Args:
             message: The error message
             error_code: The database error code
@@ -531,22 +531,22 @@ class DatabaseError(BaseError):
             context_dict["query"] = query
         if params:
             context_dict["params"] = params
-            
+
         super().__init__(message=message, error_code=error_code, **context_dict)
 
 
 class ConfigurationError(BaseError):
     """Error raised for configuration issues."""
-    
+
     def __init__(
         self,
         message: str,
-        config_key: Optional[str] = None,
+        config_key: str | None = None,
         **context: Any,
     ):
         """
         Initialize a ConfigurationError.
-        
+
         Args:
             message: The error message
             config_key: The configuration key that caused the issue
@@ -555,7 +555,7 @@ class ConfigurationError(BaseError):
         context_dict = context.copy()
         if config_key:
             context_dict["config_key"] = config_key
-            
+
         super().__init__(
             message=message, error_code=ErrorCode.CONFIGURATION_ERROR, **context_dict
         )
@@ -563,16 +563,16 @@ class ConfigurationError(BaseError):
 
 class DependencyError(BaseError):
     """Error raised for dependency resolution issues."""
-    
+
     def __init__(
         self,
         message: str,
-        dependency_name: Optional[str] = None,
+        dependency_name: str | None = None,
         **context: Any,
     ):
         """
         Initialize a DependencyError.
-        
+
         Args:
             message: The error message
             dependency_name: The name of the dependency that couldn't be resolved
@@ -581,7 +581,7 @@ class DependencyError(BaseError):
         context_dict = context.copy()
         if dependency_name:
             context_dict["dependency_name"] = dependency_name
-            
+
         super().__init__(
             message=message, error_code=ErrorCode.DEPENDENCY_ERROR, **context_dict
         )
@@ -589,18 +589,18 @@ class DependencyError(BaseError):
 
 class ConcurrencyError(BaseError):
     """Error raised when optimistic concurrency control fails."""
-    
+
     def __init__(
         self,
         message: str,
-        aggregate_id: Optional[str] = None,
+        aggregate_id: str | None = None,
         expected_version: Optional[int] = None,
         actual_version: Optional[int] = None,
         **context: Any,
     ):
         """
         Initialize a ConcurrencyError.
-        
+
         Args:
             message: The error message
             aggregate_id: The ID of the aggregate with version conflict
@@ -615,7 +615,7 @@ class ConcurrencyError(BaseError):
             context_dict["expected_version"] = expected_version
         if actual_version is not None:
             context_dict["actual_version"] = actual_version
-            
+
         super().__init__(
             message=message, error_code=ErrorCode.RESOURCE_CONFLICT, **context_dict
         )

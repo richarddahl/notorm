@@ -93,10 +93,10 @@ class UserViewDto(UserBaseDto):
     )
 
     # Navigation properties (returned as IDs, loaded on demand)
-    group_ids: List[str] = Field(
+    group_ids: list[str] = Field(
         default_factory=list, description="IDs of groups to which the user is assigned"
     )
-    role_ids: List[str] = Field(
+    role_ids: list[str] = Field(
         default_factory=list, description="IDs of roles assigned to the user"
     )
 
@@ -156,7 +156,7 @@ class UserFilterParams(BaseModel):
 class UserListDto(BaseModel):
     """DTO for a list of users with pagination data."""
 
-    items: List[UserViewDto] = Field(..., description="List of users")
+    items: list[UserViewDto] = Field(..., description="List of users")
     total: int = Field(..., description="Total number of users matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")
@@ -172,7 +172,7 @@ class GroupBaseDto(BaseModel):
 class GroupCreateDto(GroupBaseDto):
     """DTO for creating a new group."""
 
-    user_ids: Optional[List[str]] = Field(
+    user_ids: list[str] | None = Field(
         None, description="IDs of users to add to the group"
     )
 
@@ -202,7 +202,7 @@ class GroupViewDto(GroupBaseDto):
     )
 
     # Navigation properties (returned as IDs, loaded on demand)
-    user_ids: List[str] = Field(
+    user_ids: list[str] = Field(
         default_factory=list, description="IDs of users assigned to the group"
     )
 
@@ -246,7 +246,7 @@ class GroupFilterParams(BaseModel):
 class GroupListDto(BaseModel):
     """DTO for a list of groups with pagination data."""
 
-    items: List[GroupViewDto] = Field(..., description="List of groups")
+    items: list[GroupViewDto] = Field(..., description="List of groups")
     total: int = Field(..., description="Total number of groups matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")
@@ -266,10 +266,10 @@ class RoleBaseDto(BaseModel):
 class RoleCreateDto(RoleBaseDto):
     """DTO for creating a new role."""
 
-    permission_ids: Optional[List[int]] = Field(
+    permission_ids: Optional[list[int]] = Field(
         None, description="IDs of permissions to add to the role"
     )
-    user_ids: Optional[List[str]] = Field(
+    user_ids: list[str] | None = Field(
         None, description="IDs of users to assign the role to"
     )
 
@@ -302,10 +302,10 @@ class RoleViewDto(RoleBaseDto):
     )
 
     # Navigation properties (returned as IDs, loaded on demand)
-    permission_ids: List[int] = Field(
+    permission_ids: list[int] = Field(
         default_factory=list, description="IDs of permissions assigned to the role"
     )
-    user_ids: List[str] = Field(
+    user_ids: list[str] = Field(
         default_factory=list, description="IDs of users assigned to the role"
     )
 
@@ -359,7 +359,7 @@ class RoleFilterParams(BaseModel):
 class RoleListDto(BaseModel):
     """DTO for a list of roles with pagination data."""
 
-    items: List[RoleViewDto] = Field(..., description="List of roles")
+    items: list[RoleViewDto] = Field(..., description="List of roles")
     total: int = Field(..., description="Total number of roles matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")
@@ -450,7 +450,7 @@ class ResponsibilityRoleFilterParams(BaseModel):
 class ResponsibilityRoleListDto(BaseModel):
     """DTO for a list of responsibility roles with pagination data."""
 
-    items: List[ResponsibilityRoleViewDto] = Field(
+    items: list[ResponsibilityRoleViewDto] = Field(
         ..., description="List of responsibility roles"
     )
     total: int = Field(
@@ -479,7 +479,7 @@ class PermissionViewDto(PermissionBaseDto):
     id: int = Field(..., description="Unique identifier for the permission")
 
     # Navigation properties (returned as IDs, loaded on demand)
-    role_ids: List[str] = Field(
+    role_ids: list[str] = Field(
         default_factory=list, description="IDs of roles with this permission"
     )
 
@@ -508,7 +508,7 @@ class PermissionFilterParams(BaseModel):
 class PermissionListDto(BaseModel):
     """DTO for a list of permissions with pagination data."""
 
-    items: List[PermissionViewDto] = Field(..., description="List of permissions")
+    items: list[PermissionViewDto] = Field(..., description="List of permissions")
     total: int = Field(
         ..., description="Total number of permissions matching the query"
     )
@@ -600,7 +600,7 @@ class TenantFilterParams(BaseModel):
 class TenantListDto(BaseModel):
     """DTO for a list of tenants with pagination data."""
 
-    items: List[TenantViewDto] = Field(..., description="List of tenants")
+    items: list[TenantViewDto] = Field(..., description="List of tenants")
     total: int = Field(..., description="Total number of tenants matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")

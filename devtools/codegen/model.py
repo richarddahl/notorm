@@ -19,18 +19,18 @@ logger = logging.getLogger("uno.codegen")
 def generate_model(
     name: str,
     fields: Dict[str, Dict[str, Any]],
-    table_name: Optional[str] = None,
-    module_name: Optional[str] = None,
+    table_name: str | None = None,
+    module_name: str | None = None,
     include_schema: bool = True,
     include_imports: bool = True,
     include_docstrings: bool = True,
-    dto_name: Optional[str] = None,
+    dto_name: str | None = None,
     base_model_class: str = "BaseModel",
     base_dto_class: str = "BaseDTO",
     timestamps: bool = True,
     soft_delete: bool = False,
-    relationships: Optional[List[Dict[str, Any]]] = None,
-    indexes: Optional[List[Dict[str, Any]]] = None,
+    relationships: Optional[list[dict[str, Any]]] = None,
+    indexes: Optional[list[dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
     """Generate a BaseModel class with an optional BaseDTO.
@@ -193,8 +193,8 @@ def _generate_model_class(
     base_model_class: str,
     timestamps: bool,
     soft_delete: bool,
-    relationships: Optional[List[Dict[str, Any]]] = None,
-    indexes: Optional[List[Dict[str, Any]]] = None,
+    relationships: Optional[list[dict[str, Any]]] = None,
+    indexes: Optional[list[dict[str, Any]]] = None,
 ) -> str:
     """Generate a BaseModel class definition.
 
@@ -502,7 +502,7 @@ def _generate_index(index: Dict[str, Any]) -> str:
         return f"__table_args__ = (sa.Index('{name}', {', '.join(args)}),)"
 
 
-def _generate_validator(field_name: str, field_info: Dict[str, Any]) -> List[str]:
+def _generate_validator(field_name: str, field_info: Dict[str, Any]) -> list[str]:
     """Generate a Pydantic validator for a field.
 
     Args:

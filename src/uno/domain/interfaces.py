@@ -47,44 +47,44 @@ class ValueRepositoryProtocol(Protocol, Generic[T]):
     """Protocol for value repositories."""
 
     async def get_by_id(
-        self, value_id: str, session: Optional[AsyncSession] = None
+        self, value_id: str, session: AsyncSession | None = None
     ) -> Result[Optional[T]]:
         """Get a value by ID."""
         ...
 
     async def get_by_value(
-        self, value: Any, session: Optional[AsyncSession] = None
+        self, value: Any, session: AsyncSession | None = None
     ) -> Result[Optional[T]]:
         """Get a value object by its actual value."""
         ...
 
     async def create(
-        self, value_obj: T, session: Optional[AsyncSession] = None
+        self, value_obj: T, session: AsyncSession | None = None
     ) -> Result[T]:
         """Create a new value."""
         ...
 
     async def update(
-        self, value_obj: T, session: Optional[AsyncSession] = None
+        self, value_obj: T, session: AsyncSession | None = None
     ) -> Result[T]:
         """Update an existing value."""
         ...
 
     async def delete(
-        self, value_id: str, session: Optional[AsyncSession] = None
+        self, value_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """Delete a value by ID."""
         ...
 
     async def bulk_create(
-        self, value_objs: List[T], session: Optional[AsyncSession] = None
-    ) -> Result[List[T]]:
+        self, value_objs: list[T], session: AsyncSession | None = None
+    ) -> Result[list[T]]:
         """Create multiple values in a single operation."""
         ...
 
     async def search(
-        self, search_term: str, limit: int = 20, session: Optional[AsyncSession] = None
-    ) -> Result[List[T]]:
+        self, search_term: str, limit: int = 20, session: AsyncSession | None = None
+    ) -> Result[list[T]]:
         """Search for values matching a term."""
         ...
 
@@ -94,7 +94,7 @@ class ValueServiceProtocol(Protocol):
     """Protocol for value services."""
 
     async def create_value(
-        self, value_type: Type[ValueObj], value: ValueType, name: Optional[str] = None
+        self, value_type: Type[ValueObj], value: ValueType, name: str | None = None
     ) -> Result[ValueObj]:
         """
         Create a new value of the specified type.
@@ -110,7 +110,7 @@ class ValueServiceProtocol(Protocol):
         ...
 
     async def get_or_create_value(
-        self, value_type: Type[ValueObj], value: ValueType, name: Optional[str] = None
+        self, value_type: Type[ValueObj], value: ValueType, name: str | None = None
     ) -> Result[ValueObj]:
         """
         Get a value by its actual value, or create it if it doesn't exist.

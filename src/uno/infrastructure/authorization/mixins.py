@@ -18,11 +18,11 @@ from uno.mixins import ObjectMixin, ModelMixin
 
 
 class RecordAuditObjectMixin(BaseModel):
-    created_by_id: Optional[str] = None
+    created_by_id: str | None = None
     created_by: Optional["User"] = None
-    modified_by_id: Optional[str] = None
+    modified_by_id: str | None = None
     modified_by: Optional["User"] = None
-    deleted_by_id: Optional[str] = None
+    deleted_by_id: str | None = None
     deleted_by: Optional["User"] = None
 
 

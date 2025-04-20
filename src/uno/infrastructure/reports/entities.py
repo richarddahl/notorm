@@ -6,7 +6,7 @@ from typing import Any
 
 
 from uno.domain.core import Entity, AggregateRoot, safe_dataclass
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 
 
 # Define enum values
@@ -108,40 +108,56 @@ class ReportFieldDefinition(Entity[str]):
         ]
 
         if self.field_type not in allowed_types:
-            return Failure(ValueError(f"Field type must be one of: {', '.join(allowed_types)}"))
+            return Failure(
+                ValueError(f"Field type must be one of: {', '.join(allowed_types)}")
+            )
 
         # Validate field_config based on field_type
         if self.field_type == ReportFieldType.DB_COLUMN:
             required_props = ["table", "column"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(ValueError(f"Field config for DB_COLUMN must include {prop}"))
+                    return Failure(
+                        ValueError(f"Field config for DB_COLUMN must include {prop}")
+                    )
 
         elif self.field_type == ReportFieldType.ATTRIBUTE:
             if "attribute_type_id" not in self.field_config:
-                return Failure(ValueError("Field config for ATTRIBUTE must include attribute_type_id"))
+                return Failure(
+                    ValueError(
+                        "Field config for ATTRIBUTE must include attribute_type_id"
+                    )
+                )
 
         elif self.field_type == ReportFieldType.METHOD:
             required_props = ["method", "module"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(ValueError(f"Field config for METHOD must include {prop}"))
+                    return Failure(
+                        ValueError(f"Field config for METHOD must include {prop}")
+                    )
 
         elif self.field_type == ReportFieldType.QUERY:
             if "query_id" not in self.field_config:
-                return Failure(ValueError("Field config for QUERY must include query_id"))
+                return Failure(
+                    ValueError("Field config for QUERY must include query_id")
+                )
 
         elif self.field_type == ReportFieldType.AGGREGATE:
             required_props = ["function", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(ValueError(f"Field config for AGGREGATE must include {prop}"))
+                    return Failure(
+                        ValueError(f"Field config for AGGREGATE must include {prop}")
+                    )
 
         elif self.field_type == ReportFieldType.RELATED:
             required_props = ["relation", "field"]
             for prop in required_props:
                 if prop not in self.field_config:
-                    return Failure(ValueError(f"Field config for RELATED must include {prop}"))
+                    return Failure(
+                        ValueError(f"Field config for RELATED must include {prop}")
+                    )
 
         return Success(None)
 
@@ -181,10 +197,10 @@ class ReportTemplate(AggregateRoot[str]):
     version: str = "1.0.0"
 
     # Relationships
-    fields: List[ReportFieldDefinition] = field(default_factory=list)
-    triggers: List["ReportTrigger"] = field(default_factory=list)
-    outputs: List["ReportOutput"] = field(default_factory=list)
-    executions: List["ReportExecution"] = field(default_factory=list)
+    fields: list[ReportFieldDefinition] = field(default_factory=list)
+    triggers: list["ReportTrigger"] = field(default_factory=list)
+    outputs: list["ReportOutput"] = field(default_factory=list)
+    executions: list["ReportExecution"] = field(default_factory=list)
 
     # ORM mapping
     __uno_model__ = "ReportTemplateModel"
@@ -322,7 +338,9 @@ class ReportTrigger(Entity[str]):
         ]
 
         if self.trigger_type not in allowed_types:
-            return Failure(ValueError(f"Trigger type must be one of: {', '.join(allowed_types)}"))
+            return Failure(
+                ValueError(f"Trigger type must be one of: {', '.join(allowed_types)}")
+            )
 
         # Validate type-specific requirements
         if self.trigger_type == ReportTriggerType.SCHEDULED:
@@ -381,7 +399,9 @@ class ReportOutput(Entity[str]):
         ]
 
         if self.output_type not in allowed_types:
-            return Failure(ValueError(f"Output type must be one of: {', '.join(allowed_types)}"))
+            return Failure(
+                ValueError(f"Output type must be one of: {', '.join(allowed_types)}")
+            )
 
         # Validate format
         allowed_formats = [
@@ -394,20 +414,28 @@ class ReportOutput(Entity[str]):
         ]
 
         if self.format not in allowed_formats:
-            return Failure(ValueError(f"Format must be one of: {', '.join(allowed_formats)}"))
+            return Failure(
+                ValueError(f"Format must be one of: {', '.join(allowed_formats)}")
+            )
 
         # Validate type-specific requirements
         if self.output_type == ReportOutputType.FILE:
             if "path" not in self.output_config:
-                return Failure(ValueError("File output must include a path in output_config"))
+                return Failure(
+                    ValueError("File output must include a path in output_config")
+                )
 
         elif self.output_type == ReportOutputType.EMAIL:
             if "recipients" not in self.output_config:
-                return Failure(ValueError("Email output must include recipients in output_config"))
+                return Failure(
+                    ValueError("Email output must include recipients in output_config")
+                )
 
         elif self.output_type == ReportOutputType.WEBHOOK:
             if "url" not in self.output_config:
-                return Failure(ValueError("Webhook output must include a URL in output_config"))
+                return Failure(
+                    ValueError("Webhook output must include a URL in output_config")
+                )
 
         return Success(None)
 
@@ -438,7 +466,7 @@ class ReportExecution(Entity[str]):
 
     # Relationships
     report_template: Optional[ReportTemplate] = None
-    output_executions: List["ReportOutputExecution"] = field(default_factory=list)
+    output_executions: list["ReportOutputExecution"] = field(default_factory=list)
 
     # ORM mapping
     __uno_model__ = "ReportExecutionModel"
@@ -487,7 +515,7 @@ class ReportExecution(Entity[str]):
             output_execution.report_execution_id = self.id
 
     def update_status(
-        self, status: str, error_details: Optional[str] = None
+        self, status: str, error_details: str | None = None
     ) -> Result[None]:
         """Update the execution status."""
         allowed_statuses = [
@@ -525,8 +553,8 @@ class ReportOutputExecution(Entity[str]):
     report_output_id: str
     status: str = ReportExecutionStatus.PENDING
     completed_at: Optional[datetime] = None
-    error_details: Optional[str] = None
-    output_location: Optional[str] = None
+    error_details: str | None = None
+    output_location: str | None = None
     output_size_bytes: Optional[int] = None
 
     # Relationships
@@ -552,7 +580,9 @@ class ReportOutputExecution(Entity[str]):
         ]
 
         if self.status not in allowed_statuses:
-            return Failure(ValueError(f"Status must be one of: {', '.join(allowed_statuses)}"))
+            return Failure(
+                ValueError(f"Status must be one of: {', '.join(allowed_statuses)}")
+            )
 
         return Success(None)
 
@@ -569,7 +599,9 @@ class ReportOutputExecution(Entity[str]):
         ]
 
         if status not in allowed_statuses:
-            return Failure(ValueError(f"Status must be one of: {', '.join(allowed_statuses)}"))
+            return Failure(
+                ValueError(f"Status must be one of: {', '.join(allowed_statuses)}")
+            )
 
         self.status = status
 

@@ -75,13 +75,13 @@ endpoint = CqrsEndpoint(
     queries=[
         QueryHandler(
             service=get_products_service,
-            response_model=List[ProductResponse],
+            response_model=list[ProductResponse],
             path="/list",
             method="get",
         ),
         QueryHandler(
             service=search_products_service,
-            response_model=List[ProductResponse],
+            response_model=list[ProductResponse],
             query_model=ProductSearchQuery,
             path="/search",
             method="get",
@@ -119,7 +119,7 @@ Use `QueryEndpoint` or `CommandEndpoint` when:
 ```python
 query_endpoint = QueryEndpoint(
     service=search_products_service,
-    response_model=List[ProductResponse],
+    response_model=list[ProductResponse],
     query_model=ProductSearchQuery,
     router=router,
     tags=["Products"],
@@ -263,7 +263,7 @@ class PaginationMetadata(BaseModel):
 class PaginatedResponse(BaseModel, Generic[T]):
     """Paginated response model."""
     
-    data: List[T] = Field(..., description="List of items")
+    data: list[T] = Field(..., description="List of items")
     meta: PaginationMetadata = Field(..., description="Pagination metadata")
 ```
 

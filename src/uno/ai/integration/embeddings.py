@@ -54,13 +54,13 @@ class EmbeddingModelConfig(BaseModel):
     model_type: EmbeddingType
     model_name: str
     dimension: int = 384
-    api_key: Optional[str] = None
-    cache_dir: Optional[str] = None
+    api_key: str | None = None
+    cache_dir: str | None = None
     batch_size: int = 32
     max_length: int = 512
     normalize: bool = True
     pooling_strategy: str = "mean"
-    device: Optional[str] = None
+    device: str | None = None
     additional_config: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -68,7 +68,7 @@ class EmbeddingCacheEntry(BaseModel):
     """Cache entry for embeddings."""
 
     text_hash: str
-    embedding: List[float]
+    embedding: list[float]
     model_name: str
     created_at: float = Field(default_factory=lambda: asyncio.get_event_loop().time())
 
@@ -89,7 +89,7 @@ class SharedEmbeddingService:
         default_model_config: Optional[EmbeddingModelConfig] = None,
         models: Optional[Dict[str, EmbeddingModelConfig]] = None,
         cache_size: int = 10000,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the shared embedding service.
@@ -174,7 +174,7 @@ class SharedEmbeddingService:
     async def embed_text(
         self,
         text: str,
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         normalize: Optional[bool] = None,
     ) -> np.ndarray:
         """
@@ -196,10 +196,10 @@ class SharedEmbeddingService:
 
     async def embed_batch(
         self,
-        texts: List[str],
-        model_name: Optional[str] = None,
+        texts: list[str],
+        model_name: str | None = None,
         normalize: Optional[bool] = None,
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """
         Embed a batch of text strings.
 
@@ -325,7 +325,7 @@ class SharedEmbeddingService:
         return result
 
     async def import_embeddings(
-        self, embeddings: Dict[str, List[float]], model_name: Optional[str] = None
+        self, embeddings: Dict[str, list[float]], model_name: str | None = None
     ) -> None:
         """
         Import pre-computed embeddings into the cache.
@@ -354,8 +354,8 @@ class SharedEmbeddingService:
 
     def compute_similarity(
         self,
-        embedding1: Union[List[float], np.ndarray],
-        embedding2: Union[List[float], np.ndarray],
+        embedding1: Union[list[float], np.ndarray],
+        embedding2: Union[list[float], np.ndarray],
         method: str = "cosine",
     ) -> float:
         """
@@ -393,13 +393,13 @@ class SharedEmbeddingService:
 
     async def nearest_neighbors(
         self,
-        query_embedding: Union[List[float], np.ndarray],
-        texts: List[str],
-        model_name: Optional[str] = None,
+        query_embedding: Union[list[float], np.ndarray],
+        texts: list[str],
+        model_name: str | None = None,
         k: int = 5,
         similarity_method: str = "cosine",
         threshold: Optional[float] = None,
-    ) -> List[Tuple[str, float]]:
+    ) -> list[Tuple[str, float]]:
         """
         Find nearest neighbors to a query embedding among a list of texts.
 
@@ -524,8 +524,8 @@ class SharedEmbeddingService:
             raise
 
     async def _embed_with_sentence_transformer(
-        self, model, texts: List[str], config: EmbeddingModelConfig
-    ) -> List[np.ndarray]:
+        self, model, texts: list[str], config: EmbeddingModelConfig
+    ) -> list[np.ndarray]:
         """
         Embed texts with a SentenceTransformer model.
 
@@ -556,8 +556,8 @@ class SharedEmbeddingService:
         return all_embeddings
 
     async def _embed_with_huggingface(
-        self, model_tuple, texts: List[str], config: EmbeddingModelConfig
-    ) -> List[np.ndarray]:
+        self, model_tuple, texts: list[str], config: EmbeddingModelConfig
+    ) -> list[np.ndarray]:
         """
         Embed texts with a Hugging Face Transformers model.
 
@@ -625,8 +625,8 @@ class SharedEmbeddingService:
         return all_embeddings
 
     async def _embed_with_openai(
-        self, client, texts: List[str], config: EmbeddingModelConfig
-    ) -> List[np.ndarray]:
+        self, client, texts: list[str], config: EmbeddingModelConfig
+    ) -> list[np.ndarray]:
         """
         Embed texts with an OpenAI embedding model.
 
@@ -683,8 +683,8 @@ class SharedEmbeddingService:
         return all_embeddings
 
     async def _embed_with_custom_model(
-        self, model, texts: List[str], config: EmbeddingModelConfig
-    ) -> List[np.ndarray]:
+        self, model, texts: list[str], config: EmbeddingModelConfig
+    ) -> list[np.ndarray]:
         """
         Embed texts with a custom model.
 
@@ -768,10 +768,10 @@ class EnhancedRAGService:
 
     def __init__(
         self,
-        connection_string: Optional[str] = None,
+        connection_string: str | None = None,
         context_manager=None,
         embedding_service=None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the enhanced RAG service.
@@ -823,13 +823,13 @@ class EnhancedRAGService:
     async def retrieve_context(
         self,
         query: str,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        entity_id: Optional[str] = None,
-        entity_type: Optional[str] = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
+        entity_id: str | None = None,
+        entity_type: str | None = None,
         limit: int = 5,
         similarity_threshold: float = 0.7,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve relevant context for a query.
 
@@ -915,10 +915,10 @@ class EnhancedRAGService:
     async def enrich_rag_prompt(
         self,
         prompt: str,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        entity_id: Optional[str] = None,
-        entity_type: Optional[str] = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
+        entity_id: str | None = None,
+        entity_type: str | None = None,
         anomaly_context: bool = True,
         recommendation_context: bool = True,
         search_context: bool = True,

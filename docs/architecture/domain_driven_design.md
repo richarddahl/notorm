@@ -96,7 +96,7 @@ class Order(AggregateRoot[UUID]):
     
     customer_id: UUID
     status: str = "created"
-    items: List["OrderItem"] = []
+    items: list["OrderItem"] = []
     
     def add_item(self, product_id: UUID, quantity: int, price: float) -> None:
         """Add an item to the order."""
@@ -178,11 +178,11 @@ from typing import List, Optional
 class OrderRepository(EntityRepository[Order, UUID]):
     """Repository for Order aggregates."""
     
-    async def find_by_customer(self, customer_id: UUID) -> List[Order]:
+    async def find_by_customer(self, customer_id: UUID) -> list[Order]:
         """Find all orders for a customer."""
         # Implementation details...
     
-    async def find_recent(self, limit: int = 10) -> List[Order]:
+    async def find_recent(self, limit: int = 10) -> list[Order]:
         """Find the most recent orders."""
         # Implementation details...
 ```
@@ -256,7 +256,7 @@ class OrderFactory(EntityFactory[Order]):
     def create_order_with_items(
         self, 
         customer_id: UUID, 
-        items: List[dict]
+        items: list[dict]
     ) -> Order:
         """Create an order with multiple items."""
         order = Order.create(customer_id)
@@ -356,7 +356,7 @@ class OrderService:
         """Initialize with the product catalog facade."""
         self.product_catalog = product_catalog
     
-    async def place_order(self, customer_id: UUID, items: List[dict]) -> Order:
+    async def place_order(self, customer_id: UUID, items: list[dict]) -> Order:
         """Place an order, using the product catalog."""
         # Validate products and prices
         for item in items:
@@ -408,7 +408,7 @@ class Order(AggregateRoot[UUID]):
     """Order aggregate root."""
     
     customer_id: UUID
-    items: List[OrderItem] = []
+    items: list[OrderItem] = []
     status: str = "created"
     created_at: datetime = None
     
@@ -512,7 +512,7 @@ class OrderApplicationService(ApplicationService):
     async def place_order(
         self, 
         customer_id: UUID, 
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
         payment_details: Dict[str, Any]
     ) -> Result[Order, str]:
         """Place an order with payment."""

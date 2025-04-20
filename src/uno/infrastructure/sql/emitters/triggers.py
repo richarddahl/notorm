@@ -17,7 +17,7 @@ class RecordUserAuditFunction(SQLEmitter):
     This emitter generates SQL for tracking which user modified a record.
     """
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL for user audit tracking.
 
         Returns:
@@ -92,7 +92,7 @@ class InsertMetaRecordTrigger(SQLEmitter):
     This emitter generates SQL for inserting meta records when data changes.
     """
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL for meta record insertion.
 
         Returns:

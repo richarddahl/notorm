@@ -19,29 +19,30 @@ from typing import Optional, List, Dict, Any, Union, Tuple, Callable
 
 class DockerUtilsError(Exception):
     """Base exception for docker utilities errors."""
+
     pass
 
 
 def run_command(
-    command: Union[str, List[str]], 
+    command: Union[str, list[str]],
     check: bool = True,
     shell: bool = True,
     capture_output: bool = False,
-    env: Optional[Dict[str, str]] = None
+    env: Optional[Dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     """
     Run a shell command and handle errors.
-    
+
     Args:
         command: Command to run (string or list of arguments)
         check: Whether to raise an exception on non-zero exit code
         shell: Whether to run the command through the shell
         capture_output: Whether to capture stdout and stderr
         env: Optional environment variables to set
-        
+
     Returns:
         CompletedProcess instance with command results
-        
+
     Raises:
         DockerUtilsError: If command fails and check is True
     """
@@ -49,22 +50,24 @@ def run_command(
         current_env = os.environ.copy()
         if env:
             current_env.update(env)
-            
+
         result = subprocess.run(
             command,
             shell=shell,
             check=False,  # We'll handle this ourselves
             capture_output=capture_output,
             text=True,
-            env=current_env
+            env=current_env,
         )
-        
+
         if check and result.returncode != 0:
-            error_message = f"Command failed with exit code {result.returncode}:\n{command}"
+            error_message = (
+                f"Command failed with exit code {result.returncode}:\n{command}"
+            )
             if capture_output and result.stderr:
                 error_message += f"\nError output:\n{result.stderr}"
             raise DockerUtilsError(error_message)
-            
+
         return result
     except Exception as e:
         if not isinstance(e, DockerUtilsError):
@@ -75,7 +78,7 @@ def run_command(
 def is_docker_running() -> bool:
     """
     Check if Docker is running.
-    
+
     Returns:
         True if Docker is running, False otherwise
     """
@@ -89,7 +92,7 @@ def is_docker_running() -> bool:
 def ensure_docker_running() -> None:
     """
     Ensure Docker is running or raise an error.
-    
+
     Raises:
         DockerUtilsError: If Docker is not running
     """
@@ -102,7 +105,7 @@ def ensure_docker_running() -> None:
 def get_project_root() -> Path:
     """
     Get the absolute path to the project root.
-    
+
     Returns:
         Path to project root directory
     """
@@ -113,23 +116,23 @@ def get_project_root() -> Path:
 def create_test_env_file(overwrite: bool = False) -> Path:
     """
     Create a test environment configuration file.
-    
+
     Args:
         overwrite: Whether to overwrite an existing file
-        
+
     Returns:
         Path to the created file
-        
+
     Raises:
         DockerUtilsError: If file exists and overwrite is False
     """
     project_root = get_project_root()
     env_file = project_root / ".env_test"
-    
+
     if env_file.exists() and not overwrite:
         print(f"Test environment file already exists: {env_file}")
         return env_file
-    
+
     env_content = """# GENERAL SETTINGS
 SITE_NAME="Uno Test"
 LOCALE="en_US"
@@ -167,9 +170,9 @@ VECTOR_BATCH_SIZE=10
 VECTOR_UPDATE_INTERVAL=1.0
 VECTOR_AUTO_START=true
 """
-    
+
     try:
-        with open(env_file, 'w') as f:
+        with open(env_file, "w") as f:
             f.write(env_content)
         print(f"Created test environment file: {env_file}")
         return env_file
@@ -180,26 +183,26 @@ VECTOR_AUTO_START=true
 def create_test_compose_file(overwrite: bool = False) -> Path:
     """
     Create a docker-compose file for testing.
-    
+
     Args:
         overwrite: Whether to overwrite an existing file
-        
+
     Returns:
         Path to the created file
-        
+
     Raises:
         DockerUtilsError: If file exists and overwrite is False
     """
     project_root = get_project_root()
     docker_test_dir = project_root / "docker" / "test"
     docker_test_dir.mkdir(parents=True, exist_ok=True)
-    
+
     compose_file = docker_test_dir / "docker-compose.yaml"
-    
+
     if compose_file.exists() and not overwrite:
         print(f"Test docker-compose file already exists: {compose_file}")
         return compose_file
-    
+
     compose_content = """services:
   db_test:
     container_name: "pg16_uno_test"
@@ -220,9 +223,9 @@ volumes:
   pg_test_data:
     driver: local
 """
-    
+
     try:
-        with open(compose_file, 'w') as f:
+        with open(compose_file, "w") as f:
             f.write(compose_content)
         print(f"Created test docker-compose file: {compose_file}")
         return compose_file
@@ -231,18 +234,16 @@ volumes:
 
 
 def wait_for_postgres(
-    container_name: str, 
-    max_attempts: int = 15, 
-    delay: int = 2
+    container_name: str, max_attempts: int = 15, delay: int = 2
 ) -> bool:
     """
     Wait for PostgreSQL to become ready in a container.
-    
+
     Args:
         container_name: Name of the Docker container
         max_attempts: Maximum number of connection attempts
         delay: Delay in seconds between attempts
-        
+
     Returns:
         True if PostgreSQL became ready, False otherwise
     """
@@ -252,18 +253,20 @@ def wait_for_postgres(
             result = run_command(
                 f"docker exec {container_name} pg_isready -U postgres",
                 check=False,
-                capture_output=True
+                capture_output=True,
             )
             if result.returncode == 0:
                 print(f"PostgreSQL instance in {container_name} is ready!")
                 return True
         except Exception:
             pass
-            
-        print(f"Waiting for PostgreSQL to be ready (attempt {attempt}/{max_attempts})...")
+
+        print(
+            f"Waiting for PostgreSQL to be ready (attempt {attempt}/{max_attempts})..."
+        )
         time.sleep(delay)
         attempt += 1
-    
+
     print(f"PostgreSQL did not become ready in time. Check Docker logs:")
     run_command(f"docker logs {container_name}")
     return False
@@ -272,19 +275,25 @@ def wait_for_postgres(
 def setup_test_database(container_name: str = "pg16_uno_test") -> bool:
     """
     Create and initialize the test database with required extensions.
-    
+
     Args:
         container_name: Name of the Docker container
-        
+
     Returns:
         True if successful, False otherwise
     """
     try:
         # Create database
-        run_command(f'docker exec {container_name} psql -U postgres -c "DROP DATABASE IF EXISTS uno_test;"')
-        run_command(f'docker exec {container_name} psql -U postgres -c "CREATE DATABASE uno_test;"')
-        run_command(f'docker exec {container_name} psql -U postgres -d uno_test -c "CREATE SCHEMA IF NOT EXISTS uno;"')
-        
+        run_command(
+            f'docker exec {container_name} psql -U postgres -c "DROP DATABASE IF EXISTS uno_test;"'
+        )
+        run_command(
+            f'docker exec {container_name} psql -U postgres -c "CREATE DATABASE uno_test;"'
+        )
+        run_command(
+            f'docker exec {container_name} psql -U postgres -d uno_test -c "CREATE SCHEMA IF NOT EXISTS uno;"'
+        )
+
         # Enable extensions
         extensions = [
             "btree_gist",
@@ -293,95 +302,102 @@ def setup_test_database(container_name: str = "pg16_uno_test") -> bool:
             "vector",
             "age",
             "pgjwt",
-            "supa_audit CASCADE"
+            "supa_audit CASCADE",
         ]
-        
+
         for ext in extensions:
             run_command(
-                f'docker exec {container_name} psql -U postgres -d uno_test -c '
+                f"docker exec {container_name} psql -U postgres -d uno_test -c "
                 f'"CREATE EXTENSION IF NOT EXISTS {ext};"'
             )
-        
+
         # Set up age graph
         run_command(
-            f'docker exec {container_name} psql -U postgres -d uno_test -c '
-            f'"SELECT * FROM ag_catalog.create_graph(\'graph\');"'
+            f"docker exec {container_name} psql -U postgres -d uno_test -c "
+            f"\"SELECT * FROM ag_catalog.create_graph('graph');\""
         )
-        
+
         return True
     except Exception as e:
         print(f"Error setting up test database: {e}")
         return False
 
 
-def setup_test_environment(clear_data: bool = False, non_interactive: bool = False) -> bool:
+def setup_test_environment(
+    clear_data: bool = False, non_interactive: bool = False
+) -> bool:
     """
     Set up the Docker environment for testing.
-    
+
     Args:
         clear_data: Whether to clear existing PostgreSQL data
         non_interactive: Whether to run in non-interactive mode
-        
+
     Returns:
         True if setup was successful, False otherwise
     """
     try:
         print("===== Setting up Test Environment with Docker =====")
-        
+
         # Check if Docker is running
         ensure_docker_running()
-        
+
         # Create configuration files
         create_test_env_file()
         compose_file = create_test_compose_file()
-        
+
         print("\nStep 1: Setting up test Docker environment")
-        
+
         # Handle data clearing
         if not non_interactive and not clear_data:
             try:
-                user_input = input("Do you want to clear existing test PostgreSQL data? (y/N): ")
-                clear_data = user_input.lower() in ('y', 'yes')
+                user_input = input(
+                    "Do you want to clear existing test PostgreSQL data? (y/N): "
+                )
+                clear_data = user_input.lower() in ("y", "yes")
             except EOFError:
                 # Handle the case where input() can't get user input (non-interactive)
                 clear_data = False
                 print("Non-interactive mode detected. Keeping existing test data.")
-        
+
         if clear_data:
             print("Clearing test PostgreSQL data volumes...")
             run_command(f"cd {compose_file.parent} && docker-compose down -v")
             print("Test data cleared.")
-        
+
         print("\nStep 2: Starting test PostgreSQL container")
-        
+
         # Stop any existing containers
-        run_command(f"cd {compose_file.parent} && docker-compose down 2>/dev/null || true", check=False)
-        
+        run_command(
+            f"cd {compose_file.parent} && docker-compose down 2>/dev/null || true",
+            check=False,
+        )
+
         # Build and start the container
         print("Building Docker test image...")
         run_command(f"cd {compose_file.parent} && docker-compose build")
-        
+
         print("Starting test container...")
         run_command(f"cd {compose_file.parent} && docker-compose up -d")
-        
+
         # Wait for PostgreSQL to start
         print("\nStep 3: Waiting for PostgreSQL to be ready...")
         time.sleep(5)
-        
+
         if not wait_for_postgres("pg16_uno_test"):
             return False
-        
+
         # Create and set up database
         print("\nStep 4: Creating test database...")
         if not setup_test_database("pg16_uno_test"):
             return False
-        
+
         print("\n===== Test Environment Setup Complete =====")
         print("Test database is now set up and ready for testing!")
         print("\nYou can run tests with:")
         print("  hatch run test:test")
         print("\nFor more information about the Docker setup, see docs/docker_setup.md")
-        
+
         return True
     except DockerUtilsError as e:
         print(f"\n===== Test Environment Setup Failed =====")
@@ -398,33 +414,30 @@ def setup_test_environment(clear_data: bool = False, non_interactive: bool = Fal
 def main() -> int:
     """
     Main entry point for Docker utilities command line interface.
-    
+
     Returns:
         Exit code (0 for success, non-zero for failure)
     """
     parser = argparse.ArgumentParser(description="Docker utilities for uno framework")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
-    
+
     # Setup test environment command
-    setup_test_parser = subparsers.add_parser("setup-test", help="Set up the test environment")
-    setup_test_parser.add_argument(
-        "--clear-data", 
-        action="store_true", 
-        help="Clear existing PostgreSQL data"
+    setup_test_parser = subparsers.add_parser(
+        "setup-test", help="Set up the test environment"
     )
     setup_test_parser.add_argument(
-        "--non-interactive", 
-        action="store_true", 
-        help="Run in non-interactive mode"
+        "--clear-data", action="store_true", help="Clear existing PostgreSQL data"
     )
-    
+    setup_test_parser.add_argument(
+        "--non-interactive", action="store_true", help="Run in non-interactive mode"
+    )
+
     # Parse arguments
     args = parser.parse_args()
-    
+
     if args.command == "setup-test":
         success = setup_test_environment(
-            clear_data=args.clear_data,
-            non_interactive=args.non_interactive
+            clear_data=args.clear_data, non_interactive=args.non_interactive
         )
         return 0 if success else 1
     else:

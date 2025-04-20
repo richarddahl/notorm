@@ -54,12 +54,12 @@ class WorkflowNotification(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(datetime.UTC))
     notification_type: NotificationType = NotificationType.INFO
     priority: NotificationPriority = NotificationPriority.NORMAL
-    link: Optional[str] = None
+    link: str | None = None
     read: bool = False
     read_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
 
     def mark_as_read(self) -> None:
         """Mark the notification as read."""
@@ -86,10 +86,10 @@ class SystemNotificationCreated(WorkflowNotificationEvent):
         action_id: str,
         notification_type: str = "info",
         priority: str = "normal",
-        link: Optional[str] = None,
+        link: str | None = None,
         expires_at: Optional[datetime] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ):
         super().__init__()
         self.notification_id = notification_id
@@ -135,10 +135,10 @@ class BatchNotificationsCreated(WorkflowNotificationEvent):
 
     def __init__(
         self,
-        notifications: List[Dict[str, Any]],
+        notifications: list[dict[str, Any]],
         workflow_id: str,
         action_id: str,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ):
         super().__init__()
         self.notifications = notifications

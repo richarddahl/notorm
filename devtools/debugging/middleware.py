@@ -45,7 +45,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
         enable_sql_tracking: bool = True,
         enable_dependency_tracking: bool = True,
         enable_error_enhancement: bool = True,
-        exclude_paths: Optional[List[str]] = None,
+        exclude_paths: list[str] | None = None,
         debug_headers: bool = True,
         log_request_body: bool = False,
         log_response_body: bool = False,
@@ -430,7 +430,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
         return result
 
     @contextmanager
-    def _track_sql_queries(self, queries_list: List[Dict[str, Any]]) -> None:
+    def _track_sql_queries(self, queries_list: list[dict[str, Any]]) -> None:
         """Context manager to track SQL queries.
 
         Args:
@@ -476,7 +476,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
                 db_manager.engine.execute = original_execute
 
     @contextmanager
-    def _track_dependencies(self, dependencies_list: List[Dict[str, Any]]) -> None:
+    def _track_dependencies(self, dependencies_list: list[dict[str, Any]]) -> None:
         """Context manager to track dependencies.
 
         Args:
@@ -529,7 +529,7 @@ def debug_fastapi(
     enable_sql_tracking: bool = True,
     enable_dependency_tracking: bool = True,
     enable_error_enhancement: bool = True,
-    exclude_paths: Optional[List[str]] = None,
+    exclude_paths: list[str] | None = None,
     debug_headers: bool = True,
     log_request_body: bool = False,
     log_response_body: bool = False,

@@ -82,7 +82,7 @@ class SQLConfigRegistry:
         connection: Optional[Connection] = None,
         engine_factory: Optional[SyncEngineFactory] = None,
         config: Optional[ConnectionConfig] = None,
-        exclude: List[str] = None,
+        exclude: list[str] = None,
     ) -> None:
         """Emit SQL for all registered SQLConfig classes.
 

@@ -131,7 +131,7 @@ class BatchMetrics:
     end_time: float = 0.0
     chunks_processed: int = 0
     retries: int = 0
-    errors: List[Dict[str, Any]] = field(default_factory=list)
+    errors: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def elapsed_time(self) -> float:
@@ -159,9 +159,9 @@ class BatchProcessor:
 
     def __init__(
         self,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         config: Optional[BatchConfig] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the batch processor.
@@ -178,7 +178,7 @@ class BatchProcessor:
 
     async def process_batch(
         self, records: Sequence[Any], operation_fn: Callable, **kwargs
-    ) -> Tuple[List[Any], BatchMetrics]:
+    ) -> Tuple[list[Any], BatchMetrics]:
         """
         Process a batch of records.
 
@@ -292,7 +292,7 @@ class BatchProcessor:
 
     async def _execute_single_query(
         self, records: Sequence[Any], operation_fn: Callable, **kwargs
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Execute operation as a single query.
 
@@ -330,7 +330,7 @@ class BatchProcessor:
 
     async def _execute_chunked(
         self, records: Sequence[Any], operation_fn: Callable, batch_size: int, **kwargs
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Execute operation in chunks.
 
@@ -406,7 +406,7 @@ class BatchProcessor:
 
     async def _execute_parallel(
         self, records: Sequence[Any], operation_fn: Callable, batch_size: int, **kwargs
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Execute operation in parallel chunks.
 
@@ -508,7 +508,7 @@ class BatchProcessor:
 
     async def _execute_pipelined(
         self, records: Sequence[Any], operation_fn: Callable, batch_size: int, **kwargs
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Execute operation in a pipeline.
 
@@ -594,11 +594,11 @@ class BatchOperations(Generic[T]):
     def __init__(
         self,
         model_class: Type[T],
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         use_cache: bool = True,
         cache_ttl: Optional[float] = 60.0,
         collect_metrics: bool = False,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         batch_config: Optional[BatchConfig] = None,
     ):
         """
@@ -648,11 +648,11 @@ class BatchOperations(Generic[T]):
 
     async def batch_get(
         self,
-        id_values: List[Any],
-        load_relations: Optional[Union[bool, List[str]]] = None,
+        id_values: list[Any],
+        load_relations: Optional[Union[bool, list[str]]] = None,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> List[T]:
+    ) -> list[T]:
         """
         Get multiple entities by ID in batch.
 
@@ -698,11 +698,11 @@ class BatchOperations(Generic[T]):
 
     async def batch_insert(
         self,
-        records: List[Dict[str, Any]],
+        records: list[dict[str, Any]],
         return_models: bool = False,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Insert multiple records in batch.
 
@@ -752,13 +752,13 @@ class BatchOperations(Generic[T]):
 
     async def batch_update(
         self,
-        records: List[Dict[str, Any]],
+        records: list[dict[str, Any]],
         id_field: str = "id",
-        fields_to_update: Optional[List[str]] = None,
+        fields_to_update: list[str] | None = None,
         return_models: bool = False,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Update multiple records in batch.
 
@@ -843,13 +843,13 @@ class BatchOperations(Generic[T]):
 
     async def batch_upsert(
         self,
-        records: List[Dict[str, Any]],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
+        records: list[dict[str, Any]],
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
         return_models: bool = False,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Upsert multiple records in batch.
 
@@ -904,11 +904,11 @@ class BatchOperations(Generic[T]):
 
     async def batch_delete(
         self,
-        id_values: List[Any],
+        id_values: list[Any],
         return_models: bool = False,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Delete multiple records in batch.
 
@@ -958,12 +958,12 @@ class BatchOperations(Generic[T]):
 
     async def batch_compute(
         self,
-        id_values: List[Any],
+        id_values: list[Any],
         compute_fn: Callable[[T], Any],
-        load_relations: Optional[Union[bool, List[str]]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Compute a function across multiple records in batch.
 
@@ -1020,10 +1020,10 @@ class BatchOperations(Generic[T]):
     async def batch_execute_sql(
         self,
         sql_template: str,
-        parameters: List[Dict[str, Any]],
+        parameters: list[dict[str, Any]],
         batch_size: Optional[int] = None,
         parallel: bool = False,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         Execute raw SQL for multiple parameter sets in batch.
 
@@ -1115,8 +1115,8 @@ class BatchOperations(Generic[T]):
 
     async def batch_import(
         self,
-        records: List[Dict[str, Any]],
-        unique_fields: List[str],
+        records: list[dict[str, Any]],
+        unique_fields: list[str],
         update_on_conflict: bool = True,
         return_stats: bool = True,
         batch_size: Optional[int] = None,

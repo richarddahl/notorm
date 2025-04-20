@@ -214,7 +214,7 @@ class ReportTemplateBaseDto(BaseModel):
 class ReportTemplateCreateDto(ReportTemplateBaseDto):
     """DTO for creating report templates."""
 
-    field_ids: Optional[List[str]] = Field(
+    field_ids: list[str] | None = Field(
         None, description="IDs of fields to associate with the template"
     )
 
@@ -253,7 +253,7 @@ class ReportTemplateViewDto(ReportTemplateBaseDto):
     """DTO for viewing report templates."""
 
     id: str = Field(..., description="Unique identifier")
-    fields: List[ReportFieldDefinitionViewDto] = Field(
+    fields: list[ReportFieldDefinitionViewDto] = Field(
         default_factory=list, description="Associated fields"
     )
 
@@ -314,21 +314,27 @@ class ReportTriggerBaseDto(BaseModel):
     @model_validator(mode="before")
     def validate_schedule(cls, values):
         """Validate that schedule is provided for scheduled triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.SCHEDULED and not values.get("schedule"):
+        if values.get(
+            "trigger_type"
+        ) == ReportTriggerTypeEnum.SCHEDULED and not values.get("schedule"):
             return Failure("Schedule is required for scheduled triggers", convert=True)
         return values
 
     @model_validator(mode="before")
     def validate_event_type(cls, values):
         """Validate that event_type is provided for event triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not values.get("event_type"):
+        if values.get("trigger_type") == ReportTriggerTypeEnum.EVENT and not values.get(
+            "event_type"
+        ):
             return Failure("Event type is required for event triggers", convert=True)
         return values
 
     @model_validator(mode="before")
     def validate_query_id(cls, values):
         """Validate that query_id is provided for query triggers."""
-        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not values.get("query_id"):
+        if values.get("trigger_type") == ReportTriggerTypeEnum.QUERY and not values.get(
+            "query_id"
+        ):
             return Failure("Query ID is required for query triggers", convert=True)
         return values
 
@@ -610,7 +616,7 @@ class ReportExecutionViewDto(ReportExecutionBaseDto):
         None, description="Execution time in milliseconds"
     )
     result_hash: Optional[str] = Field(None, description="Hash of the execution result")
-    output_executions: List["ReportOutputExecutionViewDto"] = Field(
+    output_executions: list["ReportOutputExecutionViewDto"] = Field(
         default_factory=list, description="Output executions"
     )
 

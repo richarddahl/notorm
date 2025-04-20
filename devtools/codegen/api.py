@@ -19,9 +19,9 @@ logger = logging.getLogger("uno.codegen")
 def generate_api(
     name: str,
     model_name: str,
-    schema_name: Optional[str] = None,
-    repository_name: Optional[str] = None,
-    module_name: Optional[str] = None,
+    schema_name: str | None = None,
+    repository_name: str | None = None,
+    module_name: str | None = None,
     include_imports: bool = True,
     include_docstrings: bool = True,
     include_crud: bool = True,
@@ -29,9 +29,9 @@ def generate_api(
     include_filtering: bool = True,
     include_validation: bool = True,
     id_type: str = "str",
-    prefix: Optional[str] = None,
-    tag: Optional[str] = None,
-    security: Optional[List[Dict[str, Any]]] = None,
+    prefix: str | None = None,
+    tag: str | None = None,
+    security: Optional[list[dict[str, Any]]] = None,
     endpoint_config: Optional[Dict[str, Dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
@@ -245,7 +245,7 @@ def _generate_crud_endpoints(
     include_filtering: bool,
     include_validation: bool,
     id_type: str,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     endpoint_config: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> str:
     """Generate CRUD endpoint definitions.
@@ -398,7 +398,7 @@ def _generate_get_all_endpoint(
     include_docstrings: bool,
     include_pagination: bool,
     include_filtering: bool,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate GET all endpoint.
@@ -419,7 +419,7 @@ def _generate_get_all_endpoint(
 
     # Endpoint decorator
     path = config.get("path", "") if config else ""
-    response_model = f"List[{schema_name}]"
+    response_model = f"list[{schema_name}]"
 
     if include_pagination:
         response_model = f"Page[{schema_name}]"
@@ -440,7 +440,7 @@ def _generate_get_all_endpoint(
         params.append("params: Params = Depends()")
 
     if include_filtering:
-        params.append(f"filters: Optional[List[Filter]] = Query(None)")
+        params.append(f"filters: Optional[list[Filter]] = Query(None)")
 
     params.append(f"repository: {repository_name} = Depends(get_repository)")
 
@@ -495,7 +495,7 @@ def _generate_get_by_id_endpoint(
     schema_name: str,
     include_docstrings: bool,
     id_type: str,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate GET by ID endpoint.
@@ -561,7 +561,7 @@ def _generate_create_endpoint(
     schema_name: str,
     include_docstrings: bool,
     include_validation: bool,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate POST (create) endpoint.
@@ -625,7 +625,7 @@ def _generate_update_endpoint(
     include_docstrings: bool,
     include_validation: bool,
     id_type: str,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate PUT (update) endpoint.
@@ -698,7 +698,7 @@ def _generate_delete_endpoint(
     model_name: str,
     include_docstrings: bool,
     id_type: str,
-    security: Optional[List[Dict[str, Any]]] = None,
+    security: Optional[list[dict[str, Any]]] = None,
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Generate DELETE endpoint.

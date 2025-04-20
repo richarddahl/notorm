@@ -35,7 +35,7 @@ from pydantic import BaseModel
 
 import inject
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.settings import uno_settings
 from uno.database.db_manager import DBManager
 from uno.workflows.errors import (
@@ -55,12 +55,12 @@ class ActionExecutionContext(BaseModel):
     workflow_id: str
     workflow_name: str
     action_id: str
-    action_name: Optional[str] = None
+    action_name: str | None = None
     event_data: Dict[str, Any]
     execution_id: str
     timestamp: datetime = datetime.now(timezone.utc)
     variables: Dict[str, Any] = {}
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """Get a variable from the context by name with optional default value"""
@@ -98,7 +98,7 @@ class ActionExecutor(Protocol):
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute a workflow action"""
         ...
@@ -113,7 +113,7 @@ class NotificationExecutor:
     def __init__(
         self,
         event_bus: Optional[EventBus] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.event_bus = event_bus
         self.logger = logger or logging.getLogger(__name__)
@@ -122,7 +122,7 @@ class NotificationExecutor:
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute a notification action"""
         try:
@@ -179,7 +179,7 @@ class NotificationExecutor:
         message: str,
         notification_type: str,
         context: ActionExecutionContext,
-        link: Optional[str] = None,
+        link: str | None = None,
     ) -> UnoEvent:
         """Create a notification event for the event bus"""
         # Import here to avoid circular imports
@@ -223,7 +223,7 @@ class EmailExecutor:
     action_type = WorkflowActionType.EMAIL
 
     @inject.params(logger=logging.Logger)
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
         self.smtp_host = uno_settings.SMTP_HOST
         self.smtp_port = uno_settings.SMTP_PORT
@@ -236,7 +236,7 @@ class EmailExecutor:
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute an email action"""
         try:
@@ -370,14 +370,14 @@ class WebhookExecutor:
     action_type = WorkflowActionType.WEBHOOK
 
     @inject.params(logger=logging.Logger)
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
 
     async def execute(
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute a webhook action"""
         try:
@@ -487,7 +487,7 @@ class DatabaseExecutor:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
@@ -496,7 +496,7 @@ class DatabaseExecutor:
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute a database action"""
         try:
@@ -640,7 +640,7 @@ class CustomExecutor:
     @inject.params(logger=logging.Logger)
     def __init__(
         self,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         custom_executors: Dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
@@ -656,7 +656,7 @@ class CustomExecutor:
         self,
         action: WorkflowAction,
         context: ActionExecutionContext,
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Execute a custom action"""
         try:

@@ -23,7 +23,7 @@ class Job(BaseModel):
     # Core job identity and task
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     task: str  # Module.function reference
-    args: List[Any] = Field(default_factory=list)
+    args: list[Any] = Field(default_factory=list)
     kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     # Queue and scheduling
@@ -45,17 +45,17 @@ class Job(BaseModel):
     retry_delay: int = 60  # seconds
 
     # Metadata
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     # Worker tracking
-    worker_id: Optional[str] = None
+    worker_id: str | None = None
 
     # Timeout configuration
     timeout: Optional[int] = None  # seconds
 
     # Version
-    version: Optional[str] = None
+    version: str | None = None
 
     @property
     def duration(self) -> Optional[float]:
@@ -136,7 +136,7 @@ class Job(BaseModel):
         self.error = error_info
         self.worker_id = None
 
-    def mark_cancelled(self, reason: Optional[str] = None) -> None:
+    def mark_cancelled(self, reason: str | None = None) -> None:
         """Mark the job as cancelled.
 
         Args:

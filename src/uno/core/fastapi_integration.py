@@ -38,7 +38,7 @@ class ResourceManagementMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: FastAPI,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the middleware.
@@ -160,8 +160,8 @@ async def db_session_dependency() -> AsyncIterator[DatabaseSessionProtocol]:
 def create_resource_monitoring_endpoints(
     app: FastAPI,
     prefix: str = "/management",
-    tags: List[str] = ["Management"],
-    dependencies: List[Any] = None,
+    tags: list[str] = ["Management"],
+    dependencies: list[Any] = None,
 ) -> None:
     """
     Create resource monitoring endpoints.

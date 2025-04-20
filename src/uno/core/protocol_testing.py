@@ -284,7 +284,7 @@ class ProtocolTestCase(unittest.TestCase, Generic[P]):
         return ProtocolMock(self.protocol_type)
 
 
-def all_protocol_implementations(module_name: str) -> Dict[Type[Protocol], List[Type]]:
+def all_protocol_implementations(module_name: str) -> Dict[Type[Protocol], list[Type]]:
     """
     Find all implementations of all protocols in a module.
 

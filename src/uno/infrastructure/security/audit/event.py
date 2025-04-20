@@ -15,11 +15,13 @@ from typing import Optional, Any, Dict
 from uno.core.events.event import Event as BaseEvent
 from dataclasses import asdict
 
+
 class SecurityEvent(BaseEvent):
     """
     Security event for audit logging, inheriting from the canonical Event class.
     Propagates all canonical event metadata fields and adds security-specific fields.
     """
+
     user_id: str | None = None
     ip_address: str | None = None
     user_agent: str | None = None
@@ -30,20 +32,21 @@ class SecurityEvent(BaseEvent):
 
     def to_dict(self) -> dict:
         base = super().to_dict()
-        base.update({
-            "user_id": self.user_id,
-            "ip_address": self.ip_address,
-            "user_agent": self.user_agent,
-            "success": self.success,
-            "message": self.message,
-            "details": self.details,
-            "severity": self.severity,
-        })
+        base.update(
+            {
+                "user_id": self.user_id,
+                "ip_address": self.ip_address,
+                "user_agent": self.user_agent,
+                "success": self.success,
+                "message": self.message,
+                "details": self.details,
+                "severity": self.severity,
+            }
+        )
         return base
 
     def to_json(self) -> str:
         return super().to_json()
-
 
     def __post_init__(self) -> None:
         """Post-initialization validation."""
@@ -54,35 +57,35 @@ class SecurityEvent(BaseEvent):
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the event to a dictionary.
-        
+
         Returns:
             Dictionary representation of the event
         """
         event_dict = asdict(self)
-        
+
         # Convert details to string if it's not already a string
         if self.details and not isinstance(self.details, str):
             event_dict["details"] = json.dumps(self.details)
-        
+
         return event_dict
-    
+
     def to_json(self) -> str:
         """
         Convert the event to a JSON string.
-        
+
         Returns:
             JSON string representation of the event
         """
         return json.dumps(self.to_dict())
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SecurityEvent":
         """
         Create an event from a dictionary.
-        
+
         Args:
             data: Dictionary representation of the event
-            
+
         Returns:
             SecurityEvent instance
         """
@@ -92,35 +95,35 @@ class SecurityEvent(BaseEvent):
                 data["details"] = json.loads(data["details"])
             except json.JSONDecodeError:
                 pass
-        
+
         return cls(**data)
-    
+
     @classmethod
     def from_json(cls, json_str: str) -> "SecurityEvent":
         """
         Create an event from a JSON string.
-        
+
         Args:
             json_str: JSON string representation of the event
-            
+
         Returns:
             SecurityEvent instance
         """
         return cls.from_dict(json.loads(json_str))
-    
+
     @classmethod
     def login(
         cls,
         user_id: str,
         success: bool = True,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        message: Optional[str] = None,
-        **context
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        message: str | None = None,
+        **context,
     ) -> "SecurityEvent":
         """
         Create a login event.
-        
+
         Args:
             user_id: User ID
             success: Whether the login was successful
@@ -128,17 +131,18 @@ class SecurityEvent(BaseEvent):
             user_agent: User agent of the client
             message: Optional message
             **context: Additional context
-            
+
         Returns:
             SecurityEvent instance
         """
         event_type = "login" if success else "failed_login"
         severity = "info" if success else "warning"
         message = message or (
-            f"Successful login for user {user_id}" if success
+            f"Successful login for user {user_id}"
+            if success
             else f"Failed login attempt for user {user_id}"
         )
-        
+
         return cls(
             event_type=event_type,
             user_id=user_id,
@@ -147,26 +151,26 @@ class SecurityEvent(BaseEvent):
             success=success,
             message=message,
             severity=severity,
-            context=context
+            context=context,
         )
-    
+
     @classmethod
     def logout(
         cls,
         user_id: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        **context
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        **context,
     ) -> "SecurityEvent":
         """
         Create a logout event.
-        
+
         Args:
             user_id: User ID
             ip_address: IP address of the client
             user_agent: User agent of the client
             **context: Additional context
-            
+
         Returns:
             SecurityEvent instance
         """
@@ -192,7 +196,8 @@ class SecurityEvent(BaseEvent):
         Create a password change event with canonical event metadata fields.
         """
         msg = (
-            f"Password changed for user {user_id}" if success
+            f"Password changed for user {user_id}"
+            if success
             else f"Failed password change attempt for user {user_id}"
         )
         return cls(
@@ -227,7 +232,7 @@ class SecurityEvent(BaseEvent):
             success=False,
             message=msg,
             severity="warning",
-            details=f"action={action}, resource={resource}"
+            details=f"action={action}, resource={resource}",
         )
 
     @classmethod
@@ -251,9 +256,9 @@ class SecurityEvent(BaseEvent):
             target_info = f" on {target_type}"
         elif target_id:
             target_info = f" on {target_id}"
-        
+
         message = f"Admin action by {user_id}: {action}{target_info}"
-        
+
         return cls(
             event_type="admin_action",
             user_id=user_id,
@@ -266,6 +271,6 @@ class SecurityEvent(BaseEvent):
                 "action": action,
                 "target_id": target_id,
                 "target_type": target_type,
-                **context
-            }
+                **context,
+            },
         )

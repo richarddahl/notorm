@@ -48,4 +48,4 @@ class CategoryCreatedEvent(UnoEvent):
     """Event raised when a new category is created."""
 
     name: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None

@@ -13,7 +13,7 @@ _Last updated: 2025-04-20_
 ```python
 from typing import List, Optional
 
-def foo(bar: List[str], baz: Optional[int] = None) -> Optional[str]:
+def foo(bar: list[str], baz: Optional[int] = None) -> Optional[str]:
     ...
 # becomes
 

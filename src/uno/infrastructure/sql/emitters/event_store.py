@@ -14,7 +14,7 @@ from uno.sql.statement import SQLStatement, SQLStatementType
 class CreateDomainEventsTable(SQLEmitter):
     """Emitter for creating the domain_events table and related objects."""
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statements for creating the domain_events table.
 
         Returns:
@@ -142,7 +142,7 @@ class CreateDomainEventsTable(SQLEmitter):
 class CreateEventProcessorsTable(SQLEmitter):
     """Emitter for creating the event_processors table for tracking consumers."""
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statements for creating the event_processors table.
 
         Returns:
@@ -256,7 +256,7 @@ class CreateEventProcessorsTable(SQLEmitter):
 class CreateEventSnapshotsTable(SQLEmitter):
     """Emitter for creating the aggregate_snapshots table."""
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statements for creating the aggregate_snapshots table.
 
         Returns:
@@ -378,7 +378,7 @@ class CreateEventSnapshotsTable(SQLEmitter):
 class CreateEventHandlerFunction(SQLEmitter):
     """Emitter for creating event handler functions."""
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statements for creating event handler functions.
 
         Returns:

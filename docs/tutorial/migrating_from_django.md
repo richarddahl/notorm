@@ -135,10 +135,10 @@ class User(EntityBase[UUID]):
     
     username: str
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    bio: Optional[str] = None
-    profile_picture_url: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    bio: str | None = None
+    profile_picture_url: str | None = None
     is_active: bool = True
     created_at: datetime = None
     
@@ -282,7 +282,7 @@ class UserRepository(SQLAlchemyRepository[User, UUID, UserModel]):
             
         return self._mapper.to_entity(models[0])
         
-    async def find_active_users(self) -> List[User]:
+    async def find_active_users(self) -> list[User]:
         """Find all active users."""
         query = self._build_query().filter(UserModel.is_active == True)
         result = await self._execute_query(query)

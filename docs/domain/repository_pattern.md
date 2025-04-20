@@ -36,10 +36,10 @@ class UserRepository(EntityRepository[User, UUID]):
     async def list(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
+        order_by: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = 0,
-    ) -> List[User]:
+    ) -> list[User]:
         # Implementation details
         ...
     
@@ -240,7 +240,7 @@ class UserRepository(SQLAlchemyRepository[User, UUID, UserModel]):
         email_spec = AttributeSpecification("email", email)
         return await self.find_one(email_spec)
     
-    async def find_active_users(self) -> List[User]:
+    async def find_active_users(self) -> list[User]:
         active_spec = AttributeSpecification("is_active", True)
         return await self.find(active_spec)
     
@@ -404,7 +404,7 @@ class UserRepository(SQLAlchemyRepository[User, UUID, UserModel]):
         email_spec = AttributeSpecification("email", email)
         return await self.find_one(email_spec)
     
-    async def find_active_by_role(self, role: str) -> List[User]:
+    async def find_active_by_role(self, role: str) -> list[User]:
         """Find all active users with a specific role."""
         role_spec = AttributeSpecification("role", role)
         active_spec = AttributeSpecification("is_active", True)

@@ -75,10 +75,10 @@ class AsyncEngineFactory(EngineFactory[AsyncEngine, AsyncConnection]):
 @contextlib.asynccontextmanager
 async def async_connection(
     db_role: str,
-    db_name: Optional[str] = None,
-    db_host: Optional[str] = None,
-    db_user_pw: Optional[str] = None,
-    db_driver: Optional[str] = None,
+    db_name: str | None = None,
+    db_host: str | None = None,
+    db_user_pw: str | None = None,
+    db_driver: str | None = None,
     db_port: Optional[int] = None,
     config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",

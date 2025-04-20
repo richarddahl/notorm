@@ -137,7 +137,7 @@ def create_services(session: AsyncSession) -> Dict[str, Any]:
     }
 
 
-def format_table(data: List[Dict[str, Any]], fields: List[str] = None) -> str:
+def format_table(data: list[dict[str, Any]], fields: list[str] = None) -> str:
     """Format data as a table."""
     if not data:
         return "No data available."

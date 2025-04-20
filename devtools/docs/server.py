@@ -22,11 +22,11 @@ def serve_docs(
     port: int = 8088,
     open_browser: bool = True,
     theme: str = "light",
-    docs_dir: Optional[str] = None
+    docs_dir: str | None = None,
 ) -> None:
     """
     Start a documentation server for viewing Uno documentation.
-    
+
     Args:
         host: Hostname to serve on
         port: Port to serve on
@@ -37,29 +37,29 @@ def serve_docs(
     # If docs_dir is not provided, attempt to find it
     if not docs_dir:
         docs_dir = _find_docs_dir()
-    
+
     if not os.path.exists(docs_dir):
         raise ValueError(f"Documentation directory not found: {docs_dir}")
-    
+
     # Change to the docs directory
     os.chdir(docs_dir)
-    
+
     # Create server
     server_address = (host, port)
     httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
-    
+
     # Start server in a separate thread
     server_thread = threading.Thread(target=httpd.serve_forever)
     server_thread.daemon = True
     server_thread.start()
-    
+
     url = f"http://{host}:{port}/"
     print(f"Documentation server started at {url}")
-    
+
     # Open browser if requested
     if open_browser:
         webbrowser.open(url)
-    
+
     try:
         # Keep the main thread alive
         server_thread.join()
@@ -71,7 +71,7 @@ def serve_docs(
 def _find_docs_dir() -> str:
     """
     Attempt to find the documentation directory.
-    
+
     Returns:
         Path to the documentation directory
     """
@@ -85,16 +85,18 @@ def _find_docs_dir() -> str:
         os.path.join(os.getcwd(), "build", "documentation"),
         os.path.join(os.getcwd(), "build", "site"),
     ]
-    
+
     # Add parent directories to search
     parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    potential_paths.extend([
-        os.path.join(parent_dir, "docs"),
-        os.path.join(parent_dir, "doc"),
-        os.path.join(parent_dir, "documentation"),
-        os.path.join(parent_dir, "site"),
-    ])
-    
+    potential_paths.extend(
+        [
+            os.path.join(parent_dir, "docs"),
+            os.path.join(parent_dir, "doc"),
+            os.path.join(parent_dir, "documentation"),
+            os.path.join(parent_dir, "site"),
+        ]
+    )
+
     # Check each path
     for path in potential_paths:
         if os.path.exists(path) and os.path.isdir(path):
@@ -103,7 +105,7 @@ def _find_docs_dir() -> str:
                 return path
             if os.path.exists(os.path.join(path, "README.md")):
                 return path
-    
+
     # If all else fails, use the current directory
     return os.getcwd()
 
@@ -113,18 +115,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Uno Documentation Server")
     parser.add_argument("--host", default="localhost", help="Hostname to serve on")
     parser.add_argument("--port", type=int, default=8088, help="Port to serve on")
-    parser.add_argument("--no-browser", action="store_true", help="Don't open browser automatically")
-    parser.add_argument("--theme", default="light", choices=["light", "dark"], help="Documentation theme")
+    parser.add_argument(
+        "--no-browser", action="store_true", help="Don't open browser automatically"
+    )
+    parser.add_argument(
+        "--theme",
+        default="light",
+        choices=["light", "dark"],
+        help="Documentation theme",
+    )
     parser.add_argument("--docs-dir", help="Directory containing documentation files")
-    
+
     args = parser.parse_args()
-    
+
     serve_docs(
         host=args.host,
         port=args.port,
         open_browser=not args.no_browser,
         theme=args.theme,
-        docs_dir=args.docs_dir
+        docs_dir=args.docs_dir,
     )
 
 

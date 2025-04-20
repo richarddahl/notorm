@@ -20,35 +20,30 @@ from uno.reports.dtos import (
     ReportFieldDefinitionUpdateDto,
     ReportFieldDefinitionViewDto,
     ReportFieldDefinitionFilterParams,
-    
     # Template DTOs
     ReportTemplateBaseDto,
     ReportTemplateCreateDto,
     ReportTemplateUpdateDto,
     ReportTemplateViewDto,
     ReportTemplateFilterParams,
-    
     # Trigger DTOs
     ReportTriggerBaseDto,
     ReportTriggerCreateDto,
     ReportTriggerUpdateDto,
     ReportTriggerViewDto,
     ReportTriggerFilterParams,
-    
     # Output DTOs
     ReportOutputBaseDto,
     ReportOutputCreateDto,
     ReportOutputUpdateDto,
     ReportOutputViewDto,
     ReportOutputFilterParams,
-    
     # Execution DTOs
     ReportExecutionBaseDto,
     ReportExecutionCreateDto,
     ReportExecutionUpdateStatusDto,
     ReportExecutionViewDto,
     ReportExecutionFilterParams,
-    
     # Output Execution DTOs
     ReportOutputExecutionBaseDto,
     ReportOutputExecutionCreateDto,
@@ -60,7 +55,7 @@ from uno.reports.dtos import (
 
 class ReportFieldDefinitionSchemaManager:
     """Schema manager for report field definition entities."""
-    
+
     def __init__(self):
         """Initialize the schema manager."""
         self.schemas = {
@@ -69,21 +64,21 @@ class ReportFieldDefinitionSchemaManager:
             "update_schema": ReportFieldDefinitionUpdateDto,
             "filter_schema": ReportFieldDefinitionFilterParams,
         }
-    
+
     def entity_to_dto(
         self, entity: ReportFieldDefinition, dto_class: Type[BaseModel] = None
     ) -> Union[ReportFieldDefinitionViewDto, BaseModel]:
         """Convert a field definition entity to a DTO.
-        
+
         Args:
             entity: The field definition entity to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "name": entity.name,
@@ -97,18 +92,20 @@ class ReportFieldDefinitionSchemaManager:
             "is_visible": entity.is_visible,
             "parent_field_id": entity.parent_field_id,
         }
-        
+
         return dto_class(**dto_data)
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportFieldDefinitionCreateDto, ReportFieldDefinitionUpdateDto], entity: Optional[ReportFieldDefinition] = None
+        self,
+        dto: Union[ReportFieldDefinitionCreateDto, ReportFieldDefinitionUpdateDto],
+        entity: Optional[ReportFieldDefinition] = None,
     ) -> ReportFieldDefinition:
         """Convert a DTO to a field definition entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -128,41 +125,47 @@ class ReportFieldDefinitionSchemaManager:
                 entity.order = dto.order
             if hasattr(dto, "format_string") and dto.format_string is not None:
                 entity.format_string = dto.format_string
-            if hasattr(dto, "conditional_formats") and dto.conditional_formats is not None:
+            if (
+                hasattr(dto, "conditional_formats")
+                and dto.conditional_formats is not None
+            ):
                 entity.conditional_formats = dto.conditional_formats
             if hasattr(dto, "is_visible") and dto.is_visible is not None:
                 entity.is_visible = dto.is_visible
             if hasattr(dto, "parent_field_id") and dto.parent_field_id is not None:
                 entity.parent_field_id = dto.parent_field_id
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude_unset=True)
             return ReportFieldDefinition(**entity_data)
-    
+
     def dto_list_to_entity_list(
-        self, dtos: List[Union[ReportFieldDefinitionCreateDto, ReportFieldDefinitionUpdateDto]]
-    ) -> List[ReportFieldDefinition]:
+        self,
+        dtos: list[
+            Union[ReportFieldDefinitionCreateDto, ReportFieldDefinitionUpdateDto]
+        ],
+    ) -> list[ReportFieldDefinition]:
         """Convert a list of DTOs to a list of field definition entities.
-        
+
         Args:
             dtos: The list of DTOs to convert.
-            
+
         Returns:
             The list of converted entities.
         """
         return [self.dto_to_entity(dto) for dto in dtos]
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportFieldDefinition], dto_class: Type[BaseModel] = None
-    ) -> List[Union[ReportFieldDefinitionViewDto, BaseModel]]:
+        self, entities: list[ReportFieldDefinition], dto_class: Type[BaseModel] = None
+    ) -> list[Union[ReportFieldDefinitionViewDto, BaseModel]]:
         """Convert a list of field definition entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The list of converted DTOs.
         """
@@ -171,8 +174,13 @@ class ReportFieldDefinitionSchemaManager:
 
 class ReportTemplateSchemaManager:
     """Schema manager for report template entities."""
-    
-    def __init__(self, field_definition_schema_manager: Optional[ReportFieldDefinitionSchemaManager] = None):
+
+    def __init__(
+        self,
+        field_definition_schema_manager: Optional[
+            ReportFieldDefinitionSchemaManager
+        ] = None,
+    ):
         """Initialize the schema manager."""
         self.schemas = {
             "view_schema": ReportTemplateViewDto,
@@ -180,23 +188,28 @@ class ReportTemplateSchemaManager:
             "update_schema": ReportTemplateUpdateDto,
             "filter_schema": ReportTemplateFilterParams,
         }
-        self.field_definition_schema_manager = field_definition_schema_manager or ReportFieldDefinitionSchemaManager()
-    
+        self.field_definition_schema_manager = (
+            field_definition_schema_manager or ReportFieldDefinitionSchemaManager()
+        )
+
     def entity_to_dto(
-        self, entity: ReportTemplate, dto_class: Type[BaseModel] = None, include_related: bool = True
+        self,
+        entity: ReportTemplate,
+        dto_class: Type[BaseModel] = None,
+        include_related: bool = True,
     ) -> Union[ReportTemplateViewDto, BaseModel]:
         """Convert a template entity to a DTO.
-        
+
         Args:
             entity: The template entity to convert.
             dto_class: Optional DTO class to use for conversion.
             include_related: Whether to include related entities.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "name": entity.name,
@@ -207,21 +220,27 @@ class ReportTemplateSchemaManager:
             "cache_policy": entity.cache_policy,
             "version": entity.version,
         }
-        
+
         if include_related and hasattr(dto_class, "fields") and entity.fields:
-            dto_data["fields"] = self.field_definition_schema_manager.entity_list_to_dto_list(entity.fields)
-        
+            dto_data["fields"] = (
+                self.field_definition_schema_manager.entity_list_to_dto_list(
+                    entity.fields
+                )
+            )
+
         return dto_class(**dto_data)
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportTemplateCreateDto, ReportTemplateUpdateDto], entity: Optional[ReportTemplate] = None
+        self,
+        dto: Union[ReportTemplateCreateDto, ReportTemplateUpdateDto],
+        entity: Optional[ReportTemplate] = None,
     ) -> ReportTemplate:
         """Convert a DTO to a template entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -235,38 +254,47 @@ class ReportTemplateSchemaManager:
                 entity.base_object_type = dto.base_object_type
             if hasattr(dto, "format_config") and dto.format_config is not None:
                 entity.format_config = dto.format_config
-            if hasattr(dto, "parameter_definitions") and dto.parameter_definitions is not None:
+            if (
+                hasattr(dto, "parameter_definitions")
+                and dto.parameter_definitions is not None
+            ):
                 entity.parameter_definitions = dto.parameter_definitions
             if hasattr(dto, "cache_policy") and dto.cache_policy is not None:
                 entity.cache_policy = dto.cache_policy
             if hasattr(dto, "version") and dto.version is not None:
                 entity.version = dto.version
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude={"field_ids"}, exclude_unset=True)
             return ReportTemplate(**entity_data)
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportTemplate], dto_class: Type[BaseModel] = None, include_related: bool = True
-    ) -> List[Union[ReportTemplateViewDto, BaseModel]]:
+        self,
+        entities: list[ReportTemplate],
+        dto_class: Type[BaseModel] = None,
+        include_related: bool = True,
+    ) -> list[Union[ReportTemplateViewDto, BaseModel]]:
         """Convert a list of template entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
             include_related: Whether to include related entities.
-            
+
         Returns:
             The list of converted DTOs.
         """
-        return [self.entity_to_dto(entity, dto_class, include_related) for entity in entities]
+        return [
+            self.entity_to_dto(entity, dto_class, include_related)
+            for entity in entities
+        ]
 
 
 class ReportTriggerSchemaManager:
     """Schema manager for report trigger entities."""
-    
+
     def __init__(self):
         """Initialize the schema manager."""
         self.schemas = {
@@ -275,21 +303,21 @@ class ReportTriggerSchemaManager:
             "update_schema": ReportTriggerUpdateDto,
             "filter_schema": ReportTriggerFilterParams,
         }
-    
+
     def entity_to_dto(
         self, entity: ReportTrigger, dto_class: Type[BaseModel] = None
     ) -> Union[ReportTriggerViewDto, BaseModel]:
         """Convert a trigger entity to a DTO.
-        
+
         Args:
             entity: The trigger entity to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "report_template_id": entity.report_template_id,
@@ -302,18 +330,20 @@ class ReportTriggerSchemaManager:
             "is_active": entity.is_active,
             "last_triggered": entity.last_triggered,
         }
-        
+
         return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportTriggerCreateDto, ReportTriggerUpdateDto], entity: Optional[ReportTrigger] = None
+        self,
+        dto: Union[ReportTriggerCreateDto, ReportTriggerUpdateDto],
+        entity: Optional[ReportTrigger] = None,
     ) -> ReportTrigger:
         """Convert a DTO to a trigger entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -333,22 +363,22 @@ class ReportTriggerSchemaManager:
                 entity.query_id = dto.query_id
             if hasattr(dto, "is_active") and dto.is_active is not None:
                 entity.is_active = dto.is_active
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude_unset=True)
             return ReportTrigger(**entity_data)
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportTrigger], dto_class: Type[BaseModel] = None
-    ) -> List[Union[ReportTriggerViewDto, BaseModel]]:
+        self, entities: list[ReportTrigger], dto_class: Type[BaseModel] = None
+    ) -> list[Union[ReportTriggerViewDto, BaseModel]]:
         """Convert a list of trigger entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The list of converted DTOs.
         """
@@ -357,7 +387,7 @@ class ReportTriggerSchemaManager:
 
 class ReportOutputSchemaManager:
     """Schema manager for report output entities."""
-    
+
     def __init__(self):
         """Initialize the schema manager."""
         self.schemas = {
@@ -366,21 +396,21 @@ class ReportOutputSchemaManager:
             "update_schema": ReportOutputUpdateDto,
             "filter_schema": ReportOutputFilterParams,
         }
-    
+
     def entity_to_dto(
         self, entity: ReportOutput, dto_class: Type[BaseModel] = None
     ) -> Union[ReportOutputViewDto, BaseModel]:
         """Convert an output entity to a DTO.
-        
+
         Args:
             entity: The output entity to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "report_template_id": entity.report_template_id,
@@ -390,18 +420,20 @@ class ReportOutputSchemaManager:
             "format_config": entity.format_config,
             "is_active": entity.is_active,
         }
-        
+
         return dto_class(**dto_data)
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportOutputCreateDto, ReportOutputUpdateDto], entity: Optional[ReportOutput] = None
+        self,
+        dto: Union[ReportOutputCreateDto, ReportOutputUpdateDto],
+        entity: Optional[ReportOutput] = None,
     ) -> ReportOutput:
         """Convert a DTO to an output entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -417,22 +449,22 @@ class ReportOutputSchemaManager:
                 entity.format_config = dto.format_config
             if hasattr(dto, "is_active") and dto.is_active is not None:
                 entity.is_active = dto.is_active
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude_unset=True)
             return ReportOutput(**entity_data)
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportOutput], dto_class: Type[BaseModel] = None
-    ) -> List[Union[ReportOutputViewDto, BaseModel]]:
+        self, entities: list[ReportOutput], dto_class: Type[BaseModel] = None
+    ) -> list[Union[ReportOutputViewDto, BaseModel]]:
         """Convert a list of output entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The list of converted DTOs.
         """
@@ -441,7 +473,7 @@ class ReportOutputSchemaManager:
 
 class ReportOutputExecutionSchemaManager:
     """Schema manager for report output execution entities."""
-    
+
     def __init__(self):
         """Initialize the schema manager."""
         self.schemas = {
@@ -450,21 +482,21 @@ class ReportOutputExecutionSchemaManager:
             "update_schema": ReportOutputExecutionUpdateStatusDto,
             "filter_schema": ReportOutputExecutionFilterParams,
         }
-    
+
     def entity_to_dto(
         self, entity: ReportOutputExecution, dto_class: Type[BaseModel] = None
     ) -> Union[ReportOutputExecutionViewDto, BaseModel]:
         """Convert an output execution entity to a DTO.
-        
+
         Args:
             entity: The output execution entity to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "report_execution_id": entity.report_execution_id,
@@ -475,18 +507,22 @@ class ReportOutputExecutionSchemaManager:
             "output_location": entity.output_location,
             "output_size_bytes": entity.output_size_bytes,
         }
-        
+
         return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportOutputExecutionCreateDto, ReportOutputExecutionUpdateStatusDto], entity: Optional[ReportOutputExecution] = None
+        self,
+        dto: Union[
+            ReportOutputExecutionCreateDto, ReportOutputExecutionUpdateStatusDto
+        ],
+        entity: Optional[ReportOutputExecution] = None,
     ) -> ReportOutputExecution:
         """Convert a DTO to an output execution entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -500,22 +536,22 @@ class ReportOutputExecutionSchemaManager:
                 entity.output_location = dto.output_location
             if hasattr(dto, "output_size_bytes") and dto.output_size_bytes is not None:
                 entity.output_size_bytes = dto.output_size_bytes
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude_unset=True)
             return ReportOutputExecution(**entity_data)
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportOutputExecution], dto_class: Type[BaseModel] = None
-    ) -> List[Union[ReportOutputExecutionViewDto, BaseModel]]:
+        self, entities: list[ReportOutputExecution], dto_class: Type[BaseModel] = None
+    ) -> list[Union[ReportOutputExecutionViewDto, BaseModel]]:
         """Convert a list of output execution entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
-            
+
         Returns:
             The list of converted DTOs.
         """
@@ -524,8 +560,13 @@ class ReportOutputExecutionSchemaManager:
 
 class ReportExecutionSchemaManager:
     """Schema manager for report execution entities."""
-    
-    def __init__(self, output_execution_schema_manager: Optional[ReportOutputExecutionSchemaManager] = None):
+
+    def __init__(
+        self,
+        output_execution_schema_manager: Optional[
+            ReportOutputExecutionSchemaManager
+        ] = None,
+    ):
         """Initialize the schema manager."""
         self.schemas = {
             "view_schema": ReportExecutionViewDto,
@@ -533,23 +574,28 @@ class ReportExecutionSchemaManager:
             "update_schema": ReportExecutionUpdateStatusDto,
             "filter_schema": ReportExecutionFilterParams,
         }
-        self.output_execution_schema_manager = output_execution_schema_manager or ReportOutputExecutionSchemaManager()
-    
+        self.output_execution_schema_manager = (
+            output_execution_schema_manager or ReportOutputExecutionSchemaManager()
+        )
+
     def entity_to_dto(
-        self, entity: ReportExecution, dto_class: Type[BaseModel] = None, include_related: bool = True
+        self,
+        entity: ReportExecution,
+        dto_class: Type[BaseModel] = None,
+        include_related: bool = True,
     ) -> Union[ReportExecutionViewDto, BaseModel]:
         """Convert an execution entity to a DTO.
-        
+
         Args:
             entity: The execution entity to convert.
             dto_class: Optional DTO class to use for conversion.
             include_related: Whether to include related entities.
-            
+
         Returns:
             The converted DTO.
         """
         dto_class = dto_class or self.schemas["view_schema"]
-        
+
         dto_data = {
             "id": entity.id,
             "report_template_id": entity.report_template_id,
@@ -564,21 +610,31 @@ class ReportExecutionSchemaManager:
             "execution_time_ms": entity.execution_time_ms,
             "result_hash": entity.result_hash,
         }
-        
-        if include_related and hasattr(dto_class, "output_executions") and entity.output_executions:
-            dto_data["output_executions"] = self.output_execution_schema_manager.entity_list_to_dto_list(entity.output_executions)
-        
+
+        if (
+            include_related
+            and hasattr(dto_class, "output_executions")
+            and entity.output_executions
+        ):
+            dto_data["output_executions"] = (
+                self.output_execution_schema_manager.entity_list_to_dto_list(
+                    entity.output_executions
+                )
+            )
+
         return dto_class(**{k: v for k, v in dto_data.items() if hasattr(dto_class, k)})
-    
+
     def dto_to_entity(
-        self, dto: Union[ReportExecutionCreateDto, ReportExecutionUpdateStatusDto], entity: Optional[ReportExecution] = None
+        self,
+        dto: Union[ReportExecutionCreateDto, ReportExecutionUpdateStatusDto],
+        entity: Optional[ReportExecution] = None,
     ) -> ReportExecution:
         """Convert a DTO to an execution entity.
-        
+
         Args:
             dto: The DTO to convert.
             entity: Optional existing entity to update.
-            
+
         Returns:
             The converted entity.
         """
@@ -588,24 +644,30 @@ class ReportExecutionSchemaManager:
                 entity.status = dto.status
             if hasattr(dto, "error_details") and dto.error_details is not None:
                 entity.error_details = dto.error_details
-            
+
             return entity
         else:
             # Create new entity
             entity_data = dto.dict(exclude_unset=True)
             return ReportExecution(**entity_data)
-    
+
     def entity_list_to_dto_list(
-        self, entities: List[ReportExecution], dto_class: Type[BaseModel] = None, include_related: bool = True
-    ) -> List[Union[ReportExecutionViewDto, BaseModel]]:
+        self,
+        entities: list[ReportExecution],
+        dto_class: Type[BaseModel] = None,
+        include_related: bool = True,
+    ) -> list[Union[ReportExecutionViewDto, BaseModel]]:
         """Convert a list of execution entities to a list of DTOs.
-        
+
         Args:
             entities: The list of entities to convert.
             dto_class: Optional DTO class to use for conversion.
             include_related: Whether to include related entities.
-            
+
         Returns:
             The list of converted DTOs.
         """
-        return [self.entity_to_dto(entity, dto_class, include_related) for entity in entities]
+        return [
+            self.entity_to_dto(entity, dto_class, include_related)
+            for entity in entities
+        ]

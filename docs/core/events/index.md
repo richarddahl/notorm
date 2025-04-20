@@ -123,7 +123,7 @@ class OrderService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
     
-    async def place_order(self, user_id: UUID, items: List[UUID]) -> Order:
+    async def place_order(self, user_id: UUID, items: list[UUID]) -> Order:
         async with self.uow:
             # Create order
             order = Order.create(user_id, items)
@@ -197,7 +197,7 @@ Events can be used as the primary source of truth:
 ```python
 class Order(AggregateRoot[UUID]):
     @classmethod
-    def create(cls, user_id: UUID, items: List[UUID]) -> "Order":
+    def create(cls, user_id: UUID, items: list[UUID]) -> "Order":
         order = cls(id=uuid4(), user_id=user_id, items=items, status="created")
         order.record_event(OrderCreated(
             order_id=order.id,
@@ -219,7 +219,7 @@ class Order(AggregateRoot[UUID]):
         ))
     
     @classmethod
-    def from_events(cls, events: List[Event]) -> "Order":
+    def from_events(cls, events: list[Event]) -> "Order":
         """Reconstruct order state from events."""
         # Implementation details...
 ```

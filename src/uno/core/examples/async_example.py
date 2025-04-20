@@ -77,7 +77,7 @@ async def make_api_call(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @cancellable
-async def process_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def process_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Process a list of items with proper cancellation handling.
 
@@ -133,8 +133,8 @@ async def process_item(item: Dict[str, Any]) -> Dict[str, Any]:
 
 @as_task("database_operation")
 async def perform_database_operations(
-    items: List[Dict[str, Any]],
-) -> List[Dict[str, Any]]:
+    items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """
     Perform database operations with proper error handling.
 

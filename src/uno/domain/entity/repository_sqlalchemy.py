@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from uno.core.entity import ID
-from uno.core.errors.result import Failure, Result, Success
+from uno.core.errors.result import Result
 from uno.domain.entity.base import EntityBase
 from uno.domain.entity.repository import EntityRepository
 from uno.domain.entity.specification.base import AttributeSpecification, Specification
@@ -102,13 +102,13 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             model = result.scalar_one_or_none()
             
             if model is None:
-                return Success[T | None, str](None, convert=True)
+                return Result.success(None, convert=True)
             
-            return Success[T | None, str](self.mapper.to_entity(model), convert=True)
+            return Result.success(self.mapper.to_entity(model), convert=True)
         except SQLAlchemyError as e:
-            return Failure[T | None, str](f"Database error retrieving entity with ID {id}: {str(e)}", convert=True)
+            return Result.failure(f"Database error retrieving entity with ID {id}: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[T | None, str](f"Error retrieving entity with ID {id}: {str(e)}", convert=True)
+            return Result.failure(f"Error retrieving entity with ID {id}: {str(e)}", convert=True)
     
     async def list(
         self,
@@ -175,11 +175,11 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             
             # Convert models to entities
             entities = [self.mapper.to_entity(model) for model in models]
-            return Success[list[T], str](entities, convert=True)
+            return Result.success(entities, convert=True)
         except SQLAlchemyError as e:
-            return Failure[list[T], str](f"Database error listing entities: {str(e)}", convert=True)
+            return Result.failure(f"Database error listing entities: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[list[T], str](f"Error listing entities: {str(e)}", convert=True)
+            return Result.failure(f"Error listing entities: {str(e)}", convert=True)
     
     async def add(self, entity: T) -> Result[T, str]:
         """
@@ -195,7 +195,7 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             if entity.id is not None:
                 exists_result = await self.exists(entity.id)
                 if exists_result.is_success() and exists_result.value() is True:
-                    return Failure[T, str](f"Entity with ID {entity.id} already exists", convert=True)
+                    return Result.failure(f"Entity with ID {entity.id} already exists", convert=True)
                 
             model = self.mapper.to_model(entity)
             
@@ -206,11 +206,11 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             await self.session.refresh(model)
             
             # Convert back to an entity and return
-            return Success[T, str](self.mapper.to_entity(model), convert=True)
+            return Result.success(self.mapper.to_entity(model), convert=True)
         except SQLAlchemyError as e:
-            return Failure[T, str](f"Database error adding entity: {str(e)}", convert=True)
+            return Result.failure(f"Database error adding entity: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[T, str](f"Error adding entity: {str(e)}", convert=True)
+            return Result.failure(f"Error adding entity: {str(e)}", convert=True)
     
     async def update(self, entity: T) -> Result[T, str]:
         """
@@ -225,21 +225,21 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
         try:
             exists_result = await self.exists(entity.id)
             if exists_result.is_failure():
-                return Failure[T, str](f"Error checking entity existence: {exists_result.error()}", convert=True)
+                return Result.failure(f"Error checking entity existence: {exists_result.error()}", convert=True)
                 
             if not exists_result.value():
-                return Failure[T, str](f"Entity with ID {entity.id} does not exist", convert=True)
+                return Result.failure(f"Entity with ID {entity.id} does not exist", convert=True)
                 
             model = self.mapper.to_model(entity)
             self.session.add(model)
             await self.session.flush()
             
             # Convert back to an entity and return
-            return Success[T, str](self.mapper.to_entity(model), convert=True)
+            return Result.success(self.mapper.to_entity(model), convert=True)
         except SQLAlchemyError as e:
-            return Failure[T, str](f"Database error updating entity: {str(e)}", convert=True)
+            return Result.failure(f"Database error updating entity: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[T, str](f"Error updating entity: {str(e)}", convert=True)
+            return Result.failure(f"Error updating entity: {str(e)}", convert=True)
     
     async def delete(self, entity: T) -> Result[bool, str]:
         """
@@ -255,11 +255,11 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             model = self.mapper.to_model(entity)
             await self.session.delete(model)
             await self.session.flush()
-            return Success[bool, str](True, convert=True)
+            return Result.success(True, convert=True)
         except SQLAlchemyError as e:
-            return Failure[bool, str](f"Database error deleting entity: {str(e)}", convert=True)
+            return Result.failure(f"Database error deleting entity: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[bool, str](f"Error deleting entity: {str(e)}", convert=True)
+            return Result.failure(f"Error deleting entity: {str(e)}", convert=True)
     
     async def exists(self, id: ID) -> Result[bool, str]:
         """
@@ -275,11 +275,11 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             stmt = select(func.count()).select_from(self.mapper.model_type).where(self.mapper.model_type.id == id)
             result = await self.session.execute(stmt)
             count = result.scalar_one()
-            return Success[bool, str](count > 0, convert=True)
+            return Result.success(count > 0, convert=True)
         except SQLAlchemyError as e:
-            return Failure[bool, str](f"Database error checking entity existence: {str(e)}", convert=True)
+            return Result.failure(f"Database error checking entity existence: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[bool, str](f"Error checking entity existence: {str(e)}", convert=True)
+            return Result.failure(f"Error checking entity existence: {str(e)}", convert=True)
     
     async def find(self, specification: Specification[T]) -> Result[list[T], str]:
         """
@@ -309,11 +309,11 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             if self._needs_in_memory_filtering(specification):
                 entities = [e for e in entities if specification.is_satisfied_by(e)]
             
-            return Success[list[T], str](entities, convert=True)
+            return Result.success(entities, convert=True)
         except SQLAlchemyError as e:
-            return Failure[list[T], str](f"Database error finding entities: {str(e)}", convert=True)
+            return Result.failure(f"Database error finding entities: {str(e)}", convert=True)
         except Exception as e:
-            return Failure[list[T], str](f"Error finding entities: {str(e)}", convert=True)
+            return Result.failure(f"Error finding entities: {str(e)}", convert=True)
     
     async def find_one(self, specification: Specification[T]) -> Result[T | None, str]:
         """
@@ -340,14 +340,14 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
             model = result.scalar_one_or_none()
             
             if model is None:
-                return Success[T | None, str](None, convert=True)
+                return Result.success(None, convert=True)
             
             # Convert to entity
             entity = self.mapper.to_entity(model)
             
             # Check if it actually satisfies the specification
             if not specification.is_satisfied_by(entity):
-                return Success[T | None, str](None, convert=True)
+                return Result.success(None, convert=True)
             
             return Success[T | None, str](entity, convert=True)
         except SQLAlchemyError as e:
@@ -454,7 +454,7 @@ class SQLAlchemyRepository(EntityRepository[T], Generic[T, M]):
                 if result.is_failure():
                     return Failure[bool, str](f"Error deleting entity: {result.error()}", convert=True)
             
-            return Success[bool, str](True, convert=True)
+            return Result.success(True, convert=True)
         except SQLAlchemyError as e:
             return Failure[bool, str](f"Database error deleting entities: {str(e)}", convert=True)
         except Exception as e:

@@ -34,7 +34,7 @@ from uno.domain.entity.service import ApplicationService, CrudService
 # Models
 class ProductSchema(BaseModel):
     """Product schema."""
-    
+
     id: str = Field(..., description="Product ID")
     name: str = Field(..., description="Product name")
     price: float = Field(..., description="Product price")
@@ -44,7 +44,7 @@ class ProductSchema(BaseModel):
 
 class CreateProductRequest(BaseModel):
     """Create product request."""
-    
+
     name: str = Field(..., description="Product name")
     price: float = Field(..., description="Product price")
     category: str = Field(..., description="Product category")
@@ -52,7 +52,7 @@ class CreateProductRequest(BaseModel):
 
 class UpdateProductRequest(BaseModel):
     """Update product request."""
-    
+
     name: Optional[str] = Field(None, description="Product name")
     price: Optional[float] = Field(None, description="Product price")
     category: Optional[str] = Field(None, description="Product category")
@@ -60,7 +60,7 @@ class UpdateProductRequest(BaseModel):
 
 class ProductSearchQuery(BaseModel):
     """Product search query."""
-    
+
     name: Optional[str] = Field(None, description="Product name contains")
     min_price: Optional[float] = Field(None, description="Minimum price")
     max_price: Optional[float] = Field(None, description="Maximum price")
@@ -69,14 +69,14 @@ class ProductSearchQuery(BaseModel):
 
 class TokenRequest(BaseModel):
     """Token request."""
-    
+
     username: str = Field(..., description="Username")
     password: str = Field(..., description="Password")
 
 
 class TokenResponse(BaseModel):
     """Token response."""
-    
+
     access_token: str = Field(..., description="Access token")
     token_type: str = Field(..., description="Token type")
     expires_in: int = Field(..., description="Token expiration in seconds")
@@ -85,27 +85,31 @@ class TokenResponse(BaseModel):
 # Services
 class ProductService(CrudService):
     """Example product service implementing CRUD operations."""
-    
+
     async def create(self, data):
         # In a real service, this would create a product in the database
-        return Success({
-            "id": "new-product-id",
-            "name": data.name,
-            "price": data.price,
-            "category": data.category,
-            "is_active": True,
-        })
-    
+        return Success(
+            {
+                "id": "new-product-id",
+                "name": data.name,
+                "price": data.price,
+                "category": data.category,
+                "is_active": True,
+            }
+        )
+
     async def get_by_id(self, id):
         # In a real service, this would get a product from the database
-        return Success({
-            "id": id,
-            "name": "Example Product",
-            "price": 19.99,
-            "category": "Category 1",
-            "is_active": True,
-        })
-    
+        return Success(
+            {
+                "id": id,
+                "name": "Example Product",
+                "price": 19.99,
+                "category": "Category 1",
+                "is_active": True,
+            }
+        )
+
     async def update(self, id, data):
         # In a real service, this would update a product in the database
         product = {
@@ -115,46 +119,48 @@ class ProductService(CrudService):
             "category": "Category 1",
             "is_active": True,
         }
-        
+
         if data.name is not None:
             product["name"] = data.name
-            
+
         if data.price is not None:
             product["price"] = data.price
-            
+
         if data.category is not None:
             product["category"] = data.category
-            
+
         return Success(product)
-    
+
     async def delete(self, id):
         # In a real service, this would delete a product from the database
         return Success(True)
-    
+
     async def get_all(self):
         # In a real service, this would get all products from the database
-        return Success([
-            {
-                "id": "1",
-                "name": "Product 1",
-                "price": 19.99,
-                "category": "Category 1",
-                "is_active": True,
-            },
-            {
-                "id": "2",
-                "name": "Product 2",
-                "price": 29.99,
-                "category": "Category 2",
-                "is_active": True,
-            },
-        ])
+        return Success(
+            [
+                {
+                    "id": "1",
+                    "name": "Product 1",
+                    "price": 19.99,
+                    "category": "Category 1",
+                    "is_active": True,
+                },
+                {
+                    "id": "2",
+                    "name": "Product 2",
+                    "price": 29.99,
+                    "category": "Category 2",
+                    "is_active": True,
+                },
+            ]
+        )
 
 
 class SearchProductsService(ApplicationService):
     """Example search products service implementing a query operation."""
-    
-    async def execute(self, query: ProductSearchQuery) -> Result[List[ProductSchema]]:
+
+    async def execute(self, query: ProductSearchQuery) -> Result[list[ProductSchema]]:
         """Execute the search products query."""
         # In a real service, this would search products in the database
         products = [
@@ -173,25 +179,25 @@ class SearchProductsService(ApplicationService):
                 is_active=True,
             ),
         ]
-        
+
         # Filter products based on query parameters
         filtered_products = []
         for product in products:
             if (
-                (query.name is None or query.name.lower() in product.name.lower()) and
-                (query.min_price is None or product.price >= query.min_price) and
-                (query.max_price is None or product.price <= query.max_price) and
-                (query.category is None or product.category == query.category)
+                (query.name is None or query.name.lower() in product.name.lower())
+                and (query.min_price is None or product.price >= query.min_price)
+                and (query.max_price is None or product.price <= query.max_price)
+                and (query.category is None or product.category == query.category)
             ):
                 filtered_products.append(product)
-        
+
         return Success(filtered_products)
 
 
 def create_auth_app():
     """
     Create a FastAPI application with authentication and authorization.
-    
+
     Returns:
         A FastAPI application with authentication and authorization
     """
@@ -200,25 +206,25 @@ def create_auth_app():
         title="Secure Product API",
         description="API for managing products with authentication and authorization",
     )
-    
+
     # Create JWT auth backend
     auth_backend = JWTAuthBackend(
         secret_key="your-secret-key-here",  # In production, use a secure secret key
         algorithm="HS256",
         token_url="/api/token",
     )
-    
+
     # Set up authentication
     setup_auth(
         app=app,
         auth_backend=auth_backend,
         exclude_paths=["/api/token", "/docs", "/openapi.json"],
     )
-    
+
     # Create services
     product_service = ProductService()
     search_service = SearchProductsService()
-    
+
     # Create secure CRUD endpoint
     crud_endpoint = SecureCrudEndpoint(
         service=product_service,
@@ -234,16 +240,16 @@ def create_auth_app():
         delete_permissions=["products:delete"],
     )
     crud_endpoint.register(app)
-    
+
     # Create secure CQRS endpoint
     search_query = QueryHandler(
         service=search_service,
-        response_model=List[ProductSchema],
+        response_model=list[ProductSchema],
         query_model=ProductSearchQuery,
         path="/search",
         method="get",
     )
-    
+
     cqrs_endpoint = SecureCqrsEndpoint(
         queries=[search_query],
         tags=["Products"],
@@ -254,13 +260,13 @@ def create_auth_app():
         },
     )
     cqrs_endpoint.register(app)
-    
+
     # Add token endpoint
     @app.post("/api/token", response_model=TokenResponse)
     async def login(request: TokenRequest):
         """
         Get an access token.
-        
+
         In a real application, this would validate the username and password
         against a database or external authentication service.
         """
@@ -268,9 +274,14 @@ def create_auth_app():
         if request.username != request.password:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error": {"code": "INVALID_CREDENTIALS", "message": "Invalid username or password"}},
+                detail={
+                    "error": {
+                        "code": "INVALID_CREDENTIALS",
+                        "message": "Invalid username or password",
+                    }
+                },
             )
-        
+
         # Create a user with appropriate roles and permissions
         user = User(
             id="user-id",
@@ -280,20 +291,24 @@ def create_auth_app():
             permissions=[
                 "products:read",
                 # Conditionally add other permissions based on username
-                *(["products:create", "products:update", "products:delete"] if request.username == "admin" else []),
+                *(
+                    ["products:create", "products:update", "products:delete"]
+                    if request.username == "admin"
+                    else []
+                ),
             ],
         )
-        
+
         # Create a token
         token = auth_backend.create_token(user, expires_in=3600)
-        
+
         # Return the token response
         return {
             "access_token": token,
             "token_type": "Bearer",
             "expires_in": 3600,
         }
-    
+
     # Add a user info endpoint
     @app.get("/api/me")
     async def get_current_user(user_context: UserContext = Depends(get_user_context)):
@@ -305,18 +320,18 @@ def create_auth_app():
             "roles": user_context.user.roles,
             "permissions": user_context.user.permissions,
         }
-    
+
     # Add an endpoint that requires specific roles
     @app.get("/api/admin", dependencies=[Depends(requires_auth(roles=["admin"]))])
     async def admin_only():
         """Admin-only endpoint."""
         return {"message": "You have admin access!"}
-    
+
     return app
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     app = create_auth_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)

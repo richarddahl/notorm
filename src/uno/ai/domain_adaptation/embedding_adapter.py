@@ -60,7 +60,7 @@ class EmbeddingTrainingConfig(BaseModel):
     use_amp: bool = True  # Automatic Mixed Precision
     train_test_split: float = 0.1
     random_seed: int = 42
-    checkpoint_path: Optional[str] = None
+    checkpoint_path: str | None = None
     checkpoint_save_steps: int = 1000
 
 
@@ -71,9 +71,9 @@ class EmbeddingAdapterConfig(BaseModel):
     domain: str
     method: FineTuningMethod = FineTuningMethod.CONTRASTIVE
     training: EmbeddingTrainingConfig = Field(default_factory=EmbeddingTrainingConfig)
-    cache_dir: Optional[str] = None
+    cache_dir: str | None = None
     output_dir: str
-    description: Optional[str] = None
+    description: str | None = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
     tokenizer_params: Dict[str, Any] = Field(default_factory=dict)
 
@@ -108,7 +108,7 @@ class DomainEmbeddingAdapter:
     """
 
     def __init__(
-        self, config: EmbeddingAdapterConfig, logger: Optional[logging.Logger] = None
+        self, config: EmbeddingAdapterConfig, logger: logging.Logger | None = None
     ):
         """
         Initialize the domain embedding adapter.
@@ -178,9 +178,9 @@ class DomainEmbeddingAdapter:
 
     async def prepare_contrastive_data(
         self,
-        positive_pairs: List[Tuple[str, str]],
-        negative_pairs: Optional[List[Tuple[str, str]]] = None,
-        hard_negatives: Optional[Dict[str, List[str]]] = None,
+        positive_pairs: list[Tuple[str, str]],
+        negative_pairs: Optional[list[Tuple[str, str]]] = None,
+        hard_negatives: Optional[Dict[str, list[str]]] = None,
     ) -> None:
         """
         Prepare data for contrastive learning.
@@ -236,7 +236,7 @@ class DomainEmbeddingAdapter:
             self.dev_dataset = None
             self.evaluator = None
 
-    async def prepare_triplet_data(self, triplets: List[Tuple[str, str, str]]) -> None:
+    async def prepare_triplet_data(self, triplets: list[Tuple[str, str, str]]) -> None:
         """
         Prepare data for triplet learning.
 
@@ -286,7 +286,7 @@ class DomainEmbeddingAdapter:
             self.evaluator = None
 
     async def prepare_supervised_data(
-        self, text_pairs: List[Tuple[str, str]], similarity_scores: List[float]
+        self, text_pairs: list[Tuple[str, str]], similarity_scores: list[float]
     ) -> None:
         """
         Prepare data for supervised similarity learning.
@@ -478,8 +478,8 @@ class DomainEmbeddingAdapter:
 
     async def evaluate(
         self,
-        test_pairs: List[Tuple[str, str]],
-        test_scores: List[float],
+        test_pairs: list[Tuple[str, str]],
+        test_scores: list[float],
         batch_size: int = 32,
     ) -> Dict[str, float]:
         """
@@ -574,8 +574,8 @@ class DomainEmbeddingAdapter:
                 return np.zeros(self.model.get_sentence_embedding_dimension())
 
     async def embed_batch(
-        self, texts: List[str], batch_size: int = 32
-    ) -> List[np.ndarray]:
+        self, texts: list[str], batch_size: int = 32
+    ) -> list[np.ndarray]:
         """
         Embed a batch of text strings using the domain-adapted model.
 
@@ -642,7 +642,7 @@ class DomainEmbeddingAdapter:
         else:
             raise ValueError(f"Unsupported similarity method: {method}")
 
-    async def export_model(self, export_path: Optional[str] = None) -> str:
+    async def export_model(self, export_path: str | None = None) -> str:
         """
         Export the fine-tuned model for deployment.
 
@@ -689,7 +689,7 @@ async def create_domain_embedding_adapter(
     base_model: str = "all-MiniLM-L6-v2",
     method: Union[str, FineTuningMethod] = FineTuningMethod.CONTRASTIVE,
     output_dir: str = "./domain_models",
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> DomainEmbeddingAdapter:
     """
     Create a domain embedding adapter for a specific domain.

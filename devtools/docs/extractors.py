@@ -25,9 +25,9 @@ class ExtractionResult:
     """Result of a documentation extraction."""
 
     content: Dict[str, Any]
-    source_file: Optional[str] = None
+    source_file: str | None = None
     source_line: Optional[int] = None
-    warnings: List[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class BaseExtractor:
@@ -35,9 +35,9 @@ class BaseExtractor:
 
     def __init__(self):
         """Initialize the extractor."""
-        self.warnings: List[str] = []
+        self.warnings: list[str] = []
 
-    def extract_from_module(self, module_name: str) -> List[ExtractionResult]:
+    def extract_from_module(self, module_name: str) -> list[ExtractionResult]:
         """
         Extract documentation from a module.
 
@@ -54,7 +54,7 @@ class BaseExtractor:
             self.warnings.append(f"Failed to import module {module_name}: {e}")
             return []
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from an object.
 
@@ -250,7 +250,7 @@ class BaseExtractor:
 class ClassExtractor(BaseExtractor):
     """Extractor for class documentation."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from a class.
 
@@ -349,7 +349,7 @@ class ClassExtractor(BaseExtractor):
 class FunctionExtractor(BaseExtractor):
     """Extractor for function documentation."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from a function.
 
@@ -402,7 +402,7 @@ class FunctionExtractor(BaseExtractor):
 class ModuleExtractor(BaseExtractor):
     """Extractor for module documentation."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from a module.
 
@@ -470,7 +470,7 @@ class ModuleExtractor(BaseExtractor):
 class ExampleExtractor(BaseExtractor):
     """Extractor for code examples."""
 
-    def __init__(self, examples_dir: Optional[str] = None):
+    def __init__(self, examples_dir: str | None = None):
         """
         Initialize the example extractor.
 
@@ -480,7 +480,7 @@ class ExampleExtractor(BaseExtractor):
         super().__init__()
         self.examples_dir = examples_dir or "examples"
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract code examples related to an object.
 
@@ -545,7 +545,7 @@ class ExampleExtractor(BaseExtractor):
 
         return result
 
-    def _find_example_files(self, module_name: str) -> List[str]:
+    def _find_example_files(self, module_name: str) -> list[str]:
         """
         Find example files for a module.
 
@@ -620,7 +620,7 @@ class ExampleExtractor(BaseExtractor):
 class APIEndpointExtractor(BaseExtractor):
     """Extractor for API endpoints."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from API endpoints.
 
@@ -952,7 +952,7 @@ class APIEndpointExtractor(BaseExtractor):
 class SQLExtractor(BaseExtractor):
     """Extractor for SQL-related documentation."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract SQL-related documentation.
 
@@ -1072,7 +1072,7 @@ class SQLExtractor(BaseExtractor):
 class ModelExtractor(BaseExtractor):
     """Extractor for model documentation."""
 
-    def extract_from_object(self, obj: Any) -> List[ExtractionResult]:
+    def extract_from_object(self, obj: Any) -> list[ExtractionResult]:
         """
         Extract documentation from a model.
 

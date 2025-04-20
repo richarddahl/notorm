@@ -27,9 +27,9 @@ class Product(Entity):
     """Example product entity."""
 
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     price: float
-    category_id: Optional[str] = None
+    category_id: str | None = None
     is_active: bool = True
 
 
@@ -45,10 +45,10 @@ class ProductRepository(Repository[Product]):
     async def list(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
+        order_by: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = 0,
-    ) -> List[Product]:
+    ) -> list[Product]:
         """List products matching filters."""
         # Implementation would interact with the database
         pass

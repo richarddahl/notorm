@@ -64,7 +64,7 @@ class QueryValueCreate(BaseModel):
     include: Include = Field(Include.INCLUDE, description="Whether to include or exclude matches")
     match: Match = Field(Match.AND, description="AND/OR match type")
     lookup: str = Field("equal", description="The lookup type (equal, contains, etc.)")
-    values: List[Any] = Field(default_factory=list, description="The values to filter by")
+    values: list[Any] = Field(default_factory=list, description="The values to filter by")
 
 
 class QueryValueUpdate(BaseModel):
@@ -74,7 +74,7 @@ class QueryValueUpdate(BaseModel):
     include: Optional[Include] = Field(None, description="Whether to include or exclude matches")
     match: Optional[Match] = Field(None, description="AND/OR match type")
     lookup: Optional[str] = Field(None, description="The lookup type (equal, contains, etc.)")
-    values: Optional[List[Any]] = Field(None, description="The values to filter by")
+    values: Optional[list[Any]] = Field(None, description="The values to filter by")
 
 
 class QueryValueResponse(BaseModel):
@@ -85,7 +85,7 @@ class QueryValueResponse(BaseModel):
     include: Include = Field(..., description="Whether to include or exclude matches")
     match: Match = Field(..., description="AND/OR match type")
     lookup: str = Field(..., description="The lookup type (equal, contains, etc.)")
-    values: List[Any] = Field(..., description="The values to filter by")
+    values: list[Any] = Field(..., description="The values to filter by")
 
 
 class QueryCreate(BaseModel):
@@ -98,7 +98,7 @@ class QueryCreate(BaseModel):
     match_values: Match = Field(Match.AND, description="Whether to match any or all values")
     include_queries: Include = Field(Include.INCLUDE, description="Whether to include or exclude queries")
     match_queries: Match = Field(Match.AND, description="Whether to match any or all queries")
-    values: List[Dict[str, Any]] = Field(default_factory=list, description="The values for the query")
+    values: list[dict[str, Any]] = Field(default_factory=list, description="The values for the query")
 
 
 class QueryUpdate(BaseModel):
@@ -111,7 +111,7 @@ class QueryUpdate(BaseModel):
     match_values: Optional[Match] = Field(None, description="Whether to match any or all values")
     include_queries: Optional[Include] = Field(None, description="Whether to include or exclude queries")
     match_queries: Optional[Match] = Field(None, description="Whether to match any or all queries")
-    values: Optional[List[Dict[str, Any]]] = Field(None, description="The values for the query")
+    values: Optional[list[dict[str, Any]]] = Field(None, description="The values for the query")
 
 
 class QueryResponse(BaseModel):
@@ -125,7 +125,7 @@ class QueryResponse(BaseModel):
     match_values: Match = Field(..., description="Whether to match any or all values")
     include_queries: Include = Field(..., description="Whether to include or exclude queries")
     match_queries: Match = Field(..., description="Whether to match any or all queries")
-    query_values: List[QueryValueResponse] = Field(default_factory=list, description="The values for the query")
+    query_values: list[QueryValueResponse] = Field(default_factory=list, description="The values for the query")
 
 
 class QueryExecuteRequest(BaseModel):
@@ -138,7 +138,7 @@ class QueryExecuteRequest(BaseModel):
 class QueryExecuteResponse(BaseModel):
     """Schema for query execution results."""
 
-    results: List[str] = Field(..., description="The IDs of matching records")
+    results: list[str] = Field(..., description="The IDs of matching records")
     count: int = Field(..., description="The number of matching records")
 
 
@@ -183,7 +183,7 @@ class QueryWithFiltersRequest(BaseModel):
 class QueryWithFiltersResponse(BaseModel):
     """Schema for query with filters results."""
 
-    results: List[Dict[str, Any]] = Field(..., description="The matching entities")
+    results: list[dict[str, Any]] = Field(..., description="The matching entities")
     count: int = Field(..., description="The number of matching entities")
 
 
@@ -242,7 +242,7 @@ async def create_query(
     return result.value
 
 
-@query_router.get("", response_model=List[QueryResponse])
+@query_router.get("", response_model=list[QueryResponse])
 async def list_queries(
     meta_type_id: Optional[str] = QueryParam(None, description="Filter by meta type ID"),
     query_service: QueryService = Depends(get_query_service),
@@ -398,7 +398,7 @@ async def execute_query_with_filters(
     return QueryWithFiltersResponse(results=entities, count=count)
 
 
-@query_path_router.post("/generate", response_model=List[QueryPathResponse])
+@query_path_router.post("/generate", response_model=list[QueryPathResponse])
 async def generate_query_paths(
     generate_request: QueryPathGenerateRequest = Body(...),
     query_path_service: QueryPathService = Depends(get_query_path_service),

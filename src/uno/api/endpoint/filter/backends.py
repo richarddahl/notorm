@@ -17,33 +17,33 @@ logger = logging.getLogger(__name__)
 class SqlFilterBackend(FilterBackend):
     """
     SQL filter backend.
-    
+
     This backend uses SQL queries for filtering entities. It works with any SQL database.
     """
-    
+
     def __init__(self, session_factory):
         """
         Initialize a new SQL filter backend.
-        
+
         Args:
             session_factory: Factory for creating database sessions
         """
         self.session_factory = session_factory
-    
+
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
         *,
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         include_count: bool = True,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """
         Filter entities based on criteria using SQL.
-        
+
         Args:
             entity_type: The type of entity to filter
             filter_criteria: Filter criteria as a dictionary or list of query parameters
@@ -52,7 +52,7 @@ class SqlFilterBackend(FilterBackend):
             limit: Optional maximum number of results to return
             offset: Optional offset for pagination
             include_count: Whether to include the total count of matching entities
-            
+
         Returns:
             Tuple of (list of entity IDs, total count if include_count is True)
         """
@@ -68,30 +68,30 @@ class SqlFilterBackend(FilterBackend):
                 limit=limit,
                 offset=offset,
             )
-            
+
             # Execute query to get entity IDs
             result = await session.execute(query)
             entity_ids = [row[0] for row in result.fetchall()]
-            
+
             # Get total count if requested
             total = None
             if include_count:
                 total = await self.count_entities(entity_type, filter_criteria)
-            
+
             return entity_ids, total
-    
+
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
     ) -> int:
         """
         Count entities based on criteria using SQL.
-        
+
         Args:
             entity_type: The type of entity to count
             filter_criteria: Filter criteria as a dictionary or list of query parameters
-            
+
         Returns:
             Total count of matching entities
         """
@@ -103,26 +103,26 @@ class SqlFilterBackend(FilterBackend):
                 entity_type=entity_type,
                 filter_criteria=filter_criteria,
             )
-            
+
             # Execute query to get count
             result = await session.execute(query)
             count = result.scalar()
-            
+
             return count or 0
-    
+
     async def _build_sql_query(
         self,
         session,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ):
         """
         Build a SQL query for filtering entities.
-        
+
         Args:
             session: Database session
             entity_type: The type of entity to filter
@@ -131,7 +131,7 @@ class SqlFilterBackend(FilterBackend):
             sort_dir: Optional sort directions
             limit: Optional maximum number of results
             offset: Optional offset for pagination
-            
+
         Returns:
             SQL query
         """
@@ -139,21 +139,21 @@ class SqlFilterBackend(FilterBackend):
         # This is a placeholder that would need to be implemented
         # with the actual SQL query building logic
         pass
-    
+
     async def _build_sql_count_query(
         self,
         session,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
     ):
         """
         Build a SQL query for counting entities.
-        
+
         Args:
             session: Database session
             entity_type: The type of entity to count
             filter_criteria: Filter criteria
-            
+
         Returns:
             SQL count query
         """
@@ -166,57 +166,57 @@ class SqlFilterBackend(FilterBackend):
 class GraphFilterBackend(FilterBackend):
     """
     Apache AGE graph filter backend.
-    
+
     This backend uses the Apache AGE knowledge graph for filtering entities.
     It offers more powerful relationship-based filtering capabilities than SQL.
     """
-    
+
     def __init__(self, session_factory, fallback_backend=None):
         """
         Initialize a new graph filter backend.
-        
+
         Args:
             session_factory: Factory for creating database sessions
             fallback_backend: Optional backend to use if Apache AGE is not available
         """
         self.session_factory = session_factory
         self.fallback_backend = fallback_backend
-        
+
         # Check if Apache AGE is available
         self.age_available = self._check_age_available()
-        
+
         if not self.age_available and not self.fallback_backend:
             logger.warning(
                 "Apache AGE is not available and no fallback backend was provided. "
                 "Filtering operations will fail. Consider providing a fallback backend "
                 "like SqlFilterBackend."
             )
-    
+
     def _check_age_available(self) -> bool:
         """
         Check if Apache AGE is available in the database.
-        
+
         Returns:
             True if Apache AGE is available, False otherwise
         """
         # This would check if Apache AGE is installed in the database
         # For now, we assume it is available
         return True
-    
+
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
         *,
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         include_count: bool = True,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """
         Filter entities based on criteria using Apache AGE.
-        
+
         Args:
             entity_type: The type of entity to filter
             filter_criteria: Filter criteria as a dictionary or list of query parameters
@@ -225,7 +225,7 @@ class GraphFilterBackend(FilterBackend):
             limit: Optional maximum number of results to return
             offset: Optional offset for pagination
             include_count: Whether to include the total count of matching entities
-            
+
         Returns:
             Tuple of (list of entity IDs, total count if include_count is True)
         """
@@ -242,8 +242,10 @@ class GraphFilterBackend(FilterBackend):
                     include_count=include_count,
                 )
             else:
-                raise RuntimeError("Apache AGE is not available and no fallback backend was provided.")
-        
+                raise RuntimeError(
+                    "Apache AGE is not available and no fallback backend was provided."
+                )
+
         # Get a database session
         async with self.session_factory() as session:
             # Build and execute Cypher query
@@ -255,35 +257,35 @@ class GraphFilterBackend(FilterBackend):
                 limit=limit,
                 offset=offset,
             )
-            
+
             # Execute Cypher query
             result = await session.execute(
                 f"SELECT * FROM cypher('graph', $cypher, $params) AS (id agtype)",
                 {"cypher": cypher_query, "params": params},
             )
-            
+
             # Extract entity IDs from result
             entity_ids = [row[0] for row in result.fetchall()]
-            
+
             # Get total count if requested
             total = None
             if include_count:
                 total = await self.count_entities(entity_type, filter_criteria)
-            
+
             return entity_ids, total
-    
+
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
     ) -> int:
         """
         Count entities based on criteria using Apache AGE.
-        
+
         Args:
             entity_type: The type of entity to count
             filter_criteria: Filter criteria as a dictionary or list of query parameters
-            
+
         Returns:
             Total count of matching entities
         """
@@ -295,8 +297,10 @@ class GraphFilterBackend(FilterBackend):
                     filter_criteria=filter_criteria,
                 )
             else:
-                raise RuntimeError("Apache AGE is not available and no fallback backend was provided.")
-        
+                raise RuntimeError(
+                    "Apache AGE is not available and no fallback backend was provided."
+                )
+
         # Get a database session
         async with self.session_factory() as session:
             # Build and execute Cypher count query
@@ -304,30 +308,30 @@ class GraphFilterBackend(FilterBackend):
                 entity_type=entity_type,
                 filter_criteria=filter_criteria,
             )
-            
+
             # Execute Cypher query
             result = await session.execute(
                 f"SELECT * FROM cypher('graph', $cypher, $params) AS (count agtype)",
                 {"cypher": cypher_query, "params": params},
             )
-            
+
             # Extract count from result
             count = result.scalar()
-            
+
             return count or 0
-    
+
     def _build_cypher_query(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> tuple[str, Dict[str, Any]]:
         """
         Build a Cypher query for filtering entities.
-        
+
         Args:
             entity_type: The type of entity to filter
             filter_criteria: Filter criteria
@@ -335,7 +339,7 @@ class GraphFilterBackend(FilterBackend):
             sort_dir: Optional sort directions
             limit: Optional maximum number of results
             offset: Optional offset for pagination
-            
+
         Returns:
             Tuple of (Cypher query, query parameters)
         """
@@ -344,72 +348,76 @@ class GraphFilterBackend(FilterBackend):
             parameters = []
             for field, value in filter_criteria.items():
                 if isinstance(value, dict) and "operator" in value and "value" in value:
-                    parameters.append(QueryParameter(
-                        field=field,
-                        operator=value["operator"],
-                        value=value["value"],
-                    ))
+                    parameters.append(
+                        QueryParameter(
+                            field=field,
+                            operator=value["operator"],
+                            value=value["value"],
+                        )
+                    )
                 else:
-                    parameters.append(QueryParameter(
-                        field=field,
-                        operator="eq",
-                        value=value,
-                    ))
+                    parameters.append(
+                        QueryParameter(
+                            field=field,
+                            operator="eq",
+                            value=value,
+                        )
+                    )
         else:
             parameters = filter_criteria
-        
+
         # Start building the Cypher query
         query = f"MATCH (n:{entity_type})"
-        
+
         # Add filter conditions
         if parameters:
             conditions = []
             params = {}
-            
+
             for i, param in enumerate(parameters):
                 condition, param_values = self._build_condition(param, i)
                 conditions.append(condition)
                 params.update(param_values)
-            
+
             if conditions:
                 query += f" WHERE {' AND '.join(conditions)}"
         else:
             params = {}
-        
+
         # Add sorting
         if sort_by and sort_dir:
             sort_clauses = []
             for i, field in enumerate(sort_by):
                 direction = sort_dir[i] if i < len(sort_dir) else "asc"
                 sort_clauses.append(f"n.{field} {direction}")
-            
+
             if sort_clauses:
                 query += f" ORDER BY {', '.join(sort_clauses)}"
-        
+
         # Add limit and offset
         if limit is not None:
             query += f" LIMIT {limit}"
-        
+
         if offset is not None:
             query += f" SKIP {offset}"
-        
+
         # Return only the ID
         query += " RETURN n.id"
-        
+
         return query, params
-    
+
     def _build_cypher_count_query(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
     ) -> tuple[str, Dict[str, Any]]:
         """
         Build a Cypher query for counting entities.
-        
+
         Args:
             entity_type: The type of entity to count
             filter_criteria: Filter criteria
-            
+
         Returns:
             Tuple of (Cypher count query, query parameters)
         """
@@ -418,51 +426,57 @@ class GraphFilterBackend(FilterBackend):
             parameters = []
             for field, value in filter_criteria.items():
                 if isinstance(value, dict) and "operator" in value and "value" in value:
-                    parameters.append(QueryParameter(
-                        field=field,
-                        operator=value["operator"],
-                        value=value["value"],
-                    ))
+                    parameters.append(
+                        QueryParameter(
+                            field=field,
+                            operator=value["operator"],
+                            value=value["value"],
+                        )
+                    )
                 else:
-                    parameters.append(QueryParameter(
-                        field=field,
-                        operator="eq",
-                        value=value,
-                    ))
+                    parameters.append(
+                        QueryParameter(
+                            field=field,
+                            operator="eq",
+                            value=value,
+                        )
+                    )
         else:
             parameters = filter_criteria
-        
+
         # Start building the Cypher query
         query = f"MATCH (n:{entity_type})"
-        
+
         # Add filter conditions
         if parameters:
             conditions = []
             params = {}
-            
+
             for i, param in enumerate(parameters):
                 condition, param_values = self._build_condition(param, i)
                 conditions.append(condition)
                 params.update(param_values)
-            
+
             if conditions:
                 query += f" WHERE {' AND '.join(conditions)}"
         else:
             params = {}
-        
+
         # Return count
         query += " RETURN count(n)"
-        
+
         return query, params
-    
-    def _build_condition(self, param: QueryParameter, index: int) -> tuple[str, Dict[str, Any]]:
+
+    def _build_condition(
+        self, param: QueryParameter, index: int
+    ) -> tuple[str, Dict[str, Any]]:
         """
         Build a Cypher condition for a query parameter.
-        
+
         Args:
             param: Query parameter
             index: Parameter index for generating unique parameter names
-            
+
         Returns:
             Tuple of (condition string, parameter values)
         """
@@ -471,7 +485,7 @@ class GraphFilterBackend(FilterBackend):
         value = param.value
         param_name = f"p{index}"
         params = {}
-        
+
         # Handle different operators
         if operator == FilterOperator.EQUAL or operator == "eq":
             condition = f"n.{field} = ${param_name}"
@@ -512,11 +526,15 @@ class GraphFilterBackend(FilterBackend):
             condition = f"n.{field} IS NOT NULL"
         elif operator == FilterOperator.BETWEEN or operator == "between":
             if not isinstance(value, list) or len(value) != 2:
-                raise ValueError(f"Operator 'between' requires a list of 2 values, got {value}")
-            condition = f"n.{field} >= ${param_name}_min AND n.{field} <= ${param_name}_max"
+                raise ValueError(
+                    f"Operator 'between' requires a list of 2 values, got {value}"
+                )
+            condition = (
+                f"n.{field} >= ${param_name}_min AND n.{field} <= ${param_name}_max"
+            )
             params[f"{param_name}_min"] = value[0]
             params[f"{param_name}_max"] = value[1]
         else:
             raise ValueError(f"Unsupported operator: {operator}")
-        
+
         return condition, params

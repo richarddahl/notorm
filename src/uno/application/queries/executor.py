@@ -21,7 +21,7 @@ from typing import Any, Optional
 from sqlalchemy import select, text
 
 from uno.core.caching import QueryCache, get_cache_manager
-from uno.core.errors.result import Failure, Result, Success
+from uno.core.errors.result import Result
 from uno.enums import Include, Match
 from uno.queries.errors import (
     QueryExecutionError,
@@ -36,10 +36,10 @@ try:
 except ImportError:
     AsyncSession = Any
 
+
 # Stub for enhanced_async_session if undefined (remove if defined elsewhere)
 def enhanced_async_session():
-    raise NotImplementedError('enhanced_async_session is not implemented')
-
+    raise NotImplementedError("enhanced_async_session is not implemented")
 
 
 class QueryExecutor:
@@ -234,7 +234,7 @@ class QueryExecutor:
     async def _execute_query_fresh(
         self,
         query: Query,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[list[str]]:
         """
         Execute a query without using the cache.
@@ -403,7 +403,9 @@ class QueryExecutor:
                 )
                 value_results.append(result_ids)
             except Exception as e:
-                self._log_query_value_error(e, qv, path, value_ids, query_id, query_strategy)
+                self._log_query_value_error(
+                    e, qv, path, value_ids, query_id, query_strategy
+                )
                 continue
         return self._combine_query_value_results(value_results, match)
 
@@ -442,9 +444,7 @@ class QueryExecutor:
         return None
 
     def _log_query_value_error(self, e, qv, path, value_ids, query_id, query_strategy):
-        self.logger.error(
-            f"Error executing query for path {path.cypher_path}: {e}"
-        )
+        self.logger.error(f"Error executing query for path {path.cypher_path}: {e}")
         error_context = {
             "path_id": qv.query_path_id,
             "cypher_path": path.cypher_path,
@@ -937,7 +937,7 @@ class QueryExecutor:
         self,
         query: Query,
         record_id: str,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """
         Check if a record matches a query without using the cache.
@@ -1005,7 +1005,7 @@ class QueryExecutor:
         self,
         query: Query,
         record_id: str,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[bool]:
         """
         Check if a record matches a query using a direct EXISTS check.
@@ -1488,7 +1488,7 @@ class QueryExecutor:
     async def count_query_matches(
         self,
         query: Query,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         force_refresh: bool = False,
     ) -> Result[int]:
         """
@@ -1598,7 +1598,7 @@ class QueryExecutor:
     async def _count_direct(
         self,
         query: Query,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[int]:
         """
         Count matching records using an optimized COUNT query.
@@ -1833,9 +1833,7 @@ class QueryExecutor:
             count2 = await record_cache.invalidate(key_prefix=f"record:{query_id}")
 
             total = count + count2
-            self.logger.debug(
-                f"Invalidated {total} cache entries for query {query_id}"
-            )
+            self.logger.debug(f"Invalidated {total} cache entries for query {query_id}")
             return total
 
         except Exception as e:
@@ -1924,10 +1922,10 @@ def get_query_executor() -> QueryExecutor:
 # Decorator for query result caching
 def cache_query_result(
     ttl: Optional[int] = 300,
-    key_prefix: Optional[str] = None,
-    tags: Optional[List[str]] = None,
+    key_prefix: str | None = None,
+    tags: list[str] | None = None,
     cache_null_results: bool = True,
-    ignore_params: Optional[List[str]] = None,
+    ignore_params: list[str] | None = None,
 ) -> Callable:
     """
     Decorator for caching query execution results.

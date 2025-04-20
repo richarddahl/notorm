@@ -45,7 +45,7 @@ class DocumentIndexRequest(BaseModel):
 class BatchIndexRequest(BaseModel):
     """Request model for batch indexing documents."""
 
-    documents: List[DocumentIndexRequest] = Field(
+    documents: list[DocumentIndexRequest] = Field(
         ..., description="List of documents to index"
     )
 
@@ -53,7 +53,7 @@ class BatchIndexRequest(BaseModel):
 class IndexResponse(BaseModel):
     """Response model for indexing operations."""
 
-    ids: List[int] = Field(..., description="IDs of indexed documents")
+    ids: list[int] = Field(..., description="IDs of indexed documents")
 
 
 class SearchRequest(BaseModel):
@@ -97,7 +97,7 @@ class DeleteResponse(BaseModel):
 def create_search_router(
     engine: SemanticSearchEngine,
     prefix: str = "/semantic",
-    tags: List[str] = ["semantic-search"],
+    tags: list[str] = ["semantic-search"],
 ) -> APIRouter:
     """
     Create a FastAPI router for semantic search endpoints.
@@ -167,7 +167,7 @@ def create_search_router(
                 status_code=500, detail=f"Failed to index batch: {str(e)}"
             )
 
-    @router.post("/search", response_model=List[SearchResult])
+    @router.post("/search", response_model=list[SearchResult])
     async def semantic_search(request: SearchRequest):
         """
         Search for documents similar to the query.
@@ -220,7 +220,7 @@ def create_search_router(
             logger.error(f"Error deleting document: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
 
-    @router.get("/search", response_model=List[SearchResult])
+    @router.get("/search", response_model=list[SearchResult])
     async def semantic_search_get(
         query: str = Query(..., description="Search query text"),
         entity_type: Optional[str] = Query(None, description="Filter by entity type"),
@@ -301,7 +301,7 @@ def integrate_semantic_search(
     app,
     connection_string: str,
     prefix: str = "/api/semantic",
-    tags: List[str] = ["semantic-search"],
+    tags: list[str] = ["semantic-search"],
 ):
     """
     Integrate semantic search into a FastAPI application.

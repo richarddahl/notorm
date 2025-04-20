@@ -7,7 +7,15 @@ This module provides classes for implementing the Command Query Responsibility S
 
 from typing import Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 from pydantic import BaseModel
 
 from uno.core.errors.result import Result
@@ -17,7 +25,7 @@ from . import EndpointProtocol, IdType, RequestModel, ResponseModel
 from .base import BaseEndpoint, CommandEndpoint, QueryEndpoint
 
 __all__ = [
-    "QueryHandler", 
+    "QueryHandler",
     "CommandHandler",
     "CqrsEndpoint",
 ]
@@ -25,7 +33,7 @@ __all__ = [
 
 class QueryHandler(Generic[RequestModel, ResponseModel]):
     """Handler for a query operation in a CQRS endpoint."""
-    
+
     def __init__(
         self,
         service: Union[ApplicationService, DomainService],
@@ -36,7 +44,7 @@ class QueryHandler(Generic[RequestModel, ResponseModel]):
     ):
         """
         Initialize a new query handler.
-        
+
         Args:
             service: The service to use for query operations.
             response_model: The Pydantic model for responses.
@@ -53,7 +61,7 @@ class QueryHandler(Generic[RequestModel, ResponseModel]):
 
 class CommandHandler(Generic[RequestModel, ResponseModel]):
     """Handler for a command operation in a CQRS endpoint."""
-    
+
     def __init__(
         self,
         service: Union[ApplicationService, DomainService],
@@ -64,7 +72,7 @@ class CommandHandler(Generic[RequestModel, ResponseModel]):
     ):
         """
         Initialize a new command handler.
-        
+
         Args:
             service: The service to use for command operations.
             command_model: The Pydantic model for command data.
@@ -82,23 +90,23 @@ class CommandHandler(Generic[RequestModel, ResponseModel]):
 class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
     """
     Endpoint that implements the CQRS pattern.
-    
+
     This class provides a way to create API endpoints that follow the Command Query
     Responsibility Segregation (CQRS) pattern, separating read and write operations.
     """
-    
+
     def __init__(
         self,
         *,
-        queries: List[QueryHandler] = None,
-        commands: List[CommandHandler] = None,
+        queries: list[QueryHandler] = None,
+        commands: list[CommandHandler] = None,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         base_path: str = "",
     ):
         """
         Initialize a new CQRS endpoint instance.
-        
+
         Args:
             queries: List of query handlers for this endpoint.
             commands: List of command handlers for this endpoint.
@@ -110,10 +118,10 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
         self.queries = queries or []
         self.commands = commands or []
         self.base_path = base_path
-        
+
         # Register all query and command handlers
         self._register_handlers()
-    
+
     def _register_handlers(self) -> None:
         """Register all query and command handlers."""
         # Register query handlers
@@ -128,7 +136,7 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
                 path=path,
                 method=query.method,
             )
-        
+
         # Register command handlers
         for command in self.commands:
             path = f"{self.base_path}{command.path}"
@@ -141,20 +149,20 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
                 path=path,
                 method=command.method,
             )
-    
+
     def add_query(self, query: QueryHandler) -> "CqrsEndpoint":
         """
         Add a query handler to this endpoint.
-        
+
         Args:
             query: The query handler to add.
-            
+
         Returns:
             This endpoint instance for chaining.
         """
         self.queries.append(query)
         path = f"{self.base_path}{query.path}"
-        
+
         # Register the query handler
         endpoint = QueryEndpoint(
             service=query.service,
@@ -165,22 +173,22 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
             path=path,
             method=query.method,
         )
-        
+
         return self
-    
+
     def add_command(self, command: CommandHandler) -> "CqrsEndpoint":
         """
         Add a command handler to this endpoint.
-        
+
         Args:
             command: The command handler to add.
-            
+
         Returns:
             This endpoint instance for chaining.
         """
         self.commands.append(command)
         path = f"{self.base_path}{command.path}"
-        
+
         # Register the command handler
         endpoint = CommandEndpoint(
             service=command.service,
@@ -191,5 +199,5 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
             path=path,
             method=command.method,
         )
-        
+
         return self

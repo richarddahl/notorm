@@ -131,7 +131,7 @@ class TenantRbacService(RbacService):
     def update_tenant(
         self,
         tenant_id: str,
-        name: Optional[str] = None,
+        name: str | None = None,
         active: Optional[bool] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Optional[Tenant]:
@@ -199,8 +199,8 @@ class TenantRbacService(RbacService):
     def create_role(
         self,
         name: str,
-        permissions: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
+        permissions: list[str] | None = None,
+        tenant_id: str | None = None,
     ) -> Role:
         """
         Create a new role, optionally tenant-specific.
@@ -245,7 +245,7 @@ class TenantRbacService(RbacService):
             # Global role (use parent implementation)
             return super().create_role(name, permissions)
 
-    def get_role(self, name: str, tenant_id: Optional[str] = None) -> Optional[Role]:
+    def get_role(self, name: str, tenant_id: str | None = None) -> Optional[Role]:
         """
         Get a role by name, optionally from a specific tenant.
 
@@ -265,7 +265,7 @@ class TenantRbacService(RbacService):
             return super().get_role(name)
 
     def update_role(
-        self, name: str, permissions: List[str], tenant_id: Optional[str] = None
+        self, name: str, permissions: list[str], tenant_id: str | None = None
     ) -> Optional[Role]:
         """
         Update a role's permissions, optionally in a specific tenant.
@@ -297,7 +297,7 @@ class TenantRbacService(RbacService):
             # Global role
             return super().update_role(name, permissions)
 
-    def delete_role(self, name: str, tenant_id: Optional[str] = None) -> bool:
+    def delete_role(self, name: str, tenant_id: str | None = None) -> bool:
         """
         Delete a role, optionally from a specific tenant.
 
@@ -331,9 +331,9 @@ class TenantRbacService(RbacService):
     def create_user(
         self,
         user_id: str,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
+        roles: list[str] | None = None,
+        permissions: list[str] | None = None,
+        tenant_id: str | None = None,
     ) -> User:
         """
         Create a new user, optionally in a specific tenant.
@@ -391,7 +391,7 @@ class TenantRbacService(RbacService):
             # Global user (use parent implementation)
             return super().create_user(user_id, roles, permissions)
 
-    def get_user(self, user_id: str, tenant_id: Optional[str] = None) -> Optional[User]:
+    def get_user(self, user_id: str, tenant_id: str | None = None) -> Optional[User]:
         """
         Get a user by ID, optionally from a specific tenant.
 
@@ -410,7 +410,7 @@ class TenantRbacService(RbacService):
             # Global user
             return super().get_user(user_id)
 
-    def get_user_tenants(self, user_id: str) -> List[str]:
+    def get_user_tenants(self, user_id: str) -> list[str]:
         """
         Get the IDs of all tenants a user belongs to.
 
@@ -426,8 +426,8 @@ class TenantRbacService(RbacService):
         self,
         user_id: str,
         tenant_id: str,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None,
+        roles: list[str] | None = None,
+        permissions: list[str] | None = None,
     ) -> bool:
         """
         Add a user to a tenant.
@@ -493,7 +493,7 @@ class TenantRbacService(RbacService):
         return True
 
     def has_permission(
-        self, user_id: str, permission: str, tenant_id: Optional[str] = None
+        self, user_id: str, permission: str, tenant_id: str | None = None
     ) -> bool:
         """
         Check if a user has a specific permission, optionally in a specific tenant.
@@ -518,8 +518,8 @@ class TenantRbacService(RbacService):
             return super().has_permission(user_id, permission)
 
     def get_user_permissions(
-        self, user_id: str, tenant_id: Optional[str] = None
-    ) -> List[str]:
+        self, user_id: str, tenant_id: str | None = None
+    ) -> list[str]:
         """
         Get all permissions a user has, optionally in a specific tenant.
 
@@ -542,7 +542,7 @@ class TenantRbacService(RbacService):
             return super().get_user_permissions(user_id)
 
     def create_service_context(
-        self, user_id: str, tenant_id: Optional[str] = None
+        self, user_id: str, tenant_id: str | None = None
     ) -> ServiceContext:
         """
         Create a service context for a user, optionally in a specific tenant.
@@ -587,7 +587,7 @@ class TenantRbacService(RbacService):
         resource: str,
         action: str,
         target: Optional[Any] = None,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> bool:
         """
         Check if a user is authorized to perform an action on a resource.
@@ -622,7 +622,7 @@ class MultiTenantAuthorizationService(AuthorizationService):
     def __init__(
         self,
         rbac_service: Optional[TenantRbacService] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the multi-tenant authorization service.
@@ -638,7 +638,7 @@ class MultiTenantAuthorizationService(AuthorizationService):
         self._tenant_policies: Dict[str, Dict[str, AuthorizationPolicy]] = {}
 
     def register_policy(
-        self, policy: AuthorizationPolicy, tenant_id: Optional[str] = None
+        self, policy: AuthorizationPolicy, tenant_id: str | None = None
     ) -> None:
         """
         Register an authorization policy, optionally for a specific tenant.
@@ -660,7 +660,7 @@ class MultiTenantAuthorizationService(AuthorizationService):
             super().register_policy(policy)
 
     def get_policy(
-        self, resource: str, action: str, tenant_id: Optional[str] = None
+        self, resource: str, action: str, tenant_id: str | None = None
     ) -> Optional[AuthorizationPolicy]:
         """
         Get a policy for a specific resource and action, optionally from a specific tenant.

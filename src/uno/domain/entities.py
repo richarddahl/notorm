@@ -11,6 +11,7 @@ from typing import ClassVar, List, Optional, Dict, Any
 
 from uno.domain.core import Entity, AggregateRoot
 from uno.core.base.error import ValidationError
+from uno.core.errors.result import Result
 
 
 @dataclass
@@ -22,8 +23,8 @@ class BaseValue(AggregateRoot[str]):
     """
 
     name: str
-    group_id: Optional[str] = None
-    tenant_id: Optional[str] = None
+    group_id: str | None = None
+    tenant_id: str | None = None
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = ""
@@ -31,8 +32,8 @@ class BaseValue(AggregateRoot[str]):
     def validate(self) -> Result[None, str]:
         """Validate the value."""
         if not self.name:
-            return Failure[None, str]("Name cannot be empty")
-        return Success[None, str](None)
+            return Result.failure("Name cannot be empty")
+        return Result.success(None)
 
 
 @dataclass
@@ -48,8 +49,8 @@ class Attachment(BaseValue):
         if base_result.is_failure():
             return base_result
         if not self.file_path:
-            return Failure[None, str]("File path cannot be empty")
-        return Success[None, str](None)
+            return Result.failure("File path cannot be empty")
+        return Result.success(None)
 
 
 @dataclass
@@ -65,8 +66,8 @@ class BooleanValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, bool):
-            return Failure[None, str]("Value must be a boolean")
-        return Success[None, str](None)
+            return Result.failure("Value must be a boolean")
+        return Result.success(None)
 
 
 @dataclass
@@ -82,8 +83,8 @@ class DateTimeValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, datetime.datetime):
-            return Failure[None, str]("Value must be a datetime")
-        return Success[None, str](None)
+            return Result.failure("Value must be a datetime")
+        return Result.success(None)
 
 
 @dataclass
@@ -99,8 +100,8 @@ class DateValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, datetime.date):
-            return Failure[None, str]("Value must be a date")
-        return Success[None, str](None)
+            return Result.failure("Value must be a date")
+        return Result.success(None)
 
 
 @dataclass
@@ -116,8 +117,8 @@ class DecimalValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, decimal.Decimal):
-            return Failure[None, str]("Value must be a decimal")
-        return Success[None, str](None)
+            return Result.failure("Value must be a decimal")
+        return Result.success(None)
 
 
 @dataclass
@@ -133,8 +134,8 @@ class IntegerValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, int):
-            return Failure[None, str]("Value must be an integer")
-        return Success[None, str](None)
+            return Result.failure("Value must be an integer")
+        return Result.success(None)
 
 
 @dataclass
@@ -150,8 +151,8 @@ class TextValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, str):
-            return Failure[None, str]("Value must be a string")
-        return Success[None, str](None)
+            return Result.failure("Value must be a string")
+        return Result.success(None)
 
 
 @dataclass
@@ -167,5 +168,5 @@ class TimeValue(BaseValue):
         if base_result.is_failure():
             return base_result
         if not isinstance(self.value, datetime.time):
-            return Failure[None, str]("Value must be a time")
-        return Success[None, str](None)
+            return Result.failure("Value must be a time")
+        return Result.success(None)

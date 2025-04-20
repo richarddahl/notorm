@@ -10,15 +10,16 @@ from fastapi import FastAPI, APIRouter
 
 from uno.domain.domain_endpoints import attribute_router, attribute_type_router
 
+
 def register_attributes_endpoints(
     app_or_router: Union[FastAPI, APIRouter],
     path_prefix: str = "/api/v1",
-    dependencies: Optional[List[Any]] = None,
+    dependencies: Optional[list[Any]] = None,
     include_auth: bool = True,
 ) -> Dict[str, Any]:
     """
     Register all attribute-related API endpoints (attributes and attribute types).
-    
+
     Args:
         app_or_router: FastAPI app or APIRouter
         path_prefix: API version prefix
@@ -27,7 +28,9 @@ def register_attributes_endpoints(
     """
     # Register routers with standardized prefixes
     app_or_router.include_router(attribute_router, prefix=f"{path_prefix}/attributes")
-    app_or_router.include_router(attribute_type_router, prefix=f"{path_prefix}/attribute-types")
+    app_or_router.include_router(
+        attribute_type_router, prefix=f"{path_prefix}/attribute-types"
+    )
     return {
         "attributes": attribute_router,
         "attribute_types": attribute_type_router,

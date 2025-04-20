@@ -15,7 +15,18 @@ import logging
 import uuid
 from datetime import datetime, UTC
 from enum import Enum, auto
-from typing import Dict, List, Any, Optional, Set, Type, Callable, Awaitable, TypeVar, Union
+from typing import (
+    Dict,
+    List,
+    Any,
+    Optional,
+    Set,
+    Type,
+    Callable,
+    Awaitable,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel, Field
 
@@ -30,6 +41,7 @@ T = TypeVar("T")
 
 class TwoPhaseStatus(Enum):
     """Status of a two-phase commit participant."""
+
     INIT = auto()
     PREPARING = auto()
     PREPARED = auto()
@@ -42,17 +54,19 @@ class TwoPhaseStatus(Enum):
 
 class ResourceStatus(BaseModel):
     """Status of a resource in a distributed transaction."""
+
     resource_id: str
     resource_type: str
     status: TwoPhaseStatus = TwoPhaseStatus.INIT
     prepare_time: Optional[datetime] = None
     commit_time: Optional[datetime] = None
     rollback_time: Optional[datetime] = None
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class Participant(BaseModel):
     """A participant in a distributed transaction."""
+
     participant_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     resource_type: str
@@ -61,6 +75,7 @@ class Participant(BaseModel):
 
 class DistributedTransaction(BaseModel):
     """Represents a distributed transaction across multiple services."""
+
     transaction_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     coordinator_id: str
     status: TwoPhaseStatus = TwoPhaseStatus.INIT
@@ -138,7 +153,7 @@ class UnitOfWorkParticipant(TransactionParticipant):
         self,
         unit_of_work: AbstractUnitOfWork,
         name: str,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the Unit of Work participant.
@@ -174,11 +189,13 @@ class UnitOfWorkParticipant(TransactionParticipant):
             return Result.ok(True)
         except Exception as e:
             self.logger.error(f"Failed to prepare transaction {transaction_id}: {e}")
-            return Result.err(Error(
-                message=f"Failed to prepare transaction: {str(e)}",
-                error_code="PREPARE_FAILED",
-                context={"transaction_id": transaction_id}
-            ))
+            return Result.err(
+                Error(
+                    message=f"Failed to prepare transaction: {str(e)}",
+                    error_code="PREPARE_FAILED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
     async def commit(self, transaction_id: str) -> Result[bool, Error]:
         """
@@ -191,11 +208,13 @@ class UnitOfWorkParticipant(TransactionParticipant):
             Result indicating success or failure
         """
         if transaction_id not in self._prepared_transactions:
-            return Result.err(Error(
-                message=f"Transaction {transaction_id} not prepared",
-                error_code="TRANSACTION_NOT_PREPARED",
-                context={"transaction_id": transaction_id}
-            ))
+            return Result.err(
+                Error(
+                    message=f"Transaction {transaction_id} not prepared",
+                    error_code="TRANSACTION_NOT_PREPARED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
         try:
             # Commit the transaction
@@ -211,11 +230,13 @@ class UnitOfWorkParticipant(TransactionParticipant):
             return Result.ok(True)
         except Exception as e:
             self.logger.error(f"Failed to commit transaction {transaction_id}: {e}")
-            return Result.err(Error(
-                message=f"Failed to commit transaction: {str(e)}",
-                error_code="COMMIT_FAILED",
-                context={"transaction_id": transaction_id}
-            ))
+            return Result.err(
+                Error(
+                    message=f"Failed to commit transaction: {str(e)}",
+                    error_code="COMMIT_FAILED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
     async def rollback(self, transaction_id: str) -> Result[bool, Error]:
         """
@@ -228,11 +249,13 @@ class UnitOfWorkParticipant(TransactionParticipant):
             Result indicating success or failure
         """
         if transaction_id not in self._prepared_transactions:
-            return Result.err(Error(
-                message=f"Transaction {transaction_id} not prepared",
-                error_code="TRANSACTION_NOT_PREPARED",
-                context={"transaction_id": transaction_id}
-            ))
+            return Result.err(
+                Error(
+                    message=f"Transaction {transaction_id} not prepared",
+                    error_code="TRANSACTION_NOT_PREPARED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
         try:
             # Rollback the transaction
@@ -245,11 +268,13 @@ class UnitOfWorkParticipant(TransactionParticipant):
             return Result.ok(True)
         except Exception as e:
             self.logger.error(f"Failed to rollback transaction {transaction_id}: {e}")
-            return Result.err(Error(
-                message=f"Failed to rollback transaction: {str(e)}",
-                error_code="ROLLBACK_FAILED",
-                context={"transaction_id": transaction_id}
-            ))
+            return Result.err(
+                Error(
+                    message=f"Failed to rollback transaction: {str(e)}",
+                    error_code="ROLLBACK_FAILED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
 
 class EventStoreParticipant(TransactionParticipant):
@@ -265,7 +290,7 @@ class EventStoreParticipant(TransactionParticipant):
         self,
         event_store: Any,
         name: str,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the event store participant.
@@ -278,9 +303,9 @@ class EventStoreParticipant(TransactionParticipant):
         self.event_store = event_store
         self.name = name
         self.logger = logger or get_logger(f"uno.uow.participant.{name}")
-        self._pending_events: Dict[str, List[Event]] = {}
+        self._pending_events: Dict[str, list[Event]] = {}
 
-    def add_events(self, transaction_id: str, events: List[Event]) -> None:
+    def add_events(self, transaction_id: str, events: list[Event]) -> None:
         """
         Add events to be committed as part of the transaction.
 
@@ -342,15 +367,21 @@ class EventStoreParticipant(TransactionParticipant):
             # Remove the pending events
             del self._pending_events[transaction_id]
 
-            self.logger.debug(f"Committed {len(events)} events for transaction {transaction_id}")
+            self.logger.debug(
+                f"Committed {len(events)} events for transaction {transaction_id}"
+            )
             return Result.ok(True)
         except Exception as e:
-            self.logger.error(f"Failed to commit events for transaction {transaction_id}: {e}")
-            return Result.err(Error(
-                message=f"Failed to commit events: {str(e)}",
-                error_code="EVENT_COMMIT_FAILED",
-                context={"transaction_id": transaction_id}
-            ))
+            self.logger.error(
+                f"Failed to commit events for transaction {transaction_id}: {e}"
+            )
+            return Result.err(
+                Error(
+                    message=f"Failed to commit events: {str(e)}",
+                    error_code="EVENT_COMMIT_FAILED",
+                    context={"transaction_id": transaction_id},
+                )
+            )
 
     async def rollback(self, transaction_id: str) -> Result[bool, Error]:
         """
@@ -382,10 +413,10 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
 
     def __init__(
         self,
-        coordinator_id: Optional[str] = None,
-        transaction_id: Optional[str] = None,
+        coordinator_id: str | None = None,
+        transaction_id: str | None = None,
         event_bus: Optional[AsyncEventBus] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the distributed Unit of Work.
@@ -403,9 +434,13 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             coordinator_id=self.coordinator_id,
         )
         self.participants: Dict[str, TransactionParticipant] = {}
-        self._logger = logger or get_logger(f"uno.uow.distributed.{self.coordinator_id[:8]}")
+        self._logger = logger or get_logger(
+            f"uno.uow.distributed.{self.coordinator_id[:8]}"
+        )
 
-    def register_participant(self, name: str, participant: TransactionParticipant) -> str:
+    def register_participant(
+        self, name: str, participant: TransactionParticipant
+    ) -> str:
         """
         Register a participant in the distributed transaction.
 
@@ -417,7 +452,7 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             ID of the participant
         """
         participant_id = str(uuid.uuid4())
-        
+
         # Add to participants dictionary
         self.participants[participant_id] = participant
 
@@ -459,7 +494,9 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         participant = EventStoreParticipant(event_store, name)
         return self.register_participant(name, participant)
 
-    def add_events_to_participant(self, participant_id: str, events: List[Event]) -> None:
+    def add_events_to_participant(
+        self, participant_id: str, events: list[Event]
+    ) -> None:
         """
         Add events to a participant for eventual commit.
 
@@ -472,7 +509,9 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
 
         participant = self.participants[participant_id]
         if not isinstance(participant, EventStoreParticipant):
-            raise TypeError(f"Participant {participant_id} is not an EventStoreParticipant")
+            raise TypeError(
+                f"Participant {participant_id} is not an EventStoreParticipant"
+            )
 
         participant.add_events(self.transaction.transaction_id, events)
 
@@ -503,17 +542,21 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         all_prepared = True
         for i, (participant_id, participant) in enumerate(self.participants.items()):
             result = results[i]
-            
+
             if isinstance(result, Exception):
-                self._logger.error(f"Error preparing participant {participant_id}: {result}")
+                self._logger.error(
+                    f"Error preparing participant {participant_id}: {result}"
+                )
                 all_prepared = False
                 continue
-                
+
             if result.is_error():
-                self._logger.error(f"Failed to prepare participant {participant_id}: {result.unwrap_error()}")
+                self._logger.error(
+                    f"Failed to prepare participant {participant_id}: {result.unwrap_error()}"
+                )
                 all_prepared = False
                 continue
-                
+
             # Preparation succeeded
             self.transaction.prepared_participants.add(participant_id)
             self._logger.debug(f"Participant {participant_id} prepared successfully")
@@ -521,10 +564,14 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         # Update transaction status
         if all_prepared:
             self.transaction.status = TwoPhaseStatus.PREPARED
-            self._logger.info(f"All {len(self.participants)} participants prepared successfully")
+            self._logger.info(
+                f"All {len(self.participants)} participants prepared successfully"
+            )
         else:
             self.transaction.status = TwoPhaseStatus.FAILED
-            self._logger.error(f"Failed to prepare all participants. {len(self.transaction.prepared_participants)} of {len(self.participants)} prepared.")
+            self._logger.error(
+                f"Failed to prepare all participants. {len(self.transaction.prepared_participants)} of {len(self.participants)} prepared."
+            )
 
         return all_prepared
 
@@ -548,7 +595,7 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             if participant_id not in self.participants:
                 self._logger.error(f"Participant {participant_id} not found")
                 continue
-                
+
             participant = self.participants[participant_id]
             self._logger.debug(f"Committing participant {participant_id}")
             commit_tasks.append(participant.commit(self.transaction.transaction_id))
@@ -561,19 +608,23 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         for i, participant_id in enumerate(self.transaction.prepared_participants):
             if i >= len(results):
                 continue
-                
+
             result = results[i]
-            
+
             if isinstance(result, Exception):
-                self._logger.error(f"Error committing participant {participant_id}: {result}")
+                self._logger.error(
+                    f"Error committing participant {participant_id}: {result}"
+                )
                 all_committed = False
                 continue
-                
+
             if result.is_error():
-                self._logger.error(f"Failed to commit participant {participant_id}: {result.unwrap_error()}")
+                self._logger.error(
+                    f"Failed to commit participant {participant_id}: {result.unwrap_error()}"
+                )
                 all_committed = False
                 continue
-                
+
             # Commit succeeded
             self.transaction.committed_participants.add(participant_id)
             self._logger.debug(f"Participant {participant_id} committed successfully")
@@ -581,10 +632,14 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         # Update transaction status
         if all_committed:
             self.transaction.status = TwoPhaseStatus.COMMITTED
-            self._logger.info(f"All {len(self.transaction.prepared_participants)} prepared participants committed successfully")
+            self._logger.info(
+                f"All {len(self.transaction.prepared_participants)} prepared participants committed successfully"
+            )
         else:
             self.transaction.status = TwoPhaseStatus.FAILED
-            self._logger.error(f"Failed to commit all prepared participants. {len(self.transaction.committed_participants)} of {len(self.transaction.prepared_participants)} committed.")
+            self._logger.error(
+                f"Failed to commit all prepared participants. {len(self.transaction.committed_participants)} of {len(self.transaction.prepared_participants)} committed."
+            )
 
         return all_committed
 
@@ -596,8 +651,11 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             True if all participants were rolled back successfully, False otherwise
         """
         # Only roll back prepared participants
-        to_rollback = self.transaction.prepared_participants - self.transaction.committed_participants
-        
+        to_rollback = (
+            self.transaction.prepared_participants
+            - self.transaction.committed_participants
+        )
+
         if not to_rollback:
             self._logger.debug("No prepared participants to roll back")
             return True
@@ -611,7 +669,7 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             if participant_id not in self.participants:
                 self._logger.error(f"Participant {participant_id} not found")
                 continue
-                
+
             participant = self.participants[participant_id]
             self._logger.debug(f"Rolling back participant {participant_id}")
             rollback_tasks.append(participant.rollback(self.transaction.transaction_id))
@@ -624,19 +682,23 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         for i, participant_id in enumerate(to_rollback):
             if i >= len(results):
                 continue
-                
+
             result = results[i]
-            
+
             if isinstance(result, Exception):
-                self._logger.error(f"Error rolling back participant {participant_id}: {result}")
+                self._logger.error(
+                    f"Error rolling back participant {participant_id}: {result}"
+                )
                 all_rolled_back = False
                 continue
-                
+
             if result.is_error():
-                self._logger.error(f"Failed to roll back participant {participant_id}: {result.unwrap_error()}")
+                self._logger.error(
+                    f"Failed to roll back participant {participant_id}: {result.unwrap_error()}"
+                )
                 all_rolled_back = False
                 continue
-                
+
             # Rollback succeeded
             self.transaction.rolled_back_participants.add(participant_id)
             self._logger.debug(f"Participant {participant_id} rolled back successfully")
@@ -644,16 +706,22 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         # Update transaction status
         if all_rolled_back:
             self.transaction.status = TwoPhaseStatus.ROLLED_BACK
-            self._logger.info(f"All {len(to_rollback)} participants rolled back successfully")
+            self._logger.info(
+                f"All {len(to_rollback)} participants rolled back successfully"
+            )
         else:
             self.transaction.status = TwoPhaseStatus.FAILED
-            self._logger.error(f"Failed to roll back all participants. {len(self.transaction.rolled_back_participants)} of {len(to_rollback)} rolled back.")
+            self._logger.error(
+                f"Failed to roll back all participants. {len(self.transaction.rolled_back_participants)} of {len(to_rollback)} rolled back."
+            )
 
         return all_rolled_back
 
     async def begin(self) -> None:
         """Begin the distributed transaction."""
-        self._logger.debug(f"Beginning distributed transaction {self.transaction.transaction_id}")
+        self._logger.debug(
+            f"Beginning distributed transaction {self.transaction.transaction_id}"
+        )
         # The actual work happens in prepare
         pass
 
@@ -666,20 +734,22 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
         2. If all preparations succeed, commit all participants
         3. If any preparation fails, rollback all participants
         """
-        self._logger.debug(f"Committing distributed transaction {self.transaction.transaction_id}")
-        
+        self._logger.debug(
+            f"Committing distributed transaction {self.transaction.transaction_id}"
+        )
+
         # Phase 1: Prepare all participants
         prepared = await self.prepare_all()
-        
+
         if not prepared:
             # Some preparations failed, rollback everything
             self._logger.error("Preparation failed, rolling back all participants")
             await self.rollback_all()
             raise RuntimeError("Failed to prepare all participants for commit")
-        
+
         # Phase 2: Commit all prepared participants
         committed = await self.commit_all()
-        
+
         if not committed:
             # This is a critical error - some participants committed but others failed
             # This leaves the system in an inconsistent state that requires manual resolution
@@ -688,8 +758,10 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
                 "The system is in an inconsistent state and requires manual recovery."
             )
             raise RuntimeError("Failed to commit all prepared participants")
-        
-        self._logger.info(f"Successfully committed distributed transaction {self.transaction.transaction_id}")
+
+        self._logger.info(
+            f"Successfully committed distributed transaction {self.transaction.transaction_id}"
+        )
 
     async def rollback(self) -> None:
         """
@@ -697,9 +769,11 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
 
         This rolls back all prepared participants.
         """
-        self._logger.debug(f"Rolling back distributed transaction {self.transaction.transaction_id}")
+        self._logger.debug(
+            f"Rolling back distributed transaction {self.transaction.transaction_id}"
+        )
         await self.rollback_all()
-        
+
         # Even if not all participants rolled back, we've done our best
         # Log a warning but don't raise an exception
         if self.transaction.status == TwoPhaseStatus.FAILED:
@@ -708,7 +782,9 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
                 f"Only {len(self.transaction.rolled_back_participants)} of {len(self.transaction.prepared_participants)} were rolled back."
             )
         else:
-            self._logger.info(f"Successfully rolled back distributed transaction {self.transaction.transaction_id}")
+            self._logger.info(
+                f"Successfully rolled back distributed transaction {self.transaction.transaction_id}"
+            )
 
     def get_transaction_status(self) -> Dict[str, Any]:
         """
@@ -721,10 +797,26 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             "transaction_id": self.transaction.transaction_id,
             "coordinator_id": self.transaction.coordinator_id,
             "status": self.transaction.status.name,
-            "start_time": self.transaction.start_time.isoformat() if self.transaction.start_time else None,
-            "prepare_time": self.transaction.prepare_time.isoformat() if self.transaction.prepare_time else None,
-            "commit_time": self.transaction.commit_time.isoformat() if self.transaction.commit_time else None,
-            "rollback_time": self.transaction.rollback_time.isoformat() if self.transaction.rollback_time else None,
+            "start_time": (
+                self.transaction.start_time.isoformat()
+                if self.transaction.start_time
+                else None
+            ),
+            "prepare_time": (
+                self.transaction.prepare_time.isoformat()
+                if self.transaction.prepare_time
+                else None
+            ),
+            "commit_time": (
+                self.transaction.commit_time.isoformat()
+                if self.transaction.commit_time
+                else None
+            ),
+            "rollback_time": (
+                self.transaction.rollback_time.isoformat()
+                if self.transaction.rollback_time
+                else None
+            ),
             "participant_count": len(self.transaction.participants),
             "prepared_count": len(self.transaction.prepared_participants),
             "committed_count": len(self.transaction.committed_participants),
@@ -734,11 +826,21 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
                     "name": participant.name,
                     "resource_type": participant.resource_type,
                     "status": (
-                        "COMMITTED" if participant_id in self.transaction.committed_participants
-                        else "ROLLED_BACK" if participant_id in self.transaction.rolled_back_participants
-                        else "PREPARED" if participant_id in self.transaction.prepared_participants
-                        else "INIT"
-                    )
-                } for participant_id, participant in self.transaction.participants.items()
-            }
+                        "COMMITTED"
+                        if participant_id in self.transaction.committed_participants
+                        else (
+                            "ROLLED_BACK"
+                            if participant_id
+                            in self.transaction.rolled_back_participants
+                            else (
+                                "PREPARED"
+                                if participant_id
+                                in self.transaction.prepared_participants
+                                else "INIT"
+                            )
+                        )
+                    ),
+                }
+                for participant_id, participant in self.transaction.participants.items()
+            },
         }

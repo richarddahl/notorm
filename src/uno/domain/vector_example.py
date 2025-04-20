@@ -35,8 +35,8 @@ class Document(Entity):
 
     title: str
     content: str
-    tags: Optional[List[str]] = None
-    author: Optional[str] = None
+    tags: list[str] | None = None
+    author: str | None = None
 
 
 # Example repository for documents
@@ -60,10 +60,10 @@ class DocumentRepository(Repository[Document]):
     async def list(
         self,
         filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[List[str]] = None,
+        order_by: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = 0,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """List documents matching filters."""
         # This would normally query the database
         # For example purposes, we'll just return a dummy list
@@ -221,7 +221,7 @@ def setup_vector_search_example():
 class DocumentRAG(RAGService[Document]):
     """Custom RAG service for Document entities."""
 
-    def format_context_for_prompt(self, entities: List[Document]) -> str:
+    def format_context_for_prompt(self, entities: list[Document]) -> str:
         """
         Format document entities as context for an LLM prompt.
 

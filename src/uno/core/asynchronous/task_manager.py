@@ -66,7 +66,7 @@ class TaskGroup:
         self, 
         name: str = None, 
         cancel_on_error: bool = True,
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         """
         Initialize a TaskGroup.
@@ -80,7 +80,7 @@ class TaskGroup:
         self.cancel_on_error = cancel_on_error
         self.logger = logger or logging.getLogger(__name__)
         self._tasks: Set[asyncio.Task] = set()
-        self._errors: List[Exception] = []
+        self._errors: list[Exception] = []
         self._exit_stack = AsyncExitStack()
         self._closed = False
     
@@ -127,7 +127,7 @@ class TaskGroup:
     def create_task(
         self, 
         coro: Coroutine[Any, Any, T], 
-        name: Optional[str] = None
+        name: str | None = None
     ) -> asyncio.Task[T]:
         """
         Create a task and add it to the group.
@@ -233,7 +233,7 @@ class TaskGroup:
             await asyncio.wait(tasks)
     
     @property
-    def errors(self) -> List[Exception]:
+    def errors(self) -> list[Exception]:
         """Get a list of errors that occurred in the task group."""
         return self._errors.copy()
     
@@ -300,7 +300,7 @@ class TaskGroup:
 async def task_context(
     name: str = None, 
     cancel_on_error: bool = True,
-    logger: Optional[logging.Logger] = None
+    logger: logging.Logger | None = None
 ) -> AsyncIterator[TaskGroup]:
     """
     Context manager for managing a group of related tasks.
@@ -324,7 +324,7 @@ async def task_context(
 _task_manager_instance: Optional["TaskManager"] = None
 
 
-def get_task_manager(logger: Optional[logging.Logger] = None) -> "TaskManager":
+def get_task_manager(logger: logging.Logger | None = None -> "TaskManager":
     """
     Get the singleton instance of the TaskManager.
     
@@ -350,7 +350,7 @@ class TaskManager:
     handle signals for graceful shutdown, and provide utilities for task handling.
     """
     
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize a TaskManager.
         
@@ -439,8 +439,8 @@ class TaskManager:
     def create_task(
         self, 
         coro: Coroutine[Any, Any, T], 
-        group: Optional[str] = None,
-        name: Optional[str] = None
+        group: str | None = None,
+        name: str | None = None
     ) -> asyncio.Task[T]:
         """
         Create a task in the specified group.
@@ -541,8 +541,8 @@ class TaskManager:
 
 async def run_task(
     coro: Coroutine[Any, Any, T], 
-    name: Optional[str] = None,
-    group: Optional[str] = None,
+    name: str | None = None,
+    group: str | None = None,
     handle_errors: bool = True
 ) -> T:
     """
@@ -585,11 +585,11 @@ async def run_task(
 
 
 async def run_tasks(
-    coros: List[Coroutine[Any, Any, Any]], 
-    group_name: Optional[str] = None,
+    coros: list[Coroutine[Any, Any, Any]], 
+    group_name: str | None = None,
     return_when: str = "ALL_COMPLETED",
     handle_errors: bool = True
-) -> List[Any]:
+) -> list[Any]:
     """
     Run multiple coroutines as tasks and wait for them to complete.
     

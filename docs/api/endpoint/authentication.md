@@ -138,7 +138,7 @@ from uno.api.endpoint import QueryHandler, CommandHandler
 # Create query handler
 search_query = QueryHandler(
     service=search_service,
-    response_model=List[ProductResponse],
+    response_model=list[ProductResponse],
     query_model=ProductSearchQuery,
     path="/search",
     method="get",

@@ -54,7 +54,7 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
     def __init__(
         self,
         resource_registry: Optional[ResourceRegistry] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the pooled async engine factory.
@@ -267,17 +267,17 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
     def __init__(
         self,
         db_role: str,
-        db_name: Optional[str] = None,
-        db_host: Optional[str] = None,
-        db_user_pw: Optional[str] = None,
-        db_driver: Optional[str] = None,
+        db_name: str | None = None,
+        db_host: str | None = None,
+        db_user_pw: str | None = None,
+        db_driver: str | None = None,
         db_port: Optional[int] = None,
         config: Optional[ConnectionConfig] = None,
         isolation_level: str = "AUTOCOMMIT",
         factory: Optional[PooledAsyncEngineFactory] = None,
         pool_size: int = 10,
         min_size: int = 2,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         **kwargs: Any,
     ):
         """
@@ -391,17 +391,17 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
 
 async def pooled_async_connection(
     db_role: str,
-    db_name: Optional[str] = None,
-    db_host: Optional[str] = None,
-    db_user_pw: Optional[str] = None,
-    db_driver: Optional[str] = None,
+    db_name: str | None = None,
+    db_host: str | None = None,
+    db_user_pw: str | None = None,
+    db_driver: str | None = None,
     db_port: Optional[int] = None,
     config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",
     factory: Optional[PooledAsyncEngineFactory] = None,
     pool_size: int = 10,
     min_size: int = 2,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[AsyncConnection]:
     """

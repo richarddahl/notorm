@@ -31,12 +31,12 @@ class User(AggregateRoot):
 
     username: str = Field(..., min_length=3, max_length=50)
     email: Email
-    password_hash: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    password_hash: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
     role: UserRole = Field(default=UserRole.CUSTOMER)
     is_active: bool = Field(default=True)
-    addresses: List[Address] = Field(default_factory=list)
+    addresses: list[Address] = Field(default_factory=list)
     preferences: Dict[str, Any] = Field(default_factory=dict)
     last_login: Optional[datetime] = None
 
@@ -149,9 +149,9 @@ class User(AggregateRoot):
     def check_invariants(self) -> Result[None, str]:
         """Check that user invariants are maintained."""
         if not self.username:
-            return Failure[None, str]("Username is required")
+            return Result.failure("Username is required")
         # Additional business rules can be added here
-        return Success[None, str](None)
+        return Result.success(None)
 
 
 # Domain Events

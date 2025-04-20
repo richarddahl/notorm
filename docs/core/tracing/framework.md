@@ -216,7 +216,7 @@ class MySpanProcessor(SpanProcessor):
 
 # Custom exporter
 class MySpanExporter(SpanExporter):
-    async def export_spans(self, spans: List[Span]) -> None:
+    async def export_spans(self, spans: list[Span]) -> None:
         for span in spans:
             # Export span to your observability system
             pass

@@ -258,7 +258,7 @@ class OrderService:
         self.orders = {}
         self.logger = logging.getLogger("order_service")
 
-    async def create_order(self, customer_id: str, items: List[Dict[str, Any]]) -> str:
+    async def create_order(self, customer_id: str, items: list[dict[str, Any]]) -> str:
         """
         Create a new order and raise an OrderCreatedEvent.
 
@@ -326,7 +326,7 @@ class OrderService:
         )
         publish_event_sync(event)
 
-    async def cancel_order(self, order_id: str, reason: Optional[str] = None) -> None:
+    async def cancel_order(self, order_id: str, reason: str | None = None) -> None:
         """
         Cancel an order and raise an OrderCancelledEvent.
 

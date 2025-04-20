@@ -71,7 +71,7 @@ class MetaTypeFilterParams(BaseModel):
 
 class MetaTypeListDto(BaseModel):
     """DTO for a list of meta types with pagination data."""
-    items: List[MetaTypeViewDto] = Field(..., description="List of meta types")
+    items: list[MetaTypeViewDto] = Field(..., description="List of meta types")
     total: int = Field(..., description="Total number of meta types matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")
@@ -85,18 +85,18 @@ class MetaRecordBaseDto(BaseModel):
 
 class MetaRecordCreateDto(MetaRecordBaseDto):
     """DTO for creating a new meta record."""
-    attributes: List[str] = Field(default_factory=list, description="IDs of attributes to associate with this record")
+    attributes: list[str] = Field(default_factory=list, description="IDs of attributes to associate with this record")
 
 
 class MetaRecordUpdateDto(BaseModel):
     """DTO for updating an existing meta record."""
-    attributes: Optional[List[str]] = Field(None, description="IDs of attributes to associate with this record")
+    attributes: list[str] | None = Field(None, description="IDs of attributes to associate with this record")
 
 
 class MetaRecordViewDto(MetaRecordBaseDto):
     """DTO for viewing meta record data."""
     type_name: str = Field(..., description="Display name of the meta type")
-    attributes: List[str] = Field(default_factory=list, description="IDs of attributes associated with this record")
+    attributes: list[str] = Field(default_factory=list, description="IDs of attributes associated with this record")
     
     model_config = ConfigDict(
         json_schema_extra = {
@@ -120,7 +120,7 @@ class MetaRecordFilterParams(BaseModel):
 
 class MetaRecordListDto(BaseModel):
     """DTO for a list of meta records with pagination data."""
-    items: List[MetaRecordViewDto] = Field(..., description="List of meta records")
+    items: list[MetaRecordViewDto] = Field(..., description="List of meta records")
     total: int = Field(..., description="Total number of meta records matching the query")
     limit: int = Field(..., description="Maximum number of results returned")
     offset: int = Field(..., description="Number of results skipped")

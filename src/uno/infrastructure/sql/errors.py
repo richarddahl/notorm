@@ -54,8 +54,8 @@ class SQLStatementError(BaseError):
     def __init__(
         self,
         reason: str,
-        statement: Optional[str] = None,
-        message: Optional[str] = None,
+        statement: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -77,8 +77,8 @@ class SQLExecutionError(BaseError):
     def __init__(
         self,
         reason: str,
-        statement_type: Optional[str] = None,
-        message: Optional[str] = None,
+        statement_type: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -100,8 +100,8 @@ class SQLSyntaxError(BaseError):
     def __init__(
         self,
         reason: str,
-        statement: Optional[str] = None,
-        message: Optional[str] = None,
+        statement: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -124,8 +124,8 @@ class SQLEmitterError(BaseError):
     def __init__(
         self,
         reason: str,
-        emitter: Optional[str] = None,
-        message: Optional[str] = None,
+        emitter: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -147,9 +147,9 @@ class SQLEmitterInvalidConfigError(BaseError):
     def __init__(
         self,
         reason: str,
-        emitter: Optional[str] = None,
-        config_name: Optional[str] = None,
-        message: Optional[str] = None,
+        emitter: str | None = None,
+        config_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -171,7 +171,7 @@ class SQLEmitterInvalidConfigError(BaseError):
 class SQLRegistryClassNotFoundError(BaseError):
     """Error raised when a SQL registry class is not found."""
 
-    def __init__(self, class_name: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, class_name: str, message: str | None = None, **context: Any):
         message = message or f"SQL registry class '{class_name}' not found"
         super().__init__(
             message=message,
@@ -184,7 +184,7 @@ class SQLRegistryClassNotFoundError(BaseError):
 class SQLRegistryClassAlreadyExistsError(BaseError):
     """Error raised when a SQL registry class already exists."""
 
-    def __init__(self, class_name: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, class_name: str, message: str | None = None, **context: Any):
         message = message or f"SQL registry class '{class_name}' already exists"
         super().__init__(
             message=message,
@@ -201,8 +201,8 @@ class SQLConfigError(BaseError):
     def __init__(
         self,
         reason: str,
-        config_name: Optional[str] = None,
-        message: Optional[str] = None,
+        config_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -224,8 +224,8 @@ class SQLConfigInvalidError(BaseError):
     def __init__(
         self,
         reason: str,
-        config_name: Optional[str] = None,
-        message: Optional[str] = None,
+        config_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()

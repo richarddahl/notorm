@@ -164,7 +164,7 @@ A subscription is defined by a `SubscriptionConfig` that includes:
 | `filter_expression` | str (optional) | Expression to filter events |
 | `batch_size` | int | Batch size for batch handlers |
 | `batch_interval_ms` | int | Batch interval for time-based batching |
-| `requires_permissions` | List[str] | Required permissions for the handler |
+| `requires_permissions` | list[str] | Required permissions for the handler |
 | `alert_on_failure` | bool | Whether to alert on handler failure |
 | `alert_threshold` | float | Failure rate threshold for alerting |
 

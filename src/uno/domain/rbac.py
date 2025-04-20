@@ -102,7 +102,7 @@ class User:
 
         return False
 
-    def get_all_permissions(self, rbac_service: "RbacService") -> List[str]:
+    def get_all_permissions(self, rbac_service: "RbacService") -> list[str]:
         """
         Get all permissions this user has.
 
@@ -146,7 +146,7 @@ class RbacService:
         self._users: Dict[str, User] = {}
         self._logger = logging.getLogger(__name__)
 
-    def create_role(self, name: str, permissions: Optional[List[str]] = None) -> Role:
+    def create_role(self, name: str, permissions: list[str] | None = None) -> Role:
         """
         Create a new role.
 
@@ -190,7 +190,7 @@ class RbacService:
         """
         return self._roles.get(name)
 
-    def update_role(self, name: str, permissions: List[str]) -> Optional[Role]:
+    def update_role(self, name: str, permissions: list[str]) -> Optional[Role]:
         """
         Update a role's permissions.
 
@@ -283,8 +283,8 @@ class RbacService:
     def create_user(
         self,
         user_id: str,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None,
+        roles: list[str] | None = None,
+        permissions: list[str] | None = None,
     ) -> User:
         """
         Create a new user.
@@ -337,8 +337,8 @@ class RbacService:
     def update_user(
         self,
         user_id: str,
-        roles: Optional[List[str]] = None,
-        permissions: Optional[List[str]] = None,
+        roles: list[str] | None = None,
+        permissions: list[str] | None = None,
     ) -> Optional[User]:
         """
         Update a user's roles and permissions.
@@ -486,7 +486,7 @@ class RbacService:
 
         return user.has_permission(permission, self)
 
-    def get_user_permissions(self, user_id: str) -> List[str]:
+    def get_user_permissions(self, user_id: str) -> list[str]:
         """
         Get all permissions a user has.
 

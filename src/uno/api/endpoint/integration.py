@@ -26,16 +26,16 @@ def setup_api(
     app: FastAPI,
     *,
     enable_cors: bool = True,
-    cors_origins: Optional[List[str]] = None,
+    cors_origins: list[str] | None = None,
     enable_error_handling: bool = True,
     enable_scoped_dependencies: bool = True,
 ) -> None:
     """
     Set up a FastAPI application with the unified endpoint framework.
-    
+
     This function adds middleware and configuration for integrating the
     unified endpoint framework with a FastAPI application.
-    
+
     Args:
         app: The FastAPI application to set up.
         enable_cors: Whether to enable CORS middleware.
@@ -47,7 +47,7 @@ def setup_api(
     if enable_error_handling:
         app.add_middleware(ErrorHandlerMiddleware)
         setup_error_handlers(app)
-    
+
     # Add CORS
     if enable_cors:
         app.add_middleware(
@@ -57,7 +57,7 @@ def setup_api(
             allow_methods=["*"],
             allow_headers=["*"],
         )
-    
+
     # Add scoped dependencies
     if enable_scoped_dependencies:
         # Use the modern provider if available
@@ -74,7 +74,7 @@ def create_api(
     description: str = "API created with the UNO framework",
     version: str = "0.1.0",
     enable_cors: bool = True,
-    cors_origins: Optional[List[str]] = None,
+    cors_origins: list[str] | None = None,
     enable_error_handling: bool = True,
     enable_scoped_dependencies: bool = True,
     openapi_url: str = "/openapi.json",
@@ -83,10 +83,10 @@ def create_api(
 ) -> FastAPI:
     """
     Create a new FastAPI application with the unified endpoint framework.
-    
+
     This function creates a new FastAPI application and sets it up for use
     with the unified endpoint framework.
-    
+
     Args:
         title: The title of the API.
         description: The description of the API.
@@ -98,7 +98,7 @@ def create_api(
         openapi_url: The URL for the OpenAPI JSON.
         docs_url: The URL for the Swagger UI.
         redoc_url: The URL for the ReDoc UI.
-        
+
     Returns:
         A new FastAPI application ready to use with the unified endpoint framework.
     """
@@ -111,7 +111,7 @@ def create_api(
         docs_url=docs_url,
         redoc_url=redoc_url,
     )
-    
+
     # Set up the app
     setup_api(
         app,
@@ -120,5 +120,5 @@ def create_api(
         enable_error_handling=enable_error_handling,
         enable_scoped_dependencies=enable_scoped_dependencies,
     )
-    
+
     return app

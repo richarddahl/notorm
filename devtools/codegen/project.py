@@ -20,7 +20,7 @@ def create_project(
     email: str = "",
     with_docker: bool = True,
     with_github_actions: bool = False,
-    output_dir: Optional[str] = None,
+    output_dir: str | None = None,
 ) -> str:
     """
     Create a new Uno project with the recommended structure.
@@ -591,7 +591,7 @@ class {name.capitalize()}Repository(BaseRepository):
         limit: int = 100,
         offset: int = 0,
         filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[{name.capitalize()}]]:
+    ) -> Result[list[{name.capitalize()}]]:
         \"\"\"
         List {name.lower()}s with optional filtering
         \"\"\"
@@ -690,7 +690,7 @@ class {name.capitalize()}Service:
         limit: int = 100,
         offset: int = 0,
         filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[{name.capitalize()}]]:
+    ) -> Result[list[{name.capitalize()}]]:
         \"\"\"
         List {name.lower()}s with optional filtering
         \"\"\"
@@ -738,7 +738,7 @@ from ..services.{name.lower()}_service import {name.capitalize()}Service
 # Pydantic models for API
 class {name.capitalize()}Base(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class {name.capitalize()}Create({name.capitalize()}Base):
@@ -770,7 +770,7 @@ def get_{name.lower()}_service(session=Depends(get_db_session)):
     return {name.capitalize()}Service(repository)
 
 
-@router.get("/", response_model=List[{name.capitalize()}Read])
+@router.get("/", response_model=list[{name.capitalize()}Read])
 async def list_{name.lower()}s(
     limit: int = 100,
     offset: int = 0,

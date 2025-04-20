@@ -10,7 +10,7 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.respository import Repository, UnoDBRepository
 from uno.database.db_manager import DBManager
 from uno.values.entities import (
@@ -66,7 +66,7 @@ class ValueRepository(Repository[T]):
         """
         pass
 
-    async def search(self, search_term: str, limit: int = 20) -> List[T]:
+    async def search(self, search_term: str, limit: int = 20) -> list[T]:
         """
         Search for value entities matching a term.
 
@@ -92,7 +92,7 @@ class UnoDBValueRepository(UnoDBRepository[T], ValueRepository[T]):
         self,
         entity_type: Type[T],
         db_manager: DBManager,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the repository.
@@ -121,7 +121,7 @@ class UnoDBValueRepository(UnoDBRepository[T], ValueRepository[T]):
             return results[0] if results else None
         except Exception as e:
             self.logger.error(f"Error finding {self.entity_type.__name__} by name: {e}")
-            return None
+            return Result.failure(Error(e))
 
     async def find_by_value(self, value: Any) -> Optional[T]:
         """
@@ -142,7 +142,7 @@ class UnoDBValueRepository(UnoDBRepository[T], ValueRepository[T]):
             )
             return None
 
-    async def search(self, search_term: str, limit: int = 20) -> List[T]:
+    async def search(self, search_term: str, limit: int = 20) -> list[T]:
         """
         Search for value entities matching a term.
 
@@ -202,54 +202,54 @@ class UnoDBValueRepository(UnoDBRepository[T], ValueRepository[T]):
 class AttachmentRepository(UnoDBValueRepository[Attachment]):
     """Repository for Attachment entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(Attachment, db_manager, logger)
 
 
 class BooleanValueRepository(UnoDBValueRepository[BooleanValue]):
     """Repository for BooleanValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(BooleanValue, db_manager, logger)
 
 
 class DateTimeValueRepository(UnoDBValueRepository[DateTimeValue]):
     """Repository for DateTimeValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DateTimeValue, db_manager, logger)
 
 
 class DateValueRepository(UnoDBValueRepository[DateValue]):
     """Repository for DateValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DateValue, db_manager, logger)
 
 
 class DecimalValueRepository(UnoDBValueRepository[DecimalValue]):
     """Repository for DecimalValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DecimalValue, db_manager, logger)
 
 
 class IntegerValueRepository(UnoDBValueRepository[IntegerValue]):
     """Repository for IntegerValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(IntegerValue, db_manager, logger)
 
 
 class TextValueRepository(UnoDBValueRepository[TextValue]):
     """Repository for TextValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(TextValue, db_manager, logger)
 
 
 class TimeValueRepository(UnoDBValueRepository[TimeValue]):
     """Repository for TimeValue entities."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(TimeValue, db_manager, logger)

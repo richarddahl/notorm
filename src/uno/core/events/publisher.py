@@ -9,7 +9,7 @@ import asyncio
 
 import structlog
 
-from uno.core.errors import Failure, Result, Success
+from uno.core.errors import Result
 from uno.domain.event_bus import EventBusProtocol
 from uno.core.protocols.event import EventProtocol, EventStoreProtocol
 
@@ -44,7 +44,7 @@ class EventPublisher:
         self.event_bus = event_bus
         self.event_store = event_store
         self.logger = structlog.get_logger("uno.core.events")
-        self._collected_events: List[EventProtocol] = []
+        self._collected_events: list[EventProtocol] = []
 
     def collect(self, event: EventProtocol) -> None:
         """

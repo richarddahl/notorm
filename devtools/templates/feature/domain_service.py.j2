@@ -58,7 +58,7 @@ class {{ feature_name|pascal_case }}ServiceProtocol:
         skip: int = 0, 
         limit: int = 100,
         filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+    ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.
         
@@ -122,7 +122,7 @@ class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal
         self, 
         repository: {{ feature_name|pascal_case }}RepositoryProtocol,
         event_dispatcher: Optional[EventDispatcher] = None,
-        logger: Optional[logging.Logger] = None
+        logger: logging.Logger | None = None
     ):
         """
         Initialize the service.
@@ -154,7 +154,7 @@ class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal
         skip: int = 0, 
         limit: int = 100,
         filters: Optional[Dict[str, Any]] = None
-    ) -> Result[List[{{ feature_name|pascal_case }}]]:
+    ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.
         

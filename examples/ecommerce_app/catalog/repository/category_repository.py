@@ -36,7 +36,9 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
             model = result.scalar_one_or_none()
             return self._to_entity(model) if model else None
 
-        entity.check_invariants(existing_slugs=existing_slugs, parent_lookup=parent_lookup)
+        entity.check_invariants(
+            existing_slugs=existing_slugs, parent_lookup=parent_lookup
+        )
         return await super().add(entity)
 
     async def update(self, entity: Category) -> Category:
@@ -51,7 +53,9 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
             model = result.scalar_one_or_none()
             return self._to_entity(model) if model else None
 
-        entity.check_invariants(existing_slugs=existing_slugs, parent_lookup=parent_lookup)
+        entity.check_invariants(
+            existing_slugs=existing_slugs, parent_lookup=parent_lookup
+        )
         return await super().update(entity)
 
     def _to_entity(self, model: CategoryModel) -> Category:
@@ -84,7 +88,7 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
             "updated_at": entity.updated_at,
         }
 
-    async def get_hierarchy(self) -> List[Category]:
+    async def get_hierarchy(self) -> list[Category]:
         """
         Get the category hierarchy.
 
@@ -97,7 +101,7 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
 
         return [self._to_entity(model) for model in models]
 
-    async def get_children(self, parent_id: str) -> List[Category]:
+    async def get_children(self, parent_id: str) -> list[Category]:
         """
         Get child categories for a parent category.
 

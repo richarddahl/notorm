@@ -6,8 +6,8 @@ including DDL operations and migrations.
 """
 
 import logging
-from typing import Optional, List, Dict, Any, Callable, ContextManager
 from contextlib import contextmanager
+from typing import Any, Callable, ContextManager, Dict, List, Optional
 
 import psycopg
 from sqlalchemy import text
@@ -26,7 +26,7 @@ class DBManager:
     def __init__(
         self,
         connection_provider: Callable[[], ContextManager[psycopg.Connection]],
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         environment: str = "development",
     ):
         """
@@ -47,7 +47,7 @@ class DBManager:
 
         Args:
             ddl: The DDL statement to execute
-            
+
         Raises:
             ValueError: If destructive operations are attempted in production
         """
@@ -55,7 +55,13 @@ class DBManager:
         if self.environment == "production":
             lower_ddl = ddl.lower()
             # Check for potentially dangerous operations
-            dangerous_keywords = ["drop ", "truncate ", "delete from ", "alter table ", "drop database"]
+            dangerous_keywords = [
+                "drop ",
+                "truncate ",
+                "delete from ",
+                "alter table ",
+                "drop database",
+            ]
             for keyword in dangerous_keywords:
                 if keyword in lower_ddl:
                     # Allow certain alter table statements
@@ -64,7 +70,7 @@ class DBManager:
                     raise ValueError(
                         f"Destructive DDL operation '{keyword.strip()}' is not allowed in production environment."
                     )
-                    
+
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
                 self.logger.debug(f"Executing DDL: {ddl[:100]}...")
@@ -77,7 +83,7 @@ class DBManager:
 
         Args:
             script: The SQL script to execute
-            
+
         Raises:
             ValueError: If destructive operations are attempted in production
         """
@@ -85,7 +91,13 @@ class DBManager:
         if self.environment == "production":
             lower_script = script.lower()
             # Check for potentially dangerous operations
-            dangerous_keywords = ["drop ", "truncate ", "delete from ", "alter table ", "drop database"]
+            dangerous_keywords = [
+                "drop ",
+                "truncate ",
+                "delete from ",
+                "alter table ",
+                "drop database",
+            ]
             for keyword in dangerous_keywords:
                 if keyword in lower_script:
                     # Allow certain alter table statements
@@ -94,7 +106,7 @@ class DBManager:
                     raise ValueError(
                         f"Destructive SQL operation '{keyword.strip()}' is not allowed in production environment."
                     )
-                    
+
         with self.get_connection() as conn:
             with conn.cursor() as cursor:
                 self.logger.debug(f"Executing SQL script ({len(script)} characters)")
@@ -123,7 +135,7 @@ class DBManager:
         ddl = f"DROP SCHEMA IF EXISTS {schema_name} {cascade_stmt}"
         self.execute_ddl(ddl)
 
-    def table_exists(self, table_name: str, schema: Optional[str] = None) -> bool:
+    def table_exists(self, table_name: str, schema: str | None = None) -> bool:
         """
         Check if a table exists in the database.
 
@@ -136,10 +148,9 @@ class DBManager:
         """
         schema_clause = f"AND table_schema = '{schema}'" if schema else ""
 
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
+        with self.get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                f"""
                     SELECT EXISTS (
                         SELECT 1 
                         FROM information_schema.tables 
@@ -147,11 +158,11 @@ class DBManager:
                         {schema_clause}
                     )
                 """
-                )
-                result = cursor.fetchone()
-                return result[0] if result else False
+            )
+            result = cursor.fetchone()
+            return result[0] if result else False
 
-    def function_exists(self, function_name: str, schema: Optional[str] = None) -> bool:
+    def function_exists(self, function_name: str, schema: str | None = None) -> bool:
         """
         Check if a function exists in the database.
 
@@ -164,10 +175,9 @@ class DBManager:
         """
         schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
 
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
+        with self.get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                f"""
                     SELECT EXISTS (
                         SELECT 1
                         FROM pg_proc p
@@ -176,11 +186,11 @@ class DBManager:
                         {schema_clause}
                     )
                 """
-                )
-                result = cursor.fetchone()
-                return result[0] if result else False
-                
-    def type_exists(self, type_name: str, schema: Optional[str] = None) -> bool:
+            )
+            result = cursor.fetchone()
+            return result[0] if result else False
+
+    def type_exists(self, type_name: str, schema: str | None = None) -> bool:
         """
         Check if a type exists in the database.
 
@@ -193,10 +203,9 @@ class DBManager:
         """
         schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
 
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
+        with self.get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                f"""
                     SELECT EXISTS (
                         SELECT 1
                         FROM pg_type t
@@ -205,11 +214,13 @@ class DBManager:
                         {schema_clause}
                     )
                 """
-                )
-                result = cursor.fetchone()
-                return result[0] if result else False
-                
-    def trigger_exists(self, trigger_name: str, table_name: str, schema: Optional[str] = None) -> bool:
+            )
+            result = cursor.fetchone()
+            return result[0] if result else False
+
+    def trigger_exists(
+        self, trigger_name: str, table_name: str, schema: str | None = None
+    ) -> bool:
         """
         Check if a trigger exists in the database.
 
@@ -223,10 +234,9 @@ class DBManager:
         """
         schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
 
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
+        with self.get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                f"""
                     SELECT EXISTS (
                         SELECT 1
                         FROM pg_trigger t
@@ -237,11 +247,13 @@ class DBManager:
                         {schema_clause}
                     )
                 """
-                )
-                result = cursor.fetchone()
-                return result[0] if result else False
-                
-    def policy_exists(self, policy_name: str, table_name: str, schema: Optional[str] = None) -> bool:
+            )
+            result = cursor.fetchone()
+            return result[0] if result else False
+
+    def policy_exists(
+        self, policy_name: str, table_name: str, schema: str | None = None
+    ) -> bool:
         """
         Check if a row level security policy exists in the database.
 
@@ -255,10 +267,9 @@ class DBManager:
         """
         schema_clause = f"AND n.nspname = '{schema}'" if schema else ""
 
-        with self.get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    f"""
+        with self.get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                f"""
                     SELECT EXISTS (
                         SELECT 1
                         FROM pg_policy p
@@ -269,11 +280,11 @@ class DBManager:
                         {schema_clause}
                     )
                 """
-                )
-                result = cursor.fetchone()
-                return result[0] if result else False
+            )
+            result = cursor.fetchone()
+            return result[0] if result else False
 
-    def create_tables(self, models: List[Any]) -> None:
+    def create_tables(self, models: list[Any]) -> None:
         """
         Create tables for the given models using SQLAlchemy's metadata.
 
@@ -393,8 +404,8 @@ class DBManager:
         statements = emitter.generate_sql()
         for statement in statements:
             self.execute_ddl(statement.sql)
-            
-    def execute_from_emitters(self, emitters: List[Any]) -> None:
+
+    def execute_from_emitters(self, emitters: list[Any]) -> None:
         """
         Execute SQL statements from multiple emitters.
 
@@ -403,8 +414,8 @@ class DBManager:
         """
         for emitter in emitters:
             self.execute_from_emitter(emitter)
-            
-    def create_extension(self, extension_name: str, schema: Optional[str] = None) -> None:
+
+    def create_extension(self, extension_name: str, schema: str | None = None) -> None:
         """
         Create a PostgreSQL extension.
 
@@ -415,8 +426,10 @@ class DBManager:
         schema_clause = f"SCHEMA {schema}" if schema else ""
         ddl = f"CREATE EXTENSION IF NOT EXISTS {extension_name} {schema_clause}"
         self.execute_ddl(ddl)
-        
-    def create_user(self, username: str, password: str, is_superuser: bool = False) -> None:
+
+    def create_user(
+        self, username: str, password: str, is_superuser: bool = False
+    ) -> None:
         """
         Create a PostgreSQL user.
 
@@ -428,8 +441,10 @@ class DBManager:
         superuser_clause = "SUPERUSER" if is_superuser else "NOSUPERUSER"
         ddl = f"CREATE USER {username} WITH PASSWORD '{password}' {superuser_clause}"
         self.execute_ddl(ddl)
-        
-    def create_role(self, role_name: str, granted_roles: Optional[List[str]] = None) -> None:
+
+    def create_role(
+        self, role_name: str, granted_roles: list[str] | None = None
+    ) -> None:
         """
         Create a PostgreSQL role.
 
@@ -439,18 +454,18 @@ class DBManager:
         """
         ddl = f"CREATE ROLE {role_name}"
         self.execute_ddl(ddl)
-        
+
         if granted_roles:
             for granted_role in granted_roles:
                 self.execute_ddl(f"GRANT {granted_role} TO {role_name}")
-                
+
     def grant_privileges(
-        self, 
-        privileges: List[str], 
-        on_object: str, 
-        to_role: str, 
-        object_type: str = "TABLE", 
-        schema: Optional[str] = None
+        self,
+        privileges: list[str],
+        on_object: str,
+        to_role: str,
+        object_type: str = "TABLE",
+        schema: str | None = None,
     ) -> None:
         """
         Grant privileges to a role.

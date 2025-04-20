@@ -107,12 +107,12 @@ class Order(AggregateRoot[UUID]):
     """An order aggregate root."""
     
     customer_id: UUID
-    items: List["OrderItem"] = []
+    items: list["OrderItem"] = []
     total_amount: Money
     status: str = "created"
     
     @classmethod
-    def create(cls, customer_id: UUID, items: List["OrderItem"]) -> "Order":
+    def create(cls, customer_id: UUID, items: list["OrderItem"]) -> "Order":
         """Create a new order."""
         total = Money(amount=Decimal("0"), currency="USD")
         for item in items:
@@ -234,15 +234,15 @@ from typing import List, Optional
 class OrderRepository(EntityRepository[Order, UUID]):
     """Repository for Order aggregates."""
     
-    async def find_by_customer(self, customer_id: UUID) -> List[Order]:
+    async def find_by_customer(self, customer_id: UUID) -> list[Order]:
         """Find all orders for a customer."""
         # Implementation details...
     
-    async def find_recent(self, limit: int = 10) -> List[Order]:
+    async def find_recent(self, limit: int = 10) -> list[Order]:
         """Find most recent orders."""
         # Implementation details...
     
-    async def find_by_status(self, status: str) -> List[Order]:
+    async def find_by_status(self, status: str) -> list[Order]:
         """Find orders by status."""
         # Implementation details...
 ```
@@ -348,7 +348,7 @@ class OrderApplicationService(ApplicationService):
     async def place_order(
         self, 
         customer_id: UUID, 
-        items: List[dict],
+        items: list[dict],
         payment_method: PaymentMethod
     ) -> Result[Order, str]:
         """Place an order with payment."""

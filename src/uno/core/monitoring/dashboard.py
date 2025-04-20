@@ -49,10 +49,10 @@ class DashboardConfig:
         route_prefix: str = "/monitoring/dashboard",
         api_prefix: str = "/monitoring/api",
         require_api_key: bool = False,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         update_interval: float = 5.0,
-        templates_dir: Optional[str] = None,
-        static_dir: Optional[str] = None,
+        templates_dir: str | None = None,
+        static_dir: str | None = None,
     ):
         """
         Initialize dashboard configuration.
@@ -94,7 +94,7 @@ class MonitoringDashboard:
         app: FastAPI,
         config: Optional[DashboardConfig] = None,
         monitoring_config: Optional[MonitoringConfig] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the monitoring dashboard.

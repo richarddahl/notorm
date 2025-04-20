@@ -31,7 +31,7 @@ from enum import Enum
 
 import inject
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.error import BaseError
 from uno.workflows.errors import (
     WorkflowErrorCode,
@@ -57,7 +57,7 @@ class RecipientResolver(Protocol):
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a recipient to a list of users."""
         ...
 
@@ -69,14 +69,14 @@ class UserResolver:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a user recipient."""
         try:
             # Check if user ID contains a template variable
@@ -171,14 +171,14 @@ class RoleResolver:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a role recipient to a list of users."""
         try:
             # Get the role name
@@ -197,7 +197,7 @@ class RoleResolver:
             self.logger.exception(f"Error resolving role recipient: {e}")
             return Failure(RecipientError(f"Error resolving role recipient: {str(e)}"))
 
-    async def _get_users_by_role(self, role_name: str) -> List[User]:
+    async def _get_users_by_role(self, role_name: str) -> list[User]:
         """Get all users with a specific role."""
         try:
             if not self.db_manager:
@@ -234,14 +234,14 @@ class GroupResolver:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a group recipient to a list of users."""
         try:
             # Get the group ID or name
@@ -260,7 +260,7 @@ class GroupResolver:
             self.logger.exception(f"Error resolving group recipient: {e}")
             return Failure(RecipientError(f"Error resolving group recipient: {str(e)}"))
 
-    async def _get_users_by_group(self, group_id: str) -> List[User]:
+    async def _get_users_by_group(self, group_id: str) -> list[User]:
         """Get all users in a specific group."""
         try:
             if not self.db_manager:
@@ -314,14 +314,14 @@ class AttributeResolver:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """
         Resolve recipients based on attribute values.
 
@@ -368,7 +368,7 @@ class AttributeResolver:
 
     async def _get_users_by_attribute(
         self, attribute_name: str, attribute_value: str
-    ) -> List[User]:
+    ) -> list[User]:
         """Get all users with a specific attribute value."""
         try:
             if not self.db_manager:
@@ -484,14 +484,14 @@ class QueryRecipientResolver:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """
         Resolve recipients based on a saved query.
 
@@ -616,7 +616,7 @@ class DynamicRecipientResolver:
     @inject.params(logger=logging.Logger)
     def __init__(
         self,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         dynamic_resolvers: Dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
@@ -630,7 +630,7 @@ class DynamicRecipientResolver:
 
     async def resolve(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """
         Resolve recipients using a dynamic resolver function.
 

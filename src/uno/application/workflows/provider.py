@@ -1,4 +1,4 @@
- # SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
+# SPDX-FileCopyrightText: 2024-present Richard Dahl <richard@dahl.us>
 # SPDX-License-Identifier: MIT
 
 """
@@ -9,9 +9,9 @@ If any service or repository is not yet registered in the DI system, ensure it i
 import logging
 
 from uno.core.base.error import BaseError
-from uno.core.errors.result import Failure, Result, Success
+from uno.core.errors.result import Result
 from uno.database.db_manager import DBManager
-from uno.database.repository import UnoBaseRepository
+from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository
 from uno.workflows.engine import (
     PostgresWorkflowEventListener,
     WorkflowEngine,
@@ -32,7 +32,8 @@ from uno.workflows.errors import (
     WorkflowNotFoundError,
 )
 
-class WorkflowRepository(UnoBaseRepository):
+
+class WorkflowRepository(SQLAlchemyRepository):
     """Repository for workflow-related operations."""
 
     def __init__(self, db_manager: DBManager):
@@ -461,7 +462,9 @@ class WorkflowService:
                 )
             )
 
-    async def process_event(self, event: dict[str, object]) -> Result[dict[str, object]]:
+    async def process_event(
+        self, event: dict[str, object]
+    ) -> Result[dict[str, object]]:
         """Process a workflow event."""
         try:
             # Convert to WorkflowEventModel
@@ -487,7 +490,6 @@ class WorkflowService:
                     message="Error processing workflow event",
                 )
             )
-
 
 
 def configure_workflow_module_services(container):
@@ -529,9 +531,6 @@ def configure_workflow_module_services(container):
         ),
         lifecycle="scoped",
     )
-
-
-
 
 
 # Initialize action executors, condition evaluators, and recipient resolvers

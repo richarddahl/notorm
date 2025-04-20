@@ -17,7 +17,18 @@ import asyncio
 
 from pydantic import BaseModel, Field
 import asyncpg
-from sqlalchemy import MetaData, Table, Column, text, String, Integer, JSON, TIMESTAMP, select, insert
+from sqlalchemy import (
+    MetaData,
+    Table,
+    Column,
+    text,
+    String,
+    Integer,
+    JSON,
+    TIMESTAMP,
+    select,
+    insert,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -29,27 +40,27 @@ from uno.core.events.event import Event
 from uno.core.events.store import EventStore
 
 # Type variable for event
-E = TypeVar('E', bound=EventProtocol)
+E = TypeVar("E", bound=EventProtocol)
 
 
 class PostgresEventStoreConfig(BaseModel):
     """Configuration for the PostgreSQL event store."""
-    
+
     # Connection settings
     connection_string: str
     pool_size: int = 10
     max_overflow: int = 20
     pool_timeout: int = 30
     pool_recycle: int = 1800  # 30 minutes
-    
+
     # Schema settings
     schema: str = "public"
     table_name: str = "events"
-    
+
     # Feature flags
     use_notifications: bool = True
     create_schema_if_missing: bool = True
-    
+
     # Performance settings
     batch_size: int = 100
     use_connection_pool: bool = True
@@ -58,12 +69,12 @@ class PostgresEventStoreConfig(BaseModel):
 class PostgresEventStore(EventStore[E]):
     """
     PostgreSQL implementation of the EventStore.
-    
+
     This implementation stores events in a PostgreSQL database, providing
     robust persistence and efficient retrieval for event sourcing and
     event-driven architectures.
     """
-    
+
     def __init__(
         self,
         config: PostgresEventStoreConfig,
@@ -71,7 +82,7 @@ class PostgresEventStore(EventStore[E]):
     ):
         """
         Initialize the PostgreSQL event store.
-        
+
         Args:
             config: Configuration for the event store
             event_class: The event class this store will use
@@ -84,7 +95,7 @@ class PostgresEventStore(EventStore[E]):
         self._initialized = False
         self._initialization_lock = asyncio.Lock()
         self._table = None
-        
+
         # Define the events table schema
         metadata = MetaData()
         self._table = Table(
@@ -100,20 +111,20 @@ class PostgresEventStore(EventStore[E]):
             Column("aggregate_version", Integer, nullable=True, index=True),
             Column("data", JSONB, nullable=False),
             Column("metadata", JSONB, nullable=True),
-            schema=config.schema
+            schema=config.schema,
         )
-    
+
     async def initialize(self) -> None:
         """
         Initialize the event store.
-        
+
         This method sets up the database connection pool and creates the
         events table if it doesn't exist.
         """
         async with self._initialization_lock:
             if self._initialized:
                 return
-            
+
             # Create the SQLAlchemy engine
             self._engine = create_async_engine(
                 self.config.connection_string,
@@ -122,48 +133,58 @@ class PostgresEventStore(EventStore[E]):
                 pool_timeout=self.config.pool_timeout,
                 pool_recycle=self.config.pool_recycle,
             )
-            
+
             # Create the session factory
             self._async_session_factory = sessionmaker(
-                self._engine,
-                expire_on_commit=False,
-                class_=AsyncSession
+                self._engine, expire_on_commit=False, class_=AsyncSession
             )
-            
+
             # Create the schema if needed
             if self.config.create_schema_if_missing:
                 async with self._engine.begin() as conn:
                     # Check if the schema exists
                     schema_exists = await conn.scalar(
-                        text(f"SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = '{self.config.schema}')")
+                        text(
+                            f"SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = '{self.config.schema}')"
+                        )
                     )
-                    
+
                     if not schema_exists:
                         # Create the schema
-                        await conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {self.config.schema}"))
+                        await conn.execute(
+                            text(f"CREATE SCHEMA IF NOT EXISTS {self.config.schema}")
+                        )
                         self.logger.info(f"Created schema: {self.config.schema}")
-                    
+
                     # Check if the table exists
                     table_exists = await conn.scalar(
-                        text(f"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = '{self.config.schema}' AND table_name = '{self.config.table_name}')")
+                        text(
+                            f"SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_schema = '{self.config.schema}' AND table_name = '{self.config.table_name}')"
+                        )
                     )
-                    
+
                     if not table_exists:
                         # Create the table
                         metadata = MetaData()
-                        metadata.reflect(bind=self._engine, schema=self.config.schema, views=True)
+                        metadata.reflect(
+                            bind=self._engine, schema=self.config.schema, views=True
+                        )
                         if self._table not in metadata.tables:
                             metadata = MetaData()
                             metadata.bind = self._engine
                             metadata.add(self._table)
                             await conn.run_sync(metadata.create_all)
-                            self.logger.info(f"Created table: {self.config.schema}.{self.config.table_name}")
-                
+                            self.logger.info(
+                                f"Created table: {self.config.schema}.{self.config.table_name}"
+                            )
+
                 # Create notification function and trigger if needed
                 if self.config.use_notifications:
                     async with self._engine.begin() as conn:
                         # Create notification function
-                        await conn.execute(text(f"""
+                        await conn.execute(
+                            text(
+                                f"""
                         CREATE OR REPLACE FUNCTION {self.config.schema}.notify_event() RETURNS TRIGGER AS $$
                         DECLARE
                             payload JSON;
@@ -173,86 +194,113 @@ class PostgresEventStore(EventStore[E]):
                             RETURN NEW;
                         END;
                         $$ LANGUAGE plpgsql;
-                        """))
-                        
+                        """
+                            )
+                        )
+
                         # Create or replace trigger
-                        await conn.execute(text(f"""
+                        await conn.execute(
+                            text(
+                                f"""
                         DROP TRIGGER IF EXISTS events_notify_trigger ON {self.config.schema}.{self.config.table_name};
                         CREATE TRIGGER events_notify_trigger
                             AFTER INSERT ON {self.config.schema}.{self.config.table_name}
                             FOR EACH ROW
                             EXECUTE FUNCTION {self.config.schema}.notify_event();
-                        """))
-                        
-                        self.logger.info("Created event notification function and trigger")
-            
+                        """
+                            )
+                        )
+
+                        self.logger.info(
+                            "Created event notification function and trigger"
+                        )
+
             self._initialized = True
             self.logger.info("PostgreSQL event store initialized")
-    
-    async def append_events(self, events: List[E], expected_version: Optional[int] = None) -> int:
+
+    async def append_events(
+        self, events: list[E], expected_version: Optional[int] = None
+    ) -> int:
         """
         Append events to the store, optionally with optimistic concurrency.
-        
+
         Args:
             events: The events to append
             expected_version: The expected current version (for optimistic concurrency)
-            
+
         Returns:
             The new version after appending these events
-            
+
         Raises:
             ConcurrencyError: If expected_version is provided and doesn't match
         """
         if not self._initialized:
             await self.initialize()
-        
+
         if not events:
             return 0
-        
+
         # Get the aggregate ID from the first event
         aggregate_id = events[0].aggregate_id
         if not aggregate_id:
             raise ValueError("Events must have an aggregate_id for version tracking")
-        
+
         # Start a transaction
         async with self._async_session_factory() as session:
             async with session.begin():
                 # If we're using optimistic concurrency, verify the current version
                 if expected_version is not None:
                     # Get the current version
-                    current_version_query = select(self._table.c.aggregate_version) \
-                        .where(self._table.c.aggregate_id == aggregate_id) \
-                        .order_by(self._table.c.aggregate_version.desc()) \
+                    current_version_query = (
+                        select(self._table.c.aggregate_version)
+                        .where(self._table.c.aggregate_id == aggregate_id)
+                        .order_by(self._table.c.aggregate_version.desc())
                         .limit(1)
-                    
+                    )
+
                     result = await session.execute(current_version_query)
                     row = result.fetchone()
                     current_version = row[0] if row else 0
-                    
+
                     # Check if the version matches
                     if current_version != expected_version:
                         raise ConcurrencyError(
                             f"Concurrency conflict for aggregate {aggregate_id}: "
                             f"expected version {expected_version}, but current version is {current_version}"
                         )
-                
+
                 # Insert events with incrementing versions
                 new_version = expected_version or 0
                 for event in events:
                     new_version += 1
-                    
+
                     # Prepare the event data
-                    event_data = event.to_dict() if hasattr(event, "to_dict") else self._event_to_dict(event)
-                    
+                    event_data = (
+                        event.to_dict()
+                        if hasattr(event, "to_dict")
+                        else self._event_to_dict(event)
+                    )
+
                     # Remove the standard fields that will be stored in separate columns
-                    data = {k: v for k, v in event_data.items() if k not in [
-                        "event_id", "event_type", "occurred_at", "correlation_id", 
-                        "causation_id", "aggregate_id", "aggregate_type", "aggregate_version"
-                    ]}
-                    
+                    data = {
+                        k: v
+                        for k, v in event_data.items()
+                        if k
+                        not in [
+                            "event_id",
+                            "event_type",
+                            "occurred_at",
+                            "correlation_id",
+                            "causation_id",
+                            "aggregate_id",
+                            "aggregate_type",
+                            "aggregate_version",
+                        ]
+                    }
+
                     # Get metadata if it exists
                     metadata = event_data.get("metadata", {})
-                    
+
                     # Prepare insert values
                     values = {
                         "event_id": event.event_id,
@@ -264,163 +312,177 @@ class PostgresEventStore(EventStore[E]):
                         "aggregate_type": event.aggregate_type,
                         "aggregate_version": new_version,  # Use our incremented version
                         "data": data,
-                        "metadata": metadata
+                        "metadata": metadata,
                     }
-                    
+
                     # Insert the event
                     await session.execute(insert(self._table).values(**values))
-                
+
                 # Commit the transaction
                 await session.commit()
-        
+
         return new_version
-    
-    async def get_events_by_aggregate(self, aggregate_id: str, from_version: int = 0) -> List[E]:
+
+    async def get_events_by_aggregate(
+        self, aggregate_id: str, from_version: int = 0
+    ) -> list[E]:
         """
         Get all events for a specific aggregate.
-        
+
         Args:
             aggregate_id: The ID of the aggregate
             from_version: The starting version to retrieve from
-            
+
         Returns:
             A list of events for the specified aggregate
         """
         if not self._initialized:
             await self.initialize()
-        
+
         async with self._async_session_factory() as session:
             # Build query
-            query = select(self._table) \
-                .where(self._table.c.aggregate_id == aggregate_id) \
-                .where(self._table.c.aggregate_version >= from_version) \
+            query = (
+                select(self._table)
+                .where(self._table.c.aggregate_id == aggregate_id)
+                .where(self._table.c.aggregate_version >= from_version)
                 .order_by(self._table.c.aggregate_version)
-            
+            )
+
             # Execute query
             result = await session.execute(query)
             rows = result.fetchall()
-        
+
         # Convert rows to events
         return [self._row_to_event(row) for row in rows]
-    
-    async def get_events_by_type(self, event_type: str, start_date: Optional[datetime] = None) -> List[E]:
+
+    async def get_events_by_type(
+        self, event_type: str, start_date: Optional[datetime] = None
+    ) -> list[E]:
         """
         Get all events of a specific type.
-        
+
         Args:
             event_type: The type of events to retrieve
             start_date: Optional starting date for filtering events
-            
+
         Returns:
             A list of events of the specified type
         """
         if not self._initialized:
             await self.initialize()
-        
+
         async with self._async_session_factory() as session:
             # Build query
-            query = select(self._table) \
-                .where(self._table.c.event_type == event_type) \
+            query = (
+                select(self._table)
+                .where(self._table.c.event_type == event_type)
                 .order_by(self._table.c.occurred_at)
-            
+            )
+
             # Add date filter if needed
             if start_date:
                 query = query.where(self._table.c.occurred_at >= start_date)
-            
+
             # Execute query
             result = await session.execute(query)
             rows = result.fetchall()
-        
+
         # Convert rows to events
         return [self._row_to_event(row) for row in rows]
-    
-    async def get_events_by_correlation_id(self, correlation_id: str) -> List[E]:
+
+    async def get_events_by_correlation_id(self, correlation_id: str) -> list[E]:
         """
         Get all events with a specific correlation ID.
-        
+
         Args:
             correlation_id: The correlation ID to filter by
-            
+
         Returns:
             A list of events with the specified correlation ID
         """
         if not self._initialized:
             await self.initialize()
-        
+
         async with self._async_session_factory() as session:
             # Build query
-            query = select(self._table) \
-                .where(self._table.c.correlation_id == correlation_id) \
+            query = (
+                select(self._table)
+                .where(self._table.c.correlation_id == correlation_id)
                 .order_by(self._table.c.occurred_at)
-            
+            )
+
             # Execute query
             result = await session.execute(query)
             rows = result.fetchall()
-        
+
         # Convert rows to events
         return [self._row_to_event(row) for row in rows]
-    
-    async def get_latest_events(self, limit: int = 100) -> List[E]:
+
+    async def get_latest_events(self, limit: int = 100) -> list[E]:
         """
         Get the latest events from the store.
-        
+
         Args:
             limit: Maximum number of events to retrieve
-            
+
         Returns:
             A list of the latest events
         """
         if not self._initialized:
             await self.initialize()
-        
+
         async with self._async_session_factory() as session:
             # Build query
-            query = select(self._table) \
-                .order_by(self._table.c.occurred_at.desc()) \
+            query = (
+                select(self._table)
+                .order_by(self._table.c.occurred_at.desc())
                 .limit(limit)
-            
+            )
+
             # Execute query
             result = await session.execute(query)
             rows = result.fetchall()
-        
+
         # Convert rows to events (in chronological order)
         events = [self._row_to_event(row) for row in rows]
         return list(reversed(events))
-    
+
     async def get_aggregate_version(self, aggregate_id: str) -> int:
         """
         Get the current version of an aggregate.
-        
+
         Args:
             aggregate_id: The ID of the aggregate
-            
+
         Returns:
             The current version of the aggregate
         """
         if not self._initialized:
             await self.initialize()
-        
+
         async with self._async_session_factory() as session:
             # Build query
-            query = select(self._table.c.aggregate_version) \
-                .where(self._table.c.aggregate_id == aggregate_id) \
-                .order_by(self._table.c.aggregate_version.desc()) \
+            query = (
+                select(self._table.c.aggregate_version)
+                .where(self._table.c.aggregate_id == aggregate_id)
+                .order_by(self._table.c.aggregate_version.desc())
                 .limit(1)
-            
+            )
+
             # Execute query
             result = await session.execute(query)
             row = result.fetchone()
-        
+
         # Return the version or 0 if no events found
         return row[0] if row else 0
-    
+
     def _event_to_dict(self, event: E) -> Dict[str, Any]:
         """
         Convert an event to a dictionary.
-        
+
         Args:
             event: The event to convert
-            
+
         Returns:
             Dictionary representation of the event
         """
@@ -439,19 +501,30 @@ class PostgresEventStore(EventStore[E]):
                 "aggregate_id": getattr(event, "aggregate_id", None),
                 "aggregate_type": getattr(event, "aggregate_type", None),
                 "aggregate_version": getattr(event, "aggregate_version", None),
-                "data": {k: v for k, v in event.__dict__.items() if k not in [
-                    "event_id", "event_type", "occurred_at", "correlation_id",
-                    "causation_id", "aggregate_id", "aggregate_type", "aggregate_version"
-                ]}
+                "data": {
+                    k: v
+                    for k, v in event.__dict__.items()
+                    if k
+                    not in [
+                        "event_id",
+                        "event_type",
+                        "occurred_at",
+                        "correlation_id",
+                        "causation_id",
+                        "aggregate_id",
+                        "aggregate_type",
+                        "aggregate_version",
+                    ]
+                },
             }
-    
+
     def _row_to_event(self, row: Any) -> E:
         """
         Convert a database row to an event.
-        
+
         Args:
             row: The database row
-            
+
         Returns:
             An event created from the row data
         """
@@ -465,12 +538,12 @@ class PostgresEventStore(EventStore[E]):
         else:
             # Fallback
             row_dict = dict(row)
-        
+
         # Combine standard fields with data
         data = row_dict.get("data", {})
         if isinstance(data, str):
             data = json.loads(data)
-        
+
         # Assemble the complete event data
         event_data = {
             "event_id": row_dict.get("event_id"),
@@ -481,16 +554,16 @@ class PostgresEventStore(EventStore[E]):
             "aggregate_id": row_dict.get("aggregate_id"),
             "aggregate_type": row_dict.get("aggregate_type"),
             "aggregate_version": row_dict.get("aggregate_version"),
-            **data
+            **data,
         }
-        
+
         # Add metadata if available
         metadata = row_dict.get("metadata")
         if metadata:
             if isinstance(metadata, str):
                 metadata = json.loads(metadata)
             event_data["metadata"] = metadata
-        
+
         # Create and return the event instance
         if hasattr(self.event_class, "from_dict"):
             return self.event_class.from_dict(event_data)

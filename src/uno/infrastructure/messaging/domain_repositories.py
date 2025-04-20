@@ -28,13 +28,13 @@ class MessageRepositoryProtocol(Protocol):
         only_unread: bool = False,
         page: int = 1,
         page_size: int = 20,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get messages for a specific user."""
         ...
 
     async def get_message_thread(
         self, parent_message_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get all messages in a thread."""
         ...
 
@@ -52,13 +52,13 @@ class MessageRepositoryProtocol(Protocol):
 
     async def get_draft_messages_for_user(
         self, user_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get draft messages for a specific user."""
         ...
 
     async def get_sent_messages_for_user(
         self, user_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get sent messages for a specific user."""
         ...
 
@@ -89,7 +89,7 @@ class MessageRepository(Repository, MessageRepositoryProtocol):
         only_unread: bool = False,
         page: int = 1,
         page_size: int = 20,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get messages for a specific user."""
         query = (
             self.session.query(MessageModel)
@@ -112,7 +112,7 @@ class MessageRepository(Repository, MessageRepositoryProtocol):
 
     async def get_message_thread(
         self, parent_message_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get all messages in a thread."""
         # First get the parent message
         parent_message = await self.get_by_id(parent_message_id)
@@ -272,7 +272,7 @@ class MessageRepository(Repository, MessageRepositoryProtocol):
 
     async def get_draft_messages_for_user(
         self, user_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get draft messages for a specific user."""
         offset = (page - 1) * page_size
         message_models = (
@@ -293,7 +293,7 @@ class MessageRepository(Repository, MessageRepositoryProtocol):
 
     async def get_sent_messages_for_user(
         self, user_id: str, page: int = 1, page_size: int = 20
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Get sent messages for a specific user."""
         offset = (page - 1) * page_size
         message_models = (

@@ -39,7 +39,7 @@ class ErrorResponse:
         message: str,
         status_code: int,
         details: Optional[Dict[str, Any]] = None,
-        help_text: Optional[str] = None,
+        help_text: str | None = None,
     ):
         """
         Initialize a standardized error response.

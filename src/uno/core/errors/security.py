@@ -50,8 +50,8 @@ class AuthorizationError(BaseError):
         self,
         message: str = "Authorization failed",
         error_code: str = ErrorCode.AUTHORIZATION_ERROR,
-        permission: Optional[str] = None,
-        resource: Optional[str] = None,
+        permission: str | None = None,
+        resource: str | None = None,
         **context: Any,
     ):
         """

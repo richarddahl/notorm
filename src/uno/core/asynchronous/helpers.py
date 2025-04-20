@@ -11,12 +11,12 @@ import asyncio
 import signal
 import contextlib
 import logging
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.errors.result_utils import AsyncResultContext
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 async def setup_signal_handler(
@@ -29,8 +29,10 @@ async def setup_signal_handler(
     """
     try:
         loop = asyncio.get_running_loop()
+
         def _handler():
             asyncio.create_task(handler(sig))
+
         loop.add_signal_handler(sig, _handler)
         return Success(None)
     except Exception as e:
@@ -56,11 +58,11 @@ async def transaction(session: Any) -> Result[None, Exception]:
 class TaskGroup:
     """
     TaskGroup for structured concurrency.
-    
+
     This class provides a way to manage multiple tasks as a group, similar to
     Python 3.11's asyncio.TaskGroup but with additional features.
     """
-    
+
     def __init__(self, name: str | None = None, logger: logging.Logger | None = None):
         """
         Initialize the task group.
@@ -70,12 +72,12 @@ class TaskGroup:
         self.tasks: set[asyncio.Task] = set()
         self._entered = False
         self._exited = False
-    
+
     async def __aenter__(self) -> "Result[TaskGroup, Exception]":
         """Enter the async context, enabling task creation. Returns Result."""
         self._entered = True
         return Success(self)
-    
+
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the async context, cancelling all tasks. Errors returned as Failure."""
         if self._exited:
@@ -99,8 +101,10 @@ class TaskGroup:
         if errors:
             return Failure(errors)
         return Success(None)
-    
-    def create_task(self, coro: Awaitable[T], name: str | None = None) -> Result[asyncio.Task, Exception]:
+
+    def create_task(
+        self, coro: Awaitable[T], name: str | None = None
+    ) -> Result[asyncio.Task, Exception]:
         """
         Create a task in this group. Returns Result.
         """
@@ -114,25 +118,27 @@ class TaskGroup:
             return Success(task)
         except Exception as e:
             return Failure(e)
-    
+
     @property
     def active_tasks(self) -> list[asyncio.Task]:
         """Get the list of active (unfinished) tasks."""
         return [task for task in self.tasks if not task.done()]
+
     @property
     def completed_tasks(self) -> list[asyncio.Task]:
         """Get the list of completed tasks."""
         return [task for task in self.tasks if task.done() and not task.cancelled()]
+
     @property
     def cancelled_tasks(self) -> list[asyncio.Task]:
         """Get the list of cancelled tasks."""
         return [task for task in self.tasks if task.cancelled()]
-    
+
     async def cancel_all(self) -> None:
         """Cancel all tasks in the group."""
         for task in self.tasks:
             if not task.done():
                 task.cancel()
-        
+
         if self.tasks:
             await asyncio.gather(*self.tasks, return_exceptions=True)

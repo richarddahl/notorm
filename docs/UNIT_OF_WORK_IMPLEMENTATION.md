@@ -87,13 +87,13 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
     def __init__(
         self,
         event_bus: Optional[AsyncEventBus] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialize the Unit of Work."""
         self._event_bus = event_bus
         self._logger = logger or logging.getLogger(__name__)
         self._repositories: Dict[Type[Repository], Repository] = {}
-        self._events: List[Event] = []
+        self._events: list[Event] = []
     
     def register_repository(self, repo_type: Type[RepoT], repo: RepoT) -> None:
         """Register a repository with this Unit of Work."""
@@ -166,7 +166,7 @@ class DatabaseUnitOfWork(AbstractUnitOfWork):
         self,
         connection_factory: ConnectionFactory,
         event_bus: Optional[AsyncEventBus] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """Initialize the database Unit of Work."""
         super().__init__(event_bus, logger)
@@ -220,7 +220,7 @@ The `transaction` context manager provides a convenient way to work with transac
 @asynccontextmanager
 async def transaction(
     uow_factory: UnitOfWorkFactory,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> AsyncIterator[AbstractUnitOfWork]:
     """
     Context manager for a transaction using a Unit of Work.
@@ -244,7 +244,7 @@ The `unit_of_work` decorator makes it easy to use a Unit of Work in service meth
 ```python
 def unit_of_work(
     uow_factory: UnitOfWorkFactory,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """
     Decorator that provides a Unit of Work for a function.

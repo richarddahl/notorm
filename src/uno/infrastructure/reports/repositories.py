@@ -17,7 +17,7 @@ from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.error import ErrorCode
 from uno.reports.errors import (
     ReportError,
@@ -31,7 +31,7 @@ from uno.reports.errors import (
     ReportTemplateInvalidError,
 )
 
-from uno.database.repository import UnoBaseRepository
+from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository
 from uno.reports.models import (
     ReportTemplateModel,
     ReportFieldDefinitionModel,
@@ -357,9 +357,7 @@ class ReportFieldDefinitionRepository(
         """Create a new field definition."""
         try:
             session = session or self.session
-            model_data = field.model_dump(
-                exclude={"id"} if field.id is None else set()
-            )
+            model_data = field.model_dump(exclude={"id"} if field.id is None else set())
 
             # Remove relationship fields from data
             model_data.pop("parent_field", None)

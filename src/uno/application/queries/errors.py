@@ -46,7 +46,7 @@ class QueryErrorCode:
 class QueryNotFoundError(BaseError):
     """Error raised when a query is not found."""
 
-    def __init__(self, query_id: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, query_id: str, message: str | None = None, **context: Any):
         message = message or f"Query with ID {query_id} not found"
         super().__init__(
             message=message,
@@ -59,7 +59,7 @@ class QueryNotFoundError(BaseError):
 class QueryInvalidDataError(BaseError):
     """Error raised when query data is invalid."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Invalid query data: {reason}"
         super().__init__(
             message=message,
@@ -75,8 +75,8 @@ class QueryExecutionError(BaseError):
     def __init__(
         self,
         reason: str,
-        query_id: Optional[str] = None,
-        message: Optional[str] = None,
+        query_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -98,8 +98,8 @@ class QueryPathError(BaseError):
     def __init__(
         self,
         reason: str,
-        path_id: Optional[str] = None,
-        message: Optional[str] = None,
+        path_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -121,8 +121,8 @@ class QueryValueError(BaseError):
     def __init__(
         self,
         reason: str,
-        value_id: Optional[str] = None,
-        message: Optional[str] = None,
+        value_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -141,7 +141,7 @@ class QueryValueError(BaseError):
 class FilterError(BaseError):
     """Error raised when there is an issue with a filter."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Filter error: {reason}"
         super().__init__(
             message=message,

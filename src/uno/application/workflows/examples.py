@@ -51,7 +51,7 @@ class OrderPlacedEvent(Event):
         order_id: str,
         user_id: str,
         total_amount: float,
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
     ):
         super().__init__()
         self.order_id = order_id

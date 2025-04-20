@@ -172,7 +172,7 @@ class QueryPlan:
         pattern: QueryPattern,
         model_class: Type[T],
         metrics: Optional[QueryMetrics] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the query plan.
@@ -200,7 +200,7 @@ class QueryPlan:
         # Optimal hint settings for this pattern
         self.optimal_hints = self._get_optimal_hints()
 
-    def _get_available_indexes(self) -> Dict[str, List[str]]:
+    def _get_available_indexes(self) -> Dict[str, list[str]]:
         """
         Get available indexes for the model's table.
 
@@ -413,11 +413,11 @@ class CommonQueryPatterns:
     def __init__(
         self,
         model_class: Type[T],
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         use_cache: bool = True,
         cache_ttl: Optional[float] = 60.0,
         collect_metrics: bool = False,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the common query patterns.
@@ -454,7 +454,7 @@ class CommonQueryPatterns:
     async def find_by_id(
         self,
         id_value: Any,
-        load_relations: Optional[Union[bool, List[str]]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
     ) -> Optional[T]:
         """
         Find a model by ID.
@@ -464,7 +464,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             ModelBase instance or None
@@ -555,9 +555,9 @@ class CommonQueryPatterns:
         self,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        order_by: Optional[List[Any]] = None,
-        load_relations: Optional[Union[bool, List[str]]] = None,
-    ) -> List[T]:
+        order_by: Optional[list[Any]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
+    ) -> list[T]:
         """
         Find all models.
 
@@ -568,7 +568,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             List of model instances
@@ -667,8 +667,8 @@ class CommonQueryPatterns:
         self,
         field_name: str,
         field_value: Any,
-        load_relations: Optional[Union[bool, List[str]]] = None,
-    ) -> List[T]:
+        load_relations: Optional[Union[bool, list[str]]] = None,
+    ) -> list[T]:
         """
         Find models by field value.
 
@@ -678,7 +678,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             List of model instances
@@ -785,9 +785,9 @@ class CommonQueryPatterns:
         match_all: bool = True,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        order_by: Optional[List[Any]] = None,
-        load_relations: Optional[Union[bool, List[str]]] = None,
-    ) -> List[T]:
+        order_by: Optional[list[Any]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
+    ) -> list[T]:
         """
         Find models matching multiple field values.
 
@@ -800,7 +800,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             List of model instances
@@ -924,7 +924,7 @@ class CommonQueryPatterns:
 
     async def count(
         self,
-        where: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
+        where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
     ) -> int:
         """
         Count models matching criteria.
@@ -1141,10 +1141,10 @@ class CommonQueryPatterns:
         self,
         page: int = 1,
         page_size: int = 25,
-        where: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
-        order_by: Optional[List[Any]] = None,
-        load_relations: Optional[Union[bool, List[str]]] = None,
-    ) -> Tuple[List[T], int, int]:
+        where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
+        order_by: Optional[list[Any]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
+    ) -> Tuple[list[T], int, int]:
         """
         Paginate models.
 
@@ -1156,7 +1156,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             Tuple of (models, total_count, total_pages)
@@ -1265,12 +1265,12 @@ class CommonQueryPatterns:
     async def fts_search(
         self,
         search_text: str,
-        search_fields: List[str],
+        search_fields: list[str],
         limit: Optional[int] = 25,
         offset: Optional[int] = None,
-        order_by: Optional[List[Any]] = None,
-        load_relations: Optional[Union[bool, List[str]]] = None,
-    ) -> List[T]:
+        order_by: Optional[list[Any]] = None,
+        load_relations: Optional[Union[bool, list[str]]] = None,
+    ) -> list[T]:
         """
         Perform a full-text search.
 
@@ -1283,7 +1283,7 @@ class CommonQueryPatterns:
             load_relations: Which relationships to load
                 - None/False: Load no relationships
                 - True: Load all relationships
-                - List[str]: Load only specified relationships
+                - list[str]: Load only specified relationships
 
         Returns:
             List of matching models
@@ -1410,10 +1410,10 @@ class CommonQueryPatterns:
 
     async def batch_update(
         self,
-        id_values: List[Any],
+        id_values: list[Any],
         field_values: Dict[str, Any],
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Update multiple models by ID.
 
@@ -1472,9 +1472,9 @@ class CommonQueryPatterns:
 
     async def batch_delete(
         self,
-        id_values: List[Any],
+        id_values: list[Any],
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Delete multiple models by ID.
 
@@ -1531,11 +1531,11 @@ class CommonQueryPatterns:
 
     async def batch_upsert(
         self,
-        records: List[Dict[str, Any]],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
+        records: list[dict[str, Any]],
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Upsert multiple models.
 

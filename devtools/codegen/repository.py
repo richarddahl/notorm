@@ -19,7 +19,7 @@ logger = logging.getLogger("uno.codegen")
 def generate_repository(
     name: str,
     model_name: str,
-    module_name: Optional[str] = None,
+    module_name: str | None = None,
     include_imports: bool = True,
     include_docstrings: bool = True,
     include_crud: bool = True,
@@ -27,7 +27,7 @@ def generate_repository(
     include_bulk_methods: bool = True,
     id_type: str = "str",
     base_repository_class: str = "BaseRepository",
-    filters: Optional[List[Dict[str, Any]]] = None,
+    filters: Optional[list[dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
     """Generate a repository class for a model.
@@ -159,7 +159,7 @@ def _generate_repository_class(
     include_bulk_methods: bool,
     id_type: str,
     base_repository_class: str,
-    filters: Optional[List[Dict[str, Any]]] = None,
+    filters: Optional[list[dict[str, Any]]] = None,
 ) -> str:
     """Generate a repository class definition.
 
@@ -220,7 +220,7 @@ def _generate_repository_class(
 
 def _generate_crud_methods(
     model_name: str, id_type: str, include_docstrings: bool
-) -> List[str]:
+) -> list[str]:
     """Generate CRUD methods for a repository.
 
     Args:
@@ -316,7 +316,7 @@ def _generate_crud_methods(
     return lines
 
 
-def _generate_query_methods(model_name: str, include_docstrings: bool) -> List[str]:
+def _generate_query_methods(model_name: str, include_docstrings: bool) -> list[str]:
     """Generate query methods for a repository.
 
     Args:
@@ -331,7 +331,7 @@ def _generate_query_methods(model_name: str, include_docstrings: bool) -> List[s
     # Get all method
     lines.append("")
     lines.append(
-        f"    async def get_all(self, limit: Optional[int] = None, offset: int = 0) -> List[T]:"
+        f"    async def get_all(self, limit: Optional[int] = None, offset: int = 0) -> list[T]:"
     )
     if include_docstrings:
         lines.append(f'        """Get all {model_name}s.')
@@ -384,7 +384,7 @@ def _generate_query_methods(model_name: str, include_docstrings: bool) -> List[s
     return lines
 
 
-def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> List[str]:
+def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> list[str]:
     """Generate bulk operation methods for a repository.
 
     Args:
@@ -399,7 +399,7 @@ def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> List[st
     # Bulk create method
     lines.append("")
     lines.append(
-        f"    async def bulk_create(self, items: List[Dict[str, Any]]) -> List[T]:"
+        f"    async def bulk_create(self, items: list[dict[str, Any]]) -> list[T]:"
     )
     if include_docstrings:
         lines.append(f'        """Create multiple {model_name}s in a single operation.')
@@ -423,7 +423,7 @@ def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> List[st
     # Bulk update method
     lines.append("")
     lines.append(
-        f"    async def bulk_update(self, items: List[Dict[str, Any]], key_field: str = 'id') -> int:"
+        f"    async def bulk_update(self, items: list[dict[str, Any]], key_field: str = 'id') -> int:"
     )
     if include_docstrings:
         lines.append(f'        """Update multiple {model_name}s in a single operation.')
@@ -472,7 +472,7 @@ def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> List[st
 
     # Bulk delete method
     lines.append("")
-    lines.append(f"    async def bulk_delete(self, ids: List[Any]) -> int:")
+    lines.append(f"    async def bulk_delete(self, ids: list[Any]) -> int:")
     if include_docstrings:
         lines.append(f'        """Delete multiple {model_name}s in a single operation.')
         lines.append("")
@@ -496,8 +496,8 @@ def _generate_bulk_methods(model_name: str, include_docstrings: bool) -> List[st
 
 
 def _generate_filter_methods(
-    filters: List[Dict[str, Any]], include_docstrings: bool
-) -> List[str]:
+    filters: list[dict[str, Any]], include_docstrings: bool
+) -> list[str]:
     """Generate filter methods for a repository.
 
     Args:
@@ -512,7 +512,7 @@ def _generate_filter_methods(
     for filter_def in filters:
         name = filter_def.get("name")
         fields = filter_def.get("fields", [])
-        return_type = filter_def.get("return_type", "List[T]")
+        return_type = filter_def.get("return_type", "list[T]")
         is_single = return_type.startswith("Optional[")
 
         if not name or not fields:

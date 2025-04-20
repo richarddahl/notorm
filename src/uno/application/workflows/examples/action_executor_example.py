@@ -45,7 +45,7 @@ class OrderCreatedEvent(UnoEvent):
         order_id: str,
         customer_id: str,
         total_amount: float,
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
     ):
         super().__init__()
         self.order_id = order_id
@@ -239,7 +239,7 @@ async def create_custom_workflow() -> str:
 
 
 async def track_order_analytics(
-    action: WorkflowAction, context: ActionExecutionContext, recipients: List[User]
+    action: WorkflowAction, context: ActionExecutionContext, recipients: list[User]
 ) -> Dict[str, Any]:
     """
     Custom executor function for order analytics.

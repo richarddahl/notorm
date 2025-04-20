@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 from typing import Any, Generic, TypeVar
 
 from uno.core.entity import ID
-from uno.core.errors.result import Failure, Result, Success
+from uno.core.errors.result import Result
 from uno.domain.entity.base import EntityBase
 from uno.domain.entity.specification.base import Specification
 
@@ -51,13 +51,13 @@ class EntityRepository(Generic[T]):
         """
         result = await self.get(id)
         if result.is_failure():
-            return Failure[T, str](result.error())
+            return Result.failure(result.error())
             
         entity = result.value()
         if entity is None:
-            return Failure[T, str](f"Entity with ID {id} not found")
+            return Result.failure(f"Entity with ID {id} not found")
             
-        return Success[T, str](entity)
+        return Result.success(entity)
     
     @abstractmethod
     async def list(
@@ -145,16 +145,16 @@ class EntityRepository(Generic[T]):
         """
         result = await self.get(id)
         if result.is_failure():
-            return Failure[bool, str](result.error())
+            return Result.failure(result.error())
         
         if result.value() is None:
-            return Failure[bool, str](f"Entity with ID {id} not found")
+            return Result.failure(f"Entity with ID {id} not found")
         
         result = await self.delete(result.value())
         if result.is_failure():
-            return Failure[bool, str](result.error())
+            return Result.failure(result.error())
         
-        return Success[bool, str](result.value())
+        return Result.success(result.value())
     
     async def save(self, entity: T) -> Result[T, str]:
         """

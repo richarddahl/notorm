@@ -39,7 +39,7 @@ class PathQuerySpecification:
         params: Optional[Dict[str, Any]] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = 0,
-        order_by: Optional[str] = None,
+        order_by: str | None = None,
         order_direction: Optional[str] = "asc",
     ):
         """
@@ -91,7 +91,7 @@ class GraphPathQuery:
         track_performance: bool = True,
         use_cache: bool = True,
         cache_ttl: int = 300,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the graph path query executor.
@@ -115,7 +115,7 @@ class GraphPathQuery:
 
     async def execute(
         self, query: PathQuerySpecification
-    ) -> Tuple[List[str], QueryMetadata]:
+    ) -> Tuple[list[str], QueryMetadata]:
         """
         Execute a path query against the graph database.
 
@@ -134,7 +134,7 @@ class GraphPathQuery:
             cache_key = self._generate_cache_key(query)
 
         # Define the query function
-        async def query_fn() -> List[str]:
+        async def query_fn() -> list[str]:
             metadata.start_execution()
 
             try:
@@ -169,7 +169,7 @@ class GraphPathQuery:
         # Execute with performance tracking and caching if enabled
         if self.track_performance and self.use_cache:
             # Use tracking and caching
-            async def tracked_query() -> List[str]:
+            async def tracked_query() -> list[str]:
                 return await self.performance_tracker.track_query(
                     query_key=cache_key, callback=query_fn
                 )
@@ -355,7 +355,7 @@ class GraphPathQueryService:
     """
 
     def __init__(
-        self, path_query: GraphPathQuery, logger: Optional[logging.Logger] = None
+        self, path_query: GraphPathQuery, logger: logging.Logger | None = None
     ):
         """
         Initialize the graph path query service.
@@ -369,7 +369,7 @@ class GraphPathQueryService:
 
     async def query_entities(
         self, query: PathQuerySpecification, repository: Any, entity_type: Type[T]
-    ) -> Tuple[List[T], QueryMetadata]:
+    ) -> Tuple[list[T], QueryMetadata]:
         """
         Execute a path query and return the corresponding entity objects.
 
@@ -388,7 +388,7 @@ class GraphPathQueryService:
             return [], metadata
 
         # Retrieve entities from the repository
-        entities: List[T] = []
+        entities: list[T] = []
 
         for entity_id in entity_ids:
             entity = await repository.get(entity_id)

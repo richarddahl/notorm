@@ -58,7 +58,7 @@ class GraphRAGService(Generic[T]):
         vector_search: VectorSearchService[T],
         graph_navigator: GraphNavigator,
         knowledge_constructor: Optional[KnowledgeConstructor] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize Graph RAG service.
@@ -79,7 +79,7 @@ class GraphRAGService(Generic[T]):
 
     async def extract_relevant_nodes(
         self, query: str, limit: int = 5, threshold: float = 0.7
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Extract relevant node IDs based on semantic similarity to query.
 
@@ -107,9 +107,9 @@ class GraphRAGService(Generic[T]):
         limit: int = 5,
         threshold: float = 0.7,
         max_depth: int = 3,
-        relationship_types: Optional[List[str]] = None,
+        relationship_types: list[str] | None = None,
         strategy: str = "hybrid",
-    ) -> List[GraphContext]:
+    ) -> list[GraphContext]:
         """
         Retrieve graph-based context for a query.
 
@@ -166,8 +166,8 @@ class GraphRAGService(Generic[T]):
         start_node_id: str,
         end_node_id: str,
         max_depth: int = 3,
-        relationship_types: Optional[List[str]] = None,
-        reasoning_type: Optional[str] = None,
+        relationship_types: list[str] | None = None,
+        reasoning_type: str | None = None,
     ) -> Optional[GraphContext]:
         """
         Retrieve context from a path between two nodes.
@@ -218,7 +218,7 @@ class GraphRAGService(Generic[T]):
         center_node_id: str,
         max_depth: int = 2,
         max_nodes: int = 10,
-        relationship_types: Optional[List[str]] = None,
+        relationship_types: list[str] | None = None,
     ) -> Optional[GraphContext]:
         """
         Retrieve context from a subgraph centered on a node.
@@ -256,7 +256,7 @@ class GraphRAGService(Generic[T]):
 
     async def retrieve_knowledge_context(
         self, query: str, limit: int = 5
-    ) -> List[GraphContext]:
+    ) -> list[GraphContext]:
         """
         Retrieve context from knowledge graph based on query.
 
@@ -406,7 +406,7 @@ class GraphRAGService(Generic[T]):
 
         return text
 
-    def format_context_for_prompt(self, contexts: List[GraphContext]) -> str:
+    def format_context_for_prompt(self, contexts: list[GraphContext]) -> str:
         """
         Format graph contexts as context for an LLM prompt.
 
@@ -440,7 +440,7 @@ class GraphRAGService(Generic[T]):
         limit: int = 5,
         threshold: float = 0.7,
         max_depth: int = 3,
-        relationship_types: Optional[List[str]] = None,
+        relationship_types: list[str] | None = None,
         strategy: str = "hybrid",
     ) -> Dict[str, str]:
         """
@@ -498,7 +498,7 @@ My question is: {query}"""
         graph_limit: int = 3,
         threshold: float = 0.7,
         max_depth: int = 3,
-        relationship_types: Optional[List[str]] = None,
+        relationship_types: list[str] | None = None,
     ) -> Dict[str, str]:
         """
         Create a RAG prompt combining vector search and graph-based context.
@@ -562,7 +562,7 @@ async def create_graph_rag_service(
     entity_type: Type[T],
     table_name: str,
     graph_name: str = "graph",
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> GraphRAGService[T]:
     """
     Create a graph RAG service with initialized components.

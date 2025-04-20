@@ -25,7 +25,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         self,
         app: FastAPI,
         auth_backend: AuthenticationBackend,
-        exclude_paths: Optional[List[str]] = None,
+        exclude_paths: list[str] | None = None,
     ):
         """Initialize the authentication middleware."""
         super().__init__(app)
@@ -81,9 +81,9 @@ class User(BaseModel):
     
     id: str
     username: str
-    email: Optional[str] = None
-    roles: List[str] = Field(default_factory=list)
-    permissions: List[str] = Field(default_factory=list)
+    email: str | None = None
+    roles: list[str] = Field(default_factory=list)
+    permissions: list[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 class UserContext:
@@ -154,8 +154,8 @@ class Role(BaseModel):
     """Role model for authorization."""
     
     name: str
-    description: Optional[str] = None
-    permissions: List[str] = Field(default_factory=list)
+    description: str | None = None
+    permissions: list[str] = Field(default_factory=list)
 
 class RoleService:
     """Service for managing roles."""
@@ -164,11 +164,11 @@ class RoleService:
         """Get a role by name."""
         # Implementation details...
     
-    async def get_roles_for_user(self, user_id: str) -> List[Role]:
+    async def get_roles_for_user(self, user_id: str) -> list[Role]:
         """Get roles for a user."""
         # Implementation details...
     
-    async def get_permissions_for_user(self, user_id: str) -> List[str]:
+    async def get_permissions_for_user(self, user_id: str) -> list[str]:
         """Get permissions for a user."""
         # Implementation details...
 ```
@@ -179,17 +179,17 @@ We will implement decorators for securing endpoints:
 
 ```python
 def requires_auth(
-    roles: Optional[List[str]] = None,
-    permissions: Optional[List[str]] = None,
+    roles: list[str] | None = None,
+    permissions: list[str] | None = None,
 ):
     """Decorator for requiring authentication and authorization."""
     # Implementation details...
 
-def requires_role(roles: Union[str, List[str]]):
+def requires_role(roles: Union[str, list[str]]):
     """Decorator for requiring specific roles."""
     # Implementation details...
 
-def requires_permission(permissions: Union[str, List[str]], resource: str):
+def requires_permission(permissions: Union[str, list[str]], resource: str):
     """Decorator for requiring specific permissions on a resource."""
     # Implementation details...
 ```
@@ -209,8 +209,8 @@ class SecureBaseEndpoint(BaseEndpoint):
         *,
         auth_backend: AuthenticationBackend,
         require_auth: bool = True,
-        required_roles: Optional[List[str]] = None,
-        required_permissions: Optional[List[str]] = None,
+        required_roles: list[str] | None = None,
+        required_permissions: list[str] | None = None,
         **kwargs,
     ):
         """Initialize a new secure endpoint instance."""
@@ -247,10 +247,10 @@ class SecureCrudEndpoint(CrudEndpoint):
         self,
         *,
         auth_backend: AuthenticationBackend,
-        create_permissions: Optional[List[str]] = None,
-        read_permissions: Optional[List[str]] = None,
-        update_permissions: Optional[List[str]] = None,
-        delete_permissions: Optional[List[str]] = None,
+        create_permissions: list[str] | None = None,
+        read_permissions: list[str] | None = None,
+        update_permissions: list[str] | None = None,
+        delete_permissions: list[str] | None = None,
         **kwargs,
     ):
         """Initialize a new secure CRUD endpoint instance."""
@@ -281,8 +281,8 @@ class SecureCqrsEndpoint(CqrsEndpoint):
         self,
         *,
         auth_backend: AuthenticationBackend,
-        query_permissions: Optional[Dict[str, List[str]]] = None,
-        command_permissions: Optional[Dict[str, List[str]]] = None,
+        query_permissions: Optional[Dict[str, list[str]]] = None,
+        command_permissions: Optional[Dict[str, list[str]]] = None,
         **kwargs,
     ):
         """Initialize a new secure CQRS endpoint instance."""
@@ -305,7 +305,7 @@ We will add utilities for setting up authentication with FastAPI:
 def setup_auth(
     app: FastAPI,
     auth_backend: AuthenticationBackend,
-    exclude_paths: Optional[List[str]] = None,
+    exclude_paths: list[str] | None = None,
 ) -> None:
     """Set up authentication for a FastAPI application."""
     app.add_middleware(
@@ -337,7 +337,7 @@ def get_user_context(request: Request) -> UserContext:
 class RequireRoles:
     """Dependency for requiring specific roles."""
     
-    def __init__(self, roles: List[str]):
+    def __init__(self, roles: list[str]):
         """Initialize the role requirement."""
         self.roles = roles
     
@@ -355,7 +355,7 @@ class RequireRoles:
 class RequirePermissions:
     """Dependency for requiring specific permissions."""
     
-    def __init__(self, permissions: List[str]):
+    def __init__(self, permissions: list[str]):
         """Initialize the permission requirement."""
         self.permissions = permissions
     

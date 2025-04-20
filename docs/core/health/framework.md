@@ -51,10 +51,10 @@ class HealthCheck:
         name: str,
         check_func: Callable[[], Awaitable[HealthCheckResult]],
         timeout: float = 5.0,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
         critical: bool = False,
-        group: Optional[str] = None,
+        group: str | None = None,
     ): ...
 ```
 
@@ -81,7 +81,7 @@ class HealthEndpoint:
     @staticmethod
     def create_router(
         prefix: str = "/health",
-        tags: List[str] = ["health"],
+        tags: list[str] = ["health"],
         include_details: bool = True,
     ) -> APIRouter: ...
     
@@ -89,7 +89,7 @@ class HealthEndpoint:
     def setup(
         app: FastAPI,
         prefix: str = "/health",
-        tags: List[str] = ["health"],
+        tags: list[str] = ["health"],
         include_details: bool = True,
         register_resource_checks: bool = True,
     ) -> None: ...

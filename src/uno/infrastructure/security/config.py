@@ -120,7 +120,7 @@ class EncryptionConfig(BaseModel):
     field_level_encryption: bool = Field(
         True, description="Enable field-level encryption for sensitive data"
     )
-    encrypted_fields: List[str] = Field(
+    encrypted_fields: list[str] = Field(
         default_factory=lambda: ["password", "ssn", "credit_card", "api_key"],
         description="Fields to encrypt",
     )
@@ -254,7 +254,7 @@ class AuthenticationConfig(BaseModel):
     enable_jwt_middleware: bool = Field(
         True, description="Enable JWT middleware for FastAPI"
     )
-    jwt_exclude_paths: List[str] = Field(
+    jwt_exclude_paths: list[str] = Field(
         default_factory=lambda: [
             "/auth/login",
             "/auth/register",
@@ -281,7 +281,7 @@ class AuditingConfig(BaseModel):
         None, description="Path for audit log storage (if file or remote)"
     )
     retention_days: int = Field(365, description="Audit log retention in days")
-    include_events: List[str] = Field(
+    include_events: list[str] = Field(
         default_factory=lambda: [
             "login",
             "logout",
@@ -334,20 +334,20 @@ class WebSecurityConfig(BaseModel):
     custom_csp_directives: Dict[str, str] = Field(
         default_factory=dict, description="Custom Content Security Policy directives"
     )
-    allowed_hosts: List[str] = Field(
+    allowed_hosts: list[str] = Field(
         default_factory=lambda: ["*"], description="Allowed hosts"
     )
-    cors_allowed_origins: List[str] = Field(
+    cors_allowed_origins: list[str] = Field(
         default_factory=lambda: ["*"], description="CORS allowed origins"
     )
-    cors_allowed_methods: List[str] = Field(
+    cors_allowed_methods: list[str] = Field(
         default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         description="CORS allowed methods",
     )
-    cors_allowed_headers: List[str] = Field(
+    cors_allowed_headers: list[str] = Field(
         default_factory=lambda: ["*"], description="CORS allowed headers"
     )
-    cors_expose_headers: List[str] = Field(
+    cors_expose_headers: list[str] = Field(
         default_factory=list, description="CORS expose headers"
     )
     cors_allow_credentials: bool = Field(False, description="CORS allow credentials")
@@ -377,7 +377,7 @@ class SecurityTestingConfig(BaseModel):
     fail_build_on_medium: bool = Field(
         False, description="Fail build on medium vulnerabilities"
     )
-    allowed_vulnerabilities: List[str] = Field(
+    allowed_vulnerabilities: list[str] = Field(
         default_factory=list, description="Allowed vulnerability IDs (exceptions)"
     )
     security_scan_timeout: int = Field(

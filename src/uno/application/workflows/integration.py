@@ -15,7 +15,7 @@ import asyncio
 from typing import Optional, Type, Any, Dict, List
 
 import inject
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.error import BaseError
 from uno.workflows.errors import WorkflowErrorCode, WorkflowEventError
 
@@ -58,7 +58,7 @@ class WorkflowEventIntegration:
         workflow_handler: Optional[WorkflowEventHandler] = None,
         workflow_service: Optional[WorkflowService] = None,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the workflow event integration.
@@ -79,7 +79,7 @@ class WorkflowEventIntegration:
 
     def register_domain_event_handler(
         self,
-        event_types: Optional[List[Type[UnoEvent]]] = None,
+        event_types: Optional[list[Type[UnoEvent]]] = None,
         priority: EventPriority = EventPriority.NORMAL,
     ) -> None:
         """
@@ -187,7 +187,7 @@ def get_workflow_integration(
     workflow_handler: Optional[WorkflowEventHandler] = None,
     workflow_service: Optional[WorkflowService] = None,
     db_manager: Optional[DBManager] = None,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> WorkflowEventIntegration:
     """
     Get the workflow event integration singleton.
@@ -208,7 +208,7 @@ def get_workflow_integration(
 async def register_workflow_integrations(
     register_domain_events: bool = True,
     start_postgres_listener: bool = True,
-    event_types: Optional[List[Type[UnoEvent]]] = None,
+    event_types: Optional[list[Type[UnoEvent]]] = None,
 ) -> Result[bool]:
     """
     Register all workflow integrations.

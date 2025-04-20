@@ -364,7 +364,7 @@ class UnoFilter(BaseModel):
             .as_string()
         )
 
-    def combined_cypher_query(self, filters: List[Tuple[Any, str, str]]) -> str:
+    def combined_cypher_query(self, filters: list[Tuple[Any, str, str]]) -> str:
         """
         Creates a combined Cypher query from multiple filters with support for OR conditions.
 

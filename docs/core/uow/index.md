@@ -125,7 +125,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         self._event_bus = event_bus
         self._logger = logger or getLogger(__name__)
         self._repositories: Dict[Type[Repository], Repository] = {}
-        self._events: List[Event] = []
+        self._events: list[Event] = []
     
     def register_repository(self, repo_type: Type[R], repo: R) -> None:
         """Register a repository with this Unit of Work."""

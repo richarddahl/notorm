@@ -6,18 +6,22 @@ from typing import List, Optional, Dict, Any, Union, Type
 
 from uno.messaging.entities import Message, MessageUser
 from uno.messaging.dtos import (
-    MessageUserViewDto, MessageViewDto, MessageListDto,
-    MessageCreateDto, MessageUpdateDto, MessageFilterParams
+    MessageUserViewDto,
+    MessageViewDto,
+    MessageListDto,
+    MessageCreateDto,
+    MessageUpdateDto,
+    MessageFilterParams,
 )
 
 
 class MessageSchemaManager:
     """Schema manager for message entities."""
-    
+
     def entity_to_dto(self, entity: Message) -> MessageViewDto:
         """Convert a message entity to a DTO."""
         users = [self._message_user_to_dto(user) for user in entity.users]
-        
+
         return MessageViewDto(
             id=entity.id,
             subject=entity.subject,
@@ -28,28 +32,26 @@ class MessageSchemaManager:
             parent_id=entity.parent_id,
             users=users,
             meta_record_ids=entity.meta_record_ids,
-            group_id=entity.group_id
+            group_id=entity.group_id,
         )
-    
+
     def entities_to_list_dto(
-        self, 
-        entities: List[Message], 
-        total: int,
-        page: int,
-        page_size: int
+        self, entities: list[Message], total: int, page: int, page_size: int
     ) -> MessageListDto:
         """Convert a list of message entities to a list DTO with pagination."""
         items = [self.entity_to_dto(entity) for entity in entities]
-        
+
         return MessageListDto(
             items=items,
             total=total,
             page=page,
             page_size=page_size,
-            pages=(total + page_size - 1) // page_size if page_size > 0 else 0
+            pages=(total + page_size - 1) // page_size if page_size > 0 else 0,
         )
-    
-    def create_dto_to_params(self, dto: MessageCreateDto, sender_id: str) -> Dict[str, Any]:
+
+    def create_dto_to_params(
+        self, dto: MessageCreateDto, sender_id: str
+    ) -> Dict[str, Any]:
         """Convert a create DTO to parameters for the domain service."""
         return {
             "subject": dto.subject,
@@ -62,36 +64,36 @@ class MessageSchemaManager:
             "is_draft": dto.is_draft,
             "parent_id": dto.parent_id,
             "meta_record_ids": dto.meta_record_ids,
-            "group_id": dto.group_id
+            "group_id": dto.group_id,
         }
-    
+
     def update_dto_to_params(self, dto: MessageUpdateDto) -> Dict[str, Any]:
         """Convert an update DTO to parameters for the domain service."""
         params = {}
-        
+
         if dto.subject is not None:
             params["subject"] = dto.subject
-        
+
         if dto.body is not None:
             params["body"] = dto.body
-        
+
         if dto.flag is not None:
             params["flag"] = dto.flag
-        
+
         if dto.recipient_ids is not None:
             params["recipient_ids"] = dto.recipient_ids
-        
+
         if dto.cc_ids is not None:
             params["cc_ids"] = dto.cc_ids
-        
+
         if dto.bcc_ids is not None:
             params["bcc_ids"] = dto.bcc_ids
-        
+
         if dto.meta_record_ids is not None:
             params["meta_record_ids"] = dto.meta_record_ids
-        
+
         return params
-    
+
     def _message_user_to_dto(self, entity: MessageUser) -> MessageUserViewDto:
         """Convert a message user entity to a DTO."""
         return MessageUserViewDto(
@@ -103,5 +105,5 @@ class MessageSchemaManager:
             is_copied_on=entity.is_copied_on,
             is_blind_copied_on=entity.is_blind_copied_on,
             is_read=entity.is_read,
-            read_at=entity.read_at
+            read_at=entity.read_at,
         )

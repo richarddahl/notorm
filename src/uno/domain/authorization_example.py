@@ -52,7 +52,7 @@ class Order(AggregateRoot):
     """Order aggregate root."""
 
     customer_id: str
-    products: List[str]
+    products: list[str]
     total: float
     owner_id: str
     tenant_id: str

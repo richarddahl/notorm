@@ -16,6 +16,7 @@ from uno.domain.core import AggregateRoot
 from uno.application.result import Result, Success, Failure
 from uno.enums import Include, Match, SQLOperation
 
+
 @dataclass
 class QueryPath(AggregateRoot[str]):
     """
@@ -150,7 +151,7 @@ class Query(AggregateRoot[str]):
 
     name: str
     query_meta_type_id: str
-    description: Optional[str] = None
+    description: str | None = None
     include_values: Include = Include.INCLUDE
     match_values: Match = Match.AND
     include_queries: Include = Include.INCLUDE
@@ -176,7 +177,9 @@ class Query(AggregateRoot[str]):
                     else Include(self.include_values)
                 )
             except (KeyError, ValueError):
-                return Failure[None, str](f"Invalid include_values: {self.include_values}")
+                return Failure[None, str](
+                    f"Invalid include_values: {self.include_values}"
+                )
         if not isinstance(self.match_values, Match):
             try:
                 self.match_values = (
@@ -194,7 +197,9 @@ class Query(AggregateRoot[str]):
                     else Include(self.include_queries)
                 )
             except (KeyError, ValueError):
-                return Failure[None, str](f"Invalid include_queries: {self.include_queries}")
+                return Failure[None, str](
+                    f"Invalid include_queries: {self.include_queries}"
+                )
         if not isinstance(self.match_queries, Match):
             try:
                 self.match_queries = (
@@ -203,7 +208,9 @@ class Query(AggregateRoot[str]):
                     else Match(self.match_queries)
                 )
             except (KeyError, ValueError):
-                return Failure[None, str](f"Invalid match_queries: {self.match_queries}")
+                return Failure[None, str](
+                    f"Invalid match_queries: {self.match_queries}"
+                )
         return Success[None, str](None)
 
     def __str__(self) -> str:

@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 class SQLStatementType(Enum):
     """Types of SQL statements that can be emitted."""
+
     FUNCTION = "function"
     TRIGGER = "trigger"
     INDEX = "index"
@@ -28,17 +29,18 @@ class SQLStatementType(Enum):
 
 class SQLStatement(BaseModel):
     """A SQL statement with metadata.
-    
+
     This class represents a SQL statement along with metadata about
     the statement including its name, type, and dependencies.
-    
+
     Attributes:
         name: Unique identifier for the statement
         type: Type of SQL statement (function, trigger, etc.)
         sql: The actual SQL statement to execute
         depends_on: List of statement names this statement depends on
     """
+
     name: str
     type: SQLStatementType
     sql: str
-    depends_on: List[str] = []
+    depends_on: list[str] = []

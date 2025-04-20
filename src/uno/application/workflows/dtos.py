@@ -167,7 +167,7 @@ class WorkflowTriggerBaseDto(BaseModel):
     is_active: bool = Field(True, description="Whether the trigger is active")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "entity_type": "user",
                 "operation": "update",
@@ -178,7 +178,8 @@ class WorkflowTriggerBaseDto(BaseModel):
                 "priority": 100,
                 "is_active": True,
             }
-        })
+        }
+    )
 
 
 class WorkflowTriggerCreateDto(WorkflowTriggerBaseDto):
@@ -205,7 +206,7 @@ class WorkflowTriggerUpdateDto(BaseModel):
     is_active: Optional[bool] = Field(None, description="Whether the trigger is active")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "field_conditions": {
                     "email": {"operator": "contains", "value": "@newdomain.com"}
@@ -213,7 +214,8 @@ class WorkflowTriggerUpdateDto(BaseModel):
                 "priority": 50,
                 "is_active": False,
             }
-        })
+        }
+    )
 
 
 class WorkflowTriggerViewDto(WorkflowTriggerBaseDto):
@@ -223,7 +225,7 @@ class WorkflowTriggerViewDto(WorkflowTriggerBaseDto):
     workflow_id: str = Field(..., description="ID of the associated workflow")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "tr123e4567-e89b-12d3-a456-426614174000",
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
@@ -236,7 +238,8 @@ class WorkflowTriggerViewDto(WorkflowTriggerBaseDto):
                 "priority": 100,
                 "is_active": True,
             }
-        })
+        }
+    )
 
 
 class WorkflowTriggerFilterParams(BaseModel):
@@ -250,13 +253,14 @@ class WorkflowTriggerFilterParams(BaseModel):
     is_active: Optional[bool] = Field(None, description="Filter by active status")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "entity_type": "user",
                 "is_active": True,
             }
-        })
+        }
+    )
 
 
 # Workflow Condition DTOs
@@ -277,7 +281,7 @@ class WorkflowConditionBaseDto(BaseModel):
     order: int = Field(0, description="Order in which the condition is evaluated")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "condition_type": "field_value",
                 "condition_config": {
@@ -289,7 +293,8 @@ class WorkflowConditionBaseDto(BaseModel):
                 "description": "Checks if the user is active",
                 "order": 0,
             }
-        })
+        }
+    )
 
 
 class WorkflowConditionCreateDto(WorkflowConditionBaseDto):
@@ -317,7 +322,7 @@ class WorkflowConditionUpdateDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "condition_config": {
                     "field": "status",
@@ -327,7 +332,8 @@ class WorkflowConditionUpdateDto(BaseModel):
                 "name": "Not Inactive Check",
                 "order": 1,
             }
-        })
+        }
+    )
 
 
 class WorkflowConditionViewDto(WorkflowConditionBaseDto):
@@ -337,7 +343,7 @@ class WorkflowConditionViewDto(WorkflowConditionBaseDto):
     workflow_id: str = Field(..., description="ID of the associated workflow")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "wc123e4567-e89b-12d3-a456-426614174000",
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
@@ -351,7 +357,8 @@ class WorkflowConditionViewDto(WorkflowConditionBaseDto):
                 "description": "Checks if the user is active",
                 "order": 0,
             }
-        })
+        }
+    )
 
 
 class WorkflowConditionFilterParams(BaseModel):
@@ -364,12 +371,13 @@ class WorkflowConditionFilterParams(BaseModel):
     name: Optional[str] = Field(None, description="Filter by name")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "condition_type": "field_value",
             }
-        })
+        }
+    )
 
 
 # Workflow Recipient DTOs
@@ -386,14 +394,15 @@ class WorkflowRecipientBaseDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "recipient_type": "user",
                 "recipient_id": "user123",
                 "name": "John Doe",
                 "notification_config": {"channel": "email", "priority": "high"},
             }
-        })
+        }
+    )
 
 
 class WorkflowRecipientCreateDto(WorkflowRecipientBaseDto):
@@ -416,12 +425,13 @@ class WorkflowRecipientUpdateDto(BaseModel):
     action_id: Optional[str] = Field(None, description="ID of the associated action")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "Jane Doe",
                 "notification_config": {"channel": "sms", "priority": "urgent"},
             }
-        })
+        }
+    )
 
 
 class WorkflowRecipientViewDto(WorkflowRecipientBaseDto):
@@ -432,7 +442,7 @@ class WorkflowRecipientViewDto(WorkflowRecipientBaseDto):
     action_id: Optional[str] = Field(None, description="ID of the associated action")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "wr123e4567-e89b-12d3-a456-426614174000",
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
@@ -442,7 +452,8 @@ class WorkflowRecipientViewDto(WorkflowRecipientBaseDto):
                 "notification_config": {"channel": "email", "priority": "high"},
                 "action_id": "wa123e4567-e89b-12d3-a456-426614174000",
             }
-        })
+        }
+    )
 
 
 class WorkflowRecipientFilterParams(BaseModel):
@@ -455,12 +466,13 @@ class WorkflowRecipientFilterParams(BaseModel):
     action_id: Optional[str] = Field(None, description="Filter by action ID")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "recipient_type": "user",
             }
-        })
+        }
+    )
 
 
 # Workflow Action DTOs
@@ -480,7 +492,7 @@ class WorkflowActionBaseDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "action_type": "email",
                 "action_config": {
@@ -497,10 +509,11 @@ class WorkflowActionBaseDto(BaseModel):
         }
     )
 
+
 class WorkflowActionCreateDto(WorkflowActionBaseDto):
     """DTO for creating workflow actions."""
 
-    recipients: Optional[List[WorkflowRecipientCreateDto]] = Field(
+    recipients: Optional[list[WorkflowRecipientCreateDto]] = Field(
         None, description="Recipients for this action"
     )
 
@@ -525,7 +538,7 @@ class WorkflowActionUpdateDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "action_config": {
                     "subject": "IMPORTANT: User Account Updated",
@@ -534,7 +547,8 @@ class WorkflowActionUpdateDto(BaseModel):
                 "name": "Send Urgent Email Notification",
                 "is_active": False,
             }
-        })
+        }
+    )
 
 
 class WorkflowActionViewDto(WorkflowActionBaseDto):
@@ -542,12 +556,12 @@ class WorkflowActionViewDto(WorkflowActionBaseDto):
 
     id: str = Field(..., description="Unique identifier")
     workflow_id: str = Field(..., description="ID of the associated workflow")
-    recipients: List[WorkflowRecipientViewDto] = Field(
+    recipients: list[WorkflowRecipientViewDto] = Field(
         default_factory=list, description="Recipients for this action"
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "wa123e4567-e89b-12d3-a456-426614174000",
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
@@ -564,7 +578,8 @@ class WorkflowActionViewDto(WorkflowActionBaseDto):
                 "retry_policy": {"max_retries": 3, "retry_delay": 300},
                 "recipients": [],
             }
-        })
+        }
+    )
 
 
 class WorkflowActionFilterParams(BaseModel):
@@ -578,13 +593,14 @@ class WorkflowActionFilterParams(BaseModel):
     name: Optional[str] = Field(None, description="Filter by name")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "action_type": "email",
                 "is_active": True,
             }
-        })
+        }
+    )
 
 
 # Workflow Execution Record DTOs
@@ -616,7 +632,7 @@ class WorkflowExecutionRecordBaseDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "trigger_event_id": "ev123e4567-e89b-12d3-a456-426614174000",
@@ -635,7 +651,8 @@ class WorkflowExecutionRecordBaseDto(BaseModel):
                 },
                 "execution_time": 5000,
             }
-        })
+        }
+    )
 
 
 class WorkflowExecutionRecordCreateDto(WorkflowExecutionRecordBaseDto):
@@ -667,14 +684,15 @@ class WorkflowExecutionRecordUpdateDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "status": "failed",
                 "completed_at": "2023-01-15T10:30:10Z",
                 "error": "Failed to send email notification",
                 "execution_time": 10000,
             }
-        })
+        }
+    )
 
 
 class WorkflowExecutionRecordViewDto(WorkflowExecutionRecordBaseDto):
@@ -683,7 +701,7 @@ class WorkflowExecutionRecordViewDto(WorkflowExecutionRecordBaseDto):
     id: str = Field(..., description="Unique identifier")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "we123e4567-e89b-12d3-a456-426614174000",
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
@@ -703,7 +721,8 @@ class WorkflowExecutionRecordViewDto(WorkflowExecutionRecordBaseDto):
                 },
                 "execution_time": 5000,
             }
-        })
+        }
+    )
 
 
 class WorkflowExecutionRecordFilterParams(BaseModel):
@@ -724,13 +743,14 @@ class WorkflowExecutionRecordFilterParams(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "workflow_id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "status": "completed",
                 "executed_after": "2023-01-01T00:00:00Z",
             }
-        })
+        }
+    )
 
 
 # Workflow Definition DTOs
@@ -745,29 +765,30 @@ class WorkflowDefBaseDto(BaseModel):
     version: str = Field("1.0.0", description="Version of the workflow")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "User Update Notification",
                 "description": "Sends notifications when a user account is updated",
                 "status": "draft",
                 "version": "1.0.0",
             }
-        })
+        }
+    )
 
 
 class WorkflowDefCreateDto(WorkflowDefBaseDto):
     """DTO for creating workflow definitions."""
 
-    triggers: Optional[List[WorkflowTriggerCreateDto]] = Field(
+    triggers: Optional[list[WorkflowTriggerCreateDto]] = Field(
         None, description="Triggers for this workflow"
     )
-    conditions: Optional[List[WorkflowConditionCreateDto]] = Field(
+    conditions: Optional[list[WorkflowConditionCreateDto]] = Field(
         None, description="Conditions for this workflow"
     )
-    actions: Optional[List[WorkflowActionCreateDto]] = Field(
+    actions: Optional[list[WorkflowActionCreateDto]] = Field(
         None, description="Actions for this workflow"
     )
-    recipients: Optional[List[WorkflowRecipientCreateDto]] = Field(
+    recipients: Optional[list[WorkflowRecipientCreateDto]] = Field(
         None, description="Global recipients for this workflow"
     )
 
@@ -783,34 +804,35 @@ class WorkflowDefUpdateDto(BaseModel):
     version: Optional[str] = Field(None, description="Version of the workflow")
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "User Profile Update Notification",
                 "status": "active",
                 "version": "1.1.0",
             }
-        })
+        }
+    )
 
 
 class WorkflowDefViewDto(WorkflowDefBaseDto):
     """DTO for viewing workflow definitions."""
 
     id: str = Field(..., description="Unique identifier")
-    triggers: List[WorkflowTriggerViewDto] = Field(
+    triggers: list[WorkflowTriggerViewDto] = Field(
         default_factory=list, description="Triggers for this workflow"
     )
-    conditions: List[WorkflowConditionViewDto] = Field(
+    conditions: list[WorkflowConditionViewDto] = Field(
         default_factory=list, description="Conditions for this workflow"
     )
-    actions: List[WorkflowActionViewDto] = Field(
+    actions: list[WorkflowActionViewDto] = Field(
         default_factory=list, description="Actions for this workflow"
     )
-    recipients: List[WorkflowRecipientViewDto] = Field(
+    recipients: list[WorkflowRecipientViewDto] = Field(
         default_factory=list, description="Global recipients for this workflow"
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "wf123e4567-e89b-12d3-a456-426614174000",
                 "name": "User Update Notification",
@@ -822,7 +844,8 @@ class WorkflowDefViewDto(WorkflowDefBaseDto):
                 "actions": [],
                 "recipients": [],
             }
-        })
+        }
+    )
 
 
 class WorkflowDefFilterParams(BaseModel):
@@ -841,7 +864,7 @@ class WorkflowDefFilterParams(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {"example": {"status": "active", "entity_type": "user"}}
+        json_schema_extra={"example": {"status": "active", "entity_type": "user"}}
     )
 
 
@@ -865,7 +888,7 @@ class WorkflowEventDto(BaseModel):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "table_name": "users",
                 "schema_name": "public",
@@ -879,7 +902,8 @@ class WorkflowEventDto(BaseModel):
                 },
                 "context": {"user_id": "admin123", "session_id": "sess123456"},
             }
-        })
+        }
+    )
 
 
 # User DTOs for recipients
@@ -891,12 +915,12 @@ class UserViewDto(BaseModel):
     email: str = Field(..., description="Email address")
     is_active: bool = Field(True, description="Whether the user is active")
     display_name: Optional[str] = Field(None, description="Display name")
-    roles: List[str] = Field(
+    roles: list[str] = Field(
         default_factory=list, description="Roles assigned to the user"
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "id": "user123",
                 "username": "johndoe",
@@ -905,7 +929,8 @@ class UserViewDto(BaseModel):
                 "display_name": "John Doe",
                 "roles": ["admin", "editor"],
             }
-        })
+        }
+    )
 
 
 # Update forward references

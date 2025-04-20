@@ -88,7 +88,7 @@ endpoint = CqrsEndpoint(
     queries=[
         QueryHandler(
             service=search_products_service,
-            response_model=List[ProductResponse],
+            response_model=list[ProductResponse],
             query_model=ProductSearchQuery,
             path="/search",
             method="get",

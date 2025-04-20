@@ -166,8 +166,8 @@ class VectorSearchService(Generic[T]):
         entity_type: Type[T],
         table_name: str,
         repository: Optional[Repository[T]] = None,
-        schema: Optional[str] = None,
-        logger: Optional[logging.Logger] = None,
+        schema: str | None = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize vector search service.
@@ -194,7 +194,7 @@ class VectorSearchService(Generic[T]):
             schema=self.schema,
         )
 
-    async def search(self, query: VectorQuery) -> List[VectorSearchResult]:
+    async def search(self, query: VectorQuery) -> list[VectorSearchResult]:
         """
         Perform a vector similarity search.
 
@@ -240,7 +240,7 @@ class VectorSearchService(Generic[T]):
             self.logger.error(f"Vector search error: {e}")
             raise
 
-    async def hybrid_search(self, query: HybridQuery) -> List[VectorSearchResult]:
+    async def hybrid_search(self, query: HybridQuery) -> list[VectorSearchResult]:
         """
         Perform a hybrid search combining graph traversal and vector search.
 
@@ -305,7 +305,7 @@ class VectorSearchService(Generic[T]):
             self.logger.error(f"Hybrid search error: {e}")
             raise
 
-    async def generate_embedding(self, text: str) -> List[float]:
+    async def generate_embedding(self, text: str) -> list[float]:
         """
         Generate an embedding vector for text using the database function.
 
@@ -396,7 +396,7 @@ class TypedVectorSearchResponse(Generic[T]):
 
     def __init__(
         self,
-        results: List[TypedVectorSearchResult[T]],
+        results: list[TypedVectorSearchResult[T]],
         query: str,
         total_found: int,
         execution_time_ms: float = 0.0,
@@ -446,7 +446,7 @@ class TypedVectorSearchResponse(Generic[T]):
 
     def filter_by_similarity(
         self, min_similarity: float
-    ) -> List[TypedVectorSearchResult[T]]:
+    ) -> list[TypedVectorSearchResult[T]]:
         """
         Filter results by minimum similarity score.
 
@@ -460,7 +460,7 @@ class TypedVectorSearchResponse(Generic[T]):
 
     def filter_by_metadata(
         self, key: str, value: Any
-    ) -> List[TypedVectorSearchResult[T]]:
+    ) -> list[TypedVectorSearchResult[T]]:
         """
         Filter results by metadata value.
 
@@ -473,7 +473,7 @@ class TypedVectorSearchResponse(Generic[T]):
         """
         return [r for r in self.results if r.get_metadata_value(key) == value]
 
-    def get_entities(self) -> List[T]:
+    def get_entities(self) -> list[T]:
         """
         Get all typed entities from results.
 
@@ -485,7 +485,7 @@ class TypedVectorSearchResponse(Generic[T]):
     @classmethod
     def from_results(
         cls,
-        results: List[VectorSearchResult],
+        results: list[VectorSearchResult],
         query: str,
         entity_loader: callable,
         total_found: Optional[int] = None,
@@ -536,7 +536,7 @@ class RAGService(Generic[T]):
     def __init__(
         self,
         vector_search: VectorSearchService[T],
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize RAG service.
@@ -550,7 +550,7 @@ class RAGService(Generic[T]):
 
     async def retrieve_context(
         self, query: str, limit: int = 5, threshold: float = 0.7
-    ) -> Tuple[List[T], List[VectorSearchResult]]:
+    ) -> Tuple[list[T], list[VectorSearchResult]]:
         """
         Retrieve relevant context for a query.
 
@@ -574,7 +574,7 @@ class RAGService(Generic[T]):
 
         return entities, search_results
 
-    def format_context_for_prompt(self, entities: List[T]) -> str:
+    def format_context_for_prompt(self, entities: list[T]) -> str:
         """
         Format retrieved entities as context for an LLM prompt.
 

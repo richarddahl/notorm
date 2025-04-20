@@ -71,7 +71,7 @@ class ReportError(BaseError):
 class ReportTemplateNotFoundError(BaseError):
     """Error raised when a report template is not found."""
 
-    def __init__(self, template_id: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, template_id: str, message: str | None = None, **context: Any):
         message = message or f"Report template with ID {template_id} not found"
         super().__init__(
             message=message,
@@ -84,7 +84,7 @@ class ReportTemplateNotFoundError(BaseError):
 class ReportTemplateAlreadyExistsError(BaseError):
     """Error raised when attempting to create a duplicate report template."""
 
-    def __init__(self, name: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, name: str, message: str | None = None, **context: Any):
         message = message or f"Report template with name '{name}' already exists"
         super().__init__(
             message=message,
@@ -100,8 +100,8 @@ class ReportTemplateInvalidError(BaseError):
     def __init__(
         self,
         reason: str,
-        template_id: Optional[str] = None,
-        message: Optional[str] = None,
+        template_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -121,7 +121,7 @@ class ReportTemplateInvalidError(BaseError):
 class ReportFieldNotFoundError(BaseError):
     """Error raised when a report field is not found."""
 
-    def __init__(self, field_id: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, field_id: str, message: str | None = None, **context: Any):
         message = message or f"Report field with ID {field_id} not found"
         super().__init__(
             message=message,
@@ -137,9 +137,9 @@ class ReportFieldInvalidError(BaseError):
     def __init__(
         self,
         reason: str,
-        field_id: Optional[str] = None,
-        field_type: Optional[str] = None,
-        message: Optional[str] = None,
+        field_id: str | None = None,
+        field_type: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -164,9 +164,9 @@ class ReportExecutionFailedError(BaseError):
     def __init__(
         self,
         reason: str,
-        execution_id: Optional[str] = None,
-        template_id: Optional[str] = None,
-        message: Optional[str] = None,
+        execution_id: str | None = None,
+        template_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -187,9 +187,7 @@ class ReportExecutionFailedError(BaseError):
 class ReportExecutionNotFoundError(BaseError):
     """Error raised when a report execution is not found."""
 
-    def __init__(
-        self, execution_id: str, message: Optional[str] = None, **context: Any
-    ):
+    def __init__(self, execution_id: str, message: str | None = None, **context: Any):
         message = message or f"Report execution with ID {execution_id} not found"
         super().__init__(
             message=message,
@@ -206,8 +204,8 @@ class ReportOutputFormatInvalidError(BaseError):
     def __init__(
         self,
         format: str,
-        supported_formats: Optional[List[str]] = None,
-        message: Optional[str] = None,
+        supported_formats: list[str] | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -229,9 +227,9 @@ class ReportOutputDeliveryFailedError(BaseError):
     def __init__(
         self,
         reason: str,
-        output_id: Optional[str] = None,
-        execution_id: Optional[str] = None,
-        message: Optional[str] = None,
+        output_id: str | None = None,
+        execution_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -253,7 +251,7 @@ class ReportOutputDeliveryFailedError(BaseError):
 class ReportTriggerNotFoundError(BaseError):
     """Error raised when a report trigger is not found."""
 
-    def __init__(self, trigger_id: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, trigger_id: str, message: str | None = None, **context: Any):
         message = message or f"Report trigger with ID {trigger_id} not found"
         super().__init__(
             message=message,
@@ -269,9 +267,9 @@ class ReportTriggerInvalidError(BaseError):
     def __init__(
         self,
         reason: str,
-        trigger_id: Optional[str] = None,
-        trigger_type: Optional[str] = None,
-        message: Optional[str] = None,
+        trigger_id: str | None = None,
+        trigger_type: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()

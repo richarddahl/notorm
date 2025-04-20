@@ -19,42 +19,43 @@ from uno.core.docs.generator import DocGeneratorConfig, DocFormat, generate_docs
 class UserModel:
     """
     Represents a user in the system.
-    
+
     This model contains user information including name, email, and roles.
     """
-    
+
     # Field with documentation
     id: str
     """Unique identifier for the user"""
-    
+
     name: str
     """Full name of the user"""
-    
+
     email: str
     """Email address of the user"""
-    
-    roles: List[str] = field(default_factory=list)
+
+    roles: list[str] = field(default_factory=list)
     """List of roles assigned to the user"""
-    
+
     is_active: bool = True
     """Whether the user account is active"""
-    
+
     meta: Dict[str, Any] = field(default_factory=dict)
     """Additional metadata for the user"""
-    
+
     # Example validator method (for documentation extraction)
     def validate_email(self, email: str) -> bool:
         """Validate email format."""
         import re
+
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
         return re.match(pattern, email) is not None
-    
+
     # Example choices
     __roles_choices__ = ["admin", "user", "guest"]
-    
+
     # Example metadata
     __metadata__ = {"version": "1.2.0"}
-    
+
     # Example examples
     __examples__ = [
         {
@@ -66,8 +67,8 @@ class UserModel:
                 "email": "admin@example.com",
                 "roles": ["admin"],
                 "is_active": True,
-                "meta": {"created_at": "2023-01-01T00:00:00Z"}
-            }
+                "meta": {"created_at": "2023-01-01T00:00:00Z"},
+            },
         },
         {
             "name": "Regular User",
@@ -78,9 +79,9 @@ class UserModel:
                 "email": "user@example.com",
                 "roles": ["user"],
                 "is_active": True,
-                "meta": {}
-            }
-        }
+                "meta": {},
+            },
+        },
     ]
 
 
@@ -88,22 +89,22 @@ class UserModel:
 class OrderStatus(Enum):
     """
     Status of an order in the system.
-    
+
     This enum represents the possible states of an order.
     """
-    
+
     PENDING = "pending"
     """Order has been created but not yet processed"""
-    
+
     PROCESSING = "processing"
     """Order is being processed"""
-    
+
     SHIPPED = "shipped"
     """Order has been shipped"""
-    
+
     DELIVERED = "delivered"
     """Order has been delivered"""
-    
+
     CANCELLED = "cancelled"
     """Order has been cancelled"""
 
@@ -112,9 +113,9 @@ class OrderStatus(Enum):
 def get_user(user_id: str) -> Dict[str, Any]:
     """
     Retrieve a user by ID.
-    
+
     This endpoint returns the user information for the specified user ID.
-    
+
     :param user_id: The ID of the user to retrieve
     :return: User information
     :raises UserNotFoundError: If the user does not exist
@@ -126,7 +127,7 @@ def get_user(user_id: str) -> Dict[str, Any]:
         "email": "user@example.com",
         "roles": ["user"],
         "is_active": True,
-        "meta": {}
+        "meta": {},
     }
 
 
@@ -134,17 +135,17 @@ def get_user(user_id: str) -> Dict[str, Any]:
 class UserResource:
     """
     API endpoints for user management.
-    
+
     This resource provides endpoints for creating, retrieving, updating,
     and deleting users.
     """
-    
+
     __path__ = "/api/users"
-    
+
     def get(self, user_id: str) -> Dict[str, Any]:
         """
         Retrieve a user by ID.
-        
+
         :param user_id: The ID of the user to retrieve
         :return: User information
         :raises UserNotFoundError: If the user does not exist
@@ -156,13 +157,13 @@ class UserResource:
             "email": "user@example.com",
             "roles": ["user"],
             "is_active": True,
-            "meta": {}
+            "meta": {},
         }
-    
+
     def post(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new user.
-        
+
         :param user_data: User information
         :return: Created user information
         :raises ValidationError: If the user data is invalid
@@ -174,13 +175,13 @@ class UserResource:
             "email": user_data.get("email", ""),
             "roles": user_data.get("roles", []),
             "is_active": user_data.get("is_active", True),
-            "meta": user_data.get("meta", {})
+            "meta": user_data.get("meta", {}),
         }
-    
+
     def put(self, user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Update a user.
-        
+
         :param user_id: The ID of the user to update
         :param user_data: Updated user information
         :return: Updated user information
@@ -194,13 +195,13 @@ class UserResource:
             "email": user_data.get("email", ""),
             "roles": user_data.get("roles", []),
             "is_active": user_data.get("is_active", True),
-            "meta": user_data.get("meta", {})
+            "meta": user_data.get("meta", {}),
         }
-    
+
     def delete(self, user_id: str) -> None:
         """
         Delete a user.
-        
+
         :param user_id: The ID of the user to delete
         :raises UserNotFoundError: If the user does not exist
         """
@@ -215,7 +216,7 @@ def main():
     # Create output directory
     output_dir = "docs/api_example"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # Configure documentation generator
     config = DocGeneratorConfig(
         title="Example API Documentation",
@@ -225,12 +226,12 @@ def main():
         output_dir=output_dir,
         include_source_links=True,
         include_examples=True,
-        modules_to_document=["uno.core.examples.docs_example"]
+        modules_to_document=["uno.core.examples.docs_example"],
     )
-    
+
     # Generate documentation
     result = generate_docs(config)
-    
+
     # Print results
     print(f"Documentation generated in {output_dir}")
     for format_name, files in result.items():

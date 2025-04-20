@@ -47,7 +47,7 @@ __all__ = [
 # Error classification enums
 class ErrorSeverity(str, Enum):
     """Error severity levels."""
-    
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -56,7 +56,7 @@ class ErrorSeverity(str, Enum):
 
 class ErrorCategory(str, Enum):
     """Error categories for classification."""
-    
+
     VALIDATION = "validation"
     AUTHENTICATION = "authentication"
     AUTHORIZATION = "authorization"
@@ -74,31 +74,31 @@ class ErrorCategory(str, Enum):
 class ErrorContext:
     """
     Context information for errors.
-    
+
     This class collects additional information about the context in which an error occurred,
     which can be helpful for debugging and monitoring.
     """
-    
+
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     trace_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    request_id: Optional[str] = None
-    user_id: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    referer: Optional[str] = None
-    path: Optional[str] = None
-    method: Optional[str] = None
+    request_id: str | None = None
+    user_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    referer: str | None = None
+    path: str | None = None
+    method: str | None = None
     query_params: Dict[str, Any] = field(default_factory=dict)
     headers: Dict[str, str] = field(default_factory=dict)
-    application: Optional[str] = None
-    environment: Optional[str] = None
-    component: Optional[str] = None
-    function: Optional[str] = None
-    module: Optional[str] = None
+    application: str | None = None
+    environment: str | None = None
+    component: str | None = None
+    function: str | None = None
+    module: str | None = None
     line: Optional[int] = None
-    stack_trace: Optional[str] = None
+    stack_trace: str | None = None
     additional_data: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert context to a dictionary."""
         return {
@@ -128,11 +128,11 @@ class ErrorContext:
 class ErrorDetail(BaseModel):
     """
     Detailed error information.
-    
+
     This class provides a standardized structure for error details that can be
     used for API responses, logging, and monitoring.
     """
-    
+
     code: str = Field(..., description="Error code identifier")
     message: str = Field(..., description="Human-readable error message")
     category: ErrorCategory = Field(
@@ -141,21 +141,33 @@ class ErrorDetail(BaseModel):
     severity: ErrorSeverity = Field(
         default=ErrorSeverity.ERROR, description="Error severity level"
     )
-    field: Optional[str] = Field(None, description="Field that caused the error (for validation errors)")
+    field: Optional[str] = Field(
+        None, description="Field that caused the error (for validation errors)"
+    )
     source: Optional[str] = Field(None, description="Source of the error")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
-    help_text: Optional[str] = Field(None, description="Help text for resolving the error")
-    help_url: Optional[str] = Field(None, description="URL with more information about the error")
+    details: Optional[Dict[str, Any]] = Field(
+        None, description="Additional error details"
+    )
+    help_text: Optional[str] = Field(
+        None, description="Help text for resolving the error"
+    )
+    help_url: Optional[str] = Field(
+        None, description="URL with more information about the error"
+    )
     trace_id: Optional[str] = Field(None, description="Trace ID for tracking the error")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="When the error occurred")
-    
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(UTC), description="When the error occurred"
+    )
+
     @field_validator("code")
     def validate_code(cls, v: str) -> str:
         """Validate that the error code is in the expected format."""
         v_upper = v.upper()
         if v != v_upper:
             # Auto-convert to uppercase but warn
-            logging.warning(f"Error code '{v}' was not uppercase. Converted to '{v_upper}'.")
+            logging.warning(
+                f"Error code '{v}' was not uppercase. Converted to '{v_upper}'."
+            )
             return v_upper
         return v
 
@@ -163,21 +175,21 @@ class ErrorDetail(BaseModel):
 class ErrorLog(BaseModel):
     """
     Error log entry with context.
-    
+
     This class combines error details with context information for comprehensive
     error logging and analysis.
     """
-    
+
     error: ErrorDetail
     context: Dict[str, Any]
-    exception_class: Optional[str] = None
-    exception_traceback: Optional[str] = None
+    exception_class: str | None = None
+    exception_traceback: str | None = None
     is_handled: bool = False
-    resolution: Optional[str] = None
-    
+    resolution: str | None = None
+
     class Config:
         """Pydantic model configuration."""
-        
+
         json_encoders = {
             datetime: lambda dt: dt.isoformat(),
         }
@@ -187,13 +199,13 @@ class ErrorLog(BaseModel):
 class ErrorCatalog:
     """
     Centralized catalog of error definitions.
-    
+
     This class manages a catalog of error definitions that can be used throughout
     the application for consistent error handling.
     """
-    
+
     _errors: Dict[str, Dict[str, Any]] = {}
-    
+
     @classmethod
     def register(
         cls,
@@ -202,12 +214,12 @@ class ErrorCatalog:
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         http_status_code: Optional[int] = None,
-        help_text: Optional[str] = None,
-        help_url: Optional[str] = None,
+        help_text: str | None = None,
+        help_url: str | None = None,
     ) -> None:
         """
         Register an error definition in the catalog.
-        
+
         Args:
             code: Unique error code
             message_template: Message template with optional placeholders
@@ -219,8 +231,10 @@ class ErrorCatalog:
         """
         code = code.upper()
         if code in cls._errors:
-            logging.warning(f"Error code '{code}' already exists in catalog. Overwriting.")
-        
+            logging.warning(
+                f"Error code '{code}' already exists in catalog. Overwriting."
+            )
+
         cls._errors[code] = {
             "code": code,
             "message_template": message_template,
@@ -230,58 +244,60 @@ class ErrorCatalog:
             "help_text": help_text,
             "help_url": help_url,
         }
-    
+
     @classmethod
     def get(cls, code: str) -> Optional[Dict[str, Any]]:
         """
         Get an error definition from the catalog.
-        
+
         Args:
             code: Error code to retrieve
-            
+
         Returns:
             Error definition or None if not found
         """
         return cls._errors.get(code.upper())
-    
+
     @classmethod
     def create(
         cls,
         code: str,
         params: Optional[Dict[str, Any]] = None,
         details: Optional[Dict[str, Any]] = None,
-        field: Optional[str] = None,
-        source: Optional[str] = None,
+        field: str | None = None,
+        source: str | None = None,
     ) -> ErrorDetail:
         """
         Create an error instance from a catalog definition.
-        
+
         Args:
             code: Error code
             params: Parameters to format the message template
             details: Additional error details
             field: Field that caused the error
             source: Source of the error
-            
+
         Returns:
             Initialized ErrorDetail instance
-            
+
         Raises:
             ValueError: If the error code is not found in the catalog
         """
         error_def = cls.get(code)
         if not error_def:
             raise ValueError(f"Error code '{code}' not found in catalog.")
-        
+
         message = error_def["message_template"]
         if params:
             try:
                 message = message.format(**params)
             except KeyError as e:
-                logging.warning(f"Missing parameter {e} for error message template: {message}")
+                logging.warning(
+                    f"Missing parameter {e} for error message template: {message}"
+                )
                 # Fall back to the template
                 message = error_def["message_template"]
-        
+
         return ErrorDetail(
             code=error_def["code"],
             message=message,
@@ -294,26 +310,26 @@ class ErrorCatalog:
             help_url=error_def["help_url"],
             trace_id=getattr(ErrorContext().trace_id, "trace_id", None),
         )
-    
+
     @classmethod
     def to_result(
         cls,
         code: str,
         params: Optional[Dict[str, Any]] = None,
         details: Optional[Dict[str, Any]] = None,
-        field: Optional[str] = None,
-        source: Optional[str] = None,
+        field: str | None = None,
+        source: str | None = None,
     ) -> Failure:
         """
         Create a Failure result with an error from the catalog.
-        
+
         Args:
             code: Error code
             params: Parameters to format the message template
             details: Additional error details
             field: Field that caused the error
             source: Source of the error
-            
+
         Returns:
             Failure result with the error
         """
@@ -330,11 +346,11 @@ class ErrorCatalog:
 class FrameworkError(Exception):
     """
     Base class for all framework-specific errors.
-    
+
     This class extends the standard Exception class with additional properties
     and utilities for working with the UNO error framework.
     """
-    
+
     def __init__(
         self,
         message: str,
@@ -348,7 +364,7 @@ class FrameworkError(Exception):
     ):
         """
         Initialize a framework error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -367,7 +383,7 @@ class FrameworkError(Exception):
         self.http_status_code = http_status_code
         self.context = context or get_error_context()
         self.original_exception = original_exception
-    
+
     def to_error_detail(self) -> ErrorDetail:
         """Convert to ErrorDetail model."""
         return ErrorDetail(
@@ -378,7 +394,7 @@ class FrameworkError(Exception):
             details=self.details,
             trace_id=getattr(self.context, "trace_id", None),
         )
-    
+
     def to_result(self) -> Failure:
         """Convert to a Failure result."""
         return Failure(
@@ -386,7 +402,7 @@ class FrameworkError(Exception):
             error_code=self.code,
             details=self.details,
         )
-    
+
     def with_context(self, context: ErrorContext) -> "FrameworkError":
         """Create a new instance with updated context."""
         return self.__class__(
@@ -403,18 +419,18 @@ class FrameworkError(Exception):
 
 class ValidationError(FrameworkError):
     """Error raised when validation fails."""
-    
+
     def __init__(
         self,
         message: str,
         code: str = "VALIDATION_ERROR",
         details: Optional[Dict[str, Any]] = None,
-        field: Optional[str] = None,
+        field: str | None = None,
         **kwargs,
     ):
         """
         Initialize a validation error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -425,7 +441,7 @@ class ValidationError(FrameworkError):
         details = details or {}
         if field:
             details["field"] = field
-        
+
         super().__init__(
             message=message,
             code=code,
@@ -438,7 +454,7 @@ class ValidationError(FrameworkError):
 
 class DatabaseError(FrameworkError):
     """Error raised for database-related issues."""
-    
+
     def __init__(
         self,
         message: str,
@@ -448,7 +464,7 @@ class DatabaseError(FrameworkError):
     ):
         """
         Initialize a database error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -466,7 +482,7 @@ class DatabaseError(FrameworkError):
 
 class AuthenticationError(FrameworkError):
     """Error raised for authentication failures."""
-    
+
     def __init__(
         self,
         message: str,
@@ -476,7 +492,7 @@ class AuthenticationError(FrameworkError):
     ):
         """
         Initialize an authentication error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -494,7 +510,7 @@ class AuthenticationError(FrameworkError):
 
 class AuthorizationError(FrameworkError):
     """Error raised for authorization failures."""
-    
+
     def __init__(
         self,
         message: str,
@@ -504,7 +520,7 @@ class AuthorizationError(FrameworkError):
     ):
         """
         Initialize an authorization error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -522,7 +538,7 @@ class AuthorizationError(FrameworkError):
 
 class NotFoundError(FrameworkError):
     """Error raised when a resource is not found."""
-    
+
     def __init__(
         self,
         message: str,
@@ -532,7 +548,7 @@ class NotFoundError(FrameworkError):
     ):
         """
         Initialize a not found error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -550,7 +566,7 @@ class NotFoundError(FrameworkError):
 
 class ConflictError(FrameworkError):
     """Error raised when a conflict occurs (e.g., duplicate key)."""
-    
+
     def __init__(
         self,
         message: str,
@@ -560,7 +576,7 @@ class ConflictError(FrameworkError):
     ):
         """
         Initialize a conflict error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -578,7 +594,7 @@ class ConflictError(FrameworkError):
 
 class RateLimitError(FrameworkError):
     """Error raised when a rate limit is exceeded."""
-    
+
     def __init__(
         self,
         message: str,
@@ -588,7 +604,7 @@ class RateLimitError(FrameworkError):
     ):
         """
         Initialize a rate limit error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -606,7 +622,7 @@ class RateLimitError(FrameworkError):
 
 class ServerError(FrameworkError):
     """Error raised for server-side issues."""
-    
+
     def __init__(
         self,
         message: str,
@@ -616,7 +632,7 @@ class ServerError(FrameworkError):
     ):
         """
         Initialize a server error.
-        
+
         Args:
             message: Error message
             code: Error code
@@ -640,12 +656,12 @@ def register_error(
     category: ErrorCategory = ErrorCategory.UNKNOWN,
     severity: ErrorSeverity = ErrorSeverity.ERROR,
     http_status_code: Optional[int] = None,
-    help_text: Optional[str] = None,
-    help_url: Optional[str] = None,
+    help_text: str | None = None,
+    help_url: str | None = None,
 ) -> None:
     """
     Register an error in the catalog.
-    
+
     Args:
         code: Unique error code
         message_template: Message template with optional placeholders
@@ -670,19 +686,19 @@ def create_error(
     code: str,
     params: Optional[Dict[str, Any]] = None,
     details: Optional[Dict[str, Any]] = None,
-    field: Optional[str] = None,
-    source: Optional[str] = None,
+    field: str | None = None,
+    source: str | None = None,
 ) -> ErrorDetail:
     """
     Create an error from the catalog.
-    
+
     Args:
         code: Error code
         params: Parameters to format the message template
         details: Additional error details
         field: Field that caused the error
         source: Source of the error
-        
+
     Returns:
         Initialized ErrorDetail instance
     """
@@ -698,12 +714,12 @@ def create_error(
 def get_error_context() -> ErrorContext:
     """
     Get error context from the current execution context.
-    
+
     Returns:
         Error context with stack trace information
     """
     context = ErrorContext()
-    
+
     # Add stack trace information
     stack = inspect.stack()
     if len(stack) > 2:
@@ -711,36 +727,36 @@ def get_error_context() -> ErrorContext:
         context.function = frame.function
         context.module = frame.frame.f_globals.get("__name__", "")
         context.line = frame.lineno
-    
+
     # Add full stack trace
     context.stack_trace = "".join(traceback.format_stack()[:-1])
-    
+
     return context
 
 
 def log_error(
     error: Union[Exception, ErrorDetail, Error],
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
     level: int = logging.ERROR,
     include_traceback: bool = True,
     context: Optional[ErrorContext] = None,
 ) -> ErrorLog:
     """
     Log an error with additional context.
-    
+
     Args:
         error: The error to log
         logger: Logger to use (defaults to root logger)
         level: Logging level
         include_traceback: Whether to include traceback information
         context: Error context
-        
+
     Returns:
         Error log entry
     """
     logger = logger or logging.getLogger()
     context = context or get_error_context()
-    
+
     # Convert error to ErrorDetail if needed
     if isinstance(error, Exception) and not isinstance(error, FrameworkError):
         error_detail = ErrorDetail(
@@ -764,15 +780,13 @@ def log_error(
         )
     else:
         error_detail = error
-    
+
     # Create log entry
     log_entry = ErrorLog(
         error=error_detail,
         context=context.to_dict(),
         exception_class=(
-            error.__class__.__name__
-            if isinstance(error, Exception)
-            else None
+            error.__class__.__name__ if isinstance(error, Exception) else None
         ),
         exception_traceback=(
             "".join(traceback.format_exception(type(error), error, error.__traceback__))
@@ -780,24 +794,24 @@ def log_error(
             else None
         ),
     )
-    
+
     # Log the error
     logger.log(
         level,
         f"{error_detail.code}: {error_detail.message}",
         extra={"error_log": log_entry.model_dump()},
     )
-    
+
     return log_entry
 
 
 def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> Dict[str, Any]:
     """
     Convert an error to a dictionary representation.
-    
+
     Args:
         error: The error to convert
-        
+
     Returns:
         Dictionary representation of the error
     """
@@ -830,10 +844,10 @@ T = TypeVar("T")
 def error_to_result(error: Union[Exception, ErrorDetail]) -> Failure:
     """
     Convert an error to a Failure result.
-    
+
     Args:
         error: The error to convert
-        
+
     Returns:
         Failure result
     """

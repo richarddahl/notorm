@@ -16,7 +16,7 @@ class SQLObserver(Protocol):
     Protocol defining the interface for SQL emitter event observers.
     """
 
-    def on_sql_generated(self, source: str, statements: List[SQLStatement]) -> None:
+    def on_sql_generated(self, source: str, statements: list[SQLStatement]) -> None:
         """Called when SQL statements are generated.
 
         Args:
@@ -26,7 +26,7 @@ class SQLObserver(Protocol):
         ...
 
     def on_sql_executed(
-        self, source: str, statements: List[SQLStatement], duration: float
+        self, source: str, statements: list[SQLStatement], duration: float
     ) -> None:
         """Called when SQL statements are executed.
 
@@ -38,7 +38,7 @@ class SQLObserver(Protocol):
         ...
 
     def on_sql_error(
-        self, source: str, statements: List[SQLStatement], error: Exception
+        self, source: str, statements: list[SQLStatement], error: Exception
     ) -> None:
         """Called when SQL execution fails.
 
@@ -57,7 +57,7 @@ class BaseObserver:
     Subclasses should override these methods to provide actual implementations.
     """
 
-    def on_sql_generated(self, source: str, statements: List[SQLStatement]) -> None:
+    def on_sql_generated(self, source: str, statements: list[SQLStatement]) -> None:
         """Called when SQL statements are generated (base implementation does nothing).
 
         Args:
@@ -67,7 +67,7 @@ class BaseObserver:
         pass
 
     def on_sql_executed(
-        self, source: str, statements: List[SQLStatement], duration: float
+        self, source: str, statements: list[SQLStatement], duration: float
     ) -> None:
         """Called when SQL statements are executed (base implementation does nothing).
 
@@ -79,7 +79,7 @@ class BaseObserver:
         pass
 
     def on_sql_error(
-        self, source: str, statements: List[SQLStatement], error: Exception
+        self, source: str, statements: list[SQLStatement], error: Exception
     ) -> None:
         """Called when SQL execution fails (base implementation does nothing).
 
@@ -108,7 +108,7 @@ class LoggingSQLObserver(BaseObserver):
         """
         self.logger = logger or logging.getLogger(__name__)
 
-    def on_sql_generated(self, source: str, statements: List[SQLStatement]) -> None:
+    def on_sql_generated(self, source: str, statements: list[SQLStatement]) -> None:
         """Log SQL statement generation.
 
         Args:
@@ -120,7 +120,7 @@ class LoggingSQLObserver(BaseObserver):
             self.logger.debug(f"  - {stmt.name} ({stmt.type.value})")
 
     def on_sql_executed(
-        self, source: str, statements: List[SQLStatement], duration: float
+        self, source: str, statements: list[SQLStatement], duration: float
     ) -> None:
         """Log SQL statement execution.
 
@@ -134,7 +134,7 @@ class LoggingSQLObserver(BaseObserver):
         )
 
     def on_sql_error(
-        self, source: str, statements: List[SQLStatement], error: Exception
+        self, source: str, statements: list[SQLStatement], error: Exception
     ) -> None:
         """Log SQL execution errors.
 

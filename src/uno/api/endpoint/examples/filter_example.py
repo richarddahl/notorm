@@ -36,35 +36,35 @@ from uno.domain.entity.service import ApplicationService, CrudService
 # Models
 class Product(BaseModel):
     """Product model."""
-    
+
     id: str = Field(..., description="Product ID")
     name: str = Field(..., description="Product name")
     description: str = Field(..., description="Product description")
     price: float = Field(..., description="Product price")
     category: str = Field(..., description="Product category")
-    tags: List[str] = Field(default_factory=list, description="Product tags")
+    tags: list[str] = Field(default_factory=list, description="Product tags")
     is_active: bool = Field(True, description="Whether the product is active")
 
 
 class CreateProductRequest(BaseModel):
     """Create product request."""
-    
+
     name: str = Field(..., description="Product name")
     description: str = Field(..., description="Product description")
     price: float = Field(..., description="Product price")
     category: str = Field(..., description="Product category")
-    tags: List[str] = Field(default_factory=list, description="Product tags")
+    tags: list[str] = Field(default_factory=list, description="Product tags")
     is_active: bool = Field(True, description="Whether the product is active")
 
 
 class UpdateProductRequest(BaseModel):
     """Update product request."""
-    
+
     name: Optional[str] = Field(None, description="Product name")
     description: Optional[str] = Field(None, description="Product description")
     price: Optional[float] = Field(None, description="Product price")
     category: Optional[str] = Field(None, description="Product category")
-    tags: Optional[List[str]] = Field(None, description="Product tags")
+    tags: list[str] | None = Field(None, description="Product tags")
     is_active: Optional[bool] = Field(None, description="Whether the product is active")
 
 
@@ -121,14 +121,14 @@ PRODUCTS = [
 # Mock repository for the example
 class ProductRepository:
     """Repository for products."""
-    
-    async def get_by_ids(self, ids: List[str]) -> List[Product]:
+
+    async def get_by_ids(self, ids: list[str]) -> list[Product]:
         """
         Get products by IDs.
-        
+
         Args:
             ids: Product IDs
-            
+
         Returns:
             List of products with matching IDs
         """
@@ -139,24 +139,24 @@ class ProductRepository:
 class MockFilterBackend(FilterBackend):
     """
     Mock filter backend for the example.
-    
+
     This backend filters products in memory to simulate database filtering.
     """
-    
+
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: List[dict],
+        filter_criteria: list[dict],
         *,
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         include_count: bool = True,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """
         Filter entities based on criteria.
-        
+
         Args:
             entity_type: The type of entity to filter
             filter_criteria: Filter criteria
@@ -165,26 +165,27 @@ class MockFilterBackend(FilterBackend):
             limit: Optional maximum number of results
             offset: Optional offset for pagination
             include_count: Whether to include the total count
-            
+
         Returns:
             Tuple of (list of entity IDs, total count if include_count is True)
         """
         # Filter products
         filtered_products = PRODUCTS
-        
+
         for criteria in filter_criteria:
             field = criteria.field
             operator = criteria.operator
             value = criteria.value
-            
+
             filtered_products = [
-                p for p in filtered_products
+                p
+                for p in filtered_products
                 if self._matches_criteria(p, field, operator, value)
             ]
-        
+
         # Get total count if requested
         total = len(filtered_products) if include_count else None
-        
+
         # Sort products
         if sort_by and sort_dir:
             # Apply each sort
@@ -195,67 +196,70 @@ class MockFilterBackend(FilterBackend):
                     key=lambda p: getattr(p, field) if hasattr(p, field) else None,
                     reverse=reverse,
                 )
-        
+
         # Apply pagination
         if offset is not None:
             filtered_products = filtered_products[offset:]
-        
+
         if limit is not None:
             filtered_products = filtered_products[:limit]
-        
+
         # Return product IDs
         return [p.id for p in filtered_products], total
-    
+
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: List[dict],
+        filter_criteria: list[dict],
     ) -> int:
         """
         Count entities based on criteria.
-        
+
         Args:
             entity_type: The type of entity to count
             filter_criteria: Filter criteria
-            
+
         Returns:
             Total count of matching entities
         """
         # Filter products
         filtered_products = PRODUCTS
-        
+
         for criteria in filter_criteria:
             field = criteria.field
             operator = criteria.operator
             value = criteria.value
-            
+
             filtered_products = [
-                p for p in filtered_products
+                p
+                for p in filtered_products
                 if self._matches_criteria(p, field, operator, value)
             ]
-        
+
         # Return count
         return len(filtered_products)
-    
-    def _matches_criteria(self, product: Product, field: str, operator: str, value: Any) -> bool:
+
+    def _matches_criteria(
+        self, product: Product, field: str, operator: str, value: Any
+    ) -> bool:
         """
         Check if a product matches the given criteria.
-        
+
         Args:
             product: Product to check
             field: Field to check
             operator: Operator to use
             value: Value to check against
-            
+
         Returns:
             True if the product matches the criteria, False otherwise
         """
         # Get field value
         if not hasattr(product, field):
             return False
-        
+
         field_value = getattr(product, field)
-        
+
         # Handle different operators
         if operator == FilterOperator.EQUAL or operator == "eq":
             return field_value == value
@@ -283,14 +287,14 @@ class MockFilterBackend(FilterBackend):
             return field_value is None
         elif operator == FilterOperator.IS_NOT_NULL or operator == "is_not_null":
             return field_value is not None
-        
+
         return False
 
 
 # Mock service for the CRUD endpoint
 class ProductService(CrudService):
     """Service for managing products."""
-    
+
     async def create(self, data):
         """Create a product."""
         product = Product(
@@ -299,18 +303,18 @@ class ProductService(CrudService):
         )
         PRODUCTS.append(product)
         return Success(product)
-    
+
     async def get_by_id(self, id):
         """Get a product by ID."""
         for product in PRODUCTS:
             if product.id == id:
                 return Success(product)
         return Success(None)
-    
+
     async def get_all(self):
         """Get all products."""
         return Success(PRODUCTS)
-    
+
     async def update(self, id, data):
         """Update a product."""
         for i, product in enumerate(PRODUCTS):
@@ -321,7 +325,7 @@ class ProductService(CrudService):
                 PRODUCTS[i] = updated_product
                 return Success(updated_product)
         return Success(None)
-    
+
     async def delete(self, id):
         """Delete a product."""
         for i, product in enumerate(PRODUCTS):
@@ -329,7 +333,7 @@ class ProductService(CrudService):
                 PRODUCTS.pop(i)
                 return Success(True)
         return Success(False)
-    
+
     async def get_by_ids(self, ids):
         """Get products by IDs."""
         return [p for p in PRODUCTS if p.id in ids]
@@ -338,7 +342,7 @@ class ProductService(CrudService):
 def create_filter_app():
     """
     Create a FastAPI application with filtering capabilities.
-    
+
     Returns:
         A FastAPI application with filtering capabilities
     """
@@ -347,13 +351,13 @@ def create_filter_app():
         title="Product Filter API",
         description="API for filtering products, demonstrating the unified endpoint framework's filtering capabilities",
     )
-    
+
     # Create filter backend
     filter_backend = MockFilterBackend()
-    
+
     # Set up repositories
     product_repository = ProductRepository()
-    
+
     # Example 1: FilterableEndpoint
     # Create a filterable endpoint that uses a custom service and repository
     filterable_endpoint = FilterableEndpoint(
@@ -363,16 +367,16 @@ def create_filter_app():
         router=FastAPI().router,
         tags=["Products - Filterable"],
     )
-    
+
     # Register a filter route
     filterable_endpoint.register_filter_route(
         path="/api/products/filterable/filter",
         response_model=Product,
     )
-    
+
     # Register the endpoint
     filterable_endpoint.register(app)
-    
+
     # Example 2: FilterableCrudEndpoint
     # Create a filterable CRUD endpoint
     filterable_crud_endpoint = FilterableCrudEndpoint(
@@ -385,22 +389,22 @@ def create_filter_app():
         tags=["Products - CRUD"],
         path="/api/products/crud",
     )
-    
+
     # Register the endpoint
     filterable_crud_endpoint.register(app)
-    
+
     # Example 3: FilterableCqrsEndpoint
     # Create services for CQRS
     class GetProductService(ApplicationService):
         """Service for getting a product."""
-        
+
         async def execute(self, id: str) -> Result[Product]:
             """Get a product by ID."""
             for product in PRODUCTS:
                 if product.id == id:
                     return Success(product)
             return Success(None)
-    
+
     # Create query and command handlers
     get_product_query = QueryHandler(
         service=GetProductService(),
@@ -408,7 +412,7 @@ def create_filter_app():
         path="/{id}",
         method="get",
     )
-    
+
     # Create a filterable CQRS endpoint
     filterable_cqrs_endpoint = FilterableCqrsEndpoint(
         queries=[get_product_query],
@@ -419,12 +423,12 @@ def create_filter_app():
         tags=["Products - CQRS"],
         base_path="/api/products/cqrs",
     )
-    
+
     # Register the endpoint
     filterable_cqrs_endpoint.register(app)
-    
+
     # Example 4: Add routes that use filter parameters directly
-    @app.get("/api/products/filter", response_model=List[Product])
+    @app.get("/api/products/filter", response_model=list[Product])
     async def filter_products(
         request: Request,
         filter_criteria: FilterCriteria = Depends(get_filter_criteria),
@@ -432,16 +436,16 @@ def create_filter_app():
         """Filter products based on query parameters."""
         # Set the filter backend in the request state
         request.state.filter_backend = filter_backend
-        
+
         # Get entities using the filter backend
         entities, _ = await filter_backend.get_entities(
             entity_type="Product",
             filter_criteria=filter_criteria,
             repository=product_repository,
         )
-        
+
         return entities
-    
+
     return app
 
 
@@ -449,9 +453,9 @@ def create_filter_app():
 def create_age_filter_app():
     """
     Create a FastAPI application with Apache AGE filtering capabilities.
-    
+
     This is just a conceptual example, as it would require a real database connection.
-    
+
     Returns:
         A FastAPI application with Apache AGE filtering capabilities
     """
@@ -460,7 +464,7 @@ def create_age_filter_app():
         title="Product AGE Filter API",
         description="API for filtering products using Apache AGE knowledge graph",
     )
-    
+
     # This would be a real session factory that provides a database connection
     # For this example, we just use a mock
     class MockSessionFactory:
@@ -468,34 +472,34 @@ def create_age_filter_app():
             class MockSession:
                 async def __aenter__(self):
                     return self
-                
+
                 async def __aexit__(self, exc_type, exc_val, exc_tb):
                     pass
-                
+
                 async def execute(self, query, params=None):
                     class MockResult:
                         def fetchall(self):
                             return [("1",), ("2",)]
-                        
+
                         def scalar(self):
                             return 2
-                    
+
                     return MockResult()
-            
+
             return MockSession()
-    
+
     # Create filter backends
     session_factory = MockSessionFactory()
-    
+
     # Create a SQL filter backend as fallback
     sql_backend = SqlFilterBackend(session_factory)
-    
+
     # Create a graph filter backend that uses Apache AGE
     graph_backend = GraphFilterBackend(session_factory, fallback_backend=sql_backend)
-    
+
     # Create the repository
     product_repository = ProductRepository()
-    
+
     # Create a filterable CRUD endpoint that uses the graph backend
     filterable_crud_endpoint = FilterableCrudEndpoint(
         service=ProductService(),
@@ -507,15 +511,15 @@ def create_age_filter_app():
         tags=["Products - Graph"],
         path="/api/products/graph",
     )
-    
+
     # Register the endpoint
     filterable_crud_endpoint.register(app)
-    
+
     return app
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     app = create_filter_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -26,7 +26,6 @@ from uno.domain.models import (
     Entity,
     AggregateRoot,
     ValueObject,
-
     CommandResult,
 )
 from uno.domain.protocols import (
@@ -134,7 +133,7 @@ class AggregateFactory(EntityFactory[A], Generic[A]):
 
     @classmethod
     def create_with_children(
-        cls, children: Optional[List[EntityProtocol]] = None, **kwargs: Any
+        cls, children: Optional[list[EntityProtocol]] = None, **kwargs: Any
     ) -> A:
         """
         Create a new aggregate root with child entities.
@@ -163,7 +162,7 @@ class AggregateFactory(EntityFactory[A], Generic[A]):
 
     @classmethod
     def reconstitute_with_children(
-        cls, data: Dict[str, Any], children: Optional[List[EntityProtocol]] = None
+        cls, data: Dict[str, Any], children: Optional[list[EntityProtocol]] = None
     ) -> A:
         """
         Reconstitute an aggregate root with child entities.
@@ -241,7 +240,7 @@ class FactoryRegistry:
     for domain entities, aggregates, and value objects.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the factory registry.
 

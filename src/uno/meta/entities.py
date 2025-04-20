@@ -23,11 +23,11 @@ class MetaType(AggregateRoot[str]):
     """
 
     id: str
-    name: Optional[str] = None  # Derived from ID but can be customized
-    description: Optional[str] = None
+    name: str | None = None  # Derived from ID but can be customized
+    description: str | None = None
 
     # Navigation properties (not persisted directly)
-    meta_records: List["MetaRecord"] = field(default_factory=list, repr=False)
+    meta_records: list["MetaRecord"] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "MetaTypeModel"
@@ -67,7 +67,7 @@ class MetaRecord(AggregateRoot[str]):
 
     # Navigation properties (not persisted directly)
     meta_type: Optional[MetaType] = field(default=None, repr=False)
-    attributes: List[str] = field(default_factory=list, repr=False)  # IDs of attributes
+    attributes: list[str] = field(default_factory=list, repr=False)  # IDs of attributes
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "MetaRecordModel"

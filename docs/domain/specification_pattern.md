@@ -361,7 +361,7 @@ class SQLRepository(EntityRepository[User, UUID]):
     def __init__(self):
         self.translator = SQLSpecificationTranslator[User]()
     
-    async def find(self, specification: Specification[User]) -> List[User]:
+    async def find(self, specification: Specification[User]) -> list[User]:
         # Translate specification to SQL filters
         filters = self.translator.translate(specification)
         
@@ -469,7 +469,7 @@ def price_range_specification(min_price: float, max_price: float):
 def category_specification(category: str):
     return AttributeSpecification('category', category)
 
-def brand_specification(brands: List[str]):
+def brand_specification(brands: list[str]):
     return AttributeSpecification(
         'brand',
         brands,
@@ -492,10 +492,10 @@ def in_stock_specification():
 
 # Apply filters from user input
 async def filter_products(
-    category: Optional[str] = None,
+    category: str | None = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
-    brands: Optional[List[str]] = None,
+    brands: list[str] | None = None,
     min_rating: Optional[float] = None,
     in_stock_only: bool = False
 ):

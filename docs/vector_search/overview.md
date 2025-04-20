@@ -282,7 +282,7 @@ class ProductSearchResult(BaseModel):
     price: float
     similarity: float
 
-@router.get("/products/search/{query}", response_model=List[ProductSearchResult])
+@router.get("/products/search/{query}", response_model=list[ProductSearchResult])
 async def search_products(query: str, engine=Depends(get_search_engine)):
     """Search for products with semantic search."""
     # Perform semantic search

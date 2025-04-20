@@ -20,19 +20,19 @@ def generate_crud(
     name: str,
     module_path: str,
     fields: Dict[str, str],
-    table_name: Optional[str] = None,
-    output_dir: Optional[str] = None,
+    table_name: str | None = None,
+    output_dir: str | None = None,
     with_api: bool = True,
-    api_prefix: Optional[str] = None,
-    api_tags: Optional[List[str]] = None,
-    imports: Optional[Dict[str, List[str]]] = None,
+    api_prefix: str | None = None,
+    api_tags: list[str] | None = None,
+    imports: Optional[Dict[str, list[str]]] = None,
     relationships: Optional[Dict[str, Dict[str, Any]]] = None,
-    validators: Optional[Dict[str, List[str]]] = None,
-    methods: Optional[Dict[str, List[Dict[str, Any]]]] = None
+    validators: Optional[Dict[str, list[str]]] = None,
+    methods: Optional[Dict[str, list[dict[str, Any]]]] = None,
 ) -> Dict[str, Tuple[str, str]]:
     """
     Generate complete CRUD functionality for a model.
-    
+
     Args:
         name: Name of the model class (CamelCase)
         module_path: Module path for imports (e.g. 'myapp.users')
@@ -46,26 +46,26 @@ def generate_crud(
         relationships: Optional dictionary defining model relationships
         validators: Optional dictionary of field validation rules
         methods: Optional dictionary of methods for repository, service, and API
-        
+
     Returns:
         Dictionary of generated code with keys "model", "repository", "service", "api"
     """
     if imports is None:
         imports = {}
-    
+
     if relationships is None:
         relationships = {}
-    
+
     if validators is None:
         validators = {}
-    
+
     if methods is None:
         methods = {}
-    
+
     # Ensure output directory exists
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
-    
+
     # Generate model
     model_code, model_file = generate_model(
         name=name,
@@ -74,9 +74,9 @@ def generate_crud(
         relationships=relationships,
         validators=validators,
         imports=imports.get("model", []),
-        output_dir=output_dir
+        output_dir=output_dir,
     )
-    
+
     # Generate repository
     repository_methods = methods.get("repository", [])
     repository_code, repository_file = generate_repository(
@@ -85,9 +85,9 @@ def generate_crud(
         fields=fields,
         methods=repository_methods,
         imports=imports.get("repository", []),
-        output_dir=output_dir
+        output_dir=output_dir,
     )
-    
+
     # Generate service
     service_methods = methods.get("service", [])
     service_code, service_file = generate_service(
@@ -97,9 +97,9 @@ def generate_crud(
         methods=service_methods,
         dependencies=[],
         imports=imports.get("service", []),
-        output_dir=output_dir
+        output_dir=output_dir,
     )
-    
+
     # Generate API if requested
     api_code = ""
     api_file = ""
@@ -112,17 +112,17 @@ def generate_crud(
             tags=api_tags,
             methods=api_methods,
             imports=imports.get("api", []),
-            output_dir=output_dir
+            output_dir=output_dir,
         )
-    
+
     # Return generated code
     result = {
         "model": (model_code, model_file),
         "repository": (repository_code, repository_file),
-        "service": (service_code, service_file)
+        "service": (service_code, service_file),
     }
-    
+
     if with_api:
         result["api"] = (api_code, api_file)
-    
+
     return result

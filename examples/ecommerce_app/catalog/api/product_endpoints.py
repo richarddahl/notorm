@@ -39,7 +39,7 @@ class ProductResponse(ProductCreateCommand):
     id: str
     version: int
     created_at: str
-    updated_at: Optional[str] = None
+    updated_at: str | None = None
 
 
 class ProductVariantResponse(ProductVariantDTO):
@@ -47,7 +47,7 @@ class ProductVariantResponse(ProductVariantDTO):
 
     id: str
     created_at: str
-    updated_at: Optional[str] = None
+    updated_at: str | None = None
 
 
 class ProductImageResponse(ProductImageDTO):
@@ -55,7 +55,7 @@ class ProductImageResponse(ProductImageDTO):
 
     id: str
     created_at: str
-    updated_at: Optional[str] = None
+    updated_at: str | None = None
 
 
 class ProductListResponse(ProductResponse):
@@ -165,7 +165,7 @@ def product_to_response(product: Product) -> ProductResponse:
     return response
 
 
-def product_list_to_response(products: List[Product]) -> List[ProductSummaryResponse]:
+def product_list_to_response(products: list[Product]) -> list[ProductSummaryResponse]:
     """Convert a list of product entities to API response model."""
     return [
         ProductSummaryResponse(
@@ -209,7 +209,7 @@ def product_list_to_response(products: List[Product]) -> List[ProductSummaryResp
 
 
 # API endpoints
-@router.get("/", response_model=List[ProductSummaryResponse])
+@router.get("/", response_model=list[ProductSummaryResponse])
 async def list_products(
     status: Optional[str] = Query(None, description="Filter by product status"),
     category_id: Optional[str] = Query(None, description="Filter by category ID"),
@@ -252,8 +252,8 @@ async def list_products(
         sort_direction=sort_direction,
     )
 
-    adapter = DomainServiceAdapter[ProductListQuery, List[Product]](query_service)
-    result: Result[List[Product]] = await adapter.execute(query)
+    adapter = DomainServiceAdapter[ProductListQuery, list[Product]](query_service)
+    result: Result[list[Product]] = await adapter.execute(query)
 
     if result.is_failure:
         raise HTTPException(status_code=400, detail=result.error)

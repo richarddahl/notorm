@@ -10,6 +10,7 @@ from uno.database.engine.factory import AsyncEngineFactory
 from uno.database.config import ConnectionConfig
 from uno.settings import uno_settings
 
+
 @asynccontextmanager
 async def async_connection(
     db_driver: str = uno_settings.DB_ASYNC_DRIVER,
@@ -21,7 +22,7 @@ async def async_connection(
     factory: Optional[AsyncEngineFactory] = None,
     max_retries: int = 3,
     retry_delay: int = 2,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[AsyncConnection]:
     """
@@ -79,10 +80,10 @@ async def async_connection(
             # This line needs a type ignore because SQLAlchemy's typing is complex
             # and mypy can't determine if it returns a coroutine or not
             connection = connection.execution_options(isolation_level=isolation_level)  # type: ignore
-            
+
             try:
                 # If execute_callbacks is implemented, call it
-                if hasattr(engine_factory, 'execute_callbacks'):
+                if hasattr(engine_factory, "execute_callbacks"):
                     await engine_factory.execute_callbacks(connection)
 
                 # Yield the connection

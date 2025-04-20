@@ -193,7 +193,7 @@ Uno integrates transaction management with the event system:
 from uno.core.uow import UnitOfWork, get_unit_of_work
 from uno.domain.entity import AggregateRoot
 
-async def place_order(customer_id: UUID, items: List[dict]):
+async def place_order(customer_id: UUID, items: list[dict]):
     async with get_unit_of_work() as uow:
         # Get repositories
         order_repo = uow.get_repository(OrderRepository)
@@ -442,7 +442,7 @@ class UserService(DomainServiceWithUnitOfWork[User, UUID]):
 
 ```python
 # DON'T: Create transactions inside loops
-async def update_users(user_ids: List[UUID], new_status: str):
+async def update_users(user_ids: list[UUID], new_status: str):
     for user_id in user_ids:
         async with transaction() as session:  # BAD: Creates a separate transaction for each user
             await session.execute(
@@ -451,7 +451,7 @@ async def update_users(user_ids: List[UUID], new_status: str):
             )
 
 # DO: Create a single transaction around the entire operation
-async def update_users(user_ids: List[UUID], new_status: str):
+async def update_users(user_ids: list[UUID], new_status: str):
     async with transaction() as session:
         for user_id in user_ids:
             await session.execute(

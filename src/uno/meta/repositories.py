@@ -22,11 +22,11 @@ class MetaTypeRepository(BaseRepository[MetaTypeModel]):
     Provides data access methods for type metadata.
     """
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a database session."""
         super().__init__(session, MetaTypeModel, logger)
 
-    async def get_all_types(self) -> List[MetaTypeModel]:
+    async def get_all_types(self) -> list[MetaTypeModel]:
         """
         Get all meta types.
 
@@ -60,13 +60,13 @@ class MetaRecordRepository(BaseRepository[MetaRecordModel]):
     Provides data access methods for entity metadata records.
     """
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a database session."""
         super().__init__(session, MetaRecordModel, logger)
 
     async def find_by_type(
         self, type_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[MetaRecordModel]:
+    ) -> list[MetaRecordModel]:
         """
         Find all records of a specific meta type.
 
@@ -89,7 +89,7 @@ class MetaRecordRepository(BaseRepository[MetaRecordModel]):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def find_by_ids(self, record_ids: List[str]) -> List[MetaRecordModel]:
+    async def find_by_ids(self, record_ids: list[str]) -> list[MetaRecordModel]:
         """
         Find meta records by a list of IDs.
 

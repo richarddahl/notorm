@@ -15,7 +15,7 @@ from fastapi import FastAPI, Depends, Security, APIRouter
 # Domain-driven approach
 from uno.api.endpoint_factory import UnoEndpointFactory
 from uno.api.repository_adapter import RepositoryAdapter
-from uno.values.domain_repositories import (
+from uno.domain.repositories import (
     ValueRepository,
     TextValueRepository,
     IntegerValueRepository,

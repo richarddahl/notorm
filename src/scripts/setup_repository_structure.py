@@ -29,7 +29,6 @@ DIRECTORY_STRUCTURE = [
     "core/config",
     "core/utils",
     "core/async",
-    
     # Domain layer
     "domain/common/entities",
     "domain/common/value_objects",
@@ -38,14 +37,12 @@ DIRECTORY_STRUCTURE = [
     "domain/values",
     "domain/meta",
     "domain/vector_search",
-    
     # Application layer
     "application/common",
     "application/attributes",
     "application/values",
     "application/workflows",
     "application/jobs",
-    
     # Infrastructure layer
     "infrastructure/persistence",
     "infrastructure/persistence/repositories",
@@ -54,7 +51,6 @@ DIRECTORY_STRUCTURE = [
     "infrastructure/events",
     "infrastructure/di",
     "infrastructure/serialization",
-    
     # Interface layer
     "interface/api/base",
     "interface/api/attributes",
@@ -62,7 +58,6 @@ DIRECTORY_STRUCTURE = [
     "interface/api/auth",
     "interface/cli",
     "interface/fastapi",
-    
     # Cross-cutting layer
     "crosscutting/logging",
     "crosscutting/monitoring",
@@ -73,7 +68,9 @@ DIRECTORY_STRUCTURE = [
 # Initial files to create with basic content
 INITIAL_FILES = [
     # Core protocols
-    ("core/protocols/repository.py", """
+    (
+        "core/protocols/repository.py",
+        """
 \"\"\"Repository Protocol Definition\"\"\"
 from typing import Generic, TypeVar, List, Optional, Any
 
@@ -87,7 +84,7 @@ class RepositoryProtocol(Generic[T, ID]):
         \"\"\"Retrieve an entity by its ID.\"\"\"
         ...
     
-    async def find_all(self) -> List[T]:
+    async def find_all(self) -> list[T]:
         \"\"\"Retrieve all entities.\"\"\"
         ...
     
@@ -102,8 +99,11 @@ class RepositoryProtocol(Generic[T, ID]):
     async def delete_by_id(self, id: ID) -> None:
         \"\"\"Delete an entity by its ID.\"\"\"
         ...
-"""),
-    ("core/protocols/service.py", """
+""",
+    ),
+    (
+        "core/protocols/service.py",
+        """
 \"\"\"Service Protocol Definition\"\"\"
 from typing import Generic, TypeVar, List, Optional, Any
 from uno.core.errors.result import Result
@@ -118,7 +118,7 @@ class ServiceProtocol(Generic[T, ID]):
         \"\"\"Retrieve an entity by its ID.\"\"\"
         ...
     
-    async def get_all(self) -> Result[List[T]]:
+    async def get_all(self) -> Result[list[T]]:
         \"\"\"Retrieve all entities.\"\"\"
         ...
     
@@ -133,8 +133,11 @@ class ServiceProtocol(Generic[T, ID]):
     async def delete(self, id: ID) -> Result[None]:
         \"\"\"Delete an entity.\"\"\"
         ...
-"""),
-    ("core/protocols/event.py", """
+""",
+    ),
+    (
+        "core/protocols/event.py",
+        """
 \"\"\"Event Protocol Definitions\"\"\"
 from typing import Any, Dict, Generic, List, TypeVar, Protocol
 from datetime import datetime
@@ -178,8 +181,11 @@ class EventBusProtocol(Protocol):
     async def unsubscribe(self, event_type: str, handler: Any) -> None:
         \"\"\"Unsubscribe from events of a specific type.\"\"\"
         ...
-"""),
-    ("core/protocols/entity.py", """
+""",
+    ),
+    (
+        "core/protocols/entity.py",
+        """
 \"\"\"Entity Protocol Definition\"\"\"
 from typing import TypeVar, Generic, Protocol, Any
 
@@ -200,8 +206,11 @@ class EntityProtocol(Protocol, Generic[ID]):
     def __hash__(self) -> int:
         \"\"\"Hash based on ID.\"\"\"
         ...
-"""),
-    ("core/protocols/__init__.py", """
+""",
+    ),
+    (
+        "core/protocols/__init__.py",
+        """
 \"\"\"Core Protocol Definitions
 
 This package contains the core protocol interfaces that define
@@ -220,9 +229,12 @@ __all__ = [
     'EventBusProtocol',
     'EntityProtocol',
 ]
-"""),
+""",
+    ),
     # Error framework
-    ("core/errors/result.py", """
+    (
+        "core/errors/result.py",
+        """
 \"\"\"Result Pattern Implementation\"\"\"
 from typing import Generic, TypeVar, Optional, List, Dict, Any, Union, Callable
 
@@ -241,7 +253,7 @@ class Result(Generic[T, E]):
         self, 
         value: Optional[T] = None, 
         error: Optional[E] = None,
-        errors: Optional[List[E]] = None
+        errors: Optional[list[E]] = None
     ):
         self._value = value
         self._error = error
@@ -273,7 +285,7 @@ class Result(Generic[T, E]):
         return self._errors[0] if self._errors else None
     
     @property
-    def errors(self) -> List[E]:
+    def errors(self) -> list[E]:
         \"\"\"All errors.\"\"\"
         return self._errors.copy()
     
@@ -300,11 +312,14 @@ class Result(Generic[T, E]):
         return Result(error=error)
     
     @staticmethod
-    def failures(errors: List[E]) -> 'Result[Any, E]':
+    def failures(errors: list[E]) -> 'Result[Any, E]':
         \"\"\"Create a failed result with multiple errors.\"\"\"
         return Result(errors=errors)
-"""),
-    ("core/errors/__init__.py", """
+""",
+    ),
+    (
+        "core/errors/__init__.py",
+        """
 \"\"\"Error Handling Framework
 
 This package contains the error handling components used throughout the system.
@@ -313,9 +328,12 @@ This package contains the error handling components used throughout the system.
 from uno.core.errors.result import Result
 
 __all__ = ['Result']
-"""),
+""",
+    ),
     # Domain base classes
-    ("domain/common/entities/base_entity.py", """
+    (
+        "domain/common/entities/base_entity.py",
+        """
 \"\"\"Base Entity Definition\"\"\"
 from datetime import datetime
 from typing import Generic, TypeVar, List, Any, Dict, Optional
@@ -336,7 +354,7 @@ class BaseEntity(Generic[ID]):
         self._id = id if id is not None else str(uuid4())
         self._created_at = datetime.now()
         self._updated_at = self._created_at
-        self._events: List[Any] = []
+        self._events: list[Any] = []
     
     @property
     def id(self) -> ID:
@@ -361,7 +379,7 @@ class BaseEntity(Generic[ID]):
         \"\"\"Add a domain event to this entity.\"\"\"
         self._events.append(event)
     
-    def clear_events(self) -> List[Any]:
+    def clear_events(self) -> list[Any]:
         \"\"\"Clear and return all pending events.\"\"\"
         events = self._events.copy()
         self._events.clear()
@@ -374,8 +392,11 @@ class BaseEntity(Generic[ID]):
     
     def __hash__(self) -> int:
         return hash(self.id)
-"""),
-    ("domain/common/value_objects/base_value_object.py", """
+""",
+    ),
+    (
+        "domain/common/value_objects/base_value_object.py",
+        """
 \"\"\"Base Value Object Definition\"\"\"
 from dataclasses import dataclass
 from typing import Any
@@ -396,9 +417,12 @@ class ValueObject:
     
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.__dict__.items())))
-"""),
+""",
+    ),
     # Infrastructure implementation
-    ("infrastructure/persistence/database.py", """
+    (
+        "infrastructure/persistence/database.py",
+        """
 \"\"\"Database Provider Implementation\"\"\"
 from typing import Any, Optional, Dict
 import asyncpg
@@ -514,8 +538,11 @@ class Transaction:
             await self.rollback()
         else:
             await self.commit()
-"""),
-    ("infrastructure/persistence/unit_of_work.py", """
+""",
+    ),
+    (
+        "infrastructure/persistence/unit_of_work.py",
+        """
 \"\"\"Unit of Work Implementation\"\"\"
 from typing import Dict, Type, Any, Optional
 from uno.infrastructure.persistence.database import DatabaseProvider, Transaction
@@ -595,8 +622,11 @@ class UnitOfWork:
             await self.rollback()
         else:
             await self.commit()
-"""),
-    ("infrastructure/persistence/repositories/sqlalchemy_repository.py", """
+""",
+    ),
+    (
+        "infrastructure/persistence/repositories/sqlalchemy_repository.py",
+        """
 \"\"\"SQLAlchemy Repository Implementation\"\"\"
 from typing import Generic, TypeVar, List, Optional, Type, Any, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -616,7 +646,7 @@ class SqlAlchemyRepository(Generic[T, ID], RepositoryProtocol[T, ID]):
         self._session = session
         self._model_class = model_class
         self._transaction = None
-        self._pending_events: List[Any] = []
+        self._pending_events: list[Any] = []
     
     def set_transaction(self, transaction: Any) -> None:
         \"\"\"Set the current transaction.\"\"\"
@@ -628,7 +658,7 @@ class SqlAlchemyRepository(Generic[T, ID], RepositoryProtocol[T, ID]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def find_all(self) -> List[T]:
+    async def find_all(self) -> list[T]:
         \"\"\"Retrieve all entities.\"\"\"
         stmt = select(self._model_class)
         result = await self._session.execute(stmt)
@@ -655,34 +685,35 @@ class SqlAlchemyRepository(Generic[T, ID], RepositoryProtocol[T, ID]):
         if entity:
             await self.delete(entity)
     
-    def collect_events(self) -> List[Any]:
+    def collect_events(self) -> list[Any]:
         \"\"\"Collect and clear pending events.\"\"\"
         events = self._pending_events.copy()
         self._pending_events.clear()
         return events
-""")
+""",
+    ),
 ]
 
 
 def create_directory_structure(dry_run: bool = False) -> None:
     """Create the directory structure."""
     print("Creating directory structure...")
-    
+
     # Create base directory if it doesn't exist
     if not os.path.exists(BASE_DIR) and not dry_run:
         os.makedirs(BASE_DIR)
-    
+
     # Create directories
     for directory in DIRECTORY_STRUCTURE:
         dir_path = BASE_DIR / directory
-        
+
         if dry_run:
             print(f"Would create directory: {dir_path}")
         else:
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
                 print(f"Created directory: {dir_path}")
-            
+
             # Create __init__.py in each directory
             init_file = dir_path / "__init__.py"
             if not os.path.exists(init_file):
@@ -695,10 +726,10 @@ def create_directory_structure(dry_run: bool = False) -> None:
 def create_initial_files(dry_run: bool = False) -> None:
     """Create initial files with content."""
     print("\nCreating initial files...")
-    
+
     for file_path, content in INITIAL_FILES:
         full_path = BASE_DIR / file_path
-        
+
         if dry_run:
             print(f"Would create file: {full_path}")
         else:
@@ -710,23 +741,29 @@ def create_initial_files(dry_run: bool = False) -> None:
 
 def main() -> None:
     """Main function to run the script."""
-    parser = argparse.ArgumentParser(description="Setup UNO framework repository structure")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be created without making changes")
-    
+    parser = argparse.ArgumentParser(
+        description="Setup UNO framework repository structure"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be created without making changes",
+    )
+
     args = parser.parse_args()
-    
+
     print("UNO Framework Repository Structure Setup")
     print("=======================================")
-    
+
     if args.dry_run:
         print("\nDRY RUN MODE: No changes will be made\n")
-    
+
     # Create directory structure
     create_directory_structure(args.dry_run)
-    
+
     # Create initial files
     create_initial_files(args.dry_run)
-    
+
     print("\nSetup complete!")
     if args.dry_run:
         print("This was a dry run. Run without --dry-run to apply changes.")

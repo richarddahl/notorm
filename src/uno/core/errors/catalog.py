@@ -67,7 +67,7 @@ def get_error_code_info(code: str) -> Optional[ErrorInfo]:
     return _ERROR_CATALOG.get(code)
 
 
-def get_all_error_codes() -> List[ErrorInfo]:
+def get_all_error_codes() -> list[ErrorInfo]:
     """
     Get all registered error codes.
 

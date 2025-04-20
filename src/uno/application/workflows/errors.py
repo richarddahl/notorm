@@ -47,7 +47,7 @@ class WorkflowErrorCode:
 class WorkflowNotFoundError(BaseError):
     """Error raised when a workflow is not found."""
 
-    def __init__(self, workflow_id: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, workflow_id: str, message: str | None = None, **context: Any):
         message = message or f"Workflow with ID {workflow_id} not found"
         super().__init__(
             message=message,
@@ -63,8 +63,8 @@ class WorkflowInvalidDefinitionError(BaseError):
     def __init__(
         self,
         reason: str,
-        workflow_id: Optional[str] = None,
-        message: Optional[str] = None,
+        workflow_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         context_dict = context.copy()
@@ -86,9 +86,9 @@ class WorkflowExecutionError(BaseError):
     def __init__(
         self,
         workflow_id: str,
-        execution_id: Optional[str] = None,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        execution_id: str | None = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         context_dict = context.copy()
@@ -114,9 +114,9 @@ class WorkflowActionError(BaseError):
         self,
         action_id: str,
         workflow_id: str,
-        execution_id: Optional[str] = None,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        execution_id: str | None = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         context_dict = context.copy()
@@ -141,11 +141,11 @@ class WorkflowConditionError(BaseError):
 
     def __init__(
         self,
-        condition_id: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        condition_type: Optional[str] = None,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        condition_id: str | None = None,
+        workflow_id: str | None = None,
+        condition_type: str | None = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         context_dict = context.copy()
@@ -173,8 +173,8 @@ class WorkflowEventError(BaseError):
     def __init__(
         self,
         event_type: str,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -194,9 +194,9 @@ class WorkflowQueryError(BaseError):
 
     def __init__(
         self,
-        query_id: Optional[str] = None,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        query_id: str | None = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         context_dict = context.copy()
@@ -220,10 +220,10 @@ class WorkflowRecipientError(BaseError):
     def __init__(
         self,
         reason: str,
-        recipient_type: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        execution_id: Optional[str] = None,
-        message: Optional[str] = None,
+        recipient_type: str | None = None,
+        workflow_id: str | None = None,
+        execution_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()

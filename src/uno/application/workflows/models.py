@@ -118,27 +118,27 @@ class WorkflowDefinition(ModelMixin, BaseModel, RecordAuditModelMixin):
     )
 
     # Relationships
-    triggers: Mapped[List["WorkflowTriggerModel"]] = relationship(
+    triggers: Mapped[list["WorkflowTriggerModel"]] = relationship(
         "WorkflowTriggerModel",
         back_populates="workflow",
         cascade="all, delete-orphan",
     )
-    conditions: Mapped[List["WorkflowConditionModel"]] = relationship(
+    conditions: Mapped[list["WorkflowConditionModel"]] = relationship(
         "WorkflowConditionModel",
         back_populates="workflow",
         cascade="all, delete-orphan",
     )
-    actions: Mapped[List["WorkflowActionModel"]] = relationship(
+    actions: Mapped[list["WorkflowActionModel"]] = relationship(
         "WorkflowActionModel",
         back_populates="workflow",
         cascade="all, delete-orphan",
     )
-    recipients: Mapped[List["WorkflowRecipientModel"]] = relationship(
+    recipients: Mapped[list["WorkflowRecipientModel"]] = relationship(
         "WorkflowRecipientModel",
         back_populates="workflow",
         cascade="all, delete-orphan",
     )
-    logs: Mapped[List["WorkflowExecutionLog"]] = relationship(
+    logs: Mapped[list["WorkflowExecutionLog"]] = relationship(
         "WorkflowExecutionLog",
         back_populates="workflow",
         cascade="all, delete-orphan",

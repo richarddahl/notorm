@@ -92,15 +92,15 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 class ProductQueryDTO(BaseModel):
-    name: Optional[str] = None
-    category: Optional[str] = None
+    name: str | None = None
+    category: str | None = None
     min_price: Optional[float] = None
 
 # Create a query endpoint
 product_query_endpoint = QueryEndpoint(
     service=get_dependency(ProductQueryService),
     query_model=ProductQueryDTO,
-    response_model=List[ProductResponseDTO],
+    response_model=list[ProductResponseDTO],
     path="/products/search",
     method="get",
     tags=["Products"]
@@ -117,7 +117,7 @@ from pydantic import BaseModel
 
 class OrderPlacementDTO(BaseModel):
     customer_id: str
-    product_ids: List[str]
+    product_ids: list[str]
     shipping_address: str
 
 class OrderResultDTO(BaseModel):
@@ -149,7 +149,7 @@ from myapp.domain.services import OrderQueryService, OrderCommandService
 get_orders_handler = QueryHandler(
     service=get_dependency(OrderQueryService),
     query_model=OrderQueryDTO,
-    response_model=List[OrderResponseDTO],
+    response_model=list[OrderResponseDTO],
     path="/search",
     method="get"
 )
@@ -191,7 +191,7 @@ from typing import List
 router = APIRouter()
 
 @router.get("/items")
-async def get_items() -> DataResponse[List[Item]]:
+async def get_items() -> DataResponse[list[Item]]:
     items = await item_service.get_all()
     return DataResponse(data=items)
 
@@ -478,22 +478,22 @@ from typing import Optional, List
 # DTOs
 class ProductCreateDTO(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     price: float
     category: str
 
 class ProductResponseDTO(BaseModel):
     id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     price: float
     category: str
 
 class ProductUpdateDTO(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     price: Optional[float] = None
-    category: Optional[str] = None
+    category: str | None = None
 
 # App setup
 app = FastAPI(title="Product API")

@@ -575,7 +575,7 @@ class ProductRepository(EntityRepository[Product, UUID]):
         self, 
         query: str, 
         limit: int = 10
-    ) -> List[Product]:
+    ) -> list[Product]:
         """Find products similar to the query text."""
         # Search using the engine
         results = await self.search_engine.search(
@@ -603,7 +603,7 @@ class ProductRepository(EntityRepository[Product, UUID]):
         self, 
         product_id: UUID,
         limit: int = 5
-    ) -> List[Product]:
+    ) -> list[Product]:
         """Find products similar to an existing product."""
         # Get the source product
         product = await self.get_by_id(product_id)

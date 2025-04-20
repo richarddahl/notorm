@@ -29,14 +29,14 @@ class User(AggregateRoot[str]):
     handle: str
     full_name: str
     is_superuser: bool = False
-    tenant_id: Optional[str] = None
-    default_group_id: Optional[str] = None
+    tenant_id: str | None = None
+    default_group_id: str | None = None
 
     # Navigation properties (not persisted directly)
     tenant: Optional["Tenant"] = field(default=None, repr=False)
     default_group: Optional["Group"] = field(default=None, repr=False)
-    groups: List["Group"] = field(default_factory=list, repr=False)
-    roles: List["Role"] = field(default_factory=list, repr=False)
+    groups: list["Group"] = field(default_factory=list, repr=False)
+    roles: list["Role"] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "UserModel"
@@ -46,6 +46,7 @@ class User(AggregateRoot[str]):
         Validate the user entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.email:
             return Failure(ValidationError("Email cannot be empty"))
         if not self.handle:
@@ -131,7 +132,7 @@ class Group(AggregateRoot[str]):
 
     # Navigation properties (not persisted directly)
     tenant: Optional["Tenant"] = field(default=None, repr=False)
-    users: List[User] = field(default_factory=list, repr=False)
+    users: list[User] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "GroupModel"
@@ -141,6 +142,7 @@ class Group(AggregateRoot[str]):
         Validate the group entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.name:
             return Failure(ValidationError("Name cannot be empty"))
         if not self.tenant_id:
@@ -194,6 +196,7 @@ class ResponsibilityRole(AggregateRoot[str]):
         Validate the responsibility role entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.name:
             return Failure(ValidationError("Name cannot be empty"))
         if not self.description:
@@ -217,7 +220,7 @@ class Permission(Entity[int]):
     id: int = 0  # Will be assigned by the database
 
     # Navigation properties (not persisted directly)
-    roles: List["Role"] = field(default_factory=list, repr=False)
+    roles: list["Role"] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "PermissionModel"
@@ -227,6 +230,7 @@ class Permission(Entity[int]):
         Validate the permission entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.meta_type_id:
             return Failure(ValidationError("Meta type ID cannot be empty"))
         if not self.operation:
@@ -268,8 +272,8 @@ class Role(AggregateRoot[str]):
     # Navigation properties (not persisted directly)
     tenant: Optional["Tenant"] = field(default=None, repr=False)
     responsibility: Optional[ResponsibilityRole] = field(default=None, repr=False)
-    permissions: List[Permission] = field(default_factory=list, repr=False)
-    users: List[User] = field(default_factory=list, repr=False)
+    permissions: list[Permission] = field(default_factory=list, repr=False)
+    users: list[User] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "RoleModel"
@@ -279,6 +283,7 @@ class Role(AggregateRoot[str]):
         Validate the role entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.name:
             return Failure(ValidationError("Name cannot be empty"))
         if not self.description:
@@ -361,9 +366,9 @@ class Tenant(AggregateRoot[str]):
     tenant_type: TenantType = TenantType.INDIVIDUAL
 
     # Navigation properties (not persisted directly)
-    users: List[User] = field(default_factory=list, repr=False)
-    groups: List[Group] = field(default_factory=list, repr=False)
-    roles: List[Role] = field(default_factory=list, repr=False)
+    users: list[User] = field(default_factory=list, repr=False)
+    groups: list[Group] = field(default_factory=list, repr=False)
+    roles: list[Role] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "TenantModel"
@@ -373,6 +378,7 @@ class Tenant(AggregateRoot[str]):
         Validate the tenant entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
         """
         from uno.core.errors.result import Success, Failure
+
         if not self.name:
             return Failure(ValidationError("Name cannot be empty"))
         return Success(self)

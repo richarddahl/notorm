@@ -14,8 +14,8 @@ import logging
 from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.core.errors.result import Result, Success, Failure
-from uno.database.repository import UnoBaseRepository
+from uno.core.errors.result import Result
+from uno.domain.entity.repository_sqlalchemy import SQLAlchemyRepository
 from uno.database.db_manager import DBManager
 from uno.values.models import (
     AttachmentModel,
@@ -40,7 +40,7 @@ class ValueRepositoryError(Exception):
     pass
 
 
-class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[T]):
+class ValueRepository(SQLAlchemyRepository, Generic[T, M], ValueRepositoryProtocol[T]):
     """Generic repository for value operations."""
 
     def __init__(
@@ -48,7 +48,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
         value_class: Type[T],
         model_class: Type[M],
         db_manager: DBManager,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the value repository.
@@ -65,7 +65,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
         self.logger = logger or logging.getLogger(__name__)
 
     async def get_by_id(
-        self, value_id: str, session: Optional[AsyncSession] = None
+        self, value_id: str, session: AsyncSession | None = None
     ) -> Result[Optional[T]]:
         """
         Get a value by ID.
@@ -83,22 +83,22 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             result = await self._execute_query(query, session)
 
             if not result:
-                return Success(None)
+                return Result.success(None)
 
-            return Success(self.value_class(**result.dict()))
+            return Result.success(self.value_class(**result.dict()))
 
         except Exception as e:
             self.logger.error(
                 f"Error getting {self.value_class.__name__} by ID {value_id}: {e}"
             )
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error getting {self.value_class.__name__}: {str(e)}"
                 )
             )
 
     async def get_by_value(
-        self, value: Any, session: Optional[AsyncSession] = None
+        self, value: Any, session: AsyncSession | None = None
     ) -> Result[Optional[T]]:
         """
         Get a value object by its actual value.
@@ -116,22 +116,22 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             result = await self._execute_query(query, session)
 
             if not result:
-                return Success(None)
+                return Result.success(None)
 
-            return Success(self.value_class(**result.dict()))
+            return Result.success(self.value_class(**result.dict()))
 
         except Exception as e:
             self.logger.error(
                 f"Error getting {self.value_class.__name__} by value {value}: {e}"
             )
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error getting {self.value_class.__name__}: {str(e)}"
                 )
             )
 
     async def create(
-        self, value_obj: T, session: Optional[AsyncSession] = None
+        self, value_obj: T, session: AsyncSession | None = None
     ) -> Result[T]:
         """
         Create a new value.
@@ -159,18 +159,18 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             value_obj_dict = value_obj.dict()
             value_obj_dict["id"] = model.id
 
-            return Success(self.value_class(**value_obj_dict))
+            return Result.success(self.value_class(**value_obj_dict))
 
         except Exception as e:
             self.logger.error(f"Error creating {self.value_class.__name__}: {e}")
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error creating {self.value_class.__name__}: {str(e)}"
                 )
             )
 
     async def update(
-        self, value_obj: T, session: Optional[AsyncSession] = None
+        self, value_obj: T, session: AsyncSession | None = None
     ) -> Result[T]:
         """
         Update an existing value.
@@ -187,7 +187,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             value_id = getattr(value_obj, "id")
 
             if not value_id:
-                return Failure(
+                return Result.failure(
                     ValueRepositoryError(
                         f"Cannot update {self.value_class.__name__} without ID"
                     )
@@ -197,7 +197,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             existing_result = await self.get_by_id(value_id, session)
 
             if existing_result.is_failure:
-                return Failure(
+                return Result.failure(
                     ValueRepositoryError(
                         f"Error updating {self.value_class.__name__}: {existing_result.error}"
                     )
@@ -206,7 +206,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             existing = existing_result.value
 
             if not existing:
-                return Failure(
+                return Result.failure(
                     ValueRepositoryError(
                         f"{self.value_class.__name__} with ID {value_id} not found"
                     )
@@ -225,7 +225,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
                     model = result.scalars().first()
 
                     if not model:
-                        return Failure(
+                        return Result.failure(
                             ValueRepositoryError(
                                 f"{self.value_class.__name__} with ID {value_id} not found"
                             )
@@ -243,7 +243,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
                 model = result.scalars().first()
 
                 if not model:
-                    return Failure(
+                    return Result.failure(
                         ValueRepositoryError(
                             f"{self.value_class.__name__} with ID {value_id} not found"
                         )
@@ -262,14 +262,14 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
             self.logger.error(
                 f"Error updating {self.value_class.__name__} {getattr(value_obj, 'id', 'unknown')}: {e}"
             )
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error updating {self.value_class.__name__}: {str(e)}"
                 )
             )
 
     async def delete(
-        self, value_id: str, session: Optional[AsyncSession] = None
+        self, value_id: str, session: AsyncSession | None = None
     ) -> Result[bool]:
         """
         Delete a value by ID.
@@ -290,7 +290,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
                     model = result.scalars().first()
 
                     if not model:
-                        return Success(False)
+                        return Result.success(False)
 
                     await session.delete(model)
                     await session.commit()
@@ -301,26 +301,26 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
                 model = result.scalars().first()
 
                 if not model:
-                    return Success(False)
+                    return Result.success(False)
 
                 await session.delete(model)
                 await session.flush()
 
-            return Success(True)
+            return Result.success(True)
 
         except Exception as e:
             self.logger.error(
                 f"Error deleting {self.value_class.__name__} {value_id}: {e}"
             )
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error deleting {self.value_class.__name__}: {str(e)}"
                 )
             )
 
     async def bulk_create(
-        self, value_objs: List[T], session: Optional[AsyncSession] = None
-    ) -> Result[List[T]]:
+        self, value_objs: list[T], session: AsyncSession | None = None
+    ) -> Result[list[T]]:
         """
         Create multiple values in a single operation.
 
@@ -352,19 +352,19 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
                 value_obj_dict["id"] = model.id
                 created_values.append(self.value_class(**value_obj_dict))
 
-            return Success(created_values)
+            return Result.success(created_values)
 
         except Exception as e:
             self.logger.error(f"Error bulk creating {self.value_class.__name__}s: {e}")
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error bulk creating {self.value_class.__name__}s: {str(e)}"
                 )
             )
 
     async def search(
-        self, search_term: str, limit: int = 20, session: Optional[AsyncSession] = None
-    ) -> Result[List[T]]:
+        self, search_term: str, limit: int = 20, session: AsyncSession | None = None
+    ) -> Result[list[T]]:
         """
         Search for values matching a term.
 
@@ -414,11 +414,13 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
 
             results = await self._execute_query_many(query, session)
 
-            return Success([self.value_class(**result.dict()) for result in results])
+            return Result.success(
+                [self.value_class(**result.dict()) for result in results]
+            )
 
         except Exception as e:
             self.logger.error(f"Error searching {self.value_class.__name__}s: {e}")
-            return Failure(
+            return Result.failure(
                 ValueRepositoryError(
                     f"Error searching {self.value_class.__name__}s: {str(e)}"
                 )
@@ -431,54 +433,54 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
 class BooleanValueRepository(ValueRepository[BooleanValue, BooleanValueModel]):
     """Repository for boolean values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(BooleanValue, BooleanValueModel, db_manager, logger)
 
 
 class TextValueRepository(ValueRepository[TextValue, TextValueModel]):
     """Repository for text values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(TextValue, TextValueModel, db_manager, logger)
 
 
 class IntegerValueRepository(ValueRepository[IntegerValue, IntegerValueModel]):
     """Repository for integer values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(IntegerValue, IntegerValueModel, db_manager, logger)
 
 
 class DecimalValueRepository(ValueRepository[DecimalValue, DecimalValueModel]):
     """Repository for decimal values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DecimalValue, DecimalValueModel, db_manager, logger)
 
 
 class DateValueRepository(ValueRepository[DateValue, DateValueModel]):
     """Repository for date values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DateValue, DateValueModel, db_manager, logger)
 
 
 class DateTimeValueRepository(ValueRepository[DateTimeValue, DateTimeValueModel]):
     """Repository for datetime values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(DateTimeValue, DateTimeValueModel, db_manager, logger)
 
 
 class TimeValueRepository(ValueRepository[TimeValue, TimeValueModel]):
     """Repository for time values."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(TimeValue, TimeValueModel, db_manager, logger)
 
 
 class AttachmentRepository(ValueRepository[Attachment, AttachmentModel]):
     """Repository for file attachments."""
 
-    def __init__(self, db_manager: DBManager, logger: Optional[logging.Logger] = None):
+    def __init__(self, db_manager: DBManager, logger: logging.Logger | None = None):
         super().__init__(Attachment, AttachmentModel, db_manager, logger)

@@ -80,7 +80,7 @@ class ProductRepository:
         """Get a product by ID."""
         return self.products.get(id)
 
-    async def list(self) -> List[Product]:
+    async def list(self) -> list[Product]:
         """List all products."""
         return list(self.products.values())
 
@@ -212,7 +212,7 @@ async def create_product(
     return await repository.create(product)
 
 
-@product_router.get("", response_model=List[Product])
+@product_router.get("", response_model=list[Product])
 async def list_products(repository: ProductRepository = Depends(get_repository)):
     """List all products."""
     return await repository.list()
@@ -260,7 +260,7 @@ async def delete_product(
     return None
 
 
-@product_router.get("/search/{query}", response_model=List[ProductSearchResult])
+@product_router.get("/search/{query}", response_model=list[ProductSearchResult])
 async def search_products(
     query: str, engine: SemanticSearchEngine = Depends(lambda: app.state.search_engine)
 ):

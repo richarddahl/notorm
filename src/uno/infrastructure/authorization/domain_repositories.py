@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, Type, TypeVar, Generic, Set, cast
 import logging
 
 from uno.core.base.respository import UnoDBRepository
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.authorization.entities import (
     User,
     Group,
@@ -52,7 +52,7 @@ class UserRepository(UnoDBRepository[User]):
         return results[0] if results else None
 
     async def find_by_handle(
-        self, handle: str, tenant_id: Optional[str] = None
+        self, handle: str, tenant_id: str | None = None
     ) -> Optional[User]:
         """
         Find a user by handle, optionally within a specific tenant.
@@ -74,7 +74,7 @@ class UserRepository(UnoDBRepository[User]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Find all users in a specific tenant.
 
@@ -91,7 +91,7 @@ class UserRepository(UnoDBRepository[User]):
 
     async def find_by_group(
         self, group_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Find all users in a specific group.
 
@@ -118,7 +118,7 @@ class UserRepository(UnoDBRepository[User]):
 
     async def find_by_role(
         self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Find all users with a specific role.
 
@@ -137,7 +137,7 @@ class UserRepository(UnoDBRepository[User]):
 
     async def find_superusers(
         self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[User]:
+    ) -> list[User]:
         """
         Find all superusers.
 
@@ -219,7 +219,7 @@ class GroupRepository(UnoDBRepository[Group]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Group]:
+    ) -> list[Group]:
         """
         Find all groups in a specific tenant.
 
@@ -236,7 +236,7 @@ class GroupRepository(UnoDBRepository[Group]):
 
     async def find_by_user(
         self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Group]:
+    ) -> list[Group]:
         """
         Find all groups for a specific user.
 
@@ -311,7 +311,7 @@ class RoleRepository(UnoDBRepository[Role]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Role]:
+    ) -> list[Role]:
         """
         Find all roles in a specific tenant.
 
@@ -328,7 +328,7 @@ class RoleRepository(UnoDBRepository[Role]):
 
     async def find_by_user(
         self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Role]:
+    ) -> list[Role]:
         """
         Find all roles for a specific user.
 
@@ -350,7 +350,7 @@ class RoleRepository(UnoDBRepository[Role]):
         responsibility_id: str,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> List[Role]:
+    ) -> list[Role]:
         """
         Find all roles with a specific responsibility.
 
@@ -426,7 +426,7 @@ class PermissionRepository(UnoDBRepository[Permission]):
         meta_type_id: str,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> List[Permission]:
+    ) -> list[Permission]:
         """
         Find all permissions for a specific meta type.
 
@@ -443,7 +443,7 @@ class PermissionRepository(UnoDBRepository[Permission]):
 
     async def find_by_operation(
         self, operation: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Permission]:
+    ) -> list[Permission]:
         """
         Find all permissions for a specific operation.
 
@@ -480,7 +480,7 @@ class PermissionRepository(UnoDBRepository[Permission]):
 
     async def find_by_role(
         self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[Permission]:
+    ) -> list[Permission]:
         """
         Find all permissions for a specific role.
 
@@ -527,7 +527,7 @@ class ResponsibilityRoleRepository(UnoDBRepository[ResponsibilityRole]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[ResponsibilityRole]:
+    ) -> list[ResponsibilityRole]:
         """
         Find all responsibility roles in a specific tenant.
 
@@ -593,7 +593,7 @@ class TenantRepository(UnoDBRepository[Tenant]):
         tenant_type: str,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> List[Tenant]:
+    ) -> list[Tenant]:
         """
         Find all tenants of a specific type.
 

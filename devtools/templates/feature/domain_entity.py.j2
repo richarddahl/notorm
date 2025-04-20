@@ -41,7 +41,7 @@ class {{ feature_name|pascal_case }}(AggregateRoot[str]):
     """
     
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: Optional[datetime] = None
     is_active: bool = True
@@ -94,7 +94,7 @@ class {{ feature_name|pascal_case }}Details(ValueObject):
     """Value object for {{ feature_name|pascal_case }} details."""
     
     category: str
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     
     def add_tag(self, tag: str) -> None:

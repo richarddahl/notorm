@@ -7,7 +7,7 @@ coordinating entity validation and persistence through repositories.
 
 from typing import Any, TypeVar, Generic, cast
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.domain.service import UnoEntityService
 from uno.values.entities import (
     Attachment,
@@ -52,14 +52,14 @@ class ValueService(UnoEntityService[T], Generic[T]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_name
             result = await repository.find_by_name(name)
-            return Success(result, convert=True)
+            return Result.success(result, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding {self.entity_type.__name__} by name: {e}")
-            return Failure(
+            return Result.failure(
                 ValueServiceError(
                     f"Error finding {self.entity_type.__name__} by name: {str(e)}"
                 ),
-                convert=True
+                convert=True,
             )
 
     async def find_by_value(self, value: Any) -> Result[T | None, str]:
@@ -75,16 +75,16 @@ class ValueService(UnoEntityService[T], Generic[T]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_value
             result = await repository.find_by_value(value)
-            return Success(result, convert=True)
+            return Result.success(result, convert=True)
         except Exception as e:
             self.logger.error(
                 f"Error finding {self.entity_type.__name__} by value: {e}"
             )
-            return Failure(
+            return Result.failure(
                 ValueServiceError(
                     f"Error finding {self.entity_type.__name__} by value: {str(e)}"
                 ),
-                convert=True
+                convert=True,
             )
 
     async def search(self, search_term: str, limit: int = 20) -> Result[list[T], str]:
@@ -115,14 +115,14 @@ class ValueService(UnoEntityService[T], Generic[T]):
                 filters = {"name": {"lookup": "ilike", "val": f"%{search_term}%"}}
 
             results = await self.repository.list(filters=filters, limit=limit)
-            return Success(results, convert=True)
+            return Result.success(results, convert=True)
         except Exception as e:
             self.logger.error(f"Error searching {self.entity_type.__name__}: {e}")
-            return Failure(
+            return Result.failure(
                 ValueServiceError(
                     f"Error searching {self.entity_type.__name__}: {str(e)}"
                 ),
-                convert=True
+                convert=True,
             )
 
 
@@ -145,12 +145,12 @@ class AttachmentService(ValueService[Attachment]):
         try:
             repository = cast(Any, self.repository)  # Cast to access find_by_file_path
             result = await repository.find_by_file_path(file_path)
-            return Success(result, convert=True)
+            return Result.success(result, convert=True)
         except Exception as e:
             self.logger.error(f"Error finding Attachment by file path: {e}")
-            return Failure(
+            return Result.failure(
                 ValueServiceError(f"Error finding Attachment by file path: {str(e)}"),
-                convert=True
+                convert=True,
             )
 
 

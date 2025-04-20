@@ -22,22 +22,23 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from uno.core.events import (
-    AsyncEventBus, 
-    Event, 
-    PostgresEventStore, 
+    AsyncEventBus,
+    Event,
+    PostgresEventStore,
     PostgresEventStoreConfig,
     EventPublisher,
     SubscriptionManager,
     SubscriptionRepository,
     SubscriptionConfig,
     EventTypeInfo,
-    create_subscription_router
+    create_subscription_router,
 )
 
 
 # Define some sample events
 class UserCreated(Event):
     """Event emitted when a user is created."""
+
     user_id: str
     username: str
     email: str
@@ -46,7 +47,7 @@ class UserCreated(Event):
     @property
     def aggregate_id(self) -> str:
         return self.user_id
-    
+
     @property
     def aggregate_type(self) -> str:
         return "user"
@@ -54,16 +55,17 @@ class UserCreated(Event):
 
 class OrderCreated(Event):
     """Event emitted when an order is created."""
+
     order_id: str
     user_id: str
     total_amount: float
-    items: List[Dict[str, Any]]
+    items: list[dict[str, Any]]
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def aggregate_id(self) -> str:
         return self.order_id
-    
+
     @property
     def aggregate_type(self) -> str:
         return "order"
@@ -91,11 +93,11 @@ async def notify_inventory(event: OrderCreated):
     print(f"[INVENTORY] Processing order {event.order_id} for inventory")
     # Simulate processing delay
     await asyncio.sleep(0.15)
-    
+
     # Occasionally fail to demonstrate error handling
     if sum(item.get("quantity", 0) for item in event.items) > 10:
         raise ValueError(f"Order {event.order_id} exceeds inventory capacity")
-    
+
     print(f"[INVENTORY] Order {event.order_id} processed for inventory")
 
 
@@ -112,7 +114,8 @@ templates = Jinja2Templates(directory=templates_dir)
 template_path = os.path.join(templates_dir, "subscription_manager.html")
 if not os.path.exists(template_path):
     with open(template_path, "w") as f:
-        f.write("""<!DOCTYPE html>
+        f.write(
+            """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -504,10 +507,14 @@ if not os.path.exists(template_path):
         });
     </script>
 </body>
-</html>""")
+</html>"""
+        )
 
 # Set up static files serving
-static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "static")
+static_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+    "static",
+)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Global variables for event system components
@@ -530,125 +537,133 @@ async def get_subscription_manager():
 async def setup_event_system():
     """Set up the event system components."""
     global event_bus, event_store, event_publisher, subscription_manager
-    
+
     # Create the event bus
     event_bus = AsyncEventBus(max_concurrency=10)
-    
+
     # Set up the event store
     config = PostgresEventStoreConfig(
         connection_string="postgresql+asyncpg://postgres:postgres@localhost:5432/events",
         schema="events",
         table_name="events",
-        create_schema_if_missing=True
+        create_schema_if_missing=True,
     )
     event_store = PostgresEventStore(config=config)
-    
+
     # Initialize the event store
     await event_store.initialize()
-    
+
     # Create the event publisher
     event_publisher = EventPublisher(event_bus=event_bus, event_store=event_store)
-    
+
     # Set up the subscription repository
     repository = SubscriptionRepository()
-    
+
     # Create the subscription manager
     subscription_manager = SubscriptionManager(
-        event_bus=event_bus,
-        repository=repository,
-        auto_load=True
+        event_bus=event_bus, repository=repository, auto_load=True
     )
-    
+
     # Initialize the subscription manager
     await subscription_manager.initialize()
-    
+
     # Register event types
-    await repository.register_event_type(EventTypeInfo(
-        name="UserCreated",
-        description="Triggered when a new user is created",
-        schema={
-            "type": "object",
-            "properties": {
-                "user_id": {"type": "string"},
-                "username": {"type": "string"},
-                "email": {"type": "string"},
-                "created_at": {"type": "string", "format": "date-time"}
-            },
-            "required": ["user_id", "username", "email"]
-        },
-        example={
-            "user_id": "user-123",
-            "username": "johndoe",
-            "email": "john@example.com",
-            "created_at": "2023-01-01T00:00:00Z"
-        },
-        domain="users"
-    ))
-    
-    await repository.register_event_type(EventTypeInfo(
-        name="OrderCreated",
-        description="Triggered when a new order is created",
-        schema={
-            "type": "object",
-            "properties": {
-                "order_id": {"type": "string"},
-                "user_id": {"type": "string"},
-                "total_amount": {"type": "number"},
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "product_id": {"type": "string"},
-                            "quantity": {"type": "integer"},
-                            "price": {"type": "number"}
-                        }
-                    }
+    await repository.register_event_type(
+        EventTypeInfo(
+            name="UserCreated",
+            description="Triggered when a new user is created",
+            schema={
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"},
+                    "username": {"type": "string"},
+                    "email": {"type": "string"},
+                    "created_at": {"type": "string", "format": "date-time"},
                 },
-                "created_at": {"type": "string", "format": "date-time"}
+                "required": ["user_id", "username", "email"],
             },
-            "required": ["order_id", "user_id", "total_amount", "items"]
-        },
-        example={
-            "order_id": "order-123",
-            "user_id": "user-123",
-            "total_amount": 99.99,
-            "items": [
-                {"product_id": "product-123", "quantity": 1, "price": 49.99},
-                {"product_id": "product-456", "quantity": 2, "price": 24.99}
-            ],
-            "created_at": "2023-01-01T00:00:00Z"
-        },
-        domain="orders"
-    ))
-    
+            example={
+                "user_id": "user-123",
+                "username": "johndoe",
+                "email": "john@example.com",
+                "created_at": "2023-01-01T00:00:00Z",
+            },
+            domain="users",
+        )
+    )
+
+    await repository.register_event_type(
+        EventTypeInfo(
+            name="OrderCreated",
+            description="Triggered when a new order is created",
+            schema={
+                "type": "object",
+                "properties": {
+                    "order_id": {"type": "string"},
+                    "user_id": {"type": "string"},
+                    "total_amount": {"type": "number"},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {"type": "string"},
+                                "quantity": {"type": "integer"},
+                                "price": {"type": "number"},
+                            },
+                        },
+                    },
+                    "created_at": {"type": "string", "format": "date-time"},
+                },
+                "required": ["order_id", "user_id", "total_amount", "items"],
+            },
+            example={
+                "order_id": "order-123",
+                "user_id": "user-123",
+                "total_amount": 99.99,
+                "items": [
+                    {"product_id": "product-123", "quantity": 1, "price": 49.99},
+                    {"product_id": "product-456", "quantity": 2, "price": 24.99},
+                ],
+                "created_at": "2023-01-01T00:00:00Z",
+            },
+            domain="orders",
+        )
+    )
+
     # Create default subscriptions
     # 1. Welcome email handler
-    await subscription_manager.create_subscription(SubscriptionConfig(
-        event_type="UserCreated",
-        handler_name="send_welcome_email",
-        handler_module="uno.core.examples.subscription_management_example",
-        description="Sends a welcome email to newly registered users",
-        is_active=True
-    ))
-    
+    await subscription_manager.create_subscription(
+        SubscriptionConfig(
+            event_type="UserCreated",
+            handler_name="send_welcome_email",
+            handler_module="uno.core.examples.subscription_management_example",
+            description="Sends a welcome email to newly registered users",
+            is_active=True,
+        )
+    )
+
     # 2. User profile handler
-    await subscription_manager.create_subscription(SubscriptionConfig(
-        event_type="UserCreated",
-        handler_name="create_user_profile",
-        handler_module="uno.core.examples.subscription_management_example",
-        description="Creates a default profile for new users",
-        is_active=True
-    ))
-    
+    await subscription_manager.create_subscription(
+        SubscriptionConfig(
+            event_type="UserCreated",
+            handler_name="create_user_profile",
+            handler_module="uno.core.examples.subscription_management_example",
+            description="Creates a default profile for new users",
+            is_active=True,
+        )
+    )
+
     # 3. Inventory notification handler
-    await subscription_manager.create_subscription(SubscriptionConfig(
-        event_type="OrderCreated",
-        handler_name="notify_inventory",
-        handler_module="uno.core.examples.subscription_management_example",
-        description="Notifies inventory system about a new order",
-        is_active=True
-    ))
+    await subscription_manager.create_subscription(
+        SubscriptionConfig(
+            event_type="OrderCreated",
+            handler_name="notify_inventory",
+            handler_module="uno.core.examples.subscription_management_example",
+            description="Notifies inventory system about a new order",
+            is_active=True,
+        )
+    )
 
 
 @app.on_event("startup")
@@ -656,10 +671,10 @@ async def startup():
     """Initialize the application on startup."""
     # Configure logging
     logging.basicConfig(level=logging.INFO)
-    
+
     # Set up the event system
     await setup_event_system()
-    
+
     # Register the API router
     subscription_router = create_subscription_router(subscription_manager)
     app.include_router(subscription_router, prefix="/api")
@@ -668,10 +683,7 @@ async def startup():
 @app.get("/")
 async def get_subscription_manager_ui(request: Request):
     """Render the subscription manager UI."""
-    return templates.TemplateResponse(
-        "subscription_manager.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("subscription_manager.html", {"request": request})
 
 
 @app.post("/api/demo/user")
@@ -680,23 +692,15 @@ async def create_user(publisher: EventPublisher = Depends(get_event_bus)):
     user_id = f"user-{uuid.uuid4()}"
     username = f"user_{user_id[-6:]}"
     email = f"{username}@example.com"
-    
+
     # Create and publish the event
-    event = UserCreated(
-        user_id=user_id,
-        username=username,
-        email=email
-    )
-    
+    event = UserCreated(user_id=user_id, username=username, email=email)
+
     await event_publisher.publish(event)
-    
+
     return {
         "message": "User created successfully",
-        "user": {
-            "id": user_id,
-            "username": username,
-            "email": email
-        }
+        "user": {"id": user_id, "username": username, "email": email},
     }
 
 
@@ -705,45 +709,44 @@ async def create_order(publisher: EventPublisher = Depends(get_event_bus)):
     """Create a demo order to generate events."""
     order_id = f"order-{uuid.uuid4()}"
     user_id = f"user-{uuid.uuid4()}"
-    
+
     # Generate random items (occasionally with high quantities to trigger errors)
     items = []
     total_amount = 0
-    
+
     for i in range(1, 4):
         product_id = f"product-{uuid.uuid4()}"
-        quantity = 1 if i < 3 else (12 if uuid.uuid4().int % 5 == 0 else 2)  # Occasionally high quantity
+        quantity = (
+            1 if i < 3 else (12 if uuid.uuid4().int % 5 == 0 else 2)
+        )  # Occasionally high quantity
         price = round(float(uuid.uuid4().int % 10000) / 100, 2)
-        
-        items.append({
-            "product_id": product_id,
-            "quantity": quantity,
-            "price": price
-        })
-        
+
+        items.append({"product_id": product_id, "quantity": quantity, "price": price})
+
         total_amount += quantity * price
-    
+
     # Create and publish the event
     event = OrderCreated(
         order_id=order_id,
         user_id=user_id,
         total_amount=round(total_amount, 2),
-        items=items
+        items=items,
     )
-    
+
     await event_publisher.publish(event)
-    
+
     return {
         "message": "Order created successfully",
         "order": {
             "id": order_id,
             "user_id": user_id,
             "total_amount": round(total_amount, 2),
-            "items": items
-        }
+            "items": items,
+        },
     }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

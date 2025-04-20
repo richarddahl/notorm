@@ -31,7 +31,7 @@ class CreateOrderCommand(BaseModel):
     """Command to create a new order."""
     
     customer_id: UUID
-    items: List[dict]  # Each item has product_id, quantity, and price
+    items: list[dict]  # Each item has product_id, quantity, and price
     shipping_address: dict
 
 class UpdateOrderStatusCommand(BaseModel):
@@ -69,7 +69,7 @@ class FindOrdersQuery(BaseModel):
     """Query to find orders matching criteria."""
     
     customer_id: Optional[UUID] = None
-    status: Optional[str] = None
+    status: str | None = None
     min_amount: Optional[float] = None
     max_amount: Optional[float] = None
     from_date: Optional[datetime] = None
@@ -238,7 +238,7 @@ class CreateOrderCommand(BaseModel):
     """Command to create a new order."""
     
     customer_id: UUID
-    items: List[dict]
+    items: list[dict]
     shipping_address: dict
 
 # application/queries/order_queries.py
@@ -272,7 +272,7 @@ class OrderDTO(BaseModel):
     id: UUID
     customer_id: UUID
     status: str
-    items: List[OrderItemDTO]
+    items: list[OrderItemDTO]
     total_amount: float
     created_at: datetime
     updated_at: datetime
@@ -363,7 +363,7 @@ class OrderService:
     async def create_order(
         self,
         customer_id: UUID,
-        items: List[dict],
+        items: list[dict],
         shipping_address: dict
     ) -> Result[UUID, str]:
         """Create a new order."""
@@ -441,7 +441,7 @@ class Order(AggregateRoot[UUID]):
     
     # Properties
     customer_id: UUID
-    items: List[OrderItem] = []
+    items: list[OrderItem] = []
     status: str = "created"
     
     @classmethod
@@ -614,7 +614,7 @@ class OrderDetailReadModel(BaseModel):
     id: UUID
     customer_id: UUID
     status: str
-    items: List[OrderItemReadModel]
+    items: list[OrderItemReadModel]
     total_amount: float
     shipping_address: dict
     created_at: datetime
@@ -624,7 +624,7 @@ class CustomerOrdersReadModel(BaseModel):
     """Customer-centric view of orders."""
     
     customer_id: UUID
-    orders: List[OrderSummaryReadModel]
+    orders: list[OrderSummaryReadModel]
     total_spent: float
     average_order_value: float
     first_order_date: datetime

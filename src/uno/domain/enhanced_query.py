@@ -66,8 +66,8 @@ class QueryMetadata:
         self.execution_started: Optional[datetime] = None
         self.execution_completed: Optional[datetime] = None
         self.record_count: Optional[int] = None
-        self.query_source: Optional[str] = None
-        self.optimizations: List[str] = []
+        self.query_source: str | None = None
+        self.optimizations: list[str] = []
         self.cache_hit: Optional[bool] = None
 
     def start_execution(self) -> None:
@@ -143,7 +143,7 @@ class EnhancedQueryExecutor(Generic[T, Q]):
         performance_tracker: Optional[QueryPerformanceTracker] = None,
         cache: Optional[QueryResultCache] = None,
         optimizer: Optional[GraphQueryOptimizer] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the enhanced query executor.
@@ -491,10 +491,10 @@ class EnhancedQueryExecutor(Generic[T, Q]):
 
     def _filter_entity_fields(
         self,
-        items: List[T],
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
-    ) -> List[T]:
+        items: list[T],
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
+    ) -> list[T]:
         """
         Filter fields from a list of entities.
 
@@ -592,7 +592,7 @@ class GraphPathQuery:
     which can represent complex traversals through the domain model.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the path query handler.
 
@@ -609,7 +609,7 @@ class GraphPathQuery:
         params: Dict[str, Any] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = 0,
-    ) -> Tuple[List[str], QueryMetadata]:
+    ) -> Tuple[list[str], QueryMetadata]:
         """
         Execute a query using a defined path and parameters.
 
@@ -630,7 +630,7 @@ class GraphPathQuery:
         cache_key = f"path:{path}:{params_str}:{limit}:{offset}"
 
         # Define the query function
-        async def query_fn() -> List[str]:
+        async def query_fn() -> list[str]:
             metadata.start_execution()
 
             try:
@@ -662,7 +662,7 @@ class GraphPathQuery:
                 raise
 
         # Use tracking and caching
-        async def tracked_query() -> List[str]:
+        async def tracked_query() -> list[str]:
             return await self.performance_tracker.track_query(
                 query_key=cache_key, callback=query_fn
             )

@@ -39,14 +39,14 @@ class Alert(BaseModel):
     message: str
     details: Dict[str, Any] = Field(default_factory=dict)
     source: str
-    check_id: Optional[str] = None
-    check_name: Optional[str] = None
-    group: Optional[str] = None
+    check_id: str | None = None
+    check_name: str | None = None
+    group: str | None = None
     status: HealthStatus
     acknowledged: bool = False
     acknowledged_at: Optional[float] = None
-    acknowledged_by: Optional[str] = None
-    actions_taken: List[str] = Field(default_factory=list)
+    acknowledged_by: str | None = None
+    actions_taken: list[str] = Field(default_factory=list)
 ```
 
 ### AlertRule
@@ -57,15 +57,15 @@ The `AlertRule` class defines when alerts should be generated:
 class AlertRule(BaseModel):
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     enabled: bool = True
     level: AlertLevel
     
     # Targeting
-    check_id: Optional[str] = None
-    check_name: Optional[str] = None
-    group: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    check_id: str | None = None
+    check_name: str | None = None
+    group: str | None = None
+    tags: list[str] = Field(default_factory=list)
     status: Optional[HealthStatus] = None
     
     # Behavior
@@ -79,7 +79,7 @@ The `AlertAction` abstract base class defines how alerts are delivered:
 
 ```python
 class AlertAction(ABC):
-    def __init__(self, logger: Optional[logging.Logger] = None): ...
+    def __init__(self, logger: logging.Logger | None = None): ...
     
     @abstractmethod
     async def send(self, alert: Alert) -> bool: ...
@@ -94,20 +94,20 @@ class AlertManager:
     def __init__(
         self,
         config: Optional[AlertConfig] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ): ...
     
     async def add_rule(self, rule: AlertRule) -> None: ...
     async def remove_rule(self, rule_id: str) -> bool: ...
     async def add_action(self, action: AlertAction) -> None: ...
     async def process_health_report(self, report: Dict[str, Any]) -> None: ...
-    async def acknowledge_alert(self, alert_id: str, username: Optional[str] = None) -> bool: ...
+    async def acknowledge_alert(self, alert_id: str, username: str | None = None) -> bool: ...
     async def get_recent_alerts(
         self,
         limit: int = 10,
         min_level: Optional[AlertLevel] = None,
         include_acknowledged: bool = False,
-    ) -> List[Alert]: ...
+    ) -> list[Alert]: ...
 ```
 
 ## Alert Actions
@@ -132,7 +132,7 @@ class EmailAlertAction(AlertAction):
     def __init__(
         self,
         config: AlertConfig,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ): ...
     
     async def send(self, alert: Alert) -> bool: ...
@@ -147,7 +147,7 @@ class WebhookAlertAction(AlertAction):
     def __init__(
         self,
         config: AlertConfig,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ): ...
     
     async def send(self, alert: Alert) -> bool: ...
@@ -226,7 +226,7 @@ import asyncio
 
 # Create a custom alert action
 class SlackAlertAction(AlertAction):
-    def __init__(self, webhook_url: str, logger: Optional[logging.Logger] = None):
+    def __init__(self, webhook_url: str, logger: logging.Logger | None = None):
         super().__init__(logger)
         self.webhook_url = webhook_url
     

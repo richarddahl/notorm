@@ -152,7 +152,7 @@ cqrs_endpoint = DocumentedCqrsEndpoint(
             path="/products/by-category",
             handler=get_products_by_category_handler.execute,
             query_model=GetProductsByCategoryQuery,
-            response_model=List[ProductResponseDTO],
+            response_model=list[ProductResponseDTO],
             name="GetProductsByCategory"
         )
     ],

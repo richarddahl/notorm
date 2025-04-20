@@ -25,8 +25,8 @@ class HealthDashboardConfig(BaseModel):
     api_prefix: str = "/health/api"
     require_auth: bool = False
     update_interval: float = 5.0  # seconds
-    templates_dir: Optional[str] = None
-    static_dir: Optional[str] = None
+    templates_dir: str | None = None
+    static_dir: str | None = None
     history_size: int = 100  # number of historical status points to keep
     show_on_sidebar: bool = True
     auto_refresh: bool = True
@@ -43,7 +43,7 @@ class HealthDashboard:
         app: FastAPI,
         config: Optional[HealthDashboardConfig] = None,
         health_config: Optional[HealthConfig] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ): ...
     
     async def shutdown(self) -> None: ...

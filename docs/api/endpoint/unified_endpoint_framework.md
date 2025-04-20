@@ -45,7 +45,7 @@ crud_endpoint = CrudEndpoint(
 query_endpoint = QueryEndpoint(
     service=get_products_service,
     query_model=ProductQueryDTO,
-    response_model=List[ProductResponseDTO],
+    response_model=list[ProductResponseDTO],
     path="/products/search",
     method="get",
     tags=["Products"]
@@ -73,7 +73,7 @@ from uno.api.endpoint import CqrsEndpoint, CommandHandler, QueryHandler
 get_products_handler = QueryHandler(
     service=get_products_service,
     query_model=ProductQueryDTO,
-    response_model=List[ProductResponseDTO],
+    response_model=list[ProductResponseDTO],
     path="/search",
     method="get"
 )
@@ -104,7 +104,7 @@ from uno.api.endpoint.response import DataResponse, ErrorResponse, PaginatedResp
 
 # Standard data response
 @router.get("/items")
-async def get_items() -> DataResponse[List[Item]]:
+async def get_items() -> DataResponse[list[Item]]:
     items = await item_service.get_all()
     return DataResponse(data=items)
 

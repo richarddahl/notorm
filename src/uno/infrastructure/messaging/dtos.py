@@ -48,14 +48,14 @@ class MessageBaseDto(BaseModel):
 class MessageCreateDto(MessageBaseDto):
     """DTO for creating a new message."""
 
-    recipient_ids: List[str] = Field(..., description="List of recipient user IDs")
-    cc_ids: Optional[List[str]] = Field([], description="List of CC user IDs")
-    bcc_ids: Optional[List[str]] = Field([], description="List of BCC user IDs")
+    recipient_ids: list[str] = Field(..., description="List of recipient user IDs")
+    cc_ids: list[str] | None = Field([], description="List of CC user IDs")
+    bcc_ids: list[str] | None = Field([], description="List of BCC user IDs")
     is_draft: bool = Field(True, description="Whether the message is a draft")
     parent_id: Optional[str] = Field(
         None, description="ID of the parent message if this is a reply"
     )
-    meta_record_ids: Optional[List[str]] = Field(
+    meta_record_ids: list[str] | None = Field(
         [], description="List of meta record IDs associated with this message"
     )
     group_id: Optional[str] = Field(
@@ -75,12 +75,12 @@ class MessageUpdateDto(BaseModel):
     flag: Optional[MessageImportance] = Field(
         None, description="Importance flag of the message"
     )
-    recipient_ids: Optional[List[str]] = Field(
+    recipient_ids: list[str] | None = Field(
         None, description="List of recipient user IDs"
     )
-    cc_ids: Optional[List[str]] = Field(None, description="List of CC user IDs")
-    bcc_ids: Optional[List[str]] = Field(None, description="List of BCC user IDs")
-    meta_record_ids: Optional[List[str]] = Field(
+    cc_ids: list[str] | None = Field(None, description="List of CC user IDs")
+    bcc_ids: list[str] | None = Field(None, description="List of BCC user IDs")
+    meta_record_ids: list[str] | None = Field(
         None, description="List of meta record IDs associated with this message"
     )
 
@@ -96,10 +96,10 @@ class MessageViewDto(MessageBaseDto):
     parent_id: Optional[str] = Field(
         None, description="ID of the parent message if this is a reply"
     )
-    users: List[MessageUserViewDto] = Field(
+    users: list[MessageUserViewDto] = Field(
         [], description="List of users associated with this message"
     )
-    meta_record_ids: List[str] = Field(
+    meta_record_ids: list[str] = Field(
         [], description="List of meta record IDs associated with this message"
     )
     group_id: Optional[str] = Field(
@@ -115,17 +115,17 @@ class MessageViewDto(MessageBaseDto):
         return None
 
     @property
-    def recipients(self) -> List[MessageUserViewDto]:
+    def recipients(self) -> list[MessageUserViewDto]:
         """Get the recipients of the message."""
         return [user for user in self.users if user.is_addressee and not user.is_sender]
 
     @property
-    def cc(self) -> List[MessageUserViewDto]:
+    def cc(self) -> list[MessageUserViewDto]:
         """Get the CC recipients of the message."""
         return [user for user in self.users if user.is_copied_on]
 
     @property
-    def bcc(self) -> List[MessageUserViewDto]:
+    def bcc(self) -> list[MessageUserViewDto]:
         """Get the BCC recipients of the message."""
         return [user for user in self.users if user.is_blind_copied_on]
 
@@ -143,7 +143,7 @@ class MessageFilterParams(BaseModel):
 class MessageListDto(BaseModel):
     """DTO for a list of messages with pagination information."""
 
-    items: List[MessageViewDto] = Field(..., description="List of messages")
+    items: list[MessageViewDto] = Field(..., description="List of messages")
     total: int = Field(..., description="Total number of messages matching the filter")
     page: int = Field(..., description="Current page number")
     page_size: int = Field(..., description="Number of items per page")

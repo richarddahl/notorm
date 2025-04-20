@@ -32,8 +32,8 @@ class User(Entity[str]):
     username: str
     email: str
     is_active: bool = True
-    display_name: Optional[str] = None
-    roles: List[str] = field(default_factory=list)
+    display_name: str | None = None
+    roles: list[str] = field(default_factory=list)
 
     def validate(self) -> Result[None, str]:
         """Validate the user entity."""
@@ -101,9 +101,9 @@ class WorkflowCondition(Entity[str]):
     workflow_id: str
     condition_type: WorkflowConditionType
     condition_config: Dict[str, Any] = field(default_factory=dict)
-    query_id: Optional[str] = None
+    query_id: str | None = None
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     order: int = 0
 
     # Mapping to DB model
@@ -115,10 +115,14 @@ class WorkflowCondition(Entity[str]):
             return Failure[None, str]("Condition type is required")
         if self.condition_type == WorkflowConditionType.FIELD_VALUE:
             if not self.condition_config or "field" not in self.condition_config:
-                return Failure[None, str]("Field is required for field value conditions")
+                return Failure[None, str](
+                    "Field is required for field value conditions"
+                )
         elif self.condition_type == WorkflowConditionType.QUERY_MATCH:
             if not self.query_id:
-                return Failure[None, str]("Query ID is required for query match conditions")
+                return Failure[None, str](
+                    "Query ID is required for query match conditions"
+                )
         return Success[None, str](None)
 
     @classmethod
@@ -149,8 +153,8 @@ class WorkflowRecipient(Entity[str]):
     workflow_id: str
     recipient_type: WorkflowRecipientType
     recipient_id: str
-    name: Optional[str] = None
-    action_id: Optional[str] = None
+    name: str | None = None
+    action_id: str | None = None
     notification_config: Dict[str, Any] = field(default_factory=dict)
 
     # Mapping to DB model
@@ -196,12 +200,12 @@ class WorkflowAction(Entity[str]):
     action_type: WorkflowActionType
     action_config: Dict[str, Any] = field(default_factory=dict)
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     order: int = 0
     is_active: bool = True
     retry_policy: Optional[Dict[str, Any]] = None
     # Relationships
-    recipients: List["WorkflowRecipient"] = field(default_factory=list)
+    recipients: list["WorkflowRecipient"] = field(default_factory=list)
     workflow: Optional["WorkflowDef"] = field(default=None, repr=False)
 
     # Mapping to DB model
@@ -252,7 +256,7 @@ class WorkflowExecutionRecord(Entity[str]):
     executed_at: datetime = field(default_factory=lambda: datetime.now())
     completed_at: Optional[datetime] = None
     result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    error: str | None = None
     context: Optional[Dict[str, Any]] = None
     execution_time: Optional[float] = None
 
@@ -298,11 +302,11 @@ class WorkflowDef(AggregateRoot[str]):
     status: WorkflowStatus = WorkflowStatus.DRAFT
     version: str = "1.0.0"
     # Relationships
-    triggers: List["WorkflowTrigger"] = field(default_factory=list)
-    conditions: List["WorkflowCondition"] = field(default_factory=list)
-    actions: List["WorkflowAction"] = field(default_factory=list)
-    recipients: List["WorkflowRecipient"] = field(default_factory=list)
-    logs: List["WorkflowExecutionRecord"] = field(default_factory=list)
+    triggers: list["WorkflowTrigger"] = field(default_factory=list)
+    conditions: list["WorkflowCondition"] = field(default_factory=list)
+    actions: list["WorkflowAction"] = field(default_factory=list)
+    recipients: list["WorkflowRecipient"] = field(default_factory=list)
+    logs: list["WorkflowExecutionRecord"] = field(default_factory=list)
 
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowDefinition"

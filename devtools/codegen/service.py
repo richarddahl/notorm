@@ -15,11 +15,11 @@ def generate_service(
     name: str,
     module_path: str,
     fields: Optional[Dict[str, str]] = None,
-    methods: Optional[List[Dict[str, Any]]] = None,
-    dependencies: Optional[List[str]] = None,
+    methods: Optional[list[dict[str, Any]]] = None,
+    dependencies: list[str] | None = None,
     base_class: str = "BaseService",
-    imports: Optional[List[str]] = None,
-    output_dir: Optional[str] = None,
+    imports: list[str] | None = None,
+    output_dir: str | None = None,
 ) -> Tuple[str, str]:
     """
     Generate a service class for the Uno framework.
@@ -155,7 +155,7 @@ def generate_service(
                     "offset: int = 0",
                     "filters: Optional[Dict[str, Any]] = None",
                 ],
-                "return_type": f"Result[List[{name}]]",
+                "return_type": f"Result[list[{name}]]",
                 "body": [
                     "result = await self.repository.list(limit=limit, offset=offset, filters=filters)",
                     "if result.is_failure():",

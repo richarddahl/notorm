@@ -29,11 +29,11 @@ class QuerySpecification(BaseModel):
     """
 
     filters: Optional[Dict[str, Any]] = None
-    order_by: Optional[List[str]] = None
+    order_by: list[str] | None = None
     limit: Optional[int] = None
     offset: Optional[int] = 0
-    include: Optional[List[str]] = None
-    exclude: Optional[List[str]] = None
+    include: list[str] | None = None
+    exclude: list[str] | None = None
 
 
 class QueryResult(BaseModel, Generic[T]):
@@ -43,7 +43,7 @@ class QueryResult(BaseModel, Generic[T]):
     Contains the items matched by the query and metadata about the result.
     """
 
-    items: List[T]
+    items: list[T]
     total_count: int
     page_size: Optional[int] = None
     page: Optional[int] = None
@@ -58,7 +58,7 @@ class QueryExecutor(Generic[T, Q], ABC):
     abstracting the details of how the query is executed.
     """
 
-    def __init__(self, entity_type: Type[T], logger: Optional[logging.Logger] = None):
+    def __init__(self, entity_type: Type[T], logger: logging.Logger | None = None):
         """
         Initialize a query executor.
 
@@ -85,8 +85,8 @@ class QueryExecutor(Generic[T, Q], ABC):
     def select_fields(
         self,
         entity: T,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
     ) -> Dict[str, Any]:
         """
         Select specific fields from an entity.
@@ -125,7 +125,7 @@ class RepositoryQueryExecutor(QueryExecutor[T, Q]):
         self,
         entity_type: Type[T],
         repository: Repository[T],
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a repository query executor.
@@ -200,7 +200,7 @@ class FilterQueryExecutor(QueryExecutor[T, Q]):
         entity_type: Type[T],
         filter_manager: FilterManager,
         repository: Repository[T],
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a filter query executor.
@@ -323,8 +323,8 @@ class QueryService(Generic[T, Q]):
         self,
         entity_type: Type[T],
         query_type: Type[Q],
-        executors: List[QueryExecutor[T, Q]],
-        logger: Optional[logging.Logger] = None,
+        executors: list[QueryExecutor[T, Q]],
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a query service.
@@ -366,8 +366,8 @@ class QueryService(Generic[T, Q]):
     def create_field_subset_model(
         self,
         name: str,
-        include: Optional[List[str]] = None,
-        exclude: Optional[List[str]] = None,
+        include: list[str] | None = None,
+        exclude: list[str] | None = None,
     ) -> Type[BaseModel]:
         """
         Create a Pydantic model with a subset of fields from the entity.

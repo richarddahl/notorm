@@ -236,22 +236,22 @@ class ReportTemplateModel(DefaultModelMixin, BaseModel):
     version: Mapped[str] = mapped_column(default="1.0.0", doc="For template versioning")
 
     # Relationships
-    fields: Mapped[List["ReportFieldDefinitionModel"]] = relationship(
+    fields: Mapped[list["ReportFieldDefinitionModel"]] = relationship(
         secondary=report_template__field,
         back_populates="templates",
         doc="Fields in this report template",
     )
-    triggers: Mapped[List["ReportTriggerModel"]] = relationship(
+    triggers: Mapped[list["ReportTriggerModel"]] = relationship(
         back_populates="report_template",
         cascade="all, delete-orphan",
         doc="Triggers for this report template",
     )
-    outputs: Mapped[List["ReportOutputModel"]] = relationship(
+    outputs: Mapped[list["ReportOutputModel"]] = relationship(
         back_populates="report_template",
         cascade="all, delete-orphan",
         doc="Output configurations for this report template",
     )
-    executions: Mapped[List["ReportExecutionModel"]] = relationship(
+    executions: Mapped[list["ReportExecutionModel"]] = relationship(
         back_populates="report_template",
         cascade="all, delete-orphan",
         doc="Execution records for this report template",
@@ -311,7 +311,7 @@ class ReportFieldDefinitionModel(DefaultModelMixin, BaseModel):
         backref="child_fields",
         doc="Parent field for nested fields",
     )
-    templates: Mapped[List[ReportTemplateModel]] = relationship(
+    templates: Mapped[list[ReportTemplateModel]] = relationship(
         secondary=report_template__field,
         back_populates="fields",
         doc="Report templates using this field",
@@ -418,7 +418,7 @@ class ReportOutputModel(DefaultModelMixin, BaseModel):
         back_populates="outputs",
         doc="The report template this output belongs to",
     )
-    output_executions: Mapped[List["ReportOutputExecutionModel"]] = relationship(
+    output_executions: Mapped[list["ReportOutputExecutionModel"]] = relationship(
         back_populates="report_output",
         cascade="all, delete-orphan",
         doc="Execution records for this output",
@@ -486,7 +486,7 @@ class ReportExecutionModel(DefaultModelMixin, BaseModel):
         back_populates="executions",
         doc="The report template that was executed",
     )
-    output_executions: Mapped[List["ReportOutputExecutionModel"]] = relationship(
+    output_executions: Mapped[list["ReportOutputExecutionModel"]] = relationship(
         back_populates="report_execution",
         cascade="all, delete-orphan",
         doc="Output delivery records for this execution",

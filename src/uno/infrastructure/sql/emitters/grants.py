@@ -17,7 +17,7 @@ class AlterGrants(SQLEmitter):
     on database tables and other objects.
     """
 
-    def generate_sql(self) -> List[SQLStatement]:
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statements for grants.
 
         Returns:

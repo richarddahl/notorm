@@ -30,7 +30,7 @@ class Order(AggregateRoot[UUID]):
     """Order aggregate root."""
     
     customer_id: UUID
-    items: List["OrderItem"] = []
+    items: list["OrderItem"] = []
     status: str = "draft"
     total_amount: float = 0.0
     created_at: datetime = datetime.now()
@@ -155,7 +155,7 @@ class ShippingAddress(ValueObject):
     state: str
     postal_code: str
     country: str
-    apartment: Optional[str] = None
+    apartment: str | None = None
     
     def __str__(self) -> str:
         apt = f", Apt {self.apartment}" if self.apartment else ""
@@ -189,14 +189,14 @@ from typing import List, Optional
 class OrderRepository(AggregateRepository[Order, UUID]):
     """Repository for Order aggregates."""
     
-    async def find_by_customer(self, customer_id: UUID) -> List[Order]:
+    async def find_by_customer(self, customer_id: UUID) -> list[Order]:
         """Find all orders for a customer."""
         from uno.domain.entity.specification import AttributeSpecification
         
         spec = AttributeSpecification("customer_id", customer_id)
         return await self.find(spec)
     
-    async def find_draft_orders(self) -> List[Order]:
+    async def find_draft_orders(self) -> list[Order]:
         """Find all draft orders."""
         from uno.domain.entity.specification import AttributeSpecification
         
@@ -279,7 +279,7 @@ class SqlAlchemyOrderRepository(SqlAlchemyRepository[Order, UUID]):
 class Customer(AggregateRoot[UUID]):
     name: str
     email: str
-    shipping_addresses: List[Address] = []
+    shipping_addresses: list[Address] = []
     billing_address: Optional[Address] = None
     
     def add_shipping_address(self, address: Address) -> None:
@@ -302,9 +302,9 @@ class Customer(AggregateRoot[UUID]):
 # Poor - Overly complex aggregate
 class Order(AggregateRoot[UUID]):
     customer_id: UUID
-    items: List[OrderItem] = []
-    payments: List[Payment] = []  # Bad: Payment should be its own aggregate
-    shipments: List[Shipment] = []  # Bad: Shipment should be its own aggregate
+    items: list[OrderItem] = []
+    payments: list[Payment] = []  # Bad: Payment should be its own aggregate
+    shipments: list[Shipment] = []  # Bad: Shipment should be its own aggregate
     # ...many more properties and relationships
     
     # This aggregate has too many responsibilities and will
@@ -333,7 +333,7 @@ class Invoice(AggregateRoot[UUID]):
     invoice_number: str
     customer_id: UUID
     due_date: date
-    lines: List[InvoiceLine] = []  # Child entities
+    lines: list[InvoiceLine] = []  # Child entities
     
     def add_line(self, description: str, amount: float) -> None:
         line = InvoiceLine(
@@ -352,7 +352,7 @@ class PaymentTransaction(AggregateRoot[UUID]):
     payment_method: str
     amount: Money
     status: str = "pending"
-    steps: List[TransactionStep] = []
+    steps: list[TransactionStep] = []
     
     def add_step(self, name: str, status: str) -> None:
         step = TransactionStep(
@@ -396,7 +396,7 @@ from uno.domain.entity import AggregateFactory
 class OrderFactory(AggregateFactory[Order]):
     """Factory for creating Order aggregates."""
     
-    def create_order(self, customer_id: UUID, items: List[dict]) -> Order:
+    def create_order(self, customer_id: UUID, items: list[dict]) -> Order:
         """Create a new order with items."""
         order = Order.create(customer_id)
         
@@ -431,7 +431,7 @@ class Order(EventSourcedAggregate[UUID]):
     """Event-sourced Order aggregate."""
     
     customer_id: UUID = None
-    items: List[OrderItem] = []
+    items: list[OrderItem] = []
     status: str = "draft"
     total_amount: float = 0.0
     
@@ -528,8 +528,8 @@ class OrderDiscount(EntityBase[UUID]):
 # Aggregate root
 class Order(AggregateRoot[UUID]):
     customer_id: UUID
-    items: List[OrderItem] = []
-    discounts: List[OrderDiscount] = []
+    items: list[OrderItem] = []
+    discounts: list[OrderDiscount] = []
     status: OrderStatus = OrderStatus.DRAFT
     shipping_address: Optional[Address] = None
     billing_address: Optional[Address] = None

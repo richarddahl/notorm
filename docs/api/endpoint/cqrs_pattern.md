@@ -66,10 +66,10 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
     def __init__(
         self,
         *,
-        queries: List[QueryHandler] = None,
-        commands: List[CommandHandler] = None,
+        queries: list[QueryHandler] = None,
+        commands: list[CommandHandler] = None,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         base_path: str = "",
     ):
         """Initialize a new CQRS endpoint instance."""
@@ -134,7 +134,7 @@ Next, implement the services that will handle the queries and commands:
 class SearchProductsService(ApplicationService):
     """Service for searching products."""
     
-    async def execute(self, query: ProductSearchQuery) -> Result[List[ProductSearchResult]]:
+    async def execute(self, query: ProductSearchQuery) -> Result[list[ProductSearchResult]]:
         """Execute the search query."""
         # Query implementation...
 
@@ -155,7 +155,7 @@ Create the handlers for your queries and commands:
 # Create query handler
 search_query = QueryHandler(
     service=search_service,
-    response_model=List[ProductSearchResult],
+    response_model=list[ProductSearchResult],
     query_model=ProductSearchQuery,
     path="/search",
     method="get",
@@ -265,7 +265,7 @@ class ProductCreatedResult(BaseModel):
 class SearchProductsService(ApplicationService):
     """Service for searching products."""
     
-    async def execute(self, query: ProductSearchQuery) -> Result[List[ProductSearchResult]]:
+    async def execute(self, query: ProductSearchQuery) -> Result[list[ProductSearchResult]]:
         """Execute the search query."""
         # In a real application, this would query the database
         results = [
@@ -320,7 +320,7 @@ def create_product_endpoints(app: FastAPI) -> CqrsEndpoint:
     # Create query handlers
     search_query = QueryHandler(
         service=search_service,
-        response_model=List[ProductSearchResult],
+        response_model=list[ProductSearchResult],
         query_model=ProductSearchQuery,
         path="/search",
         method="get",

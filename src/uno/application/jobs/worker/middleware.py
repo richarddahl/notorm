@@ -19,7 +19,7 @@ class Middleware:
     modify job execution at various points in the lifecycle.
     """
     
-    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+    def __init__(self, logger: logging.Logger | None = None -> None:
         """Initialize the middleware.
         
         Args:

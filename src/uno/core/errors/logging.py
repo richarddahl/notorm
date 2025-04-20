@@ -41,7 +41,7 @@ class LogConfig:
     json_format: bool = False
     console_output: bool = True
     file_output: bool = False
-    file_path: Optional[str] = None
+    file_path: str | None = None
     backup_count: int = 5
     max_bytes: int = 10 * 1024 * 1024  # 10 MB
     propagate: bool = False

@@ -35,7 +35,7 @@ class {{ feature_name|pascal_case }}Response(BaseModel):
     
     id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     # Add additional fields as needed
     
     @classmethod
@@ -60,7 +60,7 @@ class {{ feature_name|pascal_case }}Response(BaseModel):
 class {{ feature_name|pascal_case }}ListResponse(BaseModel):
     """Response model for a list of {{ feature_name|pascal_case }}s."""
     
-    items: List[{{ feature_name|pascal_case }}Response]
+    items: list[{{ feature_name|pascal_case }}Response]
     total: int
 
 

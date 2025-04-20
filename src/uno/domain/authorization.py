@@ -146,7 +146,7 @@ class Role:
     Roles are collections of permissions that can be assigned to users.
     """
 
-    def __init__(self, name: str, permissions: Optional[List[Permission]] = None):
+    def __init__(self, name: str, permissions: Optional[list[Permission]] = None):
         """
         Initialize a role.
 
@@ -197,7 +197,7 @@ class Role:
         return False
 
     @property
-    def permissions(self) -> List[Permission]:
+    def permissions(self) -> list[Permission]:
         """
         Get all permissions in this role.
 
@@ -217,7 +217,7 @@ class AuthorizationPolicy(ABC, Generic[T]):
     """
 
     def __init__(
-        self, resource: str, action: str, logger: Optional[logging.Logger] = None
+        self, resource: str, action: str, logger: logging.Logger | None = None
     ):
         """
         Initialize an authorization policy.
@@ -360,7 +360,7 @@ class OwnershipPolicy(AuthorizationPolicy[EntityT]):
         resource: str,
         action: str,
         owner_field: str = "owner_id",
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize an ownership policy.
@@ -427,7 +427,7 @@ class TenantPolicy(AuthorizationPolicy[EntityT]):
         resource: str,
         action: str,
         tenant_field: str = "tenant_id",
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a tenant policy.
@@ -499,7 +499,7 @@ class FunctionPolicy(AuthorizationPolicy[T]):
         resource: str,
         action: str,
         func: Callable[[ServiceContext, Optional[T]], bool],
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a function policy.
@@ -550,9 +550,9 @@ class CompositePolicy(AuthorizationPolicy[T]):
         self,
         resource: str,
         action: str,
-        policies: List[AuthorizationPolicy[T]],
+        policies: list[AuthorizationPolicy[T]],
         mode: CombinationMode = CombinationMode.ALL,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a composite policy.
@@ -623,7 +623,7 @@ class AuthorizationService:
     authorization policies.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the authorization service.
 

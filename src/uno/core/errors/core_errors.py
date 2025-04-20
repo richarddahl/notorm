@@ -55,7 +55,7 @@ class CoreErrorCode:
 class ConfigNotFoundError(BaseError):
     """Error raised when a configuration setting is not found."""
 
-    def __init__(self, config_key: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, config_key: str, message: str | None = None, **context: Any):
         message = message or f"Configuration setting '{config_key}' not found"
         super().__init__(
             message=message,
@@ -72,7 +72,7 @@ class ConfigInvalidError(BaseError):
         self,
         config_key: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = message or f"Invalid configuration setting '{config_key}': {reason}"
@@ -93,7 +93,7 @@ class ConfigTypeMismatchError(BaseError):
         config_key: str,
         expected_type: Union[str, Type],
         actual_type: Union[str, Type],
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         expected_type_str = (
@@ -126,8 +126,8 @@ class InitializationError(BaseError):
     def __init__(
         self,
         reason: str,
-        component: Optional[str] = None,
-        message: Optional[str] = None,
+        component: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -144,7 +144,7 @@ class ComponentInitializationError(BaseError):
     """Error raised when a specific component fails to initialize."""
 
     def __init__(
-        self, component: str, reason: str, message: Optional[str] = None, **context: Any
+        self, component: str, reason: str, message: str | None = None, **context: Any
     ):
         message = message or f"Component '{component}' initialization failed: {reason}"
         super().__init__(
@@ -163,8 +163,8 @@ class DependencyNotFoundError(BaseError):
     def __init__(
         self,
         dependency_name: str,
-        component: Optional[str] = None,
-        message: Optional[str] = None,
+        component: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -187,7 +187,7 @@ class DependencyResolutionError(BaseError):
         self,
         dependency_name: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -206,7 +206,7 @@ class DependencyCycleError(BaseError):
     """Error raised when a dependency cycle is detected."""
 
     def __init__(
-        self, cycle_components: List[str], message: Optional[str] = None, **context: Any
+        self, cycle_components: list[str], message: str | None = None, **context: Any
     ):
         cycle_str = " -> ".join(cycle_components)
         message = message or f"Dependency cycle detected: {cycle_str}"
@@ -225,8 +225,8 @@ class ObjectNotFoundError(BaseError):
     def __init__(
         self,
         object_type: str,
-        object_id: Optional[str] = None,
-        message: Optional[str] = None,
+        object_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -252,8 +252,8 @@ class ObjectInvalidError(BaseError):
         self,
         object_type: str,
         reason: str,
-        object_id: Optional[str] = None,
-        message: Optional[str] = None,
+        object_id: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -278,7 +278,7 @@ class ObjectPropertyError(BaseError):
         object_type: str,
         property_name: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -302,7 +302,7 @@ class SerializationError(BaseError):
         self,
         object_type: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = message or f"Failed to serialize {object_type}: {reason}"
@@ -322,7 +322,7 @@ class DeserializationError(BaseError):
         self,
         object_type: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = message or f"Failed to deserialize {object_type}: {reason}"
@@ -343,7 +343,7 @@ class ProtocolValidationError(BaseError):
         self,
         protocol_name: str,
         reason: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -365,7 +365,7 @@ class InterfaceMethodError(BaseError):
         self,
         interface_name: str,
         method_name: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -386,7 +386,7 @@ class OperationFailedError(BaseError):
     """Error raised when an operation fails."""
 
     def __init__(
-        self, operation: str, reason: str, message: Optional[str] = None, **context: Any
+        self, operation: str, reason: str, message: str | None = None, **context: Any
     ):
         message = message or f"Operation '{operation}' failed: {reason}"
         super().__init__(
@@ -401,7 +401,7 @@ class OperationFailedError(BaseError):
 class NotImplementedError(BaseError):
     """Error raised when a feature is not implemented."""
 
-    def __init__(self, feature: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, feature: str, message: str | None = None, **context: Any):
         message = message or f"Feature '{feature}' is not implemented"
         super().__init__(
             message=message,
@@ -414,7 +414,7 @@ class NotImplementedError(BaseError):
 class InternalError(BaseError):
     """Error raised when an internal error occurs."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Internal error: {reason}"
         super().__init__(
             message=message,

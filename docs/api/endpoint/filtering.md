@@ -27,14 +27,14 @@ class FilterProtocol(Protocol, Generic[T, IdType]):
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
         *,
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         include_count: bool = True,
-    ) -> tuple[List[IdType], Optional[int]]:
+    ) -> tuple[list[IdType], Optional[int]]:
         """Filter entities based on criteria and return IDs."""
         ...
 ```
@@ -290,21 +290,21 @@ class CustomFilterBackend(FilterBackend):
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
         *,
-        sort_by: Optional[List[str]] = None,
-        sort_dir: Optional[List[str]] = None,
+        sort_by: list[str] | None = None,
+        sort_dir: list[str] | None = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         include_count: bool = True,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """Filter entities based on criteria."""
         # Custom implementation...
     
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], List[QueryParameter]],
+        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
     ) -> int:
         """Count entities based on criteria."""
         # Custom implementation...

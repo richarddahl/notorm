@@ -46,8 +46,8 @@ class ValueNotFoundError(BaseError):
     def __init__(
         self,
         value_id: str,
-        value_type: Optional[str] = None,
-        message: Optional[str] = None,
+        value_type: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -69,8 +69,8 @@ class ValueInvalidDataError(BaseError):
     def __init__(
         self,
         reason: str,
-        value_type: Optional[str] = None,
-        message: Optional[str] = None,
+        value_type: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -93,7 +93,7 @@ class ValueTypeMismatchError(BaseError):
         self,
         expected_type: str,
         actual_type: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -116,7 +116,7 @@ class ValueValidationError(BaseError):
         self,
         reason: str,
         value: Any = None,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -138,8 +138,8 @@ class ValueServiceError(BaseError):
     def __init__(
         self,
         reason: str,
-        operation: Optional[str] = None,
-        message: Optional[str] = None,
+        operation: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -161,8 +161,8 @@ class ValueRepositoryError(BaseError):
     def __init__(
         self,
         reason: str,
-        operation: Optional[str] = None,
-        message: Optional[str] = None,
+        operation: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()

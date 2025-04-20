@@ -40,7 +40,7 @@ class Product(Entity):
     sku: str = Field(..., min_length=3, max_length=20)
     in_stock: bool = Field(default=True)
     stock_quantity: int = Field(default=0, ge=0)
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
     @field_validator("stock_quantity")
     @classmethod
@@ -59,7 +59,7 @@ class Product(Entity):
             quantity: The new stock quantity
         """
         if quantity < 0:
-            return Failure("Stock quantity cannot be negative")
+            return Result.failure("Stock quantity cannot be negative")
 
         self.stock_quantity = quantity
         self.in_stock = quantity > 0
@@ -71,7 +71,7 @@ class Product(Entity):
                 new_quantity=quantity,
             )
         )
-        return Success(None)
+        return Result.success(None)
 
     def increase_stock(self, amount: int) -> Result[None, str]:
         """

@@ -71,8 +71,8 @@ class DatabaseConnectionError(BaseError):
     def __init__(
         self,
         reason: str,
-        database: Optional[str] = None,
-        message: Optional[str] = None,
+        database: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -94,8 +94,8 @@ class DatabaseConnectionTimeoutError(BaseError):
     def __init__(
         self,
         timeout_seconds: Union[int, float],
-        database: Optional[str] = None,
-        message: Optional[str] = None,
+        database: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -120,7 +120,7 @@ class DatabaseConnectionPoolExhaustedError(BaseError):
         self,
         pool_size: int,
         wait_seconds: Optional[Union[int, float]] = None,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -143,8 +143,8 @@ class DatabaseQueryError(BaseError):
     def __init__(
         self,
         reason: str,
-        query: Optional[str] = None,
-        message: Optional[str] = None,
+        query: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -167,8 +167,8 @@ class DatabaseQueryTimeoutError(BaseError):
     def __init__(
         self,
         timeout_seconds: Union[int, float],
-        query: Optional[str] = None,
-        message: Optional[str] = None,
+        query: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -191,8 +191,8 @@ class DatabaseQuerySyntaxError(BaseError):
     def __init__(
         self,
         reason: str,
-        query: Optional[str] = None,
-        message: Optional[str] = None,
+        query: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -213,7 +213,7 @@ class DatabaseQuerySyntaxError(BaseError):
 class DatabaseTransactionError(BaseError):
     """Error raised when there is a database transaction issue."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Database transaction error: {reason}"
         super().__init__(
             message=message,
@@ -226,7 +226,7 @@ class DatabaseTransactionError(BaseError):
 class DatabaseTransactionRollbackError(BaseError):
     """Error raised when a database transaction is rolled back."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Database transaction rolled back: {reason}"
         super().__init__(
             message=message,
@@ -239,7 +239,7 @@ class DatabaseTransactionRollbackError(BaseError):
 class DatabaseTransactionConflictError(BaseError):
     """Error raised when there is a database transaction conflict."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Database transaction conflict: {reason}"
         super().__init__(
             message=message,
@@ -256,8 +256,8 @@ class DatabaseIntegrityError(BaseError):
     def __init__(
         self,
         reason: str,
-        table_name: Optional[str] = None,
-        message: Optional[str] = None,
+        table_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -279,9 +279,9 @@ class DatabaseUniqueViolationError(BaseError):
     def __init__(
         self,
         constraint_name: str,
-        table_name: Optional[str] = None,
-        column_names: Optional[List[str]] = None,
-        message: Optional[str] = None,
+        table_name: str | None = None,
+        column_names: list[str] | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -305,9 +305,9 @@ class DatabaseForeignKeyViolationError(BaseError):
     def __init__(
         self,
         constraint_name: str,
-        table_name: Optional[str] = None,
-        referenced_table: Optional[str] = None,
-        message: Optional[str] = None,
+        table_name: str | None = None,
+        referenced_table: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -333,7 +333,7 @@ class DatabaseResourceNotFoundError(BaseError):
         self,
         resource_type: str,
         resource_name: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -355,7 +355,7 @@ class DatabaseResourceAlreadyExistsError(BaseError):
         self,
         resource_type: str,
         resource_name: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         **context: Any,
     ):
         message = (
@@ -374,7 +374,7 @@ class DatabaseResourceAlreadyExistsError(BaseError):
 class DatabaseTableNotFoundError(BaseError):
     """Error raised when a database table is not found."""
 
-    def __init__(self, table_name: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, table_name: str, message: str | None = None, **context: Any):
         message = message or f"Database table not found: '{table_name}'"
         super().__init__(
             message=message,
@@ -390,8 +390,8 @@ class DatabaseColumnNotFoundError(BaseError):
     def __init__(
         self,
         column_name: str,
-        table_name: Optional[str] = None,
-        message: Optional[str] = None,
+        table_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -411,7 +411,7 @@ class DatabaseColumnNotFoundError(BaseError):
 class DatabaseSessionError(BaseError):
     """Error raised when there is a database session issue."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Database session error: {reason}"
         super().__init__(
             message=message,
@@ -426,8 +426,8 @@ class DatabaseSessionExpiredError(BaseError):
 
     def __init__(
         self,
-        reason: Optional[str] = None,
-        message: Optional[str] = None,
+        reason: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -449,8 +449,8 @@ class DatabaseConfigError(BaseError):
     def __init__(
         self,
         reason: str,
-        config_name: Optional[str] = None,
-        message: Optional[str] = None,
+        config_name: str | None = None,
+        message: str | None = None,
         **context: Any,
     ):
         ctx = context.copy()
@@ -470,7 +470,7 @@ class DatabaseConfigError(BaseError):
 class DatabaseOperationalError(BaseError):
     """Error raised when there is a database operational issue."""
 
-    def __init__(self, reason: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, reason: str, message: str | None = None, **context: Any):
         message = message or f"Database operational error: {reason}"
         super().__init__(
             message=message,
@@ -483,7 +483,7 @@ class DatabaseOperationalError(BaseError):
 class DatabaseNotSupportedError(BaseError):
     """Error raised when a database feature is not supported."""
 
-    def __init__(self, feature: str, message: Optional[str] = None, **context: Any):
+    def __init__(self, feature: str, message: str | None = None, **context: Any):
         message = message or f"Database feature not supported: {feature}"
         super().__init__(
             message=message,

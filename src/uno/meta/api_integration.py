@@ -12,12 +12,17 @@ from fastapi import APIRouter, FastAPI, Depends, Query, Path, HTTPException, sta
 from uno.meta.entities import MetaType, MetaRecord
 from uno.meta.dtos import (
     # Meta Type DTOs
-    MetaTypeCreateDto, MetaTypeUpdateDto, MetaTypeViewDto,
-    MetaTypeFilterParams, MetaTypeListDto,
-    
+    MetaTypeCreateDto,
+    MetaTypeUpdateDto,
+    MetaTypeViewDto,
+    MetaTypeFilterParams,
+    MetaTypeListDto,
     # Meta Record DTOs
-    MetaRecordCreateDto, MetaRecordUpdateDto, MetaRecordViewDto,
-    MetaRecordFilterParams, MetaRecordListDto,
+    MetaRecordCreateDto,
+    MetaRecordUpdateDto,
+    MetaRecordViewDto,
+    MetaRecordFilterParams,
+    MetaRecordListDto,
 )
 from uno.meta.schemas import MetaTypeSchemaManager, MetaRecordSchemaManager
 from uno.meta.domain_services import MetaTypeDomainService, MetaRecordDomainService
@@ -26,20 +31,20 @@ from uno.meta.domain_services import MetaTypeDomainService, MetaRecordDomainServ
 def register_meta_type_endpoints(
     app_or_router: Union[FastAPI, APIRouter],
     path_prefix: str = "/api/v1",
-    dependencies: List[Any] = None,
+    dependencies: list[Any] = None,
     include_auth: bool = True,
     meta_type_service: Optional[MetaTypeDomainService] = None,
 ) -> Dict[str, Any]:
     """
     Register API endpoints for meta type management.
-    
+
     Args:
         app_or_router: FastAPI app or APIRouter
         path_prefix: URL path prefix
         dependencies: List of FastAPI dependencies
         include_auth: Whether to include authentication dependencies
         meta_type_service: Optional MetaTypeDomainService instance (for testing)
-        
+
     Returns:
         Dictionary of registered endpoints
     """
@@ -52,10 +57,10 @@ def register_meta_type_endpoints(
         )
     else:
         router = app_or_router
-    
+
     # Create schema manager
     schema_manager = MetaTypeSchemaManager()
-    
+
     # GET /meta/types
     @router.get(
         "",
@@ -68,8 +73,10 @@ def register_meta_type_endpoints(
         service: MetaTypeDomainService = Depends(lambda: meta_type_service),
     ) -> MetaTypeListDto:
         types, record_counts, total = await service.list_meta_types(filters)
-        return schema_manager.entities_to_list_dto(types, record_counts, total, filters.limit, filters.offset)
-    
+        return schema_manager.entities_to_list_dto(
+            types, record_counts, total, filters.limit, filters.offset
+        )
+
     # POST /meta/types
     @router.post(
         "",
@@ -85,7 +92,7 @@ def register_meta_type_endpoints(
         meta_type_entity = schema_manager.dto_to_entity(meta_type_data)
         created_meta_type = await service.create_meta_type(meta_type_entity)
         return schema_manager.entity_to_dto(created_meta_type)
-    
+
     # GET /meta/types/{meta_type_id}
     @router.get(
         "/{meta_type_id}",
@@ -94,7 +101,9 @@ def register_meta_type_endpoints(
         description="Retrieve a specific meta type by ID",
     )
     async def get_meta_type(
-        meta_type_id: str = Path(..., description="The ID of the meta type to retrieve"),
+        meta_type_id: str = Path(
+            ..., description="The ID of the meta type to retrieve"
+        ),
         service: MetaTypeDomainService = Depends(lambda: meta_type_service),
     ) -> MetaTypeViewDto:
         meta_type, record_count = await service.get_meta_type_by_id(meta_type_id)
@@ -104,7 +113,7 @@ def register_meta_type_endpoints(
                 detail=f"Meta type with ID {meta_type_id} not found",
             )
         return schema_manager.entity_to_dto(meta_type, record_count)
-    
+
     # PATCH /meta/types/{meta_type_id}
     @router.patch(
         "/{meta_type_id}",
@@ -123,11 +132,11 @@ def register_meta_type_endpoints(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Meta type with ID {meta_type_id} not found",
             )
-        
+
         updated_entity = schema_manager.dto_to_entity(meta_type_data, meta_type)
         updated_meta_type = await service.update_meta_type(updated_entity)
         return schema_manager.entity_to_dto(updated_meta_type, record_count)
-    
+
     # DELETE /meta/types/{meta_type_id}
     @router.delete(
         "/{meta_type_id}",
@@ -145,14 +154,14 @@ def register_meta_type_endpoints(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Meta type with ID {meta_type_id} not found",
             )
-        
+
         await service.delete_meta_type(meta_type_id)
         return None
-    
+
     # Include router in app if using FastAPI app
     if isinstance(app_or_router, FastAPI):
         app_or_router.include_router(router)
-    
+
     # Return registered endpoints
     return {
         "list_meta_types": list_meta_types,
@@ -166,20 +175,20 @@ def register_meta_type_endpoints(
 def register_meta_record_endpoints(
     app_or_router: Union[FastAPI, APIRouter],
     path_prefix: str = "/api/v1",
-    dependencies: List[Any] = None,
+    dependencies: list[Any] = None,
     include_auth: bool = True,
     meta_record_service: Optional[MetaRecordDomainService] = None,
 ) -> Dict[str, Any]:
     """
     Register API endpoints for meta record management.
-    
+
     Args:
         app_or_router: FastAPI app or APIRouter
         path_prefix: URL path prefix
         dependencies: List of FastAPI dependencies
         include_auth: Whether to include authentication dependencies
         meta_record_service: Optional MetaRecordDomainService instance (for testing)
-        
+
     Returns:
         Dictionary of registered endpoints
     """
@@ -192,10 +201,10 @@ def register_meta_record_endpoints(
         )
     else:
         router = app_or_router
-    
+
     # Create schema manager
     schema_manager = MetaRecordSchemaManager()
-    
+
     # GET /meta/records
     @router.get(
         "",
@@ -208,8 +217,10 @@ def register_meta_record_endpoints(
         service: MetaRecordDomainService = Depends(lambda: meta_record_service),
     ) -> MetaRecordListDto:
         records, total = await service.list_meta_records(filters)
-        return schema_manager.entities_to_list_dto(records, total, filters.limit, filters.offset)
-    
+        return schema_manager.entities_to_list_dto(
+            records, total, filters.limit, filters.offset
+        )
+
     # POST /meta/records
     @router.post(
         "",
@@ -225,7 +236,7 @@ def register_meta_record_endpoints(
         meta_record_entity = schema_manager.dto_to_entity(meta_record_data)
         created_meta_record = await service.create_meta_record(meta_record_entity)
         return schema_manager.entity_to_dto(created_meta_record)
-    
+
     # GET /meta/records/{meta_record_id}
     @router.get(
         "/{meta_record_id}",
@@ -234,7 +245,9 @@ def register_meta_record_endpoints(
         description="Retrieve a specific meta record by ID",
     )
     async def get_meta_record(
-        meta_record_id: str = Path(..., description="The ID of the meta record to retrieve"),
+        meta_record_id: str = Path(
+            ..., description="The ID of the meta record to retrieve"
+        ),
         service: MetaRecordDomainService = Depends(lambda: meta_record_service),
     ) -> MetaRecordViewDto:
         meta_record = await service.get_meta_record_by_id(meta_record_id)
@@ -244,7 +257,7 @@ def register_meta_record_endpoints(
                 detail=f"Meta record with ID {meta_record_id} not found",
             )
         return schema_manager.entity_to_dto(meta_record)
-    
+
     # PATCH /meta/records/{meta_record_id}
     @router.patch(
         "/{meta_record_id}",
@@ -254,7 +267,9 @@ def register_meta_record_endpoints(
     )
     async def update_meta_record(
         meta_record_data: MetaRecordUpdateDto,
-        meta_record_id: str = Path(..., description="The ID of the meta record to update"),
+        meta_record_id: str = Path(
+            ..., description="The ID of the meta record to update"
+        ),
         service: MetaRecordDomainService = Depends(lambda: meta_record_service),
     ) -> MetaRecordViewDto:
         meta_record = await service.get_meta_record_by_id(meta_record_id)
@@ -263,11 +278,11 @@ def register_meta_record_endpoints(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Meta record with ID {meta_record_id} not found",
             )
-        
+
         updated_entity = schema_manager.dto_to_entity(meta_record_data, meta_record)
         updated_meta_record = await service.update_meta_record(updated_entity)
         return schema_manager.entity_to_dto(updated_meta_record)
-    
+
     # DELETE /meta/records/{meta_record_id}
     @router.delete(
         "/{meta_record_id}",
@@ -276,7 +291,9 @@ def register_meta_record_endpoints(
         description="Delete an existing meta record",
     )
     async def delete_meta_record(
-        meta_record_id: str = Path(..., description="The ID of the meta record to delete"),
+        meta_record_id: str = Path(
+            ..., description="The ID of the meta record to delete"
+        ),
         service: MetaRecordDomainService = Depends(lambda: meta_record_service),
     ) -> None:
         meta_record = await service.get_meta_record_by_id(meta_record_id)
@@ -285,14 +302,14 @@ def register_meta_record_endpoints(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Meta record with ID {meta_record_id} not found",
             )
-        
+
         await service.delete_meta_record(meta_record_id)
         return None
-    
+
     # Include router in app if using FastAPI app
     if isinstance(app_or_router, FastAPI):
         app_or_router.include_router(router)
-    
+
     # Return registered endpoints
     return {
         "list_meta_records": list_meta_records,
@@ -306,14 +323,14 @@ def register_meta_record_endpoints(
 def register_meta_endpoints(
     app_or_router: Union[FastAPI, APIRouter],
     path_prefix: str = "/api/v1",
-    dependencies: List[Any] = None,
+    dependencies: list[Any] = None,
     include_auth: bool = True,
     meta_type_service: Optional[MetaTypeDomainService] = None,
     meta_record_service: Optional[MetaRecordDomainService] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Register all meta-related API endpoints.
-    
+
     Args:
         app_or_router: FastAPI app or APIRouter
         path_prefix: URL path prefix
@@ -321,27 +338,47 @@ def register_meta_endpoints(
         include_auth: Whether to include authentication dependencies
         meta_type_service: Optional MetaTypeDomainService instance (for testing)
         meta_record_service: Optional MetaRecordDomainService instance (for testing)
-        
+
     Returns:
         Dictionary of registered endpoints by resource type
     """
     # Create routers for each resource type
     if isinstance(app_or_router, FastAPI):
-        meta_type_router = APIRouter(prefix=f"{path_prefix}/meta/types", tags=["Meta Types"], dependencies=dependencies or [])
-        meta_record_router = APIRouter(prefix=f"{path_prefix}/meta/records", tags=["Meta Records"], dependencies=dependencies or [])
+        meta_type_router = APIRouter(
+            prefix=f"{path_prefix}/meta/types",
+            tags=["Meta Types"],
+            dependencies=dependencies or [],
+        )
+        meta_record_router = APIRouter(
+            prefix=f"{path_prefix}/meta/records",
+            tags=["Meta Records"],
+            dependencies=dependencies or [],
+        )
     else:
         # Use the provided router for everything
         meta_type_router = meta_record_router = app_or_router
-    
+
     # Register endpoints for each resource type
-    meta_type_endpoints = register_meta_type_endpoints(meta_type_router, path_prefix="", dependencies=None, include_auth=include_auth, meta_type_service=meta_type_service)
-    meta_record_endpoints = register_meta_record_endpoints(meta_record_router, path_prefix="", dependencies=None, include_auth=include_auth, meta_record_service=meta_record_service)
-    
+    meta_type_endpoints = register_meta_type_endpoints(
+        meta_type_router,
+        path_prefix="",
+        dependencies=None,
+        include_auth=include_auth,
+        meta_type_service=meta_type_service,
+    )
+    meta_record_endpoints = register_meta_record_endpoints(
+        meta_record_router,
+        path_prefix="",
+        dependencies=None,
+        include_auth=include_auth,
+        meta_record_service=meta_record_service,
+    )
+
     # Include routers in app if using FastAPI app
     if isinstance(app_or_router, FastAPI):
         app_or_router.include_router(meta_type_router)
         app_or_router.include_router(meta_record_router)
-    
+
     # Return all registered endpoints
     return {
         "meta_types": meta_type_endpoints,

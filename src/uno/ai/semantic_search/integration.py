@@ -115,7 +115,7 @@ class EntityIndexer(Generic[T]):
         logger.debug(f"Indexed entity {entity_id} of type {self.entity_type}")
         return doc_id
 
-    async def index_entities(self, entities: List[T]) -> List[Any]:
+    async def index_entities(self, entities: list[T]) -> list[Any]:
         """
         Index multiple entities.
 

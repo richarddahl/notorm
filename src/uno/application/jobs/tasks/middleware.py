@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, TypeVar, cast
 import logging
 
 # Global middleware registry
-_middleware: List['TaskMiddleware'] = []
+_middleware: list['TaskMiddleware'] = []
 
 T = TypeVar('T')
 
@@ -20,7 +20,7 @@ class TaskMiddleware:
     modify task execution at various points in the lifecycle.
     """
     
-    def __init__(self, logger: Optional[logging.Logger] = None) -> None:
+    def __init__(self, logger: logging.Logger | None = None -> None:
         """Initialize the middleware.
         
         Args:
@@ -103,7 +103,7 @@ def unregister_middleware(middleware: TaskMiddleware) -> bool:
     return False
 
 
-def get_registered_middleware() -> List[TaskMiddleware]:
+def get_registered_middleware() -> list[TaskMiddleware]:
     """Get all registered middleware.
     
     Returns:

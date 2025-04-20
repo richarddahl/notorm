@@ -102,7 +102,7 @@ class EventStoreProtocol(Protocol):
     """
 
     async def append_events(
-        self, events: List[EventProtocol], expected_version: Optional[int] = None
+        self, events: list[EventProtocol], expected_version: Optional[int] = None
     ) -> int:
         """
         Append events to the event store.
@@ -118,7 +118,7 @@ class EventStoreProtocol(Protocol):
 
     async def get_events_by_aggregate(
         self, aggregate_id: str, from_version: int = 0
-    ) -> List[EventProtocol]:
+    ) -> list[EventProtocol]:
         """
         Get all events for a specific aggregate.
 
@@ -133,7 +133,7 @@ class EventStoreProtocol(Protocol):
 
     async def get_events_by_type(
         self, event_type: str, start_date: Optional[datetime] = None
-    ) -> List[EventProtocol]:
+    ) -> list[EventProtocol]:
         """
         Get all events of a specific type.
 
@@ -166,7 +166,7 @@ class EventPublisherProtocol(Protocol):
         """
         ...
 
-    async def publish_events(self, events: List[EventProtocol]) -> None:
+    async def publish_events(self, events: list[EventProtocol]) -> None:
         """
         Publish multiple events to external systems.
 

@@ -188,14 +188,14 @@ class User(EntityBase[UUID]):
     username: str
     email: str
     password_hash: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
     is_active: bool = True
     created_at: datetime = None
     
     @classmethod
     def create(cls, username: str, email: str, password_hash: str, 
-               first_name: Optional[str] = None, last_name: Optional[str] = None) -> "User":
+               first_name: str | None = None, last_name: str | None = None) -> "User":
         """Create a new user."""
         return cls(
             id=uuid4(),
@@ -257,14 +257,14 @@ class Task(AggregateRoot[UUID]):
     creator_id: UUID
     assignee_id: Optional[UUID] = None
     due_date: Optional[datetime] = None
-    tags: List[str] = []
+    tags: list[str] = []
     created_at: datetime = None
     updated_at: datetime = None
     
     @classmethod
     def create(cls, title: str, creator_id: UUID, description: str = "", 
                priority: str = TaskPriority.MEDIUM, due_date: Optional[datetime] = None, 
-               tags: List[str] = None) -> "Task":
+               tags: list[str] = None) -> "Task":
         """Create a new task."""
         now = datetime.now(datetime.UTC)
         task = cls(
@@ -327,9 +327,9 @@ class Task(AggregateRoot[UUID]):
             previous_status=previous_status
         ))
     
-    def update_details(self, title: Optional[str] = None, description: Optional[str] = None,
-                       priority: Optional[str] = None, due_date: Optional[datetime] = None,
-                       tags: Optional[List[str]] = None) -> None:
+    def update_details(self, title: str | None = None, description: str | None = None,
+                       priority: str | None = None, due_date: Optional[datetime] = None,
+                       tags: list[str] | None = None) -> None:
         """Update task details."""
         changed = False
         
@@ -600,7 +600,7 @@ class UserRepository(SQLAlchemyRepository[User, UUID, UserModel]):
         
         return self._mapper.to_entity(model)
     
-    async def find_active_users(self) -> List[User]:
+    async def find_active_users(self) -> list[User]:
         """Find all active users."""
         query = select(UserModel).where(UserModel.is_active == True)
         result = await self._execute_query(query)
@@ -628,7 +628,7 @@ class TaskRepository(SQLAlchemyRepository[Task, UUID, TaskModel]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, task_mapper)
     
-    async def find_by_creator(self, creator_id: UUID) -> List[Task]:
+    async def find_by_creator(self, creator_id: UUID) -> list[Task]:
         """Find all tasks created by a user."""
         query = select(TaskModel).where(TaskModel.creator_id == creator_id)
         result = await self._execute_query(query)
@@ -636,7 +636,7 @@ class TaskRepository(SQLAlchemyRepository[Task, UUID, TaskModel]):
         
         return [self._mapper.to_entity(model) for model in models]
     
-    async def find_by_assignee(self, assignee_id: UUID) -> List[Task]:
+    async def find_by_assignee(self, assignee_id: UUID) -> list[Task]:
         """Find all tasks assigned to a user."""
         query = select(TaskModel).where(TaskModel.assignee_id == assignee_id)
         result = await self._execute_query(query)
@@ -644,7 +644,7 @@ class TaskRepository(SQLAlchemyRepository[Task, UUID, TaskModel]):
         
         return [self._mapper.to_entity(model) for model in models]
     
-    async def find_by_status(self, status: str) -> List[Task]:
+    async def find_by_status(self, status: str) -> list[Task]:
         """Find all tasks with a specific status."""
         query = select(TaskModel).where(TaskModel.status == status)
         result = await self._execute_query(query)
@@ -652,7 +652,7 @@ class TaskRepository(SQLAlchemyRepository[Task, UUID, TaskModel]):
         
         return [self._mapper.to_entity(model) for model in models]
     
-    async def find_by_filter(self, filters: Dict[str, Any]) -> List[Task]:
+    async def find_by_filter(self, filters: Dict[str, Any]) -> list[Task]:
         """Find tasks matching filter criteria."""
         conditions = []
         
@@ -758,7 +758,7 @@ class UserService(DomainService[User, UUID]):
         super().__init__(repository)
     
     async def create_user(self, username: str, email: str, password: str, 
-                          first_name: Optional[str] = None, last_name: Optional[str] = None) -> Result[User, str]:
+                          first_name: str | None = None, last_name: str | None = None) -> Result[User, str]:
         """Create a new user."""
         # Check if username exists
         existing_user = await self._repository.find_by_username(username)
@@ -843,7 +843,7 @@ class TaskService(DomainService[Task, UUID]):
     
     async def create_task(self, title: str, creator_id: UUID, description: str = "",
                           priority: str = "medium", due_date: Optional[datetime] = None,
-                          tags: List[str] = None) -> Result[Task, str]:
+                          tags: list[str] = None) -> Result[Task, str]:
         """Create a new task."""
         # Validate creator exists
         creator = await self.user_repository.get_by_id(creator_id)
@@ -903,10 +903,10 @@ class TaskService(DomainService[Task, UUID]):
         
         return Success(task)
     
-    async def update_task(self, task_id: UUID, title: Optional[str] = None,
-                         description: Optional[str] = None, priority: Optional[str] = None,
+    async def update_task(self, task_id: UUID, title: str | None = None,
+                         description: str | None = None, priority: str | None = None,
                          due_date: Optional[datetime] = None,
-                         tags: Optional[List[str]] = None) -> Result[Task, str]:
+                         tags: list[str] | None = None) -> Result[Task, str]:
         """Update a task's details."""
         # Get task
         task = await self._repository.get_by_id(task_id)
@@ -930,12 +930,12 @@ class TaskService(DomainService[Task, UUID]):
         
         return Success(task)
     
-    async def find_tasks(self, filters: Dict[str, Any]) -> List[Task]:
+    async def find_tasks(self, filters: Dict[str, Any]) -> list[Task]:
         """Find tasks matching filter criteria."""
         return await self._repository.find_by_filter(filters)
     
     async def get_user_tasks(self, user_id: UUID, include_created: bool = True,
-                           include_assigned: bool = True) -> List[Task]:
+                           include_assigned: bool = True) -> list[Task]:
         """Get all tasks related to a user."""
         tasks = []
         
@@ -967,8 +967,8 @@ class UserRegisterDTO(BaseModel):
     username: str
     email: EmailStr
     password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
 
 class UserLoginDTO(BaseModel):
     """DTO for user login."""
@@ -982,8 +982,8 @@ class UserResponseDTO(BaseModel):
     id: str
     username: str
     email: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str | None = None
+    last_name: str | None = None
     is_active: bool
 
 class TokenResponseDTO(BaseModel):
@@ -1009,16 +1009,16 @@ class TaskCreateDTO(BaseModel):
     description: str = ""
     priority: str = "medium"
     due_date: Optional[datetime] = None
-    tags: List[str] = []
+    tags: list[str] = []
 
 class TaskUpdateDTO(BaseModel):
     """DTO for task update."""
     
-    title: Optional[str] = None
-    description: Optional[str] = None
-    priority: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    priority: str | None = None
     due_date: Optional[datetime] = None
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
 class TaskAssignDTO(BaseModel):
     """DTO for task assignment."""
@@ -1039,23 +1039,23 @@ class TaskResponseDTO(BaseModel):
     status: str
     priority: str
     creator_id: str
-    assignee_id: Optional[str] = None
+    assignee_id: str | None = None
     due_date: Optional[datetime] = None
-    tags: List[str]
+    tags: list[str]
     created_at: datetime
     updated_at: datetime
 
 class TaskFilterDTO(BaseModel):
     """DTO for task filtering."""
     
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    creator_id: Optional[str] = None
-    assignee_id: Optional[str] = None
+    status: str | None = None
+    priority: str | None = None
+    creator_id: str | None = None
+    assignee_id: str | None = None
     due_before: Optional[datetime] = None
     due_after: Optional[datetime] = None
-    tags: Optional[List[str]] = None
-    search: Optional[str] = None
+    tags: list[str] | None = None
+    search: str | None = None
     order_by: Optional[str] = "updated_at"
     order_dir: Optional[str] = "desc"
     limit: Optional[int] = 20
@@ -1255,7 +1255,7 @@ class TaskApplicationService:
         
         return Success(self._task_to_dto(task))
     
-    async def find_tasks(self, filter_dto: TaskFilterDTO) -> List[TaskResponseDTO]:
+    async def find_tasks(self, filter_dto: TaskFilterDTO) -> list[TaskResponseDTO]:
         """Find tasks matching filter criteria."""
         # Convert DTO to filter dict
         filters = filter_dto.dict(exclude_none=True)
@@ -1274,7 +1274,7 @@ class TaskApplicationService:
         return [self._task_to_dto(task) for task in tasks]
     
     async def get_user_tasks(self, user_id: UUID, include_created: bool = True,
-                          include_assigned: bool = True) -> List[TaskResponseDTO]:
+                          include_assigned: bool = True) -> list[TaskResponseDTO]:
         """Get all tasks related to a user."""
         tasks = await self.task_service.get_user_tasks(
             user_id=user_id,
@@ -1444,20 +1444,20 @@ async def create_task(
     
     return DataResponse(data=result.value)
 
-@task_endpoint.router.get("", response_model=DataResponse[List[TaskResponseDTO]])
+@task_endpoint.router.get("", response_model=DataResponse[list[TaskResponseDTO]])
 async def list_tasks(
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
-    creator_id: Optional[str] = None,
-    assignee_id: Optional[str] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    priority: str | None = None,
+    creator_id: str | None = None,
+    assignee_id: str | None = None,
+    search: str | None = None,
     order_by: Optional[str] = "updated_at",
     order_dir: Optional[str] = "desc",
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     task_service: TaskApplicationService = Depends(get_dependency(TaskApplicationService))
-) -> DataResponse[List[TaskResponseDTO]]:
+) -> DataResponse[list[TaskResponseDTO]]:
     """List tasks with filters."""
     # Build filter
     filter_dto = TaskFilterDTO(
@@ -1476,13 +1476,13 @@ async def list_tasks(
     
     return DataResponse(data=tasks)
 
-@task_endpoint.router.get("/me", response_model=DataResponse[List[TaskResponseDTO]])
+@task_endpoint.router.get("/me", response_model=DataResponse[list[TaskResponseDTO]])
 async def get_my_tasks(
     include_created: bool = True,
     include_assigned: bool = True,
     current_user: User = Depends(get_current_user),
     task_service: TaskApplicationService = Depends(get_dependency(TaskApplicationService))
-) -> DataResponse[List[TaskResponseDTO]]:
+) -> DataResponse[list[TaskResponseDTO]]:
     """Get tasks related to the current user."""
     tasks = await task_service.get_user_tasks(
         user_id=current_user.id,

@@ -118,7 +118,7 @@ class AggregateRootProtocol(EntityProtocol[ID], Protocol[ID]):
         """
         ...
 
-    def clear_events(self) -> List[Any]:
+    def clear_events(self) -> list[Any]:
         """
         Clear and return all pending events.
 

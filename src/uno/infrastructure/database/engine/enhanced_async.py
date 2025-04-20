@@ -43,7 +43,7 @@ class EnhancedAsyncEngineFactory(AsyncEngineFactory):
     def __init__(
         self,
         connection_limiter: Optional[Limiter] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the enhanced async engine factory.
@@ -87,7 +87,7 @@ async def connect_with_retry(
     max_retries: int = 3,
     base_retry_delay: float = 1.0,
     isolation_level: str = "AUTOCOMMIT",
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> AsyncConnection:
     """
     Connect to the database with retry logic and timeout.
@@ -203,17 +203,17 @@ class AsyncConnectionContext(AbstractAsyncContextManager[AsyncConnection]):
     def __init__(
         self,
         db_role: str,
-        db_name: Optional[str] = None,
-        db_host: Optional[str] = None,
-        db_user_pw: Optional[str] = None,
-        db_driver: Optional[str] = None,
+        db_name: str | None = None,
+        db_host: str | None = None,
+        db_user_pw: str | None = None,
+        db_driver: str | None = None,
         db_port: Optional[int] = None,
         config: Optional[ConnectionConfig] = None,
         isolation_level: str = "AUTOCOMMIT",
         factory: Optional[EnhancedAsyncEngineFactory] = None,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         **kwargs: Any,
     ):
         """Initialize the async connection context."""
@@ -284,17 +284,17 @@ class AsyncConnectionContext(AbstractAsyncContextManager[AsyncConnection]):
 
 async def enhanced_async_connection(
     db_role: str,
-    db_name: Optional[str] = None,
-    db_host: Optional[str] = None,
-    db_user_pw: Optional[str] = None,
-    db_driver: Optional[str] = None,
+    db_name: str | None = None,
+    db_host: str | None = None,
+    db_user_pw: str | None = None,
+    db_driver: str | None = None,
     db_port: Optional[int] = None,
     config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",
     factory: Optional[EnhancedAsyncEngineFactory] = None,
     max_retries: int = 3,
     retry_delay: float = 1.0,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[AsyncConnection]:
     """
@@ -356,8 +356,8 @@ class DatabaseOperationGroup:
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        logger: Optional[logging.Logger] = None,
+        name: str | None = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize a database operation group.
@@ -386,8 +386,8 @@ class DatabaseOperationGroup:
     async def execute_in_transaction(
         self,
         session: AsyncSession,
-        operations: List[Callable[[AsyncSession], Any]],
-    ) -> List[Any]:
+        operations: list[Callable[[AsyncSession], Any]],
+    ) -> list[Any]:
         """
         Execute multiple operations in a single database transaction.
 

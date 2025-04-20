@@ -38,7 +38,6 @@ from uno.core.errors import Result, Success, Failure
 from typing import Optional, List, Dict, Any
 
 
-
 # =============================================================================
 # Domain Events
 # =============================================================================
@@ -60,13 +59,13 @@ class UserCreatedEvent(UserEvent):
 class UserUpdatedEvent(UserEvent):
     """Event raised when a user is updated."""
 
-    fields_updated: List[str]
+    fields_updated: list[str]
 
 
 class UserDeletedEvent(UserEvent):
     """Event raised when a user is deleted."""
 
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class OrderEvent(UnoEvent):
@@ -79,7 +78,7 @@ class OrderEvent(UnoEvent):
 class OrderCreatedEvent(OrderEvent):
     """Event raised when a new order is created."""
 
-    items: List[Dict[str, Any]]
+    items: list[dict[str, Any]]
     total_amount: float
 
 
@@ -93,7 +92,7 @@ class OrderShippedEvent(OrderEvent):
 class OrderCancelledEvent(OrderEvent):
     """Event raised when an order is cancelled."""
 
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 # =============================================================================
@@ -106,7 +105,7 @@ class NotificationService:
 
     def __init__(self):
         """Initialize the notification service."""
-        self.notifications: List[Dict[str, Any]] = []
+        self.notifications: list[dict[str, Any]] = []
         self.logger = logging.getLogger("notification_service")
 
     async def send_notification(self, recipient: str, subject: str, body: str) -> None:
@@ -166,7 +165,7 @@ class AnalyticsSubscriber(EventSubscriber):
         Args:
             event_bus: The event bus to subscribe to
         """
-        self.events: List[Dict[str, Any]] = []
+        self.events: list[dict[str, Any]] = []
         self.logger = logging.getLogger("analytics")
         super().__init__(event_bus)
 
@@ -333,7 +332,9 @@ class UserService:
             return Failure(result.error, convert=True)
         return Success(None, convert=True)
 
-    async def delete_user(self, user_id: str, reason: Optional[str] = None) -> Result[None, str]:
+    async def delete_user(
+        self, user_id: str, reason: str | None = None
+    ) -> Result[None, str]:
         """
         Delete a user and raise a UserDeletedEvent.
 
@@ -373,7 +374,7 @@ class OrderService:
         self.event_publisher = event_publisher
 
     async def create_order(
-        self, user_id: str, items: List[Dict[str, Any]], topic: Optional[str] = None
+        self, user_id: str, items: list[dict[str, Any]], topic: str | None = None
     ) -> Result[str, str]:
         """
         Create a new order and raise an OrderCreatedEvent.
@@ -420,7 +421,9 @@ class OrderService:
             return Failure(result.error, convert=True)
         return Success(order_id, convert=True)
 
-    async def ship_order(self, order_id: str, tracking_number: str) -> Result[None, str]:
+    async def ship_order(
+        self, order_id: str, tracking_number: str
+    ) -> Result[None, str]:
         """
         Ship an order and raise an OrderShippedEvent.
 
@@ -452,7 +455,9 @@ class OrderService:
             return Failure(result.error, convert=True)
         return Success(None, convert=True)
 
-    async def cancel_order(self, order_id: str, reason: Optional[str] = None) -> Result[None, str]:
+    async def cancel_order(
+        self, order_id: str, reason: str | None = None
+    ) -> Result[None, str]:
         """
         Cancel an order and raise an OrderCancelledEvent.
 
@@ -503,7 +508,7 @@ class AuditService:
         self.event_store = event_store or get_event_store()
         self.logger = logging.getLogger("audit_service")
 
-    async def get_user_history(self, user_id: str) -> List[Dict[str, Any]]:
+    async def get_user_history(self, user_id: str) -> list[dict[str, Any]]:
         """
         Get history of events for a user.
 

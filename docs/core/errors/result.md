@@ -97,7 +97,7 @@ def find_user_by_email(email: str) -> Result[User, str]:
     else:
         return Failure(f"User with email {email} not found")
 
-def get_users_by_department(department: str) -> Result[List[User], str]:
+def get_users_by_department(department: str) -> Result[list[User], str]:
     """Get all users in a department."""
     users = user_repository.find_by_department(department)
     
@@ -211,7 +211,7 @@ def get_user_profile(user_id: str) -> Result[Profile, str]:
 from uno.core.errors.result import Result, combine_results
 from typing import List
 
-def get_all_team_members(team_id: str) -> Result[List[User], str]:
+def get_all_team_members(team_id: str) -> Result[list[User], str]:
     """Get all members of a team."""
     # Get the team
     team_result = find_team_by_id(team_id)
@@ -235,7 +235,7 @@ def get_all_team_members(team_id: str) -> Result[List[User], str]:
 from uno.core.errors.result import Result, collect_results
 from typing import List, Dict
 
-def validate_order(order_data: Dict[str, Any]) -> Result[Dict[str, Any], List[str]]:
+def validate_order(order_data: Dict[str, Any]) -> Result[Dict[str, Any], list[str]]:
     """Validate an order, collecting all validation errors."""
     validation_results = [
         validate_customer(order_data.get("customer_id")),
@@ -503,7 +503,7 @@ class OrderApplicationService(ApplicationService):
     async def place_order(
         self, 
         customer_id: UUID, 
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
         payment_details: Dict[str, Any]
     ) -> Result[OrderDTO, str]:
         """Place an order with payment."""

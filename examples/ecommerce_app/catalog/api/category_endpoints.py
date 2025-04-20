@@ -31,7 +31,7 @@ class CategoryResponse(CategoryCreateCommand):
 
     id: str
     created_at: str
-    updated_at: Optional[str] = None
+    updated_at: str | None = None
 
 
 # Dependency functions
@@ -66,13 +66,13 @@ def category_to_response(category: Category) -> CategoryResponse:
     )
 
 
-def category_list_to_response(categories: List[Category]) -> List[CategoryResponse]:
+def category_list_to_response(categories: list[Category]) -> list[CategoryResponse]:
     """Convert a list of category entities to API response model."""
     return [category_to_response(category) for category in categories]
 
 
 # API endpoints
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("/", response_model=list[CategoryResponse])
 async def list_categories(
     parent_id: Optional[str] = Query(None, description="Filter by parent category ID"),
     active_only: bool = Query(True, description="Only show active categories"),
@@ -98,8 +98,8 @@ async def list_categories(
         offset=offset,
     )
 
-    adapter = DomainServiceAdapter[CategoryListQuery, List[Category]](query_service)
-    result: Result[List[Category]] = await adapter.execute(query)
+    adapter = DomainServiceAdapter[CategoryListQuery, list[Category]](query_service)
+    result: Result[list[Category]] = await adapter.execute(query)
 
     if result.is_failure:
         raise HTTPException(status_code=400, detail=result.error)
@@ -107,7 +107,7 @@ async def list_categories(
     return category_list_to_response(result.value)
 
 
-@router.get("/hierarchy", response_model=List[CategoryResponse])
+@router.get("/hierarchy", response_model=list[CategoryResponse])
 async def get_category_hierarchy(
     query_service: CategoryQueryService = Depends(get_category_query_service),
 ):
@@ -116,7 +116,7 @@ async def get_category_hierarchy(
 
     Returns all top-level categories (categories with no parent).
     """
-    result: Result[List[Category]] = await query_service.get_hierarchy()
+    result: Result[list[Category]] = await query_service.get_hierarchy()
 
     if result.is_failure:
         raise HTTPException(status_code=400, detail=result.error)

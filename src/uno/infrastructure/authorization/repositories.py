@@ -30,7 +30,7 @@ class UserRepository(BaseRepository[UserModel]):
     Provides data access methods for User management.
     """
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a database session."""
         super().__init__(session, UserModel, logger)
 
@@ -49,7 +49,7 @@ class UserRepository(BaseRepository[UserModel]):
         return result.scalars().first()
 
     async def find_by_handle(
-        self, handle: str, tenant_id: Optional[str] = None
+        self, handle: str, tenant_id: str | None = None
     ) -> Optional[UserModel]:
         """
         Find a user by handle, optionally within a specific tenant.
@@ -72,7 +72,7 @@ class UserRepository(BaseRepository[UserModel]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[UserModel]:
+    ) -> list[UserModel]:
         """
         Find all users in a specific tenant.
 
@@ -97,7 +97,7 @@ class UserRepository(BaseRepository[UserModel]):
 
     async def find_by_group(
         self, group_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[UserModel]:
+    ) -> list[UserModel]:
         """
         Find all users in a specific group.
 
@@ -129,7 +129,7 @@ class UserRepository(BaseRepository[UserModel]):
 
     async def find_by_role(
         self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[UserModel]:
+    ) -> list[UserModel]:
         """
         Find all users with a specific role.
 
@@ -154,7 +154,7 @@ class UserRepository(BaseRepository[UserModel]):
 
     async def find_superusers(
         self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[UserModel]:
+    ) -> list[UserModel]:
         """
         Find all superusers.
 
@@ -184,7 +184,7 @@ class GroupRepository(BaseRepository[GroupModel]):
     Provides data access methods for Group management.
     """
 
-    def __init__(self, session: AsyncSession, logger: Optional[logging.Logger] = None):
+    def __init__(self, session: AsyncSession, logger: logging.Logger | None = None):
         """Initialize the repository with a database session."""
         super().__init__(session, GroupModel, logger)
 
@@ -207,7 +207,7 @@ class GroupRepository(BaseRepository[GroupModel]):
 
     async def find_by_tenant(
         self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[GroupModel]:
+    ) -> list[GroupModel]:
         """
         Find all groups in a specific tenant.
 
@@ -232,7 +232,7 @@ class GroupRepository(BaseRepository[GroupModel]):
 
     async def find_by_user(
         self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[GroupModel]:
+    ) -> list[GroupModel]:
         """
         Find all groups for a specific user.
 

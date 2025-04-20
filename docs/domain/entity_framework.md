@@ -82,7 +82,7 @@ from uno.domain.entity import AggregateRoot, EntityBase
 
 class Order(AggregateRoot[UUID]):
     customer_id: UUID
-    items: List[OrderItem] = []
+    items: list[OrderItem] = []
     total: float = 0.0
     
     def add_item(self, item: OrderItem) -> None:
@@ -93,7 +93,7 @@ class Order(AggregateRoot[UUID]):
             item_id=item.id
         ))
         
-    def get_uncommitted_events(self) -> List[Event]:
+    def get_uncommitted_events(self) -> list[Event]:
         return self._events
         
     def clear_events(self) -> None:
@@ -242,7 +242,7 @@ class OrderingService(ApplicationService[Dict, str]):
         self.order_service = order_service
         
     async def place_order(
-        self, user_id: UUID, product_ids: List[UUID]
+        self, user_id: UUID, product_ids: list[UUID]
     ) -> Result[Order, str]:
         # Validation
         user_result = await self.user_service.get_by_id(user_id)
@@ -268,7 +268,7 @@ For managing transactions across repositories:
 from uno.domain.entity import DomainServiceWithUnitOfWork
 
 class OrderService(DomainServiceWithUnitOfWork[Order, UUID]):
-    async def create_order(self, user: User, products: List[Product]) -> Result[Order, str]:
+    async def create_order(self, user: User, products: list[Product]) -> Result[Order, str]:
         async with self.with_uow("create_order"):
             # This code runs in a transaction
             await self._ensure_repository()

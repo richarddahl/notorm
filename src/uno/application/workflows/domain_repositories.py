@@ -10,7 +10,7 @@ import logging
 from uuid import uuid4
 
 from uno.core.base.respository import UnoDBRepository
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.workflows.entities import (
     WorkflowDef,
     WorkflowTrigger,
@@ -70,7 +70,7 @@ class WorkflowDefRepository(UnoDBRepository[WorkflowDef]):
                 WorkflowRepositoryError(f"Error creating workflow: {str(e)}")
             )
 
-    async def find_active_workflows(self) -> Result[List[WorkflowDef]]:
+    async def find_active_workflows(self) -> Result[list[WorkflowDef]]:
         """
         Find all active workflows.
 
@@ -128,7 +128,7 @@ class WorkflowTriggerRepository(UnoDBRepository[WorkflowTrigger]):
         super().__init__(entity_type=WorkflowTrigger, db_factory=db_factory)
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_workflow(self, workflow_id: str) -> Result[List[WorkflowTrigger]]:
+    async def find_by_workflow(self, workflow_id: str) -> Result[list[WorkflowTrigger]]:
         """
         Find triggers for a specific workflow.
 
@@ -198,7 +198,7 @@ class WorkflowConditionRepository(UnoDBRepository[WorkflowCondition]):
 
     async def find_by_workflow(
         self, workflow_id: str
-    ) -> Result[List[WorkflowCondition]]:
+    ) -> Result[list[WorkflowCondition]]:
         """
         Find conditions for a specific workflow.
 
@@ -267,7 +267,7 @@ class WorkflowActionRepository(UnoDBRepository[WorkflowAction]):
         super().__init__(entity_type=WorkflowAction, db_factory=db_factory)
         self.logger = logging.getLogger(__name__)
 
-    async def find_by_workflow(self, workflow_id: str) -> Result[List[WorkflowAction]]:
+    async def find_by_workflow(self, workflow_id: str) -> Result[list[WorkflowAction]]:
         """
         Find actions for a specific workflow.
 
@@ -334,7 +334,7 @@ class WorkflowRecipientRepository(UnoDBRepository[WorkflowRecipient]):
 
     async def find_by_workflow(
         self, workflow_id: str
-    ) -> Result[List[WorkflowRecipient]]:
+    ) -> Result[list[WorkflowRecipient]]:
         """
         Find recipients for a specific workflow.
 
@@ -354,7 +354,7 @@ class WorkflowRecipientRepository(UnoDBRepository[WorkflowRecipient]):
                 WorkflowRepositoryError(f"Error finding recipients: {str(e)}")
             )
 
-    async def find_by_action(self, action_id: str) -> Result[List[WorkflowRecipient]]:
+    async def find_by_action(self, action_id: str) -> Result[list[WorkflowRecipient]]:
         """
         Find recipients for a specific action.
 
@@ -379,7 +379,7 @@ class WorkflowRecipientRepository(UnoDBRepository[WorkflowRecipient]):
         workflow_id: str,
         recipient_type,
         recipient_id: str,
-        action_id: Optional[str] = None,
+        action_id: str | None = None,
         **kwargs,
     ) -> Result[WorkflowRecipient]:
         """
@@ -428,7 +428,7 @@ class WorkflowExecutionRepository(UnoDBRepository[WorkflowExecutionRecord]):
 
     async def find_by_workflow(
         self, workflow_id: str, limit: int = 100
-    ) -> Result[List[WorkflowExecutionRecord]]:
+    ) -> Result[list[WorkflowExecutionRecord]]:
         """
         Find execution records for a specific workflow.
 
@@ -488,7 +488,7 @@ class WorkflowExecutionRepository(UnoDBRepository[WorkflowExecutionRecord]):
         execution_id: str,
         status,
         result: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> Result[WorkflowExecutionRecord]:
         """
         Update the status of a workflow execution.

@@ -11,7 +11,7 @@ from datetime import datetime, UTC
 
 from pydantic import BaseModel
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.error import BaseError
 from uno.core.events import UnoEvent, EventHandler
 from uno.workflows.errors import (
@@ -65,7 +65,7 @@ class WorkflowEngineError(BaseError):
 class WorkflowExecutionActionError(WorkflowEngineError):
     """Error raised when there's an issue executing workflow actions in the engine."""
 
-    def __init__(self, message: str, action_name: Optional[str] = None, **context: Any):
+    def __init__(self, message: str, action_name: str | None = None, **context: Any):
         ctx = context.copy()
         if action_name:
             ctx["action_name"] = action_name
@@ -92,7 +92,7 @@ class WorkflowEngine:
     def __init__(
         self,
         db_manager: DBManager,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class WorkflowEngine:
         self,
         action_type: WorkflowActionType,
         handler: Callable[
-            [WorkflowAction, WorkflowEventModel, Dict[str, Any], List[User]],
+            [WorkflowAction, WorkflowEventModel, Dict[str, Any], list[User]],
             Result[Dict[str, Any]],
         ],
     ) -> None:
@@ -165,7 +165,7 @@ class WorkflowEngine:
     def register_recipient_resolver(
         self,
         recipient_type: WorkflowRecipientType,
-        resolver: Callable[[WorkflowRecipient, Dict[str, Any]], Result[List[User]]],
+        resolver: Callable[[WorkflowRecipient, Dict[str, Any]], Result[list[User]]],
     ) -> None:
         """Register a resolver for a specific recipient type."""
         self._recipient_resolvers[recipient_type] = resolver
@@ -220,7 +220,7 @@ class WorkflowEngine:
 
     async def _find_matching_workflows(
         self, event: WorkflowEventModel
-    ) -> List[Tuple[WorkflowDef, WorkflowTrigger]]:
+    ) -> list[Tuple[WorkflowDef, WorkflowTrigger]]:
         """Find workflows with triggers matching the given event."""
         async with self.db_manager.get_enhanced_session() as session:
             # Query for active workflows with matching triggers
@@ -520,7 +520,7 @@ class WorkflowEngine:
         execution_id: str,
         status: WorkflowExecutionStatus,
         result: Dict[str, Any],
-        error: Optional[str] = None,
+        error: str | None = None,
         execution_time: Optional[float] = None,
     ) -> None:
         """Update an execution record with results."""
@@ -607,7 +607,7 @@ class WorkflowEngine:
 
     async def _execute_actions(
         self, workflow: WorkflowDef, event: WorkflowEventModel, context: Dict[str, Any]
-    ) -> Result[List[Dict[str, Any]]]:
+    ) -> Result[list[dict[str, Any]]]:
         """Execute all actions for a workflow."""
         if not workflow.actions:
             return Success([])  # No actions to execute
@@ -710,7 +710,7 @@ class WorkflowEngine:
 
     async def _resolve_recipients(
         self, action: WorkflowAction, workflow: WorkflowDef, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve all recipients for an action."""
         recipients = []
 
@@ -971,7 +971,7 @@ class WorkflowEngine:
         action: WorkflowAction,
         event: WorkflowEventModel,
         context: Dict[str, Any],
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Handle a notification action."""
         try:
@@ -1003,7 +1003,7 @@ class WorkflowEngine:
         action: WorkflowAction,
         event: WorkflowEventModel,
         context: Dict[str, Any],
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Handle an email action."""
         # This is a placeholder implementation
@@ -1014,7 +1014,7 @@ class WorkflowEngine:
         action: WorkflowAction,
         event: WorkflowEventModel,
         context: Dict[str, Any],
-        recipients: List[User],
+        recipients: list[User],
     ) -> Result[Dict[str, Any]]:
         """Handle a webhook action."""
         # This is a placeholder implementation
@@ -1024,7 +1024,7 @@ class WorkflowEngine:
 
     def _resolve_user_recipient(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a user recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch the user from the database
@@ -1038,7 +1038,7 @@ class WorkflowEngine:
 
     def _resolve_role_recipient(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a role recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch all users with this role
@@ -1046,7 +1046,7 @@ class WorkflowEngine:
 
     def _resolve_group_recipient(
         self, recipient: WorkflowRecipient, context: Dict[str, Any]
-    ) -> Result[List[User]]:
+    ) -> Result[list[User]]:
         """Resolve a group recipient."""
         # This is a placeholder implementation
         # In a real implementation, you would fetch all users in this group
@@ -1060,7 +1060,7 @@ class WorkflowEventHandler(EventHandler):
         self,
         db_manager: DBManager,
         workflow_engine: WorkflowEngine,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.workflow_engine = workflow_engine
@@ -1132,7 +1132,7 @@ class PostgresWorkflowEventListener:
         db_manager: DBManager,
         workflow_engine: WorkflowEngine,
         channel: str = "workflow_events",
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.workflow_engine = workflow_engine

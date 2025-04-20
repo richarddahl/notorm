@@ -42,9 +42,9 @@ class Category(Entity):
 
     name: str
     slug: str
-    description: Optional[str] = None
-    parent_id: Optional[str] = None
-    image_url: Optional[str] = None
+    description: str | None = None
+    parent_id: str | None = None
+    image_url: str | None = None
     is_active: bool = True
     sort_order: int = 0
 
@@ -52,7 +52,11 @@ class Category(Entity):
         """Update entity timestamp when modified."""
         self.updated_at = datetime.now(UTC)
 
-    def check_invariants(self, existing_slugs: Optional[set] = None, parent_lookup: Optional[callable] = None) -> None:
+    def check_invariants(
+        self,
+        existing_slugs: Optional[set] = None,
+        parent_lookup: Optional[callable] = None,
+    ) -> None:
         """
         Check invariants for Category:
         - Name and slug must be present
@@ -79,7 +83,9 @@ class Category(Entity):
                 if current_id == str(self.id):
                     raise ValueError("Category parent_id creates a circular reference")
                 if current_id in ancestor_ids:
-                    raise ValueError("Category parent_id creates a circular reference (loop detected)")
+                    raise ValueError(
+                        "Category parent_id creates a circular reference (loop detected)"
+                    )
                 ancestor_ids.add(current_id)
                 parent = parent_lookup(current_id)
                 if parent is None:
@@ -87,13 +93,12 @@ class Category(Entity):
                 current_id = parent.parent_id
 
 
-
 class ProductImage(Entity):
     """Product image entity."""
 
     product_id: str
     url: str
-    alt_text: Optional[str] = None
+    alt_text: str | None = None
     sort_order: int = 0
     is_primary: bool = False
 
@@ -138,7 +143,7 @@ class Product(AggregateRoot):
 
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     sku: str
     price: Money
     status: ProductStatus = ProductStatus.DRAFT
@@ -149,17 +154,17 @@ class Product(AggregateRoot):
     dimensions: Optional[Dimensions] = None
 
     # Relationships (references/IDs)
-    category_ids: List[str] = Field(default_factory=list)
+    category_ids: list[str] = Field(default_factory=list)
 
     # Attributes and metadata
     attributes: Dict[str, Any] = Field(default_factory=dict)
-    tags: List[str] = Field(default_factory=list)
-    seo_title: Optional[str] = None
-    seo_description: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    seo_title: str | None = None
+    seo_description: str | None = None
 
     # Excluded from serialization
-    variants: List[ProductVariant] = Field(default_factory=list, exclude=True)
-    images: List[ProductImage] = Field(default_factory=list, exclude=True)
+    variants: list[ProductVariant] = Field(default_factory=list, exclude=True)
+    images: list[ProductImage] = Field(default_factory=list, exclude=True)
 
     def __init__(self, **data):
         """Initialize a product entity."""

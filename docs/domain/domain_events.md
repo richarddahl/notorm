@@ -52,7 +52,7 @@ class Order(AggregateRoot[UUID]):
     """Order aggregate root."""
     
     customer_id: UUID
-    items: List["OrderItem"] = []
+    items: list["OrderItem"] = []
     status: str = "draft"
     total_amount: float = 0.0
     
@@ -174,7 +174,7 @@ class Order(EventSourcedAggregate[UUID]):
     """Event-sourced Order aggregate."""
     
     customer_id: UUID = None
-    items: List[Dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
     status: str = "draft"
     total_amount: float = 0.0
     
@@ -257,7 +257,7 @@ await event_store.append_events([
 ])
 
 # Retrieve events for an aggregate
-events: List[Event] = await event_store.get_events_for_aggregate(order_id)
+events: list[Event] = await event_store.get_events_for_aggregate(order_id)
 
 # Rebuild aggregate from events
 order = Order()
@@ -309,7 +309,7 @@ class EventSubscriptionManager:
     
     def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
-        self.subscriptions: Dict[Type[Event], List[Callable]] = {}
+        self.subscriptions: Dict[Type[Event], list[Callable]] = {}
     
     def subscribe(self, event_type: Type[T], handler: Callable[[T], None]) -> None:
         """Subscribe to an event type."""
@@ -366,7 +366,7 @@ class OrderPlaced(Event):
     order_date: datetime
     total_amount: float
     shipping_address: Dict[str, str]
-    items: List[Dict[str, Any]]
+    items: list[dict[str, Any]]
 
 # Bad: Missing important context
 class OrderPlaced(Event):
@@ -715,7 +715,7 @@ class OrderShipped(Event):
 # Aggregate Root
 class Order(AggregateRoot[UUID]):
     customer_id: UUID
-    items: List[Dict[str, Any]] = []
+    items: list[dict[str, Any]] = []
     status: str = "draft"
     shipping_address: Optional[Dict[str, str]] = None
     payment_status: str = "pending"

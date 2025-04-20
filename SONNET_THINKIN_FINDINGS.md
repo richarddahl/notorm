@@ -35,8 +35,8 @@ class BaseValue(AggregateRoot[str]):
     This class contains common fields and validation for all value types.
     """
     name: str
-    group_id: Optional[str] = None
-    tenant_id: Optional[str] = None
+    group_id: str | None = None
+    tenant_id: str | None = None
     __uno_model__: ClassVar[str] = ""
 
     def validate(self) -> None:
@@ -73,12 +73,12 @@ class Event(BaseModel):
     occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     
     # Tracing and correlation
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None
+    correlation_id: str | None = None
+    causation_id: str | None = None
     
     # Domain context
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
+    aggregate_id: str | None = None
+    aggregate_type: str | None = None
     aggregate_version: Optional[int] = None
 ```
 
@@ -100,7 +100,7 @@ class ValueRepository(UnoBaseRepository, Generic[T, M], ValueRepositoryProtocol[
     """Generic repository for value operations."""
 
     async def get_by_id(
-        self, value_id: str, session: Optional[AsyncSession] = None
+        self, value_id: str, session: AsyncSession | None = None
     ) -> Result[Optional[T]]:
         """
         Get a value by ID.

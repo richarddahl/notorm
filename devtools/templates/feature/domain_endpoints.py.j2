@@ -61,7 +61,7 @@ class {{ feature_name|pascal_case }}ResponseDTO(BaseModel):
     
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     is_active: bool
@@ -84,7 +84,7 @@ class {{ feature_name|pascal_case }}ResponseDTO(BaseModel):
 class {{ feature_name|pascal_case }}ListResponseDTO(BaseModel):
     """Data Transfer Object for a list of {{ feature_name|pascal_case }}s."""
     
-    items: List[{{ feature_name|pascal_case }}ResponseDTO]
+    items: list[{{ feature_name|pascal_case }}ResponseDTO]
     total: int
     skip: int
     limit: int

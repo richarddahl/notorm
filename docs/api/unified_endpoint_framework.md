@@ -97,7 +97,7 @@ app = create_api(title="Product CQRS API", description="API for managing product
 # Create query and command handlers
 search_query = QueryHandler(
     service=search_service,
-    response_model=List[ProductSearchResult],
+    response_model=list[ProductSearchResult],
     query_model=ProductSearchQuery,
     path="/search",
     method="get",
@@ -175,7 +175,7 @@ class BaseEndpoint(Generic[RequestModel, ResponseModel, IdType]):
         self,
         *,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ):
         """Initialize a new endpoint instance."""
         self.router = router or APIRouter()
@@ -206,7 +206,7 @@ class CrudEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
         response_model: Type[ResponseModel],
         update_model: Optional[Type[RequestModel]] = None,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         path: str = "",
         id_field: str = "id",
     ):
@@ -253,10 +253,10 @@ class CqrsEndpoint(BaseEndpoint[RequestModel, ResponseModel, IdType]):
     def __init__(
         self,
         *,
-        queries: List[QueryHandler] = None,
-        commands: List[CommandHandler] = None,
+        queries: list[QueryHandler] = None,
+        commands: list[CommandHandler] = None,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         base_path: str = "",
     ):
         """Initialize a new CQRS endpoint instance."""
@@ -278,7 +278,7 @@ class EndpointFactory:
         response_model: Type[ResponseModel],
         update_model: Optional[Type[RequestModel]] = None,
         router: Optional[APIRouter] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         path: str = "",
         id_field: str = "id",
     ) -> CrudEndpoint[RequestModel, ResponseModel, IdType]:
@@ -295,10 +295,10 @@ class CrudEndpointFactory(Generic[RequestModel, ResponseModel, IdType]):
         service_factory: ServiceFactory,
         entity_name: str,
         schema: Type[BaseModel],
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         path_prefix: str = "/api",
-        exclude_fields: Optional[List[str]] = None,
-        readonly_fields: Optional[List[str]] = None,
+        exclude_fields: list[str] | None = None,
+        readonly_fields: list[str] | None = None,
     ) -> "CrudEndpointFactory":
         """Create a CrudEndpointFactory from a Pydantic schema."""
         # Implementation details...
@@ -324,7 +324,7 @@ class ErrorResponse(BaseModel):
 class PaginatedResponse(BaseModel, Generic[T]):
     """Standard response format for paginated data."""
     
-    data: List[T] = Field(..., description="List of items")
+    data: list[T] = Field(..., description="List of items")
     meta: PaginationMetadata = Field(..., description="Pagination metadata")
 ```
 
@@ -354,7 +354,7 @@ def setup_api(
     app: FastAPI,
     *,
     enable_cors: bool = True,
-    cors_origins: Optional[List[str]] = None,
+    cors_origins: list[str] | None = None,
     enable_error_handling: bool = True,
     enable_scoped_dependencies: bool = True,
 ) -> None:
@@ -367,7 +367,7 @@ def create_api(
     description: str = "API created with the UNO framework",
     version: str = "0.1.0",
     enable_cors: bool = True,
-    cors_origins: Optional[List[str]] = None,
+    cors_origins: list[str] | None = None,
     enable_error_handling: bool = True,
     enable_scoped_dependencies: bool = True,
     openapi_url: str = "/openapi.json",

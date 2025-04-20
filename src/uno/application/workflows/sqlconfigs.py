@@ -14,38 +14,39 @@ from uno.sql.statement import SQLStatement, SQLStatementType
 from uno.sql.emitters.graph import GraphSQLEmitter
 from uno.meta.models import MetaTypeModel, MetaRecordModel
 
+
 # Custom CreateTable emitter for workflows module
 class CreateTable(SQLEmitter):
     """Emitter for creating tables in the database."""
-    
+
     # Model is needed as a field for pydantic
     model: Any = None
     _table: Optional[Any] = None
-    
+
     def model_post_init(self, __context):
         """Called after pydantic initialization."""
         super().model_post_init(__context)
         if self.model:
             self._table = self.model.__table__
-            
+
     @property
     def table(self):
         return self._table
-        
-    def generate_sql(self) -> List[SQLStatement]:
+
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statement for creating the table.
-        
+
         Returns:
             List of SQL statements with metadata
         """
         if self.table is None:
             return []
-            
+
         # Use sqlalchemy's CreateTable DDL
         from sqlalchemy.schema import CreateTable as SQLACreateTable
-        
+
         create_table_sql = str(SQLACreateTable(self.table))
-        
+
         # Add statement to the list
         return [
             SQLStatement(
@@ -55,43 +56,44 @@ class CreateTable(SQLEmitter):
             )
         ]
 
+
 # Custom CreateIndex emitter for workflows module
 class CreateIndex(SQLEmitter):
     """Emitter for creating indexes in the database."""
-    
+
     # Fields for pydantic
     model: Any = None
     column_name: str = ""
     _table: Optional[Any] = None
-    
+
     def model_post_init(self, __context):
         """Called after pydantic initialization."""
         super().model_post_init(__context)
         if self.model:
             self._table = self.model.__table__
-            
+
     @property
     def table(self):
         return self._table
-        
-    def generate_sql(self) -> List[SQLStatement]:
+
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statement for creating the index.
-        
+
         Returns:
             List of SQL statements with metadata
         """
         if self.table is None:
             return []
-            
+
         # Generate index name
         index_name = f"idx_{self.table.name}_{self.column_name}"
-        
+
         # Generate create index SQL
         create_index_sql = f"""
         CREATE INDEX IF NOT EXISTS {index_name}
         ON {self.table.schema}.{self.table.name} ({self.column_name});
         """
-        
+
         # Add statement to the list
         return [
             SQLStatement(
@@ -100,38 +102,41 @@ class CreateIndex(SQLEmitter):
                 sql=create_index_sql,
             )
         ]
-        
+
+
 # Custom CreateEventTriggerFunction emitter for workflows module
 class CreateEventTriggerFunction(SQLEmitter):
     """Emitter for creating event trigger functions."""
-    
+
     # Fields for pydantic
     name: str = ""
     description: str = ""
-    parameters: List[Dict[str, Any]] = []
+    parameters: list[dict[str, Any]] = []
     returns: str = "void"
     volatility: str = "VOLATILE"
     sql: str = ""
-    
+
     @property
     def function_name(self):
         return self.name
-        
+
     @property
     def function_sql(self):
         return self.sql
-        
-    def generate_sql(self) -> List[SQLStatement]:
+
+    def generate_sql(self) -> list[SQLStatement]:
         """Generate SQL statement for creating the event trigger function.
-        
+
         Returns:
             List of SQL statements with metadata
         """
         # Format parameters
         params_str = ""
         if self.parameters:
-            params_str = ", ".join([f"{param['name']} {param['type']}" for param in self.parameters])
-            
+            params_str = ", ".join(
+                [f"{param['name']} {param['type']}" for param in self.parameters]
+            )
+
         # Generate complete function SQL
         function_sql = f"""
         -- {self.description}
@@ -143,7 +148,7 @@ class CreateEventTriggerFunction(SQLEmitter):
         {self.function_sql}
         $function$;
         """
-        
+
         # Add statement to the list
         return [
             SQLStatement(
@@ -152,6 +157,8 @@ class CreateEventTriggerFunction(SQLEmitter):
                 sql=function_sql,
             )
         ]
+
+
 from uno.workflows.models import (
     WorkflowDefinition,
     WorkflowTriggerModel,

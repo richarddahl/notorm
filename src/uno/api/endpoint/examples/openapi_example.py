@@ -11,7 +11,7 @@ from typing import List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from uno.core.errors.result import Error, Result, Success
+from uno.core.errors.result import Result, Success
 from uno.domain.entity.service import CrudService
 
 from uno.api.endpoint.openapi import OpenApiEnhancer, ResponseExample
@@ -28,7 +28,7 @@ from uno.api.endpoint.cqrs import CommandHandler, CqrsEndpoint, QueryHandler
 # Example models
 class ProductCreateDTO(BaseModel):
     """Data transfer object for creating a product."""
-    
+
     name: str = Field(..., description="The name of the product")
     description: str = Field(..., description="A description of the product")
     price: float = Field(..., gt=0, description="The price of the product")
@@ -37,7 +37,7 @@ class ProductCreateDTO(BaseModel):
 
 class ProductUpdateDTO(BaseModel):
     """Data transfer object for updating a product."""
-    
+
     name: Optional[str] = Field(None, description="The name of the product")
     description: Optional[str] = Field(None, description="A description of the product")
     price: Optional[float] = Field(None, gt=0, description="The price of the product")
@@ -46,7 +46,7 @@ class ProductUpdateDTO(BaseModel):
 
 class ProductResponseDTO(BaseModel):
     """Data transfer object for product responses."""
-    
+
     id: str = Field(..., description="The unique identifier of the product")
     name: str = Field(..., description="The name of the product")
     description: str = Field(..., description="A description of the product")
@@ -59,7 +59,7 @@ class ProductResponseDTO(BaseModel):
 # Example service implementation
 class ProductService(CrudService):
     """Example product service for demonstration purposes."""
-    
+
     async def create(self, data: ProductCreateDTO) -> Result[ProductResponseDTO]:
         """Create a new product."""
         # Simulated product creation
@@ -73,7 +73,7 @@ class ProductService(CrudService):
             updated_at="2025-04-18T12:00:00Z",
         )
         return Success(product)
-    
+
     async def get_by_id(self, id: str) -> Result[ProductResponseDTO]:
         """Get a product by ID."""
         # Simulated product retrieval
@@ -89,8 +89,8 @@ class ProductService(CrudService):
             )
             return Success(product)
         return Error("Product not found", code="NOT_FOUND")
-    
-    async def get_all(self) -> Result[List[ProductResponseDTO]]:
+
+    async def get_all(self) -> Result[list[ProductResponseDTO]]:
         """Get all products."""
         # Simulated product list
         products = [
@@ -105,8 +105,10 @@ class ProductService(CrudService):
             )
         ]
         return Success(products)
-    
-    async def update(self, id: str, data: ProductUpdateDTO) -> Result[ProductResponseDTO]:
+
+    async def update(
+        self, id: str, data: ProductUpdateDTO
+    ) -> Result[ProductResponseDTO]:
         """Update a product."""
         # Simulated product update
         if id == "123":
@@ -121,7 +123,7 @@ class ProductService(CrudService):
             )
             return Success(product)
         return Error("Product not found", code="NOT_FOUND")
-    
+
     async def delete(self, id: str) -> Result[None]:
         """Delete a product."""
         # Simulated product deletion
@@ -133,21 +135,23 @@ class ProductService(CrudService):
 # CQRS Models
 class GetProductsByCategoryQuery(BaseModel):
     """Query to get products by category."""
-    
+
     category: str = Field(..., description="The category to filter by")
 
 
 class CreateProductDiscountCommand(BaseModel):
     """Command to create a product discount."""
-    
+
     product_id: str = Field(..., description="The ID of the product")
-    discount_percentage: float = Field(..., gt=0, lt=100, description="The discount percentage")
+    discount_percentage: float = Field(
+        ..., gt=0, lt=100, description="The discount percentage"
+    )
     valid_until: str = Field(..., description="The expiration date of the discount")
 
 
 class DiscountResponseDTO(BaseModel):
     """Response DTO for discount creation."""
-    
+
     id: str = Field(..., description="The unique identifier of the discount")
     product_id: str = Field(..., description="The ID of the product")
     discount_percentage: float = Field(..., description="The discount percentage")
@@ -158,8 +162,10 @@ class DiscountResponseDTO(BaseModel):
 # Example CQRS handlers
 class GetProductsByCategoryHandler:
     """Handler for GetProductsByCategoryQuery."""
-    
-    async def execute(self, query: GetProductsByCategoryQuery) -> Result[List[ProductResponseDTO]]:
+
+    async def execute(
+        self, query: GetProductsByCategoryQuery
+    ) -> Result[list[ProductResponseDTO]]:
         """Execute the query."""
         # Simulated query execution
         products = [
@@ -178,8 +184,10 @@ class GetProductsByCategoryHandler:
 
 class CreateProductDiscountHandler:
     """Handler for CreateProductDiscountCommand."""
-    
-    async def execute(self, command: CreateProductDiscountCommand) -> Result[DiscountResponseDTO]:
+
+    async def execute(
+        self, command: CreateProductDiscountCommand
+    ) -> Result[DiscountResponseDTO]:
         """Execute the command."""
         # Simulated command execution
         discount = DiscountResponseDTO(
@@ -199,31 +207,37 @@ def create_app():
         description="An example API demonstrating OpenAPI documentation capabilities",
         version="1.0.0",
     )
-    
+
     # Initialize OpenAPI enhancer
     enhancer = OpenApiEnhancer(app)
-    
+
     # Configure JWT authentication
     enhancer.setup_jwt_auth(
         description="JWT token authentication for secure endpoints",
         scheme_name="BearerAuth",
     )
-    
+
     # Add tags with descriptions
     enhancer.add_tag(
         name="Products",
         description="Operations related to products",
-        external_docs={"url": "https://example.com/docs/products", "description": "Product documentation"},
+        external_docs={
+            "url": "https://example.com/docs/products",
+            "description": "Product documentation",
+        },
     )
     enhancer.add_tag(
         name="Discounts",
         description="Operations related to product discounts",
-        external_docs={"url": "https://example.com/docs/discounts", "description": "Discount documentation"},
+        external_docs={
+            "url": "https://example.com/docs/discounts",
+            "description": "Discount documentation",
+        },
     )
-    
+
     # Create a product service
     product_service = ProductService()
-    
+
     # Example 1: Documented CRUD endpoint
     product_endpoint = DocumentedCrudEndpoint(
         service=product_service,
@@ -259,12 +273,12 @@ def create_app():
             }
         },
     )
-    
+
     # Example 2: Documented CQRS endpoint
     # Create query and command handlers
     get_products_by_category_handler = GetProductsByCategoryHandler()
     create_product_discount_handler = CreateProductDiscountHandler()
-    
+
     # Create CQRS endpoint
     cqrs_endpoint = DocumentedCqrsEndpoint(
         queries=[
@@ -272,7 +286,7 @@ def create_app():
                 path="/products/by-category",
                 handler=get_products_by_category_handler.execute,
                 query_model=GetProductsByCategoryQuery,
-                response_model=List[ProductResponseDTO],
+                response_model=list[ProductResponseDTO],
                 name="GetProductsByCategory",
             ),
         ],
@@ -319,7 +333,7 @@ def create_app():
             },
         },
     )
-    
+
     # Example 3: Documented filterable CRUD endpoint
     filterable_product_endpoint = DocumentedFilterableCrudEndpoint(
         service=product_service,
@@ -333,12 +347,12 @@ def create_app():
         filter_fields=["name", "category", "price"],
         use_graph_backend=True,  # Demonstrate Apache AGE integration
     )
-    
+
     # Register all endpoints with the application
     product_endpoint.register(app)
     cqrs_endpoint.register(app)
     filterable_product_endpoint.register(app)
-    
+
     # Manually add some additional OpenAPI documentation
     enhancer.document_operation(
         "/products",
@@ -367,13 +381,13 @@ def create_app():
             ),
         },
     )
-    
+
     return app
 
 
 # For testing purposes
 if __name__ == "__main__":
     import uvicorn
-    
+
     app = create_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)

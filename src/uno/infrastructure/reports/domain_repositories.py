@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional, Sequence, TypeVar, cast
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.respository import UnoDBRepository
 from uno.reports.entities import (
     ReportFieldDefinition,
@@ -17,7 +17,9 @@ from uno.reports.entities import (
 class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
     """Repository for report field definition entities."""
 
-    async def find_by_name(self, name: str) -> Result[ReportFieldDefinition | None, Exception]:
+    async def find_by_name(
+        self, name: str
+    ) -> Result[ReportFieldDefinition | None, Exception]:
         """Find a field definition by name.
 
         Args:
@@ -33,8 +35,9 @@ class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
         except Exception as e:
             return Failure(e)
 
-
-    async def find_by_field_type(self, field_type: str) -> Result[list[ReportFieldDefinition], Exception]:
+    async def find_by_field_type(
+        self, field_type: str
+    ) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by field type.
 
         Args:
@@ -49,7 +52,6 @@ class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
             return Success(results)
         except Exception as e:
             return Failure(e)
-
 
     async def find_by_parent_field_id(
         self, parent_field_id: str
@@ -68,7 +70,6 @@ class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
             return Success(results)
         except Exception as e:
             return Failure(e)
-
 
     async def find_by_template_id(
         self, template_id: str
@@ -95,7 +96,6 @@ class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
             return Failure(e)
 
 
-
 class ReportTemplateRepository(UnoDBRepository[ReportTemplate]):
     """Repository for report template entities."""
 
@@ -115,7 +115,6 @@ class ReportTemplateRepository(UnoDBRepository[ReportTemplate]):
         except Exception as e:
             return Failure(e)
 
-
     async def find_by_base_object_type(
         self, base_object_type: str
     ) -> Result[list[ReportTemplate], Exception]:
@@ -133,7 +132,6 @@ class ReportTemplateRepository(UnoDBRepository[ReportTemplate]):
             return Success(results)
         except Exception as e:
             return Failure(e)
-
 
     async def find_with_relationships(self, template_id: str) -> Result[ReportTemplate]:
         """Find a template with all relationships loaded.
@@ -159,7 +157,7 @@ class ReportTemplateRepository(UnoDBRepository[ReportTemplate]):
 class ReportTriggerRepository(UnoDBRepository[ReportTrigger]):
     """Repository for report trigger entities."""
 
-    async def find_by_template_id(self, template_id: str) -> List[ReportTrigger]:
+    async def find_by_template_id(self, template_id: str) -> list[ReportTrigger]:
         """Find triggers by template ID.
 
         Args:
@@ -171,7 +169,7 @@ class ReportTriggerRepository(UnoDBRepository[ReportTrigger]):
         filters = {"report_template_id": {"lookup": "eq", "val": template_id}}
         return await self.list(filters=filters)
 
-    async def find_by_trigger_type(self, trigger_type: str) -> List[ReportTrigger]:
+    async def find_by_trigger_type(self, trigger_type: str) -> list[ReportTrigger]:
         """Find triggers by trigger type.
 
         Args:
@@ -183,7 +181,7 @@ class ReportTriggerRepository(UnoDBRepository[ReportTrigger]):
         filters = {"trigger_type": {"lookup": "eq", "val": trigger_type}}
         return await self.list(filters=filters)
 
-    async def find_active_triggers(self) -> List[ReportTrigger]:
+    async def find_active_triggers(self) -> list[ReportTrigger]:
         """Find all active triggers.
 
         Returns:
@@ -192,7 +190,7 @@ class ReportTriggerRepository(UnoDBRepository[ReportTrigger]):
         filters = {"is_active": {"lookup": "eq", "val": True}}
         return await self.list(filters=filters)
 
-    async def find_active_scheduled_triggers(self) -> List[ReportTrigger]:
+    async def find_active_scheduled_triggers(self) -> list[ReportTrigger]:
         """Find active scheduled triggers.
 
         Returns:
@@ -208,7 +206,7 @@ class ReportTriggerRepository(UnoDBRepository[ReportTrigger]):
 class ReportOutputRepository(UnoDBRepository[ReportOutput]):
     """Repository for report output entities."""
 
-    async def find_by_template_id(self, template_id: str) -> List[ReportOutput]:
+    async def find_by_template_id(self, template_id: str) -> list[ReportOutput]:
         """Find outputs by template ID.
 
         Args:
@@ -220,7 +218,7 @@ class ReportOutputRepository(UnoDBRepository[ReportOutput]):
         filters = {"report_template_id": {"lookup": "eq", "val": template_id}}
         return await self.list(filters=filters)
 
-    async def find_by_output_type(self, output_type: str) -> List[ReportOutput]:
+    async def find_by_output_type(self, output_type: str) -> list[ReportOutput]:
         """Find outputs by output type.
 
         Args:
@@ -232,7 +230,7 @@ class ReportOutputRepository(UnoDBRepository[ReportOutput]):
         filters = {"output_type": {"lookup": "eq", "val": output_type}}
         return await self.list(filters=filters)
 
-    async def find_active_outputs(self) -> List[ReportOutput]:
+    async def find_active_outputs(self) -> list[ReportOutput]:
         """Find all active outputs.
 
         Returns:
@@ -245,7 +243,9 @@ class ReportOutputRepository(UnoDBRepository[ReportOutput]):
 class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
     """Repository for report execution entities."""
 
-    async def find_by_template_id(self, template_id: str) -> Result[list[ReportExecution], Exception]:
+    async def find_by_template_id(
+        self, template_id: str
+    ) -> Result[list[ReportExecution], Exception]:
         """Find executions by template ID.
 
         Args:
@@ -261,8 +261,9 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
         except Exception as e:
             return Failure(e)
 
-
-    async def find_by_status(self, status: str) -> Result[list[ReportExecution], Exception]:
+    async def find_by_status(
+        self, status: str
+    ) -> Result[list[ReportExecution], Exception]:
         """Find executions by status.
 
         Args:
@@ -278,8 +279,9 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
         except Exception as e:
             return Failure(e)
 
-
-    async def find_by_triggered_by(self, triggered_by: str) -> Result[list[ReportExecution], Exception]:
+    async def find_by_triggered_by(
+        self, triggered_by: str
+    ) -> Result[list[ReportExecution], Exception]:
         """Find executions by triggered by.
 
         Args:
@@ -294,7 +296,6 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
             return Success(results)
         except Exception as e:
             return Failure(e)
-
 
     async def find_with_output_executions(
         self, execution_id: str
@@ -318,7 +319,9 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
         except Exception as e:
             return Failure(str(e))
 
-    async def find_recent_executions(self, limit: int = 10) -> Result[list[ReportExecution], Exception]:
+    async def find_recent_executions(
+        self, limit: int = 10
+    ) -> Result[list[ReportExecution], Exception]:
         """Find recent executions.
 
         Args:
@@ -328,11 +331,12 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
             Result containing a list of recent executions, or Failure on error.
         """
         try:
-            results = await self.list(order_by="started_at", order_dir="desc", limit=limit)
+            results = await self.list(
+                order_by="started_at", order_dir="desc", limit=limit
+            )
             return Success(results)
         except Exception as e:
             return Failure(e)
-
 
 
 class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
@@ -356,8 +360,9 @@ class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
         except Exception as e:
             return Failure(e)
 
-
-    async def find_by_output_id(self, output_id: str) -> Result[list[ReportOutputExecution], Exception]:
+    async def find_by_output_id(
+        self, output_id: str
+    ) -> Result[list[ReportOutputExecution], Exception]:
         """Find output executions by output ID.
 
         Args:
@@ -373,8 +378,9 @@ class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
         except Exception as e:
             return Failure(e)
 
-
-    async def find_by_status(self, status: str) -> Result[list[ReportOutputExecution], Exception]:
+    async def find_by_status(
+        self, status: str
+    ) -> Result[list[ReportOutputExecution], Exception]:
         """Find output executions by status.
 
         Args:
@@ -389,4 +395,3 @@ class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
             return Success(results)
         except Exception as e:
             return Failure(e)
-

@@ -11,7 +11,7 @@ from fastapi import HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, create_model
 
-from uno.core.errors.result import Error, Result, Success
+from uno.core.errors.result import Result, Success
 
 __all__ = [
     "PaginatedResponse",
@@ -26,7 +26,7 @@ T = TypeVar("T")
 
 class PaginationMetadata(BaseModel):
     """Metadata for paginated responses."""
-    
+
     page: int = Field(..., description="Current page number")
     page_size: int = Field(..., description="Number of items per page")
     total_items: int = Field(..., description="Total number of items")
@@ -37,53 +37,57 @@ class PaginationMetadata(BaseModel):
 
 class ErrorDetail(BaseModel):
     """Details for an error response."""
-    
+
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
     field: Optional[str] = Field(None, description="Field associated with the error")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
+    details: Optional[Dict[str, Any]] = Field(
+        None, description="Additional error details"
+    )
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Standard response format for paginated data."""
-    
-    data: List[T] = Field(..., description="List of items")
+
+    data: list[T] = Field(..., description="List of items")
     meta: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class DataResponse(BaseModel, Generic[T]):
     """Standard response format for data."""
-    
+
     data: T = Field(..., description="Response data")
     meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
 
 
 class ErrorResponse(BaseModel):
     """Standard response format for errors."""
-    
+
     error: ErrorDetail = Field(..., description="Error details")
     meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
 
 
-def response_handler(result: Result[T], status_code: int = status.HTTP_200_OK) -> JSONResponse:
+def response_handler(
+    result: Result[T], status_code: int = status.HTTP_200_OK
+) -> JSONResponse:
     """
     Handle a Result object and return a standardized API response.
-    
+
     Args:
         result: The Result object to handle.
         status_code: The HTTP status code to use for successful responses.
-        
+
     Returns:
         A standardized JSONResponse.
     """
     if isinstance(result, Success):
         response = DataResponse(data=result.value)
         return JSONResponse(content=response.dict(), status_code=status_code)
-    
+
     # Handle specific error types
     error = result.error
     error_status_code = status.HTTP_400_BAD_REQUEST
-    
+
     # Map domain errors to HTTP status codes
     if hasattr(error, "status_code"):
         error_status_code = error.status_code
@@ -97,7 +101,7 @@ def response_handler(result: Result[T], status_code: int = status.HTTP_200_OK) -
             error_status_code = status.HTTP_403_FORBIDDEN
         elif error_code.startswith("CONFLICT"):
             error_status_code = status.HTTP_409_CONFLICT
-    
+
     # Create error detail
     error_detail = ErrorDetail(
         code=getattr(error, "code", "ERROR"),
@@ -105,14 +109,14 @@ def response_handler(result: Result[T], status_code: int = status.HTTP_200_OK) -
         field=getattr(error, "field", None),
         details=getattr(error, "details", None),
     )
-    
+
     # Create error response
     response = ErrorResponse(error=error_detail)
     return JSONResponse(content=response.dict(), status_code=error_status_code)
 
 
 def paginated_response(
-    items: List[T],
+    items: list[T],
     page: int,
     page_size: int,
     total_items: int,
@@ -120,14 +124,14 @@ def paginated_response(
 ) -> JSONResponse:
     """
     Create a standardized paginated response.
-    
+
     Args:
         items: The list of items for the current page.
         page: The current page number.
         page_size: The number of items per page.
         total_items: The total number of items.
         status_code: The HTTP status code to use for the response.
-        
+
     Returns:
         A standardized JSONResponse with pagination metadata.
     """
@@ -135,7 +139,7 @@ def paginated_response(
     total_pages = (total_items + page_size - 1) // page_size
     has_next = page < total_pages
     has_previous = page > 1
-    
+
     # Create pagination metadata
     meta = PaginationMetadata(
         page=page,
@@ -145,7 +149,7 @@ def paginated_response(
         has_next=has_next,
         has_previous=has_previous,
     )
-    
+
     # Create paginated response
     response = PaginatedResponse(data=items, meta=meta)
     return JSONResponse(content=response.dict(), status_code=status_code)

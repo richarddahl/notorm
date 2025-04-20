@@ -78,7 +78,7 @@ class EnhancedBaseError(BaseError):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         status_code: int = 500,
         detail: Optional[Dict[str, Any]] = None,
         context: Optional[Dict[str, Any]] = None,
@@ -106,7 +106,7 @@ class EnhancedBaseError(BaseError):
         # Add stack trace
         self.context["stack_trace"] = self._get_simplified_traceback()
 
-    def _get_simplified_traceback(self) -> List[Dict[str, Any]]:
+    def _get_simplified_traceback(self) -> list[dict[str, Any]]:
         """Get a simplified traceback for debugging.
 
         Returns:
@@ -133,7 +133,7 @@ class ErrorEnhancer:
 
     def __init__(self):
         """Initialize the error enhancer."""
-        self.error_hooks: List[Callable[[Exception], Optional[Exception]]] = []
+        self.error_hooks: list[Callable[[Exception], Optional[Exception]]] = []
 
     def register_hook(self, hook: Callable[[Exception], Optional[Exception]]) -> None:
         """Register an error hook.

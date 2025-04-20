@@ -33,7 +33,7 @@ import math
 
 import inject
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.core.base.error import BaseError
 from uno.workflows.errors import (
     WorkflowErrorCode,
@@ -139,7 +139,7 @@ class FieldValueEvaluator:
     """Evaluator for field value conditions."""
 
     @inject.params(logger=logging.Logger)
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
 
     async def evaluate(
@@ -262,7 +262,7 @@ class TimeBasedEvaluator:
     """Evaluator for time-based conditions."""
 
     @inject.params(logger=logging.Logger)
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
         # Default business hours
         self.business_hours = {
@@ -474,7 +474,7 @@ class RoleBasedEvaluator:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
@@ -565,7 +565,7 @@ class RoleBasedEvaluator:
                 ConditionError(f"Error evaluating role-based condition: {str(e)}")
             )
 
-    async def _get_user_roles(self, user_id: str) -> List[str]:
+    async def _get_user_roles(self, user_id: str) -> list[str]:
         """Get the roles assigned to a user."""
         try:
             if not self.db_manager:
@@ -633,7 +633,7 @@ class QueryMatchEvaluator:
     def __init__(
         self,
         db_manager: Optional[DBManager] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.db_manager = db_manager
         self.logger = logger or logging.getLogger(__name__)
@@ -710,7 +710,7 @@ class CustomEvaluator:
     @inject.params(logger=logging.Logger)
     def __init__(
         self,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
         custom_evaluators: Dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
@@ -776,7 +776,7 @@ class CompositeEvaluator:
     def __init__(
         self,
         condition_evaluators: Dict[WorkflowConditionType, ConditionEvaluator] = None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         self.condition_evaluators = condition_evaluators or {}

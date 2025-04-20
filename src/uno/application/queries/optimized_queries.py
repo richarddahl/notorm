@@ -78,10 +78,10 @@ class QueryHints:
         custom_hints: Additional custom hints
     """
 
-    use_index: Optional[str] = None
+    use_index: str | None = None
     parallel_workers: Optional[int] = None
     enable_seqscan: Optional[bool] = None
-    work_mem: Optional[str] = None
+    work_mem: str | None = None
     use_nestloop: Optional[bool] = None
     use_hashjoin: Optional[bool] = None
     use_mergejoin: Optional[bool] = None
@@ -143,10 +143,10 @@ class OptimizedQuery:
 
     def __init__(
         self,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         use_cache: bool = False,
         cache_ttl: Optional[float] = 60.0,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the optimized query.
@@ -164,7 +164,7 @@ class OptimizedQuery:
 
         # Query tracking
         self._query_count = 0
-        self._query_times: List[float] = []
+        self._query_times: list[float] = []
 
     async def execute(
         self,
@@ -285,10 +285,10 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     def __init__(
         self,
         model_class: Type[T],
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
         use_cache: bool = False,
         cache_ttl: Optional[float] = 60.0,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the optimized model query.
@@ -312,14 +312,14 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_select(
         self,
-        columns: Optional[List[Column]] = None,
-        where: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
-        order_by: Optional[List[Any]] = None,
+        columns: Optional[list[Column]] = None,
+        where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
+        order_by: Optional[list[Any]] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-        joins: Optional[List[Tuple[Table, BinaryExpression]]] = None,
-        group_by: Optional[List[Column]] = None,
-        having: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
+        joins: Optional[list[Tuple[Table, BinaryExpression]]] = None,
+        group_by: Optional[list[Column]] = None,
+        having: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
         distinct: bool = False,
         hints: Optional[QueryHints] = None,
         for_update: bool = False,
@@ -406,7 +406,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     def build_insert(
         self,
         values: Dict[str, Any],
-        returning: Optional[List[Column]] = None,
+        returning: Optional[list[Column]] = None,
     ) -> Insert:
         """
         Build an INSERT query.
@@ -430,8 +430,8 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     def build_update(
         self,
         values: Dict[str, Any],
-        where: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
-        returning: Optional[List[Column]] = None,
+        where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
+        returning: Optional[list[Column]] = None,
     ) -> Update:
         """
         Build an UPDATE query.
@@ -462,8 +462,8 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_delete(
         self,
-        where: Optional[Union[BinaryExpression, List[BinaryExpression]]] = None,
-        returning: Optional[List[Column]] = None,
+        where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
+        returning: Optional[list[Column]] = None,
     ) -> Delete:
         """
         Build a DELETE query.
@@ -494,9 +494,9 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     def build_upsert(
         self,
         values: Dict[str, Any],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
-        returning: Optional[List[Column]] = None,
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
+        returning: Optional[list[Column]] = None,
     ) -> TextClause:
         """
         Build an UPSERT query (INSERT ... ON CONFLICT).
@@ -549,8 +549,8 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_bulk_insert(
         self,
-        values: List[Dict[str, Any]],
-        returning: Optional[List[Column]] = None,
+        values: list[dict[str, Any]],
+        returning: Optional[list[Column]] = None,
     ) -> Insert:
         """
         Build a bulk INSERT query.
@@ -573,10 +573,10 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_bulk_upsert(
         self,
-        values: List[Dict[str, Any]],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
-        returning: Optional[List[Column]] = None,
+        values: list[dict[str, Any]],
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
+        returning: Optional[list[Column]] = None,
     ) -> Any:
         """
         Build a bulk UPSERT query.
@@ -781,7 +781,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_case_expression(
         self,
-        conditions: List[Tuple[BinaryExpression, Any]],
+        conditions: list[Tuple[BinaryExpression, Any]],
         else_value: Any = None,
     ) -> case:
         """
@@ -849,10 +849,10 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def get_by_ids(
         self,
-        id_values: List[Any],
+        id_values: list[Any],
         id_column: Optional[Column] = None,
         use_cache: Optional[bool] = None,
-    ) -> List[T]:
+    ) -> list[T]:
         """
         Get models by IDs.
 
@@ -930,9 +930,9 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     async def update(
         self,
         values: Dict[str, Any],
-        where: Union[BinaryExpression, List[BinaryExpression]],
+        where: Union[BinaryExpression, list[BinaryExpression]],
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Update models.
 
@@ -971,9 +971,9 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def delete(
         self,
-        where: Union[BinaryExpression, List[BinaryExpression]],
+        where: Union[BinaryExpression, list[BinaryExpression]],
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Delete models.
 
@@ -1010,8 +1010,8 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
     async def upsert(
         self,
         values: Dict[str, Any],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
         return_model: bool = True,
     ) -> Optional[T]:
         """
@@ -1063,9 +1063,9 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def bulk_insert(
         self,
-        values: List[Dict[str, Any]],
+        values: list[dict[str, Any]],
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Bulk insert models.
 
@@ -1105,11 +1105,11 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def bulk_upsert(
         self,
-        values: List[Dict[str, Any]],
-        constraint_columns: List[str],
-        update_columns: Optional[List[str]] = None,
+        values: list[dict[str, Any]],
+        constraint_columns: list[str],
+        update_columns: list[str] | None = None,
         return_models: bool = False,
-    ) -> Union[int, List[T]]:
+    ) -> Union[int, list[T]]:
         """
         Bulk upsert models.
 

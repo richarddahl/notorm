@@ -165,16 +165,16 @@ class DTOManager:
 
         # Create the list DTO using the PaginatedListDTO generic
         list_dto_name = f"{model.__name__}ListDTO"
-        
+
         # Create a specialized list DTO as a subclass of PaginatedListDTO
         item_type = base_dto
-        
+
         # Create a proper generic PaginatedListDTO class
         list_dto = create_model(
             list_dto_name,
             __base__=PaginatedListDTO[item_type],
         )
-        
+
         # Cast to ensure the type system recognizes it correctly
         typed_list_dto = cast(Type[PaginatedListDTO[T]], list_dto)
 
@@ -205,9 +205,7 @@ class DTOManager:
             fields[column.name] = (python_type, None if column.nullable else ...)
 
         # Create a new Pydantic model based on the SQLAlchemy model
-        dto = create_model(
-            f"{model.__name__}DTO", __base__=BaseDTO, **fields
-        )
+        dto = create_model(f"{model.__name__}DTO", __base__=BaseDTO, **fields)
 
         return cast(Type[BaseDTO], dto)
 
@@ -236,7 +234,7 @@ class DTOManager:
                 elif column_python_type == dict:
                     python_type = Dict[str, Any]
                 elif column_python_type == list:
-                    python_type = List[Any]
+                    python_type = list[Any]
         except (AttributeError, TypeError):
             # Fall back to string if we can't determine the type
             python_type = str

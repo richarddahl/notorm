@@ -155,7 +155,7 @@ class Order(AggregateRoot[UUID]):
     """Order aggregate root that raises domain events."""
     
     customer_id: UUID
-    items: List["OrderItem"] = []
+    items: list["OrderItem"] = []
     status: str = "created"
     
     def place(self) -> None:
@@ -197,7 +197,7 @@ class Order(AggregateRoot[UUID]):
     # State properties
     customer_id: UUID
     status: str = "created"
-    items: List[OrderItem] = []
+    items: list[OrderItem] = []
     
     @classmethod
     def create(cls, customer_id: UUID) -> "Order":
@@ -237,7 +237,7 @@ class Order(AggregateRoot[UUID]):
         ))
     
     @classmethod
-    def from_events(cls, id: UUID, events: List[Event]) -> "Order":
+    def from_events(cls, id: UUID, events: list[Event]) -> "Order":
         """Reconstruct an order from its history of events."""
         order = cls(id=id)
         
@@ -282,7 +282,7 @@ class OrderCommandService:
         self.event_store = event_store
         self.unit_of_work = unit_of_work
     
-    async def place_order(self, customer_id: UUID, items: List[dict]) -> UUID:
+    async def place_order(self, customer_id: UUID, items: list[dict]) -> UUID:
         """Place a new order (command)."""
         async with self.unit_of_work:
             # Create order
@@ -432,7 +432,7 @@ class OrderService:
     def __init__(self, unit_of_work: UnitOfWork):
         self.unit_of_work = unit_of_work
     
-    async def place_order(self, customer_id: UUID, items: List[dict]) -> Order:
+    async def place_order(self, customer_id: UUID, items: list[dict]) -> Order:
         """Place an order with transaction and event publishing."""
         async with self.unit_of_work:
             # Get repositories

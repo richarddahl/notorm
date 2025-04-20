@@ -62,7 +62,7 @@ class CacheMonitor:
         }
 
         # Cache events (rolling window)
-        self.events: List[CacheEvent] = []
+        self.events: list[CacheEvent] = []
         self._max_events = self.config.get("max_events", 1000)  # Default to 1000 events
         self._lock = threading.RLock()
 
@@ -649,7 +649,7 @@ class CacheMonitor:
             time.sleep(15)
 
 
-def percentile(values: List[float], p: float) -> float:
+def percentile(values: list[float], p: float) -> float:
     """Calculate the p-th percentile of a list of values.
 
     Args:

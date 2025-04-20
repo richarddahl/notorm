@@ -27,10 +27,10 @@ Key components:
 
 # Domain entities (DDD)
 # Domain API integration
-from uno.values.domain_api_integration import register_domain_value_endpoints_api
+from .domain_api_integration import register_domain_value_endpoints_api
 
 # Domain repositories (DDD)
-from uno.values.domain_repositories import (
+from uno.domain.repositories import (
     AttachmentRepository,
     BooleanValueRepository,
     DateTimeValueRepository,
@@ -43,7 +43,7 @@ from uno.values.domain_repositories import (
 )
 
 # Domain services (DDD)
-from uno.values.domain_services import (
+from uno.domain.domain_services import (
     AttachmentService,
     BooleanValueService,
     DateTimeValueService,

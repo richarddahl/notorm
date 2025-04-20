@@ -105,7 +105,7 @@ class ContactInfo(ValueObject):
     """Represents contact information with address and phone numbers."""
     
     primary_address: Address
-    phone_numbers: List[PhoneNumber] = []
+    phone_numbers: list[PhoneNumber] = []
     email: str
     
     @field_validator('email')
@@ -170,7 +170,7 @@ class LineItem(ValueObject):
 class OrderItems(ValueObject):
     """A collection of order items with business methods."""
     
-    items: List[LineItem] = []
+    items: list[LineItem] = []
     
     def add_item(self, item: LineItem) -> "OrderItems":
         """Add an item to the collection."""
@@ -235,7 +235,7 @@ class DateRange(ValueObject):
         """Calculate the length of the date range in days."""
         return (self.end_date - self.start_date).days + 1
     
-    def as_list(self) -> List[date]:
+    def as_list(self) -> list[date]:
         """Return all dates in this range as a list."""
         days = self.length_in_days()
         return [self.start_date + timedelta(days=i) for i in range(days)]
@@ -382,7 +382,7 @@ Here's how value objects might be used in an e-commerce application:
 # Value objects
 class ProductCategory(ValueObject):
     name: str
-    parent_category: Optional[str] = None
+    parent_category: str | None = None
 
 class Price(ValueObject):
     amount: Decimal

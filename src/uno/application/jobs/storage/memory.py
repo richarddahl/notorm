@@ -25,12 +25,14 @@ from uno.core.asynchronous import AsyncLock
 
 class LockAcquisitionError(Exception):
     """Exception raised when a lock cannot be acquired."""
+
     pass
 
 
 @dataclass(order=True)
 class PrioritizedJob:
     """Job with priority for the priority queue."""
+
     priority: int
     created_at: datetime
     job_id: str = field(compare=False)
@@ -38,54 +40,54 @@ class PrioritizedJob:
 
 class InMemoryStorage(Storage):
     """In-memory implementation of the Storage interface.
-    
+
     This implementation stores all data in memory and is intended for
     development and testing purposes only. It provides all the functionality
     of the Storage interface but does not persist data across restarts.
     """
-    
-    def __init__(self, logger: Optional[logging.Logger] = None):
+
+    def __init__(self, logger: logging.Logger | None = None):
         """Initialize in-memory storage.
-        
+
         Args:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger("uno.jobs.storage.memory")
-        
+
         # Main storage dictionaries
         self.jobs: Dict[str, Job] = {}
-        self.queues: Dict[str, List[PrioritizedJob]] = {}
+        self.queues: Dict[str, list[PrioritizedJob]] = {}
         self.queue_pause_status: Dict[str, bool] = {}
         self.schedules: Dict[str, Dict[str, Any]] = {}
-        
+
         # Locks for concurrency control
         self.jobs_lock = AsyncLock()
         self.queues_lock = AsyncLock()
         self.schedules_lock = AsyncLock()
-        
+
         # Distributed locks
         self.locks: Dict[str, Dict[str, Any]] = {}
         self.locks_lock = AsyncLock()
-        
+
         # Initialization flag
         self.initialized = False
-    
+
     async def initialize(self) -> None:
         """Initialize the storage backend."""
         if not self.initialized:
             self.logger.info("Initializing in-memory storage")
             self.initialized = True
-    
+
     async def shutdown(self) -> None:
         """Shut down the storage backend."""
         self.logger.info("Shutting down in-memory storage")
-    
+
     async def create_job(self, job: Job) -> str:
         """Create a new job record.
-        
+
         Args:
             job: The job to create
-            
+
         Returns:
             The ID of the created job
         """
@@ -93,13 +95,13 @@ class InMemoryStorage(Storage):
             # Store a deep copy to prevent external modifications
             self.jobs[job.id] = copy.deepcopy(job)
             return job.id
-    
+
     async def get_job(self, job_id: str) -> Optional[Job]:
         """Get a job by ID.
-        
+
         Args:
             job_id: The ID of the job to get
-            
+
         Returns:
             The job if found, None otherwise
         """
@@ -109,13 +111,13 @@ class InMemoryStorage(Storage):
                 # Return a deep copy to prevent external modifications
                 return copy.deepcopy(job)
             return None
-    
+
     async def update_job(self, job: Job) -> bool:
         """Update a job.
-        
+
         Args:
             job: The job to update
-            
+
         Returns:
             True if the job was updated, False otherwise
         """
@@ -125,20 +127,20 @@ class InMemoryStorage(Storage):
                 self.jobs[job.id] = copy.deepcopy(job)
                 return True
             return False
-    
+
     async def delete_job(self, job_id: str) -> bool:
         """Delete a job.
-        
+
         Args:
             job_id: The ID of the job to delete
-            
+
         Returns:
             True if the job was deleted, False otherwise
         """
         async with self.jobs_lock:
             if job_id in self.jobs:
                 del self.jobs[job_id]
-                
+
                 # Also remove from queues if present
                 async with self.queues_lock:
                     for queue_name, queue in self.queues.items():
@@ -147,125 +149,125 @@ class InMemoryStorage(Storage):
                         if len(new_queue) != len(queue):
                             self.queues[queue_name] = new_queue
                             heapq.heapify(self.queues[queue_name])
-                
+
                 return True
             return False
-    
+
     async def enqueue(self, queue_name: str, job: Job) -> str:
         """Add a job to a queue.
-        
+
         Args:
             queue_name: The name of the queue
             job: The job to enqueue
-            
+
         Returns:
             The ID of the enqueued job
         """
         # First, create or update the job
         job_copy = copy.deepcopy(job)
         job_copy.queue = queue_name
-        
+
         async with self.jobs_lock:
             self.jobs[job_copy.id] = job_copy
-        
+
         # Then, add it to the queue
         async with self.queues_lock:
             if queue_name not in self.queues:
                 self.queues[queue_name] = []
-            
+
             # Create a prioritized job entry
             pjob = PrioritizedJob(
                 priority=job_copy.priority.value,
                 created_at=job_copy.created_at,
                 job_id=job_copy.id,
             )
-            
+
             # Add to the priority queue
             heapq.heappush(self.queues[queue_name], pjob)
-        
+
         return job_copy.id
-    
+
     async def dequeue(
-        self, 
-        queue_name: str, 
+        self,
+        queue_name: str,
         worker_id: str,
-        priority_levels: Optional[List[Priority]] = None,
-        batch_size: int = 1
-    ) -> List[Job]:
+        priority_levels: Optional[list[Priority]] = None,
+        batch_size: int = 1,
+    ) -> list[Job]:
         """Get the next job(s) from a queue.
-        
+
         Args:
             queue_name: The name of the queue
             worker_id: The ID of the worker
             priority_levels: Optional list of priority levels to consider
             batch_size: Maximum number of jobs to dequeue
-            
+
         Returns:
             List of jobs (may be empty if queue is empty)
         """
-        dequeued_jobs: List[Job] = []
-        
+        dequeued_jobs: list[Job] = []
+
         # Check if queue is paused
         is_paused = await self.is_queue_paused(queue_name)
         if is_paused:
             return dequeued_jobs
-        
+
         # Convert priority levels to values if provided
         priority_values: Optional[Set[int]] = None
         if priority_levels:
             priority_values = {p.value for p in priority_levels}
-        
+
         async with self.queues_lock:
             if queue_name not in self.queues or not self.queues[queue_name]:
                 return dequeued_jobs
-            
+
             # Create a copy of the queue for processing
             queue = self.queues[queue_name].copy()
-            
+
             # Pop jobs until we have the requested batch size or the queue is empty
             while queue and len(dequeued_jobs) < batch_size:
                 # Peek at the top job
                 top_job_id = queue[0].job_id
-                
+
                 async with self.jobs_lock:
                     job = self.jobs.get(top_job_id)
-                
+
                 # If job doesn't exist or is not pending, skip it
                 if not job or job.status != JobStatus.PENDING:
                     heapq.heappop(queue)  # Remove from queue
                     continue
-                
+
                 # Skip jobs that aren't due yet
                 if job.scheduled_for and job.scheduled_for > datetime.now(datetime.UTC):
                     heapq.heappop(queue)  # Remove from queue for now
                     continue
-                
+
                 # Skip jobs with priority levels not in the requested set
                 if priority_values and job.priority.value not in priority_values:
                     heapq.heappop(queue)  # Remove from queue
                     continue
-                
+
                 # Pop the job from the queue
                 heapq.heappop(queue)
-                
+
                 # Mark job as reserved
                 job.mark_reserved(worker_id)
-                
+
                 # Add to dequeued jobs
                 dequeued_jobs.append(copy.deepcopy(job))
-            
+
             # Update the actual queue
             self.queues[queue_name] = queue
-        
+
         return dequeued_jobs
-    
+
     async def complete_job(self, job_id: str, result: Any = None) -> bool:
         """Mark a job as completed.
-        
+
         Args:
             job_id: The ID of the job
             result: Optional result data
-            
+
         Returns:
             True if the job was marked as completed, False otherwise
         """
@@ -275,92 +277,91 @@ class InMemoryStorage(Storage):
                 job.mark_completed(result)
                 return True
             return False
-    
+
     async def fail_job(
-        self, 
-        job_id: str, 
-        error: Dict[str, Any],
-        retry: bool = False
+        self, job_id: str, error: Dict[str, Any], retry: bool = False
     ) -> bool:
         """Mark a job as failed.
-        
+
         Args:
             job_id: The ID of the job
             error: Error information
             retry: Whether to retry the job
-            
+
         Returns:
             True if the job was marked as failed, False otherwise
         """
         async with self.jobs_lock:
             if job_id not in self.jobs:
                 return False
-            
+
             job = self.jobs[job_id]
-            
+
             if retry and job.can_retry:
                 job.mark_retry(error)
-                
+
                 # Calculate next execution time
-                next_run = datetime.now(datetime.UTC) + timedelta(seconds=job.retry_delay)
+                next_run = datetime.now(datetime.UTC) + timedelta(
+                    seconds=job.retry_delay
+                )
                 job.scheduled_for = next_run
-                
+
                 # Add back to queue
                 async with self.queues_lock:
                     if job.queue not in self.queues:
                         self.queues[job.queue] = []
-                    
+
                     pjob = PrioritizedJob(
                         priority=job.priority.value,
                         created_at=job.created_at,
                         job_id=job.id,
                     )
-                    
+
                     heapq.heappush(self.queues[job.queue], pjob)
             else:
                 job.mark_failed(error)
-            
+
             return True
-    
-    async def cancel_job(self, job_id: str, reason: Optional[str] = None) -> bool:
+
+    async def cancel_job(self, job_id: str, reason: str | None = None) -> bool:
         """Cancel a pending job.
-        
+
         Args:
             job_id: The ID of the job
             reason: Optional reason for cancellation
-            
+
         Returns:
             True if the job was cancelled, False otherwise
         """
         async with self.jobs_lock:
             if job_id not in self.jobs:
                 return False
-            
+
             job = self.jobs[job_id]
-            
+
             # Only pending or retrying jobs can be cancelled
             if job.status not in (JobStatus.PENDING, JobStatus.RETRYING):
                 return False
-            
+
             job.mark_cancelled(reason)
             return True
-    
+
     async def list_jobs(
         self,
-        queue: Optional[str] = None,
-        status: Optional[List[JobStatus]] = None,
+        queue: str | None = None,
+        status: Optional[list[JobStatus]] = None,
         priority: Optional[Priority] = None,
-        tags: Optional[List[str]] = None,
-        worker_id: Optional[str] = None,
+        tags: list[str] | None = None,
+        worker_id: str | None = None,
         before: Optional[datetime] = None,
         after: Optional[datetime] = None,
         limit: int = 100,
         offset: int = 0,
         order_by: str = "created_at",
-        order_dir: str = "desc"
-    ) -> List[Job]:
+        order_dir: str = "desc",
+    ) -> list[Job]:
         """List jobs with filtering.
-        
+
         Args:
             queue: Optional queue name filter
             status: Optional list of status values to include
@@ -373,7 +374,7 @@ class InMemoryStorage(Storage):
             offset: Number of jobs to skip
             order_by: Field to order by
             order_dir: Order direction ("asc" or "desc")
-            
+
         Returns:
             List of jobs matching the filters
         """
@@ -384,27 +385,27 @@ class InMemoryStorage(Storage):
                 # Apply filters
                 if queue and job.queue != queue:
                     continue
-                
+
                 if status and job.status not in status:
                     continue
-                
+
                 if priority and job.priority != priority:
                     continue
-                
+
                 if tags and not all(tag in job.tags for tag in tags):
                     continue
-                
+
                 if worker_id and job.worker_id != worker_id:
                     continue
-                
+
                 if before and job.created_at >= before:
                     continue
-                
+
                 if after and job.created_at <= after:
                     continue
-                
+
                 filtered_jobs.append(job)
-            
+
             # Sort jobs
             reverse = order_dir.lower() == "desc"
             if order_by == "created_at":
@@ -415,26 +416,27 @@ class InMemoryStorage(Storage):
                 # Handle None values for scheduled_for
                 def scheduled_for_key(j):
                     return j.scheduled_for or datetime.min
+
                 filtered_jobs.sort(key=scheduled_for_key, reverse=reverse)
-            
+
             # Apply pagination
-            paginated_jobs = filtered_jobs[offset:offset + limit]
-            
+            paginated_jobs = filtered_jobs[offset : offset + limit]
+
             # Return deep copies to prevent external modifications
             return [copy.deepcopy(job) for job in paginated_jobs]
-    
+
     async def count_jobs(
         self,
-        queue: Optional[str] = None,
-        status: Optional[List[JobStatus]] = None,
+        queue: str | None = None,
+        status: Optional[list[JobStatus]] = None,
         priority: Optional[Priority] = None,
-        tags: Optional[List[str]] = None,
-        worker_id: Optional[str] = None,
+        tags: list[str] | None = None,
+        worker_id: str | None = None,
         before: Optional[datetime] = None,
         after: Optional[datetime] = None,
     ) -> int:
         """Count jobs with filtering.
-        
+
         Args:
             queue: Optional queue name filter
             status: Optional list of status values to include
@@ -443,7 +445,7 @@ class InMemoryStorage(Storage):
             worker_id: Optional worker ID filter
             before: Optional created_at upper bound
             after: Optional created_at lower bound
-            
+
         Returns:
             Count of jobs matching the filters
         """
@@ -454,118 +456,118 @@ class InMemoryStorage(Storage):
                 # Apply filters
                 if queue and job.queue != queue:
                     continue
-                
+
                 if status and job.status not in status:
                     continue
-                
+
                 if priority and job.priority != priority:
                     continue
-                
+
                 if tags and not all(tag in job.tags for tag in tags):
                     continue
-                
+
                 if worker_id and job.worker_id != worker_id:
                     continue
-                
+
                 if before and job.created_at >= before:
                     continue
-                
+
                 if after and job.created_at <= after:
                     continue
-                
+
                 count += 1
-            
+
             return count
-    
+
     async def get_queue_sizes(self) -> Dict[str, int]:
         """Get the sizes of all queues.
-        
+
         Returns:
             Dictionary mapping queue names to their sizes
         """
         async with self.queues_lock:
             return {name: len(queue) for name, queue in self.queues.items()}
-    
+
     async def clear_queue(self, queue_name: str) -> int:
         """Clear all jobs from a queue.
-        
+
         Args:
             queue_name: The name of the queue to clear
-            
+
         Returns:
             Number of jobs removed
         """
         async with self.queues_lock:
             if queue_name not in self.queues:
                 return 0
-            
+
             count = len(self.queues[queue_name])
             self.queues[queue_name] = []
             return count
-    
+
     async def pause_queue(self, queue_name: str) -> bool:
         """Pause a queue to stop processing new jobs.
-        
+
         Args:
             queue_name: The name of the queue to pause
-            
+
         Returns:
             True if the queue was paused, False otherwise
         """
         async with self.queues_lock:
             self.queue_pause_status[queue_name] = True
             return True
-    
+
     async def resume_queue(self, queue_name: str) -> bool:
         """Resume a paused queue.
-        
+
         Args:
             queue_name: The name of the queue to resume
-            
+
         Returns:
             True if the queue was resumed, False otherwise
         """
         async with self.queues_lock:
             self.queue_pause_status[queue_name] = False
             return True
-    
+
     async def is_queue_paused(self, queue_name: str) -> bool:
         """Check if a queue is paused.
-        
+
         Args:
             queue_name: The name of the queue to check
-            
+
         Returns:
             True if the queue is paused, False otherwise
         """
         async with self.queues_lock:
             return self.queue_pause_status.get(queue_name, False)
-    
-    async def list_queues(self) -> List[str]:
+
+    async def list_queues(self) -> list[str]:
         """List all queue names.
-        
+
         Returns:
             List of queue names
         """
         async with self.queues_lock:
             return list(self.queues.keys())
-    
+
     async def prune_jobs(
         self,
-        status: List[JobStatus],
+        status: list[JobStatus],
         older_than: Optional[datetime] = None,
     ) -> int:
         """Remove old jobs with the specified statuses.
-        
+
         Args:
             status: List of job statuses to prune
             older_than: Optional timestamp; jobs older than this will be pruned
-            
+
         Returns:
             Number of jobs pruned
         """
         count = 0
-        
+
         async with self.jobs_lock:
             # Identify jobs to prune
             jobs_to_prune = []
@@ -573,132 +575,141 @@ class InMemoryStorage(Storage):
                 if job.status in status:
                     if older_than is None or job.created_at < older_than:
                         jobs_to_prune.append(job_id)
-            
+
             # Prune the jobs
             for job_id in jobs_to_prune:
                 del self.jobs[job_id]
                 count += 1
-        
+
         return count
-    
+
     async def requeue_stuck(
         self,
         older_than: datetime,
-        status: Optional[List[JobStatus]] = None,
+        status: Optional[list[JobStatus]] = None,
     ) -> int:
         """Requeue jobs that appear to be stuck.
-        
+
         Args:
             older_than: Jobs in an active state for longer than this will be requeued
             status: Optional list of job statuses to consider
-            
+
         Returns:
             Number of jobs requeued
         """
         # Default to active statuses if none provided
         if status is None:
             status = [s for s in JobStatus if s.is_active]
-        
+
         count = 0
-        
+
         async with self.jobs_lock:
             # Find stuck jobs
             stuck_jobs = []
             for job in self.jobs.values():
                 if job.status in status:
                     # Check if started and stuck
-                    if (job.started_at and job.started_at < older_than and 
-                            not job.completed_at):
+                    if (
+                        job.started_at
+                        and job.started_at < older_than
+                        and not job.completed_at
+                    ):
                         stuck_jobs.append(job)
                     # Or if reserved but never started
-                    elif (job.status == JobStatus.RESERVED and 
-                          job.created_at < older_than and 
-                          not job.started_at):
+                    elif (
+                        job.status == JobStatus.RESERVED
+                        and job.created_at < older_than
+                        and not job.started_at
+                    ):
                         stuck_jobs.append(job)
-            
+
             # Requeue stuck jobs
             for job in stuck_jobs:
                 # Reset job status and worker
                 job.status = JobStatus.PENDING
                 job.worker_id = None
-                
+
                 # Add back to queue
                 job_queue = job.queue
-                
+
                 # Create prioritized job
                 pjob = PrioritizedJob(
                     priority=job.priority.value,
                     created_at=job.created_at,
-                    job_id=job.id
+                    job_id=job.id,
                 )
-                
+
                 # Add to the queue
                 async with self.queues_lock:
                     if job_queue not in self.queues:
                         self.queues[job_queue] = []
-                    
+
                     heapq.heappush(self.queues[job_queue], pjob)
-                
+
                 count += 1
-        
+
         return count
-    
+
     async def get_statistics(self) -> Dict[str, Any]:
         """Get statistics about the storage backend.
-        
+
         Returns:
             Dictionary of statistics
         """
         stats: Dict[str, Any] = {}
-        
+
         # Jobs by status
         status_counts: Dict[str, int] = {status.name.lower(): 0 for status in JobStatus}
-        
+
         # Jobs by priority
-        priority_counts: Dict[str, int] = {priority.name.lower(): 0 for priority in Priority}
-        
+        priority_counts: Dict[str, int] = {
+            priority.name.lower(): 0 for priority in Priority
+        }
+
         # Jobs by queue
         queue_counts: Dict[str, Dict[str, int]] = {}
-        
+
         # Get counts from jobs
         async with self.jobs_lock:
             total_jobs = len(self.jobs)
-            
+
             for job in self.jobs.values():
                 # Count by status
                 status_counts[job.status.name.lower()] += 1
-                
+
                 # Count by priority
                 priority_counts[job.priority.name.lower()] += 1
-                
+
                 # Count by queue
                 if job.queue not in queue_counts:
-                    queue_counts[job.queue] = {status.name.lower(): 0 for status in JobStatus}
-                
+                    queue_counts[job.queue] = {
+                        status.name.lower(): 0 for status in JobStatus
+                    }
+
                 queue_counts[job.queue][job.status.name.lower()] += 1
-        
+
         # Compile statistics
         stats["total_jobs"] = total_jobs
-        
+
         # Status counts
         for status, count in status_counts.items():
             stats[f"{status}_jobs"] = count
-        
+
         # Priority counts
         stats["by_priority"] = priority_counts
-        
+
         # Queue counts
         stats["by_queue"] = queue_counts
-        
+
         # Queue size counts (waiting jobs)
         queue_sizes = await self.get_queue_sizes()
         stats["queue_sizes"] = queue_sizes
-        
+
         return stats
-    
+
     async def check_health(self) -> Dict[str, Any]:
         """Check the health of the storage backend.
-        
+
         Returns:
             Dictionary with health check results
         """
@@ -708,53 +719,53 @@ class InMemoryStorage(Storage):
             "job_count": len(self.jobs),
             "queue_count": len(self.queues),
         }
-    
+
     @contextlib.asynccontextmanager
     async def transaction(self) -> AsyncContextManager["Storage"]:
         """Create a transaction context.
-        
+
         For the in-memory implementation, this is a no-op since all operations
         are already atomic within their respective locks.
-        
+
         Yields:
             The storage instance itself
         """
         yield self
-    
+
     @contextlib.asynccontextmanager
     async def create_lock(
-        self, 
-        lock_name: str, 
+        self,
+        lock_name: str,
         timeout: int = 60,
-        owner: Optional[str] = None,
+        owner: str | None = None,
     ) -> AsyncContextManager[bool]:
         """Create a distributed lock.
-        
+
         Args:
             lock_name: Name of the lock
             timeout: Number of seconds until the lock expires
             owner: Optional owner identifier for the lock
-            
+
         Yields:
             True if the lock was acquired
-            
+
         Raises:
             LockAcquisitionError: If the lock could not be acquired
         """
         lock_id = str(uuid.uuid4())
         owner_id = owner or lock_id
         acquired = False
-        
+
         try:
             # Try to acquire the lock
             async with self.locks_lock:
                 now = datetime.now(datetime.UTC)
-                
+
                 # Check if lock exists and is expired
                 if lock_name in self.locks:
                     lock_info = self.locks[lock_name]
                     expires_at = lock_info["expires_at"]
-                    
+
                     if now >= expires_at:
                         # Lock is expired, we can take it
                         acquired = True
@@ -764,7 +775,7 @@ class InMemoryStorage(Storage):
                 else:
                     # Lock doesn't exist, we can take it
                     acquired = True
-                
+
                 if acquired:
                     # Set the lock
                     self.locks[lock_name] = {
@@ -773,79 +784,81 @@ class InMemoryStorage(Storage):
                         "expires_at": now + timedelta(seconds=timeout),
                         "lock_id": lock_id,
                     }
-            
+
             if not acquired:
                 raise LockAcquisitionError(f"Failed to acquire lock '{lock_name}'")
-            
+
             # Lock acquired, yield control
             yield acquired
-        
+
         finally:
             # Release the lock if we acquired it
             if acquired:
                 async with self.locks_lock:
                     # Only remove if we still own the lock
-                    if (lock_name in self.locks and 
-                            self.locks[lock_name]["lock_id"] == lock_id):
+                    if (
+                        lock_name in self.locks
+                        and self.locks[lock_name]["lock_id"] == lock_id
+                    ):
                         del self.locks[lock_name]
-    
-    async def batch_create_jobs(self, jobs: List[Job]) -> List[str]:
+
+    async def batch_create_jobs(self, jobs: list[Job]) -> list[str]:
         """Create multiple jobs in a batch operation.
-        
+
         Args:
             jobs: List of jobs to create
-            
+
         Returns:
             List of created job IDs
         """
         job_ids = []
-        
+
         async with self.jobs_lock:
             for job in jobs:
                 # Store a deep copy to prevent external modifications
                 self.jobs[job.id] = copy.deepcopy(job)
                 job_ids.append(job.id)
-        
+
         return job_ids
-    
-    async def batch_update_jobs(self, jobs: List[Job]) -> int:
+
+    async def batch_update_jobs(self, jobs: list[Job]) -> int:
         """Update multiple jobs in a batch operation.
-        
+
         Args:
             jobs: List of jobs to update
-            
+
         Returns:
             Number of jobs updated
         """
         count = 0
-        
+
         async with self.jobs_lock:
             for job in jobs:
                 if job.id in self.jobs:
                     # Store a deep copy to prevent external modifications
                     self.jobs[job.id] = copy.deepcopy(job)
                     count += 1
-        
+
         return count
-    
+
     async def schedule_recurring_job(
         self,
         schedule_id: str,
         task: str,
-        args: List[Any],
+        args: list[Any],
         kwargs: Dict[str, Any],
-        cron_expression: Optional[str] = None,
+        cron_expression: str | None = None,
         interval_seconds: Optional[int] = None,
         queue: str = "default",
         priority: Priority = Priority.NORMAL,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         metadata: Optional[Dict[str, Any]] = None,
         max_retries: int = 0,
         retry_delay: int = 60,
         timeout: Optional[int] = None,
     ) -> str:
         """Schedule a recurring job.
-        
+
         Args:
             schedule_id: Unique identifier for this schedule
             task: Task to execute
@@ -860,10 +873,10 @@ class InMemoryStorage(Storage):
             max_retries: Maximum retry attempts
             retry_delay: Delay between retries in seconds
             timeout: Optional timeout in seconds
-            
+
         Returns:
             The schedule ID
-            
+
         Raises:
             ValueError: If neither cron_expression nor interval_seconds is provided
         """
@@ -871,16 +884,16 @@ class InMemoryStorage(Storage):
             raise ValueError(
                 "Either cron_expression or interval_seconds must be provided"
             )
-        
+
         if cron_expression and interval_seconds is not None:
             raise ValueError(
                 "Only one of cron_expression or interval_seconds should be provided"
             )
-        
+
         # Calculate next run time
         now = datetime.now(datetime.UTC)
         next_run: Optional[datetime] = None
-        
+
         if cron_expression:
             # Use croniter to calculate next run time from cron expression
             cron = croniter(cron_expression, now)
@@ -888,7 +901,7 @@ class InMemoryStorage(Storage):
         elif interval_seconds is not None:
             # Simple interval scheduling
             next_run = now + timedelta(seconds=interval_seconds)
-        
+
         # Create schedule record
         schedule = {
             "id": schedule_id,
@@ -912,19 +925,19 @@ class InMemoryStorage(Storage):
             "run_count": 0,
             "status": "active",  # active or paused
         }
-        
+
         # Store schedule
         async with self.schedules_lock:
             self.schedules[schedule_id] = schedule
-        
+
         return schedule_id
-    
+
     async def get_schedule(self, schedule_id: str) -> Optional[Dict[str, Any]]:
         """Get a schedule by ID.
-        
+
         Args:
             schedule_id: The ID of the schedule to get
-            
+
         Returns:
             The schedule if found, None otherwise
         """
@@ -934,18 +947,18 @@ class InMemoryStorage(Storage):
                 # Return a deep copy to prevent external modifications
                 return copy.deepcopy(schedule)
             return None
-    
+
     async def list_schedules(
         self,
-        status: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        status: str | None = None,
+        tags: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
         """List schedules with filtering.
-        
+
         Args:
             status: Optional status filter ("active" or "paused")
             tags: Optional list of tags to filter by
-            
+
         Returns:
             List of schedules matching the filters
         """
@@ -956,31 +969,31 @@ class InMemoryStorage(Storage):
                 # Apply filters
                 if status and schedule["status"] != status:
                     continue
-                
+
                 if tags and not all(tag in schedule["tags"] for tag in tags):
                     continue
-                
+
                 # Add a deep copy to the results
                 filtered_schedules.append(copy.deepcopy(schedule))
-            
+
             return filtered_schedules
-    
+
     async def update_schedule(
         self,
         schedule_id: str,
-        cron_expression: Optional[str] = None,
+        cron_expression: str | None = None,
         interval_seconds: Optional[int] = None,
-        queue: Optional[str] = None,
+        queue: str | None = None,
         priority: Optional[Priority] = None,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         metadata: Optional[Dict[str, Any]] = None,
         max_retries: Optional[int] = None,
         retry_delay: Optional[int] = None,
         timeout: Optional[int] = None,
-        status: Optional[str] = None,
+        status: str | None = None,
     ) -> bool:
         """Update a schedule.
-        
+
         Args:
             schedule_id: The ID of the schedule to update
             cron_expression: Optional new cron expression
@@ -993,74 +1006,76 @@ class InMemoryStorage(Storage):
             retry_delay: Optional new delay between retries in seconds
             timeout: Optional new timeout in seconds
             status: Optional new status ("active" or "paused")
-            
+
         Returns:
             True if the schedule was updated, False otherwise
         """
         async with self.schedules_lock:
             if schedule_id not in self.schedules:
                 return False
-            
+
             schedule = self.schedules[schedule_id]
-            
+
             # Update fields if provided
             if cron_expression is not None:
                 schedule["cron_expression"] = cron_expression
                 schedule["interval_seconds"] = None
-                
+
                 # Recalculate next run time
                 now = datetime.now(datetime.UTC)
                 cron = croniter(cron_expression, now)
                 schedule["next_run"] = cron.get_next(datetime)
-            
+
             if interval_seconds is not None:
                 schedule["interval_seconds"] = interval_seconds
                 schedule["cron_expression"] = None
-                
+
                 # Recalculate next run time
                 now = datetime.now(datetime.UTC)
                 schedule["next_run"] = now + timedelta(seconds=interval_seconds)
-            
+
             if queue is not None:
                 schedule["queue"] = queue
-            
+
             if priority is not None:
-                schedule["priority"] = priority.name if isinstance(priority, Priority) else priority
-            
+                schedule["priority"] = (
+                    priority.name if isinstance(priority, Priority) else priority
+                )
+
             if tags is not None:
                 schedule["tags"] = tags
-            
+
             if metadata is not None:
                 # Merge metadata rather than replace
                 if schedule["metadata"] is None:
                     schedule["metadata"] = {}
                 schedule["metadata"].update(metadata)
-            
+
             if max_retries is not None:
                 schedule["max_retries"] = max_retries
-            
+
             if retry_delay is not None:
                 schedule["retry_delay"] = retry_delay
-            
+
             if timeout is not None:
                 schedule["timeout"] = timeout
-            
+
             if status is not None:
                 if status not in ("active", "paused"):
                     raise ValueError("Status must be 'active' or 'paused'")
                 schedule["status"] = status
-            
+
             # Update the updated_at timestamp
             schedule["updated_at"] = datetime.now(datetime.UTC)
-            
+
             return True
-    
+
     async def delete_schedule(self, schedule_id: str) -> bool:
         """Delete a schedule.
-        
+
         Args:
             schedule_id: The ID of the schedule to delete
-            
+
         Returns:
             True if the schedule was deleted, False otherwise
         """
@@ -1069,33 +1084,33 @@ class InMemoryStorage(Storage):
                 del self.schedules[schedule_id]
                 return True
             return False
-    
+
     async def get_due_jobs(
         self,
         limit: int = 100,
-    ) -> List[Tuple[str, Dict[str, Any]]]:
+    ) -> list[Tuple[str, Dict[str, Any]]]:
         """Get jobs that are due for execution based on their schedules.
-        
+
         Args:
             limit: Maximum number of due jobs to return
-            
+
         Returns:
             List of (schedule_id, job_data) tuples for due jobs
         """
-        due_jobs: List[Tuple[str, Dict[str, Any]]] = []
+        due_jobs: list[Tuple[str, Dict[str, Any]]] = []
         now = datetime.now(datetime.UTC)
-        
+
         async with self.schedules_lock:
             # Find due schedules
             for schedule_id, schedule in self.schedules.items():
                 # Skip paused schedules
                 if schedule["status"] != "active":
                     continue
-                
+
                 # Skip schedules without a next run time
                 if not schedule["next_run"]:
                     continue
-                
+
                 # Check if the schedule is due
                 if schedule["next_run"] <= now:
                     # Create job data for this schedule
@@ -1115,28 +1130,30 @@ class InMemoryStorage(Storage):
                         "retry_delay": schedule["retry_delay"],
                         "timeout": schedule["timeout"],
                     }
-                    
+
                     due_jobs.append((schedule_id, job_data))
-                    
+
                     # Update schedule for next run
                     if len(due_jobs) >= limit:
                         break
-            
+
             # Update schedules with new next run times
             for schedule_id, _ in due_jobs:
                 schedule = self.schedules[schedule_id]
-                
+
                 # Update run statistics
                 schedule["last_run"] = now
                 schedule["run_count"] += 1
-                
+
                 # Calculate next run time
                 if schedule["cron_expression"]:
                     cron = croniter(schedule["cron_expression"], now)
                     schedule["next_run"] = cron.get_next(datetime)
                 elif schedule["interval_seconds"] is not None:
-                    schedule["next_run"] = now + timedelta(seconds=schedule["interval_seconds"])
-        
+                    schedule["next_run"] = now + timedelta(
+                        seconds=schedule["interval_seconds"]
+                    )
+
         return due_jobs
 
 

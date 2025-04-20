@@ -15,7 +15,7 @@ import logging
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from uno.core.errors.result import Result, Success, Failure
+from uno.core.errors.result import Result
 from uno.database.provider import async_connection
 from uno.database.enhanced_session import enhanced_async_session
 from uno.queries.models import QueryPathModel
@@ -35,7 +35,7 @@ class AttributeGraphQuery:
     graph queries.
     """
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         """
         Initialize the attribute graph query utilities.
 
@@ -45,8 +45,8 @@ class AttributeGraphQuery:
         self.logger = logger or logging.getLogger(__name__)
 
     async def register_attribute_query_paths(
-        self, attribute_type: AttributeType, session: Optional[AsyncSession] = None
-    ) -> Result[List[str], AttributeGraphError]:
+        self, attribute_type: Any, session: AsyncSession | None = None
+    ) -> Result[list[str], AttributeGraphError]:
         """
         Register query paths for an attribute type.
 
@@ -86,11 +86,11 @@ class AttributeGraphQuery:
 
                     path_ids.append(path_id)
 
-            return Success(path_ids)
+            return Result.success(path_ids)
 
         except Exception as e:
             self.logger.error(f"Error registering attribute query paths: {e}")
-            return Failure(
+            return Result.failure(
                 AttributeGraphError(
                     f"Error registering attribute query paths: {str(e)}"
                 )
@@ -98,7 +98,7 @@ class AttributeGraphQuery:
 
     async def _create_attribute_query_path(
         self,
-        attribute_type: AttributeType,
+        attribute_type: Any,
         source_meta_type_id: str,
         target_meta_type_id: str,
         session: AsyncSession,
@@ -162,8 +162,8 @@ class AttributeGraphQuery:
         object_type: str,
         attribute_type: str,
         value: Any,
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[str], AttributeGraphError]:
+        session: AsyncSession | None = None,
+    ) -> Result[list[str], AttributeGraphError]:
         """
         Find objects with a specific attribute type and value.
 
@@ -200,21 +200,21 @@ class AttributeGraphQuery:
                         s,
                     )
 
-            return Success(result)
+            return Result.success(result)
 
         except Exception as e:
             self.logger.error(f"Error finding objects by attribute: {e}")
-            return Failure(
+            return Result.failure(
                 AttributeGraphError(f"Error finding objects by attribute: {str(e)}")
             )
 
     async def find_objects_with_attributes(
         self,
         object_type: str,
-        conditions: List[Dict[str, Any]],
+        conditions: list[dict[str, Any]],
         logic: str = "AND",
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[str], AttributeGraphError]:
+        session: AsyncSession | None = None,
+    ) -> Result[list[str], AttributeGraphError]:
         """
         Find objects with multiple attribute conditions.
 
@@ -230,7 +230,7 @@ class AttributeGraphQuery:
         try:
             # Validate logic operator
             if logic not in ["AND", "OR"]:
-                return Failure(
+                return Result.failure(
                     AttributeGraphError(
                         f"Invalid logic operator: {logic}. Must be 'AND' or 'OR'"
                     )
@@ -251,7 +251,7 @@ class AttributeGraphQuery:
                 value = condition.get("value")
 
                 if not attribute_type or value is None:
-                    return Failure(
+                    return Result.failure(
                         AttributeGraphError(
                             f"Invalid condition: {condition}. Must include 'attribute_type' and 'value'"
                         )
@@ -283,11 +283,11 @@ class AttributeGraphQuery:
                 async with enhanced_async_session() as s:
                     result = await self._execute_cypher_query(cypher_query, params, s)
 
-            return Success(result)
+            return Result.success(result)
 
         except Exception as e:
             self.logger.error(f"Error finding objects with attributes: {e}")
-            return Failure(
+            return Result.failure(
                 AttributeGraphError(f"Error finding objects with attributes: {str(e)}")
             )
 
@@ -297,8 +297,8 @@ class AttributeGraphQuery:
         attribute_type: str,
         min_value: Optional[Any] = None,
         max_value: Optional[Any] = None,
-        session: Optional[AsyncSession] = None,
-    ) -> Result[List[str], AttributeGraphError]:
+        session: AsyncSession | None = None,
+    ) -> Result[list[str], AttributeGraphError]:
         """
         Find objects with an attribute value in a range.
 
@@ -315,7 +315,7 @@ class AttributeGraphQuery:
         try:
             # Validate parameters
             if min_value is None and max_value is None:
-                return Failure(
+                return Result.failure(
                     AttributeGraphError(
                         "At least one of min_value or max_value must be provided"
                     )
@@ -348,11 +348,11 @@ class AttributeGraphQuery:
                 async with enhanced_async_session() as s:
                     result = await self._execute_cypher_query(cypher_query, params, s)
 
-            return Success(result)
+            return Result.success(result)
 
         except Exception as e:
             self.logger.error(f"Error finding objects by attribute range: {e}")
-            return Failure(
+            return Result.failure(
                 AttributeGraphError(
                     f"Error finding objects by attribute range: {str(e)}"
                 )
@@ -363,7 +363,7 @@ class AttributeGraphQuery:
         object_type: str,
         attribute_type: str,
         value: Optional[Any] = None,
-        session: Optional[AsyncSession] = None,
+        session: AsyncSession | None = None,
     ) -> Result[int, AttributeGraphError]:
         """
         Count objects with a specific attribute type and optionally a value.
@@ -423,17 +423,17 @@ class AttributeGraphQuery:
                     )
                     count = result.scalar() or 0
 
-            return Success(count)
+            return Result.success(count)
 
         except Exception as e:
             self.logger.error(f"Error counting objects with attribute: {e}")
-            return Failure(
+            return Result.failure(
                 AttributeGraphError(f"Error counting objects with attribute: {str(e)}")
             )
 
     async def _execute_cypher_query(
         self, cypher_query: str, params: Dict[str, Any], session: AsyncSession
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Execute a cypher query and return the results.
 

@@ -50,10 +50,10 @@ class KnowledgeImportConfig(BaseModel):
     """Configuration for importing domain knowledge."""
 
     source_type: KnowledgeSource
-    source_path: Optional[str] = None
-    source_url: Optional[str] = None
-    source_database: Optional[str] = None
-    connection_string: Optional[str] = None
+    source_path: str | None = None
+    source_url: str | None = None
+    source_database: str | None = None
+    connection_string: str | None = None
     domain: str
     format: str = "json"  # json, csv, xml, sql, txt, etc.
     auto_index: bool = True
@@ -77,15 +77,15 @@ class KnowledgeItem(BaseModel):
     source: KnowledgeSource
     type: str  # concept, term, rule, guideline, etc.
     name: str
-    definition: Optional[str] = None
-    content: Optional[str] = None
-    synonyms: List[str] = Field(default_factory=list)
-    relationships: Dict[str, List[str]] = Field(default_factory=dict)
+    definition: str | None = None
+    content: str | None = None
+    synonyms: list[str] = Field(default_factory=list)
+    relationships: Dict[str, list[str]] = Field(default_factory=dict)
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    embedding: Optional[List[float]] = None
+    embedding: Optional[list[float]] = None
     importance: float = 1.0  # 0.0 to 1.0
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: str | None = None
+    updated_at: str | None = None
 
 
 class PromptEnhancementConfig(BaseModel):
@@ -97,8 +97,8 @@ class PromptEnhancementConfig(BaseModel):
     max_items: int = 5
     include_definitions: bool = True
     include_relationships: bool = False
-    template: Optional[str] = None
-    custom_formatter: Optional[str] = None
+    template: str | None = None
+    custom_formatter: str | None = None
     metadata_filters: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -112,10 +112,10 @@ class DomainKnowledgeManager:
 
     def __init__(
         self,
-        connection_string: Optional[str] = None,
+        connection_string: str | None = None,
         knowledge_table: str = "domain_knowledge",
         embedding_service=None,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ):
         """
         Initialize the domain knowledge manager.
@@ -137,7 +137,7 @@ class DomainKnowledgeManager:
         # In-memory cache
         self.knowledge_cache: Dict[str, Dict[str, KnowledgeItem]] = {}
         self.domain_glossaries: Dict[str, Dict[str, str]] = {}
-        self.domain_taxonomies: Dict[str, Dict[str, List[str]]] = {}
+        self.domain_taxonomies: Dict[str, Dict[str, list[str]]] = {}
 
         # Initialization flag
         self.initialized = False
@@ -311,7 +311,7 @@ class DomainKnowledgeManager:
 
     async def _load_from_file(
         self, config: KnowledgeImportConfig
-    ) -> List[KnowledgeItem]:
+    ) -> list[KnowledgeItem]:
         """
         Load knowledge items from a file.
 
@@ -476,7 +476,7 @@ class DomainKnowledgeManager:
 
     async def _load_from_url(
         self, config: KnowledgeImportConfig
-    ) -> List[KnowledgeItem]:
+    ) -> list[KnowledgeItem]:
         """
         Load knowledge items from a URL.
 
@@ -660,7 +660,7 @@ class DomainKnowledgeManager:
 
     async def _load_from_database(
         self, config: KnowledgeImportConfig
-    ) -> List[KnowledgeItem]:
+    ) -> list[KnowledgeItem]:
         """
         Load knowledge items from a database.
 
@@ -894,8 +894,8 @@ class DomainKnowledgeManager:
         domain: str,
         limit: int = 10,
         similarity_threshold: float = 0.7,
-        item_types: Optional[List[str]] = None,
-    ) -> List[Tuple[KnowledgeItem, float]]:
+        item_types: list[str] | None = None,
+    ) -> list[Tuple[KnowledgeItem, float]]:
         """
         Search for knowledge items by similarity.
 
@@ -1105,7 +1105,7 @@ class DomainKnowledgeManager:
 
         return glossary
 
-    async def get_domain_taxonomy(self, domain: str) -> Dict[str, List[str]]:
+    async def get_domain_taxonomy(self, domain: str) -> Dict[str, list[str]]:
         """
         Get a taxonomy for a specific domain.
 
@@ -1365,9 +1365,9 @@ class DomainKnowledgeManager:
 # Factory function for domain knowledge managers
 async def create_domain_knowledge_manager(
     domain: str,
-    connection_string: Optional[str] = None,
+    connection_string: str | None = None,
     embedding_service=None,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
 ) -> Tuple[DomainKnowledgeManager, Dict[str, Any]]:
     """
     Create a domain knowledge manager and load domain knowledge.
