@@ -24,6 +24,36 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
         """Initialize the category repository."""
         super().__init__(Category, session, CategoryModel)
 
+    async def add(self, entity: Category) -> Category:
+        # Gather all existing slugs for uniqueness check
+        stmt = select(CategoryModel.slug)
+        result = await self.session.execute(stmt)
+        existing_slugs = set(row[0] for row in result.all() if row[0] != entity.slug)
+
+        async def parent_lookup(parent_id: str) -> Category | None:
+            stmt = select(CategoryModel).where(CategoryModel.id == parent_id)
+            result = await self.session.execute(stmt)
+            model = result.scalar_one_or_none()
+            return self._to_entity(model) if model else None
+
+        entity.check_invariants(existing_slugs=existing_slugs, parent_lookup=parent_lookup)
+        return await super().add(entity)
+
+    async def update(self, entity: Category) -> Category:
+        # Gather all existing slugs except this entity's slug
+        stmt = select(CategoryModel.slug, CategoryModel.id)
+        result = await self.session.execute(stmt)
+        existing_slugs = set(row[0] for row in result.all() if row[1] != entity.id)
+
+        async def parent_lookup(parent_id: str) -> Category | None:
+            stmt = select(CategoryModel).where(CategoryModel.id == parent_id)
+            result = await self.session.execute(stmt)
+            model = result.scalar_one_or_none()
+            return self._to_entity(model) if model else None
+
+        entity.check_invariants(existing_slugs=existing_slugs, parent_lookup=parent_lookup)
+        return await super().update(entity)
+
     def _to_entity(self, model: CategoryModel) -> Category:
         """Convert a category model to a domain entity."""
         return Category(

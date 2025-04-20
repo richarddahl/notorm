@@ -31,7 +31,14 @@ from uno.examples.ecommerce_app.catalog.domain.events import (
 
 
 class Category(Entity):
-    """Category entity for organizing products."""
+    """
+    Category entity for organizing products.
+
+    Invariants:
+    - Name and slug must be present (non-empty)
+    - Slug should be unique (enforced at repository/service layer)
+    - If parent_id is set, it must not create a circular reference
+    """
 
     name: str
     slug: str
@@ -44,6 +51,41 @@ class Category(Entity):
     def update(self) -> None:
         """Update entity timestamp when modified."""
         self.updated_at = datetime.now(UTC)
+
+    def check_invariants(self, existing_slugs: Optional[set] = None, parent_lookup: Optional[callable] = None) -> None:
+        """
+        Check invariants for Category:
+        - Name and slug must be present
+        - Slug must be unique (if existing_slugs provided)
+        - Parent must not create a circular reference (if parent_lookup provided)
+
+        Args:
+            existing_slugs: Set of slugs already in use (optional)
+            parent_lookup: Callable that takes a parent_id and returns a Category or None (optional)
+        Raises:
+            ValueError: If any invariant is violated
+        """
+        if not self.name or not self.name.strip():
+            raise ValueError("Category must have a name")
+        if not self.slug or not self.slug.strip():
+            raise ValueError("Category must have a slug")
+        if existing_slugs is not None and self.slug in existing_slugs:
+            raise ValueError(f"Category slug '{self.slug}' must be unique")
+        if self.parent_id and parent_lookup is not None:
+            # Check for circular reference
+            ancestor_ids = set()
+            current_id = self.parent_id
+            while current_id:
+                if current_id == str(self.id):
+                    raise ValueError("Category parent_id creates a circular reference")
+                if current_id in ancestor_ids:
+                    raise ValueError("Category parent_id creates a circular reference (loop detected)")
+                ancestor_ids.add(current_id)
+                parent = parent_lookup(current_id)
+                if parent is None:
+                    break
+                current_id = parent.parent_id
+
 
 
 class ProductImage(Entity):

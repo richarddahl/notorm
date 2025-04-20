@@ -750,7 +750,40 @@ class Order(AggregateRoot[UUID]):
             order_id=self.id,
             reason=reason
         ))
-```
+
+## Catalog Domain Aggregates
+
+### Product (Aggregate Root)
+- **Description:** Represents a product in the catalog, with variants, images, and category memberships.
+- **Key Invariants:**
+  - Must have a name and SKU.
+  - Price cannot be negative.
+  - All variants/images must reference this product’s ID.
+- **Encapsulated Entities:**
+  - `ProductVariant`, `ProductImage`
+- **Value Objects Used:**
+  - `Money`, `Inventory`, `Weight`, `Dimensions`
+- **Domain Events:**
+  - `ProductCreatedEvent`, `ProductUpdatedEvent`, `ProductPriceChangedEvent`, `ProductInventoryUpdatedEvent`
+- **Category Membership:**
+  - Maintained by list of category IDs; no direct reference to category objects.
+
+### Category (Aggregate Root/Entity)
+- **Description:** Organizes products into a hierarchy.
+- **Fields:** `name`, `slug`, `parent_id`, etc.
+- **Potential Invariants:** Name/slug uniqueness, valid parent-child relationships.
+
+### ProductVariant (Entity)
+- **Description:** Represents a specific configuration of a product.
+- **Fields:** `sku`, `price`, `inventory`, `attributes`, etc.
+- **Invariant:** Must reference the owning product’s ID.
+
+### ProductImage (Entity)
+- **Description:** Represents a product image.
+- **Fields:** `product_id`, `url`, `is_primary`, etc.
+- **Invariant:** Must reference the owning product’s ID.
+
+---
 
 ## Further Reading
 
