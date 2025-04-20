@@ -1,23 +1,12 @@
 """
-Dependency injection provider for the Meta domain services.
+Dependency injection provider for the Meta domain.
 
-This module integrates the meta domain services and repositories with
-the dependency injection system, making them available throughout the application.
+This module registers all repositories and services for the Meta domain with the DI container.
+Use this as the canonical place for all DI registrations in uno.meta.
 """
 
 import logging
-from functools import lru_cache
-from typing import Dict, Any, Optional, Type
-
-from uno.database.db_manager import DBManager
-from uno.dependencies.modern_provider import (
-    ServiceProvider,
-    ServiceLifecycle,
-)
-from uno.meta.entities import (
-    MetaType,
-    MetaRecord,
-)
+from uno.dependencies.modern_provider import ServiceLifecycle
 from uno.meta.domain_repositories import (
     MetaTypeRepository,
     MetaRecordRepository,
@@ -27,7 +16,6 @@ from uno.meta.domain_services import (
     MetaRecordService,
 )
 
-
 def configure_meta_services(container):
     """Configure meta services in the DI container."""
     logger = logging.getLogger("uno.meta")
@@ -35,12 +23,12 @@ def configure_meta_services(container):
     # Register repositories
     container.register(
         MetaTypeRepository,
-        lambda c: MetaTypeRepository(db_factory=c.resolve(DBManager)),
+        lambda c: MetaTypeRepository(),
         lifecycle=ServiceLifecycle.SCOPED,
     )
     container.register(
         MetaRecordRepository,
-        lambda c: MetaRecordRepository(db_factory=c.resolve(DBManager)),
+        lambda c: MetaRecordRepository(),
         lifecycle=ServiceLifecycle.SCOPED,
     )
 
@@ -59,5 +47,3 @@ def configure_meta_services(container):
         ),
         lifecycle=ServiceLifecycle.SCOPED,
     )
-
-

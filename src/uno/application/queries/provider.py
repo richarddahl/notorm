@@ -1,16 +1,18 @@
-"""Dependency injection provider for the Queries module."""
+"""
+Dependency injection provider for the Queries domain.
+
+This module registers all repositories and services for the Queries domain with the DI container.
+Use this as the canonical place for all DI registrations in uno.application.queries.
+"""
 
 import logging
-from functools import lru_cache
-
-from uno.dependencies.interfaces import ServiceLifecycle
-from uno.dependencies.modern_provider import ServiceProvider, get_service
-from uno.queries.domain_repositories import (
+from uno.dependencies.modern_provider import ServiceLifecycle
+from uno.application.queries.domain_repositories import (
     QueryPathRepository,
     QueryValueRepository,
     QueryRepository,
 )
-from uno.queries.domain_services import (
+from uno.application.queries.domain_services import (
     QueryPathService,
     QueryValueService,
     QueryService,
@@ -23,9 +25,6 @@ from uno.application.queries.queries_interfaces import (
     IQueryValueService,
     IQueryService,
 )
-from uno.queries.filter_manager import get_filter_manager
-from uno.queries.executor import get_query_executor
-
 
 def configure_queries_services(container):
     """Configure Queries module services in the DI container."""
@@ -66,5 +65,3 @@ def configure_queries_services(container):
     # container.register(QueryPathRepository, ...)
     # container.register(QueryPathService, ...)
     # etc.
-
-

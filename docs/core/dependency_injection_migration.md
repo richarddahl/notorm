@@ -183,6 +183,9 @@ def process_order(order_id, service: OrderServiceProtocol):
 
 ### From Domain Provider to Provider
 
+> **Migration Note:**
+> As of April 2025, all `domain_provider.py` modules in the uno codebase have been deprecated and replaced by a single `provider.py` per domain. All dependency registration and DI logic should now be centralized in these canonical `provider.py` files. Any usage of `domain_provider.py` will emit a deprecation warning and should be updated immediately.
+
 **Before:**
 ```python
 class AttributesDomainProvider:
