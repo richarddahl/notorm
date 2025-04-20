@@ -104,12 +104,16 @@ async def create_dashboard(
     dashboard_id = "d-" + str(hash(json.dumps(dashboard_dict)) % 10000)
     dashboard_dict["id"] = dashboard_id
     
-    # In a real implementation: await dashboard_repository.create(dashboard_dict)
-    
+    # In a real implementation:
+    # result = await dashboard_repository.create(dashboard_dict)
+    # if isinstance(result, Failure):
+    #     raise HTTPException(status_code=500, detail=str(result.error))
+    # return {"id": dashboard_id, **dashboard_dict}
     return {
         "id": dashboard_id,
         **dashboard_dict
     }
+
 
 
 @router.get("/{dashboard_id}", response_model=Dict[str, Any])
@@ -201,12 +205,16 @@ async def update_dashboard(
     dashboard_dict["id"] = dashboard_id
     dashboard_dict["updated_at"] = datetime.now().isoformat()
     
-    # In a real implementation: await dashboard_repository.update(dashboard_id, dashboard_dict)
-    
+    # In a real implementation:
+    # result = await dashboard_repository.update(dashboard_id, dashboard_dict)
+    # if isinstance(result, Failure):
+    #     raise HTTPException(status_code=500, detail=str(result.error))
+    # return {"id": dashboard_id, **dashboard_dict}
     return {
         "id": dashboard_id,
         **dashboard_dict
     }
+
 
 
 @router.delete("/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -214,10 +222,13 @@ async def delete_dashboard(
     dashboard_id: str = Path(..., description="The ID of the dashboard to delete")
 ):
     """Delete a dashboard configuration."""
-    # In a real implementation: await dashboard_repository.delete(dashboard_id)
-    
+    # In a real implementation: result = await dashboard_repository.delete(dashboard_id)
+    # if isinstance(result, Failure):
+    #     raise HTTPException(status_code=404, detail=str(result.error))
+    # return None
     # Simulate success with empty response
     return None
+
 
 
 @router.get("/{dashboard_id}/data", response_model=Dict[str, Any])

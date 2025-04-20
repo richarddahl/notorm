@@ -17,97 +17,123 @@ from uno.reports.entities import (
 class ReportFieldDefinitionRepository(UnoDBRepository[ReportFieldDefinition]):
     """Repository for report field definition entities."""
 
-    async def find_by_name(self, name: str) -> Optional[ReportFieldDefinition]:
+    async def find_by_name(self, name: str) -> Result[ReportFieldDefinition | None, Exception]:
         """Find a field definition by name.
 
         Args:
             name: The name of the field definition to find.
 
         Returns:
-            The field definition if found, None otherwise.
+            Result containing the field definition if found, or None, or Failure on error.
         """
-        filters = {"name": {"lookup": "eq", "val": name}}
-        results = await self.list(filters=filters, limit=1)
-        return results[0] if results else None
+        try:
+            filters = {"name": {"lookup": "eq", "val": name}}
+            results = await self.list(filters=filters, limit=1)
+            return Success(results[0] if results else None)
+        except Exception as e:
+            return Failure(e)
 
-    async def find_by_field_type(self, field_type: str) -> List[ReportFieldDefinition]:
+
+    async def find_by_field_type(self, field_type: str) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by field type.
 
         Args:
             field_type: The field type to search for.
 
         Returns:
-            A list of field definitions with the specified field type.
+            Result containing a list of field definitions with the specified field type, or Failure on error.
         """
-        filters = {"field_type": {"lookup": "eq", "val": field_type}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"field_type": {"lookup": "eq", "val": field_type}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+
 
     async def find_by_parent_field_id(
         self, parent_field_id: str
-    ) -> List[ReportFieldDefinition]:
+    ) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by parent field ID.
 
         Args:
             parent_field_id: The ID of the parent field.
 
         Returns:
-            A list of field definitions with the specified parent field ID.
+            Result containing a list of field definitions with the specified parent field ID, or Failure on error.
         """
-        filters = {"parent_field_id": {"lookup": "eq", "val": parent_field_id}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"parent_field_id": {"lookup": "eq", "val": parent_field_id}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+
 
     async def find_by_template_id(
         self, template_id: str
-    ) -> List[ReportFieldDefinition]:
+    ) -> Result[list[ReportFieldDefinition], Exception]:
         """Find field definitions by template ID.
 
         Args:
             template_id: The ID of the template.
 
         Returns:
-            A list of field definitions associated with the specified template ID.
+            Result containing a list of field definitions associated with the specified template ID, or Failure on error.
         """
-        # Note: This requires joining through the junction table
-        # Implementation may vary based on your ORM specifics
-        query = f"""
-        SELECT fd.* 
-        FROM report_field_definition fd
-        JOIN report_template__field tf ON fd.id = tf.report_field_definition_id
-        WHERE tf.report_template_id = :template_id
-        """
-        results = await self._db.fetch_all(query, {"template_id": template_id})
-        return [self._create_entity_from_row(row) for row in results]
+        try:
+            query = f"""
+            SELECT fd.* 
+            FROM report_field_definition fd
+            JOIN report_template__field tf ON fd.id = tf.report_field_definition_id
+            WHERE tf.report_template_id = :template_id
+            """
+            results = await self._db.fetch_all(query, {"template_id": template_id})
+            entities = [self._create_entity_from_row(row) for row in results]
+            return Success(entities)
+        except Exception as e:
+            return Failure(e)
+
 
 
 class ReportTemplateRepository(UnoDBRepository[ReportTemplate]):
     """Repository for report template entities."""
 
-    async def find_by_name(self, name: str) -> Optional[ReportTemplate]:
+    async def find_by_name(self, name: str) -> Result[ReportTemplate | None, Exception]:
         """Find a template by name.
 
         Args:
             name: The name of the template to find.
 
         Returns:
-            The template if found, None otherwise.
+            Result containing the template if found, or None, or Failure on error.
         """
-        filters = {"name": {"lookup": "eq", "val": name}}
-        results = await self.list(filters=filters, limit=1)
-        return results[0] if results else None
+        try:
+            filters = {"name": {"lookup": "eq", "val": name}}
+            results = await self.list(filters=filters, limit=1)
+            return Success(results[0] if results else None)
+        except Exception as e:
+            return Failure(e)
+
 
     async def find_by_base_object_type(
         self, base_object_type: str
-    ) -> List[ReportTemplate]:
+    ) -> Result[list[ReportTemplate], Exception]:
         """Find templates by base object type.
 
         Args:
             base_object_type: The base object type to search for.
 
         Returns:
-            A list of templates with the specified base object type.
+            Result containing a list of templates with the specified base object type, or Failure on error.
         """
-        filters = {"base_object_type": {"lookup": "eq", "val": base_object_type}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"base_object_type": {"lookup": "eq", "val": base_object_type}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+
 
     async def find_with_relationships(self, template_id: str) -> Result[ReportTemplate]:
         """Find a template with all relationships loaded.
@@ -219,41 +245,56 @@ class ReportOutputRepository(UnoDBRepository[ReportOutput]):
 class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
     """Repository for report execution entities."""
 
-    async def find_by_template_id(self, template_id: str) -> List[ReportExecution]:
+    async def find_by_template_id(self, template_id: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by template ID.
 
         Args:
             template_id: The ID of the template.
 
         Returns:
-            A list of executions associated with the specified template ID.
+            Result containing a list of executions associated with the specified template ID, or Failure on error.
         """
-        filters = {"report_template_id": {"lookup": "eq", "val": template_id}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"report_template_id": {"lookup": "eq", "val": template_id}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
 
-    async def find_by_status(self, status: str) -> List[ReportExecution]:
+
+    async def find_by_status(self, status: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by status.
 
         Args:
             status: The status to search for.
 
         Returns:
-            A list of executions with the specified status.
+            Result containing a list of executions with the specified status, or Failure on error.
         """
-        filters = {"status": {"lookup": "eq", "val": status}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"status": {"lookup": "eq", "val": status}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
 
-    async def find_by_triggered_by(self, triggered_by: str) -> List[ReportExecution]:
+
+    async def find_by_triggered_by(self, triggered_by: str) -> Result[list[ReportExecution], Exception]:
         """Find executions by triggered by.
 
         Args:
             triggered_by: The triggered by value to search for.
 
         Returns:
-            A list of executions with the specified triggered by value.
+            Result containing a list of executions with the specified triggered by value, or Failure on error.
         """
-        filters = {"triggered_by": {"lookup": "eq", "val": triggered_by}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"triggered_by": {"lookup": "eq", "val": triggered_by}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+
 
     async def find_with_output_executions(
         self, execution_id: str
@@ -277,16 +318,21 @@ class ReportExecutionRepository(UnoDBRepository[ReportExecution]):
         except Exception as e:
             return Failure(str(e))
 
-    async def find_recent_executions(self, limit: int = 10) -> List[ReportExecution]:
+    async def find_recent_executions(self, limit: int = 10) -> Result[list[ReportExecution], Exception]:
         """Find recent executions.
 
         Args:
             limit: The maximum number of executions to return.
 
         Returns:
-            A list of recent executions.
+            Result containing a list of recent executions, or Failure on error.
         """
-        return await self.list(order_by="started_at", order_dir="desc", limit=limit)
+        try:
+            results = await self.list(order_by="started_at", order_dir="desc", limit=limit)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+
 
 
 class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
@@ -294,38 +340,53 @@ class ReportOutputExecutionRepository(UnoDBRepository[ReportOutputExecution]):
 
     async def find_by_execution_id(
         self, execution_id: str
-    ) -> List[ReportOutputExecution]:
+    ) -> Result[list[ReportOutputExecution], Exception]:
         """Find output executions by execution ID.
 
         Args:
             execution_id: The ID of the execution.
 
         Returns:
-            A list of output executions associated with the specified execution ID.
+            Result containing a list of output executions associated with the specified execution ID, or Failure on error.
         """
-        filters = {"report_execution_id": {"lookup": "eq", "val": execution_id}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"report_execution_id": {"lookup": "eq", "val": execution_id}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
 
-    async def find_by_output_id(self, output_id: str) -> List[ReportOutputExecution]:
+
+    async def find_by_output_id(self, output_id: str) -> Result[list[ReportOutputExecution], Exception]:
         """Find output executions by output ID.
 
         Args:
             output_id: The ID of the output.
 
         Returns:
-            A list of output executions associated with the specified output ID.
+            Result containing a list of output executions associated with the specified output ID, or Failure on error.
         """
-        filters = {"report_output_id": {"lookup": "eq", "val": output_id}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"report_output_id": {"lookup": "eq", "val": output_id}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
 
-    async def find_by_status(self, status: str) -> List[ReportOutputExecution]:
+
+    async def find_by_status(self, status: str) -> Result[list[ReportOutputExecution], Exception]:
         """Find output executions by status.
 
         Args:
             status: The status to search for.
 
         Returns:
-            A list of output executions with the specified status.
+            Result containing a list of output executions with the specified status, or Failure on error.
         """
-        filters = {"status": {"lookup": "eq", "val": status}}
-        return await self.list(filters=filters)
+        try:
+            filters = {"status": {"lookup": "eq", "val": status}}
+            results = await self.list(filters=filters)
+            return Success(results)
+        except Exception as e:
+            return Failure(e)
+

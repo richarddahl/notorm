@@ -41,22 +41,22 @@ class User(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "UserModel"
 
-    def validate(self) -> None:
-        """Validate the user entity."""
+    def validate(self) -> "Result[User, ValidationError]":
+        """
+        Validate the user entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.email:
-            raise ValidationError("Email cannot be empty")
+            return Failure(ValidationError("Email cannot be empty"))
         if not self.handle:
-            raise ValidationError("Handle cannot be empty")
+            return Failure(ValidationError("Handle cannot be empty"))
         if not self.full_name:
-            raise ValidationError("Full name cannot be empty")
-
-        # If user is a superuser, they should not have a default group
+            return Failure(ValidationError("Full name cannot be empty"))
         if self.is_superuser and self.default_group_id:
-            raise ValidationError("Superuser cannot have a default group")
-
-        # If user is not a superuser, they must have a default group
+            return Failure(ValidationError("Superuser cannot have a default group"))
         if not self.is_superuser and not self.default_group_id:
-            raise ValidationError("Non-superuser must have a default group")
+            return Failure(ValidationError("Non-superuser must have a default group"))
+        return Success(self)
 
     def add_to_group(self, group: "Group") -> None:
         """
@@ -136,12 +136,16 @@ class Group(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "GroupModel"
 
-    def validate(self) -> None:
-        """Validate the group entity."""
+    def validate(self) -> "Result[Group, ValidationError]":
+        """
+        Validate the group entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure(ValidationError("Name cannot be empty"))
         if not self.tenant_id:
-            raise ValidationError("Tenant ID cannot be empty")
+            return Failure(ValidationError("Tenant ID cannot be empty"))
+        return Success(self)
 
     def add_user(self, user: User) -> None:
         """
@@ -185,14 +189,18 @@ class ResponsibilityRole(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "ResponsibilityRoleModel"
 
-    def validate(self) -> None:
-        """Validate the responsibility role entity."""
+    def validate(self) -> "Result[ResponsibilityRole, ValidationError]":
+        """
+        Validate the responsibility role entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure(ValidationError("Name cannot be empty"))
         if not self.description:
-            raise ValidationError("Description cannot be empty")
+            return Failure(ValidationError("Description cannot be empty"))
         if not self.tenant_id:
-            raise ValidationError("Tenant ID cannot be empty")
+            return Failure(ValidationError("Tenant ID cannot be empty"))
+        return Success(self)
 
 
 @dataclass
@@ -214,12 +222,16 @@ class Permission(Entity[int]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "PermissionModel"
 
-    def validate(self) -> None:
-        """Validate the permission entity."""
+    def validate(self) -> "Result[Permission, ValidationError]":
+        """
+        Validate the permission entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.meta_type_id:
-            raise ValidationError("Meta type ID cannot be empty")
+            return Failure(ValidationError("Meta type ID cannot be empty"))
         if not self.operation:
-            raise ValidationError("Operation cannot be empty")
+            return Failure(ValidationError("Operation cannot be empty"))
+        return Success(self)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -262,16 +274,20 @@ class Role(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "RoleModel"
 
-    def validate(self) -> None:
-        """Validate the role entity."""
+    def validate(self) -> "Result[Role, ValidationError]":
+        """
+        Validate the role entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure(ValidationError("Name cannot be empty"))
         if not self.description:
-            raise ValidationError("Description cannot be empty")
+            return Failure(ValidationError("Description cannot be empty"))
         if not self.tenant_id:
-            raise ValidationError("Tenant ID cannot be empty")
+            return Failure(ValidationError("Tenant ID cannot be empty"))
         if not self.responsibility_role_id:
-            raise ValidationError("Responsibility role ID cannot be empty")
+            return Failure(ValidationError("Responsibility role ID cannot be empty"))
+        return Success(self)
 
     def add_permission(self, permission: Permission) -> None:
         """
@@ -352,10 +368,14 @@ class Tenant(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "TenantModel"
 
-    def validate(self) -> None:
-        """Validate the tenant entity."""
+    def validate(self) -> "Result[Tenant, ValidationError]":
+        """
+        Validate the tenant entity. Returns Success(self) if valid, otherwise Failure(ValidationError).
+        """
+        from uno.core.errors.result import Success, Failure
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure(ValidationError("Name cannot be empty"))
+        return Success(self)
 
     def add_user(self, user: User) -> None:
         """
