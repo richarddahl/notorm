@@ -6,14 +6,15 @@ records in the knowledge graph. These entities represent the core domain objects
 query subsystem, including query paths, query values, and queries.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Optional, Set, Dict, Any
 from enum import Enum
+from typing import Any, ClassVar, Optional
 
-from uno.domain.core import Entity, AggregateRoot
-from uno.core.base.error import ValidationError
+from uno.domain.core import AggregateRoot
+from uno.application.result import Result, Success, Failure
 from uno.enums import Include, Match, SQLOperation
-
 
 @dataclass
 class QueryPath(AggregateRoot[str]):
@@ -28,22 +29,23 @@ class QueryPath(AggregateRoot[str]):
     target_meta_type_id: str
     cypher_path: str
     data_type: str
-    source_meta_type: Optional[Any] = field(default=None, repr=False)
-    target_meta_type: Optional[Any] = field(default=None, repr=False)
+    source_meta_type: Any | None = field(default=None, repr=False)
+    target_meta_type: Any | None = field(default=None, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "QueryPathModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the query path entity."""
         if not self.source_meta_type_id:
-            raise ValidationError("Source meta type ID cannot be empty")
+            return Failure[None, str]("Source meta type ID cannot be empty")
         if not self.target_meta_type_id:
-            raise ValidationError("Target meta type ID cannot be empty")
+            return Failure[None, str]("Target meta type ID cannot be empty")
         if not self.cypher_path:
-            raise ValidationError("Cypher path cannot be empty")
+            return Failure[None, str]("Cypher path cannot be empty")
         if not self.data_type:
-            raise ValidationError("Data type cannot be empty")
+            return Failure[None, str]("Data type cannot be empty")
+        return Success[None, str](None)
 
     def __str__(self) -> str:
         """String representation of the query path."""
@@ -63,17 +65,17 @@ class QueryValue(AggregateRoot[str]):
     include: Include = Include.INCLUDE
     match: Match = Match.AND
     lookup: str = "equal"
-    query_path: Optional[QueryPath] = field(default=None, repr=False)
-    values: List[Any] = field(default_factory=list, repr=False)
-    queries: List["Query"] = field(default_factory=list, repr=False)
+    query_path: QueryPath | None = field(default=None, repr=False)
+    values: list[Any] = field(default_factory=list, repr=False)
+    queries: list[Query] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "QueryValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the query value entity."""
         if not self.query_path_id:
-            raise ValidationError("Query path ID cannot be empty")
+            return Failure[None, str]("Query path ID cannot be empty")
         if not isinstance(self.include, Include):
             try:
                 self.include = (
@@ -82,7 +84,7 @@ class QueryValue(AggregateRoot[str]):
                     else Include(self.include)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(f"Invalid include value: {self.include}")
+                return Failure[None, str](f"Invalid include value: {self.include}")
         if not isinstance(self.match, Match):
             try:
                 self.match = (
@@ -91,9 +93,10 @@ class QueryValue(AggregateRoot[str]):
                     else Match(self.match)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(f"Invalid match value: {self.match}")
+                return Failure[None, str](f"Invalid match value: {self.match}")
         if not self.values and not self.queries:
-            raise ValidationError("Query value must have either values or queries")
+            return Failure[None, str]("Query value must have either values or queries")
+        return Success[None, str](None)
 
     def add_value(self, value: Any) -> None:
         """
@@ -152,19 +155,19 @@ class Query(AggregateRoot[str]):
     match_values: Match = Match.AND
     include_queries: Include = Include.INCLUDE
     match_queries: Match = Match.AND
-    query_meta_type: Optional[Any] = field(default=None, repr=False)
-    query_values: List[QueryValue] = field(default_factory=list, repr=False)
-    sub_queries: List["Query"] = field(default_factory=list, repr=False)
+    query_meta_type: Any | None = field(default=None, repr=False)
+    query_values: list[QueryValue] = field(default_factory=list, repr=False)
+    sub_queries: list[Query] = field(default_factory=list, repr=False)
 
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = "QueryModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the query entity."""
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure[None, str]("Name cannot be empty")
         if not self.query_meta_type_id:
-            raise ValidationError("Query meta type ID cannot be empty")
+            return Failure[None, str]("Query meta type ID cannot be empty")
         if not isinstance(self.include_values, Include):
             try:
                 self.include_values = (
@@ -173,7 +176,7 @@ class Query(AggregateRoot[str]):
                     else Include(self.include_values)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(f"Invalid include_values: {self.include_values}")
+                return Failure[None, str](f"Invalid include_values: {self.include_values}")
         if not isinstance(self.match_values, Match):
             try:
                 self.match_values = (
@@ -182,7 +185,7 @@ class Query(AggregateRoot[str]):
                     else Match(self.match_values)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(f"Invalid match_values: {self.match_values}")
+                return Failure[None, str](f"Invalid match_values: {self.match_values}")
         if not isinstance(self.include_queries, Include):
             try:
                 self.include_queries = (
@@ -191,9 +194,7 @@ class Query(AggregateRoot[str]):
                     else Include(self.include_queries)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(
-                    f"Invalid include_queries: {self.include_queries}"
-                )
+                return Failure[None, str](f"Invalid include_queries: {self.include_queries}")
         if not isinstance(self.match_queries, Match):
             try:
                 self.match_queries = (
@@ -202,7 +203,8 @@ class Query(AggregateRoot[str]):
                     else Match(self.match_queries)
                 )
             except (KeyError, ValueError):
-                raise ValidationError(f"Invalid match_queries: {self.match_queries}")
+                return Failure[None, str](f"Invalid match_queries: {self.match_queries}")
+        return Success[None, str](None)
 
     def __str__(self) -> str:
         """String representation of the query."""
@@ -230,7 +232,7 @@ class Query(AggregateRoot[str]):
             self.query_values.remove(query_value)
             query_value.remove_query(self)
 
-    def add_sub_query(self, sub_query: "Query") -> None:
+    def add_sub_query(self, sub_query: "Query") -> Result[None, str]:
         """
         Add a sub-query to the query.
 
@@ -239,10 +241,11 @@ class Query(AggregateRoot[str]):
         """
         # Prevent circular references
         if sub_query.id == self.id:
-            raise ValidationError("Cannot add query as its own sub-query")
+            return Failure[None, str]("Cannot add query as its own sub-query")
 
         if sub_query not in self.sub_queries:
             self.sub_queries.append(sub_query)
+        return Success[None, str](None)
 
     def remove_sub_query(self, sub_query: "Query") -> None:
         """

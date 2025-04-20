@@ -21,6 +21,34 @@ E = TypeVar("E")  # Error type variable
 R = TypeVar("R")  # Result type variable
 
 
+from uno.domain.event_bus import EventBusProtocol
+from typing import Any, Mapping
+
+async def publish_and_clear_events(
+    aggregate: Any,
+    event_bus: EventBusProtocol,
+    *,
+    metadata: Mapping[str, Any] | None = None,
+    correlation_id: str | None = None,
+) -> None:
+    """
+    Publish all uncommitted domain events from the aggregate root via the event bus, then clear them.
+    Supports batch publishing, metadata, and correlation IDs for robust event handling.
+
+    Args:
+        aggregate: The aggregate root (must have get_uncommitted_events and clear_events)
+        event_bus: The event bus implementing EventBusProtocol
+        metadata: Optional metadata to attach to events
+        correlation_id: Optional correlation/causation ID
+    """
+    if aggregate and hasattr(aggregate, "get_uncommitted_events") and hasattr(event_bus, "publish_many"):
+        events = aggregate.get_uncommitted_events()
+        if events:
+            await event_bus.publish_many(events, metadata=metadata, correlation_id=correlation_id)
+        if hasattr(aggregate, "clear_events"):
+            aggregate.clear_events()
+
+
 class DomainService(Generic[T, ID], ABC):
     """
     Base class for domain services.

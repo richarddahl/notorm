@@ -11,7 +11,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from pydantic import BaseModel
 
-from uno.core.protocols.event import EventBusProtocol
+from uno.domain.event_bus import EventBusProtocol
 from uno.core.errors import Error, NotFoundError
 from uno.core.events.subscription import (
     SubscriptionManager, 

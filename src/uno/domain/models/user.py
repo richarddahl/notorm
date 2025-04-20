@@ -146,12 +146,12 @@ class User(AggregateRoot):
             return self.last_name
         return self.username
 
-    def check_invariants(self) -> None:
+    def check_invariants(self) -> Result[None, str]:
         """Check that user invariants are maintained."""
         if not self.username:
-            raise ValueError("Username is required")
-
+            return Failure[None, str]("Username is required")
         # Additional business rules can be added here
+        return Success[None, str](None)
 
 
 # Domain Events

@@ -9,7 +9,7 @@ import fnmatch
 import threading
 import asyncio
 from uno.core.events.event import Event
-from uno.core.protocols.event import EventBusProtocol
+from uno.domain.event_bus import EventBusProtocol
 from uno.core.result import Result, Success, Failure
 
 

@@ -23,6 +23,12 @@ from uno.dependencies.interfaces import (
     EventBusProtocol
 )
 
+from uno.domain.entity.base import EntityBase
+from uno.domain.entity.repository import EntityRepository
+from uno.domain.entity.specification.base import Specification
+from uno.domain.entity.service import publish_and_clear_events
+from uno.domain.event_bus import EventBusProtocol
+
 
 # Define a service interface using Protocol
 class UserServiceProtocol(Protocol):
@@ -331,11 +337,9 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         
         # Create the user
         user = await self.user_repository.create_user(user_data)
-        
-        # Publish event
-        if hasattr(self.event_bus, "publish"):
-            await self.event_bus.publish(UserCreatedEvent(user_id, user))
-        
+
+        # Publish all uncommitted domain events from the user aggregate
+        await publish_and_clear_events(user, self.event_bus)
         return user
     
     async def update_user(self, user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -358,11 +362,9 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         
         # Update the user
         user = await self.user_repository.update_user(user_id, user_data)
-        
-        # Publish event if the user was updated
-        if user and hasattr(self.event_bus, "publish"):
-            await self.event_bus.publish(UserUpdatedEvent(user_id, user))
-        
+
+        # Publish all uncommitted domain events from the user aggregate
+        await publish_and_clear_events(user, self.event_bus)
         return user
     
     async def delete_user(self, user_id: str) -> bool:
@@ -378,12 +380,11 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         self.logger.info(f"Deleting user {user_id}")
         
         # Delete the user
+        user = await self.user_repository.get_user(user_id) if hasattr(self.user_repository, "get_user") else None
         success = await self.user_repository.delete_user(user_id)
-        
-        # Publish event if the user was deleted
-        if success and hasattr(self.event_bus, "publish"):
-            await self.event_bus.publish(UserDeletedEvent(user_id))
-        
+
+        # Publish all uncommitted domain events from the user aggregate (if any)
+        await publish_and_clear_events(user, self.event_bus)
         return success
 
 

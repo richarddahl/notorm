@@ -30,7 +30,8 @@ from pydantic import BaseModel, Field
 
 from uno.core.errors import Error, NotFoundError, Result
 from uno.core.monitoring.metrics import Counter, Gauge, Timer
-from uno.core.protocols.event import EventBusProtocol, EventHandler, EventProtocol
+from uno.domain.event_bus import EventBusProtocol
+from uno.core.protocols.event import EventHandler, EventProtocol
 from uno.core.resources import Disposable
 
 

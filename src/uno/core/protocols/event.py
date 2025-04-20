@@ -86,44 +86,9 @@ class EventProtocol(Protocol):
 EventHandler = Callable[[EventProtocol], Awaitable[None]]
 
 
-@runtime_checkable
-class EventBusProtocol(Protocol):
-    """
-    Protocol defining the interface for the event bus.
-
-    The event bus is responsible for publishing events and routing them
-    to the appropriate subscribers. It decouples event producers from
-    event consumers.
-    """
-
-    async def publish(self, event: EventProtocol) -> None:
-        """
-        Publish an event to all subscribers.
-
-        Args:
-            event: The event to publish
-        """
-        ...
-
-    async def subscribe(self, event_type: str, handler: EventHandler) -> None:
-        """
-        Subscribe to events of a specific type.
-
-        Args:
-            event_type: The type of events to subscribe to
-            handler: The handler function to call when an event is received
-        """
-        ...
-
-    async def unsubscribe(self, event_type: str, handler: EventHandler) -> None:
-        """
-        Unsubscribe from events of a specific type.
-
-        Args:
-            event_type: The type of events to unsubscribe from
-            handler: The handler function to remove
-        """
-        ...
+# DEPRECATED: EventBusProtocol is now defined in uno.domain.event_bus.
+# Please use uno.domain.event_bus.EventBusProtocol as the canonical event bus protocol.
+# This legacy protocol is retained for backward compatibility only and will be removed in a future release.
 
 
 @runtime_checkable

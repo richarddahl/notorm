@@ -51,7 +51,7 @@ class Product(Entity):
             values["in_stock"] = in_stock
         return v
 
-    def update_stock(self, quantity: int) -> None:
+    def update_stock(self, quantity: int) -> Result[None, str]:
         """
         Update the stock quantity.
 
@@ -59,7 +59,7 @@ class Product(Entity):
             quantity: The new stock quantity
         """
         if quantity < 0:
-            raise ValueError("Stock quantity cannot be negative")
+            return Failure("Stock quantity cannot be negative")
 
         self.stock_quantity = quantity
         self.in_stock = quantity > 0
@@ -71,8 +71,9 @@ class Product(Entity):
                 new_quantity=quantity,
             )
         )
+        return Success(None)
 
-    def increase_stock(self, amount: int) -> None:
+    def increase_stock(self, amount: int) -> Result[None, str]:
         """
         Increase the stock quantity.
 

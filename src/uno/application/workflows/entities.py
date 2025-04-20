@@ -13,6 +13,7 @@ from enum import Enum
 
 from uno.domain.core import Entity, AggregateRoot
 from uno.core.base.error import ValidationError
+from uno.core.errors.result_utils import Result, Success, Failure
 
 from uno.workflows.models import (
     WorkflowStatus,
@@ -34,14 +35,15 @@ class User(Entity[str]):
     display_name: Optional[str] = None
     roles: List[str] = field(default_factory=list)
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the user entity."""
         if not self.id:
-            raise ValidationError("User ID is required")
+            return Failure[None, str]("User ID is required")
         if not self.username:
-            raise ValidationError("Username is required")
+            return Failure[None, str]("Username is required")
         if not self.email:
-            raise ValidationError("Email is required")
+            return Failure[None, str]("Email is required")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -64,12 +66,13 @@ class WorkflowTrigger(Entity[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowTriggerModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow trigger entity."""
         if not self.entity_type:
-            raise ValidationError("Entity type is required")
+            return Failure[None, str]("Entity type is required")
         if not self.operation:
-            raise ValidationError("Operation is required")
+            return Failure[None, str]("Operation is required")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowTrigger":
@@ -106,16 +109,17 @@ class WorkflowCondition(Entity[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowConditionModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow condition entity."""
         if not self.condition_type:
-            raise ValidationError("Condition type is required")
+            return Failure[None, str]("Condition type is required")
         if self.condition_type == WorkflowConditionType.FIELD_VALUE:
             if not self.condition_config or "field" not in self.condition_config:
-                raise ValidationError("Field is required for field value conditions")
+                return Failure[None, str]("Field is required for field value conditions")
         elif self.condition_type == WorkflowConditionType.QUERY_MATCH:
             if not self.query_id:
-                raise ValidationError("Query ID is required for query match conditions")
+                return Failure[None, str]("Query ID is required for query match conditions")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowCondition":
@@ -152,12 +156,13 @@ class WorkflowRecipient(Entity[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowRecipientModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow recipient entity."""
         if not self.recipient_type:
-            raise ValidationError("Recipient type is required")
+            return Failure[None, str]("Recipient type is required")
         if not self.recipient_id:
-            raise ValidationError("Recipient ID is required")
+            return Failure[None, str]("Recipient ID is required")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowRecipient":
@@ -202,16 +207,17 @@ class WorkflowAction(Entity[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowActionModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow action entity."""
         if not self.action_type:
-            raise ValidationError("Action type is required")
+            return Failure[None, str]("Action type is required")
         if self.action_type == WorkflowActionType.EMAIL:
             if not self.action_config or "subject" not in self.action_config:
-                raise ValidationError("Subject is required for email actions")
+                return Failure[None, str]("Subject is required for email actions")
         elif self.action_type == WorkflowActionType.WEBHOOK:
             if not self.action_config or "url" not in self.action_config:
-                raise ValidationError("URL is required for webhook actions")
+                return Failure[None, str]("URL is required for webhook actions")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowAction":
@@ -253,12 +259,13 @@ class WorkflowExecutionRecord(Entity[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowExecutionLog"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow execution record entity."""
         if not self.workflow_id:
-            raise ValidationError("Workflow ID is required")
+            return Failure[None, str]("Workflow ID is required")
         if not self.trigger_event_id:
-            raise ValidationError("Trigger event ID is required")
+            return Failure[None, str]("Trigger event ID is required")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowExecutionRecord":
@@ -300,17 +307,18 @@ class WorkflowDef(AggregateRoot[str]):
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowDefinition"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the workflow definition entity."""
         if not self.name:
-            raise ValidationError("Name is required")
+            return Failure[None, str]("Name is required")
         if not self.description:
-            raise ValidationError("Description is required")
+            return Failure[None, str]("Description is required")
         if not isinstance(self.status, WorkflowStatus):
             try:
                 self.status = WorkflowStatus(self.status)
             except (ValueError, TypeError):
-                raise ValidationError(f"Invalid status: {self.status}")
+                return Failure[None, str](f"Invalid status: {self.status}")
+        return Success[None, str](None)
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "WorkflowDef":

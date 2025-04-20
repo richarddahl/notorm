@@ -89,6 +89,14 @@ class AggregateRoot(EntityBase[ID]):
             The list of pending domain events
         """
         return list(self._events)
+
+    def get_uncommitted_events(self) -> List[Event]:
+        """
+        Protocol-compliant alias for retrieving all uncommitted domain events (does not clear them).
+        Returns:
+            The list of pending domain events
+        """
+        return self.events
     
     def add_child_entity(self, entity: E) -> None:
         """

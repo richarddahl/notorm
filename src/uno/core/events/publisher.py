@@ -10,7 +10,8 @@ import asyncio
 import structlog
 
 from uno.core.errors import Failure, Result, Success
-from uno.core.protocols.event import EventBusProtocol, EventProtocol, EventStoreProtocol
+from uno.domain.event_bus import EventBusProtocol
+from uno.core.protocols.event import EventProtocol, EventStoreProtocol
 
 
 class EventPublisher:

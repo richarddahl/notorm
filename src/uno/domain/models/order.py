@@ -103,31 +103,35 @@ class Order(Entity):
         self.status = status
         self.updated_at = datetime.now(timezone.utc)
     
-    def cancel(self) -> None:
+    def cancel(self) -> Result[None, str]:
         """Cancel the order."""
         if self.status in [OrderStatus.SHIPPED, OrderStatus.DELIVERED]:
-            raise ValueError("Cannot cancel order that has been shipped or delivered")
+            return Failure("Cannot cancel order that has been shipped or delivered")
         self.status = OrderStatus.CANCELLED
         self.updated_at = datetime.now(timezone.utc)
+        return Success(None)
     
-    def ship(self) -> None:
+    def ship(self) -> Result[None, str]:
         """Mark the order as shipped."""
         if self.status != OrderStatus.PROCESSING:
-            raise ValueError("Order must be processing before shipping")
+            return Failure("Order must be processing before shipping")
         self.status = OrderStatus.SHIPPED
         self.updated_at = datetime.now(timezone.utc)
+        return Success(None)
     
-    def deliver(self) -> None:
+    def deliver(self) -> Result[None, str]:
         """Mark the order as delivered."""
         if self.status != OrderStatus.SHIPPED:
-            raise ValueError("Order must be shipped before delivery")
+            return Failure("Order must be shipped before delivery")
         self.status = OrderStatus.DELIVERED
         self.updated_at = datetime.now(timezone.utc)
+        return Success(None)
     
-    def refund(self) -> None:
+    def refund(self) -> Result[None, str]:
         """Mark the order as refunded."""
         self.status = OrderStatus.REFUNDED
         self.updated_at = datetime.now(timezone.utc)
+        return Success(None)
     
     def calculate_total(self) -> float:
         """

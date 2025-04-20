@@ -28,10 +28,11 @@ class BaseValue(AggregateRoot[str]):
     # SQLAlchemy model mapping
     __uno_model__: ClassVar[str] = ""
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the value."""
         if not self.name:
-            raise ValidationError("Name cannot be empty")
+            return Failure[None, str]("Name cannot be empty")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -41,11 +42,14 @@ class Attachment(BaseValue):
     file_path: str
     __uno_model__: ClassVar[str] = "AttachmentModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the attachment."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not self.file_path:
-            raise ValidationError("File path cannot be empty")
+            return Failure[None, str]("File path cannot be empty")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -55,11 +59,14 @@ class BooleanValue(BaseValue):
     value: bool
     __uno_model__: ClassVar[str] = "BooleanValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the boolean value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, bool):
-            raise ValidationError("Value must be a boolean")
+            return Failure[None, str]("Value must be a boolean")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -69,11 +76,14 @@ class DateTimeValue(BaseValue):
     value: datetime.datetime
     __uno_model__: ClassVar[str] = "DateTimeValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the datetime value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, datetime.datetime):
-            raise ValidationError("Value must be a datetime")
+            return Failure[None, str]("Value must be a datetime")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -83,11 +93,14 @@ class DateValue(BaseValue):
     value: datetime.date
     __uno_model__: ClassVar[str] = "DateValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the date value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, datetime.date):
-            raise ValidationError("Value must be a date")
+            return Failure[None, str]("Value must be a date")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -97,11 +110,14 @@ class DecimalValue(BaseValue):
     value: decimal.Decimal
     __uno_model__: ClassVar[str] = "DecimalValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the decimal value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, decimal.Decimal):
-            raise ValidationError("Value must be a decimal")
+            return Failure[None, str]("Value must be a decimal")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -111,11 +127,14 @@ class IntegerValue(BaseValue):
     value: int
     __uno_model__: ClassVar[str] = "IntegerValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the integer value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, int):
-            raise ValidationError("Value must be an integer")
+            return Failure[None, str]("Value must be an integer")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -125,11 +144,14 @@ class TextValue(BaseValue):
     value: str
     __uno_model__: ClassVar[str] = "TextValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the text value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, str):
-            raise ValidationError("Value must be a string")
+            return Failure[None, str]("Value must be a string")
+        return Success[None, str](None)
 
 
 @dataclass
@@ -139,8 +161,11 @@ class TimeValue(BaseValue):
     value: datetime.time
     __uno_model__: ClassVar[str] = "TimeValueModel"
 
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate the time value."""
-        super().validate()
+        base_result = super().validate()
+        if base_result.is_failure():
+            return base_result
         if not isinstance(self.value, datetime.time):
-            raise ValidationError("Value must be a time")
+            return Failure[None, str]("Value must be a time")
+        return Success[None, str](None)

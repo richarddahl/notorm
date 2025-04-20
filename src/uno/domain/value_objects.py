@@ -12,19 +12,23 @@ from uuid import UUID
 from pydantic import field_validator, ConfigDict
 
 from uno.domain.core import ValueObject, PrimitiveValueObject
+from uno.core.errors.result import Result, Success, Failure
+
+# NOTE: All validate and domain logic now return Result types instead of raising exceptions.
 
 
 class Email(PrimitiveValueObject[str]):
     """Email address value object."""
     
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate email address."""
         if not self.value:
-            raise ValueError("Email cannot be empty")
+            return Failure[None, str]("Email cannot be empty")
         if "@" not in self.value:
-            raise ValueError("Email must contain @")
-        if "." not in self.value.split("@")[1]:
-            raise ValueError("Email must have a valid domain")
+            return Failure[None, str]("Email must contain @")
+        if "." not in self.value.split("@", 1)[1]:
+            return Failure[None, str]("Email must have a valid domain")
+        return Success[None, str](None)
     
     @field_validator('value')
     @classmethod
@@ -39,66 +43,43 @@ class Money(ValueObject):
     amount: float
     currency: str = "USD"
     
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate money."""
         if self.amount < 0:
-            raise ValueError("Amount cannot be negative")
+            return Failure[None, str]("Amount cannot be negative")
         if self.currency not in {"USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"}:
-            raise ValueError(f"Unsupported currency: {self.currency}")
+            return Failure[None, str](f"Unsupported currency: {self.currency}")
+        return Success[None, str](None)
     
-    def add(self, other: 'Money') -> 'Money':
+    def add(self, other: 'Money') -> Result['Money', str]:
         """
         Add money.
-        
-        Args:
-            other: Money to add
-            
-        Returns:
-            New money value
-            
-        Raises:
-            ValueError: If currencies don't match
+        Returns Result monad.
         """
         if self.currency != other.currency:
-            raise ValueError("Cannot add different currencies")
-        return Money(amount=self.amount + other.amount, currency=self.currency)
+            return Failure[Money, str]("Cannot add different currencies")
+        return Success[Money, str](Money(amount=self.amount + other.amount, currency=self.currency))
     
-    def subtract(self, other: 'Money') -> 'Money':
+    def subtract(self, other: 'Money') -> Result['Money', str]:
         """
         Subtract money.
-        
-        Args:
-            other: Money to subtract
-            
-        Returns:
-            New money value
-            
-        Raises:
-            ValueError: If currencies don't match or result is negative
+        Returns Result monad.
         """
         if self.currency != other.currency:
-            raise ValueError("Cannot subtract different currencies")
+            return Failure[Money, str]("Cannot subtract different currencies")
         result = self.amount - other.amount
         if result < 0:
-            raise ValueError("Result cannot be negative")
-        return Money(amount=result, currency=self.currency)
+            return Failure[Money, str]("Result cannot be negative")
+        return Success[Money, str](Money(amount=result, currency=self.currency))
     
-    def multiply(self, factor: float) -> 'Money':
+    def multiply(self, factor: float) -> Result['Money', str]:
         """
         Multiply money by a factor.
-        
-        Args:
-            factor: Factor to multiply by
-            
-        Returns:
-            New money value
-            
-        Raises:
-            ValueError: If factor is negative
+        Returns Result monad.
         """
         if factor < 0:
-            raise ValueError("Factor cannot be negative")
-        return Money(amount=self.amount * factor, currency=self.currency)
+            return Failure[Money, str]("Factor cannot be negative")
+        return Success[Money, str](Money(amount=self.amount * factor, currency=self.currency))
 
 
 class Address(ValueObject):
@@ -110,14 +91,15 @@ class Address(ValueObject):
     zip_code: str
     country: str = "US"
     
-    def validate(self) -> None:
+    def validate(self) -> Result[None, str]:
         """Validate address."""
         if not self.street:
-            raise ValueError("Street cannot be empty")
+            return Failure[None, str]("Street cannot be empty")
         if not self.city:
-            raise ValueError("City cannot be empty")
+            return Failure[None, str]("City cannot be empty")
         if not self.zip_code:
-            raise ValueError("Zip code cannot be empty")
+            return Failure[None, str]("Zip code cannot be empty")
+        return Success[None, str](None)
     
     @property
     def formatted(self) -> str:
