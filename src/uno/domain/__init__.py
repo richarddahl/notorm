@@ -26,9 +26,37 @@ Key components:
 """
 
 # Domain entities (DDD)
+# Domain API integration
+from uno.values.domain_api_integration import register_domain_value_endpoints_api
+
+# Domain repositories (DDD)
+from uno.values.domain_repositories import (
+    AttachmentRepository,
+    BooleanValueRepository,
+    DateTimeValueRepository,
+    DateValueRepository,
+    DecimalValueRepository,
+    IntegerValueRepository,
+    TextValueRepository,
+    TimeValueRepository,
+    ValueRepository,
+)
+
+# Domain services (DDD)
+from uno.values.domain_services import (
+    AttachmentService,
+    BooleanValueService,
+    DateTimeValueService,
+    DateValueService,
+    DecimalValueService,
+    IntegerValueService,
+    TextValueService,
+    TimeValueService,
+    ValueService,
+)
 from uno.values.entities import (
-    BaseValue,
     Attachment,
+    BaseValue,
     BooleanValue,
     DateTimeValue,
     DateValue,
@@ -38,51 +66,22 @@ from uno.values.entities import (
     TimeValue,
 )
 
-# Domain repositories (DDD)
-from uno.values.domain_repositories import (
-    ValueRepository,
-    AttachmentRepository,
-    BooleanValueRepository,
-    DateTimeValueRepository,
-    DateValueRepository,
-    DecimalValueRepository,
-    IntegerValueRepository,
-    TextValueRepository,
-    TimeValueRepository,
-)
-
-# Domain services (DDD)
-from uno.values.domain_services import (
-    ValueService,
-    AttachmentService,
-    BooleanValueService,
-    DateTimeValueService,
-    DateValueService,
-    DecimalValueService,
-    IntegerValueService,
-    TextValueService,
-    TimeValueService,
-)
-
-# Dependency injection provider
-
-    get_values_provider,
-    configure_values_services,
-)
-
-# Domain API integration
-from uno.values.domain_api_integration import register_domain_value_endpoints_api
-
 # Error types
 from uno.values.errors import (
     ValueErrorCode,
-    ValueNotFoundError,
     ValueInvalidDataError,
+    ValueNotFoundError,
+    ValueRepositoryError,
+    ValueServiceError,
     ValueTypeMismatchError,
     ValueValidationError,
-    ValueServiceError,
-    ValueRepositoryError,
     register_value_errors,
+)
+
+# Dependency injection provider
+from uno.values.providers import (
+    configure_values_services,
+    get_values_provider,
 )
 
 # Register value error codes in the catalog
@@ -105,7 +104,6 @@ __all__ = [
     "IntegerValue",
     "TextValue",
     "TimeValue",
-    
     # Domain Repositories (DDD)
     "ValueRepository",
     "AttachmentRepository",
@@ -116,7 +114,6 @@ __all__ = [
     "IntegerValueRepository",
     "TextValueRepository",
     "TimeValueRepository",
-    
     # Domain Services (DDD)
     "ValueService",
     "AttachmentService",
@@ -127,14 +124,11 @@ __all__ = [
     "IntegerValueService",
     "TextValueService",
     "TimeValueService",
-    
     # Dependency Injection
     "get_values_provider",
     "configure_values_services",
-    
     # API integration
     "register_domain_value_endpoints_api",
-    
     # Error types
     "ValueErrorCode",
     "ValueNotFoundError",
