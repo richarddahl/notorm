@@ -13,7 +13,6 @@ from uno.core.protocols.entity import (
     ValueObjectProtocol,
 )
 from uno.core.protocols.event import (
-    EventBusProtocol,
     EventHandler,
     EventProtocol,
     EventPublisherProtocol,
@@ -53,7 +52,7 @@ __all__ = [
     "Result",
     # Event protocols
     "EventProtocol",
-    "EventBusProtocol",
+
     "EventStoreProtocol",
     "EventPublisherProtocol",
     "EventHandler",
