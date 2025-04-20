@@ -17,72 +17,51 @@ from sqlalchemy.exc import SQLAlchemyError
 from uno.utilities import snake_to_camel
 
 
-class GraphChangeEvent:
+from uno.core.events.event import Event
+from typing import Optional, Set, Any
+
+class GraphChangeEvent(Event):
     """
     Represents a change event for graph updates.
-    
+    Inherits all canonical event metadata fields from Event.
     These events are used to track changes to entities that should be
     reflected in the graph database.
     """
-    
-    CREATE = "create"
-    UPDATE = "update"
-    DELETE = "delete"
-    
-    def __init__(
-        self,
-        entity_type: str,
-        entity_id: str,
-        change_type: str,
-        data: Optional[Dict[str, Any]] = None,
-        previous_data: Optional[Dict[str, Any]] = None,
-        changed_fields: Optional[Set[str]] = None,
-        timestamp: Optional[datetime] = None
-    ):
-        """
-        Initialize a graph change event.
-        
-        Args:
-            entity_type: The type of entity being changed (table name)
-            entity_id: The primary key of the entity
-            change_type: Type of change (create, update, delete)
-            data: Current entity data for creates and updates
-            previous_data: Previous entity data for updates
-            changed_fields: Set of field names that changed for updates
-            timestamp: When this change occurred
-        """
-        self.entity_type = entity_type
-        self.entity_id = entity_id
-        self.change_type = change_type
-        self.data = data or {}
-        self.previous_data = previous_data or {}
-        self.changed_fields = changed_fields or set()
-        self.timestamp = timestamp or datetime.now()
-    
+    CREATE: str = "create"
+    UPDATE: str = "update"
+    DELETE: str = "delete"
+
+    entity_type: str
+    entity_id: str
+    change_type: str
+    data: dict[str, Any] = {}
+    previous_data: dict[str, Any] = {}
+    changed_fields: Set[str] = set()
+
     @property
     def node_label(self) -> str:
         """Get the node label for this entity type."""
+        from uno.utilities import snake_to_camel
         return snake_to_camel(self.entity_type)
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
+        d = super().dict()
+        d.update({
             "entity_type": self.entity_type,
             "entity_id": self.entity_id,
             "change_type": self.change_type,
             "data": self.data,
             "previous_data": self.previous_data,
             "changed_fields": list(self.changed_fields),
-            "timestamp": self.timestamp.isoformat(),
             "node_label": self.node_label
-        }
-    
+        })
+        return d
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GraphChangeEvent":
+    def from_dict(cls, data: dict[str, Any]) -> "GraphChangeEvent":
         """Create from dictionary representation."""
         changed_fields = set(data.get("changed_fields", []))
-        timestamp = datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else None
-        
         return cls(
             entity_type=data["entity_type"],
             entity_id=data["entity_id"],
@@ -90,7 +69,6 @@ class GraphChangeEvent:
             data=data.get("data", {}),
             previous_data=data.get("previous_data", {}),
             changed_fields=changed_fields,
-            timestamp=timestamp
         )
 
 

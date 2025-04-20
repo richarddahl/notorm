@@ -50,30 +50,32 @@ class UserServiceProtocol(Protocol):
 
 
 # Define events for the user service
-class UserCreatedEvent:
-    """Event raised when a user is created."""
-    
-    def __init__(self, user_id: str, user_data: Dict[str, Any]):
-        """Initialize the event."""
-        self.user_id = user_id
-        self.user_data = user_data
+from uno.core.events.event import Event
+
+class UserCreatedEvent(Event):
+    """
+    Event raised when a user is created.
+    Inherits all canonical event metadata fields from Event.
+    """
+    user_id: str
+    user_data: dict[str, Any]
 
 
-class UserUpdatedEvent:
-    """Event raised when a user is updated."""
-    
-    def __init__(self, user_id: str, user_data: Dict[str, Any]):
-        """Initialize the event."""
-        self.user_id = user_id
-        self.user_data = user_data
+class UserUpdatedEvent(Event):
+    """
+    Event raised when a user is updated.
+    Inherits all canonical event metadata fields from Event.
+    """
+    user_id: str
+    user_data: dict[str, Any]
 
 
-class UserDeletedEvent:
-    """Event raised when a user is deleted."""
-    
-    def __init__(self, user_id: str):
-        """Initialize the event."""
-        self.user_id = user_id
+class UserDeletedEvent(Event):
+    """
+    Event raised when a user is deleted.
+    Inherits all canonical event metadata fields from Event.
+    """
+    user_id: str
 
 
 # Define a repository for user data

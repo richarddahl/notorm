@@ -8,6 +8,63 @@ import re
 import fnmatch
 import threading
 import asyncio
+from uno.core.events.event import Event
+from uno.core.protocols.event import EventBusProtocol
+from uno.core.result import Result, Success, Failure
+
+
+class CacheInvalidationEvent(Event):
+    """
+    Canonical event for cache invalidation, inheriting from the core Event class.
+    Propagates all canonical event metadata and allows for cache-specific context.
+    """
+    key_pattern: str
+    reason: str | None = None
+    extra: dict[str, Any] = {}
+
+    def to_dict(self) -> dict[str, Any]:
+        base = super().to_dict()
+        base["key_pattern"] = self.key_pattern
+        base["reason"] = self.reason
+        base["extra"] = self.extra
+        return base
+
+
+from uno.core.events.publisher import EventPublisher
+
+def emit_cache_invalidation_event(
+    publisher: EventPublisher,
+    key_pattern: str,
+    *,
+    reason: str | None = None,
+    extra: dict[str, Any] | None = None,
+    correlation_id: str | None = None,
+    causation_id: str | None = None,
+    aggregate_id: str | None = None,
+    aggregate_type: str | None = None,
+    aggregate_version: int | None = None,
+) -> Result[CacheInvalidationEvent, str]:
+    """
+    Emit a cache invalidation event via the canonical EventPublisher, using Result monad error handling.
+    This function is now async and must be awaited.
+    """
+    try:
+        event = CacheInvalidationEvent(
+            key_pattern=key_pattern,
+            reason=reason,
+            extra=extra or {},
+            correlation_id=correlation_id,
+            causation_id=causation_id,
+            aggregate_id=aggregate_id,
+            aggregate_type=aggregate_type,
+            aggregate_version=aggregate_version,
+        )
+        result = await publisher.publish(event)
+        if isinstance(result, Failure):
+            return Failure(f"Failed to emit cache invalidation event: {result.error}", convert=True)
+        return Success(event, convert=True)
+    except Exception as e:
+        return Failure(f"Failed to emit cache invalidation event: {e}", convert=True)
 
 
 class EventBasedInvalidation:

@@ -32,11 +32,11 @@ from uno.core.events import (
     get_event_bus,
     get_event_publisher,
     get_event_store,
-    publish_event,
-    publish_event_sync,
-    collect_event,
     publish_collected_events_async,
 )
+from uno.core.errors import Result, Success, Failure
+from typing import Optional, List, Dict, Any
+
 
 
 # =============================================================================
@@ -265,12 +265,13 @@ def process_order_cancellation(event: OrderCancelledEvent) -> None:
 class UserService:
     """Service responsible for user management."""
 
-    def __init__(self):
+    def __init__(self, event_publisher: EventPublisher):
         """Initialize the user service."""
         self.users: Dict[str, Dict[str, Any]] = {}
         self.logger = logging.getLogger("user_service")
+        self.event_publisher = event_publisher
 
-    async def create_user(self, email: str, username: str) -> str:
+    async def create_user(self, email: str, username: str) -> Result[str, str]:
         """
         Create a new user and raise a UserCreatedEvent.
 
@@ -296,11 +297,13 @@ class UserService:
 
         # Raise event
         event = UserCreatedEvent(user_id=user_id, email=email, username=username)
-        publish_event(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish UserCreatedEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(user_id, convert=True)
 
-        return user_id
-
-    async def update_user(self, user_id: str, **kwargs) -> None:
+    async def update_user(self, user_id: str, **kwargs) -> Result[None, str]:
         """
         Update a user and raise a UserUpdatedEvent.
 
@@ -324,9 +327,13 @@ class UserService:
 
         # Raise event
         event = UserUpdatedEvent(user_id=user_id, fields_updated=updated_fields)
-        publish_event(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish UserUpdatedEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(None, convert=True)
 
-    async def delete_user(self, user_id: str, reason: Optional[str] = None) -> None:
+    async def delete_user(self, user_id: str, reason: Optional[str] = None) -> Result[None, str]:
         """
         Delete a user and raise a UserDeletedEvent.
 
@@ -344,7 +351,11 @@ class UserService:
 
         # Collect event for batch processing
         event = UserDeletedEvent(user_id=user_id, reason=reason)
-        collect_event(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish UserDeletedEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(None, convert=True)
 
 
 # =============================================================================
@@ -355,14 +366,15 @@ class UserService:
 class OrderService:
     """Service responsible for order management."""
 
-    def __init__(self):
+    def __init__(self, event_publisher: EventPublisher):
         """Initialize the order service."""
         self.orders: Dict[str, Dict[str, Any]] = {}
         self.logger = logging.getLogger("order_service")
+        self.event_publisher = event_publisher
 
     async def create_order(
         self, user_id: str, items: List[Dict[str, Any]], topic: Optional[str] = None
-    ) -> str:
+    ) -> Result[str, str]:
         """
         Create a new order and raise an OrderCreatedEvent.
 
@@ -402,11 +414,13 @@ class OrderService:
             total_amount=total_amount,
             topic=topic,
         )
-        publish_event_sync(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish OrderCreatedEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(order_id, convert=True)
 
-        return order_id
-
-    async def ship_order(self, order_id: str, tracking_number: str) -> None:
+    async def ship_order(self, order_id: str, tracking_number: str) -> Result[None, str]:
         """
         Ship an order and raise an OrderShippedEvent.
 
@@ -432,9 +446,13 @@ class OrderService:
             user_id=self.orders[order_id]["user_id"],
             tracking_number=tracking_number,
         )
-        publish_event(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish OrderShippedEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(None, convert=True)
 
-    async def cancel_order(self, order_id: str, reason: Optional[str] = None) -> None:
+    async def cancel_order(self, order_id: str, reason: Optional[str] = None) -> Result[None, str]:
         """
         Cancel an order and raise an OrderCancelledEvent.
 
@@ -460,7 +478,11 @@ class OrderService:
             reason=reason,
             topic=f"orders.{self.orders[order_id]['user_id']}.cancelled",
         )
-        collect_event(event)
+        result = await self.event_publisher.publish(event)
+        if isinstance(result, Failure):
+            self.logger.error(f"Failed to publish OrderCancelledEvent: {result.error}")
+            return Failure(result.error, convert=True)
+        return Success(None, convert=True)
 
 
 # =============================================================================
