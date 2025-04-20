@@ -97,56 +97,23 @@ class EventContext:
     attributes: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
-class Event:
+from uno.core.events.event import Event as BaseEvent
+
+class MonitoringEvent(BaseEvent):
     """
-    A structured event.
-    
-    Events represent significant occurrences in the application,
-    with structured data for analysis.
+    Monitoring event that extends the canonical Event class.
+    Inherits all canonical event metadata fields and supports full metadata/context propagation.
+    Adds a 'level' field for monitoring/logging importance.
     """
-    id: str
-    name: str
-    message: str
-    timestamp: float
     level: EventLevel
-    type: EventType
-    context: EventContext
-    data: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the event to a dictionary.
-        
-        Returns:
-            Dictionary representation of the event
-        """
-        return {
-            "id": self.id,
-            "name": self.name,
-            "message": self.message,
-            "timestamp": self.timestamp,
-            "level": self.level.name,
-            "type": self.type.name,
-            "context": {
-                "user_id": self.context.user_id,
-                "source": self.context.source,
-                "request_id": self.context.request_id,
-                "trace_id": self.context.trace_id,
-                "span_id": self.context.span_id,
-                "attributes": self.context.attributes
-            },
-            "data": self.data
-        }
-    
+
+    def to_dict(self) -> dict:
+        base = super().to_dict()
+        base["level"] = self.level.name if hasattr(self.level, 'name') else str(self.level)
+        return base
+
     def to_json(self) -> str:
-        """
-        Convert the event to JSON.
-        
-        Returns:
-            JSON string representation of the event
-        """
-        return json.dumps(self.to_dict(), default=str)
+        return super().to_json()
 
 
 class EventFilter(Protocol):

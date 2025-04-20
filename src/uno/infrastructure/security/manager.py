@@ -26,7 +26,7 @@ from uno.security.audit import AuditLogManager, SecurityEvent
 class SecurityHook(Protocol):
     """Protocol for security hooks."""
     
-    def __call__(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def __call__(self, event: SecurityEvent) -> None:
         """Process a security event."""
         ...
 
@@ -121,7 +121,7 @@ class SecurityManager:
         if event.event_type in self.security_hooks:
             for hook in self.security_hooks[event.event_type]:
                 try:
-                    hook(event, event.context)
+                    hook(event)
                 except Exception as e:
                     self.logger.error(f"Error executing security hook: {str(e)}")
     
@@ -566,17 +566,17 @@ class SecurityManager:
         except ValueError:
             return False
     
-    def _log_login_event(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def _log_login_event(self, event: SecurityEvent) -> None:
         """Log a login event."""
         # This is a placeholder for additional processing of login events
         pass
     
-    def _log_logout_event(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def _log_logout_event(self, event: SecurityEvent) -> None:
         """Log a logout event."""
         # This is a placeholder for additional processing of logout events
         pass
     
-    def _log_failed_login(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def _log_failed_login(self, event: SecurityEvent) -> None:
         """
         Log a failed login attempt.
         
@@ -586,12 +586,12 @@ class SecurityManager:
         # This is a placeholder for additional processing of failed login events
         pass
     
-    def _log_password_change(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def _log_password_change(self, event: SecurityEvent) -> None:
         """Log a password change event."""
         # This is a placeholder for additional processing of password change events
         pass
     
-    def _log_security_setting_change(self, event: SecurityEvent, context: Dict[str, Any]) -> None:
+    def _log_security_setting_change(self, event: SecurityEvent) -> None:
         """Log a security setting change event."""
         # This is a placeholder for additional processing of security setting change events
         pass

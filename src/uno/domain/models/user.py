@@ -155,10 +155,10 @@ class User(AggregateRoot):
 
 
 # Domain Events
-from uno.domain.core import UnoEvent
+from uno.core.events.event import Event
 
 
-class UserEmailChangedEvent(UnoEvent):
+class UserEmailChangedEvent(Event):
     """Event fired when a user's email is changed."""
 
     user_id: str
@@ -166,7 +166,7 @@ class UserEmailChangedEvent(UnoEvent):
     new_email: str
 
 
-class UserRoleChangedEvent(UnoEvent):
+class UserRoleChangedEvent(Event):
     """Event fired when a user's role is changed."""
 
     user_id: str

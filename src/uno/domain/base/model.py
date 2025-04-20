@@ -16,24 +16,24 @@ import enum
 from typing import Annotated, Any, Optional, Type, TypeVar
 
 from sqlalchemy import MetaData
-from sqlalchemy.orm import registry, DeclarativeBase
-from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.dialects.postgresql import (
     ARRAY,
     BIGINT,
-    TIMESTAMP,
-    DATE,
-    TIME,
-    VARCHAR,
-    ENUM,
     BOOLEAN,
-    NUMERIC,
-    INTERVAL,
-    UUID,
-    JSONB,
     BYTEA,
+    DATE,
+    ENUM,
+    INTERVAL,
+    JSONB,
+    NUMERIC,
     TEXT,
+    TIME,
+    TIMESTAMP,
+    UUID,
+    VARCHAR,
 )
+from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, registry
 
 from uno.settings import uno_settings
 

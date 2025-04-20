@@ -161,10 +161,10 @@ class Product(Entity):
 
 
 # Domain Events
-from uno.domain.core import UnoEvent
+from uno.core.events.event import Event
 
 
-class ProductPriceUpdatedEvent(UnoEvent):
+class ProductPriceUpdatedEvent(Event):
     """Event fired when a product's price is updated."""
 
     product_id: str
@@ -172,7 +172,7 @@ class ProductPriceUpdatedEvent(UnoEvent):
     new_price: dict
 
 
-class ProductStockUpdatedEvent(UnoEvent):
+class ProductStockUpdatedEvent(Event):
     """Event fired when a product's stock is updated."""
 
     product_id: str

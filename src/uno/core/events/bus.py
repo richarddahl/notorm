@@ -7,13 +7,11 @@ async handling and concurrency control.
 """
 
 import asyncio
-import logging
-from typing import Dict, List, Set, Type, Callable, Awaitable, Optional, Any
 
 import structlog
 
-from uno.core.protocols.event import EventBusProtocol, EventProtocol, EventHandler
-from uno.core.events.event import Event
+from uno.core.errors import Failure, Result, Success
+from uno.core.protocols.event import EventBusProtocol, EventHandler, EventProtocol
 
 
 class AsyncEventBus(EventBusProtocol):
@@ -41,10 +39,10 @@ class AsyncEventBus(EventBusProtocol):
         structlog.configure(logger_factory=structlog.stdlib.LoggerFactory())
         self.logger = structlog.get_logger("uno.core.events")
         self.max_concurrency = max_concurrency
-        self._subscriptions: Dict[str, Set[EventHandler]] = {}
+        self._subscriptions: dict[str, set[EventHandler]] = {}
         self._semaphore = asyncio.Semaphore(max_concurrency)
     
-    async def publish(self, event: EventProtocol) -> None:
+    async def publish(self, event: EventProtocol) -> Result[None, str]:
         """
         Publish an event to all subscribers.
         
@@ -55,28 +53,30 @@ class AsyncEventBus(EventBusProtocol):
         Args:
             event: The event to publish
         """
-        event_type = event.event_type
-        self.logger.debug(
-            "Publishing event",
-            event_type=event_type,
-            event_id=event.event_id,
-        )
-        
-        handlers = self._subscriptions.get(event_type, set())
-        if not handlers:
+        try:
+            event_type = event.event_type
             self.logger.debug(
-                "No handlers registered for event",
+                "Publishing event",
                 event_type=event_type,
+                event_id=event.event_id,
             )
-            return
-        
-        # Create tasks for all handlers
-        tasks = []
-        for handler in handlers:
-            tasks.append(self._execute_handler(handler, event))
-        
-        # Wait for all handlers to complete
-        await asyncio.gather(*tasks, return_exceptions=True)
+            handlers = self._subscriptions.get(event_type, set())
+            if not handlers:
+                self.logger.debug(
+                    "No handlers registered for event",
+                    event_type=event_type,
+                )
+                return Success(None, convert=True)
+            # Create tasks for all handlers
+            tasks = []
+            for handler in handlers:
+                tasks.append(self._execute_handler(handler, event))
+            # Wait for all handlers to complete
+            await asyncio.gather(*tasks, return_exceptions=True)
+            return Success(None, convert=True)
+        except Exception as e:
+            self.logger.error("Error publishing event", error=str(e), exc_info=True)
+            return Failure(str(e), convert=True)
     
     async def subscribe(self, event_type: str, handler: EventHandler) -> None:
         """
@@ -135,17 +135,24 @@ class AsyncEventBus(EventBusProtocol):
                     exc_info=True,
                 )
     
-    async def publish_many(self, events: List[EventProtocol]) -> None:
+    async def publish_many(self, events: list[EventProtocol]) -> Result[None, str]:
         """
         Publish multiple events sequentially.
         
         Args:
             events: The events to publish
         """
-        for event in events:
-            await self.publish(event)
+        try:
+            for event in events:
+                result = await self.publish(event)
+                if isinstance(result, Failure):
+                    return result
+            return Success(None, convert=True)
+        except Exception as e:
+            self.logger.error("Error publishing multiple events", error=str(e), exc_info=True)
+            return Failure(str(e), convert=True)
     
-    async def publish_many_async(self, events: List[EventProtocol]) -> None:
+    async def publish_many_async(self, events: list[EventProtocol]) -> None:
         """
         Publish multiple events concurrently.
         

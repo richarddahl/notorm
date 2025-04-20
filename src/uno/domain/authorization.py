@@ -23,10 +23,9 @@ from typing import (
     cast,
 )
 
-from uno.domain.application_services import ServiceContext
 from uno.core.base.error import AuthorizationError
-from uno.domain.models import Entity, AggregateRoot
-
+from uno.domain.application_services import ServiceContext
+from uno.domain.models import AggregateRoot, Entity
 
 # Type variables
 T = TypeVar("T")

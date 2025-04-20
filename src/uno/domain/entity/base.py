@@ -7,8 +7,9 @@ timestamp tracking, and other essential entity behaviors.
 """
 
 import uuid
-from datetime import datetime, UTC
-from typing import TypeVar, Generic, Any, ClassVar, Optional, Dict
+from datetime import UTC, datetime
+from typing import Any, ClassVar, Dict, Generic, Optional, TypeVar
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ID = TypeVar('ID')

@@ -261,7 +261,6 @@ Despite the overall strength of the architecture, several potential areas for im
 
 1. **Documentation Cleanup**: The documentation still contains legacy references that need to be removed to avoid confusion for new developers.
 
-2. **API Endpoint Migration**: The API endpoint framework migration is in progress, potentially creating inconsistency across different parts of the API layer.
 
 3. **Testing Infrastructure**: The codebase would benefit from more extensive testing patterns and robust test fixtures to support comprehensive unit and integration testing of DDD components.
 

@@ -6,40 +6,39 @@ and flexibility, integrating with the graph database for complex queries.
 It provides efficient data retrieval capabilities for the domain model.
 """
 
-import logging
-import json
-import time
 import hashlib
-from typing import (
-    Dict,
-    List,
-    Any,
-    Optional,
-    TypeVar,
-    Generic,
-    Union,
-    Set,
-    Type,
-    Tuple,
-    Callable,
-    Awaitable,
-)
+import json
+import logging
+import time
 from datetime import datetime
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
-from sqlalchemy import text, func
+from sqlalchemy import func, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from uno.domain.core import Entity
 from uno.core.base.respository import Repository
-from uno.domain.query import QuerySpecification, QueryResult
 from uno.database.session import async_session
+from uno.domain.core import Entity
+from uno.domain.query import QueryResult, QuerySpecification
 from uno.domain.query_optimizer import (
-    QueryPerformanceTracker,
-    QueryResultCache,
     GraphQueryOptimizer,
     MaterializedQueryView,
+    QueryPerformanceTracker,
+    QueryResultCache,
 )
-
 
 T = TypeVar("T", bound=Entity)
 Q = TypeVar("Q", bound=QuerySpecification)

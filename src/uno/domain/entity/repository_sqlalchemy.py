@@ -18,7 +18,11 @@ from uno.domain.entity.base import EntityBase
 from uno.domain.entity.repository import EntityRepository
 from uno.domain.entity.specification.base import AttributeSpecification, Specification
 from uno.domain.entity.specification.composite import (
-    AllSpecification, AndSpecification, AnySpecification, NotSpecification, OrSpecification
+    AllSpecification,
+    AndSpecification,
+    AnySpecification,
+    NotSpecification,
+    OrSpecification,
 )
 
 # Type variables

@@ -9,9 +9,9 @@ from uno.domain.bounded_context import (
     BoundedContext,
     ContextRelation,
     ContextRelationType,
+    get_context_map,
     register_bounded_context,
     register_context_relation,
-    get_context_map
 )
 
 

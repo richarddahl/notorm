@@ -11,36 +11,46 @@ This module defines security events for audit logging.
 import time
 import uuid
 import json
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Any, Union
+from typing import Optional, Any, Dict
+from uno.core.events.event import Event as BaseEvent
+from dataclasses import asdict
 
-
-@dataclass
-class SecurityEvent:
+class SecurityEvent(BaseEvent):
     """
-    Security event for audit logging.
-    
-    This class represents a security event that can be logged and analyzed.
+    Security event for audit logging, inheriting from the canonical Event class.
+    Propagates all canonical event metadata fields and adds security-specific fields.
     """
-    
-    event_type: str
-    user_id: Optional[str] = None
-    timestamp: float = field(default_factory=time.time)
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    user_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
     success: bool = True
-    message: Optional[str] = None
-    details: Optional[str] = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    message: str | None = None
+    details: str | None = None
     severity: str = "info"
-    
+
+    def to_dict(self) -> dict:
+        base = super().to_dict()
+        base.update({
+            "user_id": self.user_id,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "success": self.success,
+            "message": self.message,
+            "details": self.details,
+            "severity": self.severity,
+        })
+        return base
+
+    def to_json(self) -> str:
+        return super().to_json()
+
+
     def __post_init__(self) -> None:
         """Post-initialization validation."""
         # Ensure timestamp is a float
         if isinstance(self.timestamp, int):
             self.timestamp = float(self.timestamp)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert the event to a dictionary.
@@ -165,112 +175,74 @@ class SecurityEvent:
             user_id=user_id,
             ip_address=ip_address,
             user_agent=user_agent,
+            success=True,
             message=f"Logout for user {user_id}",
-            context=context
+            severity="info",
         )
-    
+
     @classmethod
     def password_change(
         cls,
         user_id: str,
         success: bool = True,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        **context
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> "SecurityEvent":
         """
-        Create a password change event.
-        
-        Args:
-            user_id: User ID
-            success: Whether the password change was successful
-            ip_address: IP address of the client
-            user_agent: User agent of the client
-            **context: Additional context
-            
-        Returns:
-            SecurityEvent instance
+        Create a password change event with canonical event metadata fields.
         """
-        message = (
+        msg = (
             f"Password changed for user {user_id}" if success
             else f"Failed password change attempt for user {user_id}"
         )
-        
         return cls(
-            event_type="password_change",
+            event_type="security.password_change",
             user_id=user_id,
             ip_address=ip_address,
             user_agent=user_agent,
             success=success,
-            message=message,
-            context=context
+            message=msg,
+            severity="info" if success else "warning",
         )
-    
+
     @classmethod
     def access_denied(
         cls,
-        user_id: Optional[str],
+        user_id: str | None,
         resource: str,
         action: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        **context
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> "SecurityEvent":
         """
-        Create an access denied event.
-        
-        Args:
-            user_id: User ID (if authenticated)
-            resource: Resource being accessed
-            action: Action being attempted
-            ip_address: IP address of the client
-            user_agent: User agent of the client
-            **context: Additional context
-            
-        Returns:
-            SecurityEvent instance
+        Create an access denied event with canonical event metadata fields.
         """
         user_info = f"user {user_id}" if user_id else "unauthenticated user"
-        message = f"Access denied for {user_info}: {action} on {resource}"
-        
+        msg = f"Access denied for {user_info}: {action} on {resource}"
         return cls(
-            event_type="access_denied",
+            event_type="security.access_denied",
             user_id=user_id,
             ip_address=ip_address,
             user_agent=user_agent,
             success=False,
-            message=message,
+            message=msg,
             severity="warning",
-            context={"resource": resource, "action": action, **context}
+            details=f"action={action}, resource={resource}"
         )
-    
+
     @classmethod
     def admin_action(
         cls,
         user_id: str,
         action: str,
-        target_id: Optional[str] = None,
-        target_type: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        details: Optional[Any] = None,
-        **context
+        target_id: str | None = None,
+        target_type: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        details: str | None = None,
     ) -> "SecurityEvent":
         """
-        Create an admin action event.
-        
-        Args:
-            user_id: User ID of the administrator
-            action: Action being performed
-            target_id: ID of the target resource (if applicable)
-            target_type: Type of the target resource (if applicable)
-            ip_address: IP address of the client
-            user_agent: User agent of the client
-            details: Additional details about the action
-            **context: Additional context
-            
-        Returns:
-            SecurityEvent instance
+        Create an admin action event with canonical event metadata fields.
         """
         target_info = ""
         if target_type and target_id:

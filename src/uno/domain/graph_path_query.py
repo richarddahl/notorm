@@ -7,19 +7,19 @@ It provides a more expressive and efficient approach for multi-hop queries
 compared to traditional filtering.
 """
 
-import logging
-import json
-import time
 import hashlib
-from typing import Dict, List, Any, Optional, Set, Tuple, TypeVar, Generic, Type, Union
+import json
+import logging
+import time
 from datetime import datetime
+from typing import Any, Dict, Generic, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from uno.database.session import async_session
-from uno.domain.query_optimizer import QueryPerformanceTracker, QueryResultCache
 from uno.domain.enhanced_query import QueryMetadata
+from uno.domain.query_optimizer import QueryPerformanceTracker, QueryResultCache
 from uno.queries.filter import UnoFilter
 
 T = TypeVar("T")

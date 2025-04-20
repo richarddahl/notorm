@@ -26,7 +26,7 @@ from uno.domain.models import (
     Entity,
     AggregateRoot,
     ValueObject,
-    UnoEvent,
+
     CommandResult,
 )
 from uno.domain.protocols import (
@@ -34,8 +34,8 @@ from uno.domain.protocols import (
     AggregateRootProtocol,
     ValueObjectProtocol,
     EntityFactoryProtocol,
-    DomainEventProtocol,
 )
+from uno.core.events.event import Event
 from uno.core.base.error import DomainValidationError
 
 
@@ -81,12 +81,12 @@ class EntityFactory(Generic[T]):
         return cls.entity_class(**kwargs)
 
     @classmethod
-    def create_with_events(cls, events: List[DomainEventProtocol], **kwargs: Any) -> T:
+    def create_with_events(cls, events: list[Event], **kwargs: Any) -> T:
         """
         Create a new entity and register domain events.
 
         Args:
-            events: Domain events to register with the entity
+            events: Domain events to register with the entity (must inherit from Event)
             **kwargs: Entity attributes
 
         Returns:
