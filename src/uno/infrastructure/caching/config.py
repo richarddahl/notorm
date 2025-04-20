@@ -69,12 +69,12 @@ class InvalidationConfig:
     ttl_jitter: float = 0.1  # Jitter to add to TTL to prevent stampede
 
     # Event-based invalidation settings
-    event_handlers: Dict[str, list[str]] = field(
+    event_handlers: dict[str, list[str]] = field(
         default_factory=dict
     )  # Event to patterns mapping
 
     # Pattern-based invalidation settings
-    patterns: Dict[str, list[str]] = field(
+    patterns: dict[str, list[str]] = field(
         default_factory=dict
     )  # Entity to patterns mapping
 
@@ -119,7 +119,7 @@ class CacheConfig:
     hash_algorithm: str = "md5"  # Algorithm for key hashing
 
     # Cache regions/namespaces
-    regions: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    regions: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @classmethod
     def development_defaults(cls) -> "CacheConfig":

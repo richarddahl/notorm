@@ -20,10 +20,10 @@ TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__))
 def get_template_path(template_name: str) -> str:
     """
     Get the path to a template file.
-    
+
     Args:
         template_name: Name of the template (e.g., "sql_migration.tpl")
-        
+
     Returns:
         Path to the template file
     """
@@ -33,13 +33,13 @@ def get_template_path(template_name: str) -> str:
 def get_default_sql_template() -> str:
     """
     Get the default SQL migration template.
-    
+
     Returns:
         Content of the template
     """
     template_path = get_template_path("sql_migration.tpl")
     if os.path.exists(template_path):
-        with open(template_path, 'r') as f:
+        with open(template_path, "r") as f:
             return f.read()
     else:
         # Fallback template if file doesn't exist
@@ -61,13 +61,13 @@ def get_default_sql_template() -> str:
 def get_default_python_template() -> str:
     """
     Get the default Python migration template.
-    
+
     Returns:
         Content of the template
     """
     template_path = get_template_path("python_migration.tpl")
     if os.path.exists(template_path):
-        with open(template_path, 'r') as f:
+        with open(template_path, "r") as f:
             return f.read()
     else:
         # Fallback template if file doesn't exist
@@ -122,14 +122,14 @@ async def down(context: Any) -> None:
 """
 
 
-def render_template(template: str, context: Dict[str, Any]) -> str:
+def render_template(template: str, context: dict[str, Any]) -> str:
     """
     Render a template with the given context.
-    
+
     Args:
         template: Template string
         context: Context variables for the template
-        
+
     Returns:
         Rendered template
     """
@@ -142,36 +142,36 @@ def create_migration_content(
     name: str,
     template_path: str = None,
     template_type: str = "sql",
-    description: str = ""
+    description: str = "",
 ) -> str:
     """
     Create migration content from a template.
-    
+
     Args:
         name: Name of the migration
         template_path: Path to template file (optional)
         template_type: Type of migration (sql or python)
         description: Description of the migration
-        
+
     Returns:
         Migration content
     """
     # Get the template content
     if template_path and os.path.exists(template_path):
-        with open(template_path, 'r') as f:
+        with open(template_path, "r") as f:
             template = f.read()
     elif template_type == "sql":
         template = get_default_sql_template()
     else:
         template = get_default_python_template()
-    
+
     # Create context for template rendering
     context = {
         "name": name,
         "description": description or f"Migration for {name}",
         "created_at": datetime.datetime.now().isoformat(),
-        "class_name": "".join(word.title() for word in name.split("_"))
+        "class_name": "".join(word.title() for word in name.split("_")),
     }
-    
+
     # Render the template
     return render_template(template, context)

@@ -18,7 +18,7 @@ logger = logging.getLogger("uno.codegen")
 
 def generate_model(
     name: str,
-    fields: Dict[str, Dict[str, Any]],
+    fields: dict[str, dict[str, Any]],
     table_name: str | None = None,
     module_name: str | None = None,
     include_schema: bool = True,
@@ -122,11 +122,11 @@ def generate_model(
 
 
 def _generate_model_imports(
-    module_name: Optional[str],
+    module_name: str | None,
     base_model_class: str,
     base_dto_class: str,
     include_schema: bool,
-    fields: Dict[str, Dict[str, Any]],
+    fields: dict[str, dict[str, Any]],
 ) -> str:
     """Generate import statements for a model.
 
@@ -187,7 +187,7 @@ def _generate_model_imports(
 
 def _generate_model_class(
     name: str,
-    fields: Dict[str, Dict[str, Any]],
+    fields: dict[str, dict[str, Any]],
     table_name: str,
     include_docstrings: bool,
     base_model_class: str,
@@ -268,7 +268,7 @@ def _generate_model_class(
 def _generate_dto_class(
     name: str,
     model_name: str,
-    fields: Dict[str, Dict[str, Any]],
+    fields: dict[str, dict[str, Any]],
     include_docstrings: bool,
     base_dto_class: str,
 ) -> str:
@@ -319,7 +319,7 @@ def _generate_dto_class(
     return "\n".join(lines)
 
 
-def _generate_model_field(field_name: str, field_info: Dict[str, Any]) -> str:
+def _generate_model_field(field_name: str, field_info: dict[str, Any]) -> str:
     """Generate a SQLAlchemy column definition for a model field.
 
     Args:
@@ -380,7 +380,7 @@ def _generate_model_field(field_name: str, field_info: Dict[str, Any]) -> str:
     return f"{field_name} = sa.Column({', '.join(args)})"
 
 
-def _get_sqlalchemy_type(field_type: str, field_info: Dict[str, Any]) -> str:
+def _get_sqlalchemy_type(field_type: str, field_info: dict[str, Any]) -> str:
     """Convert a field type to a SQLAlchemy type.
 
     Args:
@@ -442,7 +442,7 @@ def _get_sqlalchemy_type(field_type: str, field_info: Dict[str, Any]) -> str:
     return "sa.String(255)"
 
 
-def _generate_relationship(relationship: Dict[str, Any]) -> str:
+def _generate_relationship(relationship: dict[str, Any]) -> str:
     """Generate a SQLAlchemy relationship definition.
 
     Args:
@@ -470,7 +470,7 @@ def _generate_relationship(relationship: Dict[str, Any]) -> str:
     return f"{name} = sa.orm.relationship({', '.join(args)})"
 
 
-def _generate_index(index: Dict[str, Any]) -> str:
+def _generate_index(index: dict[str, Any]) -> str:
     """Generate a SQLAlchemy index definition.
 
     Args:
@@ -502,7 +502,7 @@ def _generate_index(index: Dict[str, Any]) -> str:
         return f"__table_args__ = (sa.Index('{name}', {', '.join(args)}),)"
 
 
-def _generate_validator(field_name: str, field_info: Dict[str, Any]) -> list[str]:
+def _generate_validator(field_name: str, field_info: dict[str, Any]) -> list[str]:
     """Generate a Pydantic validator for a field.
 
     Args:

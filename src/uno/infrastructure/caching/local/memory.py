@@ -34,9 +34,9 @@ class MemoryCache(LocalCache):
 
         # Use OrderedDict if LRU policy is enabled
         if lru_policy:
-            self._cache: Dict[str, Tuple[Any, float]] = OrderedDict()
+            self._cache: dict[str, Tuple[Any, float]] = OrderedDict()
         else:
-            self._cache: Dict[str, Tuple[Any, float]] = {}
+            self._cache: dict[str, Tuple[Any, float]] = {}
 
         self._lock = threading.RLock()
 
@@ -85,7 +85,7 @@ class MemoryCache(LocalCache):
             self._stats["hits"] += 1
             return value
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache.
 
         Args:
@@ -189,7 +189,7 @@ class MemoryCache(LocalCache):
         """
         return True
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -220,7 +220,7 @@ class MemoryCache(LocalCache):
             self._cache.clear()
             self._stats["size"] = 0
 
-    def multi_get(self, keys: list[str]) -> Dict[str, Any]:
+    def multi_get(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from the cache.
 
         Args:
@@ -256,7 +256,7 @@ class MemoryCache(LocalCache):
 
             return result
 
-    def multi_set(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+    def multi_set(self, mapping: dict[str, Any], ttl: int | None = None) -> bool:
         """Set multiple values in the cache.
 
         Args:

@@ -20,10 +20,10 @@ from uno.domain.entity.service import ApplicationService
 class ProductSearchQuery(BaseModel):
     """Query model for searching products."""
 
-    name: Optional[str] = Field(None, description="Product name contains")
+    name: str | None = Field(None, description="Product name contains")
     min_price: Optional[float] = Field(None, description="Minimum price")
     max_price: Optional[float] = Field(None, description="Maximum price")
-    category: Optional[str] = Field(None, description="Product category")
+    category: str | None = Field(None, description="Product category")
 
 
 class ProductSearchResult(BaseModel):

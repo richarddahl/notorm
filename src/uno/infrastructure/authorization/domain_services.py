@@ -108,7 +108,7 @@ class UserService(UnoEntityService[User]):
             return Failure(AuthorizationServiceError(f"Error finding user: {str(e)}"))
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[User]]:
         """
         Find all users in a specific tenant.
@@ -130,7 +130,7 @@ class UserService(UnoEntityService[User]):
             return Failure(AuthorizationServiceError(f"Error finding users: {str(e)}"))
 
     async def find_by_group(
-        self, group_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, group_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[User]]:
         """
         Find all users in a specific group.
@@ -152,7 +152,7 @@ class UserService(UnoEntityService[User]):
             return Failure(AuthorizationServiceError(f"Error finding users: {str(e)}"))
 
     async def find_by_role(
-        self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, role_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[User]]:
         """
         Find all users with a specific role.
@@ -174,7 +174,7 @@ class UserService(UnoEntityService[User]):
             return Failure(AuthorizationServiceError(f"Error finding users: {str(e)}"))
 
     async def find_superusers(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
+        self, limit: int | None = None, offset: int | None = None
     ) -> Result[list[User]]:
         """
         Find all superusers.
@@ -407,7 +407,7 @@ class GroupService(UnoEntityService[Group]):
             return Failure(AuthorizationServiceError(f"Error finding group: {str(e)}"))
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Group]]:
         """
         Find all groups in a specific tenant.
@@ -429,7 +429,7 @@ class GroupService(UnoEntityService[Group]):
             return Failure(AuthorizationServiceError(f"Error finding groups: {str(e)}"))
 
     async def find_by_user(
-        self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, user_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Group]]:
         """
         Find all groups for a specific user.
@@ -583,7 +583,7 @@ class RoleService(UnoEntityService[Role]):
             return Failure(AuthorizationServiceError(f"Error finding role: {str(e)}"))
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Role]]:
         """
         Find all roles in a specific tenant.
@@ -605,7 +605,7 @@ class RoleService(UnoEntityService[Role]):
             return Failure(AuthorizationServiceError(f"Error finding roles: {str(e)}"))
 
     async def find_by_user(
-        self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, user_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Role]]:
         """
         Find all roles for a specific user.
@@ -629,8 +629,8 @@ class RoleService(UnoEntityService[Role]):
     async def find_by_responsibility(
         self,
         responsibility_id: str,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> Result[list[Role]]:
         """
         Find all roles with a specific responsibility.
@@ -854,8 +854,8 @@ class PermissionService(UnoEntityService[Permission]):
     async def find_by_meta_type(
         self,
         meta_type_id: str,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> Result[list[Permission]]:
         """
         Find all permissions for a specific meta type.
@@ -879,7 +879,7 @@ class PermissionService(UnoEntityService[Permission]):
             )
 
     async def find_by_operation(
-        self, operation: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, operation: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Permission]]:
         """
         Find all permissions for a specific operation.
@@ -930,7 +930,7 @@ class PermissionService(UnoEntityService[Permission]):
             )
 
     async def find_by_role(
-        self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, role_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[Permission]]:
         """
         Find all permissions for a specific role.
@@ -1004,7 +1004,7 @@ class ResponsibilityRoleService(UnoEntityService[ResponsibilityRole]):
             )
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> Result[list[ResponsibilityRole]]:
         """
         Find all responsibility roles in a specific tenant.
@@ -1120,8 +1120,8 @@ class TenantService(UnoEntityService[Tenant]):
     async def find_by_type(
         self,
         tenant_type: str,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> Result[list[Tenant]]:
         """
         Find all tenants of a specific type.

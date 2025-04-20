@@ -178,7 +178,7 @@ Validation errors provide detailed information about what's missing or incorrect
 
 ```
 ProtocolValidationError: Class 'InvalidUserRepository' does not properly implement protocol 'Repository'.
-Missing attributes: list, delete. Type mismatches: get (expected: User, found: Dict[str, Any])
+Missing attributes: list, delete. Type mismatches: get (expected: User, found: dict[str, Any])
 ```
 
 ## Next Steps

@@ -42,7 +42,7 @@ class JobErrorDto(BaseModel):
 
     type: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
-    traceback: Optional[str] = Field(None, description="Error traceback")
+    traceback: str | None = Field(None, description="Error traceback")
 
 
 class JobBaseDto(BaseModel):
@@ -52,7 +52,7 @@ class JobBaseDto(BaseModel):
     args: list[Any] = Field(
         default_factory=list, description="Positional arguments for task"
     )
-    kwargs: Dict[str, Any] = Field(
+    kwargs: dict[str, Any] = Field(
         default_factory=dict, description="Keyword arguments for task"
     )
     queue_name: str = Field("default", description="Queue to place job in")
@@ -73,11 +73,11 @@ class CreateJobDto(JobBaseDto):
         None, ge=1, description="Timeout for job execution in seconds"
     )
     tags: list[str] = Field(default_factory=list, description="Tags for categorization")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
-    version: Optional[str] = Field(None, description="Specific version of task to use")
-    job_id: Optional[str] = Field(
+    version: str | None = Field(None, description="Specific version of task to use")
+    job_id: str | None = Field(
         None, description="Specific ID for the job (generated if not provided)"
     )
 
@@ -88,7 +88,7 @@ class JobViewDto(BaseModel):
     id: str = Field(..., description="Unique job identifier")
     task_name: str = Field(..., description="Task being executed")
     args: list[Any] = Field(..., description="Positional arguments for task")
-    kwargs: Dict[str, Any] = Field(..., description="Keyword arguments for task")
+    kwargs: dict[str, Any] = Field(..., description="Keyword arguments for task")
     queue_name: str = Field(..., description="Queue the job is in")
     priority: PriorityEnum = Field(..., description="Job priority level")
     status: StatusEnum = Field(..., description="Current job status")
@@ -110,14 +110,12 @@ class JobViewDto(BaseModel):
     max_retries: int = Field(..., description="Maximum retry attempts")
     retry_delay: int = Field(..., description="Delay between retries in seconds")
     tags: list[str] = Field(..., description="Tags for categorization")
-    metadata: Dict[str, Any] = Field(..., description="Additional metadata")
-    worker_id: Optional[str] = Field(
-        None, description="ID of worker processing the job"
-    )
+    metadata: dict[str, Any] = Field(..., description="Additional metadata")
+    worker_id: str | None = Field(None, description="ID of worker processing the job")
     timeout: Optional[int] = Field(
         None, description="Timeout for job execution in seconds"
     )
-    version: Optional[str] = Field(None, description="Version of task being used")
+    version: str | None = Field(None, description="Version of task being used")
     duration: Optional[float] = Field(
         None, description="Duration of execution in seconds"
     )
@@ -126,11 +124,11 @@ class JobViewDto(BaseModel):
 class JobFilterParams(BaseModel):
     """Parameters for filtering jobs."""
 
-    queue_name: Optional[str] = Field(None, description="Filter by queue name")
+    queue_name: str | None = Field(None, description="Filter by queue name")
     status: list[str] | None = Field(None, description="Filter by job status")
-    priority: Optional[str] = Field(None, description="Filter by priority level")
+    priority: str | None = Field(None, description="Filter by priority level")
     tags: list[str] | None = Field(None, description="Filter by tags")
-    worker_id: Optional[str] = Field(None, description="Filter by worker ID")
+    worker_id: str | None = Field(None, description="Filter by worker ID")
     before: Optional[datetime] = Field(
         None, description="Filter by creation before this time"
     )
@@ -193,7 +191,7 @@ class JobListDto(BaseModel):
 class CancelJobDto(BaseModel):
     """DTO for cancelling a job."""
 
-    reason: Optional[str] = Field(None, description="Reason for cancellation")
+    reason: str | None = Field(None, description="Reason for cancellation")
 
 
 class JobStatsDto(BaseModel):
@@ -211,10 +209,10 @@ class JobStatsDto(BaseModel):
     avg_run_time: Optional[float] = Field(
         None, description="Average run time in seconds"
     )
-    by_queue: Dict[str, Dict[str, Any]] = Field(
+    by_queue: dict[str, dict[str, Any]] = Field(
         default_factory=dict, description="Statistics by queue"
     )
-    by_priority: Dict[str, int] = Field(
+    by_priority: dict[str, int] = Field(
         default_factory=dict, description="Job count by priority"
     )
 
@@ -239,7 +237,7 @@ class CreateScheduleDto(BaseModel):
 
     name: str = Field(..., description="Name for the schedule")
     task_name: str = Field(..., description="Task to execute")
-    cron_expression: Optional[str] = Field(
+    cron_expression: str | None = Field(
         None,
         description="Cron expression for scheduling (mutually exclusive with interval)",
     )
@@ -250,7 +248,7 @@ class CreateScheduleDto(BaseModel):
     args: list[Any] = Field(
         default_factory=list, description="Positional arguments for task"
     )
-    kwargs: Dict[str, Any] = Field(
+    kwargs: dict[str, Any] = Field(
         default_factory=dict, description="Keyword arguments for task"
     )
     queue_name: str = Field("default", description="Queue to use")
@@ -258,7 +256,7 @@ class CreateScheduleDto(BaseModel):
         PriorityEnum.NORMAL, description="Job priority level"
     )
     tags: list[str] = Field(default_factory=list, description="Tags for categorization")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
     max_retries: int = Field(3, ge=0, description="Maximum retry attempts")
@@ -266,7 +264,7 @@ class CreateScheduleDto(BaseModel):
     timeout: Optional[int] = Field(
         None, ge=1, description="Timeout for job execution in seconds"
     )
-    version: Optional[str] = Field(None, description="Specific version of task to use")
+    version: str | None = Field(None, description="Specific version of task to use")
 
     @model_validator(mode="after")
     def validate_schedule(self):
@@ -282,21 +280,21 @@ class CreateScheduleDto(BaseModel):
 class UpdateScheduleDto(BaseModel):
     """DTO for updating an existing schedule."""
 
-    name: Optional[str] = Field(None, description="Name for the schedule")
-    cron_expression: Optional[str] = Field(
+    name: str | None = Field(None, description="Name for the schedule")
+    cron_expression: str | None = Field(
         None, description="Cron expression for scheduling"
     )
     interval: Optional[ScheduleIntervalDto] = Field(
         None, description="Interval for scheduling"
     )
     args: Optional[list[Any]] = Field(None, description="Positional arguments for task")
-    kwargs: Optional[Dict[str, Any]] = Field(
+    kwargs: dict[str, Any] | None = Field(
         None, description="Keyword arguments for task"
     )
-    queue_name: Optional[str] = Field(None, description="Queue to use")
+    queue_name: str | None = Field(None, description="Queue to use")
     priority: Optional[PriorityEnum] = Field(None, description="Job priority level")
     tags: list[str] | None = Field(None, description="Tags for categorization")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
     max_retries: Optional[int] = Field(None, ge=0, description="Maximum retry attempts")
     retry_delay: Optional[int] = Field(
         None, ge=0, description="Delay between retries in seconds"
@@ -304,7 +302,7 @@ class UpdateScheduleDto(BaseModel):
     timeout: Optional[int] = Field(
         None, ge=1, description="Timeout for job execution in seconds"
     )
-    status: Optional[str] = Field(None, description="Schedule status (active/paused)")
+    status: str | None = Field(None, description="Schedule status (active/paused)")
 
     @field_validator("status")
     def validate_status(cls, v):
@@ -320,18 +318,18 @@ class ScheduleViewDto(BaseModel):
     name: str = Field(..., description="Schedule name")
     task_name: str = Field(..., description="Task being executed")
     status: str = Field(..., description="Schedule status (active/paused)")
-    cron_expression: Optional[str] = Field(
+    cron_expression: str | None = Field(
         None, description="Cron expression for scheduling"
     )
     interval: Optional[ScheduleIntervalDto] = Field(
         None, description="Interval for scheduling"
     )
     args: list[Any] = Field(..., description="Positional arguments for task")
-    kwargs: Dict[str, Any] = Field(..., description="Keyword arguments for task")
+    kwargs: dict[str, Any] = Field(..., description="Keyword arguments for task")
     queue_name: str = Field(..., description="Queue to use")
     priority: PriorityEnum = Field(..., description="Job priority level")
     tags: list[str] = Field(..., description="Tags for categorization")
-    metadata: Dict[str, Any] = Field(..., description="Additional metadata")
+    metadata: dict[str, Any] = Field(..., description="Additional metadata")
     max_retries: int = Field(..., description="Maximum retry attempts")
     retry_delay: int = Field(..., description="Delay between retries in seconds")
     timeout: Optional[int] = Field(
@@ -345,13 +343,13 @@ class ScheduleViewDto(BaseModel):
     )
     created_at: datetime = Field(..., description="When the schedule was created")
     updated_at: datetime = Field(..., description="When the schedule was last updated")
-    version: Optional[str] = Field(None, description="Version of task being used")
+    version: str | None = Field(None, description="Version of task being used")
 
 
 class ScheduleFilterParams(BaseModel):
     """Parameters for filtering schedules."""
 
-    status: Optional[str] = Field(None, description="Filter by status (active/paused)")
+    status: str | None = Field(None, description="Filter by status (active/paused)")
     tags: list[str] | None = Field(None, description="Filter by tags")
     limit: int = Field(
         100, ge=1, le=1000, description="Maximum number of schedules to return"
@@ -379,13 +377,13 @@ class TaskInfoDto(BaseModel):
     """DTO for task information."""
 
     name: str = Field(..., description="Task name")
-    description: Optional[str] = Field(None, description="Task description")
+    description: str | None = Field(None, description="Task description")
     is_async: bool = Field(..., description="Whether the task is async")
     timeout: Optional[int] = Field(None, description="Task timeout in seconds")
     max_retries: int = Field(..., description="Default max retries")
     retry_delay: int = Field(..., description="Default retry delay in seconds")
     queue: str = Field(..., description="Default queue")
-    version: Optional[str] = Field(None, description="Task version")
+    version: str | None = Field(None, description="Task version")
 
 
 class TaskListDto(BaseModel):
@@ -416,7 +414,7 @@ class RunSyncJobDto(JobBaseDto):
     timeout: Optional[int] = Field(
         None, ge=1, description="Timeout for job execution in seconds"
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
-    version: Optional[str] = Field(None, description="Specific version of task to use")
+    version: str | None = Field(None, description="Specific version of task to use")

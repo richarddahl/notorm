@@ -126,7 +126,7 @@ class ReportFieldConfigModel(DefaultModelMixin, BaseModel):
     is_label_included: Mapped[bool] = mapped_column(
         doc="Whether the label for this field is included in the report",
     )
-    field_format: Mapped[Optional[str]] = mapped_column(
+    field_format: Mapped[str | None] = mapped_column(
         doc="Format for the field in the report",
     )
 
@@ -224,13 +224,13 @@ class ReportTemplateModel(DefaultModelMixin, BaseModel):
     base_object_type: Mapped[str] = mapped_column(
         doc="What type of entity this report is based on"
     )
-    format_config: Mapped[Dict[str, Any]] = mapped_column(
+    format_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="JSON configuration for output format"
     )
-    parameter_definitions: Mapped[Dict[str, Any]] = mapped_column(
+    parameter_definitions: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="User parameters the report accepts"
     )
-    cache_policy: Mapped[Dict[str, Any]] = mapped_column(
+    cache_policy: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="How report results are cached"
     )
     version: Mapped[str] = mapped_column(default="1.0.0", doc="For template versioning")
@@ -272,7 +272,7 @@ class ReportFieldDefinitionModel(DefaultModelMixin, BaseModel):
         doc="Internal name of the field"
     )
     display: Mapped[str] = mapped_column(doc="Display for the field")
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         nullable=True, doc="Description of the field"
     )
 
@@ -281,16 +281,16 @@ class ReportFieldDefinitionModel(DefaultModelMixin, BaseModel):
         VARCHAR(50),
         doc="Type of field (db_column, attribute, method, query, aggregate, etc.)",
     )
-    field_config: Mapped[Dict[str, Any]] = mapped_column(
+    field_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="Configuration specific to field_type"
     )
 
     # Presentation
     order: Mapped[int] = mapped_column(default=0, doc="Display order of the field")
-    format_string: Mapped[Optional[str]] = mapped_column(
+    format_string: Mapped[str | None] = mapped_column(
         nullable=True, doc="Format string for the field value"
     )
-    conditional_formats: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    conditional_formats: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB, nullable=True, doc="Conditional formatting rules"
     )
     is_visible: Mapped[bool] = mapped_column(
@@ -336,20 +336,20 @@ class ReportTriggerModel(DefaultModelMixin, BaseModel):
     trigger_type: Mapped[str] = mapped_column(
         VARCHAR(50), doc="Type of trigger (manual, scheduled, event, query)"
     )
-    trigger_config: Mapped[Dict[str, Any]] = mapped_column(
+    trigger_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="Configuration specific to trigger_type"
     )
 
     # For scheduled triggers
-    schedule: Mapped[Optional[str]] = mapped_column(
+    schedule: Mapped[str | None] = mapped_column(
         nullable=True, doc="Cron-style schedule expression"
     )
 
     # For event triggers
-    event_type: Mapped[Optional[str]] = mapped_column(
+    event_type: Mapped[str | None] = mapped_column(
         nullable=True, doc="Type of event that triggers the report"
     )
-    entity_type: Mapped[Optional[str]] = mapped_column(
+    entity_type: Mapped[str | None] = mapped_column(
         nullable=True, doc="Type of entity involved in the event"
     )
 
@@ -395,7 +395,7 @@ class ReportOutputModel(DefaultModelMixin, BaseModel):
     output_type: Mapped[str] = mapped_column(
         VARCHAR(50), doc="Type of output (file, email, webhook, notification)"
     )
-    output_config: Mapped[Dict[str, Any]] = mapped_column(
+    output_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="Configuration specific to output_type"
     )
 
@@ -403,7 +403,7 @@ class ReportOutputModel(DefaultModelMixin, BaseModel):
     format: Mapped[str] = mapped_column(
         VARCHAR(50), doc="Format of the output (csv, pdf, json, html, excel, text)"
     )
-    format_config: Mapped[Dict[str, Any]] = mapped_column(
+    format_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="Configuration specific to format"
     )
 
@@ -449,7 +449,7 @@ class ReportExecutionModel(DefaultModelMixin, BaseModel):
     )
 
     # Parameters provided
-    parameters: Mapped[Dict[str, Any]] = mapped_column(
+    parameters: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default={}, doc="Parameters provided for this execution"
     )
 
@@ -465,7 +465,7 @@ class ReportExecutionModel(DefaultModelMixin, BaseModel):
     completed_at: Mapped[Optional[datetime]] = mapped_column(
         nullable=True, doc="When execution completed"
     )
-    error_details: Mapped[Optional[str]] = mapped_column(
+    error_details: Mapped[str | None] = mapped_column(
         nullable=True, doc="Error details if execution failed"
     )
 
@@ -476,7 +476,7 @@ class ReportExecutionModel(DefaultModelMixin, BaseModel):
     execution_time_ms: Mapped[Optional[int]] = mapped_column(
         nullable=True, doc="Execution time in milliseconds"
     )
-    result_hash: Mapped[Optional[str]] = mapped_column(
+    result_hash: Mapped[str | None] = mapped_column(
         nullable=True, doc="Hash of the result data for caching"
     )
 
@@ -523,12 +523,12 @@ class ReportOutputExecutionModel(DefaultModelMixin, BaseModel):
     completed_at: Mapped[Optional[datetime]] = mapped_column(
         nullable=True, doc="When output delivery completed"
     )
-    error_details: Mapped[Optional[str]] = mapped_column(
+    error_details: Mapped[str | None] = mapped_column(
         nullable=True, doc="Error details if output delivery failed"
     )
 
     # Result details
-    output_location: Mapped[Optional[str]] = mapped_column(
+    output_location: Mapped[str | None] = mapped_column(
         nullable=True, doc="Location of the output (URL, file path, etc.)"
     )
     output_size_bytes: Mapped[Optional[int]] = mapped_column(

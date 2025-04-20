@@ -18,15 +18,15 @@ class {{ feature_name|pascal_case }}Create(BaseModel):
     """Model for creating a {{ feature_name|pascal_case }}."""
     
     name: str = Field(..., description="Name of the {{ feature_name|pascal_case }}")
-    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    description: str | None = Field(None, description="Description of the {{ feature_name|pascal_case }}")
     # Add additional fields as needed
 
 
 class {{ feature_name|pascal_case }}Update(BaseModel):
     """Model for updating a {{ feature_name|pascal_case }}."""
     
-    name: Optional[str] = Field(None, description="Name of the {{ feature_name|pascal_case }}")
-    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    name: str | None = Field(None, description="Name of the {{ feature_name|pascal_case }}")
+    description: str | None = Field(None, description="Description of the {{ feature_name|pascal_case }}")
     # Add additional fields as needed
 
 

@@ -65,8 +65,8 @@ class PooledAsyncEngineFactory(EnhancedAsyncEngineFactory):
         """
         super().__init__(logger=logger)
         self.resource_registry = resource_registry or get_resource_registry()
-        self._engine_pools: Dict[str, ConnectionPool[AsyncEngine]] = {}
-        self._circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self._engine_pools: dict[str, ConnectionPool[AsyncEngine]] = {}
+        self._circuit_breakers: dict[str, CircuitBreaker] = {}
         self._registry_lock = AsyncLock()
 
     async def create_engine_pool(
@@ -271,7 +271,7 @@ class PooledAsyncConnectionContext(AsyncConnectionContext):
         db_host: str | None = None,
         db_user_pw: str | None = None,
         db_driver: str | None = None,
-        db_port: Optional[int] = None,
+        db_port: int | None = None,
         config: Optional[ConnectionConfig] = None,
         isolation_level: str = "AUTOCOMMIT",
         factory: Optional[PooledAsyncEngineFactory] = None,
@@ -395,7 +395,7 @@ async def pooled_async_connection(
     db_host: str | None = None,
     db_user_pw: str | None = None,
     db_driver: str | None = None,
-    db_port: Optional[int] = None,
+    db_port: int | None = None,
     config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",
     factory: Optional[PooledAsyncEngineFactory] = None,

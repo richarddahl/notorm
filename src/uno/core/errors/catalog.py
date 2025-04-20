@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from uno.core.base.error import ErrorInfo, ErrorCategory, ErrorSeverity
 
 # Global registry of error codes
-_ERROR_CATALOG: Dict[str, ErrorInfo] = {}
+_ERROR_CATALOG: dict[str, ErrorInfo] = {}
 
 
 def register_error(
@@ -22,7 +22,7 @@ def register_error(
     category: ErrorCategory,
     severity: ErrorSeverity,
     description: str,
-    http_status_code: Optional[int] = None,
+    http_status_code: int | None = None,
     retry_allowed: bool = True,
 ) -> None:
     """

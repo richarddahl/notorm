@@ -86,7 +86,7 @@ class MigrationExecutor:
                 self.conn.execute(sa.text(statement))
 
     def execute_python(
-        self, script_path: Union[str, Path], context: Optional[Dict[str, Any]] = None
+        self, script_path: Union[str, Path], context: dict[str, Any] | None = None
     ) -> None:
         """Execute a Python migration script.
 
@@ -143,7 +143,7 @@ class MigrationExecutor:
             module.upgrade()
 
     def apply_migration(
-        self, script_path: Union[str, Path], context: Optional[Dict[str, Any]] = None
+        self, script_path: Union[str, Path], context: dict[str, Any] | None = None
     ) -> None:
         """Apply a migration script.
 
@@ -172,7 +172,7 @@ def apply_migration(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> bool:
     """Apply a migration script with transaction safety.
 
@@ -206,9 +206,9 @@ def apply_migrations(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     stop_on_error: bool = True,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Apply multiple migration scripts with transaction safety.
 
     Args:
@@ -255,11 +255,11 @@ def apply_migrations_directory(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     stop_on_error: bool = True,
     file_pattern: str = "*.py",
     sort_key: Optional[Callable[[Path], Any]] = None,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Apply all migration scripts in a directory.
 
     Args:

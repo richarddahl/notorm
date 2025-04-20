@@ -32,7 +32,7 @@ class EventStore(Generic[E], abc.ABC):
 
     @abc.abstractmethod
     async def append_events(
-        self, events: list[E], expected_version: Optional[int] = None
+        self, events: list[E], expected_version: int | None = None
     ) -> int:
         """
         Append events to the store, optionally with optimistic concurrency.
@@ -94,10 +94,10 @@ class InMemoryEventStore(EventStore[EventProtocol]):
     def __init__(self):
         """Initialize an empty in-memory event store."""
         self._events: list[EventProtocol] = []
-        self._aggregate_versions: Dict[str, int] = {}  # aggregate_id -> version
+        self._aggregate_versions: dict[str, int] = {}  # aggregate_id -> version
 
     async def append_events(
-        self, events: list[EventProtocol], expected_version: Optional[int] = None
+        self, events: list[EventProtocol], expected_version: int | None = None
     ) -> int:
         """
         Append events to the store, with optional optimistic concurrency.

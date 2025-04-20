@@ -19,7 +19,7 @@ class PatternBasedInvalidation:
 
     def __init__(
         self,
-        patterns: Optional[Dict[str, list[str]]] = None,
+        patterns: Optional[dict[str, list[str]]] = None,
         consistent_hashing: bool = False,
     ):
         """Initialize the pattern-based invalidation strategy.
@@ -34,7 +34,7 @@ class PatternBasedInvalidation:
         self._lock = threading.RLock()
 
         # Map of entity types to sets of shard keys for consistent hashing
-        self._shard_keys: Dict[str, Set[str]] = {}
+        self._shard_keys: dict[str, Set[str]] = {}
 
         # Initialize shard keys
         if consistent_hashing:
@@ -161,7 +161,7 @@ class PatternBasedInvalidation:
                     if self.consistent_hashing and entity_type in self._shard_keys:
                         del self._shard_keys[entity_type]
 
-    def get_shard_key(self, entity_type: str, entity_id: str) -> Optional[str]:
+    def get_shard_key(self, entity_type: str, entity_id: str) -> str | None:
         """Get the shard key for a specific entity.
 
         This method is used for consistent hashing to ensure that the same entity

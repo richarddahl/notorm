@@ -59,7 +59,7 @@ class WorkflowTrigger(Entity[str]):
     workflow_id: str
     entity_type: str
     operation: str
-    field_conditions: Dict[str, Any] = field(default_factory=dict)
+    field_conditions: dict[str, Any] = field(default_factory=dict)
     priority: int = 100
     is_active: bool = True
 
@@ -75,7 +75,7 @@ class WorkflowTrigger(Entity[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowTrigger":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowTrigger":
         """Create a WorkflowTrigger entity from a database record."""
         return cls(
             id=record["id"],
@@ -100,7 +100,7 @@ class WorkflowCondition(Entity[str]):
     id: str
     workflow_id: str
     condition_type: WorkflowConditionType
-    condition_config: Dict[str, Any] = field(default_factory=dict)
+    condition_config: dict[str, Any] = field(default_factory=dict)
     query_id: str | None = None
     name: str = ""
     description: str | None = None
@@ -126,7 +126,7 @@ class WorkflowCondition(Entity[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowCondition":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowCondition":
         """Create a WorkflowCondition entity from a database record."""
         return cls(
             id=record["id"],
@@ -155,7 +155,7 @@ class WorkflowRecipient(Entity[str]):
     recipient_id: str
     name: str | None = None
     action_id: str | None = None
-    notification_config: Dict[str, Any] = field(default_factory=dict)
+    notification_config: dict[str, Any] = field(default_factory=dict)
 
     # Mapping to DB model
     __uno_model__: ClassVar[str] = "WorkflowRecipientModel"
@@ -169,7 +169,7 @@ class WorkflowRecipient(Entity[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowRecipient":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowRecipient":
         """Create a WorkflowRecipient entity from a database record."""
         return cls(
             id=record["id"],
@@ -198,12 +198,12 @@ class WorkflowAction(Entity[str]):
     id: str
     workflow_id: str
     action_type: WorkflowActionType
-    action_config: Dict[str, Any] = field(default_factory=dict)
+    action_config: dict[str, Any] = field(default_factory=dict)
     name: str = ""
     description: str | None = None
     order: int = 0
     is_active: bool = True
-    retry_policy: Optional[Dict[str, Any]] = None
+    retry_policy: dict[str, Any] | None = None
     # Relationships
     recipients: list["WorkflowRecipient"] = field(default_factory=list)
     workflow: Optional["WorkflowDef"] = field(default=None, repr=False)
@@ -224,7 +224,7 @@ class WorkflowAction(Entity[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowAction":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowAction":
         """Create a WorkflowAction entity from a database record."""
         return cls(
             id=record["id"],
@@ -255,9 +255,9 @@ class WorkflowExecutionRecord(Entity[str]):
     status: WorkflowExecutionStatus = WorkflowExecutionStatus.PENDING
     executed_at: datetime = field(default_factory=lambda: datetime.now())
     completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
+    result: dict[str, Any] | None = None
     error: str | None = None
-    context: Optional[Dict[str, Any]] = None
+    context: dict[str, Any] | None = None
     execution_time: Optional[float] = None
 
     # Mapping to DB model
@@ -272,7 +272,7 @@ class WorkflowExecutionRecord(Entity[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowExecutionRecord":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowExecutionRecord":
         """Create a WorkflowExecutionRecord entity from a database record."""
         return cls(
             id=record["id"],
@@ -325,7 +325,7 @@ class WorkflowDef(AggregateRoot[str]):
         return Success[None, str](None)
 
     @classmethod
-    def from_record(cls, record: Dict[str, Any]) -> "WorkflowDef":
+    def from_record(cls, record: dict[str, Any]) -> "WorkflowDef":
         """Create a WorkflowDef entity from a database record."""
         return cls(
             id=record["id"],

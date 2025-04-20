@@ -69,14 +69,14 @@ class ReportFieldDefinitionBaseDto(BaseModel):
     field_config: dict[str, Any] = Field(
         default_factory=dict, description="Configuration for the field"
     )
-    description: Optional[str] = Field(None, description="Field description")
+    description: str | None = Field(None, description="Field description")
     order: int = Field(0, description="Display order")
-    format_string: Optional[str] = Field(None, description="Format string for display")
-    conditional_formats: Optional[Dict[str, Any]] = Field(
+    format_string: str | None = Field(None, description="Format string for display")
+    conditional_formats: dict[str, Any] | None = Field(
         None, description="Conditional formatting rules"
     )
     is_visible: bool = Field(True, description="Whether the field is visible")
-    parent_field_id: Optional[str] = Field(None, description="ID of the parent field")
+    parent_field_id: str | None = Field(None, description="ID of the parent field")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -105,20 +105,20 @@ class ReportFieldDefinitionCreateDto(ReportFieldDefinitionBaseDto):
 class ReportFieldDefinitionUpdateDto(BaseModel):
     """DTO for updating report field definitions."""
 
-    name: Optional[str] = Field(None, description="Field name")
-    display: Optional[str] = Field(None, description="Display name for the field")
+    name: str | None = Field(None, description="Field name")
+    display: str | None = Field(None, description="Display name for the field")
     field_type: Optional[ReportFieldTypeEnum] = Field(None, description="Type of field")
     field_config: dict[str, Any] | None = Field(
         None, description="Configuration for the field"
     )
-    description: Optional[str] = Field(None, description="Field description")
+    description: str | None = Field(None, description="Field description")
     order: Optional[int] = Field(None, description="Display order")
-    format_string: Optional[str] = Field(None, description="Format string for display")
-    conditional_formats: Optional[Dict[str, Any]] = Field(
+    format_string: str | None = Field(None, description="Format string for display")
+    conditional_formats: dict[str, Any] | None = Field(
         None, description="Conditional formatting rules"
     )
     is_visible: Optional[bool] = Field(None, description="Whether the field is visible")
-    parent_field_id: Optional[str] = Field(None, description="ID of the parent field")
+    parent_field_id: str | None = Field(None, description="ID of the parent field")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -159,14 +159,12 @@ class ReportFieldDefinitionViewDto(ReportFieldDefinitionBaseDto):
 class ReportFieldDefinitionFilterParams(BaseModel):
     """Filter parameters for report field definitions."""
 
-    name: Optional[str] = Field(None, description="Filter by field name")
+    name: str | None = Field(None, description="Filter by field name")
     field_type: Optional[ReportFieldTypeEnum] = Field(
         None, description="Filter by field type"
     )
-    parent_field_id: Optional[str] = Field(
-        None, description="Filter by parent field ID"
-    )
-    template_id: Optional[str] = Field(None, description="Filter by template ID")
+    parent_field_id: str | None = Field(None, description="Filter by parent field ID")
+    template_id: str | None = Field(None, description="Filter by template ID")
     is_visible: Optional[bool] = Field(None, description="Filter by visibility")
 
     model_config = ConfigDict(
@@ -181,13 +179,13 @@ class ReportTemplateBaseDto(BaseModel):
     name: str = Field(..., description="Template name")
     description: str = Field(..., description="Template description")
     base_object_type: str = Field(..., description="Base object type for the report")
-    format_config: Dict[str, Any] = Field(
+    format_config: dict[str, Any] = Field(
         default_factory=dict, description="Format configuration"
     )
-    parameter_definitions: Dict[str, Any] = Field(
+    parameter_definitions: dict[str, Any] = Field(
         default_factory=dict, description="Parameter definitions"
     )
-    cache_policy: Dict[str, Any] = Field(
+    cache_policy: dict[str, Any] = Field(
         default_factory=dict, description="Cache policy configuration"
     )
     version: str = Field("1.0.0", description="Template version")
@@ -222,21 +220,21 @@ class ReportTemplateCreateDto(ReportTemplateBaseDto):
 class ReportTemplateUpdateDto(BaseModel):
     """DTO for updating report templates."""
 
-    name: Optional[str] = Field(None, description="Template name")
-    description: Optional[str] = Field(None, description="Template description")
-    base_object_type: Optional[str] = Field(
+    name: str | None = Field(None, description="Template name")
+    description: str | None = Field(None, description="Template description")
+    base_object_type: str | None = Field(
         None, description="Base object type for the report"
     )
-    format_config: Optional[Dict[str, Any]] = Field(
+    format_config: dict[str, Any] | None = Field(
         None, description="Format configuration"
     )
-    parameter_definitions: Optional[Dict[str, Any]] = Field(
+    parameter_definitions: dict[str, Any] | None = Field(
         None, description="Parameter definitions"
     )
-    cache_policy: Optional[Dict[str, Any]] = Field(
+    cache_policy: dict[str, Any] | None = Field(
         None, description="Cache policy configuration"
     )
-    version: Optional[str] = Field(None, description="Template version")
+    version: str | None = Field(None, description="Template version")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -281,11 +279,9 @@ class ReportTemplateViewDto(ReportTemplateBaseDto):
 class ReportTemplateFilterParams(BaseModel):
     """Filter parameters for report templates."""
 
-    name: Optional[str] = Field(None, description="Filter by template name")
-    base_object_type: Optional[str] = Field(
-        None, description="Filter by base object type"
-    )
-    field_id: Optional[str] = Field(None, description="Filter by associated field ID")
+    name: str | None = Field(None, description="Filter by template name")
+    base_object_type: str | None = Field(None, description="Filter by base object type")
+    field_id: str | None = Field(None, description="Filter by associated field ID")
 
     model_config = ConfigDict(
         json_schema_extra={"example": {"base_object_type": "Order"}}
@@ -301,14 +297,12 @@ class ReportTriggerBaseDto(BaseModel):
     trigger_config: dict[str, Any] = Field(
         default_factory=dict, description="Trigger configuration"
     )
-    schedule: Optional[str] = Field(
+    schedule: str | None = Field(
         None, description="Cron expression for scheduled triggers"
     )
-    event_type: Optional[str] = Field(None, description="Event type for event triggers")
-    entity_type: Optional[str] = Field(
-        None, description="Entity type for event triggers"
-    )
-    query_id: Optional[str] = Field(None, description="Query ID for query triggers")
+    event_type: str | None = Field(None, description="Event type for event triggers")
+    entity_type: str | None = Field(None, description="Entity type for event triggers")
+    query_id: str | None = Field(None, description="Query ID for query triggers")
     is_active: bool = Field(True, description="Whether the trigger is active")
 
     @model_validator(mode="before")
@@ -363,17 +357,15 @@ class ReportTriggerUpdateDto(BaseModel):
     trigger_type: Optional[ReportTriggerTypeEnum] = Field(
         None, description="Type of trigger"
     )
-    trigger_config: Optional[Dict[str, Any]] = Field(
+    trigger_config: dict[str, Any] | None = Field(
         None, description="Trigger configuration"
     )
-    schedule: Optional[str] = Field(
+    schedule: str | None = Field(
         None, description="Cron expression for scheduled triggers"
     )
-    event_type: Optional[str] = Field(None, description="Event type for event triggers")
-    entity_type: Optional[str] = Field(
-        None, description="Entity type for event triggers"
-    )
-    query_id: Optional[str] = Field(None, description="Query ID for query triggers")
+    event_type: str | None = Field(None, description="Event type for event triggers")
+    entity_type: str | None = Field(None, description="Entity type for event triggers")
+    query_id: str | None = Field(None, description="Query ID for query triggers")
     is_active: Optional[bool] = Field(None, description="Whether the trigger is active")
 
     model_config = ConfigDict(
@@ -412,7 +404,7 @@ class ReportTriggerViewDto(ReportTriggerBaseDto):
 class ReportTriggerFilterParams(BaseModel):
     """Filter parameters for report triggers."""
 
-    report_template_id: Optional[str] = Field(None, description="Filter by template ID")
+    report_template_id: str | None = Field(None, description="Filter by template ID")
     trigger_type: Optional[ReportTriggerTypeEnum] = Field(
         None, description="Filter by trigger type"
     )
@@ -430,10 +422,10 @@ class ReportOutputBaseDto(BaseModel):
     report_template_id: str = Field(..., description="Associated template ID")
     output_type: ReportOutputTypeEnum = Field(..., description="Type of output")
     format: ReportFormatEnum = Field(..., description="Output format")
-    output_config: Dict[str, Any] = Field(
+    output_config: dict[str, Any] = Field(
         default_factory=dict, description="Output configuration"
     )
-    format_config: Dict[str, Any] = Field(
+    format_config: dict[str, Any] = Field(
         default_factory=dict, description="Format configuration"
     )
     is_active: bool = Field(True, description="Whether the output is active")
@@ -489,10 +481,10 @@ class ReportOutputUpdateDto(BaseModel):
         None, description="Type of output"
     )
     format: Optional[ReportFormatEnum] = Field(None, description="Output format")
-    output_config: Optional[Dict[str, Any]] = Field(
+    output_config: dict[str, Any] | None = Field(
         None, description="Output configuration"
     )
-    format_config: Optional[Dict[str, Any]] = Field(
+    format_config: dict[str, Any] | None = Field(
         None, description="Format configuration"
     )
     is_active: Optional[bool] = Field(None, description="Whether the output is active")
@@ -536,7 +528,7 @@ class ReportOutputViewDto(ReportOutputBaseDto):
 class ReportOutputFilterParams(BaseModel):
     """Filter parameters for report outputs."""
 
-    report_template_id: Optional[str] = Field(None, description="Filter by template ID")
+    report_template_id: str | None = Field(None, description="Filter by template ID")
     output_type: Optional[ReportOutputTypeEnum] = Field(
         None, description="Filter by output type"
     )
@@ -559,7 +551,7 @@ class ReportExecutionBaseDto(BaseModel):
     trigger_type: ReportTriggerTypeEnum = Field(
         ..., description="Type of trigger that initiated the execution"
     )
-    parameters: Dict[str, Any] = Field(
+    parameters: dict[str, Any] = Field(
         default_factory=dict, description="Execution parameters"
     )
     status: ReportExecutionStatusEnum = Field(
@@ -591,7 +583,7 @@ class ReportExecutionUpdateStatusDto(BaseModel):
     """DTO for updating report execution status."""
 
     status: ReportExecutionStatusEnum = Field(..., description="New execution status")
-    error_details: Optional[str] = Field(
+    error_details: str | None = Field(
         None, description="Error details if status is failed"
     )
 
@@ -608,14 +600,14 @@ class ReportExecutionViewDto(ReportExecutionBaseDto):
     completed_at: Optional[datetime] = Field(
         None, description="When the execution completed"
     )
-    error_details: Optional[str] = Field(
+    error_details: str | None = Field(
         None, description="Error details if status is failed"
     )
     row_count: Optional[int] = Field(None, description="Number of rows in the report")
     execution_time_ms: Optional[int] = Field(
         None, description="Execution time in milliseconds"
     )
-    result_hash: Optional[str] = Field(None, description="Hash of the execution result")
+    result_hash: str | None = Field(None, description="Hash of the execution result")
     output_executions: list["ReportOutputExecutionViewDto"] = Field(
         default_factory=list, description="Output executions"
     )
@@ -644,8 +636,8 @@ class ReportExecutionViewDto(ReportExecutionBaseDto):
 class ReportExecutionFilterParams(BaseModel):
     """Filter parameters for report executions."""
 
-    report_template_id: Optional[str] = Field(None, description="Filter by template ID")
-    triggered_by: Optional[str] = Field(None, description="Filter by triggered by")
+    report_template_id: str | None = Field(None, description="Filter by template ID")
+    triggered_by: str | None = Field(None, description="Filter by triggered by")
     trigger_type: Optional[ReportTriggerTypeEnum] = Field(
         None, description="Filter by trigger type"
     )
@@ -703,10 +695,10 @@ class ReportOutputExecutionUpdateStatusDto(BaseModel):
     """DTO for updating report output execution status."""
 
     status: ReportExecutionStatusEnum = Field(..., description="New execution status")
-    error_details: Optional[str] = Field(
+    error_details: str | None = Field(
         None, description="Error details if status is failed"
     )
-    output_location: Optional[str] = Field(None, description="Location of the output")
+    output_location: str | None = Field(None, description="Location of the output")
     output_size_bytes: Optional[int] = Field(
         None, description="Size of the output in bytes"
     )
@@ -730,10 +722,10 @@ class ReportOutputExecutionViewDto(ReportOutputExecutionBaseDto):
     completed_at: Optional[datetime] = Field(
         None, description="When the execution completed"
     )
-    error_details: Optional[str] = Field(
+    error_details: str | None = Field(
         None, description="Error details if status is failed"
     )
-    output_location: Optional[str] = Field(None, description="Location of the output")
+    output_location: str | None = Field(None, description="Location of the output")
     output_size_bytes: Optional[int] = Field(
         None, description="Size of the output in bytes"
     )
@@ -757,10 +749,8 @@ class ReportOutputExecutionViewDto(ReportOutputExecutionBaseDto):
 class ReportOutputExecutionFilterParams(BaseModel):
     """Filter parameters for report output executions."""
 
-    report_execution_id: Optional[str] = Field(
-        None, description="Filter by execution ID"
-    )
-    report_output_id: Optional[str] = Field(None, description="Filter by output ID")
+    report_execution_id: str | None = Field(None, description="Filter by execution ID")
+    report_output_id: str | None = Field(None, description="Filter by output ID")
     status: Optional[ReportExecutionStatusEnum] = Field(
         None, description="Filter by status"
     )

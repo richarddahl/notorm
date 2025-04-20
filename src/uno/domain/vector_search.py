@@ -35,7 +35,7 @@ class VectorSearchResult(BaseModel):
     id: str
     similarity: float
     entity: Optional[Any] = None
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
     def get_metadata_value(self, key: str, default: Any = None) -> Any:
         """
@@ -64,7 +64,7 @@ class TypedVectorSearchResult(Generic[T]):
         id: str,
         entity: T,
         similarity: float,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize the typed vector search result.
@@ -146,7 +146,7 @@ class HybridQuery(VectorQuery):
     """
 
     start_node_type: str
-    start_filters: Dict[str, Any] = {}
+    start_filters: dict[str, Any] = {}
     path_pattern: str
     combine_method: str = "intersect"  # Options: "intersect", "union", "weighted"
     graph_weight: float = 0.5
@@ -400,7 +400,7 @@ class TypedVectorSearchResponse(Generic[T]):
         query: str,
         total_found: int,
         execution_time_ms: float = 0.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize the typed vector search response.
@@ -488,9 +488,9 @@ class TypedVectorSearchResponse(Generic[T]):
         results: list[VectorSearchResult],
         query: str,
         entity_loader: callable,
-        total_found: Optional[int] = None,
+        total_found: int | None = None,
         execution_time_ms: float = 0.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> "TypedVectorSearchResponse[T]":
         """
         Create a typed response from regular search results.
@@ -618,7 +618,7 @@ class RAGService(Generic[T]):
 
     async def create_rag_prompt(
         self, query: str, system_prompt: str, limit: int = 5, threshold: float = 0.7
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Create a RAG prompt with retrieved context.
 

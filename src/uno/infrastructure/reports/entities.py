@@ -191,9 +191,9 @@ class ReportTemplate(AggregateRoot[str]):
     name: str
     description: str
     base_object_type: str
-    format_config: Dict[str, Any] = field(default_factory=dict)
-    parameter_definitions: Dict[str, Any] = field(default_factory=dict)
-    cache_policy: Dict[str, Any] = field(default_factory=dict)
+    format_config: dict[str, Any] = field(default_factory=dict)
+    parameter_definitions: dict[str, Any] = field(default_factory=dict)
+    cache_policy: dict[str, Any] = field(default_factory=dict)
     version: str = "1.0.0"
 
     # Relationships
@@ -306,7 +306,7 @@ class ReportTrigger(Entity[str]):
 
     report_template_id: str
     trigger_type: str
-    trigger_config: Dict[str, Any] = field(default_factory=dict)
+    trigger_config: dict[str, Any] = field(default_factory=dict)
     schedule: str | None = None
     event_type: str | None = None
     entity_type: str | None = None
@@ -555,7 +555,7 @@ class ReportOutputExecution(Entity[str]):
     completed_at: Optional[datetime] = None
     error_details: str | None = None
     output_location: str | None = None
-    output_size_bytes: Optional[int] = None
+    output_size_bytes: int | None = None
 
     # Relationships
     report_execution: ReportExecution | None = None

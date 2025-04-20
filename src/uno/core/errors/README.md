@@ -127,12 +127,12 @@ Structured validation with a focus on clear error messages:
 from uno.core.errors import ValidationContext, validate_fields
 from typing import Dict, Any, Optional
 
-def validate_email(value: str) -> Optional[str]:
+def validate_email(value: str) -> str | None:
     if "@" not in value:
         return "Invalid email format"
     return None
 
-def validate_user(data: Dict[str, Any]):
+def validate_user(data: dict[str, Any]):
     validate_fields(
         data=data,
         required_fields={"username", "email", "password"},
@@ -144,7 +144,7 @@ def validate_user(data: Dict[str, Any]):
     )
     
 # Using ValidationContext for complex validation
-def validate_complex_object(data: Dict[str, Any]):
+def validate_complex_object(data: dict[str, Any]):
     context = ValidationContext("ComplexObject")
     
     # Validate top-level fields

@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Set, Tuple, Optional
 
 
-def check_file(file_path: Path, module_name: str) -> Tuple[bool, Optional[str]]:
+def check_file(file_path: Path, module_name: str) -> Tuple[bool, str | None]:
     """
     Check a single Python file for domain-driven design compliance.
 

@@ -58,7 +58,7 @@ T = TypeVar("T")
 F = TypeVar("F", bound=Callable[..., Any])
 
 # Context variable for logging context
-_logging_context = contextvars.ContextVar[Dict[str, Any]]("logging_context", default={})
+_logging_context = contextvars.ContextVar[dict[str, Any]]("logging_context", default={})
 
 
 class LogLevel(str, Enum):
@@ -111,9 +111,9 @@ class LogContext:
     component: str | None = None
     function: str | None = None
     module: str | None = None
-    additional_data: Dict[str, Any] = field(default_factory=dict)
+    additional_data: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to a dictionary."""
         result = {}
 
@@ -127,7 +127,7 @@ class LogContext:
 
         return result
 
-    def merge(self, other: Union["LogContext", Dict[str, Any]]) -> "LogContext":
+    def merge(self, other: Union["LogContext", dict[str, Any]]) -> "LogContext":
         """
         Merge with another context.
 
@@ -370,7 +370,7 @@ class StructuredLogAdapter(logging.LoggerAdapter):
     This adapter enhances log messages with contextual information.
     """
 
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    def process(self, msg: str, kwargs: dict[str, Any]) -> Tuple[str, dict[str, Any]]:
         """
         Process the log message and inject context.
 
@@ -451,7 +451,7 @@ class StructuredLogger:
         error: Union[Exception, ErrorDetail],
         level: int = logging.ERROR,
         include_traceback: bool = True,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         """
         Log an error with the error framework.
@@ -625,7 +625,7 @@ def add_context(**context: Any) -> None:
     _logging_context.set(current)
 
 
-def get_context() -> Dict[str, Any]:
+def get_context() -> dict[str, Any]:
     """
     Get the current logging context.
 
@@ -737,7 +737,7 @@ def log_error(
     logger: Optional[Union[logging.Logger, StructuredLogger]] = None,
     level: int = logging.ERROR,
     include_traceback: bool = True,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> None:
     """
     Log an error with the error framework.

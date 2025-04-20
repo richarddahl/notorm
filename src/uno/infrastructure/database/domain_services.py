@@ -209,7 +209,7 @@ class QueryOptimizerServiceProtocol(Protocol):
         ...
 
     async def analyze_query(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
+        self, query: str, parameters: dict[str, Any] | None = None
     ) -> UnoResult[QueryPlan, ErrorDetails]:
         """
         Analyze a query to get its execution plan.
@@ -268,7 +268,7 @@ class QueryCacheServiceProtocol(Protocol):
     """Service protocol for query caching."""
 
     async def get_cached_result(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
+        self, query: str, parameters: dict[str, Any] | None = None
     ) -> UnoResult[Optional[Any], ErrorDetails]:
         """
         Get a cached query result.
@@ -285,9 +285,9 @@ class QueryCacheServiceProtocol(Protocol):
     async def cache_result(
         self,
         query: str,
-        parameters: Optional[Dict[str, Any]],
+        parameters: dict[str, Any] | None,
         result: Any,
-        ttl_seconds: Optional[int] = None,
+        ttl_seconds: int | None = None,
     ) -> UnoResult[None, ErrorDetails]:
         """
         Cache a query result.
@@ -317,7 +317,7 @@ class QueryCacheServiceProtocol(Protocol):
         """
         ...
 
-    async def get_cache_statistics(self) -> UnoResult[Dict[str, Any], ErrorDetails]:
+    async def get_cache_statistics(self) -> UnoResult[dict[str, Any], ErrorDetails]:
         """
         Get cache statistics.
 
@@ -1043,7 +1043,7 @@ class QueryOptimizerService:
         return Success(response)
 
     async def analyze_query(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
+        self, query: str, parameters: dict[str, Any] | None = None
     ) -> UnoResult[QueryPlan, ErrorDetails]:
         """
         Analyze a query to get its execution plan.
@@ -1520,7 +1520,7 @@ class QueryCacheService:
         self.total_queries = 0
 
     async def get_cached_result(
-        self, query: str, parameters: Optional[Dict[str, Any]] = None
+        self, query: str, parameters: dict[str, Any] | None = None
     ) -> UnoResult[Optional[Any], ErrorDetails]:
         """
         Get a cached query result.
@@ -1559,9 +1559,9 @@ class QueryCacheService:
     async def cache_result(
         self,
         query: str,
-        parameters: Optional[Dict[str, Any]],
+        parameters: dict[str, Any] | None,
         result: Any,
-        ttl_seconds: Optional[int] = None,
+        ttl_seconds: int | None = None,
     ) -> UnoResult[None, ErrorDetails]:
         """
         Cache a query result.
@@ -1630,7 +1630,7 @@ class QueryCacheService:
 
         return result
 
-    async def get_cache_statistics(self) -> UnoResult[Dict[str, Any], ErrorDetails]:
+    async def get_cache_statistics(self) -> UnoResult[dict[str, Any], ErrorDetails]:
         """
         Get cache statistics.
 

@@ -18,13 +18,13 @@ logger = logging.getLogger("uno.profiler.visualization")
 
 
 def visualize_profile(
-    profile_result: Union[ProfileResult, Dict[str, Any]], 
+    profile_result: Union[ProfileResult, dict[str, Any]],
     output_file: Union[str, Path],
     include_callers: bool = True,
     include_callees: bool = True,
 ) -> None:
     """Generate a visualization of profiling results.
-    
+
     Args:
         profile_result: Profiling result to visualize
         output_file: Path to write the visualization to
@@ -34,16 +34,17 @@ def visualize_profile(
     try:
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
+
         HAS_PLOTLY = True
     except ImportError:
         logger.warning("Plotly not available. Install with 'pip install plotly'")
         HAS_PLOTLY = False
-        
+
     # Basic HTML fallback if plotly is not available
     if not HAS_PLOTLY:
         _generate_basic_html(profile_result, output_file)
         return
-    
+
     # Convert profile result to a dictionary if it's not already
     if isinstance(profile_result, ProfileResult):
         data = {
@@ -51,77 +52,79 @@ def visualize_profile(
             "total_time": profile_result.total_time,
             "ncalls": profile_result.ncalls,
             "cumtime": profile_result.cumtime,
-            "function_stats": getattr(profile_result, "function_stats", {})
+            "function_stats": getattr(profile_result, "function_stats", {}),
         }
     else:
         data = profile_result
-    
+
     # Create plotly figure
     fig = make_subplots(
-        rows=2, cols=1,
+        rows=2,
+        cols=1,
         subplot_titles=("Function Time Distribution", "Function Call Count"),
-        vertical_spacing=0.2
+        vertical_spacing=0.2,
     )
-    
+
     # Extract function stats
     function_stats = data.get("function_stats", {})
     if not function_stats:
         logger.warning("No detailed function stats available for visualization")
         _generate_basic_html(profile_result, output_file)
         return
-    
+
     # Prepare data for visualization
     func_names = []
     total_times = []
     cum_times = []
     call_counts = []
-    
+
     # Sort by total time
     sorted_stats = sorted(
-        function_stats.items(),
-        key=lambda x: x[1].get("tottime", 0),
-        reverse=True
+        function_stats.items(), key=lambda x: x[1].get("tottime", 0), reverse=True
     )
-    
+
     # Take top 20 functions
     for name, stats in sorted_stats[:20]:
         func_names.append(name.split(":")[-1])  # Extract function name without module
         total_times.append(stats.get("tottime", 0))
         cum_times.append(stats.get("cumtime", 0))
         call_counts.append(stats.get("ncalls", 0))
-    
+
     # Time distribution bar chart
     fig.add_trace(
         go.Bar(
             x=func_names,
             y=total_times,
             name="Total Time",
-            marker_color="rgb(55, 83, 109)"
+            marker_color="rgb(55, 83, 109)",
         ),
-        row=1, col=1
+        row=1,
+        col=1,
     )
-    
+
     fig.add_trace(
         go.Bar(
             x=func_names,
             y=cum_times,
             name="Cumulative Time",
-            marker_color="rgb(26, 118, 255)"
+            marker_color="rgb(26, 118, 255)",
         ),
-        row=1, col=1
+        row=1,
+        col=1,
     )
-    
+
     # Call count bar chart
     fig.add_trace(
         go.Bar(
             x=func_names,
             y=call_counts,
             name="Call Count",
-            marker_color="rgb(34, 139, 34)"
+            marker_color="rgb(34, 139, 34)",
         ),
-        row=2, col=1
+        row=2,
+        col=1,
     )
-    
+
     # Update layout
     fig.update_layout(
         title_text=f"Profile Results for {data.get('name', 'Unknown')}",
@@ -129,19 +132,21 @@ def visualize_profile(
         height=800,
         width=1000,
         bargap=0.15,
-        bargroupgap=0.1
+        bargroupgap=0.1,
     )
-    
+
     # Add annotations
     total_run_time = data.get("total_time", 0)
     fig.add_annotation(
-        xref="paper", yref="paper",
-        x=0.5, y=1.15,
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=1.15,
         text=f"Total Run Time: {total_run_time:.6f}s",
         showarrow=False,
-        font=dict(size=16)
+        font=dict(size=16),
     )
-    
+
     # Save to HTML file
     try:
         fig.write_html(output_file)
@@ -152,11 +157,10 @@ def visualize_profile(
 
 
 def _generate_basic_html(
-    profile_result: Union[ProfileResult, Dict[str, Any]],
-    output_file: Union[str, Path]
+    profile_result: Union[ProfileResult, dict[str, Any]], output_file: Union[str, Path]
 ) -> None:
     """Generate a basic HTML visualization of profiling results.
-    
+
     Args:
         profile_result: Profiling result to visualize
         output_file: Path to write the visualization to
@@ -168,11 +172,11 @@ def _generate_basic_html(
             "total_time": profile_result.total_time,
             "ncalls": profile_result.ncalls,
             "cumtime": profile_result.cumtime,
-            "function_stats": getattr(profile_result, "function_stats", {})
+            "function_stats": getattr(profile_result, "function_stats", {}),
         }
     else:
         data = profile_result
-    
+
     # Generate HTML
     html = [
         "<!DOCTYPE html>",
@@ -204,25 +208,23 @@ def _generate_basic_html(
         "            <th>Total Time (s)</th>",
         "            <th>Per Call (s)</th>",
         "            <th>Cumulative Time (s)</th>",
-        "        </tr>"
+        "        </tr>",
     ]
-    
+
     # Add function stats
     function_stats = data.get("function_stats", {})
     if function_stats:
         # Sort by total time
         sorted_stats = sorted(
-            function_stats.items(),
-            key=lambda x: x[1].get("tottime", 0),
-            reverse=True
+            function_stats.items(), key=lambda x: x[1].get("tottime", 0), reverse=True
         )
-        
+
         for name, stats in sorted_stats:
             tottime = stats.get("tottime", 0)
             ncalls = stats.get("ncalls", 0)
             percall = tottime / ncalls if ncalls > 0 else 0
             cumtime = stats.get("cumtime", 0)
-            
+
             html.append("        <tr>")
             html.append(f"            <td>{name}</td>")
             html.append(f"            <td>{ncalls}</td>")
@@ -231,15 +233,13 @@ def _generate_basic_html(
             html.append(f"            <td>{cumtime:.6f}</td>")
             html.append("        </tr>")
     else:
-        html.append("        <tr><td colspan='5'>No detailed function stats available</td></tr>")
-    
+        html.append(
+            "        <tr><td colspan='5'>No detailed function stats available</td></tr>"
+        )
+
     # Complete HTML
-    html.extend([
-        "    </table>",
-        "</body>",
-        "</html>"
-    ])
-    
+    html.extend(["    </table>", "</body>", "</html>"])
+
     # Write to file
     try:
         with open(output_file, "w") as f:

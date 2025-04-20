@@ -137,7 +137,7 @@ Application services coordinate operations across multiple domain services. They
 from uno.domain.entity import ApplicationService
 from uno.core.errors.result import Result
 
-class OrderingService(ApplicationService[Dict[str, Any], str]):
+class OrderingService(ApplicationService[dict[str, Any], str]):
     def __init__(
         self,
         user_service: UserService,
@@ -154,7 +154,7 @@ class OrderingService(ApplicationService[Dict[str, Any], str]):
     
     async def place_order(
         self, customer_id: UUID, items: list[dict[str, Any]]
-    ) -> Result[Dict[str, Any], str]:
+    ) -> Result[dict[str, Any], str]:
         self.log_request("place_order", {"customer_id": customer_id, "items": items})
         
         # Validate customer
@@ -324,7 +324,7 @@ class OrderService(DomainServiceWithUnitOfWork[Order, UUID]):
             return Success(order)
 
 # Define application service
-class ShoppingService(ApplicationService[Dict[str, Any], str]):
+class ShoppingService(ApplicationService[dict[str, Any], str]):
     def __init__(
         self, 
         product_service: ProductService,
@@ -336,7 +336,7 @@ class ShoppingService(ApplicationService[Dict[str, Any], str]):
     
     async def checkout(
         self, user_id: UUID, product_ids: list[UUID]
-    ) -> Result[Dict[str, Any], str]:
+    ) -> Result[dict[str, Any], str]:
         self.log_request("checkout", {"user_id": user_id, "product_ids": product_ids})
         
         # Check product availability

@@ -50,7 +50,7 @@ class BoundedContext:
     package_path: str
     description: str
     responsibility: str
-    ubiquitous_language: Dict[str, str] = field(default_factory=dict)
+    ubiquitous_language: dict[str, str] = field(default_factory=dict)
     team: str | None = None
     dependencies: Set[str] = field(default_factory=set)
     is_core_domain: bool = False
@@ -100,8 +100,8 @@ class ContextMap:
     """
 
     def __init__(self):
-        self._contexts: Dict[str, BoundedContext] = {}
-        self._relations: Dict[str, ContextRelation] = {}
+        self._contexts: dict[str, BoundedContext] = {}
+        self._relations: dict[str, ContextRelation] = {}
 
     def add_context(self, context: BoundedContext) -> None:
         """
@@ -198,7 +198,7 @@ class ContextMap:
             ctx for ctx in self._contexts.values() if context_name in ctx.dependencies
         ]
 
-    def analyze_dependencies(self) -> Dict[str, Any]:
+    def analyze_dependencies(self) -> dict[str, Any]:
         """
         Analyze the dependencies between contexts.
 

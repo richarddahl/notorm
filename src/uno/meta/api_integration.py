@@ -34,7 +34,7 @@ def register_meta_type_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     meta_type_service: Optional[MetaTypeDomainService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Register API endpoints for meta type management.
 
@@ -178,7 +178,7 @@ def register_meta_record_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     meta_record_service: Optional[MetaRecordDomainService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Register API endpoints for meta record management.
 
@@ -327,7 +327,7 @@ def register_meta_endpoints(
     include_auth: bool = True,
     meta_type_service: Optional[MetaTypeDomainService] = None,
     meta_record_service: Optional[MetaRecordDomainService] = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """
     Register all meta-related API endpoints.
 

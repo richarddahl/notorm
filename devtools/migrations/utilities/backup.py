@@ -231,7 +231,7 @@ def backup_database(
 
 
 def save_migration_metadata(
-    backup_path: Union[str, Path], metadata: Dict[str, Any]
+    backup_path: Union[str, Path], metadata: dict[str, Any]
 ) -> Path:
     """Save metadata about a backup for future reference.
 
@@ -269,9 +269,9 @@ def save_migration_metadata(
 def backup_before_migration(
     files_or_dirs: list[Union[str, Path]],
     output_dir: Union[str, Path],
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
     compress: bool = True,
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """Create backups of files or directories before migration.
 
     Args:

@@ -310,7 +310,7 @@ def retry(
 
 def rate_limited(
     operations_per_second: float,
-    burst_limit: Optional[int] = None,
+    burst_limit: int | None = None,
     limiter: Optional[RateLimiter] = None,
 ) -> Callable[[Callable[..., Awaitable[T]]], Callable[..., Awaitable[T]]]:
     """
@@ -573,7 +573,7 @@ class AsyncCache(Generic[T, R]):
         self,
         ttl: float,
         refresh_before_expiry: Optional[float] = None,
-        max_size: Optional[int] = None,
+        max_size: int | None = None,
         logger: logging.Logger | None = None,
     ):
         """
@@ -589,7 +589,7 @@ class AsyncCache(Generic[T, R]):
         self.refresh_ahead = refresh_before_expiry or (ttl * 0.8)
         self.max_size = max_size
         self.logger = logger or logging.getLogger(__name__)
-        self.cache: Dict[T, Dict[str, Any]] = {}
+        self.cache: Dict[T, dict[str, Any]] = {}
         self.cache_lock = AsyncLock()
         self.refresh_tasks: Dict[T, asyncio.Task] = {}
 

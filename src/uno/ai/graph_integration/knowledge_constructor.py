@@ -63,7 +63,7 @@ class TextSource(BaseModel):
 
     id: str
     content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     source_type: str = "document"
     source_url: str | None = None
     timestamp: str | None = None
@@ -78,7 +78,7 @@ class Entity(BaseModel):
     start_char: int
     end_char: int
     confidence: float = 1.0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     source_id: str | None = None
 
 
@@ -91,7 +91,7 @@ class Relationship(BaseModel):
     type: str
     text: str
     confidence: float = 1.0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     source_id: str | None = None
 
 
@@ -102,7 +102,7 @@ class Triple(BaseModel):
     predicate: str
     object: Entity
     confidence: float = 1.0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     source_id: str | None = None
 
 
@@ -131,8 +131,8 @@ class KnowledgeConstructorConfig(BaseModel):
     age_schema: str = "ag_catalog"
     graph_name: str = "knowledge_graph"
     default_pipeline: ConstructionPipeline = Field(default_factory=ConstructionPipeline)
-    custom_entity_patterns: Dict[str, list[str]] = Field(default_factory=dict)
-    custom_relationship_patterns: Dict[str, list[str]] = Field(default_factory=dict)
+    custom_entity_patterns: dict[str, list[str]] = Field(default_factory=dict)
+    custom_relationship_patterns: dict[str, list[str]] = Field(default_factory=dict)
     spacy_model: str = "en_core_web_sm"
     transformer_model: str = "dslim/bert-base-NER"
     create_node_properties: bool = True
@@ -154,7 +154,7 @@ class ExtractionResult(BaseModel):
     entities: list[Entity] = Field(default_factory=list)
     relationships: list[Relationship] = Field(default_factory=list)
     triples: list[Triple] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class ConstructionResult(BaseModel):
@@ -166,7 +166,7 @@ class ConstructionResult(BaseModel):
     relationship_count: int = 0
     success: bool = True
     error_message: str | None = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class KnowledgeConstructor:
@@ -1239,7 +1239,7 @@ class KnowledgeConstructor:
             self.logger.error(f"Failed to execute Cypher query: {e}")
             return []
 
-    async def export_graph(self, format: str = "json") -> Dict[str, Any]:
+    async def export_graph(self, format: str = "json") -> dict[str, Any]:
         """
         Export the knowledge graph.
 

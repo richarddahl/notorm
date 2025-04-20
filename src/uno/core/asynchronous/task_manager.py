@@ -358,7 +358,7 @@ class TaskManager:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._groups: Dict[str, TaskGroup] = {}
+        self._groups: dict[str, TaskGroup] = {}
         self._signal_handlers_installed = False
         self._started = False
         self._shutdown_complete = False

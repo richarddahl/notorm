@@ -61,18 +61,18 @@ class RelationshipType(BaseModel):
     weight: float = 1.0
     max_depth: int = 3
     required: bool = False
-    properties: Dict[str, Any] = Field(default_factory=dict)
+    properties: dict[str, Any] = Field(default_factory=dict)
 
 
 class NodeFilter(BaseModel):
     """Filter for nodes in the graph."""
 
     labels: list[str] | None = None
-    properties: Dict[str, Any] = Field(default_factory=dict)
+    properties: dict[str, Any] = Field(default_factory=dict)
     exclude_labels: list[str] | None = None
-    exclude_properties: Dict[str, Any] = Field(default_factory=dict)
-    min_degree: Optional[int] = None
-    max_degree: Optional[int] = None
+    exclude_properties: dict[str, Any] = Field(default_factory=dict)
+    min_degree: int | None = None
+    max_degree: int | None = None
     created_after: str | None = None
     created_before: str | None = None
 
@@ -86,7 +86,7 @@ class PathConstraint(BaseModel):
     excluded_nodes: list[str] = Field(default_factory=list)
     required_relationships: list[str] = Field(default_factory=list)
     excluded_relationships: list[str] = Field(default_factory=list)
-    properties: Dict[str, Any] = Field(default_factory=dict)
+    properties: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphNavigatorConfig(BaseModel):
@@ -111,26 +111,26 @@ class PathResult(BaseModel):
     """Result of a path search in the graph."""
 
     path_id: str
-    start_node: Dict[str, Any]
-    end_node: Dict[str, Any]
+    start_node: dict[str, Any]
+    end_node: dict[str, Any]
     nodes: list[dict[str, Any]]
     relationships: list[dict[str, Any]]
     length: int
     score: float = 1.0
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class SubgraphResult(BaseModel):
     """Result of a subgraph extraction from the graph."""
 
     subgraph_id: str
-    center_node: Dict[str, Any]
+    center_node: dict[str, Any]
     nodes: list[dict[str, Any]]
     relationships: list[dict[str, Any]]
     node_count: int
     relationship_count: int
     diameter: int
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class GraphNavigator:
@@ -164,11 +164,11 @@ class GraphNavigator:
         self.pool = None
 
         # Result cache
-        self.path_cache: Dict[str, Dict[str, PathResult]] = {}
-        self.subgraph_cache: Dict[str, SubgraphResult] = {}
+        self.path_cache: dict[str, dict[str, PathResult]] = {}
+        self.subgraph_cache: dict[str, SubgraphResult] = {}
 
         # Cache metadata
-        self.cache_timestamps: Dict[str, float] = {}
+        self.cache_timestamps: dict[str, float] = {}
 
         # Initialization flag
         self.initialized = False
@@ -238,7 +238,7 @@ class GraphNavigator:
         end_node_id: str,
         traversal_mode: Optional[TraversalMode] = None,
         relationship_types: list[str] | None = None,
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
         node_filter: Optional[NodeFilter] = None,
         path_constraint: Optional[PathConstraint] = None,
     ) -> Optional[PathResult]:
@@ -393,7 +393,7 @@ class GraphNavigator:
         max_paths: int = 5,
         traversal_mode: Optional[TraversalMode] = None,
         relationship_types: list[str] | None = None,
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
         node_filter: Optional[NodeFilter] = None,
         path_constraint: Optional[PathConstraint] = None,
     ) -> list[PathResult]:
@@ -511,7 +511,7 @@ class GraphNavigator:
     async def extract_subgraph(
         self,
         center_node_id: str,
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
         relationship_types: list[str] | None = None,
         traversal_mode: Optional[TraversalMode] = None,
         node_filter: Optional[NodeFilter] = None,
@@ -636,7 +636,7 @@ class GraphNavigator:
         min_similarity: float = 0.0,
         relationship_types: list[str] | None = None,
         node_filter: Optional[NodeFilter] = None,
-    ) -> list[Tuple[Dict[str, Any], float]]:
+    ) -> list[Tuple[dict[str, Any], float]]:
         """
         Find nodes similar to a given node.
 
@@ -721,7 +721,7 @@ class GraphNavigator:
         start_node_id: str,
         end_node_id: str,
         reasoning_type: str = "causal",
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
         relationship_types: list[str] | None = None,
     ) -> Optional[PathResult]:
         """

@@ -28,9 +28,9 @@ class QuerySpecification(BaseModel):
     including filters, sorting, pagination, and field selection.
     """
 
-    filters: Optional[Dict[str, Any]] = None
+    filters: dict[str, Any] | None = None
     order_by: list[str] | None = None
-    limit: Optional[int] = None
+    limit: int | None = None
     offset: Optional[int] = 0
     include: list[str] | None = None
     exclude: list[str] | None = None
@@ -45,9 +45,9 @@ class QueryResult(BaseModel, Generic[T]):
 
     items: list[T]
     total_count: int
-    page_size: Optional[int] = None
-    page: Optional[int] = None
-    total_pages: Optional[int] = None
+    page_size: int | None = None
+    page: int | None = None
+    total_pages: int | None = None
 
 
 class QueryExecutor(Generic[T, Q], ABC):
@@ -87,7 +87,7 @@ class QueryExecutor(Generic[T, Q], ABC):
         entity: T,
         include: list[str] | None = None,
         exclude: list[str] | None = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Select specific fields from an entity.
 
@@ -287,7 +287,7 @@ class FilterQueryExecutor(QueryExecutor[T, Q]):
             ),
         )
 
-    def _prepare_filter_params(self, filters: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_filter_params(self, filters: dict[str, Any]) -> dict[str, Any]:
         """
         Prepare filter parameters for the filter manager.
 
@@ -340,7 +340,7 @@ class QueryService(Generic[T, Q]):
         self.executors = executors
         self.logger = logger or logging.getLogger(__name__)
 
-    async def query(self, query_params: Union[Q, Dict[str, Any]]) -> QueryResult[T]:
+    async def query(self, query_params: Union[Q, dict[str, Any]]) -> QueryResult[T]:
         """
         Execute a query and return the results.
 

@@ -33,12 +33,12 @@ class SqlFilterBackend(FilterBackend):
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
         *,
         sort_by: list[str] | None = None,
         sort_dir: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         include_count: bool = True,
     ) -> tuple[list[str], Optional[int]]:
         """
@@ -83,7 +83,7 @@ class SqlFilterBackend(FilterBackend):
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
     ) -> int:
         """
         Count entities based on criteria using SQL.
@@ -114,11 +114,11 @@ class SqlFilterBackend(FilterBackend):
         self,
         session,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
         sort_by: list[str] | None = None,
         sort_dir: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ):
         """
         Build a SQL query for filtering entities.
@@ -144,7 +144,7 @@ class SqlFilterBackend(FilterBackend):
         self,
         session,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
     ):
         """
         Build a SQL query for counting entities.
@@ -206,12 +206,12 @@ class GraphFilterBackend(FilterBackend):
     async def filter_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
         *,
         sort_by: list[str] | None = None,
         sort_dir: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         include_count: bool = True,
     ) -> tuple[list[str], Optional[int]]:
         """
@@ -277,7 +277,7 @@ class GraphFilterBackend(FilterBackend):
     async def count_entities(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
     ) -> int:
         """
         Count entities based on criteria using Apache AGE.
@@ -323,12 +323,12 @@ class GraphFilterBackend(FilterBackend):
     def _build_cypher_query(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
         sort_by: list[str] | None = None,
         sort_dir: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-    ) -> tuple[str, Dict[str, Any]]:
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         """
         Build a Cypher query for filtering entities.
 
@@ -409,8 +409,8 @@ class GraphFilterBackend(FilterBackend):
     def _build_cypher_count_query(
         self,
         entity_type: str,
-        filter_criteria: Union[Dict[str, Any], list[QueryParameter]],
-    ) -> tuple[str, Dict[str, Any]]:
+        filter_criteria: Union[dict[str, Any], list[QueryParameter]],
+    ) -> tuple[str, dict[str, Any]]:
         """
         Build a Cypher query for counting entities.
 
@@ -469,7 +469,7 @@ class GraphFilterBackend(FilterBackend):
 
     def _build_condition(
         self, param: QueryParameter, index: int
-    ) -> tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, dict[str, Any]]:
         """
         Build a Cypher condition for a query parameter.
 

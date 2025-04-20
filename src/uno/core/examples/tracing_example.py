@@ -86,7 +86,7 @@ def setup_observability() -> None:
 class MockDatabaseSession:
     """Mock database session for demonstration purposes."""
 
-    async def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    async def execute(self, query: str, params: dict[str, Any] | None = None) -> Any:
         """
         Execute a query against the mock database.
 
@@ -148,7 +148,7 @@ class MockResult:
         """Fetch all results."""
         return self.rows
 
-    def fetchone(self) -> Optional[Dict[str, Any]]:
+    def fetchone(self) -> dict[str, Any] | None:
         """Fetch one result."""
         return self.rows[0] if self.rows else None
 
@@ -166,7 +166,7 @@ logger = get_logger("examples.tracing")
 
 
 # Example of tracing with context manager
-async def trace_with_context_manager() -> Dict[str, Any]:
+async def trace_with_context_manager() -> dict[str, Any]:
     """Example of using a tracing context manager."""
     # Get the tracer
     tracer = get_tracer()
@@ -230,7 +230,7 @@ async def trace_with_context_manager() -> Dict[str, Any]:
 
 # Example of tracing with decorator
 @trace(name="decorated_function", attributes={"method": "decorator_example"})
-async def trace_with_decorator(iterations: int = 3) -> Dict[str, Any]:
+async def trace_with_decorator(iterations: int = 3) -> dict[str, Any]:
     """
     Example of using the tracing decorator.
 
@@ -271,7 +271,7 @@ async def trace_with_decorator(iterations: int = 3) -> Dict[str, Any]:
 
 
 # Example of tracing with database operations
-async def trace_database_operations() -> Dict[str, Any]:
+async def trace_database_operations() -> dict[str, Any]:
     """Example of tracing database operations."""
     # Create a mock database session
     session = MockDatabaseSession()
@@ -281,7 +281,7 @@ async def trace_database_operations() -> Dict[str, Any]:
 
     # Define a traced database function
     @trace_db
-    async def get_user(session: MockDatabaseSession, user_id: str) -> Dict[str, Any]:
+    async def get_user(session: MockDatabaseSession, user_id: str) -> dict[str, Any]:
         """
         Get a user from the database.
 
@@ -299,8 +299,8 @@ async def trace_database_operations() -> Dict[str, Any]:
 
     @trace_db
     async def create_user(
-        session: MockDatabaseSession, user_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        session: MockDatabaseSession, user_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Create a user in the database.
 
@@ -419,7 +419,7 @@ async def get_user_endpoint(
 @app.post("/api/users")
 @trace(name="create_user_endpoint")
 async def create_user_endpoint(
-    user_data: Dict[str, Any], session: MockDatabaseSession = Depends(get_db_session)
+    user_data: dict[str, Any], session: MockDatabaseSession = Depends(get_db_session)
 ):
     """Create a user with tracing."""
     logger.info(f"Creating user: {user_data.get('name')}")

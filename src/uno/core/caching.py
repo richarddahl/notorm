@@ -90,7 +90,7 @@ class CacheEntry(Generic[T]):
     last_accessed: float = field(default_factory=time.time)
     access_count: int = 0
     size: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self, now: Optional[float] = None) -> bool:
         """
@@ -135,7 +135,7 @@ class Cache(Generic[K, V]):
         name: str,
         strategy: CacheStrategy = CacheStrategy.LRU,
         max_size: Optional[int] = 1000,
-        max_bytes: Optional[int] = None,
+        max_bytes: int | None = None,
         ttl: Optional[float] = 300.0,
         logger: logging.Logger | None = None,
     ):
@@ -208,7 +208,7 @@ class Cache(Generic[K, V]):
         key: K,
         getter: Callable[[], Awaitable[V]],
         ttl: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> V:
         """
         Get a value from the cache or set it if not found.
@@ -241,7 +241,7 @@ class Cache(Generic[K, V]):
         key: K,
         value: V,
         ttl: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Set a value in the cache.
@@ -326,7 +326,7 @@ class Cache(Generic[K, V]):
 
         return False
 
-    async def _evict_entries(self, needed_bytes: Optional[int] = None) -> int:
+    async def _evict_entries(self, needed_bytes: int | None = None) -> int:
         """
         Evict entries from the cache.
 
@@ -467,7 +467,7 @@ class Cache(Generic[K, V]):
                 # Default estimate
                 return 100  # Rough estimate for small objects
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -513,7 +513,7 @@ class QueryCache(Generic[K, V]):
         name: str,
         strategy: CacheStrategy = CacheStrategy.LRU,
         max_size: Optional[int] = 1000,
-        max_bytes: Optional[int] = None,
+        max_bytes: int | None = None,
         ttl: Optional[float] = 60.0,
         stale_ttl: Optional[float] = 300.0,
         logger: logging.Logger | None = None,
@@ -546,7 +546,7 @@ class QueryCache(Generic[K, V]):
         )
 
         # Query tag mappings for invalidation
-        self._tag_to_keys: Dict[str, Set[K]] = {}
+        self._tag_to_keys: dict[str, Set[K]] = {}
         self._key_to_tags: Dict[K, Set[str]] = {}
         self._tag_lock = AsyncLock()
 
@@ -795,7 +795,7 @@ class QueryCache(Generic[K, V]):
             async with self._refresh_lock:
                 self._refresh_tasks.pop(key, None)
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -824,8 +824,8 @@ class QueryCache(Generic[K, V]):
 
 def normalize_query(
     query: str,
-    params: Optional[Dict[str, Any]] = None,
-) -> Tuple[str, Optional[Dict[str, Any]]]:
+    params: dict[str, Any] | None = None,
+) -> Tuple[str, dict[str, Any] | None]:
     """
     Normalize a SQL query for caching.
 
@@ -874,7 +874,7 @@ def normalize_query(
 
 def generate_cache_key(
     query: str,
-    params: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
     prefix: str = "query",
 ) -> str:
     """
@@ -989,8 +989,8 @@ class CacheManager:
         self.logger = logger or logging.getLogger(__name__)
 
         # Caches
-        self._caches: Dict[str, Cache] = {}
-        self._query_caches: Dict[str, QueryCache] = {}
+        self._caches: dict[str, Cache] = {}
+        self._query_caches: dict[str, QueryCache] = {}
         self._cache_lock = AsyncLock()
 
         # Maintenance
@@ -1224,7 +1224,7 @@ class CacheManager:
 
         return count
 
-    async def get_stats(self) -> Dict[str, Any]:
+    async def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 

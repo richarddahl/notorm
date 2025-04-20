@@ -180,7 +180,7 @@ class FunctionTracer:
 
         return str(func)
 
-    def _get_caller(self) -> Optional[str]:
+    def _get_caller(self) -> str | None:
         """Get information about the caller of the traced function.
 
         Returns:

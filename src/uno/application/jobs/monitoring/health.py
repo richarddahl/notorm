@@ -43,7 +43,7 @@ class JobQueueHealthCheck(HealthCheck):
         self.alert_on_stalled_jobs = alert_on_stalled_jobs
         self.logger = logger or logging.getLogger(__name__)
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Perform the health check.
 
         Returns:
@@ -148,7 +148,7 @@ class WorkerHealthCheck(HealthCheck):
         self.worker = worker
         self.logger = logger or logging.getLogger(__name__)
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Perform the health check.
 
         Returns:
@@ -212,7 +212,7 @@ class SchedulerHealthCheck(HealthCheck):
         self.scheduler = scheduler
         self.logger = logger or logging.getLogger(__name__)
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Perform the health check.
 
         Returns:
@@ -381,7 +381,7 @@ class JobSystemHealthChecker:
             except Exception as e:
                 self.logger.exception(f"Error in health check loop: {str(e)}")
 
-    async def get_system_health(self) -> Dict[str, Any]:
+    async def get_system_health(self) -> dict[str, Any]:
         """Get the overall health of the job system.
 
         Returns:

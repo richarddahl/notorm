@@ -60,7 +60,7 @@ db = EnhancedUnoDb()
 @rate_limited(operations_per_second=10)
 @retry(max_attempts=3)
 @timeout_handler(timeout_seconds=5.0)
-async def make_api_call(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+async def make_api_call(endpoint: str, data: dict[str, Any]) -> dict[str, Any]:
     """
     Make an API call with rate limiting and retry logic.
 
@@ -109,7 +109,7 @@ async def process_items(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 @concurrent_limited(max_concurrent=5)
-async def process_item(item: Dict[str, Any]) -> Dict[str, Any]:
+async def process_item(item: dict[str, Any]) -> dict[str, Any]:
     """
     Process a single item with concurrency limiting.
 

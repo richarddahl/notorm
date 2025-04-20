@@ -53,7 +53,7 @@ class SQLQueryTracker:
         if self.enabled:
             self.queries.append(query_info)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about the tracked queries.
 
         Returns:
@@ -138,14 +138,14 @@ class SQLQueryTracker:
             q for q in self.queries if q.query.strip().upper().startswith(query_type)
         ]
 
-    def get_duplicate_queries(self) -> Dict[str, list[SQLQueryInfo]]:
+    def get_duplicate_queries(self) -> dict[str, list[SQLQueryInfo]]:
         """Get queries that were executed multiple times.
 
         Returns:
             Dictionary mapping normalized query patterns to lists of query instances
         """
         # Normalize queries (remove specific values)
-        normalized_queries: Dict[str, list[SQLQueryInfo]] = {}
+        normalized_queries: dict[str, list[SQLQueryInfo]] = {}
 
         for query_info in self.queries:
             normalized = self._normalize_query(query_info.query)
@@ -349,7 +349,7 @@ class SQLQueryDebugger:
         finally:
             pass  # Queries are already tracked
 
-    def analyze_queries(self) -> Dict[str, Any]:
+    def analyze_queries(self) -> dict[str, Any]:
         """Analyze captured queries and provide optimization suggestions.
 
         Returns:

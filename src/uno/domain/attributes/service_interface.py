@@ -37,10 +37,10 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
 
     async def list_attributes(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> Result[list[AttributeT]]:
         """
         List attributes with optional filtering, ordering, and pagination.
@@ -56,7 +56,7 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
         """
         ...
 
-    async def create_attribute(self, data: Dict[str, Any]) -> Result[AttributeT]:
+    async def create_attribute(self, data: dict[str, Any]) -> Result[AttributeT]:
         """
         Create a new attribute.
 
@@ -69,7 +69,7 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
         ...
 
     async def update_attribute(
-        self, attribute_id: IDT, data: Dict[str, Any]
+        self, attribute_id: IDT, data: dict[str, Any]
     ) -> Result[AttributeT]:
         """
         Update an existing attribute.
@@ -111,10 +111,10 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
 
     async def list_attribute_types(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> Result[list[AttributeTypeT]]:
         """
         List attribute types with optional filtering, ordering, and pagination.
@@ -131,7 +131,7 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
         ...
 
     async def create_attribute_type(
-        self, data: Dict[str, Any]
+        self, data: dict[str, Any]
     ) -> Result[AttributeTypeT]:
         """
         Create a new attribute type.
@@ -145,7 +145,7 @@ class AttributeServiceProtocol(Protocol[AttributeT, AttributeTypeT, IDT]):
         ...
 
     async def update_attribute_type(
-        self, type_id: IDT, data: Dict[str, Any]
+        self, type_id: IDT, data: dict[str, Any]
     ) -> Result[AttributeTypeT]:
         """
         Update an existing attribute type.

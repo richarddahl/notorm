@@ -97,7 +97,7 @@ class Order:
         self,
         id: str,
         customer_id: str,
-        products: Dict[str, int] = None,
+        products: dict[str, int] = None,
         status: str = "pending",
         ship_date: Optional[datetime] = None,
     ):
@@ -263,7 +263,7 @@ class OrderResponse(BaseModel):
 
     id: str = Field(..., description="Order ID")
     customer_id: str = Field(..., description="Customer ID")
-    products: Dict[str, int] = Field(..., description="Product quantities")
+    products: dict[str, int] = Field(..., description="Product quantities")
     status: str = Field(..., description="Order status")
     ship_date: Optional[datetime] = Field(None, description="Ship date")
 

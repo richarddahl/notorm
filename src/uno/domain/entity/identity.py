@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict
 T = TypeVar('T')
 
 
-class Identity(Generic[T], BaseModel):
+class Identity(BaseModel, Generic[T]):
     """
     Value object representing an entity identity.
     

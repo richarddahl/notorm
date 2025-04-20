@@ -24,7 +24,7 @@ class CacheEvent:
     cache_name: str
     event_type: str  # "hit", "miss", "error", ...
     timestamp: float
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
 
 class CacheMonitor:
@@ -36,7 +36,7 @@ class CacheMonitor:
 
     def __init__(
         self,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         local_cache: Optional[Any] = None,
         distributed_cache: Optional[Any] = None,
     ):
@@ -190,7 +190,7 @@ class CacheMonitor:
         self,
         name: str,
         value: Union[int, float, str],
-        labels: Optional[Dict[str, str]] = None,
+        labels: Optional[dict[str, str]] = None,
     ) -> None:
         """Record a custom metric.
 
@@ -217,7 +217,7 @@ class CacheMonitor:
             if len(self._stats["metrics"][name]) > 100:
                 self._stats["metrics"][name] = self._stats["metrics"][name][-100:]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -289,7 +289,7 @@ class CacheMonitor:
 
             return stats
 
-    async def get_stats_async(self) -> Dict[str, Any]:
+    async def get_stats_async(self) -> dict[str, Any]:
         """Get cache statistics asynchronously.
 
         Returns:
@@ -300,7 +300,7 @@ class CacheMonitor:
 
     def analyze_performance(
         self, time_window: Optional[float] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze cache performance over a time window.
 
         Args:
@@ -415,7 +415,7 @@ class CacheMonitor:
 
     async def analyze_performance_async(
         self, time_window: Optional[float] = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze cache performance asynchronously.
 
         Args:
@@ -428,7 +428,7 @@ class CacheMonitor:
         # Use a thread to avoid blocking the event loop
         return await asyncio.to_thread(self.analyze_performance, time_window)
 
-    def check_health(self) -> Dict[str, bool]:
+    def check_health(self) -> dict[str, bool]:
         """Check the health of the cache.
 
         Returns:
@@ -466,7 +466,7 @@ class CacheMonitor:
 
         return health
 
-    async def check_health_async(self) -> Dict[str, bool]:
+    async def check_health_async(self) -> dict[str, bool]:
         """Check the health of the cache asynchronously.
 
         Returns:
@@ -497,7 +497,7 @@ class CacheMonitor:
             self._executor.shutdown(wait=True)
 
     def _add_event(
-        self, cache_name: str, event_type: str, details: Optional[Dict[str, Any]] = None
+        self, cache_name: str, event_type: str, details: dict[str, Any] | None = None
     ) -> None:
         """Add an event to the events list.
 
@@ -520,7 +520,7 @@ class CacheMonitor:
         if len(self.events) > self._max_events:
             self.events = self.events[-self._max_events :]
 
-    def _check_alerts(self) -> Dict[str, bool]:
+    def _check_alerts(self) -> dict[str, bool]:
         """Check for alert conditions.
 
         Returns:

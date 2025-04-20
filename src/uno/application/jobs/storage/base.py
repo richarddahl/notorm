@@ -159,7 +159,7 @@ class Storage(ABC):
 
     @abstractmethod
     async def fail_job(
-        self, job_id: str, error: Dict[str, Any], retry: bool = False
+        self, job_id: str, error: dict[str, Any], retry: bool = False
     ) -> bool:
         """Mark a job as failed.
 
@@ -261,7 +261,7 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    async def get_queue_sizes(self) -> Dict[str, int]:
+    async def get_queue_sizes(self) -> dict[str, int]:
         """Get the sizes of all queues.
 
         Returns:
@@ -385,7 +385,7 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """Get statistics about the storage backend.
 
         Returns:
@@ -397,7 +397,7 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Check the health of the storage backend.
 
         Returns:
@@ -482,16 +482,16 @@ class Storage(ABC):
         schedule_id: str,
         task: str,
         args: list[Any],
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
         cron_expression: str | None = None,
-        interval_seconds: Optional[int] = None,
+        interval_seconds: int | None = None,
         queue: str = "default",
         priority: Priority = Priority.NORMAL,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         max_retries: int = 0,
         retry_delay: int = 60,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> str:
         """Schedule a recurring job.
 
@@ -519,7 +519,7 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    async def get_schedule(self, schedule_id: str) -> Optional[Dict[str, Any]]:
+    async def get_schedule(self, schedule_id: str) -> dict[str, Any] | None:
         """Get a schedule by ID.
 
         Args:
@@ -558,14 +558,14 @@ class Storage(ABC):
         self,
         schedule_id: str,
         cron_expression: str | None = None,
-        interval_seconds: Optional[int] = None,
+        interval_seconds: int | None = None,
         queue: str | None = None,
         priority: Optional[Priority] = None,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[int] = None,
-        timeout: Optional[int] = None,
+        metadata: dict[str, Any] | None = None,
+        max_retries: int | None = None,
+        retry_delay: int | None = None,
+        timeout: int | None = None,
         status: str | None = None,
     ) -> bool:
         """Update a schedule.
@@ -610,7 +610,7 @@ class Storage(ABC):
     async def get_due_jobs(
         self,
         limit: int = 100,
-    ) -> list[Tuple[str, Dict[str, Any]]]:
+    ) -> list[Tuple[str, dict[str, Any]]]:
         """Get jobs that are due for execution based on their schedules.
 
         Args:

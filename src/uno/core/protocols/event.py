@@ -61,7 +61,7 @@ class EventProtocol(Protocol):
         ...
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         """
         Get the event data.
 
@@ -71,7 +71,7 @@ class EventProtocol(Protocol):
         ...
 
     @property
-    def aggregate_id(self) -> Optional[str]:
+    def aggregate_id(self) -> str | None:
         """
         Get the ID of the aggregate this event belongs to, if any.
 
@@ -102,7 +102,7 @@ class EventStoreProtocol(Protocol):
     """
 
     async def append_events(
-        self, events: list[EventProtocol], expected_version: Optional[int] = None
+        self, events: list[EventProtocol], expected_version: int | None = None
     ) -> int:
         """
         Append events to the event store.

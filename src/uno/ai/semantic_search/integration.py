@@ -36,7 +36,7 @@ class EntityProtocol(Protocol):
 
     id: Union[str, UUID]
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dict."""
         ...
 
@@ -54,7 +54,7 @@ class EntityIndexer(Generic[T]):
         engine: SemanticSearchEngine,
         entity_type: str,
         text_extractor: Callable[[T], str],
-        metadata_extractor: Optional[Callable[[T], Dict[str, Any]]] = None,
+        metadata_extractor: Optional[Callable[[T], dict[str, Any]]] = None,
         id_formatter: Optional[Callable[[T], str]] = None,
         entity_class: Optional[Type[T]] = None,
     ):

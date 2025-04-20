@@ -344,7 +344,7 @@ class Gauge(Metric[float]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a gauge.
@@ -451,7 +451,7 @@ class Histogram(Metric[list[float]]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         max_size: int = 1000,
     ):
         """
@@ -494,7 +494,7 @@ class Histogram(Metric[list[float]]):
             description=self.description,
         )
 
-    async def get_statistics(self) -> Dict[str, float]:
+    async def get_statistics(self) -> dict[str, float]:
         """
         Get statistical measures from the histogram.
 
@@ -539,7 +539,7 @@ class Timer(Metric[float]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.MILLISECONDS,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a timer.
@@ -601,7 +601,7 @@ class Timer(Metric[float]):
             description=self.description,
         )
 
-    async def get_statistics(self) -> Dict[str, float]:
+    async def get_statistics(self) -> dict[str, float]:
         """
         Get statistical measures from the timer.
 
@@ -644,7 +644,7 @@ class TimerContext:
 def timed(
     timer_name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional["MetricsRegistry"] = None,
 ) -> Callable[[F], F]:
     """
@@ -817,7 +817,7 @@ def add_metrics_context(**context: Any) -> None:
     _metrics_context.set(current)
 
 
-def get_metrics_context() -> Dict[str, Any]:
+def get_metrics_context() -> dict[str, Any]:
     """
     Get the current metrics context.
 
@@ -886,7 +886,7 @@ class PrometheusExporter(MetricsExporter):
         output = []
 
         # Group metrics by name and type
-        grouped: Dict[str, Dict[str, list[MetricValue]]] = {}
+        grouped: dict[str, dict[str, list[MetricValue]]] = {}
 
         for metric in metrics:
             name = metric.name
@@ -988,7 +988,7 @@ class LoggingExporter(MetricsExporter):
             metrics: List of metrics to export
         """
         # Group metrics by name
-        grouped: Dict[str, Dict[str, Any]] = {}
+        grouped: dict[str, dict[str, Any]] = {}
 
         for metric in metrics:
             name = metric.name
@@ -1041,10 +1041,10 @@ class MetricsRegistry:
         """
         self.config = config or MetricsConfig()
         self.logger = logger or get_logger("uno.metrics")
-        self._counters: Dict[str, Counter] = {}
-        self._gauges: Dict[str, Gauge] = {}
-        self._histograms: Dict[str, Histogram] = {}
-        self._timers: Dict[str, Timer] = {}
+        self._counters: dict[str, Counter] = {}
+        self._gauges: dict[str, Gauge] = {}
+        self._histograms: dict[str, Histogram] = {}
+        self._timers: dict[str, Timer] = {}
         self._exporters: list[MetricsExporter] = []
         self._lock = asyncio.Lock()
         self._export_task: Optional[asyncio.Task] = None
@@ -1173,7 +1173,7 @@ class MetricsRegistry:
         except Exception as e:
             self.logger.error(f"Error exporting metrics: {str(e)}", exc_info=True)
 
-    def _get_metric_key(self, name: str, tags: Optional[Dict[str, str]] = None) -> str:
+    def _get_metric_key(self, name: str, tags: Optional[dict[str, str]] = None) -> str:
         """
         Get a unique key for a metric based on name and tags.
 
@@ -1191,7 +1191,7 @@ class MetricsRegistry:
         tag_str = "".join(f"{k}:{tags[k]}" for k in sorted(tags.keys()))
         return f"{name}:{tag_str}"
 
-    def _merge_tags(self, tags: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    def _merge_tags(self, tags: Optional[dict[str, str]] = None) -> dict[str, str]:
         """
         Merge default tags with provided tags.
 
@@ -1211,7 +1211,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.COUNT,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Counter:
         """
         Get or create a counter.
@@ -1248,7 +1248,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Gauge:
         """
         Get or create a gauge.
@@ -1285,7 +1285,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Histogram:
         """
         Get or create a histogram.
@@ -1321,7 +1321,7 @@ class MetricsRegistry:
         self,
         name: str,
         description: str | None = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Timer:
         """
         Get or create a timer.
@@ -1451,7 +1451,7 @@ def configure_metrics(config: Optional[MetricsConfig] = None) -> MetricsRegistry
 async def counter(
     name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Counter:
     """
@@ -1478,7 +1478,7 @@ async def gauge(
     name: str,
     description: str | None = None,
     unit: MetricUnit = MetricUnit.NONE,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Gauge:
     """
@@ -1506,7 +1506,7 @@ async def histogram(
     name: str,
     description: str | None = None,
     unit: MetricUnit = MetricUnit.NONE,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Histogram:
     """
@@ -1533,7 +1533,7 @@ async def histogram(
 async def timer(
     name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Timer:
     """
@@ -1729,7 +1729,7 @@ class MetricsContext:
         self,
         operation: str,
         registry: Optional[MetricsRegistry] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a metrics context.

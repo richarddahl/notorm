@@ -34,7 +34,7 @@ class LocalKeyManager:
             config: Encryption configuration
         """
         self.config = config
-        self.keys: Dict[str, Dict[str, Any]] = {}
+        self.keys: dict[str, dict[str, Any]] = {}
         self.current_key_id: str | None = None
 
         # Key storage path (default to user's home directory)
@@ -105,7 +105,7 @@ class LocalKeyManager:
 
         return key_id
 
-    def get_current_key(self) -> Dict[str, Any]:
+    def get_current_key(self) -> dict[str, Any]:
         """
         Get the current encryption key.
 
@@ -118,7 +118,7 @@ class LocalKeyManager:
 
         return self.keys[self.current_key_id]
 
-    def get_key(self, key_id: str) -> Optional[Dict[str, Any]]:
+    def get_key(self, key_id: str) -> dict[str, Any] | None:
         """
         Get a specific encryption key.
 

@@ -22,7 +22,7 @@ def rollback_migration(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     verify: bool = True,
 ) -> bool:
     """Roll back a migration with transaction safety.
@@ -134,10 +134,10 @@ def rollback_migrations(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     verify: bool = True,
     stop_on_error: bool = True,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Roll back multiple migrations with transaction safety.
 
     Args:
@@ -184,10 +184,10 @@ def rollback_to_revision(
     engine: Engine,
     schema: str = "public",
     dry_run: bool = False,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
     verify: bool = True,
     stop_on_error: bool = True,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Roll back all migrations until a specific revision.
 
     Args:

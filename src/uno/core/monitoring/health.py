@@ -69,10 +69,10 @@ class HealthCheckResult:
 
     status: HealthStatus
     message: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the result to a dictionary.
 
@@ -167,7 +167,7 @@ class HealthCheck:
                 self.last_check_time = now
                 return result
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the health check to a dictionary.
 
@@ -200,7 +200,7 @@ class HealthRegistry:
             logger: Logger to use
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._checks: Dict[str, HealthCheck] = {}
+        self._checks: dict[str, HealthCheck] = {}
         self._lock = asyncio.Lock()
 
     async def register(self, check: HealthCheck) -> None:
@@ -226,7 +226,7 @@ class HealthRegistry:
                 del self._checks[check_id]
                 self.logger.debug(f"Unregistered health check: {check_id}")
 
-    async def check_all(self, force: bool = False) -> Dict[str, HealthCheckResult]:
+    async def check_all(self, force: bool = False) -> dict[str, HealthCheckResult]:
         """
         Run all health checks.
 
@@ -292,7 +292,7 @@ class HealthRegistry:
         else:
             return HealthStatus.UNKNOWN
 
-    async def get_health_report(self, force: bool = False) -> Dict[str, Any]:
+    async def get_health_report(self, force: bool = False) -> dict[str, Any]:
         """
         Get a health report.
 
@@ -339,7 +339,7 @@ class HealthRegistry:
             "checks": by_status,
         }
 
-    async def get_resource_health(self) -> Dict[str, Any]:
+    async def get_resource_health(self) -> dict[str, Any]:
         """
         Get health from resource monitor.
 

@@ -7,7 +7,7 @@ This module defines the models used for filtering operations in the unified endp
 from enum import Enum
 from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 T = TypeVar("T")
 
@@ -78,10 +78,7 @@ class FilterCondition(BaseModel):
         None, description="Group of conditions, required if type is 'group'"
     )
 
-    class Config:
-        """Pydantic configuration for the model."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class FilterConditionGroup(BaseModel):
@@ -150,4 +147,4 @@ class FilterResponse(BaseModel, Generic[T]):
     """
 
     data: FilterResult[T] = Field(..., description="Filter result")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")

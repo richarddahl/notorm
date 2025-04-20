@@ -41,14 +41,14 @@ class JobQueue:
         self,
         task: str,
         args: Optional[list[Any]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         priority: Union[Priority, str, int] = Priority.NORMAL,
         scheduled_for: Optional[datetime] = None,
         max_retries: int = 0,
         retry_delay: int = 60,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        timeout: Optional[int] = None,
+        metadata: dict[str, Any] | None = None,
+        timeout: int | None = None,
         version: str | None = None,
         job_id: str | None = None,
     ) -> str:
@@ -172,7 +172,7 @@ class JobQueue:
     async def fail(
         self,
         job_id: str,
-        error: Union[Dict[str, Any], Exception, str],
+        error: Union[dict[str, Any], Exception, str],
         retry: bool = False,
     ) -> bool:
         """Mark a job as failed.
@@ -189,7 +189,7 @@ class JobQueue:
             Exception: If job failure marking fails
         """
         # Convert the error to a dictionary if it's not already
-        error_dict: Dict[str, Any]
+        error_dict: dict[str, Any]
         if isinstance(error, dict):
             error_dict = error
         elif isinstance(error, Exception):
@@ -411,7 +411,7 @@ class JobQueue:
             self.logger.error(f"Error counting jobs: {e}")
             raise
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """Get statistics for this queue.
 
         Returns:

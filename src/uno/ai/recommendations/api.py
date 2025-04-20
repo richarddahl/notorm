@@ -27,13 +27,13 @@ class InteractionCreate(BaseModel):
         "view", description="Interaction type (view, like, purchase, etc.)"
     )
     rating: Optional[float] = Field(None, description="Optional explicit rating (0-5)")
-    timestamp: Optional[str] = Field(
+    timestamp: str | None = Field(
         None, description="Interaction timestamp (ISO format)"
     )
-    content: Optional[str] = Field(
+    content: str | None = Field(
         None, description="Item content for content-based recommendations"
     )
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
 
 
 class BatchInteractionCreate(BaseModel):
@@ -52,7 +52,7 @@ class RecommendationRequest(BaseModel):
         10, ge=1, le=100, description="Maximum number of recommendations"
     )
     exclusions: list[str] | None = Field(None, description="Items to exclude")
-    item_type: Optional[str] = Field(None, description="Filter by item type")
+    item_type: str | None = Field(None, description="Filter by item type")
 
 
 class Recommendation(BaseModel):
@@ -64,7 +64,7 @@ class Recommendation(BaseModel):
     sources: Optional[list[int]] = Field(
         None, description="Source algorithms (for hybrid recommenders)"
     )
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
 
 
 class RecommendationResponse(BaseModel):
@@ -173,7 +173,7 @@ def create_recommendation_router(
         limit: int = Query(
             10, ge=1, le=100, description="Maximum number of recommendations"
         ),
-        item_type: Optional[str] = Query(None, description="Filter by item type"),
+        item_type: str | None = Query(None, description="Filter by item type"),
     ):
         """
         Generate recommendations for a user (GET method).

@@ -87,7 +87,7 @@ class QueryPerformanceMetric:
             idx_95 = int(len(sorted_times) * 0.95)
             self.p95_time = sorted_times[idx_95]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert metrics to a dictionary representation.
 
@@ -125,7 +125,7 @@ class QueryPerformanceTracker:
         Args:
             logger: Optional logger for diagnostic output
         """
-        self.metrics: Dict[str, QueryPerformanceMetric] = {}
+        self.metrics: dict[str, QueryPerformanceMetric] = {}
         self.logger = logger or logging.getLogger(__name__)
 
     async def track_query(self, query_key: str, callback: QueryCallback[T]) -> T:
@@ -173,7 +173,7 @@ class QueryPerformanceTracker:
 
     def get_metrics(
         self, query_key: str | None = None
-    ) -> Union[Dict[str, Any], list[dict[str, Any]]]:
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         """
         Get performance metrics for queries.
 
@@ -246,7 +246,7 @@ class QueryResultCache:
             max_entries: Maximum number of entries to store in the cache
             logger: Optional logger for diagnostic output
         """
-        self.cache: Dict[str, Dict[str, Any]] = {}
+        self.cache: dict[str, dict[str, Any]] = {}
         self.default_ttl = ttl_seconds
         self.max_entries = max_entries
         self.logger = logger or logging.getLogger(__name__)
@@ -259,7 +259,7 @@ class QueryResultCache:
         self,
         cache_key: str,
         query_fn: QueryCallback[T],
-        ttl_seconds: Optional[int] = None,
+        ttl_seconds: int | None = None,
     ) -> T:
         """
         Get from cache or execute query if not cached or expired.
@@ -356,7 +356,7 @@ class QueryResultCache:
                 pass
             self._cleanup_task = None
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -392,7 +392,7 @@ class GraphQueryOptimizer:
         Args:
             logger: Optional logger for diagnostic output
         """
-        self.cardinality_stats: Dict[str, int] = {}
+        self.cardinality_stats: dict[str, int] = {}
         self.logger = logger or logging.getLogger(__name__)
         self.last_stats_update: Optional[datetime] = None
 
@@ -490,7 +490,7 @@ class GraphQueryOptimizer:
         # This is a placeholder for more complex optimization logic
         return cypher_query
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get the current graph statistics.
 
@@ -619,7 +619,7 @@ class MaterializedQueryView:
                 pass
             self.refresh_task = None
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """
         Get metadata about this materialized view.
 

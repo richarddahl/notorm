@@ -182,14 +182,14 @@ Uno uses a dependency injection system based on Python's Protocol typing:
 # Define a protocol
 class ConfigProtocol(Protocol):
     def get(self, key: str, default: Any = None) -> Any: ...
-    def all(self) -> Dict[str, Any]: ...
+    def all(self) -> dict[str, Any]: ...
 
 # Create an implementation
 class EnvironmentConfig(ConfigProtocol):
     def get(self, key: str, default: Any = None) -> Any:
         return os.environ.get(key, default)
         
-    def all(self) -> Dict[str, Any]:
+    def all(self) -> dict[str, Any]:
         return dict(os.environ)
 
 # Register with container

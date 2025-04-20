@@ -223,8 +223,8 @@ class FieldEncryption:
         return field.decrypt().value
 
     def encrypt_dict(
-        self, data: Dict[str, Any], entity_type: str | None = None
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], entity_type: str | None = None
+    ) -> dict[str, Any]:
         """
         Encrypt a dictionary of field values.
 
@@ -245,8 +245,8 @@ class FieldEncryption:
         return result
 
     def decrypt_dict(
-        self, data: Dict[str, Any], entity_type: str | None = None
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], entity_type: str | None = None
+    ) -> dict[str, Any]:
         """
         Decrypt a dictionary of field values.
 

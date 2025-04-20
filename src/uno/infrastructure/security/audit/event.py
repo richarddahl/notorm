@@ -54,7 +54,7 @@ class SecurityEvent(BaseEvent):
         if isinstance(self.timestamp, int):
             self.timestamp = float(self.timestamp)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the event to a dictionary.
 
@@ -79,7 +79,7 @@ class SecurityEvent(BaseEvent):
         return json.dumps(self.to_dict())
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SecurityEvent":
+    def from_dict(cls, data: dict[str, Any]) -> "SecurityEvent":
         """
         Create an event from a dictionary.
 

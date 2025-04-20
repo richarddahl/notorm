@@ -57,7 +57,7 @@ class Order(Entity):
     user_id: str
     status: OrderStatus = Field(default=OrderStatus.PENDING)
     total_amount: float = Field(..., ge=0)
-    shipping_address: Optional[Dict[str, str]] = None
+    shipping_address: Optional[dict[str, str]] = None
     payment_method: str | None = None
     order_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     items: list[OrderItem] = Field(default_factory=list)

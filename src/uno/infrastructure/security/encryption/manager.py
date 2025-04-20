@@ -24,11 +24,11 @@ from uno.security.config import EncryptionConfig, EncryptionAlgorithm, KeyManage
 class EncryptionProvider(Protocol):
     """Protocol for encryption providers."""
 
-    def encrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def encrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """Encrypt data."""
         ...
 
-    def decrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def decrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """Decrypt data."""
         ...
 
@@ -167,7 +167,7 @@ class EncryptionManager:
         """Initialize the encryption manager."""
         pass
 
-    def encrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def encrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """
         Encrypt data.
 
@@ -188,7 +188,7 @@ class EncryptionManager:
             # In production, you might want to re-raise the exception or return a specific error value
             raise
 
-    def decrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def decrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """
         Decrypt data.
 

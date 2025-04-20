@@ -36,11 +36,11 @@ class PathQuerySpecification:
     def __init__(
         self,
         path: Union[str, QueryPath, UnoFilter],
-        params: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None,
+        params: dict[str, Any] | None = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
         order_by: str | None = None,
-        order_direction: Optional[str] = "asc",
+        order_direction: str | None = "asc",
     ):
         """
         Initialize a path query specification.
@@ -66,7 +66,7 @@ class PathQuerySpecification:
         self.order_by = order_by
         self.order_direction = order_direction
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "path_expression": self.path_expression,

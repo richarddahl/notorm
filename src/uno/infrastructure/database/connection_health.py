@@ -94,7 +94,7 @@ class ConnectionHealthMetrics:
     ping_times: list[float] = field(default_factory=list)
 
     # Resource usage
-    memory_usage: Optional[int] = None
+    memory_usage: int | None = None
     cpu_usage: Optional[float] = None
 
     # Transaction metrics
@@ -212,7 +212,7 @@ class ConnectionIssue:
     resolution_action: str | None = None
 
     # Contextual information
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
     def resolve(self, action: str) -> None:
         """
@@ -665,24 +665,24 @@ class ConnectionHealthMonitor:
         self.logger = logger or logging.getLogger(__name__)
 
         # Connection metrics
-        self._metrics: Dict[str, ConnectionHealthMetrics] = {}
-        self._connection_states: Dict[str, ConnectionHealthState] = {}
+        self._metrics: dict[str, ConnectionHealthMetrics] = {}
+        self._connection_states: dict[str, ConnectionHealthState] = {}
 
         # Issue tracking
-        self._issues: Dict[str, list[ConnectionIssue]] = {}
+        self._issues: dict[str, list[ConnectionIssue]] = {}
         self._remediation_actions: Dict[ConnectionIssueType, list[str]] = (
             self._initialize_remediation_actions()
         )
 
         # Health history for trend analysis
-        self._health_history: Dict[str, list[ConnectionHealthAssessment]] = {}
+        self._health_history: dict[str, list[ConnectionHealthAssessment]] = {}
 
         # Lock for concurrent access
         self._lock = AsyncLock()
 
         # Monitoring and assessment tasks
         self._monitoring_task: Optional[asyncio.Task] = None
-        self._diagnostic_queries: Dict[str, str] = self._initialize_diagnostic_queries()
+        self._diagnostic_queries: dict[str, str] = self._initialize_diagnostic_queries()
 
         # Database connection provider function
         self._connection_provider: Optional[
@@ -776,7 +776,7 @@ class ConnectionHealthMonitor:
             ],
         }
 
-    def _initialize_diagnostic_queries(self) -> Dict[str, str]:
+    def _initialize_diagnostic_queries(self) -> dict[str, str]:
         """Initialize diagnostic queries for different aspects of connection health."""
         return {
             "connection_info": """
@@ -1020,7 +1020,7 @@ class ConnectionHealthMonitor:
 
     async def run_diagnostic_query(
         self, connection: AsyncConnection, query_name: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Run a diagnostic query on a connection.
 
@@ -1062,7 +1062,7 @@ class ConnectionHealthMonitor:
 
     async def run_diagnostics(
         self, connection: AsyncConnection, query_names: list[str] | None = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run a set of diagnostic queries on a connection.
 
@@ -1536,7 +1536,7 @@ class ConnectionHealthMonitor:
                 f"{assessment.state.value} (score: {assessment.score:.2f})"
             )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics for the health monitor.
 
@@ -1602,7 +1602,7 @@ class ConnectionRecycler:
         self._recycling_task: Optional[asyncio.Task] = None
 
         # Dictionary of connections pending recycling
-        self._pending_recycling: Dict[str, str] = {}
+        self._pending_recycling: dict[str, str] = {}
 
         # Callbacks
         self._connection_recycled_callbacks: list[
@@ -1781,7 +1781,7 @@ class ConnectionRecycler:
                     self.logger.error(f"Error recycling connection {conn_id}: {str(e)}")
                     self.recycling_failures += 1
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics for the connection recycler.
 

@@ -50,7 +50,7 @@ class JobManager:
         self.logger = logger or logging.getLogger(__name__)
 
         self.workers: list[WorkerBase] = []
-        self.queues: Dict[str, JobQueue] = {}
+        self.queues: dict[str, JobQueue] = {}
         self.running = False
         self._tasks: Set[asyncio.Task] = set()
         self._stop_event = asyncio.Event()
@@ -143,7 +143,7 @@ class JobManager:
         self,
         task_name: str,
         args: Optional[List] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         queue_name: str = "default",
         priority: Priority = Priority.NORMAL,
         job_id: str | None = None,
@@ -151,7 +151,7 @@ class JobManager:
         max_retries: int = 3,
         retry_delay: timedelta = timedelta(seconds=60),
         timeout: Optional[timedelta] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         tags: Optional[Set[str]] = None,
     ) -> Result[str]:
         """Enqueue a job for execution.
@@ -385,8 +385,8 @@ class JobManager:
         self,
         task_name: str,
         args: Optional[List] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
         timeout: Optional[timedelta] = None,
     ) -> Result[Any]:
         """Run a job synchronously, waiting for the result.

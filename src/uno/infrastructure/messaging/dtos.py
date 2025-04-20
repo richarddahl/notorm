@@ -52,13 +52,13 @@ class MessageCreateDto(MessageBaseDto):
     cc_ids: list[str] | None = Field([], description="List of CC user IDs")
     bcc_ids: list[str] | None = Field([], description="List of BCC user IDs")
     is_draft: bool = Field(True, description="Whether the message is a draft")
-    parent_id: Optional[str] = Field(
+    parent_id: str | None = Field(
         None, description="ID of the parent message if this is a reply"
     )
     meta_record_ids: list[str] | None = Field(
         [], description="List of meta record IDs associated with this message"
     )
-    group_id: Optional[str] = Field(
+    group_id: str | None = Field(
         None, description="ID of the group this message belongs to"
     )
 
@@ -66,12 +66,10 @@ class MessageCreateDto(MessageBaseDto):
 class MessageUpdateDto(BaseModel):
     """DTO for updating an existing message."""
 
-    subject: Optional[str] = Field(
+    subject: str | None = Field(
         None, description="Subject of the message", max_length=255
     )
-    body: Optional[str] = Field(
-        None, description="Content of the message", max_length=255
-    )
+    body: str | None = Field(None, description="Content of the message", max_length=255)
     flag: Optional[MessageImportance] = Field(
         None, description="Importance flag of the message"
     )
@@ -93,7 +91,7 @@ class MessageViewDto(MessageBaseDto):
     id: str = Field(..., description="ID of the message")
     is_draft: bool = Field(..., description="Whether the message is a draft")
     sent_at: Optional[datetime] = Field(None, description="When the message was sent")
-    parent_id: Optional[str] = Field(
+    parent_id: str | None = Field(
         None, description="ID of the parent message if this is a reply"
     )
     users: list[MessageUserViewDto] = Field(
@@ -102,7 +100,7 @@ class MessageViewDto(MessageBaseDto):
     meta_record_ids: list[str] = Field(
         [], description="List of meta record IDs associated with this message"
     )
-    group_id: Optional[str] = Field(
+    group_id: str | None = Field(
         None, description="ID of the group this message belongs to"
     )
 

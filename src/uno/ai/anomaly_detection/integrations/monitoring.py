@@ -34,7 +34,7 @@ class SystemMonitorIntegration:
         engine: AnomalyDetectionEngine,
         metrics_source: str = "prometheus",  # prometheus, datadog, cloudwatch, etc.
         poll_interval: int = 60,  # seconds
-        metrics_mapping: Optional[Dict[str, str]] = None,
+        metrics_mapping: Optional[dict[str, str]] = None,
         alert_handlers: Optional[list[callable]] = None,
         logger: logging.Logger | None = None,
     ):
@@ -518,7 +518,7 @@ class SystemMonitorIntegration:
         except Exception as e:
             self.logger.error(f"Error training detectors: {e}")
 
-    async def _fetch_historical_data(self, days: int) -> Dict[str, pd.DataFrame]:
+    async def _fetch_historical_data(self, days: int) -> dict[str, pd.DataFrame]:
         """
         Fetch historical metric data.
 
@@ -554,7 +554,7 @@ class SystemMonitorIntegration:
 
     async def _fetch_prometheus_historical(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Fetch historical data from Prometheus.
 
@@ -618,7 +618,7 @@ class SystemMonitorIntegration:
 
     async def _fetch_datadog_historical(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Fetch historical data from Datadog.
 
@@ -635,7 +635,7 @@ class SystemMonitorIntegration:
 
     async def _fetch_cloudwatch_historical(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Fetch historical data from CloudWatch.
 

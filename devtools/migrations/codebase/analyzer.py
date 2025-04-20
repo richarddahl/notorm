@@ -44,7 +44,7 @@ class AnalysisResult:
     """Result of a code analysis."""
 
     issues: list[CodeIssue] = field(default_factory=list)
-    stats: Dict[str, Any] = field(default_factory=dict)
+    stats: dict[str, Any] = field(default_factory=dict)
 
     def add_issue(self, issue: CodeIssue) -> None:
         """Add an issue to the results."""

@@ -33,7 +33,7 @@ class ResponseExample:
         self,
         status_code: Union[int, str],
         content_type: str = "application/json",
-        example: Optional[Dict[str, Any]] = None,
+        example: dict[str, Any] | None = None,
         description: str | None = None,
     ):
         """
@@ -119,7 +119,7 @@ def add_security_schema(
     app: FastAPI,
     schema_name: str,
     schema_type: str,
-    schema_data: Dict[str, Any],
+    schema_data: dict[str, Any],
 ) -> None:
     """
     Add a security schema to a FastAPI application.
@@ -197,7 +197,7 @@ def document_operation(
     operation_id: str | None = None,
     tags: list[str] | None = None,
     deprecated: Optional[bool] = None,
-    responses: Optional[Dict[str, ResponseExample]] = None,
+    responses: Optional[dict[str, ResponseExample]] = None,
     security: Optional[list[dict[str, list[str]]]] = None,
 ) -> None:
     """
@@ -271,9 +271,9 @@ class ApiDocumentation:
         description: str | None = None,
         version: str = "0.1.0",
         openapi_tags: Optional[list[dict[str, str]]] = None,
-        contact: Optional[Dict[str, str]] = None,
-        license_info: Optional[Dict[str, str]] = None,
-        security_schemas: Optional[Dict[str, Dict[str, Any]]] = None,
+        contact: Optional[dict[str, str]] = None,
+        license_info: Optional[dict[str, str]] = None,
+        security_schemas: Optional[dict[str, dict[str, Any]]] = None,
     ):
         """
         Initialize a new API documentation container.
@@ -294,7 +294,7 @@ class ApiDocumentation:
         self.contact = contact
         self.license_info = license_info
         self.security_schemas = security_schemas or {}
-        self.operation_docs: Dict[str, Dict[str, Any]] = {}
+        self.operation_docs: dict[str, dict[str, Any]] = {}
 
     def document_operation(
         self,
@@ -306,7 +306,7 @@ class ApiDocumentation:
         operation_id: str | None = None,
         tags: list[str] | None = None,
         deprecated: Optional[bool] = None,
-        responses: Optional[Dict[str, ResponseExample]] = None,
+        responses: Optional[dict[str, ResponseExample]] = None,
         security: Optional[list[dict[str, list[str]]]] = None,
     ) -> None:
         """
@@ -340,7 +340,7 @@ class ApiDocumentation:
         self,
         schema_name: str,
         schema_type: str,
-        schema_data: Dict[str, Any],
+        schema_data: dict[str, Any],
     ) -> None:
         """
         Add a security schema.
@@ -359,7 +359,7 @@ class ApiDocumentation:
         self,
         name: str,
         description: str | None = None,
-        external_docs: Optional[Dict[str, str]] = None,
+        external_docs: Optional[dict[str, str]] = None,
     ) -> None:
         """
         Add a tag with detailed description.
@@ -484,7 +484,7 @@ class OpenApiEnhancer:
         self,
         schema_name: str,
         schema_type: str,
-        schema_data: Dict[str, Any],
+        schema_data: dict[str, Any],
     ) -> None:
         """
         Add a security schema to the OpenAPI documentation.
@@ -500,7 +500,7 @@ class OpenApiEnhancer:
         self,
         name: str,
         description: str | None = None,
-        external_docs: Optional[Dict[str, str]] = None,
+        external_docs: Optional[dict[str, str]] = None,
     ) -> None:
         """
         Add a tag with detailed description to the OpenAPI documentation.
@@ -522,7 +522,7 @@ class OpenApiEnhancer:
         operation_id: str | None = None,
         tags: list[str] | None = None,
         deprecated: Optional[bool] = None,
-        responses: Optional[Dict[str, ResponseExample]] = None,
+        responses: Optional[dict[str, ResponseExample]] = None,
         security: Optional[list[dict[str, list[str]]]] = None,
     ) -> None:
         """

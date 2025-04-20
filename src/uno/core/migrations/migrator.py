@@ -132,7 +132,7 @@ class MigrationContext:
 
 
 # Global registry of migrations
-migration_registry: Dict[str, Migration] = {}
+migration_registry: dict[str, Migration] = {}
 
 
 def get_revision_id() -> str:
@@ -162,7 +162,7 @@ def register_migration(migration: Migration) -> None:
     migration_registry[migration.id] = migration
 
 
-def get_migrations() -> Dict[str, Migration]:
+def get_migrations() -> dict[str, Migration]:
     """
     Get all registered migrations.
 
@@ -364,8 +364,8 @@ class Migrator:
                 raise
 
     def _build_dependency_graph(
-        self, migrations: Dict[str, Migration]
-    ) -> Dict[str, Set[str]]:
+        self, migrations: dict[str, Migration]
+    ) -> dict[str, Set[str]]:
         """
         Build a dependency graph for migrations.
 
@@ -385,7 +385,7 @@ class Migrator:
         return graph
 
     def _calculate_execution_order(
-        self, migrations: Dict[str, Migration], direction: MigrationDirection
+        self, migrations: dict[str, Migration], direction: MigrationDirection
     ) -> list[Migration]:
         """
         Calculate the order in which migrations should be executed.

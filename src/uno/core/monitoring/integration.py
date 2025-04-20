@@ -211,7 +211,7 @@ def setup_monitoring(
         # Configure sampling
         if config.tracing.sampling_rate < 1.0:
             # Create a sampler function
-            def sampler(trace_id: str, parent_id: Optional[str], name: str) -> bool:
+            def sampler(trace_id: str, parent_id: str | None, name: str) -> bool:
                 # Always sample if parent is sampled
                 if parent_id is not None:
                     return True

@@ -747,7 +747,7 @@ class ConnectionPool(Generic[T]):
             f"Validation failures: {self._validation_failures}"
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics about the connection pool.
 
@@ -803,7 +803,7 @@ class ResourceRegistry:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._resources: Dict[str, Any] = {}
+        self._resources: dict[str, Any] = {}
         self._resource_lock = AsyncLock()
         self._closed = False
 
@@ -904,7 +904,7 @@ class ResourceRegistry:
             f"Resource registry closed ({len(resources_to_close)} resources)"
         )
 
-    def get_all_resources(self) -> Dict[str, Any]:
+    def get_all_resources(self) -> dict[str, Any]:
         """
         Get all registered resources.
 
@@ -913,7 +913,7 @@ class ResourceRegistry:
         """
         return dict(self._resources)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics about all resources.
 
@@ -1150,7 +1150,7 @@ class BackgroundTask:
         """
         return self._task is not None and not self._task.done()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics about the background task.
 

@@ -60,10 +60,10 @@ class CreateProductRequest(BaseModel):
 class UpdateProductRequest(BaseModel):
     """Update product request."""
 
-    name: Optional[str] = Field(None, description="Product name")
-    description: Optional[str] = Field(None, description="Product description")
+    name: str | None = Field(None, description="Product name")
+    description: str | None = Field(None, description="Product description")
     price: Optional[float] = Field(None, description="Product price")
-    category: Optional[str] = Field(None, description="Product category")
+    category: str | None = Field(None, description="Product category")
     tags: list[str] | None = Field(None, description="Product tags")
     is_active: Optional[bool] = Field(None, description="Whether the product is active")
 
@@ -150,8 +150,8 @@ class MockFilterBackend(FilterBackend):
         *,
         sort_by: list[str] | None = None,
         sort_dir: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         include_count: bool = True,
     ) -> tuple[list[str], Optional[int]]:
         """

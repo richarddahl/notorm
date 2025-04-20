@@ -19,10 +19,10 @@ def register_unified_example_endpoints(
     path_prefix: str = "/api/v1/examples",
     dependencies: Optional[list[Any]] = None,
     include_auth: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Register all example endpoints from the unified endpoint framework.
-    
+
     Args:
         app_or_router: FastAPI app or APIRouter
         path_prefix: API version prefix for examples

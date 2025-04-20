@@ -29,7 +29,7 @@ class Role(BaseModel):
     """Role model for authorization."""
 
     name: str = Field(..., description="Role name")
-    description: Optional[str] = Field(None, description="Role description")
+    description: str | None = Field(None, description="Role description")
     permissions: list[str] = Field(default_factory=list, description="Role permissions")
 
 
@@ -38,10 +38,10 @@ class User(BaseModel):
 
     id: str = Field(..., description="User ID")
     username: str = Field(..., description="Username")
-    email: Optional[str] = Field(None, description="User email")
+    email: str | None = Field(None, description="User email")
     roles: list[str] = Field(default_factory=list, description="User roles")
     permissions: list[str] = Field(default_factory=list, description="User permissions")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="User metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="User metadata")
 
 
 class UserContext:

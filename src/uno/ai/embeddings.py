@@ -116,7 +116,7 @@ class OpenAIEmbeddingModel(EmbeddingModel):
         self,
         model_name: str = "text-embedding-ada-002",
         api_key: str | None = None,
-        dimensions: Optional[int] = None,
+        dimensions: int | None = None,
     ):
         """
         Initialize the OpenAI embedding model.
@@ -192,7 +192,7 @@ class EmbeddingRegistry:
 
     def __init__(self):
         """Initialize the embedding registry."""
-        self.models: Dict[str, EmbeddingModel] = {}
+        self.models: dict[str, EmbeddingModel] = {}
 
     def register(self, name: str, model: EmbeddingModel) -> None:
         """

@@ -89,7 +89,7 @@ class OptimizerMetricsSnapshot:
     maintenance_recommendations: int = 0
 
     # Additional metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_optimizer(cls, optimizer: QueryOptimizer) -> "OptimizerMetricsSnapshot":
@@ -405,7 +405,7 @@ class OptimizerMetricsCollector:
         self,
         optimizer: Optional[QueryOptimizer] = None,
         time_range: Optional[Tuple[float, float]] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a metrics report.
 

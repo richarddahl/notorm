@@ -23,10 +23,10 @@ class UserBaseDto(BaseModel):
     is_superuser: bool = Field(
         False, description="Indicates that the user is a Superuser"
     )
-    tenant_id: Optional[str] = Field(
+    tenant_id: str | None = Field(
         None, description="The Tenant to which the user is assigned"
     )
-    default_group_id: Optional[str] = Field(
+    default_group_id: str | None = Field(
         None, description="User's default group, used for creating new objects"
     )
 
@@ -43,7 +43,7 @@ class UserBaseDto(BaseModel):
 class UserCreateDto(UserBaseDto):
     """DTO for creating a new user."""
 
-    password: Optional[str] = Field(None, description="Initial password for the user")
+    password: str | None = Field(None, description="Initial password for the user")
 
 
 class UserUpdateDto(BaseModel):
@@ -52,17 +52,17 @@ class UserUpdateDto(BaseModel):
     email: Optional[EmailStr] = Field(
         None, description="Email address, used as login ID"
     )
-    handle: Optional[str] = Field(
+    handle: str | None = Field(
         None, description="User's displayed name and alternate login ID"
     )
-    full_name: Optional[str] = Field(None, description="User's full name")
+    full_name: str | None = Field(None, description="User's full name")
     is_superuser: Optional[bool] = Field(
         None, description="Indicates that the user is a Superuser"
     )
-    tenant_id: Optional[str] = Field(
+    tenant_id: str | None = Field(
         None, description="The Tenant to which the user is assigned"
     )
-    default_group_id: Optional[str] = Field(
+    default_group_id: str | None = Field(
         None, description="User's default group, used for creating new objects"
     )
 
@@ -122,21 +122,17 @@ class UserViewDto(UserBaseDto):
 class UserFilterParams(BaseModel):
     """Parameters for filtering users."""
 
-    email: Optional[str] = Field(None, description="Filter by email (exact match)")
-    email_contains: Optional[str] = Field(
-        None, description="Filter by email (contains)"
-    )
-    handle: Optional[str] = Field(None, description="Filter by handle (exact match)")
-    handle_contains: Optional[str] = Field(
-        None, description="Filter by handle (contains)"
-    )
-    full_name_contains: Optional[str] = Field(
+    email: str | None = Field(None, description="Filter by email (exact match)")
+    email_contains: str | None = Field(None, description="Filter by email (contains)")
+    handle: str | None = Field(None, description="Filter by handle (exact match)")
+    handle_contains: str | None = Field(None, description="Filter by handle (contains)")
+    full_name_contains: str | None = Field(
         None, description="Filter by full name (contains)"
     )
     is_superuser: Optional[bool] = Field(None, description="Filter by superuser status")
-    tenant_id: Optional[str] = Field(None, description="Filter by tenant ID")
-    group_id: Optional[str] = Field(None, description="Filter by group membership")
-    role_id: Optional[str] = Field(None, description="Filter by role assignment")
+    tenant_id: str | None = Field(None, description="Filter by tenant ID")
+    group_id: str | None = Field(None, description="Filter by group membership")
+    role_id: str | None = Field(None, description="Filter by role assignment")
     created_after: Optional[datetime] = Field(
         None, description="Filter by creation date (after)"
     )
@@ -180,7 +176,7 @@ class GroupCreateDto(GroupBaseDto):
 class GroupUpdateDto(BaseModel):
     """DTO for updating an existing group."""
 
-    name: Optional[str] = Field(None, description="Group name")
+    name: str | None = Field(None, description="Group name")
 
     @model_validator(mode="after")
     def validate_fields(self) -> "GroupUpdateDto":
@@ -223,10 +219,10 @@ class GroupViewDto(GroupBaseDto):
 class GroupFilterParams(BaseModel):
     """Parameters for filtering groups."""
 
-    name: Optional[str] = Field(None, description="Filter by name (exact match)")
-    name_contains: Optional[str] = Field(None, description="Filter by name (contains)")
-    tenant_id: Optional[str] = Field(None, description="Filter by tenant ID")
-    user_id: Optional[str] = Field(None, description="Filter by user membership")
+    name: str | None = Field(None, description="Filter by name (exact match)")
+    name_contains: str | None = Field(None, description="Filter by name (contains)")
+    tenant_id: str | None = Field(None, description="Filter by tenant ID")
+    user_id: str | None = Field(None, description="Filter by user membership")
     created_after: Optional[datetime] = Field(
         None, description="Filter by creation date (after)"
     )
@@ -277,9 +273,9 @@ class RoleCreateDto(RoleBaseDto):
 class RoleUpdateDto(BaseModel):
     """DTO for updating an existing role."""
 
-    name: Optional[str] = Field(None, description="Role name")
-    description: Optional[str] = Field(None, description="Role description")
-    responsibility_role_id: Optional[str] = Field(
+    name: str | None = Field(None, description="Role name")
+    description: str | None = Field(None, description="Role description")
+    responsibility_role_id: str | None = Field(
         None, description="The Responsibility that the role's assigned user performs"
     )
 
@@ -329,16 +325,16 @@ class RoleViewDto(RoleBaseDto):
 class RoleFilterParams(BaseModel):
     """Parameters for filtering roles."""
 
-    name: Optional[str] = Field(None, description="Filter by name (exact match)")
-    name_contains: Optional[str] = Field(None, description="Filter by name (contains)")
-    description_contains: Optional[str] = Field(
+    name: str | None = Field(None, description="Filter by name (exact match)")
+    name_contains: str | None = Field(None, description="Filter by name (contains)")
+    description_contains: str | None = Field(
         None, description="Filter by description (contains)"
     )
-    tenant_id: Optional[str] = Field(None, description="Filter by tenant ID")
-    responsibility_role_id: Optional[str] = Field(
+    tenant_id: str | None = Field(None, description="Filter by tenant ID")
+    responsibility_role_id: str | None = Field(
         None, description="Filter by responsibility role ID"
     )
-    user_id: Optional[str] = Field(None, description="Filter by user assignment")
+    user_id: str | None = Field(None, description="Filter by user assignment")
     permission_id: Optional[int] = Field(None, description="Filter by permission ID")
     created_after: Optional[datetime] = Field(
         None, description="Filter by creation date (after)"
@@ -384,10 +380,8 @@ class ResponsibilityRoleCreateDto(ResponsibilityRoleBaseDto):
 class ResponsibilityRoleUpdateDto(BaseModel):
     """DTO for updating an existing responsibility role."""
 
-    name: Optional[str] = Field(None, description="Responsibility role name")
-    description: Optional[str] = Field(
-        None, description="Responsibility role description"
-    )
+    name: str | None = Field(None, description="Responsibility role name")
+    description: str | None = Field(None, description="Responsibility role description")
 
     @model_validator(mode="after")
     def validate_fields(self) -> "ResponsibilityRoleUpdateDto":
@@ -425,12 +419,12 @@ class ResponsibilityRoleViewDto(ResponsibilityRoleBaseDto):
 class ResponsibilityRoleFilterParams(BaseModel):
     """Parameters for filtering responsibility roles."""
 
-    name: Optional[str] = Field(None, description="Filter by name (exact match)")
-    name_contains: Optional[str] = Field(None, description="Filter by name (contains)")
-    description_contains: Optional[str] = Field(
+    name: str | None = Field(None, description="Filter by name (exact match)")
+    name_contains: str | None = Field(None, description="Filter by name (contains)")
+    description_contains: str | None = Field(
         None, description="Filter by description (contains)"
     )
-    tenant_id: Optional[str] = Field(None, description="Filter by tenant ID")
+    tenant_id: str | None = Field(None, description="Filter by tenant ID")
     created_after: Optional[datetime] = Field(
         None, description="Filter by creation date (after)"
     )
@@ -498,9 +492,9 @@ class PermissionViewDto(PermissionBaseDto):
 class PermissionFilterParams(BaseModel):
     """Parameters for filtering permissions."""
 
-    meta_type_id: Optional[str] = Field(None, description="Filter by meta type ID")
+    meta_type_id: str | None = Field(None, description="Filter by meta type ID")
     operation: Optional[SQLOperation] = Field(None, description="Filter by operation")
-    role_id: Optional[str] = Field(None, description="Filter by role assignment")
+    role_id: str | None = Field(None, description="Filter by role assignment")
     limit: int = Field(50, description="Maximum number of results to return")
     offset: int = Field(0, description="Number of results to skip")
 
@@ -532,7 +526,7 @@ class TenantCreateDto(TenantBaseDto):
 class TenantUpdateDto(BaseModel):
     """DTO for updating an existing tenant."""
 
-    name: Optional[str] = Field(None, description="Tenant name")
+    name: str | None = Field(None, description="Tenant name")
     tenant_type: Optional[TenantType] = Field(None, description="Tenant type")
 
     @model_validator(mode="after")
@@ -578,8 +572,8 @@ class TenantViewDto(TenantBaseDto):
 class TenantFilterParams(BaseModel):
     """Parameters for filtering tenants."""
 
-    name: Optional[str] = Field(None, description="Filter by name (exact match)")
-    name_contains: Optional[str] = Field(None, description="Filter by name (contains)")
+    name: str | None = Field(None, description="Filter by name (exact match)")
+    name_contains: str | None = Field(None, description="Filter by name (contains)")
     tenant_type: Optional[TenantType] = Field(None, description="Filter by tenant type")
     created_after: Optional[datetime] = Field(
         None, description="Filter by creation date (after)"

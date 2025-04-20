@@ -109,7 +109,7 @@ class InMemoryOrderRepository(Repository[Order, str]):
 
     def __init__(self):
         """Initialize with empty storage."""
-        self.orders: Dict[str, Order] = {}
+        self.orders: dict[str, Order] = {}
         self.events: list[Event] = []
 
     async def get_by_id(self, id: str) -> Optional[Order]:

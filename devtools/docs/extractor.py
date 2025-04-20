@@ -21,7 +21,7 @@ def extract_docstrings(
     include_dunder: bool = False,
     include_modules: list[str] | None = None,
     exclude_modules: list[str] | None = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """
     Extract docstrings from a module, class, or function.
 
@@ -107,7 +107,7 @@ def extract_docstrings(
 
 def _extract_from_object(
     obj: Any, recursive: bool, include_private: bool, include_dunder: bool
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """
     Extract docstrings from an object.
 

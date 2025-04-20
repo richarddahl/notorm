@@ -215,9 +215,7 @@ class QueryModel(DefaultModelMixin, BaseModel):
         nullable=False,
         doc="The name of the query.",
     )
-    description: Mapped[Optional[str]] = mapped_column(
-        doc="The description of the query."
-    )
+    description: Mapped[str | None] = mapped_column(doc="The description of the query.")
     query_meta_type_id: Mapped[PostgresTypes.String26] = mapped_column(
         ForeignKey("meta_type.id", ondelete="CASCADE"),
         index=True,

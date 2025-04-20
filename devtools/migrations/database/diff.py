@@ -22,17 +22,17 @@ class SchemaDiff:
 
     added_tables: list[str]
     removed_tables: list[str]
-    modified_tables: Dict[str, Dict[str, Any]]
+    modified_tables: dict[str, dict[str, Any]]
 
-    added_columns: Dict[str, list[str]]
-    removed_columns: Dict[str, list[str]]
-    modified_columns: Dict[str, Dict[str, Dict[str, Any]]]
+    added_columns: dict[str, list[str]]
+    removed_columns: dict[str, list[str]]
+    modified_columns: dict[str, dict[str, dict[str, Any]]]
 
-    added_indexes: Dict[str, list[str]]
-    removed_indexes: Dict[str, list[str]]
+    added_indexes: dict[str, list[str]]
+    removed_indexes: dict[str, list[str]]
 
-    added_constraints: Dict[str, list[str]]
-    removed_constraints: Dict[str, list[str]]
+    added_constraints: dict[str, list[str]]
+    removed_constraints: dict[str, list[str]]
 
     @property
     def has_changes(self) -> bool:
@@ -142,7 +142,7 @@ def diff_model_to_db(
     metadata = MetaData(schema=schema)
 
     # Add each model's table to the metadata
-    model_tables: Dict[str, Table] = {}
+    model_tables: dict[str, Table] = {}
     for model in models:
         if hasattr(model, "__table__"):
             model_tables[model.__table__.name] = model.__table__

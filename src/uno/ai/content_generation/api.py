@@ -31,7 +31,7 @@ class IndexContentRequest(BaseModel):
     content: str = Field(..., description="Text content to index")
     entity_id: str = Field(..., description="Unique identifier for the content")
     entity_type: str = Field(..., description="Type of content")
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         default=None, description="Additional metadata"
     )
     graph_nodes: Optional[list[dict[str, Any]]] = Field(
@@ -122,9 +122,7 @@ class ErrorResponse(BaseModel):
     """Error response model."""
 
     error: str = Field(..., description="Error message")
-    detail: Optional[str] = Field(
-        default=None, description="Detailed error information"
-    )
+    detail: str | None = Field(default=None, description="Detailed error information")
 
 
 def create_content_router(engine: ContentEngine) -> APIRouter:
@@ -139,7 +137,7 @@ def create_content_router(engine: ContentEngine) -> APIRouter:
     """
     router = APIRouter(tags=["Content Generation"])
 
-    @router.post("/content/index", response_model=Dict[str, Any])
+    @router.post("/content/index", response_model=dict[str, Any])
     async def index_content(request: IndexContentRequest):
         """
         Index content for retrieval augmented generation.

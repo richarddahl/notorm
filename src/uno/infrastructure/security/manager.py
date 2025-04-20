@@ -80,7 +80,7 @@ class SecurityManager:
         )
 
         # Security hooks
-        self.security_hooks: Dict[str, list[SecurityHook]] = {}
+        self.security_hooks: dict[str, list[SecurityHook]] = {}
 
         # Initialize security hooks
         self._initialize_hooks()
@@ -125,7 +125,7 @@ class SecurityManager:
                 except Exception as e:
                     self.logger.error(f"Error executing security hook: {str(e)}")
 
-    def encrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def encrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """
         Encrypt data.
 
@@ -138,7 +138,7 @@ class SecurityManager:
         """
         return self.encryption_manager.encrypt(data, context)
 
-    def decrypt(self, data: str, context: Optional[Dict[str, Any]] = None) -> str:
+    def decrypt(self, data: str, context: dict[str, Any] | None = None) -> str:
         """
         Decrypt data.
 
@@ -228,7 +228,7 @@ class SecurityManager:
 
         return verify_password(password, hashed_password)
 
-    def validate_password_policy(self, password: str) -> Dict[str, Any]:
+    def validate_password_policy(self, password: str) -> dict[str, Any]:
         """
         Validate a password against the password policy.
 
@@ -337,7 +337,7 @@ class SecurityManager:
         """
         return self.config.authentication.password_policy.generate_password()
 
-    def setup_mfa(self, user_id: str) -> Dict[str, Any]:
+    def setup_mfa(self, user_id: str) -> dict[str, Any]:
         """
         Set up multi-factor authentication for a user.
 
@@ -362,7 +362,7 @@ class SecurityManager:
         """
         return self.mfa_manager.verify_mfa(user_id, code)
 
-    def get_security_headers(self) -> Dict[str, str]:
+    def get_security_headers(self) -> dict[str, str]:
         """
         Get security headers for HTTP responses.
 
@@ -455,7 +455,7 @@ class SecurityManager:
 
     def validate_cors_request(
         self, origin: str, method: str, headers: list[str] | None = None
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate a CORS request.
 

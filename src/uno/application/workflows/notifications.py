@@ -58,7 +58,7 @@ class WorkflowNotification(BaseModel):
     read: bool = False
     read_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     tenant_id: str | None = None
 
     def mark_as_read(self) -> None:
@@ -88,7 +88,7 @@ class SystemNotificationCreated(WorkflowNotificationEvent):
         priority: str = "normal",
         link: str | None = None,
         expires_at: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         tenant_id: str | None = None,
     ):
         super().__init__()

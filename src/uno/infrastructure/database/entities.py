@@ -163,7 +163,7 @@ class ConnectionConfig:
     max_overflow: int = 0
     pool_timeout: int = 30
     pool_recycle: int = 90
-    connect_args: Dict[str, Any] = field(default_factory=dict)
+    connect_args: dict[str, Any] = field(default_factory=dict)
 
     def get_uri(self) -> ConnectionString:
         """
@@ -292,7 +292,7 @@ class QueryPlan:
     estimated_cost: float
     actual_cost: Optional[float] = None
     estimated_rows: int = 0
-    actual_rows: Optional[int] = None
+    actual_rows: int | None = None
     sequential_scans: int = 0
     index_scans: int = 0
     analyze_time: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -378,7 +378,7 @@ class CacheKey:
 
     @classmethod
     def from_query(
-        cls, query: str, parameters: Optional[Dict[str, Any]] = None
+        cls, query: str, parameters: dict[str, Any] | None = None
     ) -> "CacheKey":
         """
         Create a cache key from a query and parameters.
@@ -574,9 +574,9 @@ class QueryRequest:
     """Request for executing a database query."""
 
     query: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     use_cache: bool = False
-    cache_ttl: Optional[int] = None
+    cache_ttl: int | None = None
     optimize: bool = True
 
 
@@ -598,7 +598,7 @@ class OptimizationRequest:
     """Request for query optimization."""
 
     query: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     level: OptimizationLevel = OptimizationLevel.BASIC
     include_plan: bool = True
     generate_recommendations: bool = True
@@ -625,7 +625,7 @@ class TransactionRequest:
         TransactionIsolationLevel.READ_COMMITTED
     )
     read_only: bool = False
-    timeout: Optional[int] = None  # in seconds
+    timeout: int | None = None  # in seconds
 
 
 @dataclass

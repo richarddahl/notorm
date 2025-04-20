@@ -129,7 +129,7 @@ class FileCache(LocalCache):
                     self._stats["misses"] += 1
                 return None
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache.
 
         Args:
@@ -346,7 +346,7 @@ class FileCache(LocalCache):
         except Exception:
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -434,7 +434,7 @@ class FileCache(LocalCache):
         # key in the cache entry and read it from the file
         return filename
 
-    def _serialize(self, entry: Dict[str, Any]) -> bytes:
+    def _serialize(self, entry: dict[str, Any]) -> bytes:
         """Serialize a cache entry.
 
         Args:
@@ -450,7 +450,7 @@ class FileCache(LocalCache):
         else:
             raise ValueError(f"Unsupported serializer: {self.serializer}")
 
-    def _deserialize(self, data: bytes) -> Dict[str, Any]:
+    def _deserialize(self, data: bytes) -> dict[str, Any]:
         """Deserialize a cache entry.
 
         Args:

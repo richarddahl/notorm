@@ -70,14 +70,14 @@ class InMemorySpecificationTranslator(SpecificationTranslator[T, list[T]]):
         ]
 
 
-class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
+class SQLSpecificationTranslator(SpecificationTranslator[T, dict[str, Any]]):
     """
     Translator that converts specifications to SQL filter criteria.
 
     This translator produces filter dictionaries that can be used with SQL queries.
     """
 
-    def translate(self, specification: Specification[T]) -> Dict[str, Any]:
+    def translate(self, specification: Specification[T]) -> dict[str, Any]:
         """
         Translate a specification into SQL filter criteria.
 
@@ -104,7 +104,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_attribute_specification(
         self, specification: AttributeSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an attribute specification into SQL filter criteria.
 
@@ -119,7 +119,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_and_specification(
         self, specification: AndSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an AND specification into SQL filter criteria.
 
@@ -137,7 +137,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_or_specification(
         self, specification: OrSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an OR specification into SQL filter criteria.
 
@@ -155,7 +155,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_not_specification(
         self, specification: NotSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate a NOT specification into SQL filter criteria.
 
@@ -172,7 +172,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_all_specification(
         self, specification: AllSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an ALL specification into SQL filter criteria.
 
@@ -190,7 +190,7 @@ class SQLSpecificationTranslator(SpecificationTranslator[T, Dict[str, Any]]):
 
     def _translate_any_specification(
         self, specification: AnySpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an ANY specification into SQL filter criteria.
 
@@ -213,7 +213,7 @@ class PostgreSQLSpecificationTranslator(SQLSpecificationTranslator[T]):
 
     def _translate_attribute_specification(
         self, specification: AttributeSpecification[T]
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Translate an attribute specification into PostgreSQL filter criteria.
 

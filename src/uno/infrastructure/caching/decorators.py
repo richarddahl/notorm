@@ -17,10 +17,10 @@ AsyncF = TypeVar("AsyncF", bound=Callable[..., Any])
 
 
 def cached(
-    ttl: Optional[int] = None,
+    ttl: int | None = None,
     key_prefix: str | None = None,
     region: str | None = None,
-    arg_preprocessors: Optional[Dict[str, Callable]] = None,
+    arg_preprocessors: Optional[dict[str, Callable]] = None,
     invalidate_on_args: Optional[list[Union[int, str]]] = None,
 ):
     """Decorator for caching function results.
@@ -115,10 +115,10 @@ def cached(
 
 
 def async_cached(
-    ttl: Optional[int] = None,
+    ttl: int | None = None,
     key_prefix: str | None = None,
     region: str | None = None,
-    arg_preprocessors: Optional[Dict[str, Callable]] = None,
+    arg_preprocessors: Optional[dict[str, Callable]] = None,
     invalidate_on_args: Optional[list[Union[int, str]]] = None,
 ):
     """Decorator for caching async function results.

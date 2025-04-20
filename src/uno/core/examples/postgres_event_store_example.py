@@ -142,7 +142,7 @@ class User:
         self.version += 1
 
     async def deactivate(
-        self, reason: Optional[str], event_store: PostgresEventStore
+        self, reason: str | None, event_store: PostgresEventStore
     ) -> None:
         """Deactivate the user and store the UserDeactivated event."""
         if not self.active:

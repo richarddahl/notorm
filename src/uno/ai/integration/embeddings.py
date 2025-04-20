@@ -61,7 +61,7 @@ class EmbeddingModelConfig(BaseModel):
     normalize: bool = True
     pooling_strategy: str = "mean"
     device: str | None = None
-    additional_config: Dict[str, Any] = Field(default_factory=dict)
+    additional_config: dict[str, Any] = Field(default_factory=dict)
 
 
 class EmbeddingCacheEntry(BaseModel):
@@ -87,7 +87,7 @@ class SharedEmbeddingService:
     def __init__(
         self,
         default_model_config: Optional[EmbeddingModelConfig] = None,
-        models: Optional[Dict[str, EmbeddingModelConfig]] = None,
+        models: Optional[dict[str, EmbeddingModelConfig]] = None,
         cache_size: int = 10000,
         logger: logging.Logger | None = None,
     ):
@@ -109,7 +109,7 @@ class SharedEmbeddingService:
         self.embedding_models = {}
 
         # In-memory cache
-        self.embedding_cache: Dict[str, EmbeddingCacheEntry] = {}
+        self.embedding_cache: dict[str, EmbeddingCacheEntry] = {}
 
         # Initialize locks for thread safety
         self.model_locks = {}
@@ -325,7 +325,7 @@ class SharedEmbeddingService:
         return result
 
     async def import_embeddings(
-        self, embeddings: Dict[str, list[float]], model_name: str | None = None
+        self, embeddings: dict[str, list[float]], model_name: str | None = None
     ) -> None:
         """
         Import pre-computed embeddings into the cache.

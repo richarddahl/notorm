@@ -510,9 +510,7 @@ class QueryExecutor:
         # Default to standard query
         return "standard"
 
-    def _build_lookup_condition(
-        self, lookup: Optional[str], value_ids: list[str]
-    ) -> str:
+    def _build_lookup_condition(self, lookup: str | None, value_ids: list[str]) -> str:
         """
         Build a lookup condition based on the lookup type.
 

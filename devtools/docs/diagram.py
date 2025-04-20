@@ -15,7 +15,7 @@ def generate_diagram(
     output_path: str | None = None,
     include_modules: list[str] | None = None,
     exclude_modules: list[str] | None = None,
-    options: Optional[Dict[str, Any]] = None,
+    options: dict[str, Any] | None = None,
 ) -> str:
     """
     Generate a diagram of the specified type.
@@ -63,10 +63,10 @@ def generate_diagram(
 
 def _generate_db_schema_diagram(
     target: str,
-    output_path: Optional[str],
+    output_path: str | None,
     include_modules: list[str],
     exclude_modules: list[str],
-    options: Dict[str, Any],
+    options: dict[str, Any],
 ) -> str:
     """Generate a database schema diagram."""
     # This is a placeholder implementation
@@ -101,10 +101,10 @@ def _generate_db_schema_diagram(
 
 def _generate_api_diagram(
     target: str,
-    output_path: Optional[str],
+    output_path: str | None,
     include_modules: list[str],
     exclude_modules: list[str],
-    options: Dict[str, Any],
+    options: dict[str, Any],
 ) -> str:
     """Generate an API endpoint diagram."""
     # This is a placeholder implementation
@@ -133,10 +133,10 @@ def _generate_api_diagram(
 
 def _generate_dependency_diagram(
     target: str,
-    output_path: Optional[str],
+    output_path: str | None,
     include_modules: list[str],
     exclude_modules: list[str],
-    options: Dict[str, Any],
+    options: dict[str, Any],
 ) -> str:
     """Generate a dependency injection diagram."""
     # This is a placeholder implementation
@@ -163,10 +163,10 @@ def _generate_dependency_diagram(
 
 def _generate_class_diagram(
     target: str,
-    output_path: Optional[str],
+    output_path: str | None,
     include_modules: list[str],
     exclude_modules: list[str],
-    options: Dict[str, Any],
+    options: dict[str, Any],
 ) -> str:
     """Generate a class diagram."""
     # This is a placeholder implementation

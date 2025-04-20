@@ -88,7 +88,7 @@ class TransactionMetrics:
         self.success = success
         self.error_message = error
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert transaction metrics to a dictionary."""
         return {
             "transaction_id": self.transaction_id,
@@ -127,7 +127,7 @@ class TransactionMetricsTracker:
         """
         self.registry = registry or get_metrics_registry()
         self.logger = logger or logging.getLogger(__name__)
-        self._current_transactions: Dict[str, TransactionMetrics] = {}
+        self._current_transactions: dict[str, TransactionMetrics] = {}
         self._transaction_history: list[TransactionMetrics] = []
         self._max_history_size = 1000
         self._lock = asyncio.Lock()
@@ -356,7 +356,7 @@ class TransactionMetricsTracker:
         async with self._lock:
             return self._transaction_history[-limit:]
 
-    async def get_transaction_statistics(self) -> Dict[str, Any]:
+    async def get_transaction_statistics(self) -> dict[str, Any]:
         """
         Get statistics for all tracked transactions.
 
@@ -381,7 +381,7 @@ class TransactionMetricsTracker:
         succeeded = [t for t in recent_transactions if t.success]
 
         # Count by isolation level
-        isolation_levels: Dict[str, int] = {}
+        isolation_levels: dict[str, int] = {}
         for t in recent_transactions:
             level = t.isolation_level
             isolation_levels[level] = isolation_levels.get(level, 0) + 1

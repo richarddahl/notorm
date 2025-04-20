@@ -430,7 +430,7 @@ class MigrationServiceProvider:
 
 
 # Registry of migration providers
-_providers: Dict[str, MigrationProvider] = {}
+_providers: dict[str, MigrationProvider] = {}
 
 
 def register_provider(name: str, provider: MigrationProvider) -> None:
@@ -444,7 +444,7 @@ def register_provider(name: str, provider: MigrationProvider) -> None:
     _providers[name] = provider
 
 
-def get_providers() -> Dict[str, MigrationProvider]:
+def get_providers() -> dict[str, MigrationProvider]:
     """
     Get all registered migration providers.
 

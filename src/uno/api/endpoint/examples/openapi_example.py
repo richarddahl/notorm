@@ -38,10 +38,10 @@ class ProductCreateDTO(BaseModel):
 class ProductUpdateDTO(BaseModel):
     """Data transfer object for updating a product."""
 
-    name: Optional[str] = Field(None, description="The name of the product")
-    description: Optional[str] = Field(None, description="A description of the product")
+    name: str | None = Field(None, description="The name of the product")
+    description: str | None = Field(None, description="A description of the product")
     price: Optional[float] = Field(None, gt=0, description="The price of the product")
-    category: Optional[str] = Field(None, description="The category of the product")
+    category: str | None = Field(None, description="The category of the product")
 
 
 class ProductResponseDTO(BaseModel):

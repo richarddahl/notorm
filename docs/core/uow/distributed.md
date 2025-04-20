@@ -172,7 +172,7 @@ class UserOrderService:
         self.order_db = order_db
         self.event_store = event_store
         
-    async def create_user_with_order(self, user_data, order_data) -> Dict[str, str]:
+    async def create_user_with_order(self, user_data, order_data) -> dict[str, str]:
         # Create a distributed unit of work
         uow = DistributedUnitOfWork()
         

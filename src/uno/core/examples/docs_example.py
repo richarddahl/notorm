@@ -39,7 +39,7 @@ class UserModel:
     is_active: bool = True
     """Whether the user account is active"""
 
-    meta: Dict[str, Any] = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
     """Additional metadata for the user"""
 
     # Example validator method (for documentation extraction)
@@ -110,7 +110,7 @@ class OrderStatus(Enum):
 
 
 # Example API endpoint function
-def get_user(user_id: str) -> Dict[str, Any]:
+def get_user(user_id: str) -> dict[str, Any]:
     """
     Retrieve a user by ID.
 
@@ -142,7 +142,7 @@ class UserResource:
 
     __path__ = "/api/users"
 
-    def get(self, user_id: str) -> Dict[str, Any]:
+    def get(self, user_id: str) -> dict[str, Any]:
         """
         Retrieve a user by ID.
 
@@ -160,7 +160,7 @@ class UserResource:
             "meta": {},
         }
 
-    def post(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    def post(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """
         Create a new user.
 
@@ -178,7 +178,7 @@ class UserResource:
             "meta": user_data.get("meta", {}),
         }
 
-    def put(self, user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    def put(self, user_id: str, user_data: dict[str, Any]) -> dict[str, Any]:
         """
         Update a user.
 

@@ -200,7 +200,7 @@ class QueryPlan:
         # Optimal hint settings for this pattern
         self.optimal_hints = self._get_optimal_hints()
 
-    def _get_available_indexes(self) -> Dict[str, list[str]]:
+    def _get_available_indexes(self) -> dict[str, list[str]]:
         """
         Get available indexes for the model's table.
 
@@ -272,7 +272,7 @@ class QueryPlan:
         # Default hints for other patterns
         return QueryHints()
 
-    def should_use_cache(self, params: Dict[str, Any]) -> bool:
+    def should_use_cache(self, params: dict[str, Any]) -> bool:
         """
         Determine if a query should use caching.
 
@@ -310,7 +310,7 @@ class QueryPlan:
         # Default to caching for read operations
         return True
 
-    def select_join_strategy(self, params: Dict[str, Any]) -> str:
+    def select_join_strategy(self, params: dict[str, Any]) -> str:
         """
         Select the optimal join strategy for a query.
 
@@ -341,7 +341,7 @@ class QueryPlan:
         # Default to hash join for most cases
         return "hash"
 
-    def should_use_prepared_statement(self, params: Dict[str, Any]) -> bool:
+    def should_use_prepared_statement(self, params: dict[str, Any]) -> bool:
         """
         Determine if a query should use prepared statements.
 
@@ -369,7 +369,7 @@ class QueryPlan:
         # Default to using prepared statements
         return True
 
-    def get_optimal_fetch_size(self, params: Dict[str, Any]) -> int:
+    def get_optimal_fetch_size(self, params: dict[str, Any]) -> int:
         """
         Get the optimal fetch size for a query.
 
@@ -553,8 +553,8 @@ class CommonQueryPatterns:
 
     async def find_all(
         self,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         order_by: Optional[list[Any]] = None,
         load_relations: Optional[Union[bool, list[str]]] = None,
     ) -> list[T]:
@@ -781,10 +781,10 @@ class CommonQueryPatterns:
 
     async def find_by_fields(
         self,
-        field_values: Dict[str, Any],
+        field_values: dict[str, Any],
         match_all: bool = True,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         order_by: Optional[list[Any]] = None,
         load_relations: Optional[Union[bool, list[str]]] = None,
     ) -> list[T]:
@@ -1098,7 +1098,7 @@ class CommonQueryPatterns:
 
         return counts
 
-    async def get_metrics(self) -> Dict[str, Dict[str, Any]]:
+    async def get_metrics(self) -> dict[str, dict[str, Any]]:
         """
         Get query metrics.
 
@@ -1267,7 +1267,7 @@ class CommonQueryPatterns:
         search_text: str,
         search_fields: list[str],
         limit: Optional[int] = 25,
-        offset: Optional[int] = None,
+        offset: int | None = None,
         order_by: Optional[list[Any]] = None,
         load_relations: Optional[Union[bool, list[str]]] = None,
     ) -> list[T]:
@@ -1411,7 +1411,7 @@ class CommonQueryPatterns:
     async def batch_update(
         self,
         id_values: list[Any],
-        field_values: Dict[str, Any],
+        field_values: dict[str, Any],
         return_models: bool = False,
     ) -> Union[int, list[T]]:
         """

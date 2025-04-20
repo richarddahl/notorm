@@ -131,7 +131,7 @@ class ItemService:
 
     @trace(name="get_item", kind=SpanKind.INTERNAL)
     @with_error_context
-    async def get_item(self, item_id: str) -> Result[Dict[str, Any]]:
+    async def get_item(self, item_id: str) -> Result[dict[str, Any]]:
         """
         Get an item by ID.
 

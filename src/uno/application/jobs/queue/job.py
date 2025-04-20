@@ -24,7 +24,7 @@ class Job(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     task: str  # Module.function reference
     args: list[Any] = Field(default_factory=list)
-    kwargs: Dict[str, Any] = Field(default_factory=dict)
+    kwargs: dict[str, Any] = Field(default_factory=dict)
 
     # Queue and scheduling
     queue: str = "default"
@@ -37,7 +37,7 @@ class Job(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     result: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
+    error: dict[str, Any] | None = None
 
     # Retry configuration
     retry_count: int = 0
@@ -46,13 +46,13 @@ class Job(BaseModel):
 
     # Metadata
     tags: list[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     # Worker tracking
     worker_id: str | None = None
 
     # Timeout configuration
-    timeout: Optional[int] = None  # seconds
+    timeout: int | None = None  # seconds
 
     # Version
     version: str | None = None
@@ -115,7 +115,7 @@ class Job(BaseModel):
         self.completed_at = datetime.now(datetime.UTC)
         self.result = result
 
-    def mark_failed(self, error_info: Dict[str, Any]) -> None:
+    def mark_failed(self, error_info: dict[str, Any]) -> None:
         """Mark the job as failed.
 
         Args:
@@ -125,7 +125,7 @@ class Job(BaseModel):
         self.completed_at = datetime.now(datetime.UTC)
         self.error = error_info
 
-    def mark_retry(self, error_info: Dict[str, Any]) -> None:
+    def mark_retry(self, error_info: dict[str, Any]) -> None:
         """Mark the job for retry after a failure.
 
         Args:
@@ -194,7 +194,7 @@ class Job(BaseModel):
 
         raise ValueError(f"Invalid priority value: {value}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the job to a dictionary suitable for storage.
 
         Returns:
@@ -217,7 +217,7 @@ class Job(BaseModel):
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Job":
+    def from_dict(cls, data: dict[str, Any]) -> "Job":
         """Create a job from a dictionary.
 
         Args:

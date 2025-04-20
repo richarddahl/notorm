@@ -46,15 +46,15 @@ class DTOManager:
     - Managing DTO registrations for API documentation
     """
 
-    def __init__(self, dto_configs: Optional[Dict[str, DTOConfig]] = None):
+    def __init__(self, dto_configs: Optional[dict[str, DTOConfig]] = None):
         """
         Initialize the DTO manager.
 
         Args:
             dto_configs: Optional initial DTO configurations
         """
-        self.dto_configs: Dict[str, DTOConfig] = dto_configs or {}
-        self.dtos: Dict[str, Type[BaseDTO]] = {}
+        self.dto_configs: dict[str, DTOConfig] = dto_configs or {}
+        self.dtos: dict[str, Type[BaseDTO]] = {}
 
     def add_dto_config(self, name: str, config: DTOConfig) -> None:
         """
@@ -96,7 +96,7 @@ class DTOManager:
         self.dtos[dto_name] = dto
         return dto
 
-    def create_all_dtos(self, model: Type[BaseModel]) -> Dict[str, Type[BaseDTO]]:
+    def create_all_dtos(self, model: Type[BaseModel]) -> dict[str, Type[BaseDTO]]:
         """
         Create all DTOs for a model.
 
@@ -232,7 +232,7 @@ class DTOManager:
                 elif column_python_type == float:
                     python_type = float
                 elif column_python_type == dict:
-                    python_type = Dict[str, Any]
+                    python_type = dict[str, Any]
                 elif column_python_type == list:
                     python_type = list[Any]
         except (AttributeError, TypeError):

@@ -65,7 +65,7 @@ class MetaRecordRepository(BaseRepository[MetaRecordModel]):
         super().__init__(session, MetaRecordModel, logger)
 
     async def find_by_type(
-        self, type_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, type_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[MetaRecordModel]:
         """
         Find all records of a specific meta type.

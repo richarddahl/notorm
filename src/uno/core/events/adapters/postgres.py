@@ -219,7 +219,7 @@ class PostgresEventStore(EventStore[E]):
             self.logger.info("PostgreSQL event store initialized")
 
     async def append_events(
-        self, events: list[E], expected_version: Optional[int] = None
+        self, events: list[E], expected_version: int | None = None
     ) -> int:
         """
         Append events to the store, optionally with optimistic concurrency.
@@ -476,7 +476,7 @@ class PostgresEventStore(EventStore[E]):
         # Return the version or 0 if no events found
         return row[0] if row else 0
 
-    def _event_to_dict(self, event: E) -> Dict[str, Any]:
+    def _event_to_dict(self, event: E) -> dict[str, Any]:
         """
         Convert an event to a dictionary.
 

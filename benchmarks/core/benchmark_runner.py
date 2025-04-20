@@ -32,7 +32,7 @@ from uno.core.logging import configure_logging, get_logger
 
 
 # Benchmark result type
-BenchmarkResult = Dict[str, Any]
+BenchmarkResult = dict[str, Any]
 
 
 class BenchmarkConfig:
@@ -111,7 +111,7 @@ class Benchmark:
         """Clean up the benchmark environment."""
         pass
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """
         Run a single benchmark iteration.
 
@@ -248,7 +248,7 @@ class Benchmark:
             # Ensure cleanup
             await self.teardown()
 
-    def _get_system_info(self) -> Dict[str, Any]:
+    def _get_system_info(self) -> dict[str, Any]:
         """
         Get system information.
 
@@ -278,7 +278,7 @@ class Benchmark:
 class BenchmarkRegistry:
     """Registry for benchmarks."""
 
-    _benchmarks: Dict[str, Type[Benchmark]] = {}
+    _benchmarks: dict[str, Type[Benchmark]] = {}
 
     @classmethod
     def register(cls, benchmark_class: Type[Benchmark]) -> Type[Benchmark]:
@@ -296,7 +296,7 @@ class BenchmarkRegistry:
         return benchmark_class
 
     @classmethod
-    def get_all_benchmarks(cls) -> Dict[str, Type[Benchmark]]:
+    def get_all_benchmarks(cls) -> dict[str, Type[Benchmark]]:
         """
         Get all registered benchmarks.
 
@@ -306,7 +306,7 @@ class BenchmarkRegistry:
         return cls._benchmarks
 
     @classmethod
-    def get_benchmarks_by_category(cls, category: str) -> Dict[str, Type[Benchmark]]:
+    def get_benchmarks_by_category(cls, category: str) -> dict[str, Type[Benchmark]]:
         """
         Get registered benchmarks by category.
 
@@ -378,9 +378,9 @@ class BenchmarkRunner:
         """
         self.config = config
         self.logger = get_logger("benchmark.runner")
-        self.results: Dict[str, BenchmarkResult] = {}
+        self.results: dict[str, BenchmarkResult] = {}
 
-    async def run_all(self) -> Dict[str, BenchmarkResult]:
+    async def run_all(self) -> dict[str, BenchmarkResult]:
         """
         Run all registered benchmarks.
 
@@ -542,7 +542,7 @@ class EventCreationBenchmark(Benchmark):
 
         self.event_class = TestEvent
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Create a new event
         event = self.event_class(event_id=str(uuid.uuid4()), data="test data", value=42)
@@ -568,7 +568,7 @@ class ErrorHandlingBenchmark(Benchmark):
         self.Error = Error
         self.Result = Result
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Create error and result objects
         error = self.Error(
@@ -613,7 +613,7 @@ class LoggingBenchmark(Benchmark):
         self.logger.logger.handlers = [handler]
         self.logger.logger.propagate = False
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Log messages at different levels
         self.logger.debug("Debug message", extra={"test": "value"})
@@ -661,7 +661,7 @@ class InMemoryEventStoreBenchmark(Benchmark):
             for i in range(10)
         ]
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Store events
         version = await self.event_store.append_events(self.test_events)
@@ -694,7 +694,7 @@ class UnitOfWorkBenchmark(Benchmark):
         # Create a unit of work
         self.uow = InMemoryUnitOfWork()
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Start time
         start = time.perf_counter()

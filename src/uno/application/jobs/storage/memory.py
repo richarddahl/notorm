@@ -55,10 +55,10 @@ class InMemoryStorage(Storage):
         self.logger = logger or logging.getLogger("uno.jobs.storage.memory")
 
         # Main storage dictionaries
-        self.jobs: Dict[str, Job] = {}
-        self.queues: Dict[str, list[PrioritizedJob]] = {}
-        self.queue_pause_status: Dict[str, bool] = {}
-        self.schedules: Dict[str, Dict[str, Any]] = {}
+        self.jobs: dict[str, Job] = {}
+        self.queues: dict[str, list[PrioritizedJob]] = {}
+        self.queue_pause_status: dict[str, bool] = {}
+        self.schedules: dict[str, dict[str, Any]] = {}
 
         # Locks for concurrency control
         self.jobs_lock = AsyncLock()
@@ -66,7 +66,7 @@ class InMemoryStorage(Storage):
         self.schedules_lock = AsyncLock()
 
         # Distributed locks
-        self.locks: Dict[str, Dict[str, Any]] = {}
+        self.locks: dict[str, dict[str, Any]] = {}
         self.locks_lock = AsyncLock()
 
         # Initialization flag
@@ -279,7 +279,7 @@ class InMemoryStorage(Storage):
             return False
 
     async def fail_job(
-        self, job_id: str, error: Dict[str, Any], retry: bool = False
+        self, job_id: str, error: dict[str, Any], retry: bool = False
     ) -> bool:
         """Mark a job as failed.
 
@@ -479,7 +479,7 @@ class InMemoryStorage(Storage):
 
             return count
 
-    async def get_queue_sizes(self) -> Dict[str, int]:
+    async def get_queue_sizes(self) -> dict[str, int]:
         """Get the sizes of all queues.
 
         Returns:
@@ -650,24 +650,24 @@ class InMemoryStorage(Storage):
 
         return count
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """Get statistics about the storage backend.
 
         Returns:
             Dictionary of statistics
         """
-        stats: Dict[str, Any] = {}
+        stats: dict[str, Any] = {}
 
         # Jobs by status
-        status_counts: Dict[str, int] = {status.name.lower(): 0 for status in JobStatus}
+        status_counts: dict[str, int] = {status.name.lower(): 0 for status in JobStatus}
 
         # Jobs by priority
-        priority_counts: Dict[str, int] = {
+        priority_counts: dict[str, int] = {
             priority.name.lower(): 0 for priority in Priority
         }
 
         # Jobs by queue
-        queue_counts: Dict[str, Dict[str, int]] = {}
+        queue_counts: dict[str, dict[str, int]] = {}
 
         # Get counts from jobs
         async with self.jobs_lock:
@@ -707,7 +707,7 @@ class InMemoryStorage(Storage):
 
         return stats
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Check the health of the storage backend.
 
         Returns:
@@ -846,16 +846,16 @@ class InMemoryStorage(Storage):
         schedule_id: str,
         task: str,
         args: list[Any],
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
         cron_expression: str | None = None,
-        interval_seconds: Optional[int] = None,
+        interval_seconds: int | None = None,
         queue: str = "default",
         priority: Priority = Priority.NORMAL,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         max_retries: int = 0,
         retry_delay: int = 60,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> str:
         """Schedule a recurring job.
 
@@ -932,7 +932,7 @@ class InMemoryStorage(Storage):
 
         return schedule_id
 
-    async def get_schedule(self, schedule_id: str) -> Optional[Dict[str, Any]]:
+    async def get_schedule(self, schedule_id: str) -> dict[str, Any] | None:
         """Get a schedule by ID.
 
         Args:
@@ -982,14 +982,14 @@ class InMemoryStorage(Storage):
         self,
         schedule_id: str,
         cron_expression: str | None = None,
-        interval_seconds: Optional[int] = None,
+        interval_seconds: int | None = None,
         queue: str | None = None,
         priority: Optional[Priority] = None,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[int] = None,
-        timeout: Optional[int] = None,
+        metadata: dict[str, Any] | None = None,
+        max_retries: int | None = None,
+        retry_delay: int | None = None,
+        timeout: int | None = None,
         status: str | None = None,
     ) -> bool:
         """Update a schedule.
@@ -1088,7 +1088,7 @@ class InMemoryStorage(Storage):
     async def get_due_jobs(
         self,
         limit: int = 100,
-    ) -> list[Tuple[str, Dict[str, Any]]]:
+    ) -> list[Tuple[str, dict[str, Any]]]:
         """Get jobs that are due for execution based on their schedules.
 
         Args:
@@ -1097,7 +1097,7 @@ class InMemoryStorage(Storage):
         Returns:
             List of (schedule_id, job_data) tuples for due jobs
         """
-        due_jobs: list[Tuple[str, Dict[str, Any]]] = []
+        due_jobs: list[Tuple[str, dict[str, Any]]] = []
         now = datetime.now(datetime.UTC)
 
         async with self.schedules_lock:

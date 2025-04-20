@@ -9,17 +9,17 @@ from typing import Any, Dict, Optional
 
 class AuthenticationError(Exception):
     """Exception raised when authentication fails."""
-    
+
     def __init__(
         self,
         message: str = "Authentication failed",
         code: str = "AUTHENTICATION_FAILED",
         status_code: int = 401,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         """
         Initialize a new authentication error.
-        
+
         Args:
             message: The error message
             code: The error code
@@ -35,17 +35,17 @@ class AuthenticationError(Exception):
 
 class AuthorizationError(Exception):
     """Exception raised when authorization fails."""
-    
+
     def __init__(
         self,
         message: str = "Authorization failed",
         code: str = "AUTHORIZATION_FAILED",
         status_code: int = 403,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ):
         """
         Initialize a new authorization error.
-        
+
         Args:
             message: The error message
             code: The error code

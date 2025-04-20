@@ -59,9 +59,9 @@ class DocumentRepository(Repository[Document]):
 
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
     ) -> list[Document]:
         """List documents matching filters."""

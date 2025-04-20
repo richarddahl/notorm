@@ -15,7 +15,7 @@ def register_messaging_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     message_service: Optional[MessageDomainServiceProtocol] = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """Register all messaging-related API endpoints.
 
     Args:

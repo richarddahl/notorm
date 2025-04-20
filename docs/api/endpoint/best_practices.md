@@ -166,8 +166,8 @@ class CreateProductRequest(BaseModel):
 class UpdateProductRequest(BaseModel):
     """Update product request model."""
     
-    name: Optional[str] = Field(None, description="Product name")
-    description: Optional[str] = Field(None, description="Product description")
+    name: str | None = Field(None, description="Product name")
+    description: str | None = Field(None, description="Product description")
     price: Optional[float] = Field(None, description="Product price", gt=0)
     stock: Optional[int] = Field(None, description="Product stock", ge=0)
 ```
@@ -218,15 +218,15 @@ class ErrorDetail(BaseModel):
     
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
-    field: Optional[str] = Field(None, description="Field associated with the error")
-    details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
+    field: str | None = Field(None, description="Field associated with the error")
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
 
 
 class ErrorResponse(BaseModel):
     """Error response model."""
     
     error: ErrorDetail = Field(..., description="Error details")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")
 ```
 
 ### Standardized Error Codes
@@ -283,10 +283,10 @@ async def list_products(
     page_size: int = Query(50, description="Items per page", ge=1, le=100),
     
     # Filtering parameters
-    name: Optional[str] = Query(None, description="Filter by name"),
+    name: str | None = Query(None, description="Filter by name"),
     min_price: Optional[float] = Query(None, description="Minimum price"),
     max_price: Optional[float] = Query(None, description="Maximum price"),
-    category_id: Optional[str] = Query(None, description="Filter by category ID"),
+    category_id: str | None = Query(None, description="Filter by category ID"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
 ):
     # Implementation...

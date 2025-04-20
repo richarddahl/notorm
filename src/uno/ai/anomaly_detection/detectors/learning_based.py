@@ -49,7 +49,7 @@ class LearningBasedDetector(AnomalyDetector):
         context_columns: list[str] | None = None,  # Context columns for prediction
         model_path: str | None = None,  # Path to save/load models
         logger: logging.Logger | None = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ):
         """
         Initialize the learning-based detector.
@@ -575,7 +575,7 @@ class LearningBasedDetector(AnomalyDetector):
 
         return np.array(X), np.array(y)
 
-    async def detect(self, data_point: Dict[str, Any]) -> Optional[AnomalyAlert]:
+    async def detect(self, data_point: dict[str, Any]) -> Optional[AnomalyAlert]:
         """
         Detect anomalies in a single data point.
 
@@ -635,7 +635,7 @@ class LearningBasedDetector(AnomalyDetector):
         return alert
 
     async def _detect_isolation_forest(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using isolation forest.
@@ -692,7 +692,7 @@ class LearningBasedDetector(AnomalyDetector):
         return None
 
     async def _detect_one_class_svm(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using one-class SVM.
@@ -749,7 +749,7 @@ class LearningBasedDetector(AnomalyDetector):
         return None
 
     async def _detect_autoencoder(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using autoencoder.
@@ -807,7 +807,7 @@ class LearningBasedDetector(AnomalyDetector):
         return None
 
     async def _detect_lstm(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using LSTM.
@@ -893,7 +893,7 @@ class LearningBasedDetector(AnomalyDetector):
         return None
 
     def _create_feature_vector(
-        self, data_point: Dict[str, Any], timestamp: datetime.datetime
+        self, data_point: dict[str, Any], timestamp: datetime.datetime
     ) -> np.ndarray:
         """
         Create a feature vector for detection.

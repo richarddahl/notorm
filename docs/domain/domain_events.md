@@ -278,7 +278,7 @@ class OrderConfirmed(IntegrationEvent):
     order_id: UUID
     customer_id: UUID
     total_amount: float
-    shipping_address: Dict[str, str]
+    shipping_address: dict[str, str]
     
     # Additional methods for integration events
     def to_message(self) -> dict:
@@ -365,7 +365,7 @@ class OrderPlaced(Event):
     customer_id: UUID
     order_date: datetime
     total_amount: float
-    shipping_address: Dict[str, str]
+    shipping_address: dict[str, str]
     items: list[dict[str, Any]]
 
 # Bad: Missing important context
@@ -390,10 +390,10 @@ class OrderPlaced_v2(Event):
     customer_id: UUID
     total_amount: float
     items_count: int
-    shipping_address: Dict[str, str]
+    shipping_address: dict[str, str]
     
     @classmethod
-    def from_v1(cls, event_v1: OrderPlaced_v1, items_count: int, shipping_address: Dict[str, str]) -> "OrderPlaced_v2":
+    def from_v1(cls, event_v1: OrderPlaced_v1, items_count: int, shipping_address: dict[str, str]) -> "OrderPlaced_v2":
         """Convert from version 1 to version 2."""
         return cls(
             order_id=event_v1.order_id,
@@ -695,7 +695,7 @@ class OrderItemAdded(Event):
 class OrderPlaced(Event):
     order_id: UUID
     customer_id: UUID
-    shipping_address: Dict[str, str]
+    shipping_address: dict[str, str]
     total_amount: Decimal
     items_count: int
 
@@ -717,7 +717,7 @@ class Order(AggregateRoot[UUID]):
     customer_id: UUID
     items: list[dict[str, Any]] = []
     status: str = "draft"
-    shipping_address: Optional[Dict[str, str]] = None
+    shipping_address: Optional[dict[str, str]] = None
     payment_status: str = "pending"
     shipping_status: str = "pending"
     created_at: datetime = datetime.now()
@@ -765,7 +765,7 @@ class Order(AggregateRoot[UUID]):
             unit_price=unit_price
         ))
     
-    def set_shipping_address(self, address: Dict[str, str]) -> None:
+    def set_shipping_address(self, address: dict[str, str]) -> None:
         """Set the shipping address."""
         self.shipping_address = address
     
@@ -860,7 +860,7 @@ class OrderService:
             await self.order_repository.update(order)
             return order
     
-    async def place_order(self, order_id: UUID, shipping_address: Dict[str, str]) -> Order:
+    async def place_order(self, order_id: UUID, shipping_address: dict[str, str]) -> Order:
         """Place an order."""
         async with self.unit_of_work:
             order = await self.order_repository.get(order_id)

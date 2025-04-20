@@ -39,7 +39,7 @@ class {{ feature_name|pascal_case }}RepositoryProtocol(Protocol):
         self, 
         skip: int = 0, 
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.
@@ -137,7 +137,7 @@ class {{ feature_name|pascal_case }}Repository(Repository[{{ feature_name|pascal
         self, 
         skip: int = 0, 
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.

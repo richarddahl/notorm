@@ -55,7 +55,7 @@ class Schedule(ABC):
         pass
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -64,7 +64,7 @@ class Schedule(ABC):
         pass
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "Schedule":
+    def from_dict(data: dict[str, Any]) -> "Schedule":
         """Create a schedule from a dictionary representation.
 
         Args:
@@ -163,7 +163,7 @@ class CronSchedule(Schedule):
         # Check if the previous run time is within 1 minute of the current time
         return (current_time - prev_run).total_seconds() < 60
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -176,7 +176,7 @@ class CronSchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "CronSchedule":
+    def from_dict(data: dict[str, Any]) -> "CronSchedule":
         """Create a cron schedule from a dictionary representation.
 
         Args:
@@ -270,7 +270,7 @@ class IntervalSchedule(Schedule):
         # This allows for slight timing variations
         return (current_time - prev_run).total_seconds() < 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -283,7 +283,7 @@ class IntervalSchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "IntervalSchedule":
+    def from_dict(data: dict[str, Any]) -> "IntervalSchedule":
         """Create an interval schedule from a dictionary representation.
 
         Args:
@@ -359,7 +359,7 @@ class OneTimeSchedule(Schedule):
             and (current_time - self.run_time).total_seconds() < 1
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -371,7 +371,7 @@ class OneTimeSchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "OneTimeSchedule":
+    def from_dict(data: dict[str, Any]) -> "OneTimeSchedule":
         """Create a one-time schedule from a dictionary representation.
 
         Args:
@@ -488,7 +488,7 @@ class DailySchedule(Schedule):
 
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -501,7 +501,7 @@ class DailySchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "DailySchedule":
+    def from_dict(data: dict[str, Any]) -> "DailySchedule":
         """Create a daily schedule from a dictionary representation.
 
         Args:
@@ -666,7 +666,7 @@ class WeeklySchedule(Schedule):
         time_diff = abs((current_time - scheduled_datetime).total_seconds())
         return time_diff < 60
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -688,7 +688,7 @@ class WeeklySchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "WeeklySchedule":
+    def from_dict(data: dict[str, Any]) -> "WeeklySchedule":
         """Create a weekly schedule from a dictionary representation.
 
         Args:
@@ -843,7 +843,7 @@ class MonthlySchedule(Schedule):
         time_diff = abs((current_time - scheduled_datetime).total_seconds())
         return time_diff < 60
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -857,7 +857,7 @@ class MonthlySchedule(Schedule):
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "MonthlySchedule":
+    def from_dict(data: dict[str, Any]) -> "MonthlySchedule":
         """Create a monthly schedule from a dictionary representation.
 
         Args:
@@ -932,7 +932,7 @@ class EventTrigger(Schedule):
         """
         return False
 
-    def trigger(self, event_data: Optional[Dict[str, Any]] = None) -> datetime:
+    def trigger(self, event_data: dict[str, Any] | None = None) -> datetime:
         """Trigger this event schedule.
 
         Args:
@@ -944,7 +944,7 @@ class EventTrigger(Schedule):
         self.last_triggered = datetime.now()
         return self.last_triggered
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert this schedule to a dictionary representation.
 
         Returns:
@@ -961,7 +961,7 @@ class EventTrigger(Schedule):
         return data
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "EventTrigger":
+    def from_dict(data: dict[str, Any]) -> "EventTrigger":
         """Create an event trigger from a dictionary representation.
 
         Args:
@@ -993,9 +993,9 @@ class ScheduleTemplate:
         priority: str = "normal",
         max_retries: int = 0,
         retry_delay: int = 60,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """Initialize a schedule template.
 
@@ -1022,7 +1022,7 @@ class ScheduleTemplate:
 
     def create_schedule(
         self, schedule: Optional[Schedule] = None, **overrides: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a schedule from this template.
 
         Args:

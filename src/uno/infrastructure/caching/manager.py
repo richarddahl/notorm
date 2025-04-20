@@ -326,7 +326,7 @@ class CacheManager:
 
         return default
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache.
 
         This method sets the value in the local cache and, if multi-level caching
@@ -394,7 +394,7 @@ class CacheManager:
 
         return success
 
-    async def set_async(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set_async(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache asynchronously.
 
         This is the async version of the set method.
@@ -721,7 +721,7 @@ class CacheManager:
 
         return success
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -732,7 +732,7 @@ class CacheManager:
 
         return self.monitor.get_stats()
 
-    def check_health(self) -> Dict[str, bool]:
+    def check_health(self) -> dict[str, bool]:
         """Check the health of the caching system.
 
         Returns:
@@ -757,7 +757,7 @@ class CacheManager:
 
         return health
 
-    async def check_health_async(self) -> Dict[str, bool]:
+    async def check_health_async(self) -> dict[str, bool]:
         """Check the health of the caching system asynchronously.
 
         Returns:

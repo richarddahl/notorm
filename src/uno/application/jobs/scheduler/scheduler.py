@@ -188,9 +188,9 @@ class Scheduler:
     async def schedule(
         self,
         task: str,
-        schedule: Union[Schedule, Dict[str, Any]],
+        schedule: Union[Schedule, dict[str, Any]],
         args: Optional[list[Any]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         queue: str | None = None,
         priority: str = "normal",
         start_date: Optional[datetime] = None,
@@ -199,8 +199,8 @@ class Scheduler:
         max_retries: int = 0,
         retry_delay: int = 60,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        timeout: Optional[int] = None,
+        metadata: dict[str, Any] | None = None,
+        timeout: int | None = None,
         unique: bool = False,
         name: str | None = None,
     ) -> str:
@@ -271,7 +271,7 @@ class Scheduler:
         self.logger.info(f"Scheduled task '{task}' with ID '{schedule_id}'")
         return schedule_id
 
-    async def get_schedule(self, schedule_id: str) -> Optional[Dict[str, Any]]:
+    async def get_schedule(self, schedule_id: str) -> dict[str, Any] | None:
         """Get a schedule by ID.
 
         Args:
@@ -282,7 +282,7 @@ class Scheduler:
         """
         return await self.storage.get_schedule(schedule_id)
 
-    async def get_schedule_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+    async def get_schedule_by_name(self, name: str) -> dict[str, Any] | None:
         """Get a schedule by name.
 
         Args:
@@ -304,16 +304,16 @@ class Scheduler:
         schedule_id: str,
         schedule: Optional[Schedule] = None,
         args: Optional[list[Any]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         queue: str | None = None,
         priority: str | None = None,
         tags: list[str] | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[int] = None,
-        timeout: Optional[int] = None,
+        metadata: dict[str, Any] | None = None,
+        max_retries: int | None = None,
+        retry_delay: int | None = None,
+        timeout: int | None = None,
         status: str | None = None,
-        version: Optional[int] = None,
+        version: int | None = None,
         changelog: str | None = None,
     ) -> bool:
         """Update a schedule.
@@ -486,7 +486,7 @@ class Scheduler:
 
         return schedule.get_next_n_run_times(next_run, count)
 
-    async def get_schedule_status(self, schedule_id: str) -> Dict[str, Any]:
+    async def get_schedule_status(self, schedule_id: str) -> dict[str, Any]:
         """Get detailed status information for a schedule.
 
         Args:
@@ -549,7 +549,7 @@ class Scheduler:
         self,
         schedule_id: str,
         args: Optional[list[Any]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
     ) -> str:
         """Trigger a scheduled job immediately.
 
@@ -614,7 +614,7 @@ class Scheduler:
     async def trigger_event(
         self,
         event_name: str,
-        event_data: Optional[Dict[str, Any]] = None,
+        event_data: dict[str, Any] | None = None,
     ) -> list[str]:
         """Trigger all schedules associated with an event.
 
@@ -703,7 +703,7 @@ class Scheduler:
 
         return job_ids
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """Get scheduler statistics.
 
         Returns:

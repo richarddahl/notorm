@@ -16,7 +16,7 @@ def register_attributes_endpoints(
     path_prefix: str = "/api/v1",
     dependencies: Optional[list[Any]] = None,
     include_auth: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Register all attribute-related API endpoints (attributes and attribute types).
 

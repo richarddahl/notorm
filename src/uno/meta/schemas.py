@@ -99,7 +99,7 @@ class MetaTypeSchemaManager:
     def entities_to_list_dto(
         self,
         entities: list[MetaType],
-        record_counts: Dict[str, int],
+        record_counts: dict[str, int],
         total: int,
         limit: int,
         offset: int,

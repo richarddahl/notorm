@@ -211,17 +211,17 @@ def product_list_to_response(products: list[Product]) -> list[ProductSummaryResp
 # API endpoints
 @router.get("/", response_model=list[ProductSummaryResponse])
 async def list_products(
-    status: Optional[str] = Query(None, description="Filter by product status"),
-    category_id: Optional[str] = Query(None, description="Filter by category ID"),
-    search: Optional[str] = Query(None, description="Search products by name"),
+    status: str | None = Query(None, description="Filter by product status"),
+    category_id: str | None = Query(None, description="Filter by category ID"),
+    search: str | None = Query(None, description="Search products by name"),
     min_price: Optional[Decimal] = Query(None, description="Minimum price"),
     max_price: Optional[Decimal] = Query(None, description="Maximum price"),
     limit: Optional[int] = Query(
         50, description="Maximum number of products to return"
     ),
     offset: Optional[int] = Query(0, description="Number of products to skip"),
-    sort_by: Optional[str] = Query("name", description="Field to sort by"),
-    sort_direction: Optional[str] = Query(
+    sort_by: str | None = Query("name", description="Field to sort by"),
+    sort_direction: str | None = Query(
         "asc", description="Sort direction (asc or desc)"
     ),
     query_service: ProductQueryService = Depends(get_product_query_service),

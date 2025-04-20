@@ -170,7 +170,7 @@ async def create_trigger(
     workflow_id: str = Body(..., description="The ID of the workflow"),
     entity_type: str = Body(..., description="The type of entity that triggers the workflow"),
     operation: str = Body(..., description="The operation that triggers the workflow"),
-    field_conditions: Dict[str, Any] = Body({}, description="Optional conditions on fields"),
+    field_conditions: dict[str, Any] = Body({}, description="Optional conditions on fields"),
     priority: int = Body(100, description="The priority of the trigger"),
     is_active: bool = Body(True, description="Whether the trigger is active"),
     service: WorkflowTriggerService = Depends(container.resolve(WorkflowTriggerService))
@@ -213,10 +213,10 @@ async def get_triggers_by_workflow(
 async def create_condition(
     workflow_id: str = Body(..., description="The ID of the workflow"),
     condition_type: WorkflowConditionType = Body(..., description="The type of condition"),
-    condition_config: Dict[str, Any] = Body({}, description="The configuration for the condition"),
-    query_id: Optional[str] = Body(None, description="Optional query ID for query match conditions"),
+    condition_config: dict[str, Any] = Body({}, description="The configuration for the condition"),
+    query_id: str | None = Body(None, description="Optional query ID for query match conditions"),
     name: str = Body("", description="Optional name for the condition"),
-    description: Optional[str] = Body(None, description="Optional description"),
+    description: str | None = Body(None, description="Optional description"),
     order: int = Body(0, description="The order of the condition"),
     service: WorkflowConditionService = Depends(container.resolve(WorkflowConditionService))
 ):
@@ -259,12 +259,12 @@ async def get_conditions_by_workflow(
 async def create_action(
     workflow_id: str = Body(..., description="The ID of the workflow"),
     action_type: WorkflowActionType = Body(..., description="The type of action"),
-    action_config: Dict[str, Any] = Body({}, description="The configuration for the action"),
+    action_config: dict[str, Any] = Body({}, description="The configuration for the action"),
     name: str = Body("", description="Optional name for the action"),
-    description: Optional[str] = Body(None, description="Optional description"),
+    description: str | None = Body(None, description="Optional description"),
     order: int = Body(0, description="The order of the action"),
     is_active: bool = Body(True, description="Whether the action is active"),
-    retry_policy: Optional[Dict[str, Any]] = Body(None, description="Optional retry policy"),
+    retry_policy: dict[str, Any] | None = Body(None, description="Optional retry policy"),
     service: WorkflowActionService = Depends(container.resolve(WorkflowActionService))
 ):
     """Create a new workflow action."""
@@ -323,9 +323,9 @@ async def create_recipient(
     workflow_id: str = Body(..., description="The ID of the workflow"),
     recipient_type: WorkflowRecipientType = Body(..., description="The type of recipient"),
     recipient_id: str = Body(..., description="The ID of the recipient"),
-    name: Optional[str] = Body(None, description="Optional name for the recipient"),
-    action_id: Optional[str] = Body(None, description="Optional action ID if this recipient is for a specific action"),
-    notification_config: Dict[str, Any] = Body({}, description="Optional notification configuration"),
+    name: str | None = Body(None, description="Optional name for the recipient"),
+    action_id: str | None = Body(None, description="Optional action ID if this recipient is for a specific action"),
+    notification_config: dict[str, Any] = Body({}, description="Optional notification configuration"),
     service: WorkflowRecipientService = Depends(container.resolve(WorkflowRecipientService))
 ):
     """Create a new workflow recipient."""
@@ -382,7 +382,7 @@ async def create_execution_record(
     workflow_id: str = Body(..., description="The ID of the workflow"),
     trigger_event_id: str = Body(..., description="The ID of the trigger event"),
     status: WorkflowExecutionStatus = Body(WorkflowExecutionStatus.PENDING, description="The initial status of the execution"),
-    context: Optional[Dict[str, Any]] = Body(None, description="Optional execution context"),
+    context: dict[str, Any] | None = Body(None, description="Optional execution context"),
     service: WorkflowExecutionService = Depends(container.resolve(WorkflowExecutionService))
 ):
     """Create a new workflow execution record."""
@@ -404,8 +404,8 @@ async def create_execution_record(
 async def update_execution_status(
     id: str = Path(..., description="The ID of the execution record"),
     status: WorkflowExecutionStatus = Body(..., description="The new status"),
-    result: Optional[Dict[str, Any]] = Body(None, description="Optional result data"),
-    error: Optional[str] = Body(None, description="Optional error message"),
+    result: dict[str, Any] | None = Body(None, description="Optional result data"),
+    error: str | None = Body(None, description="Optional error message"),
     service: WorkflowExecutionService = Depends(container.resolve(WorkflowExecutionService))
 ):
     """Update the status of a workflow execution."""

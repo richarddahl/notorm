@@ -22,7 +22,7 @@ def register_jobs_endpoints(
     include_auth: bool = True,
     job_manager_service: Optional[JobManagerServiceProtocol] = None,
     task_registry_service: Optional[TaskRegistryProtocol] = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """Register all jobs-related API endpoints.
 
     Args:

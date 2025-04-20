@@ -77,7 +77,7 @@ def register_report_field_definition_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     field_definition_service: Optional[ReportFieldDefinitionService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report field definitions.
 
     Args:
@@ -160,12 +160,12 @@ def register_report_field_definition_endpoints(
         summary="List report field definitions",
     )
     async def list_field_definitions(
-        name: Optional[str] = Query(None, description="Filter by field name"),
-        field_type: Optional[str] = Query(None, description="Filter by field type"),
-        parent_field_id: Optional[str] = Query(
+        name: str | None = Query(None, description="Filter by field name"),
+        field_type: str | None = Query(None, description="Filter by field type"),
+        parent_field_id: str | None = Query(
             None, description="Filter by parent field ID"
         ),
-        template_id: Optional[str] = Query(None, description="Filter by template ID"),
+        template_id: str | None = Query(None, description="Filter by template ID"),
         is_visible: Optional[bool] = Query(None, description="Filter by visibility"),
         skip: int = Query(0, description="Number of records to skip"),
         limit: int = Query(100, description="Maximum number of records to return"),
@@ -271,7 +271,7 @@ def register_report_template_endpoints(
     include_auth: bool = True,
     template_service: Optional[ReportTemplateService] = None,
     field_definition_service: Optional[ReportFieldDefinitionService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report templates.
 
     Args:
@@ -371,13 +371,11 @@ def register_report_template_endpoints(
         summary="List report templates",
     )
     async def list_templates(
-        name: Optional[str] = Query(None, description="Filter by template name"),
-        base_object_type: Optional[str] = Query(
+        name: str | None = Query(None, description="Filter by template name"),
+        base_object_type: str | None = Query(
             None, description="Filter by base object type"
         ),
-        field_id: Optional[str] = Query(
-            None, description="Filter by associated field ID"
-        ),
+        field_id: str | None = Query(None, description="Filter by associated field ID"),
         skip: int = Query(0, description="Number of records to skip"),
         limit: int = Query(100, description="Maximum number of records to return"),
     ) -> list[ReportTemplateViewDto]:
@@ -527,7 +525,7 @@ def register_report_template_endpoints(
         triggered_by: str = Body(
             ..., description="ID or name of the entity triggering the execution"
         ),
-        parameters: Dict[str, Any] = Body(default={}),
+        parameters: dict[str, Any] = Body(default={}),
     ) -> ReportExecutionViewDto:
         """Execute a report template."""
         execution_result = await template_service.execute_template(
@@ -558,7 +556,7 @@ def register_report_trigger_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     trigger_service: Optional[ReportTriggerService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report triggers.
 
     Args:
@@ -637,10 +635,10 @@ def register_report_trigger_endpoints(
         summary="List report triggers",
     )
     async def list_triggers(
-        report_template_id: Optional[str] = Query(
+        report_template_id: str | None = Query(
             None, description="Filter by template ID"
         ),
-        trigger_type: Optional[str] = Query(None, description="Filter by trigger type"),
+        trigger_type: str | None = Query(None, description="Filter by trigger type"),
         is_active: Optional[bool] = Query(None, description="Filter by active status"),
         skip: int = Query(0, description="Number of records to skip"),
         limit: int = Query(100, description="Maximum number of records to return"),
@@ -714,10 +712,10 @@ def register_report_trigger_endpoints(
     # Process due triggers
     @router.post(
         "/process-due",
-        response_model=Dict[str, Any],
+        response_model=dict[str, Any],
         summary="Process all due scheduled triggers",
     )
-    async def process_due_triggers() -> Dict[str, Any]:
+    async def process_due_triggers() -> dict[str, Any]:
         """Process all due scheduled triggers."""
         result = await trigger_service.process_due_triggers()
         if result.is_failure:
@@ -739,7 +737,7 @@ def register_report_output_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     output_service: Optional[ReportOutputService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report outputs.
 
     Args:
@@ -818,11 +816,11 @@ def register_report_output_endpoints(
         summary="List report outputs",
     )
     async def list_outputs(
-        report_template_id: Optional[str] = Query(
+        report_template_id: str | None = Query(
             None, description="Filter by template ID"
         ),
-        output_type: Optional[str] = Query(None, description="Filter by output type"),
-        format: Optional[str] = Query(None, description="Filter by format"),
+        output_type: str | None = Query(None, description="Filter by output type"),
+        format: str | None = Query(None, description="Filter by format"),
         is_active: Optional[bool] = Query(None, description="Filter by active status"),
         skip: int = Query(0, description="Number of records to skip"),
         limit: int = Query(100, description="Maximum number of records to return"),
@@ -907,7 +905,7 @@ def register_report_execution_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     execution_service: Optional[ReportExecutionService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report executions.
 
     Args:
@@ -968,12 +966,12 @@ def register_report_execution_endpoints(
         summary="List report executions",
     )
     async def list_executions(
-        report_template_id: Optional[str] = Query(
+        report_template_id: str | None = Query(
             None, description="Filter by template ID"
         ),
-        triggered_by: Optional[str] = Query(None, description="Filter by triggered by"),
-        trigger_type: Optional[str] = Query(None, description="Filter by trigger type"),
-        status: Optional[str] = Query(None, description="Filter by status"),
+        triggered_by: str | None = Query(None, description="Filter by triggered by"),
+        trigger_type: str | None = Query(None, description="Filter by trigger type"),
+        status: str | None = Query(None, description="Filter by status"),
         created_after: Optional[datetime] = Query(
             None, description="Filter by created after date"
         ),
@@ -1068,7 +1066,7 @@ def register_report_output_execution_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     output_execution_service: Optional[ReportOutputExecutionService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for report output executions.
 
     Args:
@@ -1127,13 +1125,11 @@ def register_report_output_execution_endpoints(
         summary="List report output executions",
     )
     async def list_output_executions(
-        report_execution_id: Optional[str] = Query(
+        report_execution_id: str | None = Query(
             None, description="Filter by execution ID"
         ),
-        report_output_id: Optional[str] = Query(
-            None, description="Filter by output ID"
-        ),
-        status: Optional[str] = Query(None, description="Filter by status"),
+        report_output_id: str | None = Query(None, description="Filter by output ID"),
+        status: str | None = Query(None, description="Filter by status"),
         skip: int = Query(0, description="Number of records to skip"),
         limit: int = Query(100, description="Maximum number of records to return"),
     ) -> list[ReportOutputExecutionViewDto]:
@@ -1197,7 +1193,7 @@ def register_reports_endpoints(
     path_prefix: str = "/api/v1",
     dependencies: list[Any] = None,
     include_auth: bool = True,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """Register all Reports module API endpoints.
 
     Args:

@@ -79,13 +79,13 @@ class QueryHints:
     """
 
     use_index: str | None = None
-    parallel_workers: Optional[int] = None
+    parallel_workers: int | None = None
     enable_seqscan: Optional[bool] = None
     work_mem: str | None = None
     use_nestloop: Optional[bool] = None
     use_hashjoin: Optional[bool] = None
     use_mergejoin: Optional[bool] = None
-    custom_hints: Dict[str, Any] = field(default_factory=dict)
+    custom_hints: dict[str, Any] = field(default_factory=dict)
 
     def to_sql(self) -> str:
         """
@@ -169,7 +169,7 @@ class OptimizedQuery:
     async def execute(
         self,
         query: Any,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         use_cache: Optional[bool] = None,
         stream: bool = False,
         chunks: bool = False,
@@ -216,7 +216,7 @@ class OptimizedQuery:
     async def _execute_query(
         self,
         query: Any,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         """
         Execute a query without caching.
@@ -257,7 +257,7 @@ class OptimizedQuery:
     async def _execute_cached(
         self,
         query: Any,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         """
         Execute a query with caching.
@@ -315,8 +315,8 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
         columns: Optional[list[Column]] = None,
         where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
         order_by: Optional[list[Any]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
         joins: Optional[list[Tuple[Table, BinaryExpression]]] = None,
         group_by: Optional[list[Column]] = None,
         having: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
@@ -405,7 +405,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_insert(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         returning: Optional[list[Column]] = None,
     ) -> Insert:
         """
@@ -429,7 +429,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_update(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         where: Optional[Union[BinaryExpression, list[BinaryExpression]]] = None,
         returning: Optional[list[Column]] = None,
     ) -> Update:
@@ -493,7 +493,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     def build_upsert(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         constraint_columns: list[str],
         update_columns: list[str] | None = None,
         returning: Optional[list[Column]] = None,
@@ -892,7 +892,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def insert(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         return_model: bool = True,
     ) -> Optional[T]:
         """
@@ -929,7 +929,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def update(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         where: Union[BinaryExpression, list[BinaryExpression]],
         return_models: bool = False,
     ) -> Union[int, list[T]]:
@@ -1009,7 +1009,7 @@ class OptimizedModelQuery(OptimizedQuery, Generic[T]):
 
     async def upsert(
         self,
-        values: Dict[str, Any],
+        values: dict[str, Any],
         constraint_columns: list[str],
         update_columns: list[str] | None = None,
         return_model: bool = True,

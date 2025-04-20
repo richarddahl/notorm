@@ -359,7 +359,7 @@ class ${entity.name}Repository:
             # Implementation depends on your ORM approach
             pass
     
-    async def list(self, filters: Optional[Dict[str, Any]] = None) -> list[${
+    async def list(self, filters: dict[str,Any] | None = None) -> list[${
       entity.name
     }]:
         """
@@ -468,7 +468,7 @@ class ${entity.name}Service:
             raise NotFoundError(f"${entity.name} with ID {id} not found")
         return entity
     
-    async def list(self, filters: Optional[Dict[str, Any]] = None) -> list[${
+    async def list(self, filters: dict[str,Any] | None = None) -> list[${
       entity.name
     }]:
         """
@@ -482,7 +482,7 @@ class ${entity.name}Service:
         """
         return await self.repository.list(filters)
     
-    async def create(self, data: Dict[str, Any]) -> ${entity.name}:
+    async def create(self, data: dict[str, Any]) -> ${entity.name}:
         """
         Create a new ${entity.name}.
         
@@ -495,7 +495,7 @@ class ${entity.name}Service:
         entity = ${entity.name}(**data)
         return await self.repository.create(entity)
     
-    async def update(self, id: UUID, data: Dict[str, Any]) -> ${entity.name}:
+    async def update(self, id: UUID, data: dict[str, Any]) -> ${entity.name}:
         """
         Update a ${entity.name}.
         

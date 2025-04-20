@@ -23,7 +23,7 @@ class DocumentIndexRequest(BaseModel):
     text: str = Field(..., description="Document text content")
     entity_id: str = Field(..., description="Unique entity identifier")
     entity_type: str = Field(..., description="Entity type")
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         default=None, description="Additional metadata"
     )
 
@@ -60,9 +60,7 @@ class SearchRequest(BaseModel):
     """Request model for semantic search."""
 
     query: str = Field(..., description="Search query text")
-    entity_type: Optional[str] = Field(
-        default=None, description="Filter by entity type"
-    )
+    entity_type: str | None = Field(default=None, description="Filter by entity type")
     limit: int = Field(
         default=10, ge=1, le=100, description="Maximum number of results"
     )
@@ -77,7 +75,7 @@ class SearchResult(BaseModel):
     id: int = Field(..., description="Internal ID of the document")
     entity_id: str = Field(..., description="Entity identifier")
     entity_type: str = Field(..., description="Entity type")
-    metadata: Dict[str, Any] = Field(..., description="Entity metadata")
+    metadata: dict[str, Any] = Field(..., description="Entity metadata")
     similarity: float = Field(..., description="Similarity score (0-1)")
 
 
@@ -85,7 +83,7 @@ class DeleteRequest(BaseModel):
     """Request model for deleting documents."""
 
     entity_id: str = Field(..., description="Entity identifier to delete")
-    entity_type: Optional[str] = Field(default=None, description="Entity type filter")
+    entity_type: str | None = Field(default=None, description="Entity type filter")
 
 
 class DeleteResponse(BaseModel):
@@ -223,7 +221,7 @@ def create_search_router(
     @router.get("/search", response_model=list[SearchResult])
     async def semantic_search_get(
         query: str = Query(..., description="Search query text"),
-        entity_type: Optional[str] = Query(None, description="Filter by entity type"),
+        entity_type: str | None = Query(None, description="Filter by entity type"),
         limit: int = Query(10, ge=1, le=100, description="Maximum number of results"),
         similarity_threshold: float = Query(
             0.7, ge=0.0, le=1.0, description="Minimum similarity score (0-1)"
@@ -269,7 +267,7 @@ def create_search_router(
     @router.delete("/documents/{entity_id}")
     async def delete_document_get(
         entity_id: str,
-        entity_type: Optional[str] = Query(None, description="Entity type filter"),
+        entity_type: str | None = Query(None, description="Entity type filter"),
     ):
         """
         Delete document from the index (DELETE method).

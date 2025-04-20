@@ -95,7 +95,7 @@ from uno.reports.services import (
 )
 
 
-def create_services(session: AsyncSession) -> Dict[str, Any]:
+def create_services(session: AsyncSession) -> dict[str, Any]:
     """Create services needed for CLI."""
     # Create repositories
     template_repo = ReportTemplateRepository(session)
@@ -153,7 +153,7 @@ def format_table(data: list[dict[str, Any]], fields: list[str] = None) -> str:
     return tabulate.tabulate(rows, headers=fields, tablefmt="grid")
 
 
-def format_dict(data: Dict[str, Any]) -> str:
+def format_dict(data: dict[str, Any]) -> str:
     """Format a dictionary as key-value pairs."""
     if not data:
         return "No data available."
@@ -168,7 +168,7 @@ def format_dict(data: Dict[str, Any]) -> str:
     return "\n".join(result)
 
 
-async def handle_templates(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_templates(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle templates commands."""
     services = create_services(session)
     template_service = services["template_service"]
@@ -253,7 +253,7 @@ async def handle_templates(args: Dict[str, Any], session: AsyncSession) -> None:
             print(f"Error: {result.error}")
 
 
-async def handle_fields(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_fields(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle fields commands."""
     services = create_services(session)
     field_service = services["field_service"]
@@ -338,7 +338,7 @@ async def handle_fields(args: Dict[str, Any], session: AsyncSession) -> None:
             print(f"Error: {result.error}")
 
 
-async def handle_triggers(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_triggers(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle triggers commands."""
     services = create_services(session)
     trigger_service = services["trigger_service"]
@@ -438,7 +438,7 @@ async def handle_triggers(args: Dict[str, Any], session: AsyncSession) -> None:
             print(f"Error: {result.error}")
 
 
-async def handle_outputs(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_outputs(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle outputs commands."""
     services = create_services(session)
     output_service = services["output_service"]
@@ -516,7 +516,7 @@ async def handle_outputs(args: Dict[str, Any], session: AsyncSession) -> None:
             print(f"Error: {result.error}")
 
 
-async def handle_executions(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_executions(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle executions commands."""
     services = create_services(session)
     execution_service = services["execution_service"]
@@ -613,7 +613,7 @@ async def handle_executions(args: Dict[str, Any], session: AsyncSession) -> None
             print(f"Error: {result.error}")
 
 
-async def handle_scheduler(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_scheduler(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle scheduler commands."""
     services = create_services(session)
     trigger_service = services["trigger_service"]
@@ -632,7 +632,7 @@ async def handle_scheduler(args: Dict[str, Any], session: AsyncSession) -> None:
             print(f"Error: {result.error}")
 
 
-async def handle_event(args: Dict[str, Any], session: AsyncSession) -> None:
+async def handle_event(args: dict[str, Any], session: AsyncSession) -> None:
     """Handle event commands."""
     services = create_services(session)
     trigger_service = services["trigger_service"]

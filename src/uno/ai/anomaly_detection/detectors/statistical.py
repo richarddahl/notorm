@@ -46,7 +46,7 @@ class StatisticalDetector(AnomalyDetector):
         window_size: int = 24,  # For moving average
         seasonality: int = 24,  # For seasonal decomposition
         logger: logging.Logger | None = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ):
         """
         Initialize the statistical detector.
@@ -334,7 +334,7 @@ class StatisticalDetector(AnomalyDetector):
             self.logger.error(f"Error training regression model: {e}")
             return False
 
-    async def detect(self, data_point: Dict[str, Any]) -> Optional[AnomalyAlert]:
+    async def detect(self, data_point: dict[str, Any]) -> Optional[AnomalyAlert]:
         """
         Detect anomalies in a single data point.
 
@@ -394,7 +394,7 @@ class StatisticalDetector(AnomalyDetector):
         return alert
 
     def _detect_zscore(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using Z-score.
@@ -443,7 +443,7 @@ class StatisticalDetector(AnomalyDetector):
         return None
 
     def _detect_iqr(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using IQR method.
@@ -497,7 +497,7 @@ class StatisticalDetector(AnomalyDetector):
         return None
 
     def _detect_moving_average(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using moving average method.
@@ -589,7 +589,7 @@ class StatisticalDetector(AnomalyDetector):
         return None
 
     def _detect_regression(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using regression-based method.

@@ -29,7 +29,7 @@ class {{ feature_name|pascal_case }}Updated(Event):
     """Event emitted when a {{ feature_name|pascal_case }} is updated."""
     
     entity_id: str
-    changes: Dict[str, Any]
+    changes: dict[str, Any]
 
 
 class {{ feature_name|pascal_case }}Deleted(Event):
@@ -57,7 +57,7 @@ class {{ feature_name|pascal_case }}ServiceProtocol:
         self, 
         skip: int = 0, 
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.
@@ -72,7 +72,7 @@ class {{ feature_name|pascal_case }}ServiceProtocol:
         """
         ...
     
-    async def create(self, data: Dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
+    async def create(self, data: dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
         """
         Create a new {{ feature_name|pascal_case }} entity.
         
@@ -84,7 +84,7 @@ class {{ feature_name|pascal_case }}ServiceProtocol:
         """
         ...
     
-    async def update(self, id: str, data: Dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+    async def update(self, id: str, data: dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
         """
         Update an existing {{ feature_name|pascal_case }} entity.
         
@@ -153,7 +153,7 @@ class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal
         self, 
         skip: int = 0, 
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{{ feature_name|pascal_case }}]]:
         """
         List {{ feature_name|pascal_case }} entities.
@@ -174,7 +174,7 @@ class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal
             
         return await self.repository.list(skip=skip, limit=limit, filters=filters)
     
-    async def create(self, data: Dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
+    async def create(self, data: dict[str, Any]) -> Result[{{ feature_name|pascal_case }}]:
         """
         Create a new {{ feature_name|pascal_case }} entity.
         
@@ -219,7 +219,7 @@ class {{ feature_name|pascal_case }}Service(DomainService[{{ feature_name|pascal
                 details={"data": data, "error": str(e)}
             ))
     
-    async def update(self, id: str, data: Dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
+    async def update(self, id: str, data: dict[str, Any]) -> Result[Optional[{{ feature_name|pascal_case }}]]:
         """
         Update an existing {{ feature_name|pascal_case }} entity.
         

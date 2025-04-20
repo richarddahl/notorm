@@ -82,8 +82,8 @@ class WorkflowEventModel(BaseModel):
     schema_name: str
     operation: WorkflowDBEvent
     timestamp: float
-    payload: Dict[str, Any]
-    context: Optional[Dict[str, Any]] = None
+    payload: dict[str, Any]
+    context: dict[str, Any] | None = None
 
 
 class WorkflowEngine:
@@ -145,7 +145,7 @@ class WorkflowEngine:
         self,
         condition_type: WorkflowConditionType,
         handler: Callable[
-            [WorkflowCondition, WorkflowEventModel, Dict[str, Any]], Result[bool]
+            [WorkflowCondition, WorkflowEventModel, dict[str, Any]], Result[bool]
         ],
     ) -> None:
         """Register a handler for a specific condition type."""
@@ -155,8 +155,8 @@ class WorkflowEngine:
         self,
         action_type: WorkflowActionType,
         handler: Callable[
-            [WorkflowAction, WorkflowEventModel, Dict[str, Any], list[User]],
-            Result[Dict[str, Any]],
+            [WorkflowAction, WorkflowEventModel, dict[str, Any], list[User]],
+            Result[dict[str, Any]],
         ],
     ) -> None:
         """Register a handler for a specific action type."""
@@ -165,12 +165,12 @@ class WorkflowEngine:
     def register_recipient_resolver(
         self,
         recipient_type: WorkflowRecipientType,
-        resolver: Callable[[WorkflowRecipient, Dict[str, Any]], Result[list[User]]],
+        resolver: Callable[[WorkflowRecipient, dict[str, Any]], Result[list[User]]],
     ) -> None:
         """Register a resolver for a specific recipient type."""
         self._recipient_resolvers[recipient_type] = resolver
 
-    async def process_event(self, event: WorkflowEventModel) -> Result[Dict[str, Any]]:
+    async def process_event(self, event: WorkflowEventModel) -> Result[dict[str, Any]]:
         """Process a database event and execute matching workflows."""
         self.logger.debug(f"Processing event: {event.table_name} {event.operation}")
 
@@ -396,7 +396,7 @@ class WorkflowEngine:
 
     async def _execute_workflow(
         self, workflow: WorkflowDef, trigger: WorkflowTrigger, event: WorkflowEventModel
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a workflow based on an event."""
         self.logger.info(
             f"Executing workflow '{workflow.name}' (ID: {workflow.id}) for event {event.table_name} {event.operation}"
@@ -519,7 +519,7 @@ class WorkflowEngine:
         self,
         execution_id: str,
         status: WorkflowExecutionStatus,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         error: str | None = None,
         execution_time: Optional[float] = None,
     ) -> None:
@@ -559,7 +559,7 @@ class WorkflowEngine:
             )
 
     async def _evaluate_conditions(
-        self, workflow: WorkflowDef, event: WorkflowEventModel, context: Dict[str, Any]
+        self, workflow: WorkflowDef, event: WorkflowEventModel, context: dict[str, Any]
     ) -> Result[bool]:
         """Evaluate all conditions for a workflow."""
         if not workflow.conditions:
@@ -606,7 +606,7 @@ class WorkflowEngine:
         return Success(True)
 
     async def _execute_actions(
-        self, workflow: WorkflowDef, event: WorkflowEventModel, context: Dict[str, Any]
+        self, workflow: WorkflowDef, event: WorkflowEventModel, context: dict[str, Any]
     ) -> Result[list[dict[str, Any]]]:
         """Execute all actions for a workflow."""
         if not workflow.actions:
@@ -709,7 +709,7 @@ class WorkflowEngine:
         return Success(results)
 
     async def _resolve_recipients(
-        self, action: WorkflowAction, workflow: WorkflowDef, context: Dict[str, Any]
+        self, action: WorkflowAction, workflow: WorkflowDef, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve all recipients for an action."""
         recipients = []
@@ -800,7 +800,7 @@ class WorkflowEngine:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Handle a field value condition."""
         try:
@@ -866,7 +866,7 @@ class WorkflowEngine:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Handle a time-based condition."""
         # This is a placeholder implementation
@@ -877,7 +877,7 @@ class WorkflowEngine:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Handle a role-based condition."""
         # This is a placeholder implementation
@@ -888,7 +888,7 @@ class WorkflowEngine:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """
         Handle a query match condition by evaluating the record against a saved Query.
@@ -970,9 +970,9 @@ class WorkflowEngine:
         self,
         action: WorkflowAction,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Handle a notification action."""
         try:
             config = action.action_config
@@ -1002,9 +1002,9 @@ class WorkflowEngine:
         self,
         action: WorkflowAction,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Handle an email action."""
         # This is a placeholder implementation
         return Success({"sent": len(recipients)})
@@ -1013,9 +1013,9 @@ class WorkflowEngine:
         self,
         action: WorkflowAction,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Handle a webhook action."""
         # This is a placeholder implementation
         return Success({"status": "sent"})
@@ -1023,7 +1023,7 @@ class WorkflowEngine:
     # ===== Default recipient resolvers =====
 
     def _resolve_user_recipient(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a user recipient."""
         # This is a placeholder implementation
@@ -1037,7 +1037,7 @@ class WorkflowEngine:
         return Success([user])
 
     def _resolve_role_recipient(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a role recipient."""
         # This is a placeholder implementation
@@ -1045,7 +1045,7 @@ class WorkflowEngine:
         return Success([])
 
     def _resolve_group_recipient(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a group recipient."""
         # This is a placeholder implementation

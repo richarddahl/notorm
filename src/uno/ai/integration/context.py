@@ -59,7 +59,7 @@ class ContextValidityPeriod(BaseModel):
 
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.now)
     expires_at: Optional[datetime.datetime] = None
-    max_uses: Optional[int] = None
+    max_uses: int | None = None
     current_uses: int = 0
 
     @property
@@ -92,7 +92,7 @@ class ContextItem(BaseModel):
     session_id: str | None = None
     key: str
     value: Any
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     relevance: Relevance = Relevance.UNKNOWN
     embedding: Optional[list[float]] = None
     validity: ContextValidityPeriod = Field(default_factory=ContextValidityPeriod)
@@ -109,7 +109,7 @@ class ContextItem(BaseModel):
         """Mark the context item as used once."""
         self.validity.use()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context item to dictionary."""
         result = {
             "id": self.id,
@@ -152,7 +152,7 @@ class ContextQuery(BaseModel):
     min_relevance: Optional[Relevance] = None
     created_after: Optional[datetime.datetime] = None
     created_before: Optional[datetime.datetime] = None
-    metadata_filters: Dict[str, Any] = Field(default_factory=dict)
+    metadata_filters: dict[str, Any] = Field(default_factory=dict)
     limit: int = 10
     valid_only: bool = True
     include_embeddings: bool = False
@@ -163,7 +163,7 @@ class ContextBatch(BaseModel):
 
     items: list[ContextItem]
     batch_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class UnifiedContextManager:
@@ -200,13 +200,13 @@ class UnifiedContextManager:
         self.logger = logger or logging.getLogger(__name__)
 
         # In-memory cache
-        self.context_cache: Dict[str, ContextItem] = {}
+        self.context_cache: dict[str, ContextItem] = {}
 
         # Indexes for efficient retrieval
-        self.entity_index: Dict[str, Set[str]] = {}  # entity_id -> context_ids
-        self.user_index: Dict[str, Set[str]] = {}  # user_id -> context_ids
-        self.session_index: Dict[str, Set[str]] = {}  # session_id -> context_ids
-        self.key_index: Dict[str, Set[str]] = {}  # key -> context_ids
+        self.entity_index: dict[str, Set[str]] = {}  # entity_id -> context_ids
+        self.user_index: dict[str, Set[str]] = {}  # user_id -> context_ids
+        self.session_index: dict[str, Set[str]] = {}  # session_id -> context_ids
+        self.key_index: dict[str, Set[str]] = {}  # key -> context_ids
         self.source_index: Dict[ContextSource, Set[str]] = {}  # source -> context_ids
         self.type_index: Dict[ContextType, Set[str]] = {}  # type -> context_ids
 
@@ -731,7 +731,7 @@ class UnifiedContextManager:
         results: list[dict[str, Any]],
         user_id: str | None = None,
         session_id: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ContextItem:
         """
         Create context from a search operation.
@@ -784,7 +784,7 @@ class UnifiedContextManager:
         user_id: str,
         recommendations: list[dict[str, Any]],
         session_id: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ContextItem:
         """
         Create context from a recommendation operation.
@@ -821,7 +821,7 @@ class UnifiedContextManager:
         content: str,
         user_id: str | None = None,
         session_id: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         context_sources: list[str] | None = None,
     ) -> ContextItem:
         """
@@ -874,10 +874,10 @@ class UnifiedContextManager:
 
     async def create_anomaly_context(
         self,
-        alert: Dict[str, Any],
+        alert: dict[str, Any],
         user_id: str | None = None,
         session_id: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ContextItem:
         """
         Create context from an anomaly detection operation.

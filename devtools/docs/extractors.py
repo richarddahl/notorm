@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 class ExtractionResult:
     """Result of a documentation extraction."""
 
-    content: Dict[str, Any]
+    content: dict[str, Any]
     source_file: str | None = None
-    source_line: Optional[int] = None
+    source_line: int | None = None
     warnings: list[str] = field(default_factory=list)
 
 
@@ -66,7 +66,7 @@ class BaseExtractor:
         """
         raise NotImplementedError("Subclasses must implement extract_from_object")
 
-    def extract_docstring(self, obj: Any) -> Dict[str, Any]:
+    def extract_docstring(self, obj: Any) -> dict[str, Any]:
         """
         Extract structured information from a docstring.
 
@@ -83,7 +83,7 @@ class BaseExtractor:
         # Parse the docstring
         return self._parse_docstring(docstring)
 
-    def _parse_docstring(self, docstring: str) -> Dict[str, Any]:
+    def _parse_docstring(self, docstring: str) -> dict[str, Any]:
         """
         Parse a docstring into structured information.
 
@@ -519,7 +519,7 @@ class ExampleExtractor(BaseExtractor):
 
         return [ExtractionResult(content=result, source_file=None, source_line=None)]
 
-    def _extract_example_from_function(self, func: Any) -> Dict[str, Any]:
+    def _extract_example_from_function(self, func: Any) -> dict[str, Any]:
         """
         Extract example information from a function.
 
@@ -576,7 +576,7 @@ class ExampleExtractor(BaseExtractor):
 
     def _extract_example_from_file(
         self, file_path: str, module_name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extract example information from a file.
 
@@ -697,7 +697,7 @@ class APIEndpointExtractor(BaseExtractor):
 
         return results
 
-    def _extract_endpoint_from_route(self, route: Any) -> Optional[Dict[str, Any]]:
+    def _extract_endpoint_from_route(self, route: Any) -> dict[str, Any] | None:
         """
         Extract endpoint information from a route.
 
@@ -778,7 +778,7 @@ class APIEndpointExtractor(BaseExtractor):
 
         return endpoint_info
 
-    def _extract_endpoint_from_class(self, cls: Any) -> Optional[Dict[str, Any]]:
+    def _extract_endpoint_from_class(self, cls: Any) -> dict[str, Any] | None:
         """
         Extract endpoint information from a class.
 
@@ -824,7 +824,7 @@ class APIEndpointExtractor(BaseExtractor):
 
         return endpoint_info
 
-    def _extract_endpoint_method(self, method: Any) -> Dict[str, Any]:
+    def _extract_endpoint_method(self, method: Any) -> dict[str, Any]:
         """
         Extract endpoint information from a method.
 
@@ -876,7 +876,7 @@ class APIEndpointExtractor(BaseExtractor):
 
         return method_info
 
-    def _extract_endpoint_from_function(self, func: Any) -> Optional[Dict[str, Any]]:
+    def _extract_endpoint_from_function(self, func: Any) -> dict[str, Any] | None:
         """
         Extract endpoint information from a function.
 
@@ -1008,7 +1008,7 @@ class SQLExtractor(BaseExtractor):
 
         return results
 
-    def _extract_sql_from_class(self, cls: Any) -> Dict[str, Any]:
+    def _extract_sql_from_class(self, cls: Any) -> dict[str, Any]:
         """
         Extract SQL information from a class.
 
@@ -1045,7 +1045,7 @@ class SQLExtractor(BaseExtractor):
 
         return sql_info
 
-    def _extract_sql_from_function(self, func: Any) -> Dict[str, Any]:
+    def _extract_sql_from_function(self, func: Any) -> dict[str, Any]:
         """
         Extract SQL information from a function.
 

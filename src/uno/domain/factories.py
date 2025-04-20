@@ -103,7 +103,7 @@ class EntityFactory(Generic[T]):
         return entity
 
     @classmethod
-    def reconstitute(cls, data: Dict[str, Any]) -> T:
+    def reconstitute(cls, data: dict[str, Any]) -> T:
         """
         Reconstitute an entity from a dictionary representation.
 
@@ -162,7 +162,7 @@ class AggregateFactory(EntityFactory[A], Generic[A]):
 
     @classmethod
     def reconstitute_with_children(
-        cls, data: Dict[str, Any], children: Optional[list[EntityProtocol]] = None
+        cls, data: dict[str, Any], children: Optional[list[EntityProtocol]] = None
     ) -> A:
         """
         Reconstitute an aggregate root with child entities.
@@ -216,7 +216,7 @@ class ValueObjectFactory(Generic[V]):
         return cls.value_class(**kwargs)
 
     @classmethod
-    def create_from_dict(cls, data: Dict[str, Any]) -> V:
+    def create_from_dict(cls, data: dict[str, Any]) -> V:
         """
         Create a value object from a dictionary.
 

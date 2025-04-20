@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union, cast, Tuple
 from uno.core.base.error import BaseError
 
 # Context variable for logging context
-_logging_context = contextvars.ContextVar[Dict[str, Any]]("logging_context", default={})
+_logging_context = contextvars.ContextVar[dict[str, Any]]("logging_context", default={})
 
 
 @dataclass
@@ -56,7 +56,7 @@ class StructuredLogAdapter(logging.LoggerAdapter):
     This adapter enhances log messages with contextual information.
     """
 
-    def process(self, msg: str, kwargs: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    def process(self, msg: str, kwargs: dict[str, Any]) -> Tuple[str, dict[str, Any]]:
         """
         Process the log message and inject context.
 
@@ -236,7 +236,7 @@ def add_logging_context(**context: Any) -> None:
     _logging_context.set(current)
 
 
-def get_logging_context() -> Dict[str, Any]:
+def get_logging_context() -> dict[str, Any]:
     """
     Get the current logging context.
 

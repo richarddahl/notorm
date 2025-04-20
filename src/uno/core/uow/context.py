@@ -22,7 +22,9 @@ from typing import (
     ParamSpec,
 )
 
-from uno.core.protocols import UnitOfWork
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from uno.core.protocols import UnitOfWork
 from uno.core.uow.base import AbstractUnitOfWork
 
 # Type variables

@@ -63,11 +63,11 @@ class ReportDataAggregator:
     async def get_aggregated_data(
         self,
         template_id: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         aggregations: list[dict[str, Any]],
         cache_key: str | None = None,
         force_refresh: bool = False,
-    ) -> Result[Dict[str, Any], AggregationError]:
+    ) -> Result[dict[str, Any], AggregationError]:
         """
         Get aggregated report data, optimized for visualization.
 
@@ -144,11 +144,11 @@ class ReportDataAggregator:
     async def get_multi_report_data(
         self,
         template_ids: list[str],
-        date_range: Dict[str, str],
-        filters: Dict[str, Any],
+        date_range: dict[str, str],
+        filters: dict[str, Any],
         cache_key: str | None = None,
         force_refresh: bool = False,
-    ) -> Result[Dict[str, Any], AggregationError]:
+    ) -> Result[dict[str, Any], AggregationError]:
         """
         Get data from multiple reports for dashboard views.
 
@@ -254,8 +254,8 @@ class ReportDataAggregator:
             )
 
     async def _apply_aggregations(
-        self, data: Dict[str, Any], aggregations: list[dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], aggregations: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Apply aggregations to the report data.
 
@@ -308,7 +308,7 @@ class ReportDataAggregator:
         return {"aggregated": aggregated_data, "original": data}
 
     async def _execute_group_by(
-        self, df: pd.DataFrame, config: Dict[str, Any]
+        self, df: pd.DataFrame, config: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Execute a group by aggregation on the dataframe."""
         group_by_columns = config.get("group_by", [])
@@ -330,7 +330,7 @@ class ReportDataAggregator:
         self,
         df: pd.DataFrame,
         group_by_columns: list[str],
-        agg_columns: Dict[str, Union[str, list[str]]],
+        agg_columns: dict[str, Union[str, list[str]]],
     ) -> list[dict[str, Any]]:
         """Perform group by operation in a separate thread."""
         # Check if all columns exist
@@ -377,7 +377,7 @@ class ReportDataAggregator:
         return result
 
     async def _execute_pivot(
-        self, df: pd.DataFrame, config: Dict[str, Any]
+        self, df: pd.DataFrame, config: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Execute a pivot aggregation on the dataframe."""
         index = config.get("index", [])
@@ -402,7 +402,7 @@ class ReportDataAggregator:
         index: list[str],
         columns: str,
         values: str,
-        config: Dict[str, Any],
+        config: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """Perform pivot operation in a separate thread."""
         # Check if columns exist
@@ -450,7 +450,7 @@ class ReportDataAggregator:
         return result
 
     async def _execute_time_series(
-        self, df: pd.DataFrame, config: Dict[str, Any]
+        self, df: pd.DataFrame, config: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Execute a time series aggregation on the dataframe."""
         date_column = config.get("date_column")
@@ -538,8 +538,8 @@ class ReportDataAggregator:
         return result
 
     async def _execute_summary(
-        self, df: pd.DataFrame, config: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, df: pd.DataFrame, config: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute summary statistics on the dataframe."""
         columns = config.get("columns", [])
 
@@ -567,7 +567,7 @@ class ReportDataAggregator:
 
         return result
 
-    def _perform_summary(self, df: pd.DataFrame, columns: list[str]) -> Dict[str, Any]:
+    def _perform_summary(self, df: pd.DataFrame, columns: list[str]) -> dict[str, Any]:
         """Perform summary statistics in a separate thread."""
         summary = {}
 

@@ -13,8 +13,8 @@ from pydantic import BaseModel, Field, model_validator
 class MetaTypeBaseDto(BaseModel):
     """Base DTO for meta type data with common fields."""
     id: str = Field(..., description="Unique identifier for the meta type, used as table name")
-    name: Optional[str] = Field(None, description="Human-readable name (derived from ID if not provided)")
-    description: Optional[str] = Field(None, description="Optional description of the meta type")
+    name: str | None = Field(None, description="Human-readable name (derived from ID if not provided)")
+    description: str | None = Field(None, description="Optional description of the meta type")
     
     @model_validator(mode='after')
     def validate_id(self) -> 'MetaTypeBaseDto':
@@ -31,8 +31,8 @@ class MetaTypeCreateDto(MetaTypeBaseDto):
 
 class MetaTypeUpdateDto(BaseModel):
     """DTO for updating an existing meta type."""
-    name: Optional[str] = Field(None, description="Human-readable name")
-    description: Optional[str] = Field(None, description="Optional description of the meta type")
+    name: str | None = Field(None, description="Human-readable name")
+    description: str | None = Field(None, description="Optional description of the meta type")
     
     @model_validator(mode='after')
     def validate_fields(self) -> 'MetaTypeUpdateDto':
@@ -61,10 +61,10 @@ class MetaTypeViewDto(MetaTypeBaseDto):
 
 class MetaTypeFilterParams(BaseModel):
     """Parameters for filtering meta types."""
-    id: Optional[str] = Field(None, description="Filter by ID (exact match)")
-    id_contains: Optional[str] = Field(None, description="Filter by ID (contains)")
-    name_contains: Optional[str] = Field(None, description="Filter by name (contains)")
-    description_contains: Optional[str] = Field(None, description="Filter by description (contains)")
+    id: str | None = Field(None, description="Filter by ID (exact match)")
+    id_contains: str | None = Field(None, description="Filter by ID (contains)")
+    name_contains: str | None = Field(None, description="Filter by name (contains)")
+    description_contains: str | None = Field(None, description="Filter by description (contains)")
     limit: int = Field(50, description="Maximum number of results to return")
     offset: int = Field(0, description="Number of results to skip")
 
@@ -111,9 +111,9 @@ class MetaRecordViewDto(MetaRecordBaseDto):
 
 class MetaRecordFilterParams(BaseModel):
     """Parameters for filtering meta records."""
-    id: Optional[str] = Field(None, description="Filter by ID (exact match)")
-    meta_type_id: Optional[str] = Field(None, description="Filter by meta type ID")
-    has_attribute: Optional[str] = Field(None, description="Filter by having a specific attribute")
+    id: str | None = Field(None, description="Filter by ID (exact match)")
+    meta_type_id: str | None = Field(None, description="Filter by meta type ID")
+    has_attribute: str | None = Field(None, description="Filter by having a specific attribute")
     limit: int = Field(50, description="Maximum number of results to return")
     offset: int = Field(0, description="Number of results to skip")
 

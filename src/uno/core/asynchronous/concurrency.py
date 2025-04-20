@@ -114,7 +114,7 @@ class AsyncLock(AbstractAsyncContextManager[None]):
         self._lock = asyncio.Lock()
         self.name = name or f"Lock-{id(self)}"
         self.logger = logger or logging.getLogger(__name__)
-        self._owner_task_id: Optional[int] = None
+        self._owner_task_id: int | None = None
         self._owner: str | None = None
         self._locked_at: Optional[float] = None
         self._depth: int = 0  # For reentrant locking
@@ -237,7 +237,7 @@ class AsyncLock(AbstractAsyncContextManager[None]):
                 del frame
 
     @property
-    def owner_info(self) -> Optional[Dict[str, Any]]:
+    def owner_info(self) -> dict[str, Any] | None:
         """Get information about the current owner of the lock."""
         if not self.locked() or self._owner is None:
             return None
@@ -524,7 +524,7 @@ class AsyncEvent(AbstractAsyncContextManager[None]):
         return waiter
 
     @property
-    def state_info(self) -> Dict[str, Any]:
+    def state_info(self) -> dict[str, Any]:
         """Get information about the current state of the event."""
         return {
             "name": self.name,

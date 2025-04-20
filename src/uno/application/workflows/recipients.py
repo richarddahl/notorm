@@ -56,7 +56,7 @@ class RecipientResolver(Protocol):
     """Interface for recipient resolvers."""
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a recipient to a list of users."""
         ...
@@ -75,7 +75,7 @@ class UserResolver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a user recipient."""
         try:
@@ -134,7 +134,7 @@ class UserResolver:
             self.logger.error(f"Error fetching user {user_id}: {e}")
             return None
 
-    def _interpolate_template(self, template: str, context: Dict[str, Any]) -> str:
+    def _interpolate_template(self, template: str, context: dict[str, Any]) -> str:
         """Interpolate template variables in a string."""
         result = template
 
@@ -177,7 +177,7 @@ class RoleResolver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a role recipient to a list of users."""
         try:
@@ -240,7 +240,7 @@ class GroupResolver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """Resolve a group recipient to a list of users."""
         try:
@@ -320,7 +320,7 @@ class AttributeResolver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """
         Resolve recipients based on attribute values.
@@ -447,7 +447,7 @@ class AttributeResolver:
             )
             return []
 
-    def _interpolate_template(self, template: str, context: Dict[str, Any]) -> str:
+    def _interpolate_template(self, template: str, context: dict[str, Any]) -> str:
         """Interpolate template variables in a string."""
         result = template
 
@@ -490,7 +490,7 @@ class QueryRecipientResolver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """
         Resolve recipients based on a saved query.
@@ -617,7 +617,7 @@ class DynamicRecipientResolver:
     def __init__(
         self,
         logger: logging.Logger | None = None,
-        dynamic_resolvers: Dict[str, Callable] = None,
+        dynamic_resolvers: dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         self.dynamic_resolvers = dynamic_resolvers or {}
@@ -629,7 +629,7 @@ class DynamicRecipientResolver:
         self.dynamic_resolvers[resolver_type] = resolver_func
 
     async def resolve(
-        self, recipient: WorkflowRecipient, context: Dict[str, Any]
+        self, recipient: WorkflowRecipient, context: dict[str, Any]
     ) -> Result[list[User]]:
         """
         Resolve recipients using a dynamic resolver function.

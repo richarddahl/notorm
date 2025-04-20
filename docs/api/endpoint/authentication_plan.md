@@ -84,7 +84,7 @@ class User(BaseModel):
     email: str | None = None
     roles: list[str] = Field(default_factory=list)
     permissions: list[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 class UserContext:
     """Context for the current user."""
@@ -281,8 +281,8 @@ class SecureCqrsEndpoint(CqrsEndpoint):
         self,
         *,
         auth_backend: AuthenticationBackend,
-        query_permissions: Optional[Dict[str, list[str]]] = None,
-        command_permissions: Optional[Dict[str, list[str]]] = None,
+        query_permissions: Optional[dict[str, list[str]]] = None,
+        command_permissions: Optional[dict[str, list[str]]] = None,
         **kwargs,
     ):
         """Initialize a new secure CQRS endpoint instance."""

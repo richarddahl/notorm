@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 # Type for error context dict
-ErrorContext = Dict[str, Any]
+ErrorContext = dict[str, Any]
 
 # Thread-local storage for error context
 _error_context = contextvars.ContextVar[ErrorContext]("error_context", default={})
@@ -224,7 +224,7 @@ class ErrorInfo:
     category: ErrorCategory
     severity: ErrorSeverity
     description: str
-    http_status_code: Optional[int] = None
+    http_status_code: int | None = None
     retry_allowed: bool = True
 
 
@@ -315,7 +315,7 @@ class BaseError(Exception):
         self.error_code: str = error_code
 
         # Combine the explicit context with the ambient context
-        self.context: Dict[str, Any] = get_error_context().copy()
+        self.context: dict[str, Any] = get_error_context().copy()
         self.context.update(context)
 
         # Capture stack trace information
@@ -372,7 +372,7 @@ class BaseError(Exception):
             return self.error_info.retry_allowed
         return True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the error to a dictionary.
 
@@ -436,7 +436,7 @@ class ValidationError(BaseError):
         )
         self.validation_errors = validation_errors or []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the error to a dictionary.
 
@@ -513,7 +513,7 @@ class DatabaseError(BaseError):
         message: str,
         error_code: str = ErrorCode.DB_QUERY_ERROR,
         query: str | None = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         **context: Any,
     ):
         """
@@ -594,8 +594,8 @@ class ConcurrencyError(BaseError):
         self,
         message: str,
         aggregate_id: str | None = None,
-        expected_version: Optional[int] = None,
-        actual_version: Optional[int] = None,
+        expected_version: int | None = None,
+        actual_version: int | None = None,
         **context: Any,
     ):
         """

@@ -129,7 +129,7 @@ class PostgresEventStoreAppendBenchmark(Benchmark):
         except Exception as e:
             self.logger.error(f"Error cleaning up benchmark schema: {e}")
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Select a random aggregate
         aggregate_id = random.choice(self.aggregate_ids)
@@ -250,7 +250,7 @@ class PostgresEventStoreRetrievalBenchmark(Benchmark):
         except Exception as e:
             self.logger.error(f"Error cleaning up benchmark schema: {e}")
 
-    async def run_iteration(self) -> Dict[str, Any]:
+    async def run_iteration(self) -> dict[str, Any]:
         """Run a single benchmark iteration."""
         # Select a random aggregate
         aggregate_id = random.choice(self.aggregate_ids)

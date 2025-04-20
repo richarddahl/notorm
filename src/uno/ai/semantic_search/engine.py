@@ -92,7 +92,7 @@ class SemanticSearchEngine:
         document: str,
         entity_id: str,
         entity_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Any:
         """
         Index a document for semantic search.

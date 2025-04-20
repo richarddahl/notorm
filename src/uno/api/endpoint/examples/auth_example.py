@@ -53,18 +53,18 @@ class CreateProductRequest(BaseModel):
 class UpdateProductRequest(BaseModel):
     """Update product request."""
 
-    name: Optional[str] = Field(None, description="Product name")
+    name: str | None = Field(None, description="Product name")
     price: Optional[float] = Field(None, description="Product price")
-    category: Optional[str] = Field(None, description="Product category")
+    category: str | None = Field(None, description="Product category")
 
 
 class ProductSearchQuery(BaseModel):
     """Product search query."""
 
-    name: Optional[str] = Field(None, description="Product name contains")
+    name: str | None = Field(None, description="Product name contains")
     min_price: Optional[float] = Field(None, description="Minimum price")
     max_price: Optional[float] = Field(None, description="Maximum price")
-    category: Optional[str] = Field(None, description="Product category")
+    category: str | None = Field(None, description="Product category")
 
 
 class TokenRequest(BaseModel):

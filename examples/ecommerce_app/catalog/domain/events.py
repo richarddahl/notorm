@@ -25,7 +25,7 @@ class ProductUpdatedEvent(UnoEvent):
 
     name: str
     status: str
-    attributes: Optional[Dict[str, Any]] = None
+    attributes: dict[str, Any] | None = None
 
 
 class ProductPriceChangedEvent(UnoEvent):

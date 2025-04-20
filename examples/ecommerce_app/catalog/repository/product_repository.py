@@ -137,7 +137,7 @@ class ProductRepository(SQLAlchemyAggregateRepository[Product, ProductModel]):
 
         return product
 
-    def _to_model_data(self, entity: Product) -> Dict[str, Any]:
+    def _to_model_data(self, entity: Product) -> dict[str, Any]:
         """Convert a product entity to model data."""
         # Extract basic data
         data = {
@@ -434,7 +434,7 @@ class CategoryRepository(SQLAlchemyRepository[Category, CategoryModel]):
             updated_at=model.updated_at,
         )
 
-    def _to_model_data(self, entity: Category) -> Dict[str, Any]:
+    def _to_model_data(self, entity: Category) -> dict[str, Any]:
         """Convert a category entity to model data."""
         return {
             "id": entity.id,

@@ -21,7 +21,7 @@ class Field:
     foreign_key: str | None = None
     default: Optional[Any] = None
     description: str | None = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -32,7 +32,7 @@ class Entity:
     table_name: str | None = None
     fields: list[Field] = field(default_factory=list)
     description: str | None = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def primary_key_fields(self) -> list[Field]:
@@ -52,7 +52,7 @@ class Relationship:
     nullable: bool = False
     name: str | None = None
     description: str | None = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class RelationshipType(str, Enum):
@@ -81,9 +81,9 @@ class Model:
     entities: list[Entity] = field(default_factory=list)
     relationships: list[Relationship] = field(default_factory=list)
     description: str | None = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the model to a dictionary for serialization."""
         return {
             "name": self.name,
@@ -95,7 +95,7 @@ class Model:
             "metadata": self.metadata,
         }
 
-    def _entity_to_dict(self, entity: Entity) -> Dict[str, Any]:
+    def _entity_to_dict(self, entity: Entity) -> dict[str, Any]:
         """Convert an entity to a dictionary."""
         return {
             "name": entity.name,
@@ -105,7 +105,7 @@ class Model:
             "metadata": entity.metadata,
         }
 
-    def _field_to_dict(self, field: Field) -> Dict[str, Any]:
+    def _field_to_dict(self, field: Field) -> dict[str, Any]:
         """Convert a field to a dictionary."""
         return {
             "name": field.name,
@@ -118,7 +118,7 @@ class Model:
             "metadata": field.metadata,
         }
 
-    def _relationship_to_dict(self, relationship: Relationship) -> Dict[str, Any]:
+    def _relationship_to_dict(self, relationship: Relationship) -> dict[str, Any]:
         """Convert a relationship to a dictionary."""
         return {
             "source_entity": relationship.source_entity,
@@ -133,7 +133,7 @@ class Model:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Model":
+    def from_dict(cls, data: dict[str, Any]) -> "Model":
         """Create a model from a dictionary."""
         entities = []
         for entity_data in data.get("entities", []):

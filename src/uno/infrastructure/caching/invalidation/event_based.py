@@ -78,7 +78,7 @@ class EventBasedInvalidation:
     by the application.
     """
 
-    def __init__(self, event_handlers: Optional[Dict[str, list[str]]] = None):
+    def __init__(self, event_handlers: Optional[dict[str, list[str]]] = None):
         """Initialize the event-based invalidation strategy.
 
         Args:
@@ -86,7 +86,7 @@ class EventBasedInvalidation:
                           For example: {"user.updated": ["user:*", "profile:*"]}
         """
         self.event_handlers = event_handlers or {}
-        self._pattern_cache: Dict[str, Pattern] = {}
+        self._pattern_cache: dict[str, Pattern] = {}
         self._lock = threading.RLock()
         self._pending_invalidations: Set[str] = set()
 
@@ -107,7 +107,7 @@ class EventBasedInvalidation:
         return False
 
     def handle_event(
-        self, event_type: str, payload: Optional[Dict[str, Any]] = None
+        self, event_type: str, payload: dict[str, Any] | None = None
     ) -> list[str]:
         """Handle an event and determine which patterns should be invalidated.
 
@@ -150,7 +150,7 @@ class EventBasedInvalidation:
         return patterns
 
     async def handle_event_async(
-        self, event_type: str, payload: Optional[Dict[str, Any]] = None
+        self, event_type: str, payload: dict[str, Any] | None = None
     ) -> list[str]:
         """Handle an event asynchronously and determine which patterns should be invalidated.
 

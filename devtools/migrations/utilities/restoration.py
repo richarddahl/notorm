@@ -230,7 +230,7 @@ def restore_from_metadata(
     metadata_path: Union[str, Path],
     target_dir: Optional[Union[str, Path]] = None,
     force: bool = False,
-) -> Dict[str, Union[Path, bool]]:
+) -> dict[str, Union[Path, bool]]:
     """Restore files and directories from a migration backup metadata file.
 
     Args:
@@ -299,7 +299,7 @@ def restore_from_metadata(
 
 def undo_migration(
     backups_dir: Union[str, Path], force: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Undo a migration by restoring all backups in a directory.
 
     Args:

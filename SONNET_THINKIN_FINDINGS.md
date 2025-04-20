@@ -79,7 +79,7 @@ class Event(BaseModel):
     # Domain context
     aggregate_id: str | None = None
     aggregate_type: str | None = None
-    aggregate_version: Optional[int] = None
+    aggregate_version: int | None = None
 ```
 
 This event system enables loose coupling between components, allowing different parts of the application to react to domain events without direct dependencies.

@@ -41,22 +41,23 @@ attribute_type_router = create_domain_router(
 
 # Add custom endpoints for attribute types
 
+
 @attribute_type_router.get("/by-name/{name}")
 @domain_endpoint(entity_type=AttributeType, service_type=AttributeTypeService)
 async def get_attribute_type_by_name(
     name: str = Path(..., description="The name of the attribute type"),
-    group_id: Optional[str] = Query(None, description="Optional group ID to filter by"),
-    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService))
+    group_id: str | None = Query(None, description="Optional group ID to filter by"),
+    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService)),
 ):
     """Get an attribute type by name."""
     result = await service.find_by_name(name, group_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     if not result.value:
         raise HTTPException(status_code=404, detail="Attribute type not found")
-    
+
     return result.value.to_dict()
 
 
@@ -64,14 +65,14 @@ async def get_attribute_type_by_name(
 @domain_endpoint(entity_type=AttributeType, service_type=AttributeTypeService)
 async def get_attribute_type_hierarchy(
     id: str = Path(..., description="The ID of the root attribute type"),
-    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService))
+    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService)),
 ):
     """Get a hierarchy of attribute types starting from a root."""
     result = await service.get_hierarchy(id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return [attr_type.to_dict() for attr_type in result.value]
 
 
@@ -80,14 +81,14 @@ async def get_attribute_type_hierarchy(
 async def add_value_type(
     id: str = Path(..., description="The ID of the attribute type"),
     meta_type_id: str = Path(..., description="The ID of the meta type to add"),
-    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService))
+    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService)),
 ):
     """Add a value type to an attribute type."""
     result = await service.add_value_type(id, meta_type_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return result.value.to_dict()
 
 
@@ -96,31 +97,32 @@ async def add_value_type(
 async def add_describable_type(
     id: str = Path(..., description="The ID of the attribute type"),
     meta_type_id: str = Path(..., description="The ID of the meta type to add"),
-    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService))
+    service: AttributeTypeService = Depends(lambda: get_service(AttributeTypeService)),
 ):
     """Add a meta type that an attribute type can describe."""
     result = await service.add_describable_type(id, meta_type_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return result.value.to_dict()
 
 
 # Add custom endpoints for attributes
 
+
 @attribute_router.get("/by-type/{attribute_type_id}")
 @domain_endpoint(entity_type=Attribute, service_type=AttributeService)
 async def get_attributes_by_type(
     attribute_type_id: str = Path(..., description="The ID of the attribute type"),
-    service: AttributeService = Depends(lambda: get_service(AttributeService))
+    service: AttributeService = Depends(lambda: get_service(AttributeService)),
 ):
     """Get attributes by attribute type."""
     result = await service.find_by_attribute_type(attribute_type_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return [attr.to_dict() for attr in result.value]
 
 
@@ -128,14 +130,14 @@ async def get_attributes_by_type(
 @domain_endpoint(entity_type=Attribute, service_type=AttributeService)
 async def get_attribute_with_related(
     id: str = Path(..., description="The ID of the attribute"),
-    service: AttributeService = Depends(lambda: get_service(AttributeService))
+    service: AttributeService = Depends(lambda: get_service(AttributeService)),
 ):
     """Get an attribute with its related data."""
     result = await service.get_with_related_data(id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return result.value.to_dict()
 
 
@@ -144,14 +146,14 @@ async def get_attribute_with_related(
 async def add_value_to_attribute(
     id: str = Path(..., description="The ID of the attribute"),
     value_id: str = Path(..., description="The ID of the value to add"),
-    service: AttributeService = Depends(lambda: get_service(AttributeService))
+    service: AttributeService = Depends(lambda: get_service(AttributeService)),
 ):
     """Add a value to an attribute."""
     result = await service.add_value(id, value_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
+
     return result.value.to_dict()
 
 
@@ -160,13 +162,12 @@ async def add_value_to_attribute(
 async def add_meta_record_to_attribute(
     id: str = Path(..., description="The ID of the attribute"),
     meta_record_id: str = Path(..., description="The ID of the meta record to add"),
-    service: AttributeService = Depends(lambda: get_service(AttributeService))
+    service: AttributeService = Depends(lambda: get_service(AttributeService)),
 ):
     """Add a meta record to an attribute."""
     result = await service.add_meta_record(id, meta_record_id)
-    
+
     if result.is_failure:
         raise HTTPException(status_code=400, detail=str(result.error))
-    
-    return result.value.to_dict()
 
+    return result.value.to_dict()

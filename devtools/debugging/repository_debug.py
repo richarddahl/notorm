@@ -24,9 +24,9 @@ class RepositoryOperation:
 
     method: str
     args: tuple = field(default_factory=tuple)
-    kwargs: Dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(default_factory=dict)
     result: Any = None
-    error: Optional[Exception] = None
+    error: Exception | None = None
     duration_ms: float = 0.0
     timestamp: float = 0.0
     repository_class: str | None = None
@@ -92,7 +92,7 @@ class RepositoryTracker:
         """
         return [op for op in self.operations if op.duration_ms >= threshold_ms]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics about tracked operations.
 
         Returns:
@@ -264,7 +264,7 @@ class RepositoryDebugger:
         for repo_class in repo_classes:
             self.patch_repository_class(repo_class)
 
-    def analyze_operations(self) -> Dict[str, Any]:
+    def analyze_operations(self) -> dict[str, Any]:
         """Analyze repository operations and provide optimization suggestions.
 
         Returns:

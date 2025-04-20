@@ -44,19 +44,19 @@ class Event(BaseModel):
     # Domain context
     aggregate_id: str | None = None
     aggregate_type: str | None = None
-    aggregate_version: Optional[int] = None
+    aggregate_version: int | None = None
 
     @classmethod
     def get_event_type(cls) -> str:
         """Get the standardized event type name based on the class name."""
         return _class_to_event_type(cls.__name__)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the event to a dictionary for serialization."""
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Event":
+    def from_dict(cls, data: dict[str, Any]) -> "Event":
         """Create an event from a dictionary representation."""
         return cls.model_validate(data)
 
@@ -75,7 +75,7 @@ class Event(BaseModel):
         causation_id: str | None = None,
         aggregate_id: str | None = None,
         aggregate_type: str | None = None,
-        aggregate_version: Optional[int] = None,
+        aggregate_version: int | None = None,
     ) -> "Event":
         """
         Create a new instance of this event with additional metadata.

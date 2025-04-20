@@ -89,10 +89,10 @@ class UnoFilterManager(FilterManagerProtocol):
     """
 
     # Class-level caches for static filters and parameter models
-    _filter_cache: Dict[str, Dict[str, UnoFilterProtocol]] = {}
-    _model_cache: Dict[str, Type[BaseModel]] = {}
-    _validation_cache: Dict[str, list[Tuple[str, Any, str]]] = {}
-    _column_type_cache: Dict[str, Dict[str, Any]] = {}
+    _filter_cache: dict[str, dict[str, UnoFilterProtocol]] = {}
+    _model_cache: dict[str, Type[BaseModel]] = {}
+    _validation_cache: dict[str, list[Tuple[str, Any, str]]] = {}
+    _column_type_cache: dict[str, dict[str, Any]] = {}
 
     # Cache management timestamps
     _last_cleanup = time.time()
@@ -106,7 +106,7 @@ class UnoFilterManager(FilterManagerProtocol):
         Args:
             logger: Optional logger for diagnostic output
         """
-        self.filters: Dict[str, UnoFilterProtocol] = {}
+        self.filters: dict[str, UnoFilterProtocol] = {}
         self.logger = logger or logging.getLogger(__name__)
 
         # Perform periodic cache cleanup on instantiation
@@ -178,7 +178,7 @@ class UnoFilterManager(FilterManagerProtocol):
         exclude_from_filters: bool = False,
         exclude_fields: list[str] | None = None,
         use_cache: bool = True,
-    ) -> Dict[str, UnoFilterProtocol]:
+    ) -> dict[str, UnoFilterProtocol]:
         """
         Create filters from a model's table.
 
@@ -227,7 +227,7 @@ class UnoFilterManager(FilterManagerProtocol):
                 UnoFilterManager._cache_misses += 1
 
         # Cache miss or caching disabled - create filters from scratch
-        filters: Dict[str, UnoFilterProtocol] = {}
+        filters: dict[str, UnoFilterProtocol] = {}
 
         # Handle case where model_class might not have __table__ attribute
         if not hasattr(model_class, "__table__"):
@@ -415,7 +415,7 @@ class UnoFilterManager(FilterManagerProtocol):
                     Field(None, description="Number of results to skip"),
                 ),
                 "order_by": (
-                    Optional[str],
+                    str | None,
                     Field(None, description="Field to order by"),
                 ),
             }
@@ -426,7 +426,7 @@ class UnoFilterManager(FilterManagerProtocol):
             model_filter_dict.update(
                 {
                     f"order_by.{direction}": (
-                        Optional[str],
+                        str | None,
                         Field(
                             None,
                             description=f"Field to order by in {direction}ending order",

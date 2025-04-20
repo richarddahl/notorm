@@ -80,13 +80,13 @@ def diff_schema_command(
         ),
     ],
     schema: Annotated[
-        Optional[str], typer.Option("--schema", "-s", help="Database schema to compare")
+        str | None, typer.Option("--schema", "-s", help="Database schema to compare")
     ] = None,
     output_format: Annotated[
         str, typer.Option("--format", "-f", help="Output format (text or markdown)")
     ] = "text",
     output_file: Annotated[
-        Optional[str], typer.Option("--output", "-o", help="Output file path")
+        str | None, typer.Option("--output", "-o", help="Output file path")
     ] = None,
 ) -> None:
     """Compare SQLAlchemy models to database schema and show differences."""
@@ -182,7 +182,7 @@ def generate_migration_command(
         typer.Option("--message", "-g", help="Migration message (short description)"),
     ],
     schema: Annotated[
-        Optional[str], typer.Option("--schema", "-s", help="Database schema")
+        str | None, typer.Option("--schema", "-s", help="Database schema")
     ] = None,
     format: Annotated[
         str, typer.Option("--format", "-f", help="Migration format (python or sql)")
@@ -289,7 +289,7 @@ def apply_migration_command(
         str, typer.Option("--connection", "-c", help="Database connection string")
     ],
     schema: Annotated[
-        Optional[str], typer.Option("--schema", "-s", help="Database schema")
+        str | None, typer.Option("--schema", "-s", help="Database schema")
     ] = None,
     dry_run: Annotated[
         bool, typer.Option("--dry-run", help="Run without applying changes")
@@ -298,7 +298,7 @@ def apply_migration_command(
         bool, typer.Option("--backup", help="Create database backup before applying")
     ] = True,
     backup_dir: Annotated[
-        Optional[str], typer.Option("--backup-dir", help="Directory for backups")
+        str | None, typer.Option("--backup-dir", help="Directory for backups")
     ] = None,
 ) -> None:
     """Apply a database migration script."""
@@ -362,7 +362,7 @@ def rollback_migration_command(
         str, typer.Option("--connection", "-c", help="Database connection string")
     ],
     schema: Annotated[
-        Optional[str], typer.Option("--schema", "-s", help="Database schema")
+        str | None, typer.Option("--schema", "-s", help="Database schema")
     ] = None,
     dry_run: Annotated[
         bool, typer.Option("--dry-run", help="Run without applying changes")
@@ -372,7 +372,7 @@ def rollback_migration_command(
         typer.Option("--backup", help="Create database backup before rolling back"),
     ] = True,
     backup_dir: Annotated[
-        Optional[str], typer.Option("--backup-dir", help="Directory for backups")
+        str | None, typer.Option("--backup-dir", help="Directory for backups")
     ] = None,
 ) -> None:
     """Roll back a database migration."""
@@ -438,7 +438,7 @@ def analyze_code_command(
         typer.Option("--format", "-f", help="Output format (text, markdown, or json)"),
     ] = "text",
     output_file: Annotated[
-        Optional[str], typer.Option("--output", "-o", help="Output file path")
+        str | None, typer.Option("--output", "-o", help="Output file path")
     ] = None,
     patterns: Annotated[
         list[str] | None,
@@ -495,7 +495,7 @@ def transform_code_command(
         str, typer.Option("--format", "-f", help="Output format (text, diff, or json)")
     ] = "text",
     output_file: Annotated[
-        Optional[str], typer.Option("--output", "-o", help="Output file path")
+        str | None, typer.Option("--output", "-o", help="Output file path")
     ] = None,
     transformations: Annotated[
         list[str] | None,
@@ -508,7 +508,7 @@ def transform_code_command(
         bool, typer.Option("--backup", help="Create backups before transforming")
     ] = True,
     backup_dir: Annotated[
-        Optional[str], typer.Option("--backup-dir", help="Directory for backups")
+        str | None, typer.Option("--backup-dir", help="Directory for backups")
     ] = None,
 ) -> None:
     """Transform Python code to migrate patterns and APIs."""
@@ -571,7 +571,7 @@ def restore_backup_command(
         bool, typer.Option("--force", help="Force overwriting existing files")
     ] = False,
     target_dir: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--target", "-t", help="Target directory for restoration"),
     ] = None,
 ) -> None:

@@ -158,7 +158,7 @@ class WorkflowTriggerBaseDto(BaseModel):
     operation: WorkflowDBEventEnum = Field(
         ..., description="Database operation that triggers the workflow"
     )
-    field_conditions: Dict[str, Any] = Field(
+    field_conditions: dict[str, Any] = Field(
         default_factory=dict, description="Field conditions to filter events"
     )
     priority: int = Field(
@@ -191,13 +191,13 @@ class WorkflowTriggerCreateDto(WorkflowTriggerBaseDto):
 class WorkflowTriggerUpdateDto(BaseModel):
     """DTO for updating workflow triggers."""
 
-    entity_type: Optional[str] = Field(
+    entity_type: str | None = Field(
         None, description="Type of entity that triggers the workflow"
     )
     operation: Optional[WorkflowDBEventEnum] = Field(
         None, description="Database operation that triggers the workflow"
     )
-    field_conditions: Optional[Dict[str, Any]] = Field(
+    field_conditions: dict[str, Any] | None = Field(
         None, description="Field conditions to filter events"
     )
     priority: Optional[int] = Field(
@@ -245,8 +245,8 @@ class WorkflowTriggerViewDto(WorkflowTriggerBaseDto):
 class WorkflowTriggerFilterParams(BaseModel):
     """Filter parameters for workflow triggers."""
 
-    workflow_id: Optional[str] = Field(None, description="Filter by workflow ID")
-    entity_type: Optional[str] = Field(None, description="Filter by entity type")
+    workflow_id: str | None = Field(None, description="Filter by workflow ID")
+    entity_type: str | None = Field(None, description="Filter by entity type")
     operation: Optional[WorkflowDBEventEnum] = Field(
         None, description="Filter by operation"
     )
@@ -270,14 +270,14 @@ class WorkflowConditionBaseDto(BaseModel):
     condition_type: WorkflowConditionTypeEnum = Field(
         ..., description="Type of condition"
     )
-    condition_config: Dict[str, Any] = Field(
+    condition_config: dict[str, Any] = Field(
         default_factory=dict, description="Configuration for the condition"
     )
-    query_id: Optional[str] = Field(
+    query_id: str | None = Field(
         None, description="ID of the query for query match conditions"
     )
     name: str = Field("", description="Name of the condition")
-    description: Optional[str] = Field(None, description="Description of the condition")
+    description: str | None = Field(None, description="Description of the condition")
     order: int = Field(0, description="Order in which the condition is evaluated")
 
     model_config = ConfigDict(
@@ -309,14 +309,14 @@ class WorkflowConditionUpdateDto(BaseModel):
     condition_type: Optional[WorkflowConditionTypeEnum] = Field(
         None, description="Type of condition"
     )
-    condition_config: Optional[Dict[str, Any]] = Field(
+    condition_config: dict[str, Any] | None = Field(
         None, description="Configuration for the condition"
     )
-    query_id: Optional[str] = Field(
+    query_id: str | None = Field(
         None, description="ID of the query for query match conditions"
     )
-    name: Optional[str] = Field(None, description="Name of the condition")
-    description: Optional[str] = Field(None, description="Description of the condition")
+    name: str | None = Field(None, description="Name of the condition")
+    description: str | None = Field(None, description="Description of the condition")
     order: Optional[int] = Field(
         None, description="Order in which the condition is evaluated"
     )
@@ -364,11 +364,11 @@ class WorkflowConditionViewDto(WorkflowConditionBaseDto):
 class WorkflowConditionFilterParams(BaseModel):
     """Filter parameters for workflow conditions."""
 
-    workflow_id: Optional[str] = Field(None, description="Filter by workflow ID")
+    workflow_id: str | None = Field(None, description="Filter by workflow ID")
     condition_type: Optional[WorkflowConditionTypeEnum] = Field(
         None, description="Filter by condition type"
     )
-    name: Optional[str] = Field(None, description="Filter by name")
+    name: str | None = Field(None, description="Filter by name")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -388,8 +388,8 @@ class WorkflowRecipientBaseDto(BaseModel):
         ..., description="Type of recipient"
     )
     recipient_id: str = Field(..., description="ID of the recipient")
-    name: Optional[str] = Field(None, description="Display name for the recipient")
-    notification_config: Dict[str, Any] = Field(
+    name: str | None = Field(None, description="Display name for the recipient")
+    notification_config: dict[str, Any] = Field(
         default_factory=dict, description="Configuration for notifications"
     )
 
@@ -408,7 +408,7 @@ class WorkflowRecipientBaseDto(BaseModel):
 class WorkflowRecipientCreateDto(WorkflowRecipientBaseDto):
     """DTO for creating workflow recipients."""
 
-    action_id: Optional[str] = Field(None, description="ID of the associated action")
+    action_id: str | None = Field(None, description="ID of the associated action")
 
 
 class WorkflowRecipientUpdateDto(BaseModel):
@@ -417,12 +417,12 @@ class WorkflowRecipientUpdateDto(BaseModel):
     recipient_type: Optional[WorkflowRecipientTypeEnum] = Field(
         None, description="Type of recipient"
     )
-    recipient_id: Optional[str] = Field(None, description="ID of the recipient")
-    name: Optional[str] = Field(None, description="Display name for the recipient")
-    notification_config: Optional[Dict[str, Any]] = Field(
+    recipient_id: str | None = Field(None, description="ID of the recipient")
+    name: str | None = Field(None, description="Display name for the recipient")
+    notification_config: dict[str, Any] | None = Field(
         None, description="Configuration for notifications"
     )
-    action_id: Optional[str] = Field(None, description="ID of the associated action")
+    action_id: str | None = Field(None, description="ID of the associated action")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -439,7 +439,7 @@ class WorkflowRecipientViewDto(WorkflowRecipientBaseDto):
 
     id: str = Field(..., description="Unique identifier")
     workflow_id: str = Field(..., description="ID of the associated workflow")
-    action_id: Optional[str] = Field(None, description="ID of the associated action")
+    action_id: str | None = Field(None, description="ID of the associated action")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -459,11 +459,11 @@ class WorkflowRecipientViewDto(WorkflowRecipientBaseDto):
 class WorkflowRecipientFilterParams(BaseModel):
     """Filter parameters for workflow recipients."""
 
-    workflow_id: Optional[str] = Field(None, description="Filter by workflow ID")
+    workflow_id: str | None = Field(None, description="Filter by workflow ID")
     recipient_type: Optional[WorkflowRecipientTypeEnum] = Field(
         None, description="Filter by recipient type"
     )
-    action_id: Optional[str] = Field(None, description="Filter by action ID")
+    action_id: str | None = Field(None, description="Filter by action ID")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -480,14 +480,14 @@ class WorkflowActionBaseDto(BaseModel):
     """Base DTO for workflow actions."""
 
     action_type: WorkflowActionTypeEnum = Field(..., description="Type of action")
-    action_config: Dict[str, Any] = Field(
+    action_config: dict[str, Any] = Field(
         default_factory=dict, description="Configuration for the action"
     )
     name: str = Field("", description="Name of the action")
-    description: Optional[str] = Field(None, description="Description of the action")
+    description: str | None = Field(None, description="Description of the action")
     order: int = Field(0, description="Order in which the action is executed")
     is_active: bool = Field(True, description="Whether the action is active")
-    retry_policy: Optional[Dict[str, Any]] = Field(
+    retry_policy: dict[str, Any] | None = Field(
         None, description="Policy for retrying failed actions"
     )
 
@@ -524,16 +524,16 @@ class WorkflowActionUpdateDto(BaseModel):
     action_type: Optional[WorkflowActionTypeEnum] = Field(
         None, description="Type of action"
     )
-    action_config: Optional[Dict[str, Any]] = Field(
+    action_config: dict[str, Any] | None = Field(
         None, description="Configuration for the action"
     )
-    name: Optional[str] = Field(None, description="Name of the action")
-    description: Optional[str] = Field(None, description="Description of the action")
+    name: str | None = Field(None, description="Name of the action")
+    description: str | None = Field(None, description="Description of the action")
     order: Optional[int] = Field(
         None, description="Order in which the action is executed"
     )
     is_active: Optional[bool] = Field(None, description="Whether the action is active")
-    retry_policy: Optional[Dict[str, Any]] = Field(
+    retry_policy: dict[str, Any] | None = Field(
         None, description="Policy for retrying failed actions"
     )
 
@@ -585,12 +585,12 @@ class WorkflowActionViewDto(WorkflowActionBaseDto):
 class WorkflowActionFilterParams(BaseModel):
     """Filter parameters for workflow actions."""
 
-    workflow_id: Optional[str] = Field(None, description="Filter by workflow ID")
+    workflow_id: str | None = Field(None, description="Filter by workflow ID")
     action_type: Optional[WorkflowActionTypeEnum] = Field(
         None, description="Filter by action type"
     )
     is_active: Optional[bool] = Field(None, description="Filter by active status")
-    name: Optional[str] = Field(None, description="Filter by name")
+    name: str | None = Field(None, description="Filter by name")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -618,13 +618,13 @@ class WorkflowExecutionRecordBaseDto(BaseModel):
     completed_at: Optional[datetime] = Field(
         None, description="When the workflow execution completed"
     )
-    result: Optional[Dict[str, Any]] = Field(
+    result: dict[str, Any] | None = Field(
         None, description="Result of the workflow execution"
     )
-    error: Optional[str] = Field(
+    error: str | None = Field(
         None, description="Error message if the workflow execution failed"
     )
-    context: Optional[Dict[str, Any]] = Field(
+    context: dict[str, Any] | None = Field(
         None, description="Context data for the workflow execution"
     )
     execution_time: Optional[float] = Field(
@@ -670,13 +670,13 @@ class WorkflowExecutionRecordUpdateDto(BaseModel):
     completed_at: Optional[datetime] = Field(
         None, description="When the workflow execution completed"
     )
-    result: Optional[Dict[str, Any]] = Field(
+    result: dict[str, Any] | None = Field(
         None, description="Result of the workflow execution"
     )
-    error: Optional[str] = Field(
+    error: str | None = Field(
         None, description="Error message if the workflow execution failed"
     )
-    context: Optional[Dict[str, Any]] = Field(
+    context: dict[str, Any] | None = Field(
         None, description="Context data for the workflow execution"
     )
     execution_time: Optional[float] = Field(
@@ -728,7 +728,7 @@ class WorkflowExecutionRecordViewDto(WorkflowExecutionRecordBaseDto):
 class WorkflowExecutionRecordFilterParams(BaseModel):
     """Filter parameters for workflow execution records."""
 
-    workflow_id: Optional[str] = Field(None, description="Filter by workflow ID")
+    workflow_id: str | None = Field(None, description="Filter by workflow ID")
     status: Optional[WorkflowExecutionStatusEnum] = Field(
         None, description="Filter by status"
     )
@@ -738,9 +738,7 @@ class WorkflowExecutionRecordFilterParams(BaseModel):
     executed_before: Optional[datetime] = Field(
         None, description="Filter by executed before date"
     )
-    trigger_event_id: Optional[str] = Field(
-        None, description="Filter by trigger event ID"
-    )
+    trigger_event_id: str | None = Field(None, description="Filter by trigger event ID")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -796,12 +794,12 @@ class WorkflowDefCreateDto(WorkflowDefBaseDto):
 class WorkflowDefUpdateDto(BaseModel):
     """DTO for updating workflow definitions."""
 
-    name: Optional[str] = Field(None, description="Name of the workflow")
-    description: Optional[str] = Field(None, description="Description of the workflow")
+    name: str | None = Field(None, description="Name of the workflow")
+    description: str | None = Field(None, description="Description of the workflow")
     status: Optional[WorkflowStatusEnum] = Field(
         None, description="Status of the workflow"
     )
-    version: Optional[str] = Field(None, description="Version of the workflow")
+    version: str | None = Field(None, description="Version of the workflow")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -851,9 +849,9 @@ class WorkflowDefViewDto(WorkflowDefBaseDto):
 class WorkflowDefFilterParams(BaseModel):
     """Filter parameters for workflow definitions."""
 
-    name: Optional[str] = Field(None, description="Filter by name")
+    name: str | None = Field(None, description="Filter by name")
     status: Optional[WorkflowStatusEnum] = Field(None, description="Filter by status")
-    entity_type: Optional[str] = Field(
+    entity_type: str | None = Field(
         None, description="Filter by entity type (via triggers)"
     )
     operation: Optional[WorkflowDBEventEnum] = Field(
@@ -882,8 +880,8 @@ class WorkflowEventDto(BaseModel):
         ..., description="Database operation that triggered the event"
     )
     timestamp: float = Field(..., description="Timestamp when the event occurred")
-    payload: Dict[str, Any] = Field(..., description="Payload of the event")
-    context: Optional[Dict[str, Any]] = Field(
+    payload: dict[str, Any] = Field(..., description="Payload of the event")
+    context: dict[str, Any] | None = Field(
         None, description="Context data for the event"
     )
 
@@ -914,7 +912,7 @@ class UserViewDto(BaseModel):
     username: str = Field(..., description="Username")
     email: str = Field(..., description="Email address")
     is_active: bool = Field(True, description="Whether the user is active")
-    display_name: Optional[str] = Field(None, description="Display name")
+    display_name: str | None = Field(None, description="Display name")
     roles: list[str] = Field(
         default_factory=list, description="Roles assigned to the user"
     )

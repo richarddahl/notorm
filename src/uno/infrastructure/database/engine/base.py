@@ -22,7 +22,7 @@ class EngineFactory(Generic[E, C], ABC):
     ):
         """Initialize the engine factory."""
         self.logger = logger or logging.getLogger(__name__)
-        self.connection_callbacks: Dict[str, ConnectionCallback] = {}
+        self.connection_callbacks: dict[str, ConnectionCallback] = {}
 
     @abstractmethod
     def create_engine(self, config: ConnectionConfig) -> E:

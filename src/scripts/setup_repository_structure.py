@@ -163,7 +163,7 @@ class EventProtocol(Protocol):
         ...
     
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         \"\"\"Event payload data.\"\"\"
         ...
 
@@ -468,7 +468,7 @@ class DatabaseProvider:
         async with self._pool.acquire() as connection:
             return await connection.fetch(query, *args, timeout=timeout)
     
-    async def fetchrow(self, query: str, *args: Any, timeout: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    async def fetchrow(self, query: str, *args: Any, timeout: Optional[float] = None) -> dict[str, Any] | None:
         \"\"\"Execute a query and return the first row.\"\"\"
         if not self._pool:
             await self.initialize()
@@ -511,7 +511,7 @@ class Transaction:
         \"\"\"Execute a query within the transaction and return the results.\"\"\"
         return await self._connection.fetch(query, *args, timeout=timeout)
     
-    async def fetchrow(self, query: str, *args: Any, timeout: Optional[float] = None) -> Optional[Dict[str, Any]]:
+    async def fetchrow(self, query: str, *args: Any, timeout: Optional[float] = None) -> dict[str, Any] | None:
         \"\"\"Execute a query within the transaction and return the first row.\"\"\"
         row = await self._connection.fetchrow(query, *args, timeout=timeout)
         return dict(row) if row else None
@@ -556,7 +556,7 @@ class UnitOfWork:
         self._db_provider = db_provider
         self._event_bus = event_bus
         self._transaction: Optional[Transaction] = None
-        self._repositories: Dict[str, Any] = {}
+        self._repositories: dict[str, Any] = {}
     
     def register_repository(self, name: str, repository: Any) -> None:
         \"\"\"Register a repository with this unit of work.\"\"\"

@@ -272,7 +272,7 @@ class OrderingApplicationService(ApplicationService[Any, str]):
 
     async def place_order(
         self, customer_id: uuid.UUID, product_ids: list[uuid.UUID]
-    ) -> Result[Dict[str, Any], str]:
+    ) -> Result[dict[str, Any], str]:
         """
         Place an order for a customer.
 

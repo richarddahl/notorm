@@ -6,41 +6,42 @@ across the UNO ecosystem. It includes error catalogs, error context, and utiliti
 for working with errors in a consistent way.
 """
 
-from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 import inspect
 import logging
 import traceback
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field, field_validator
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, TypeVar, Union
 
-from .result import Error, Failure, Result, Success
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .result import Result, ValidationError
+from .result import ValidationError as Error
 
 __all__ = [
-    "ErrorCode",
-    "ErrorSeverity",
+    "AuthenticationError",
+    "AuthorizationError",
+    "ConflictError",
+    "DatabaseError",
+    "ErrorCatalog",
     "ErrorCategory",
     "ErrorContext",
     "ErrorDetail",
     "ErrorLog",
-    "ErrorCatalog",
+    "ErrorSeverity",
     "FrameworkError",
-    "DatabaseError",
-    "ValidationError",
-    "AuthenticationError",
-    "AuthorizationError",
     "NotFoundError",
-    "ConflictError",
     "RateLimitError",
     "ServerError",
-    "register_error",
+    "ValidationError",
     "create_error",
-    "log_error",
     "error_to_dict",
     "get_error_context",
+    "log_error",
+    "register_error",
 ]
 
 
@@ -88,18 +89,18 @@ class ErrorContext:
     referer: str | None = None
     path: str | None = None
     method: str | None = None
-    query_params: Dict[str, Any] = field(default_factory=dict)
-    headers: Dict[str, str] = field(default_factory=dict)
+    query_params: dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     application: str | None = None
     environment: str | None = None
     component: str | None = None
     function: str | None = None
     module: str | None = None
-    line: Optional[int] = None
+    line: int | None = None
     stack_trace: str | None = None
-    additional_data: Dict[str, Any] = field(default_factory=dict)
+    additional_data: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to a dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -141,26 +142,22 @@ class ErrorDetail(BaseModel):
     severity: ErrorSeverity = Field(
         default=ErrorSeverity.ERROR, description="Error severity level"
     )
-    field: Optional[str] = Field(
+    field: str | None = Field(
         None, description="Field that caused the error (for validation errors)"
     )
-    source: Optional[str] = Field(None, description="Source of the error")
-    details: Optional[Dict[str, Any]] = Field(
-        None, description="Additional error details"
-    )
-    help_text: Optional[str] = Field(
-        None, description="Help text for resolving the error"
-    )
-    help_url: Optional[str] = Field(
+    source: str | None = Field(None, description="Source of the error")
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
+    help_text: str | None = Field(None, description="Help text for resolving the error")
+    help_url: str | None = Field(
         None, description="URL with more information about the error"
     )
-    trace_id: Optional[str] = Field(None, description="Trace ID for tracking the error")
+    trace_id: str | None = Field(None, description="Trace ID for tracking the error")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(UTC), description="When the error occurred"
     )
 
     @field_validator("code")
-    def validate_code(cls, v: str) -> str:
+    def validate_code(self, v: str) -> str:
         """Validate that the error code is in the expected format."""
         v_upper = v.upper()
         if v != v_upper:
@@ -181,18 +178,17 @@ class ErrorLog(BaseModel):
     """
 
     error: ErrorDetail
-    context: Dict[str, Any]
+    context: dict[str, Any]
     exception_class: str | None = None
     exception_traceback: str | None = None
     is_handled: bool = False
     resolution: str | None = None
 
-    class Config:
-        """Pydantic model configuration."""
-
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda dt: dt.isoformat(),
         }
+    )
 
 
 # Error catalog for centralized error definition
@@ -204,7 +200,7 @@ class ErrorCatalog:
     the application for consistent error handling.
     """
 
-    _errors: Dict[str, Dict[str, Any]] = {}
+    _errors: dict[str, dict[str, Any]] = {}
 
     @classmethod
     def register(
@@ -213,7 +209,7 @@ class ErrorCatalog:
         message_template: str,
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
-        http_status_code: Optional[int] = None,
+        http_status_code: int | None = None,
         help_text: str | None = None,
         help_url: str | None = None,
     ) -> None:
@@ -246,7 +242,7 @@ class ErrorCatalog:
         }
 
     @classmethod
-    def get(cls, code: str) -> Optional[Dict[str, Any]]:
+    def get(cls, code: str) -> dict[str, Any] | None:
         """
         Get an error definition from the catalog.
 
@@ -262,8 +258,8 @@ class ErrorCatalog:
     def create(
         cls,
         code: str,
-        params: Optional[Dict[str, Any]] = None,
-        details: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
         field: str | None = None,
         source: str | None = None,
     ) -> ErrorDetail:
@@ -315,11 +311,11 @@ class ErrorCatalog:
     def to_result(
         cls,
         code: str,
-        params: Optional[Dict[str, Any]] = None,
-        details: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
         field: str | None = None,
         source: str | None = None,
-    ) -> Failure:
+    ) -> Result[Any, ValidationError]:
         """
         Create a Failure result with an error from the catalog.
 
@@ -334,11 +330,13 @@ class ErrorCatalog:
             Failure result with the error
         """
         error = cls.create(code, params, details, field, source)
-        return Failure(
-            error.message,
-            error_code=error.code,
-            details=error.details,
-            context={"field": error.field, "source": error.source},
+        return Result.failure(
+            error,
+            metadata={
+                "error_code": error.code,
+                "details": error.details,
+                "context": {"field": error.field, "source": error.source},
+            },
         )
 
 
@@ -355,12 +353,12 @@ class FrameworkError(Exception):
         self,
         message: str,
         code: str = "FRAMEWORK_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         category: ErrorCategory = ErrorCategory.SYSTEM,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
-        http_status_code: Optional[int] = None,
-        context: Optional[ErrorContext] = None,
-        original_exception: Optional[Exception] = None,
+        http_status_code: int | None = None,
+        context: ErrorContext | None = None,
+        original_exception: Exception | None = None,
     ):
         """
         Initialize a framework error.
@@ -395,9 +393,9 @@ class FrameworkError(Exception):
             trace_id=getattr(self.context, "trace_id", None),
         )
 
-    def to_result(self) -> Failure:
+    def to_result(self) -> Result[Any, ValidationError]:
         """Convert to a Failure result."""
-        return Failure(
+        return Result.failure(
             str(self),
             error_code=self.code,
             details=self.details,
@@ -424,7 +422,7 @@ class ValidationError(FrameworkError):
         self,
         message: str,
         code: str = "VALIDATION_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         field: str | None = None,
         **kwargs,
     ):
@@ -459,7 +457,7 @@ class DatabaseError(FrameworkError):
         self,
         message: str,
         code: str = "DATABASE_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -487,7 +485,7 @@ class AuthenticationError(FrameworkError):
         self,
         message: str,
         code: str = "AUTHENTICATION_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -515,7 +513,7 @@ class AuthorizationError(FrameworkError):
         self,
         message: str,
         code: str = "AUTHORIZATION_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -543,7 +541,7 @@ class NotFoundError(FrameworkError):
         self,
         message: str,
         code: str = "NOT_FOUND",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -571,7 +569,7 @@ class ConflictError(FrameworkError):
         self,
         message: str,
         code: str = "CONFLICT",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -599,7 +597,7 @@ class RateLimitError(FrameworkError):
         self,
         message: str,
         code: str = "RATE_LIMIT_EXCEEDED",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -627,7 +625,7 @@ class ServerError(FrameworkError):
         self,
         message: str,
         code: str = "SERVER_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         **kwargs,
     ):
         """
@@ -655,7 +653,7 @@ def register_error(
     message_template: str,
     category: ErrorCategory = ErrorCategory.UNKNOWN,
     severity: ErrorSeverity = ErrorSeverity.ERROR,
-    http_status_code: Optional[int] = None,
+    http_status_code: int | None = None,
     help_text: str | None = None,
     help_url: str | None = None,
 ) -> None:
@@ -684,8 +682,8 @@ def register_error(
 
 def create_error(
     code: str,
-    params: Optional[Dict[str, Any]] = None,
-    details: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
+    details: dict[str, Any] | None = None,
     field: str | None = None,
     source: str | None = None,
 ) -> ErrorDetail:
@@ -739,7 +737,7 @@ def log_error(
     logger: logging.Logger | None = None,
     level: int = logging.ERROR,
     include_traceback: bool = True,
-    context: Optional[ErrorContext] = None,
+    context: ErrorContext | None = None,
 ) -> ErrorLog:
     """
     Log an error with additional context.
@@ -805,7 +803,7 @@ def log_error(
     return log_entry
 
 
-def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> Dict[str, Any]:
+def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> dict[str, Any]:
     """
     Convert an error to a dictionary representation.
 
@@ -841,7 +839,9 @@ def error_to_dict(error: Union[Exception, ErrorDetail, Error]) -> Dict[str, Any]
 T = TypeVar("T")
 
 
-def error_to_result(error: Union[Exception, ErrorDetail]) -> Failure:
+def error_to_result(
+    error: Union[Exception, ErrorDetail],
+) -> Result[Any, ValidationError]:
     """
     Convert an error to a Failure result.
 
@@ -854,13 +854,13 @@ def error_to_result(error: Union[Exception, ErrorDetail]) -> Failure:
     if isinstance(error, FrameworkError):
         return error.to_result()
     elif isinstance(error, Exception):
-        return Failure(
+        return Result.failure(
             str(error),
             error_code="EXCEPTION",
             details={"exception_type": error.__class__.__name__},
         )
     else:
-        return Failure(
+        return Result.failure(
             error.message,
             error_code=error.code,
             details=error.details,

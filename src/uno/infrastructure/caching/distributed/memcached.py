@@ -156,7 +156,7 @@ class MemcachedCache(DistributedCache):
             logger.warning(f"Error getting value from Memcached: {e}")
             return None
 
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache.
 
         Args:
@@ -183,7 +183,7 @@ class MemcachedCache(DistributedCache):
             logger.warning(f"Error setting value in Memcached: {e}")
             return False
 
-    async def set_async(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set_async(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache asynchronously.
 
         Args:
@@ -348,7 +348,7 @@ class MemcachedCache(DistributedCache):
         except Exception:
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -389,7 +389,7 @@ class MemcachedCache(DistributedCache):
             logger.warning(f"Error getting Memcached statistics: {e}")
             return self._stats.copy()
 
-    async def get_stats_async(self) -> Dict[str, Any]:
+    async def get_stats_async(self) -> dict[str, Any]:
         """Get cache statistics asynchronously.
 
         Returns:
@@ -410,7 +410,7 @@ class MemcachedCache(DistributedCache):
         except Exception as e:
             logger.warning(f"Error closing Memcached connections: {e}")
 
-    def multi_get(self, keys: list[str]) -> Dict[str, Any]:
+    def multi_get(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from the cache.
 
         Args:
@@ -444,7 +444,7 @@ class MemcachedCache(DistributedCache):
             logger.warning(f"Error getting multiple values from Memcached: {e}")
             return {}
 
-    async def multi_get_async(self, keys: list[str]) -> Dict[str, Any]:
+    async def multi_get_async(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from the cache asynchronously.
 
         Args:
@@ -471,7 +471,7 @@ class MemcachedCache(DistributedCache):
 
         return result
 
-    def multi_set(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+    def multi_set(self, mapping: dict[str, Any], ttl: int | None = None) -> bool:
         """Set multiple values in the cache.
 
         Args:
@@ -508,7 +508,7 @@ class MemcachedCache(DistributedCache):
             return False
 
     async def multi_set_async(
-        self, mapping: Dict[str, Any], ttl: Optional[int] = None
+        self, mapping: dict[str, Any], ttl: int | None = None
     ) -> bool:
         """Set multiple values in the cache asynchronously.
 

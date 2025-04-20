@@ -34,7 +34,7 @@ from uno.domain.event_bus import EventBusProtocol
 class UserServiceProtocol(Protocol):
     """Protocol for user services."""
 
-    async def get_user(self, user_id: str) -> Dict[str, Any]:
+    async def get_user(self, user_id: str) -> dict[str, Any]:
         """Get a user by ID."""
         ...
 
@@ -42,13 +42,13 @@ class UserServiceProtocol(Protocol):
         """Get all users."""
         ...
 
-    async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_user(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """Create a new user."""
         ...
 
     async def update_user(
-        self, user_id: str, user_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, user_id: str, user_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Update a user."""
         ...
 
@@ -110,9 +110,9 @@ class UserRepository:
         self.db_provider = db_provider
         self.logger = logger or logging.getLogger("uno.user_repository")
         # In-memory storage for demonstration
-        self.users: Dict[str, Dict[str, Any]] = {}
+        self.users: dict[str, dict[str, Any]] = {}
 
-    async def get_user(self, user_id: str) -> Dict[str, Any]:
+    async def get_user(self, user_id: str) -> dict[str, Any]:
         """
         Get a user by ID.
 
@@ -135,7 +135,7 @@ class UserRepository:
         self.logger.debug(f"Getting all users ({len(self.users)} total)")
         return list(self.users.values())
 
-    async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_user(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """
         Create a new user.
 
@@ -151,8 +151,8 @@ class UserRepository:
         return user_data
 
     async def update_user(
-        self, user_id: str, user_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, user_id: str, user_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Update a user.
 
@@ -296,7 +296,7 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         self.logger.info(f"User {event.user_id} deleted")
         # Additional business logic here
 
-    async def get_user(self, user_id: str) -> Dict[str, Any]:
+    async def get_user(self, user_id: str) -> dict[str, Any]:
         """
         Get a user by ID.
 
@@ -327,7 +327,7 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
 
         return users
 
-    async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_user(self, user_data: dict[str, Any]) -> dict[str, Any]:
         """
         Create a new user.
 
@@ -355,8 +355,8 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
         return user
 
     async def update_user(
-        self, user_id: str, user_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, user_id: str, user_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Update a user.
 
@@ -412,7 +412,7 @@ class UserService(UserServiceProtocol, ServiceLifecycle):
 @inject_params()
 async def process_user(
     user_id: str, user_service: UserServiceProtocol
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Process a user.
 

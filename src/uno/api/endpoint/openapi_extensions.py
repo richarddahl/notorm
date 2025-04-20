@@ -56,7 +56,7 @@ class DocumentedBaseEndpoint(BaseEndpoint):
         super().__init__(router=router, tags=tags)
         self.summary = summary
         self.description = description
-        self.operation_docs: Dict[str, Dict[str, Any]] = {}
+        self.operation_docs: dict[str, dict[str, Any]] = {}
 
     def register(self, app: FastAPI, prefix: str = "") -> None:
         """
@@ -97,7 +97,7 @@ class DocumentedBaseEndpoint(BaseEndpoint):
         operation_id: str | None = None,
         tags: list[str] | None = None,
         deprecated: Optional[bool] = None,
-        responses: Optional[Dict[str, ResponseExample]] = None,
+        responses: Optional[dict[str, ResponseExample]] = None,
         security: Optional[list[dict[str, list[str]]]] = None,
     ) -> None:
         """
@@ -147,7 +147,7 @@ class DocumentedCrudEndpoint(CrudEndpoint, DocumentedBaseEndpoint):
         id_field: str = "id",
         summary: str | None = None,
         description: str | None = None,
-        operation_examples: Optional[Dict[str, Dict[str, Any]]] = None,
+        operation_examples: Optional[dict[str, dict[str, Any]]] = None,
     ):
         """
         Initialize a new documented CRUD endpoint instance.
@@ -241,7 +241,7 @@ class DocumentedCrudEndpoint(CrudEndpoint, DocumentedBaseEndpoint):
             responses=self._get_operation_examples("delete"),
         )
 
-    def _get_operation_examples(self, operation: str) -> Dict[str, ResponseExample]:
+    def _get_operation_examples(self, operation: str) -> dict[str, ResponseExample]:
         """
         Get examples for a specific operation.
 
@@ -433,7 +433,7 @@ class DocumentedQueryEndpoint(QueryEndpoint, DocumentedBaseEndpoint):
         method: str = "get",
         summary: str | None = None,
         description: str | None = None,
-        operation_examples: Optional[Dict[str, Dict[str, Any]]] = None,
+        operation_examples: Optional[dict[str, dict[str, Any]]] = None,
     ):
         """
         Initialize a new documented query endpoint instance.
@@ -485,7 +485,7 @@ class DocumentedQueryEndpoint(QueryEndpoint, DocumentedBaseEndpoint):
             responses=self._get_operation_examples(),
         )
 
-    def _get_operation_examples(self) -> Dict[str, ResponseExample]:
+    def _get_operation_examples(self) -> dict[str, ResponseExample]:
         """
         Get examples for the query operation.
 
@@ -576,7 +576,7 @@ class DocumentedCommandEndpoint(CommandEndpoint, DocumentedBaseEndpoint):
         method: str = "post",
         summary: str | None = None,
         description: str | None = None,
-        operation_examples: Optional[Dict[str, Dict[str, Any]]] = None,
+        operation_examples: Optional[dict[str, dict[str, Any]]] = None,
     ):
         """
         Initialize a new documented command endpoint instance.
@@ -628,7 +628,7 @@ class DocumentedCommandEndpoint(CommandEndpoint, DocumentedBaseEndpoint):
             responses=self._get_operation_examples(),
         )
 
-    def _get_operation_examples(self) -> Dict[str, ResponseExample]:
+    def _get_operation_examples(self) -> dict[str, ResponseExample]:
         """
         Get examples for the command operation.
 
@@ -767,7 +767,7 @@ class DocumentedCqrsEndpoint(CqrsEndpoint, DocumentedBaseEndpoint):
                 responses=self._get_operation_examples(f"command_{operation_name}"),
             )
 
-    def _get_operation_examples(self, operation_key: str) -> Dict[str, ResponseExample]:
+    def _get_operation_examples(self, operation_key: str) -> dict[str, ResponseExample]:
         """
         Get examples for a specific operation.
 

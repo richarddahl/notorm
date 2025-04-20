@@ -315,7 +315,7 @@ class QueryService(UnoEntityService[Query]):
             return Failure(str(e))
 
     async def update_with_values(
-        self, query_id: str, query_data: Dict[str, Any], values: list[dict[str, Any]]
+        self, query_id: str, query_data: dict[str, Any], values: list[dict[str, Any]]
     ) -> Result[Query]:
         """Update a query with its values.
 
@@ -406,7 +406,7 @@ class QueryService(UnoEntityService[Query]):
     async def execute_query(
         self,
         query_id: str,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         force_refresh: bool = False,
     ) -> Result[list[str]]:
         """Execute a query and return matching record IDs.
@@ -616,7 +616,7 @@ class QueryService(UnoEntityService[Query]):
             return Failure(str(e))
 
     async def execute_query_with_filters(
-        self, entity_type: str, filters: Dict[str, Any]
+        self, entity_type: str, filters: dict[str, Any]
     ) -> Result[Tuple[list[dict[str, Any]], int]]:
         """Execute a query with filters.
 

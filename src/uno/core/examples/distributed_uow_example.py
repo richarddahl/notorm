@@ -47,7 +47,7 @@ class UserDatabase:
 
     def __init__(self):
         """Initialize the user database."""
-        self.users: Dict[str, Dict[str, Any]] = {}
+        self.users: dict[str, dict[str, Any]] = {}
         self.in_transaction = False
         self.logger = get_logger("users.db")
 
@@ -90,7 +90,7 @@ class OrderDatabase:
 
     def __init__(self):
         """Initialize the order database."""
-        self.orders: Dict[str, Dict[str, Any]] = {}
+        self.orders: dict[str, dict[str, Any]] = {}
         self.in_transaction = False
         self.logger = get_logger("orders.db")
 
@@ -143,7 +143,7 @@ class UserDatabaseParticipant(TransactionParticipant):
         """Initialize the user database participant."""
         self.db = db
         self.logger = get_logger("users.participant")
-        self._prepared_tx: Dict[str, bool] = {}
+        self._prepared_tx: dict[str, bool] = {}
 
     async def prepare(self, transaction_id: str) -> Result[bool, Error]:
         """Prepare the user database for a transaction."""
@@ -221,7 +221,7 @@ class OrderDatabaseParticipant(TransactionParticipant):
         """Initialize the order database participant."""
         self.db = db
         self.logger = get_logger("orders.participant")
-        self._prepared_tx: Dict[str, bool] = {}
+        self._prepared_tx: dict[str, bool] = {}
 
     async def prepare(self, transaction_id: str) -> Result[bool, Error]:
         """Prepare the order database for a transaction."""
@@ -331,7 +331,7 @@ class UserOrderService:
         username: str,
         total_amount: float,
         items: list[dict[str, Any]],
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Create a user and an initial order in a single distributed transaction.
 

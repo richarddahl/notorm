@@ -19,17 +19,17 @@ from uno.devtools.codegen.formatter import format_code
 def generate_crud(
     name: str,
     module_path: str,
-    fields: Dict[str, str],
+    fields: dict[str, str],
     table_name: str | None = None,
     output_dir: str | None = None,
     with_api: bool = True,
     api_prefix: str | None = None,
     api_tags: list[str] | None = None,
-    imports: Optional[Dict[str, list[str]]] = None,
-    relationships: Optional[Dict[str, Dict[str, Any]]] = None,
-    validators: Optional[Dict[str, list[str]]] = None,
-    methods: Optional[Dict[str, list[dict[str, Any]]]] = None,
-) -> Dict[str, Tuple[str, str]]:
+    imports: Optional[dict[str, list[str]]] = None,
+    relationships: Optional[dict[str, dict[str, Any]]] = None,
+    validators: Optional[dict[str, list[str]]] = None,
+    methods: Optional[dict[str, list[dict[str, Any]]]] = None,
+) -> dict[str, Tuple[str, str]]:
     """
     Generate complete CRUD functionality for a model.
 

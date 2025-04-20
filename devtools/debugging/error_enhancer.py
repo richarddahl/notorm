@@ -24,7 +24,7 @@ class ErrorContext:
 
     def __init__(self):
         """Initialize the error context."""
-        self.context: Dict[str, Any] = {}
+        self.context: dict[str, Any] = {}
 
     def add(self, key: str, value: Any) -> None:
         """Add context information.
@@ -46,7 +46,7 @@ class ErrorContext:
         """
         return self.context.get(key)
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> dict[str, Any]:
         """Get all context information.
 
         Returns:
@@ -80,9 +80,9 @@ class EnhancedBaseError(BaseError):
         message: str,
         error_code: str | None = None,
         status_code: int = 500,
-        detail: Optional[Dict[str, Any]] = None,
-        context: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None,
+        detail: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
+        cause: Exception | None = None,
     ):
         """Initialize the enhanced error.
 
@@ -133,9 +133,9 @@ class ErrorEnhancer:
 
     def __init__(self):
         """Initialize the error enhancer."""
-        self.error_hooks: list[Callable[[Exception], Optional[Exception]]] = []
+        self.error_hooks: list[Callable[[Exception], Exception | None]] = []
 
-    def register_hook(self, hook: Callable[[Exception], Optional[Exception]]) -> None:
+    def register_hook(self, hook: Callable[[Exception], Exception | None]) -> None:
         """Register an error hook.
 
         Args:
@@ -266,7 +266,7 @@ def capture_error_context(**kwargs) -> Any:
     return _error_enhancer.capture_context(**kwargs)
 
 
-def _uno_error_hook(error: Exception) -> Optional[Exception]:
+def _uno_error_hook(error: Exception) -> Exception | None:
     """Hook to enhance BaseError instances.
 
     Args:
@@ -287,7 +287,7 @@ def _uno_error_hook(error: Exception) -> Optional[Exception]:
     return None
 
 
-def _sql_error_hook(error: Exception) -> Optional[Exception]:
+def _sql_error_hook(error: Exception) -> Exception | None:
     """Hook to enhance database errors.
 
     Args:
@@ -363,7 +363,7 @@ def _sql_error_hook(error: Exception) -> Optional[Exception]:
     return None
 
 
-def _general_exception_hook(error: Exception) -> Optional[Exception]:
+def _general_exception_hook(error: Exception) -> Exception | None:
     """Hook to enhance general exceptions.
 
     Args:

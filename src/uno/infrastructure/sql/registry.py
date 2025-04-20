@@ -31,7 +31,7 @@ class SQLConfigRegistry:
         _registry: Dictionary of registered SQLConfig classes by name
     """
 
-    _registry: Dict[str, Type["SQLConfig"]] = {}
+    _registry: dict[str, Type["SQLConfig"]] = {}
 
     @classmethod
     def register(cls, config_class: Type["SQLConfig"]) -> None:
@@ -68,7 +68,7 @@ class SQLConfigRegistry:
         return cls._registry.get(name)
 
     @classmethod
-    def all(cls) -> Dict[str, Type["SQLConfig"]]:
+    def all(cls) -> dict[str, Type["SQLConfig"]]:
         """Get all registered SQLConfig classes.
 
         Returns:

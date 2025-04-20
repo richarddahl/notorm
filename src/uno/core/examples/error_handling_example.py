@@ -15,7 +15,12 @@ from uno.core.base.error import (
     with_error_context,
     with_async_error_context,
 )
-from uno.core.errors.result import Result, ValidationResult, ValidationError, ErrorSeverity
+from uno.core.errors.result import (
+    Result,
+    ValidationResult,
+    ValidationError,
+    ErrorSeverity,
+)
 from uno.core.validation import validate_schema, required, email, min_length
 from uno.core.validation.schema import SchemaValidator
 from uno.core.errors.security import AuthorizationError
@@ -32,12 +37,17 @@ class UserService:
     # Define a Pydantic schema for user data
     class UserSchema(BaseModel):
         """Schema for user data validation."""
+
         username: str = Field(..., min_length=2)
-        email: str = Field(..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        email: str = Field(
+            ..., pattern=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        )
         password: str = Field(..., min_length=8)
-    
+
     @with_error_context
-    def validate_user_data(self, user_data: Dict[str, Any]) -> ValidationResult[Dict[str, Any]]:
+    def validate_user_data(
+        self, user_data: dict[str, Any]
+    ) -> ValidationResult[dict[str, Any]]:
         """
         Validate user data using the new validation framework.
 
@@ -51,19 +61,19 @@ class UserService:
         """
         # Create validator function for the schema
         validate = validate_schema(self.UserSchema)
-        
+
         # Validate the data against the schema
         schema_result = validate(user_data)
-        
+
         # If validation succeeds, return the original data for further processing
         if schema_result.is_success:
             return Result.success(user_data)
-        
+
         # If validation fails, return the validation errors
         return schema_result.map(lambda _: user_data)
 
     @with_error_context
-    def create_user(self, user_data: Dict[str, Any]) -> Result[Dict[str, Any]]:
+    def create_user(self, user_data: dict[str, Any]) -> Result[dict[str, Any]]:
         """
         Create a user using the Result pattern for error handling.
 
@@ -100,8 +110,8 @@ class UserService:
 
     @with_async_error_context
     async def authenticate_user(
-        self, credentials: Dict[str, Any]
-    ) -> Result[Dict[str, Any]]:
+        self, credentials: dict[str, Any]
+    ) -> Result[dict[str, Any]]:
         """
         Authenticate a user with async error handling.
 
@@ -128,7 +138,7 @@ class UserService:
                 ValidationError(
                     message="Username and password are required",
                     code="CREDENTIALS_REQUIRED",
-                    severity=ErrorSeverity.ERROR
+                    severity=ErrorSeverity.ERROR,
                 )
             )
 
@@ -198,28 +208,28 @@ async def main():
     )
     if result5.is_success:
         print(f"Authenticated user: {result5.value}")
-        
+
     # Example 6: Demonstrate metadata in Result
     print("\nExample 6: Using result metadata")
     result6 = Result.success("Success value")
     result6.add_metadata("execution_time", 0.5)
     result6.add_metadata("source", "example")
-    
+
     print(f"Result metadata: {result6.metadata}")
-    
+
     # Example 7: Demonstrate tap method
     print("\nExample 7: Using tap method")
     result7 = Result.success("Success value")
     result7.tap(lambda value: print(f"Processing: {value}"))
-    
+
     # Example 8: Demonstrate value_or and value_or_raise
     print("\nExample 8: Using value_or and value_or_raise")
     success_result = Result.success(42)
     failure_result = Result.failure(ValidationError(message="Failed"))
-    
+
     print(f"Success value_or: {success_result.value_or(0)}")
     print(f"Failure value_or: {failure_result.value_or(0)}")
-    
+
     try:
         failure_result.value_or_raise()
     except Exception as e:

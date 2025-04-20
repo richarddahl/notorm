@@ -131,7 +131,7 @@ class UserRepository(Repository):
 
     def __init__(self):
         """Initialize the repository with an in-memory store."""
-        self.users: Dict[str, UserEntity] = {}
+        self.users: dict[str, UserEntity] = {}
 
     async def get_by_id(self, id: str) -> Optional[UserEntity]:
         """Get a user by ID."""
@@ -139,8 +139,8 @@ class UserRepository(Repository):
 
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        options: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
+        options: dict[str, Any] | None = None,
     ) -> list[UserEntity]:
         """List users with optional filtering and pagination."""
         # Extract pagination options

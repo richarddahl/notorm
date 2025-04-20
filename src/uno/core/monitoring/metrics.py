@@ -71,7 +71,7 @@ class MetricValue:
     value: Union[int, float, list[float]]
     type: MetricType
     unit: MetricUnit = MetricUnit.NONE
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
     description: str | None = None
     timestamp: float = field(default_factory=time.time)
 
@@ -97,7 +97,7 @@ class Metric(ABC, Generic[T]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a metric.
@@ -133,7 +133,7 @@ class Counter(Metric[int]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.COUNT,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a counter.
@@ -190,7 +190,7 @@ class Gauge(Metric[float]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a gauge.
@@ -297,7 +297,7 @@ class Histogram(Metric[list[float]]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
         max_size: int = 1000,
     ):
         """
@@ -340,7 +340,7 @@ class Histogram(Metric[list[float]]):
             description=self.description,
         )
 
-    async def get_statistics(self) -> Dict[str, float]:
+    async def get_statistics(self) -> dict[str, float]:
         """
         Get statistical measures from the histogram.
 
@@ -385,7 +385,7 @@ class Timer(Metric[float]):
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.MILLISECONDS,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ):
         """
         Initialize a timer.
@@ -447,7 +447,7 @@ class Timer(Metric[float]):
             description=self.description,
         )
 
-    async def get_statistics(self) -> Dict[str, float]:
+    async def get_statistics(self) -> dict[str, float]:
         """
         Get statistical measures from the timer.
 
@@ -490,7 +490,7 @@ class TimerContext:
 def timed(
     timer_name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional["MetricsRegistry"] = None,
 ) -> Callable[[Callable], Callable]:
     """
@@ -606,7 +606,7 @@ class PrometheusExporter(MetricsExporter):
         output = []
 
         # Group metrics by name and type
-        grouped: Dict[str, Dict[str, list[MetricValue]]] = {}
+        grouped: dict[str, dict[str, list[MetricValue]]] = {}
 
         for metric in metrics:
             name = metric.name
@@ -708,7 +708,7 @@ class LoggingExporter(MetricsExporter):
             metrics: List of metrics to export
         """
         # Group metrics by name
-        grouped: Dict[str, Dict[str, Any]] = {}
+        grouped: dict[str, dict[str, Any]] = {}
 
         for metric in metrics:
             name = metric.name
@@ -755,10 +755,10 @@ class MetricsRegistry:
             logger: Logger to use
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._counters: Dict[str, Counter] = {}
-        self._gauges: Dict[str, Gauge] = {}
-        self._histograms: Dict[str, Histogram] = {}
-        self._timers: Dict[str, Timer] = {}
+        self._counters: dict[str, Counter] = {}
+        self._gauges: dict[str, Gauge] = {}
+        self._histograms: dict[str, Histogram] = {}
+        self._timers: dict[str, Timer] = {}
         self._exporters: list[MetricsExporter] = []
         self._lock = asyncio.Lock()
         self._export_task: Optional[asyncio.Task] = None
@@ -865,7 +865,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.COUNT,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Counter:
         """
         Get or create a counter.
@@ -894,7 +894,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Gauge:
         """
         Get or create a gauge.
@@ -923,7 +923,7 @@ class MetricsRegistry:
         name: str,
         description: str | None = None,
         unit: MetricUnit = MetricUnit.NONE,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Histogram:
         """
         Get or create a histogram.
@@ -951,7 +951,7 @@ class MetricsRegistry:
         self,
         name: str,
         description: str | None = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> Timer:
         """
         Get or create a timer.
@@ -1041,7 +1041,7 @@ def get_metrics_registry() -> MetricsRegistry:
 async def counter(
     name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Counter:
     """
@@ -1068,7 +1068,7 @@ async def gauge(
     name: str,
     description: str | None = None,
     unit: MetricUnit = MetricUnit.NONE,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Gauge:
     """
@@ -1096,7 +1096,7 @@ async def histogram(
     name: str,
     description: str | None = None,
     unit: MetricUnit = MetricUnit.NONE,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Histogram:
     """
@@ -1123,7 +1123,7 @@ async def histogram(
 async def timer(
     name: str,
     description: str | None = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[dict[str, str]] = None,
     registry: Optional[MetricsRegistry] = None,
 ) -> Timer:
     """

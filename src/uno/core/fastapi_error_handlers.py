@@ -19,7 +19,11 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 
 from uno.core.base.error import BaseError, ErrorCode, ErrorCategory, ErrorSeverity
-from uno.core.errors.result import ValidationError as ResultValidationError, ValidationResult, ErrorSeverity as ValidationSeverity
+from uno.core.errors.result import (
+    ValidationError as ResultValidationError,
+    ValidationResult,
+    ErrorSeverity as ValidationSeverity,
+)
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -180,8 +184,12 @@ def setup_error_handlers(app: FastAPI, include_tracebacks: bool = False) -> None
                 "details": {
                     "path": exc.path,
                     "code": exc.code,
-                    "severity": exc.severity.name if exc.severity else ValidationSeverity.ERROR.name,
-                    "context": exc.context
+                    "severity": (
+                        exc.severity.name
+                        if exc.severity
+                        else ValidationSeverity.ERROR.name
+                    ),
+                    "context": exc.context,
                 },
                 "category": ErrorCategory.VALIDATION.name,
                 "severity": ErrorSeverity.ERROR.name,
@@ -237,7 +245,7 @@ def setup_error_handlers(app: FastAPI, include_tracebacks: bool = False) -> None
 
 def _build_error_response(
     exc: BaseError, include_traceback: bool = False
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Build a standardized error response from an BaseError.
 

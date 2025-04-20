@@ -7,18 +7,21 @@ providing common functionality for all concrete implementations.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TypeVar, cast
+from typing import TypeVar, cast, TYPE_CHECKING
 
 from uno.core.errors.result import Result
-from uno.core.events import AsyncEventBus, Event
-from uno.core.protocols import Repository, UnitOfWork
+from uno.core.events import Event
+from uno.domain.event_bus import EventBusProtocol
+from uno.core.protocols.repository import RepositoryProtocol
+if TYPE_CHECKING:
+    from uno.core.protocols import UnitOfWork
 
 # Type variables
 T = TypeVar("T")
-RepoT = TypeVar("RepoT", bound=Repository)
+RepoT = TypeVar("RepoT", bound=RepositoryProtocol)
 
 
-class AbstractUnitOfWork(UnitOfWork, ABC):
+class AbstractUnitOfWork(ABC):
     """
     Abstract base class for Unit of Work implementations.
 
@@ -28,7 +31,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
 
     def __init__(
         self,
-        event_bus: AsyncEventBus | None = None,
+        event_bus: EventBusProtocol | None = None,
         logger: logging.Logger | None = None,
     ):
         """
@@ -40,7 +43,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
         """
         self._event_bus = event_bus
         self._logger = logger or logging.getLogger(__name__)
-        self._repositories: dict[type[Repository], Repository] = {}
+        self._repositories: dict[type[RepositoryProtocol], RepositoryProtocol] = {}
         self._events: list[Event] = []
 
     def register_repository(self, repo_type: type[RepoT], repo: RepoT) -> None:
@@ -64,8 +67,8 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
             Result containing the repository implementation or an error
         """
         if repo_type not in self._repositories:
-            return Failure(f"Repository not found: {repo_type.__name__}")
-        return Success(cast(RepoT, self._repositories[repo_type]))
+            return Result.failure(f"Repository not found: {repo_type.__name__}")
+        return Result.success(cast(RepoT, self._repositories[repo_type]))
 
     def add_event(self, event: Event) -> None:
         """
@@ -115,7 +118,7 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
                 "No event bus configured, events will not be published"
             )
             self._events.clear()
-            return Success(None)
+            return Result.success(None)
 
         try:
             # Get all events to publish
@@ -128,10 +131,10 @@ class AbstractUnitOfWork(UnitOfWork, ABC):
 
             # Clear the events after publishing
             self._events.clear()
-            return Success(None)
+            return Result.success(None)
         except Exception as e:
             self._logger.error(f"Error publishing events: {e}")
-            return Failure(f"Failed to publish events: {str(e)}")
+            return Result.failure(f"Failed to publish events: {str(e)}")
 
     @abstractmethod
     async def begin(self) -> Result[None, str]:

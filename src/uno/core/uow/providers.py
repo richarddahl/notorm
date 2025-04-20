@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Concrete Unit of Work implementations.
 
@@ -26,7 +27,9 @@ from typing import (
 )
 
 from uno.core.uow.base import AbstractUnitOfWork
-from uno.core.events import AsyncEventBus, Event
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from uno.core.events import AsyncEventBus, Event
 
 
 # Type aliases
@@ -46,7 +49,7 @@ class DatabaseUnitOfWork(AbstractUnitOfWork):
     def __init__(
         self,
         connection_factory: ConnectionFactory,
-        event_bus: Optional[AsyncEventBus] = None,
+        event_bus: Optional["AsyncEventBus"] = None,
         logger: logging.Logger | None = None,
     ):
         """
@@ -119,7 +122,7 @@ class InMemoryUnitOfWork(AbstractUnitOfWork):
 
     def __init__(
         self,
-        event_bus: Optional[AsyncEventBus] = None,
+        event_bus: Optional["AsyncEventBus"] = None,
         logger: logging.Logger | None = None,
     ):
         """
@@ -173,7 +176,7 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     def __init__(
         self,
         session_factory: Callable[[], Any],
-        event_bus: Optional[AsyncEventBus] = None,
+        event_bus: Optional["AsyncEventBus"] = None,
         logger: logging.Logger | None = None,
     ):
         """

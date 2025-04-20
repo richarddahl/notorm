@@ -71,7 +71,7 @@ class UserRepository(BaseRepository[UserModel]):
         return result.scalars().first()
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[UserModel]:
         """
         Find all users in a specific tenant.
@@ -96,7 +96,7 @@ class UserRepository(BaseRepository[UserModel]):
         return list(result.scalars().all())
 
     async def find_by_group(
-        self, group_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, group_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[UserModel]:
         """
         Find all users in a specific group.
@@ -128,7 +128,7 @@ class UserRepository(BaseRepository[UserModel]):
         return list(result.scalars().all())
 
     async def find_by_role(
-        self, role_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, role_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[UserModel]:
         """
         Find all users with a specific role.
@@ -153,7 +153,7 @@ class UserRepository(BaseRepository[UserModel]):
         return list(result.scalars().all())
 
     async def find_superusers(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
+        self, limit: int | None = None, offset: int | None = None
     ) -> list[UserModel]:
         """
         Find all superusers.
@@ -206,7 +206,7 @@ class GroupRepository(BaseRepository[GroupModel]):
         return result.scalars().first()
 
     async def find_by_tenant(
-        self, tenant_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, tenant_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[GroupModel]:
         """
         Find all groups in a specific tenant.
@@ -231,7 +231,7 @@ class GroupRepository(BaseRepository[GroupModel]):
         return list(result.scalars().all())
 
     async def find_by_user(
-        self, user_id: str, limit: Optional[int] = None, offset: Optional[int] = None
+        self, user_id: str, limit: int | None = None, offset: int | None = None
     ) -> list[GroupModel]:
         """
         Find all groups for a specific user.

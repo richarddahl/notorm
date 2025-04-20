@@ -64,7 +64,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
         self.save_directory = save_directory
 
         # Profiles
-        self.profiles: Dict[str, Dict[str, Any]] = {}
+        self.profiles: dict[str, dict[str, Any]] = {}
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -212,7 +212,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
             # Re-raise the exception
             raise
 
-    def _save_profile(self, profile_id: str, profile_data: Dict[str, Any]) -> None:
+    def _save_profile(self, profile_id: str, profile_data: dict[str, Any]) -> None:
         """Save a profile.
 
         Args:
@@ -249,7 +249,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
             except Exception as e:
                 logger.error(f"Error saving profile to disk: {str(e)}")
 
-    def get_profile(self, profile_id: str) -> Optional[Dict[str, Any]]:
+    def get_profile(self, profile_id: str) -> dict[str, Any] | None:
         """Get a profile by ID.
 
         Args:
@@ -265,7 +265,7 @@ class ProfilerMiddleware(BaseHTTPMiddleware):
         min_duration_ms: Optional[float] = None,
         path_prefix: str | None = None,
         method: str | None = None,
-        status_code: Optional[int] = None,
+        status_code: int | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """Get profiles matching the specified filters.
@@ -371,7 +371,7 @@ def profile_fastapi(
         min_duration: Optional[float] = None,
         path: str | None = None,
         method: str | None = None,
-        status: Optional[int] = None,
+        status: int | None = None,
         limit: int = 100,
     ):
         profiles = middleware.get_profiles(

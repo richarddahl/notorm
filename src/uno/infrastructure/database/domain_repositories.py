@@ -100,7 +100,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
         ...
 
     async def execute_query(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[Result, ErrorDetails]:
         """
         Execute a database query.
@@ -115,7 +115,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
         ...
 
     async def fetch_all(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[list[dict[str, Any]], ErrorDetails]:
         """
         Fetch all rows as dictionaries.
@@ -130,8 +130,8 @@ class DatabaseSessionRepositoryProtocol(Protocol):
         ...
 
     async def fetch_one(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
-    ) -> UnoResult[Optional[Dict[str, Any]], ErrorDetails]:
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
+    ) -> UnoResult[dict[str, Any] | None, ErrorDetails]:
         """
         Fetch a single row as a dictionary.
 
@@ -145,7 +145,7 @@ class DatabaseSessionRepositoryProtocol(Protocol):
         ...
 
     async def execute(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[int, ErrorDetails]:
         """
         Execute a query and return the number of affected rows.
@@ -246,10 +246,10 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
 
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> UnoResult[list[EntityT], ErrorDetails]:
         """
         List entities with optional filtering.
@@ -302,7 +302,7 @@ class ModelRepositoryProtocol(Generic[ModelT, EntityT], Protocol):
         ...
 
     async def count(
-        self, filters: Optional[Dict[str, Any]] = None
+        self, filters: dict[str, Any] | None = None
     ) -> UnoResult[int, ErrorDetails]:
         """
         Count entities with optional filtering.
@@ -634,7 +634,7 @@ class SqlAlchemyDatabaseSessionRepository:
             session.close()
 
     async def execute_query(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[Result, ErrorDetails]:
         """
         Execute a database query.
@@ -664,7 +664,7 @@ class SqlAlchemyDatabaseSessionRepository:
             )
 
     async def fetch_all(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[list[dict[str, Any]], ErrorDetails]:
         """
         Fetch all rows as dictionaries.
@@ -693,8 +693,8 @@ class SqlAlchemyDatabaseSessionRepository:
             )
 
     async def fetch_one(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
-    ) -> UnoResult[Optional[Dict[str, Any]], ErrorDetails]:
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
+    ) -> UnoResult[dict[str, Any] | None, ErrorDetails]:
         """
         Fetch a single row as a dictionary.
 
@@ -722,7 +722,7 @@ class SqlAlchemyDatabaseSessionRepository:
             )
 
     async def execute(
-        self, query: Union[str, Select], parameters: Optional[Dict[str, Any]] = None
+        self, query: Union[str, Select], parameters: dict[str, Any] | None = None
     ) -> UnoResult[int, ErrorDetails]:
         """
         Execute a query and return the number of affected rows.
@@ -773,7 +773,7 @@ class SqlAlchemyDatabaseTransactionRepository:
         self.logger = logger or logging.getLogger(__name__)
 
         # Track active transactions
-        self._active_transactions: Dict[str, Tuple[Transaction, AsyncSession]] = {}
+        self._active_transactions: dict[str, Tuple[Transaction, AsyncSession]] = {}
 
     async def begin_transaction(
         self,
@@ -1002,7 +1002,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
         self.id_field = id_field
         self.logger = logger or logging.getLogger(__name__)
 
-    def _entity_to_dict(self, entity: EntityT) -> Dict[str, Any]:
+    def _entity_to_dict(self, entity: EntityT) -> dict[str, Any]:
         """
         Convert an entity to a dictionary for database operations.
 
@@ -1079,10 +1079,10 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
 
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> UnoResult[list[EntityT], ErrorDetails]:
         """
         List entities with optional filtering.
@@ -1275,7 +1275,7 @@ class SqlAlchemyModelRepository(Generic[ModelT, EntityT]):
             )
 
     async def count(
-        self, filters: Optional[Dict[str, Any]] = None
+        self, filters: dict[str, Any] | None = None
     ) -> UnoResult[int, ErrorDetails]:
         """
         Count entities with optional filtering.
@@ -1323,7 +1323,7 @@ class InMemoryQueryStatisticsRepository:
         Args:
             max_entries: Maximum number of entries to store
         """
-        self._statistics: Dict[str, QueryStatistics] = {}
+        self._statistics: dict[str, QueryStatistics] = {}
         self.max_entries = max_entries
 
     async def save_statistics(
@@ -1429,7 +1429,7 @@ class InMemoryQueryPlanRepository:
         Args:
             max_entries: Maximum number of entries to store
         """
-        self._plans: Dict[str, QueryPlan] = {}
+        self._plans: dict[str, QueryPlan] = {}
         self.max_entries = max_entries
 
     async def save_plan(self, plan: QueryPlan) -> UnoResult[QueryPlan, ErrorDetails]:
@@ -1551,7 +1551,7 @@ class InMemoryQueryCacheRepository:
         Args:
             max_size: Maximum cache size
         """
-        self._cache: Dict[str, CachedResult] = {}
+        self._cache: dict[str, CachedResult] = {}
         self.max_size = max_size
 
     async def get_cached_result(

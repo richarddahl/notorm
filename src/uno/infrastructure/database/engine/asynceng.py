@@ -79,7 +79,7 @@ async def async_connection(
     db_host: str | None = None,
     db_user_pw: str | None = None,
     db_driver: str | None = None,
-    db_port: Optional[int] = None,
+    db_port: int | None = None,
     config: Optional[ConnectionConfig] = None,
     isolation_level: str = "AUTOCOMMIT",
     factory: Optional[AsyncEngineFactory] = None,

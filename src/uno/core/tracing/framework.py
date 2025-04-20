@@ -61,9 +61,9 @@ class PropagationContext:
     span_id: str
     parent_span_id: str | None = None
     sampled: bool = True
-    baggage: Dict[str, str] = field(default_factory=dict)
+    baggage: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "trace_id": self.trace_id,
@@ -74,7 +74,7 @@ class PropagationContext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "PropagationContext":
+    def from_dict(cls, data: dict[str, Any]) -> "PropagationContext":
         """Create from dictionary representation."""
         return cls(
             trace_id=data["trace_id"],
@@ -100,7 +100,7 @@ class Span:
     parent_span_id: str | None = None
     start_time: float = field(default_factory=time.time)
     end_time: Optional[float] = None
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    attributes: dict[str, Any] = field(default_factory=dict)
     events: list[dict[str, Any]] = field(default_factory=list)
     kind: SpanKind = SpanKind.INTERNAL
     status_code: str = "ok"
@@ -116,7 +116,7 @@ class Span:
     def add_event(
         self,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
         timestamp: Optional[float] = None,
     ) -> None:
         """
@@ -155,7 +155,7 @@ class Span:
         """
         self.end_time = end_time or time.time()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the span to a dictionary.
 
@@ -193,7 +193,7 @@ class TracingContext:
         self,
         tracer: "Tracer",
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
         kind: SpanKind = SpanKind.INTERNAL,
     ):
         """
@@ -263,7 +263,7 @@ def get_current_span() -> Optional[Span]:
     return _current_span.get()
 
 
-def get_current_trace_id() -> Optional[str]:
+def get_current_trace_id() -> str | None:
     """
     Get the current trace ID from the context.
 
@@ -274,7 +274,7 @@ def get_current_trace_id() -> Optional[str]:
     return span.trace_id if span else None
 
 
-def get_current_span_id() -> Optional[str]:
+def get_current_span_id() -> str | None:
     """
     Get the current span ID from the context.
 
@@ -523,7 +523,7 @@ class TracingConfig:
     max_batch_size: int = 100
     console_export: bool = True
     include_all_attributes: bool = True
-    default_attributes: Dict[str, str] = field(default_factory=dict)
+    default_attributes: dict[str, str] = field(default_factory=dict)
     sampling_rate: float = 1.0
 
     @classmethod
@@ -583,13 +583,11 @@ class Tracer:
         self.config = config or TracingConfig()
         self.logger = logger or get_logger("uno.tracing")
         self._processors: list[SpanProcessor] = []
-        self._sampler_func: Callable[[str, Optional[str], str], bool] = (
+        self._sampler_func: Callable[[str, str | None, str], bool] = (
             self._default_sampler
         )
 
-    def _default_sampler(
-        self, trace_id: str, parent_id: Optional[str], name: str
-    ) -> bool:
+    def _default_sampler(self, trace_id: str, parent_id: str | None, name: str) -> bool:
         """
         Default sampling function.
 
@@ -617,7 +615,7 @@ class Tracer:
     async def start_span(
         self,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
         kind: SpanKind = SpanKind.INTERNAL,
         links: Optional[list[dict[str, Any]]] = None,
     ) -> Span:
@@ -733,7 +731,7 @@ class Tracer:
     def create_span(
         self,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
         kind: SpanKind = SpanKind.INTERNAL,
     ) -> TracingContext:
         """
@@ -761,7 +759,7 @@ class Tracer:
 
         self._processors.append(processor)
 
-    def set_sampler(self, sampler: Callable[[str, Optional[str], str], bool]) -> None:
+    def set_sampler(self, sampler: Callable[[str, str | None, str], bool]) -> None:
         """
         Set the sampling function.
 
@@ -842,7 +840,7 @@ def configure_tracing(config: Optional[TracingConfig] = None) -> Tracer:
 
 def trace(
     name: str | None = None,
-    attributes: Optional[Dict[str, Any]] = None,
+    attributes: dict[str, Any] | None = None,
     kind: SpanKind = SpanKind.INTERNAL,
 ) -> Callable[[F], F]:
     """
@@ -940,7 +938,7 @@ def trace(
     return decorator
 
 
-def inject_context(headers: Dict[str, str]) -> None:
+def inject_context(headers: dict[str, str]) -> None:
     """
     Inject tracing context into headers.
 
@@ -967,7 +965,7 @@ def inject_context(headers: Dict[str, str]) -> None:
     headers["X-Trace-ID"] = span.trace_id
 
 
-def extract_context(headers: Dict[str, str]) -> Optional[PropagationContext]:
+def extract_context(headers: dict[str, str]) -> Optional[PropagationContext]:
     """
     Extract tracing context from headers.
 

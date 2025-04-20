@@ -40,10 +40,8 @@ class ErrorDetail(BaseModel):
 
     code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
-    field: Optional[str] = Field(None, description="Field associated with the error")
-    details: Optional[Dict[str, Any]] = Field(
-        None, description="Additional error details"
-    )
+    field: str | None = Field(None, description="Field associated with the error")
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -57,14 +55,14 @@ class DataResponse(BaseModel, Generic[T]):
     """Standard response format for data."""
 
     data: T = Field(..., description="Response data")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 class ErrorResponse(BaseModel):
     """Standard response format for errors."""
 
     error: ErrorDetail = Field(..., description="Error details")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")
 
 
 def response_handler(

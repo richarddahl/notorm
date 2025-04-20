@@ -299,7 +299,7 @@ class JobMetrics:
             labels={"queue": queue, "task": task, "priority": priority},
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get all metrics.
 
         Returns:

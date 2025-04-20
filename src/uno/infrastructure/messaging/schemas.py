@@ -51,7 +51,7 @@ class MessageSchemaManager:
 
     def create_dto_to_params(
         self, dto: MessageCreateDto, sender_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert a create DTO to parameters for the domain service."""
         return {
             "subject": dto.subject,
@@ -67,7 +67,7 @@ class MessageSchemaManager:
             "group_id": dto.group_id,
         }
 
-    def update_dto_to_params(self, dto: MessageUpdateDto) -> Dict[str, Any]:
+    def update_dto_to_params(self, dto: MessageUpdateDto) -> dict[str, Any]:
         """Convert an update DTO to parameters for the domain service."""
         params = {}
 

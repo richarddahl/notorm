@@ -95,9 +95,9 @@ class GeneratedCode(BaseModel):
     Generated code for entities, repositories, and services.
     """
 
-    entities: Dict[str, str]
-    repositories: Dict[str, str]
-    services: Dict[str, str]
+    entities: dict[str, str]
+    repositories: dict[str, str]
+    services: dict[str, str]
 
 
 class ModelAnalysisResult(BaseModel):

@@ -32,7 +32,7 @@ router = APIRouter(prefix="/examples/errors", tags=["Error Examples"])
 @router.get("/basic/{error_type}")
 async def basic_error_example(
     error_type: str = Path(..., description="Type of error to demonstrate"),
-    message: Optional[str] = Query(None, description="Custom error message"),
+    message: str | None = Query(None, description="Custom error message"),
 ):
     """
     Demonstrate basic error handling with BaseError.
@@ -76,7 +76,7 @@ async def basic_error_example(
 @with_error_context
 async def context_example(
     user_id: str = Path(..., description="User ID to use in the context"),
-    operation: Optional[str] = Query("view", description="Operation being performed"),
+    operation: str | None = Query("view", description="Operation being performed"),
 ):
     """
     Demonstrate error context with BaseError.
@@ -166,7 +166,7 @@ async def result_pattern_example(
 
 
 # Example function that returns a Result
-def process_value(value: str) -> Success[Dict[str, Any]] | Failure:
+def process_value(value: str) -> Success[dict[str, Any]] | Failure:
     """Process a value and return a Result."""
     try:
         # Simulate validation

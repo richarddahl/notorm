@@ -30,7 +30,7 @@ T = TypeVar("T")
 TaskFunc = TypeVar("TaskFunc", bound=Callable[..., Any])
 
 # Global state
-_registry: Dict[str, Dict[str, Any]] = {}
+_registry: dict[str, dict[str, Any]] = {}
 _middleware: list[TaskMiddleware] = []
 
 
@@ -93,7 +93,7 @@ class TaskRegistry:
         return task_id
 
     @staticmethod
-    def get_task(name: str, version: str | None = None) -> Optional[Dict[str, Any]]:
+    def get_task(name: str, version: str | None = None) -> dict[str, Any] | None:
         """Get a task by name and optional version.
 
         Args:
@@ -125,7 +125,7 @@ class TaskRegistry:
         return task_id in _registry
 
     @staticmethod
-    def get_all_tasks() -> Dict[str, Dict[str, Any]]:
+    def get_all_tasks() -> dict[str, dict[str, Any]]:
         """Get all registered tasks.
 
         Returns:
@@ -153,7 +153,7 @@ class TaskRegistry:
         return False
 
     @staticmethod
-    def import_task(task_name: str) -> Optional[Dict[str, Any]]:
+    def import_task(task_name: str) -> dict[str, Any] | None:
         """Dynamically import and register a task by its full path.
 
         Args:
@@ -198,7 +198,7 @@ def task(
     version: str | None = None,
     max_retries: int = 0,
     retry_delay: int = 60,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
     queue: str = "default",
     priority: str = "normal",
     description: str | None = None,
@@ -354,7 +354,7 @@ def _add_retry_callback(task_id: str, callback: Callable[[Any, Any, int], Any]) 
 
 def _signature(
     func: Callable[..., Any], args: tuple = (), kwargs: dict = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Create a task signature for delayed execution.
 
     Args:

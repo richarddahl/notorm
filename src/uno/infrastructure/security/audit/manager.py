@@ -57,8 +57,8 @@ class AuditLogManager:
         end_time: Optional[float] = None,
         event_types: list[str] | None = None,
         user_id: str | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[SecurityEvent]:
         """
         Get security events.
@@ -173,7 +173,7 @@ class AuditLogManager:
         self,
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze security events.
 

@@ -87,19 +87,19 @@ class AnomalyAlert(BaseModel):
     entity_type: str | None = None
     metric_name: str
     metric_value: float
-    expected_range: Dict[str, float]
+    expected_range: dict[str, float]
     deviation_factor: float
     description: str
     suggestion: str | None = None
     related_alerts: list[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def is_critical(self) -> bool:
         """Check if this is a critical alert."""
         return self.severity in [AlertSeverity.CRITICAL, AlertSeverity.EMERGENCY]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for storage or API response."""
         return {
             "id": self.id,
@@ -179,7 +179,7 @@ class AnomalyDetector:
         """
         raise NotImplementedError("Subclasses must implement train method")
 
-    async def detect(self, data_point: Dict[str, Any]) -> Optional[AnomalyAlert]:
+    async def detect(self, data_point: dict[str, Any]) -> Optional[AnomalyAlert]:
         """
         Detect anomalies in a single data point.
 
@@ -203,7 +203,7 @@ class AnomalyDetector:
         """
         raise NotImplementedError("Subclasses must implement detect_batch method")
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get detector metrics."""
         return {
             "anomaly_type": self.anomaly_type.value,
@@ -256,7 +256,7 @@ class AnomalyDetectionEngine:
         self.logger = logger or logging.getLogger(__name__)
 
         # Initialize detectors registry
-        self.detectors: Dict[str, AnomalyDetector] = {}
+        self.detectors: dict[str, AnomalyDetector] = {}
 
         # Alert handlers registry
         self.alert_handlers: list[callable] = []
@@ -457,7 +457,7 @@ class AnomalyDetectionEngine:
 
     async def process_data_point(
         self,
-        data_point: Dict[str, Any],
+        data_point: dict[str, Any],
         detector_types: Optional[list[AnomalyType]] = None,
     ) -> list[AnomalyAlert]:
         """
@@ -576,8 +576,8 @@ class AnomalyDetectionEngine:
         return await detector.train(data)
 
     async def train_all_detectors(
-        self, data: Dict[str, pd.DataFrame]
-    ) -> Dict[str, bool]:
+        self, data: dict[str, pd.DataFrame]
+    ) -> dict[str, bool]:
         """
         Train all detectors with historical data.
 
@@ -725,7 +725,7 @@ class AnomalyDetectionEngine:
 
             return alerts
 
-    async def get_detector_metrics(self) -> Dict[str, Dict[str, Any]]:
+    async def get_detector_metrics(self) -> dict[str, dict[str, Any]]:
         """
         Get metrics for all registered detectors.
 

@@ -41,10 +41,10 @@ class HybridDetector(AnomalyDetector):
         training_window: int = 30,
         threshold: float = 2.0,
         min_data_points: int = 100,
-        ensemble_weights: Optional[Dict[str, float]] = None,
+        ensemble_weights: Optional[dict[str, float]] = None,
         ensemble_threshold: float = 0.6,  # Minimum combined score for anomaly detection
         logger: logging.Logger | None = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ):
         """
         Initialize the hybrid detector.
@@ -77,10 +77,10 @@ class HybridDetector(AnomalyDetector):
         self.params = params or {}
 
         # Sub-detectors
-        self.detectors: Dict[str, AnomalyDetector] = {}
+        self.detectors: dict[str, AnomalyDetector] = {}
 
         # Performance tracking for adaptive strategy
-        self.detector_performance: Dict[str, Dict[str, Any]] = {}
+        self.detector_performance: dict[str, dict[str, Any]] = {}
 
         # Initialize strategy-specific parameters
         if strategy == DetectionStrategy.HYBRID_ENSEMBLE:
@@ -219,7 +219,7 @@ class HybridDetector(AnomalyDetector):
 
         return success
 
-    async def detect(self, data_point: Dict[str, Any]) -> Optional[AnomalyAlert]:
+    async def detect(self, data_point: dict[str, Any]) -> Optional[AnomalyAlert]:
         """
         Detect anomalies in a single data point.
 
@@ -275,7 +275,7 @@ class HybridDetector(AnomalyDetector):
         return alert
 
     async def _detect_ensemble(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using ensemble of detectors.
@@ -363,7 +363,7 @@ class HybridDetector(AnomalyDetector):
         return None
 
     async def _detect_adaptive(
-        self, value: float, timestamp: datetime.datetime, data_point: Dict[str, Any]
+        self, value: float, timestamp: datetime.datetime, data_point: dict[str, Any]
     ) -> Optional[AnomalyAlert]:
         """
         Detect anomalies using adaptive selection of detectors.
@@ -398,7 +398,7 @@ class HybridDetector(AnomalyDetector):
 
         return alert
 
-    def _calculate_adaptive_weights(self) -> Dict[str, float]:
+    def _calculate_adaptive_weights(self) -> dict[str, float]:
         """
         Calculate adaptive weights based on detector performance.
 

@@ -24,14 +24,25 @@ from pydantic import BaseModel
 
 from uno.core.health import (
     # Main health framework
-    health_check, HealthStatus, HealthCheckResult, HealthRegistry,
-    get_health_registry, register_health_check, HealthEndpoint, HealthConfig,
-    
+    health_check,
+    HealthStatus,
+    HealthCheckResult,
+    HealthRegistry,
+    get_health_registry,
+    register_health_check,
+    HealthEndpoint,
+    HealthConfig,
     # Dashboard
-    HealthDashboard, setup_health_dashboard, HealthDashboardConfig,
-    
+    HealthDashboard,
+    setup_health_dashboard,
+    HealthDashboardConfig,
     # Alerting
-    AlertConfig, AlertLevel, AlertRule, Alert, setup_health_alerting, get_alert_manager
+    AlertConfig,
+    AlertLevel,
+    AlertRule,
+    Alert,
+    setup_health_alerting,
+    get_alert_manager,
 )
 from uno.core.logging import get_logger
 
@@ -45,42 +56,43 @@ app = FastAPI(title="Health Check Example")
 # Health check registry
 health_registry = get_health_registry()
 
+
 # Example database connection
 class MockDatabase:
     """Mock database for demonstration purposes."""
-    
+
     def __init__(self):
         self.connected = True
         self.latency = 0.01
         self.error_rate = 0.0
-    
+
     async def ping(self) -> float:
         """
         Ping the database.
-        
+
         Returns:
             Latency in seconds
-        
+
         Raises:
             Exception: If connection fails
         """
         # Simulate random errors
         if random.random() < self.error_rate:
             raise Exception("Database connection error")
-        
+
         # Simulate latency
         await asyncio.sleep(self.latency)
         return self.latency
-    
+
     async def simulate_degraded(self):
         """Simulate degraded performance."""
         self.latency = 0.2
-    
+
     async def simulate_failure(self):
         """Simulate connection failure."""
         self.connected = False
         self.error_rate = 0.8
-    
+
     async def restore(self):
         """Restore normal operation."""
         self.connected = True
@@ -91,42 +103,39 @@ class MockDatabase:
 # Example cache service
 class MockCache:
     """Mock cache service for demonstration purposes."""
-    
+
     def __init__(self):
         self.connected = True
         self.hit_rate = 0.9
         self.latency = 0.005
-    
-    async def ping(self) -> Dict[str, Any]:
+
+    async def ping(self) -> dict[str, Any]:
         """
         Ping the cache.
-        
+
         Returns:
             Cache metrics
-        
+
         Raises:
             Exception: If connection fails
         """
         if not self.connected:
             raise Exception("Cache connection error")
-        
+
         # Simulate latency
         await asyncio.sleep(self.latency)
-        
-        return {
-            "hit_rate": self.hit_rate,
-            "latency": self.latency
-        }
-    
+
+        return {"hit_rate": self.hit_rate, "latency": self.latency}
+
     async def simulate_degraded(self):
         """Simulate degraded performance."""
         self.hit_rate = 0.5
         self.latency = 0.05
-    
+
     async def simulate_failure(self):
         """Simulate connection failure."""
         self.connected = False
-    
+
     async def restore(self):
         """Restore normal operation."""
         self.connected = True
@@ -137,47 +146,44 @@ class MockCache:
 # Example API service
 class MockApiService:
     """Mock API service for demonstration purposes."""
-    
+
     def __init__(self):
         self.available = True
         self.latency = 0.05
         self.error_rate = 0.0
-    
-    async def check_status(self) -> Dict[str, Any]:
+
+    async def check_status(self) -> dict[str, Any]:
         """
         Check API status.
-        
+
         Returns:
             API metrics
-        
+
         Raises:
             Exception: If API is unavailable
         """
         # Simulate random errors
         if random.random() < self.error_rate:
             raise Exception("API service error")
-        
+
         # Simulate unavailability
         if not self.available:
             raise Exception("API service unavailable")
-        
+
         # Simulate latency
         await asyncio.sleep(self.latency)
-        
-        return {
-            "latency": self.latency,
-            "requests_per_second": random.randint(10, 100)
-        }
-    
+
+        return {"latency": self.latency, "requests_per_second": random.randint(10, 100)}
+
     async def simulate_degraded(self):
         """Simulate degraded performance."""
         self.latency = 0.3
         self.error_rate = 0.2
-    
+
     async def simulate_failure(self):
         """Simulate service failure."""
         self.available = False
-    
+
     async def restore(self):
         """Restore normal operation."""
         self.available = True
@@ -198,32 +204,32 @@ api_service = MockApiService()
     tags=["database", "critical"],
     timeout=2.0,
     critical=True,
-    group="database"
+    group="database",
 )
 async def check_database():
     """Check database connection health."""
     try:
         latency = await db.ping()
-        
+
         # Determine status based on latency
         if latency > 0.1:
             return HealthCheckResult(
                 status=HealthStatus.DEGRADED,
                 message=f"Database response time is slow: {latency:.3f}s",
-                details={"latency": latency}
+                details={"latency": latency},
             )
         else:
             return HealthCheckResult(
                 status=HealthStatus.HEALTHY,
                 message="Database connection is healthy",
-                details={"latency": latency}
+                details={"latency": latency},
             )
-    
+
     except Exception as e:
         return HealthCheckResult(
             status=HealthStatus.UNHEALTHY,
             message=f"Database connection failed: {str(e)}",
-            details={"error": str(e)}
+            details={"error": str(e)},
         )
 
 
@@ -232,33 +238,33 @@ async def check_database():
     description="Checks if cache service is healthy",
     tags=["cache"],
     timeout=1.0,
-    group="cache"
+    group="cache",
 )
 async def check_cache():
     """Check cache service health."""
     try:
         metrics = await cache.ping()
-        
+
         # Determine status based on hit rate
         hit_rate = metrics["hit_rate"]
         if hit_rate < 0.7:
             return HealthCheckResult(
                 status=HealthStatus.DEGRADED,
                 message=f"Cache hit rate is low: {hit_rate:.2f}",
-                details=metrics
+                details=metrics,
             )
         else:
             return HealthCheckResult(
                 status=HealthStatus.HEALTHY,
                 message="Cache service is healthy",
-                details=metrics
+                details=metrics,
             )
-    
+
     except Exception as e:
         return HealthCheckResult(
             status=HealthStatus.UNHEALTHY,
             message=f"Cache service failed: {str(e)}",
-            details={"error": str(e)}
+            details={"error": str(e)},
         )
 
 
@@ -267,27 +273,27 @@ async def check_api_service():
     """Check API service health."""
     try:
         metrics = await api_service.check_status()
-        
+
         # Determine status based on latency
         latency = metrics["latency"]
         if latency > 0.2:
             return HealthCheckResult(
                 status=HealthStatus.DEGRADED,
                 message=f"API service is slow: {latency:.3f}s",
-                details=metrics
+                details=metrics,
             )
         else:
             return HealthCheckResult(
                 status=HealthStatus.HEALTHY,
                 message="API service is healthy",
-                details=metrics
+                details=metrics,
             )
-    
+
     except Exception as e:
         return HealthCheckResult(
             status=HealthStatus.UNHEALTHY,
             message=f"API service failed: {str(e)}",
-            details={"error": str(e)}
+            details={"error": str(e)},
         )
 
 
@@ -301,7 +307,7 @@ async def register_api_check():
         tags=["api", "external"],
         timeout=3.0,
         critical=True,
-        group="api"
+        group="api",
     )
 
 
@@ -310,7 +316,7 @@ async def register_api_check():
     name="system_resources",
     description="Checks system resource usage",
     tags=["system"],
-    group="system"
+    group="system",
 )
 async def check_system_resources():
     """Check system resource usage."""
@@ -318,27 +324,27 @@ async def check_system_resources():
     cpu_usage = random.uniform(0.0, 100.0)
     memory_usage = random.uniform(0.0, 100.0)
     disk_usage = random.uniform(0.0, 100.0)
-    
+
     # Determine status based on resource usage
     status = HealthStatus.HEALTHY
     message = "System resources are healthy"
-    
+
     if cpu_usage > 80 or memory_usage > 80 or disk_usage > 90:
         status = HealthStatus.DEGRADED
         message = "System resources are under pressure"
-    
+
     if cpu_usage > 90 or memory_usage > 90 or disk_usage > 95:
         status = HealthStatus.UNHEALTHY
         message = "System resources are critically low"
-    
+
     return HealthCheckResult(
         status=status,
         message=message,
         details={
             "cpu_usage": cpu_usage,
             "memory_usage": memory_usage,
-            "disk_usage": disk_usage
-        }
+            "disk_usage": disk_usage,
+        },
     )
 
 
@@ -347,7 +353,7 @@ async def check_system_resources():
     name="simple_check",
     description="A simple boolean health check",
     tags=["example"],
-    group="example"
+    group="example",
 )
 async def simple_check():
     """Simple boolean health check."""
@@ -360,7 +366,7 @@ async def simple_check():
     name="tuple_check",
     description="A health check that returns a tuple",
     tags=["example"],
-    group="example"
+    group="example",
 )
 async def tuple_check():
     """Health check that returns a tuple."""
@@ -381,12 +387,12 @@ async def setup_alerts():
         email_from="alerts@example.com",
         email_to=["ops@example.com"],
         smtp_server="smtp.example.com",  # not actually used in this example
-        webhook_urls=[]  # no real webhooks in this example
+        webhook_urls=[],  # no real webhooks in this example
     )
-    
+
     # Setup alerting
     alert_manager = await setup_health_alerting(config=alert_config)
-    
+
     # Add custom rules
     db_rule = AlertRule(
         id="critical-db-failure",
@@ -395,9 +401,9 @@ async def setup_alerts():
         enabled=True,
         level=AlertLevel.CRITICAL,
         check_name="database_connection",
-        status=HealthStatus.UNHEALTHY
+        status=HealthStatus.UNHEALTHY,
     )
-    
+
     api_rule = AlertRule(
         id="api-degraded",
         name="API Service Degraded",
@@ -405,9 +411,9 @@ async def setup_alerts():
         enabled=True,
         level=AlertLevel.WARNING,
         check_name="api_service",
-        status=HealthStatus.DEGRADED
+        status=HealthStatus.DEGRADED,
     )
-    
+
     system_rule = AlertRule(
         id="system-resources",
         name="System Resources",
@@ -415,9 +421,9 @@ async def setup_alerts():
         enabled=True,
         level=AlertLevel.WARNING,
         group="system",
-        status=HealthStatus.DEGRADED
+        status=HealthStatus.DEGRADED,
     )
-    
+
     await alert_manager.add_rule(db_rule)
     await alert_manager.add_rule(api_rule)
     await alert_manager.add_rule(system_rule)
@@ -433,14 +439,11 @@ def configure_dashboard():
         require_auth=False,
         update_interval=5.0,
         history_size=100,
-        auto_refresh=True
+        auto_refresh=True,
     )
-    
+
     # Setup dashboard
-    return setup_health_dashboard(
-        app=app,
-        config=dashboard_config
-    )
+    return setup_health_dashboard(app=app, config=dashboard_config)
 
 
 # Setup health check endpoints
@@ -451,14 +454,16 @@ def setup_health_endpoints():
         prefix="/health",
         tags=["health"],
         include_details=True,
-        register_resource_checks=True
+        register_resource_checks=True,
     )
 
 
 # API endpoints to simulate service issues
 
+
 class ServiceAction(BaseModel):
     """Service action request."""
+
     action: str  # "degrade", "fail", "restore"
     service: str  # "database", "cache", "api"
 
@@ -467,72 +472,66 @@ class ServiceAction(BaseModel):
 async def simulate_service_issue(action: ServiceAction):
     """
     Simulate service issues.
-    
+
     Args:
         action: Service action to perform
-    
+
     Returns:
         Result of the action
     """
-    service_map = {
-        "database": db,
-        "cache": cache,
-        "api": api_service
-    }
-    
+    service_map = {"database": db, "cache": cache, "api": api_service}
+
     if action.service not in service_map:
-        raise HTTPException(status_code=400, detail=f"Unknown service: {action.service}")
-    
+        raise HTTPException(
+            status_code=400, detail=f"Unknown service: {action.service}"
+        )
+
     service = service_map[action.service]
-    
+
     if action.action == "degrade":
         await service.simulate_degraded()
         return {"status": "ok", "message": f"{action.service} service degraded"}
-    
+
     elif action.action == "fail":
         await service.simulate_failure()
         return {"status": "ok", "message": f"{action.service} service failed"}
-    
+
     elif action.action == "restore":
         await service.restore()
         return {"status": "ok", "message": f"{action.service} service restored"}
-    
+
     else:
         raise HTTPException(status_code=400, detail=f"Unknown action: {action.action}")
 
 
 @app.get("/alerts")
 async def get_alerts(
-    limit: int = 10,
-    min_level: str = "WARNING",
-    include_acknowledged: bool = False
+    limit: int = 10, min_level: str = "WARNING", include_acknowledged: bool = False
 ):
     """
     Get recent alerts.
-    
+
     Args:
         limit: Maximum number of alerts to return
         min_level: Minimum alert level
         include_acknowledged: Whether to include acknowledged alerts
-    
+
     Returns:
         Recent alerts
     """
     alert_manager = get_alert_manager()
-    
+
     # Convert string level to enum
     try:
         level = AlertLevel[min_level.upper()]
     except KeyError:
         level = AlertLevel.WARNING
-    
+
     # Get alerts
     alerts = await alert_manager.get_recent_alerts(
-        limit=limit,
-        min_level=level,
-        include_acknowledged=include_acknowledged
+        limit=limit, min_level=level, include_acknowledged=include_acknowledged
     )
-    
+
     # Convert to dict
     return {"alerts": [alert.to_dict() for alert in alerts]}
 
@@ -541,24 +540,25 @@ async def get_alerts(
 async def acknowledge_alert(alert_id: str):
     """
     Acknowledge an alert.
-    
+
     Args:
         alert_id: ID of the alert to acknowledge
-    
+
     Returns:
         Acknowledgment result
     """
     alert_manager = get_alert_manager()
-    
+
     # Acknowledge alert
     acknowledged = await alert_manager.acknowledge_alert(
-        alert_id=alert_id,
-        username="admin"
+        alert_id=alert_id, username="admin"
     )
-    
+
     if not acknowledged:
-        raise HTTPException(status_code=404, detail="Alert not found or already acknowledged")
-    
+        raise HTTPException(
+            status_code=404, detail="Alert not found or already acknowledged"
+        )
+
     return {"status": "acknowledged", "alert_id": alert_id}
 
 
@@ -687,16 +687,16 @@ async def startup_event():
     """Startup event handler."""
     # Register health checks
     await register_api_check()
-    
+
     # Setup health checks
     setup_health_endpoints()
-    
+
     # Configure dashboard
     configure_dashboard()
-    
+
     # Setup alerting
     await setup_alerts()
-    
+
     logger.info("Health check example started")
 
 

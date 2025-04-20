@@ -25,7 +25,7 @@ class {{ feature_name|pascal_case }}CreateDTO(BaseModel):
     """Data Transfer Object for creating a {{ feature_name|pascal_case }}."""
     
     name: str = Field(..., description="Name of the {{ feature_name|pascal_case }}")
-    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    description: str | None = Field(None, description="Description of the {{ feature_name|pascal_case }}")
     is_active: bool = Field(True, description="Whether the {{ feature_name|pascal_case }} is active")
 
     class Config:
@@ -42,8 +42,8 @@ class {{ feature_name|pascal_case }}CreateDTO(BaseModel):
 class {{ feature_name|pascal_case }}UpdateDTO(BaseModel):
     """Data Transfer Object for updating a {{ feature_name|pascal_case }}."""
     
-    name: Optional[str] = Field(None, description="Name of the {{ feature_name|pascal_case }}")
-    description: Optional[str] = Field(None, description="Description of the {{ feature_name|pascal_case }}")
+    name: str | None = Field(None, description="Name of the {{ feature_name|pascal_case }}")
+    description: str | None = Field(None, description="Description of the {{ feature_name|pascal_case }}")
     is_active: Optional[bool] = Field(None, description="Whether the {{ feature_name|pascal_case }} is active")
 
     class Config:
@@ -99,7 +99,7 @@ router = APIRouter(prefix="/api/{{ feature_name|snake_case }}s", tags=["{{ featu
 async def list_{{ feature_name|snake_case }}s(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    name: Optional[str] = Query(None, description="Filter by name"),
+    name: str | None = Query(None, description="Filter by name"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     service: {{ feature_name|pascal_case }}ServiceProtocol = Depends(get_{{ feature_name|snake_case }}_service)
 ) -> {{ feature_name|pascal_case }}ListResponseDTO:

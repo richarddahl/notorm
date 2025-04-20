@@ -535,7 +535,7 @@ class DatabaseSettings(BaseSettings, ConfigProtocol):
         """Get a configuration value by key."""
         return getattr(self, key, default)
     
-    def all(self) -> Dict[str, Any]:
+    def all(self) -> dict[str, Any]:
         """Get all configuration values."""
         return self.dict()
 

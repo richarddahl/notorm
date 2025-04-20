@@ -37,7 +37,7 @@ class DataQualityIntegration:
         engine: AnomalyDetectionEngine,
         data_source: str = "database",  # database, kafka, etc.
         tables: list[str] | None = None,  # Tables/collections to monitor
-        metrics_mapping: Optional[Dict[str, str]] = None,
+        metrics_mapping: Optional[dict[str, str]] = None,
         poll_interval: int = 3600,  # seconds (1 hour)
         alert_handlers: Optional[list[callable]] = None,
         logger: logging.Logger | None = None,
@@ -593,7 +593,7 @@ class DataQualityIntegration:
         except Exception as e:
             self.logger.error(f"Error training detectors: {e}")
 
-    async def _fetch_historical_data(self, days: int) -> Dict[str, pd.DataFrame]:
+    async def _fetch_historical_data(self, days: int) -> dict[str, pd.DataFrame]:
         """
         Fetch historical data quality metrics.
 
@@ -628,7 +628,7 @@ class DataQualityIntegration:
 
     async def _generate_historical_metrics(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Generate synthetic historical data quality metrics.
 

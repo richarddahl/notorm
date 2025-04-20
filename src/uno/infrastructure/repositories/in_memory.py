@@ -60,7 +60,7 @@ class InMemoryRepository(Repository[T, ID], Generic[T, ID]):
         self,
         filters: Optional[FilterType] = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
     ) -> list[T]:
         """List entities matching filter criteria."""

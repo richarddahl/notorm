@@ -164,7 +164,7 @@ class Order(EntityBase[str]):
     items: list[OrderItem] = Field(default_factory=list)
 
     # Additional properties
-    shipping_address: Optional[Dict[str, str]] = None
+    shipping_address: Optional[dict[str, str]] = None
     notes: str | None = None
 
     # Domain events collection - not serialized

@@ -79,7 +79,7 @@ class RecommendationItem(BaseModel):
     strength: RecommendationStrength = RecommendationStrength.MEDIUM
     priority: RecommendationPriority = RecommendationPriority.MEDIUM
     reasons: list[RecommendationReason] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     similarity_score: Optional[float] = None
     embedding: Optional[list[float]] = None
     created_at: datetime = Field(default_factory=datetime.now)
@@ -110,7 +110,7 @@ class RecommendationSet(BaseModel):
     entity_id: str | None = None
     entity_type: str | None = None
     context_ids: list[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -162,7 +162,7 @@ class IntelligentRecommendationService:
         self.embedding_cache = {}
 
         # Active item registry
-        self.active_items: Dict[str, Dict[str, Any]] = {}
+        self.active_items: dict[str, dict[str, Any]] = {}
 
         # Filter for anomalous items
         self.anomaly_filter_enabled = True
@@ -386,7 +386,7 @@ class IntelligentRecommendationService:
         item_type: str,
         title: str,
         description: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Register an item for recommendation.
@@ -462,7 +462,7 @@ class IntelligentRecommendationService:
         item_type: str,
         interaction_type: str,
         context_id: str | None = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Record a user interaction with an item.
@@ -522,7 +522,7 @@ class IntelligentRecommendationService:
 
     async def get_similar_items(
         self, item_id: str, item_type: str, limit: int = 10, min_similarity: float = 0.7
-    ) -> list[Tuple[Dict[str, Any], float]]:
+    ) -> list[Tuple[dict[str, Any], float]]:
         """
         Get items similar to a specified item.
 
@@ -656,7 +656,7 @@ class IntelligentRecommendationService:
 
         return similar_items
 
-    async def _collect_context(self, request: RecommendationRequest) -> Dict[str, Any]:
+    async def _collect_context(self, request: RecommendationRequest) -> dict[str, Any]:
         """
         Collect context for a recommendation request.
 
@@ -735,7 +735,7 @@ class IntelligentRecommendationService:
         return context
 
     async def _generate_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate candidate recommendations.
@@ -825,7 +825,7 @@ class IntelligentRecommendationService:
         return candidates
 
     async def _generate_behavior_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate recommendations based on user behavior.
@@ -945,7 +945,7 @@ class IntelligentRecommendationService:
         return candidates
 
     async def _generate_similarity_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate recommendations based on semantic similarity.
@@ -1064,7 +1064,7 @@ class IntelligentRecommendationService:
         return candidates
 
     async def _generate_popularity_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate recommendations based on overall popularity.
@@ -1149,7 +1149,7 @@ class IntelligentRecommendationService:
         return candidates
 
     async def _generate_complementary_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate recommendations that complement recent interactions.
@@ -1211,7 +1211,7 @@ class IntelligentRecommendationService:
         return candidates
 
     async def _generate_expert_candidates(
-        self, request: RecommendationRequest, context: Dict[str, Any]
+        self, request: RecommendationRequest, context: dict[str, Any]
     ) -> list[RecommendationItem]:
         """
         Generate expert recommendations using content generation.
@@ -1436,7 +1436,7 @@ class IntelligentRecommendationService:
         self,
         candidates: list[RecommendationItem],
         request: RecommendationRequest,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> list[RecommendationItem]:
         """
         Rank recommendation candidates by relevance.
@@ -1488,7 +1488,7 @@ class IntelligentRecommendationService:
         return ranked_candidates
 
     async def _generate_explanations(
-        self, candidates: list[RecommendationItem], context: Dict[str, Any]
+        self, candidates: list[RecommendationItem], context: dict[str, Any]
     ) -> None:
         """
         Generate human-readable explanations for recommendations.

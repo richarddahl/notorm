@@ -8,12 +8,12 @@ class ConnectionConfig(BaseModel):
     """Configuration for database connections."""
 
     db_role: str = uno_settings.DB_USER  # Use DB_USER by default
-    db_name: Optional[str] = uno_settings.DB_NAME
-    db_user_pw: Optional[str] = uno_settings.DB_USER_PW
-    db_host: Optional[str] = uno_settings.DB_HOST
+    db_name: str | None = uno_settings.DB_NAME
+    db_user_pw: str | None = uno_settings.DB_USER_PW
+    db_host: str | None = uno_settings.DB_HOST
     db_port: Optional[int] = uno_settings.DB_PORT
-    db_driver: Optional[str] = uno_settings.DB_ASYNC_DRIVER
-    db_schema: Optional[str] = uno_settings.DB_SCHEMA
+    db_driver: str | None = uno_settings.DB_ASYNC_DRIVER
+    db_schema: str | None = uno_settings.DB_SCHEMA
 
     # Connection pooling parameters
     pool_size: Optional[int] = 5

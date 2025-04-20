@@ -24,7 +24,7 @@ class LocalCache(ABC):
         pass
 
     @abstractmethod
-    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set a value in the cache.
 
         Args:
@@ -80,7 +80,7 @@ class LocalCache(ABC):
         pass
 
     @abstractmethod
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -93,7 +93,7 @@ class LocalCache(ABC):
         """Close the cache and release resources."""
         pass
 
-    def multi_get(self, keys: list[str]) -> Dict[str, Any]:
+    def multi_get(self, keys: list[str]) -> dict[str, Any]:
         """Get multiple values from the cache.
 
         Args:
@@ -110,7 +110,7 @@ class LocalCache(ABC):
                 result[key] = value
         return result
 
-    def multi_set(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+    def multi_set(self, mapping: dict[str, Any], ttl: int | None = None) -> bool:
         """Set multiple values in the cache.
 
         Args:

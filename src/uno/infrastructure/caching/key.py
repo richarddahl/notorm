@@ -214,10 +214,10 @@ _function_signature_cache = {}
 def get_function_cache_key(
     func: callable,
     args: Tuple,
-    kwargs: Dict[str, Any],
+    kwargs: dict[str, Any],
     prefix: str = "",
     use_hash: bool = True,
-    arg_preprocessors: Optional[Dict[str, callable]] = None,
+    arg_preprocessors: Optional[dict[str, callable]] = None,
 ) -> str:
     """Generate a cache key for a function call.
 

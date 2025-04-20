@@ -544,7 +544,7 @@ class QueryExecutorProtocol(Protocol, Generic[QueryResultT]):
     """
 
     async def execute(
-        self, query: str, params: Optional[Dict[str, Any]] = None
+        self, query: str, params: dict[str, Any] | None = None
     ) -> QueryResultT:
         """
         Execute a query.

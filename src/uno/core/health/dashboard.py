@@ -95,7 +95,7 @@ class HealthDashboard:
         self._status_history: list[dict[str, Any]] = []
 
         # Health check status cache
-        self._last_status: Optional[Dict[str, Any]] = None
+        self._last_status: dict[str, Any] | None = None
         self._last_check_time: float = 0
 
         # Update task

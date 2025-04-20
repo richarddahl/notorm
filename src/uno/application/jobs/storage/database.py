@@ -891,7 +891,7 @@ class DatabaseJobStorage(JobStorageProtocol):
                 f"Failed to mark stalled jobs as failed in database: {str(e)}"
             )
 
-    def _job_from_row(self, row: Dict[str, Any]) -> Job:
+    def _job_from_row(self, row: dict[str, Any]) -> Job:
         """Convert a database row to a Job object.
 
         Args:
@@ -943,7 +943,7 @@ class DatabaseJobStorage(JobStorageProtocol):
             tags=tags,
         )
 
-    def _schedule_from_row(self, row: Dict[str, Any]) -> ScheduleDefinition:
+    def _schedule_from_row(self, row: dict[str, Any]) -> ScheduleDefinition:
         """Convert a database row to a ScheduleDefinition object.
 
         Args:

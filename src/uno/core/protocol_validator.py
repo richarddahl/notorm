@@ -39,7 +39,7 @@ class ProtocolValidationError(Exception):
         cls: Type[Any],
         protocol: Any,  # We use Any instead of Type[Protocol] to avoid typing issues
         missing_attributes: list[str],
-        type_mismatches: Dict[str, Tuple[str, str]],
+        type_mismatches: dict[str, Tuple[str, str]],
     ):
         self.cls = cls
         self.protocol = protocol
@@ -400,7 +400,7 @@ def implements(*protocols: Any) -> Callable[[Type[T]], Type[T]]:
 
 def verify_all_implementations(
     modules: list[Union[str, ModuleType]],
-) -> Dict[str, list[ProtocolValidationError]]:
+) -> dict[str, list[ProtocolValidationError]]:
     """
     Verify all protocol implementations in the given modules.
 

@@ -74,7 +74,7 @@ def category_list_to_response(categories: list[Category]) -> list[CategoryRespon
 # API endpoints
 @router.get("/", response_model=list[CategoryResponse])
 async def list_categories(
-    parent_id: Optional[str] = Query(None, description="Filter by parent category ID"),
+    parent_id: str | None = Query(None, description="Filter by parent category ID"),
     active_only: bool = Query(True, description="Only show active categories"),
     limit: Optional[int] = Query(
         100, description="Maximum number of categories to return"

@@ -38,7 +38,7 @@ class ErrorResponse:
         code: str,
         message: str,
         status_code: int,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         help_text: str | None = None,
     ):
         """
@@ -57,7 +57,7 @@ class ErrorResponse:
         self.details = details or {}
         self.help_text = help_text
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the error response to a dictionary."""
         response = {
             "code": self.code,

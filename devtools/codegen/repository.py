@@ -98,7 +98,7 @@ def generate_repository(
 
 
 def _generate_repository_imports(
-    module_name: Optional[str],
+    module_name: str | None,
     model_name: str,
     base_repository_class: str,
     include_crud: bool,
@@ -331,7 +331,7 @@ def _generate_query_methods(model_name: str, include_docstrings: bool) -> list[s
     # Get all method
     lines.append("")
     lines.append(
-        f"    async def get_all(self, limit: Optional[int] = None, offset: int = 0) -> list[T]:"
+        f"    async def get_all(self, limit: int | None = None, offset: int = 0) -> list[T]:"
     )
     if include_docstrings:
         lines.append(f'        """Get all {model_name}s.')

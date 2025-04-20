@@ -31,9 +31,14 @@ from typing import (
 from pydantic import BaseModel, Field
 
 from uno.core.uow.base import AbstractUnitOfWork
-from uno.core.events import Event, AsyncEventBus
+from uno.core.events import Event
 from uno.core.logging import get_logger
 from uno.core.errors import Result, Error
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from uno.core.events import AsyncEventBus
 
 # Type variables
 T = TypeVar("T")
@@ -83,7 +88,7 @@ class DistributedTransaction(BaseModel):
     prepare_time: Optional[datetime] = None
     commit_time: Optional[datetime] = None
     rollback_time: Optional[datetime] = None
-    participants: Dict[str, Participant] = Field(default_factory=dict)
+    participants: dict[str, Participant] = Field(default_factory=dict)
     prepared_participants: Set[str] = Field(default_factory=set)
     committed_participants: Set[str] = Field(default_factory=set)
     rolled_back_participants: Set[str] = Field(default_factory=set)
@@ -166,7 +171,7 @@ class UnitOfWorkParticipant(TransactionParticipant):
         self.unit_of_work = unit_of_work
         self.name = name
         self.logger = logger or get_logger(f"uno.uow.participant.{name}")
-        self._prepared_transactions: Dict[str, Any] = {}
+        self._prepared_transactions: dict[str, Any] = {}
 
     async def prepare(self, transaction_id: str) -> Result[bool, Error]:
         """
@@ -303,7 +308,7 @@ class EventStoreParticipant(TransactionParticipant):
         self.event_store = event_store
         self.name = name
         self.logger = logger or get_logger(f"uno.uow.participant.{name}")
-        self._pending_events: Dict[str, list[Event]] = {}
+        self._pending_events: dict[str, list[Event]] = {}
 
     def add_events(self, transaction_id: str, events: list[Event]) -> None:
         """
@@ -433,7 +438,7 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
             transaction_id=transaction_id or str(uuid.uuid4()),
             coordinator_id=self.coordinator_id,
         )
-        self.participants: Dict[str, TransactionParticipant] = {}
+        self.participants: dict[str, TransactionParticipant] = {}
         self._logger = logger or get_logger(
             f"uno.uow.distributed.{self.coordinator_id[:8]}"
         )
@@ -786,7 +791,7 @@ class DistributedUnitOfWork(AbstractUnitOfWork):
                 f"Successfully rolled back distributed transaction {self.transaction.transaction_id}"
             )
 
-    def get_transaction_status(self) -> Dict[str, Any]:
+    def get_transaction_status(self) -> dict[str, Any]:
         """
         Get the status of the distributed transaction.
 

@@ -54,7 +54,7 @@ class RecommendationAlgorithm(Generic[T], ABC):
         pass
 
     @abstractmethod
-    async def add_interaction(self, interaction: Dict[str, Any]) -> None:
+    async def add_interaction(self, interaction: dict[str, Any]) -> None:
         """
         Add a single interaction to the algorithm.
 
@@ -84,7 +84,7 @@ class ContentBasedRecommender(RecommendationAlgorithm[T]):
         storage_type: str = "pgvector",
         table_name: str = "recommendation_embeddings",
         schema: str = "public",
-        interaction_weights: Optional[Dict[str, float]] = None,
+        interaction_weights: Optional[dict[str, float]] = None,
         item_id_field: str = "item_id",
         item_type_field: str = "item_type",
         user_id_field: str = "user_id",
@@ -151,11 +151,11 @@ class ContentBasedRecommender(RecommendationAlgorithm[T]):
         }
 
         # User profile cache
-        self.user_profiles: Dict[str, Dict[str, Any]] = {}
-        self.user_interactions: Dict[str, Dict[T, Dict[str, Any]]] = {}
+        self.user_profiles: dict[str, dict[str, Any]] = {}
+        self.user_interactions: dict[str, Dict[T, dict[str, Any]]] = {}
 
         # Item cache
-        self.item_cache: Dict[T, Dict[str, Any]] = {}
+        self.item_cache: Dict[T, dict[str, Any]] = {}
 
         # Initialization state
         self.initialized = False
@@ -196,7 +196,7 @@ class ContentBasedRecommender(RecommendationAlgorithm[T]):
             f"Trained ContentBasedRecommender on {len(interactions)} interactions"
         )
 
-    async def add_interaction(self, interaction: Dict[str, Any]) -> None:
+    async def add_interaction(self, interaction: dict[str, Any]) -> None:
         """
         Add a single interaction to the algorithm.
 
@@ -394,7 +394,7 @@ class CollaborativeFilteringRecommender(RecommendationAlgorithm[T]):
         interaction_type_field: str = "interaction_type",
         rating_field: str = "rating",
         timestamp_field: str = "timestamp",
-        interaction_weights: Optional[Dict[str, float]] = None,
+        interaction_weights: Optional[dict[str, float]] = None,
         implicit_ratings: bool = True,
         use_timestamps: bool = True,
         time_decay_factor: float = 0.1,
@@ -442,15 +442,15 @@ class CollaborativeFilteringRecommender(RecommendationAlgorithm[T]):
         self.min_interactions = min_interactions
 
         # User-item matrix (sparse representation)
-        self.user_items: Dict[str, Dict[T, float]] = {}
-        self.item_users: Dict[T, Dict[str, float]] = {}
+        self.user_items: dict[str, Dict[T, float]] = {}
+        self.item_users: Dict[T, dict[str, float]] = {}
 
         # Metadata
-        self.item_metadata: Dict[T, Dict[str, Any]] = {}
-        self.user_metadata: Dict[str, Dict[str, Any]] = {}
+        self.item_metadata: Dict[T, dict[str, Any]] = {}
+        self.user_metadata: dict[str, dict[str, Any]] = {}
 
         # User similarity cache
-        self.user_similarity: Dict[str, Dict[str, float]] = {}
+        self.user_similarity: dict[str, dict[str, float]] = {}
 
         # Timestamp information
         self.latest_timestamp = datetime.min
@@ -487,7 +487,7 @@ class CollaborativeFilteringRecommender(RecommendationAlgorithm[T]):
             f"Trained CollaborativeFilteringRecommender on {len(interactions)} interactions"
         )
 
-    async def add_interaction(self, interaction: Dict[str, Any]) -> None:
+    async def add_interaction(self, interaction: dict[str, Any]) -> None:
         """
         Add a single interaction to the algorithm.
 
@@ -831,7 +831,7 @@ class HybridRecommender(RecommendationAlgorithm[T]):
 
         logger.info(f"Trained HybridRecommender on {len(interactions)} interactions")
 
-    async def add_interaction(self, interaction: Dict[str, Any]) -> None:
+    async def add_interaction(self, interaction: dict[str, Any]) -> None:
         """
         Add a single interaction to the algorithm.
 
@@ -892,7 +892,7 @@ class HybridRecommender(RecommendationAlgorithm[T]):
                 )
 
         # Combine and deduplicate
-        combined: Dict[str, Dict[str, Any]] = {}
+        combined: dict[str, dict[str, Any]] = {}
 
         for rec in all_recommendations:
             item_id = rec["item_id"]
@@ -1078,7 +1078,7 @@ class RecommendationEngine(Generic[T]):
 
         await self.algorithm.train(interactions)
 
-    async def add_interaction(self, interaction: Dict[str, Any]) -> None:
+    async def add_interaction(self, interaction: dict[str, Any]) -> None:
         """
         Add a single interaction to the recommendation engine.
 

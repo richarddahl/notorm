@@ -78,16 +78,14 @@ class QueryPathCreateDto(QueryPathBaseDto):
 class QueryPathUpdateDto(BaseModel):
     """DTO for updating query paths."""
 
-    source_meta_type_id: Optional[str] = Field(
+    source_meta_type_id: str | None = Field(
         None, description="ID of the source meta type"
     )
-    target_meta_type_id: Optional[str] = Field(
+    target_meta_type_id: str | None = Field(
         None, description="ID of the target meta type"
     )
-    cypher_path: Optional[str] = Field(None, description="The Cypher path expression")
-    data_type: Optional[str] = Field(
-        None, description="The data type of the path result"
-    )
+    cypher_path: str | None = Field(None, description="The Cypher path expression")
+    data_type: str | None = Field(None, description="The data type of the path result")
 
     model_config = {
         "json_schema_extra": {
@@ -120,13 +118,13 @@ class QueryPathViewDto(QueryPathBaseDto):
 class QueryPathFilterParams(BaseModel):
     """Filter parameters for query paths."""
 
-    source_meta_type_id: Optional[str] = Field(
+    source_meta_type_id: str | None = Field(
         None, description="Filter by source meta type ID"
     )
-    target_meta_type_id: Optional[str] = Field(
+    target_meta_type_id: str | None = Field(
         None, description="Filter by target meta type ID"
     )
-    data_type: Optional[str] = Field(None, description="Filter by data type")
+    data_type: str | None = Field(None, description="Filter by data type")
 
 
 # QueryValue DTOs
@@ -163,12 +161,12 @@ class QueryValueCreateDto(QueryValueBaseDto):
 class QueryValueUpdateDto(BaseModel):
     """DTO for updating query values."""
 
-    query_path_id: Optional[str] = Field(None, description="ID of the query path")
+    query_path_id: str | None = Field(None, description="ID of the query path")
     include: Optional[IncludeEnum] = Field(
         None, description="Whether to include or exclude"
     )
     match: Optional[MatchEnum] = Field(None, description="AND/OR match type")
-    lookup: Optional[str] = Field(None, description="Lookup operation")
+    lookup: str | None = Field(None, description="Lookup operation")
     values: Optional[list[Any]] = Field(None, description="Values for filtering")
 
     model_config = {
@@ -200,12 +198,12 @@ class QueryValueViewDto(QueryValueBaseDto):
 class QueryValueFilterParams(BaseModel):
     """Filter parameters for query values."""
 
-    query_path_id: Optional[str] = Field(None, description="Filter by query path ID")
+    query_path_id: str | None = Field(None, description="Filter by query path ID")
     include: Optional[IncludeEnum] = Field(
         None, description="Filter by include/exclude"
     )
     match: Optional[MatchEnum] = Field(None, description="Filter by AND/OR match type")
-    lookup: Optional[str] = Field(None, description="Filter by lookup operation")
+    lookup: str | None = Field(None, description="Filter by lookup operation")
 
 
 # Query DTOs
@@ -216,7 +214,7 @@ class QueryBaseDto(BaseModel):
 
     name: str = Field(..., description="Name of the query")
     query_meta_type_id: str = Field(..., description="ID of the query meta type")
-    description: Optional[str] = Field(None, description="Description of the query")
+    description: str | None = Field(None, description="Description of the query")
     include_values: IncludeEnum = Field(
         IncludeEnum.INCLUDE, description="Whether to include or exclude values"
     )
@@ -269,11 +267,11 @@ class QueryCreateDto(QueryBaseDto):
 class QueryUpdateDto(BaseModel):
     """DTO for updating queries."""
 
-    name: Optional[str] = Field(None, description="Name of the query")
-    query_meta_type_id: Optional[str] = Field(
+    name: str | None = Field(None, description="Name of the query")
+    query_meta_type_id: str | None = Field(
         None, description="ID of the query meta type"
     )
-    description: Optional[str] = Field(None, description="Description of the query")
+    description: str | None = Field(None, description="Description of the query")
     include_values: Optional[IncludeEnum] = Field(
         None, description="Whether to include or exclude values"
     )
@@ -349,8 +347,8 @@ class QueryViewDto(QueryBaseDto):
 class QueryFilterParams(BaseModel):
     """Filter parameters for queries."""
 
-    name: Optional[str] = Field(None, description="Filter by name")
-    query_meta_type_id: Optional[str] = Field(
+    name: str | None = Field(None, description="Filter by name")
+    query_meta_type_id: str | None = Field(
         None, description="Filter by query meta type ID"
     )
 
@@ -361,10 +359,10 @@ class QueryFilterParams(BaseModel):
 class QueryExecuteDto(BaseModel):
     """DTO for executing queries."""
 
-    filters: Optional[Dict[str, Any]] = Field(
+    filters: dict[str, Any] | None = Field(
         None, description="Additional filters to apply"
     )
-    options: Optional[Dict[str, Any]] = Field(
+    options: dict[str, Any] | None = Field(
         None, description="Options for query execution"
     )
 

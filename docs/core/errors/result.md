@@ -235,7 +235,7 @@ def get_all_team_members(team_id: str) -> Result[list[User], str]:
 from uno.core.errors.result import Result, collect_results
 from typing import List, Dict
 
-def validate_order(order_data: Dict[str, Any]) -> Result[Dict[str, Any], list[str]]:
+def validate_order(order_data: dict[str, Any]) -> Result[dict[str, Any], list[str]]:
     """Validate an order, collecting all validation errors."""
     validation_results = [
         validate_customer(order_data.get("customer_id")),
@@ -423,7 +423,7 @@ Convert a Result to an Optional value:
 from typing import Optional
 from uno.core.errors.result import Result, to_option
 
-def get_user_email(user_id: str) -> Optional[str]:
+def get_user_email(user_id: str) -> str | None:
     """Get a user's email, returning None if the user is not found."""
     result = find_user_by_id(user_id).map(lambda user: user.email)
     return to_option(result)
@@ -504,7 +504,7 @@ class OrderApplicationService(ApplicationService):
         self, 
         customer_id: UUID, 
         items: list[dict[str, Any]],
-        payment_details: Dict[str, Any]
+        payment_details: dict[str, Any]
     ) -> Result[OrderDTO, str]:
         """Place an order with payment."""
         

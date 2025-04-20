@@ -430,7 +430,7 @@ def check_dependencies(install: bool = False) -> bool:
     return not missing
 
 
-def check_documentation_consistency(modules: list[str]) -> Dict[str, list[str]]:
+def check_documentation_consistency(modules: list[str]) -> dict[str, list[str]]:
     """
     Check documentation for consistency issues.
 

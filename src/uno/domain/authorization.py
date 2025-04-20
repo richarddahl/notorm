@@ -631,7 +631,7 @@ class AuthorizationService:
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
-        self._policies: Dict[str, AuthorizationPolicy] = {}
+        self._policies: dict[str, AuthorizationPolicy] = {}
 
     def register_policy(self, policy: AuthorizationPolicy) -> None:
         """

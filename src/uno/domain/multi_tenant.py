@@ -32,7 +32,7 @@ class Tenant:
     id: str
     name: str
     active: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -76,17 +76,17 @@ class TenantRbacService(RbacService):
         super().__init__(authorization_service)
 
         # Tenant-specific roles and users
-        self._tenant_roles: Dict[str, Dict[str, Role]] = {}
-        self._tenant_users: Dict[str, Dict[str, User]] = {}
+        self._tenant_roles: dict[str, dict[str, Role]] = {}
+        self._tenant_users: dict[str, dict[str, User]] = {}
 
         # Tenant info
-        self._tenants: Dict[str, Tenant] = {}
+        self._tenants: dict[str, Tenant] = {}
 
         # User-tenant memberships
-        self._user_tenants: Dict[str, Set[str]] = {}
+        self._user_tenants: dict[str, Set[str]] = {}
 
     def create_tenant(
-        self, tenant_id: str, name: str, metadata: Optional[Dict[str, Any]] = None
+        self, tenant_id: str, name: str, metadata: dict[str, Any] | None = None
     ) -> Tenant:
         """
         Create a new tenant.
@@ -133,7 +133,7 @@ class TenantRbacService(RbacService):
         tenant_id: str,
         name: str | None = None,
         active: Optional[bool] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Optional[Tenant]:
         """
         Update a tenant.
@@ -635,7 +635,7 @@ class MultiTenantAuthorizationService(AuthorizationService):
         self.rbac_service = rbac_service or TenantRbacService()
 
         # Tenant-specific policies
-        self._tenant_policies: Dict[str, Dict[str, AuthorizationPolicy]] = {}
+        self._tenant_policies: dict[str, dict[str, AuthorizationPolicy]] = {}
 
     def register_policy(
         self, policy: AuthorizationPolicy, tenant_id: str | None = None

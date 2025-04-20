@@ -134,7 +134,7 @@ async def migrate_events(config: MigrationConfig) -> int:
         return 0
 
     # Group events by aggregate
-    events_by_aggregate: Dict[str, list[Event]] = {}
+    events_by_aggregate: dict[str, list[Event]] = {}
     for event in events:
         if event.aggregate_id:
             if event.aggregate_id not in events_by_aggregate:

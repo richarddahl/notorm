@@ -115,7 +115,7 @@ class ProductVariant(Entity):
     name: str
     price: Money
     inventory: Inventory = Field(default_factory=lambda: Inventory(quantity=0))
-    attributes: Dict[str, str] = Field(default_factory=dict)
+    attributes: dict[str, str] = Field(default_factory=dict)
     is_active: bool = True
 
     def update(self) -> None:
@@ -157,7 +157,7 @@ class Product(AggregateRoot):
     category_ids: list[str] = Field(default_factory=list)
 
     # Attributes and metadata
-    attributes: Dict[str, Any] = Field(default_factory=dict)
+    attributes: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
     seo_title: str | None = None
     seo_description: str | None = None

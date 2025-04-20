@@ -32,7 +32,7 @@ def generate_api(
     prefix: str | None = None,
     tag: str | None = None,
     security: Optional[list[dict[str, Any]]] = None,
-    endpoint_config: Optional[Dict[str, Dict[str, Any]]] = None,
+    endpoint_config: Optional[dict[str, dict[str, Any]]] = None,
     output_file: Optional[Union[str, Path]] = None,
 ) -> str:
     """Generate FastAPI endpoint code for a model.
@@ -134,7 +134,7 @@ def generate_api(
 
 
 def _generate_api_imports(
-    module_name: Optional[str],
+    module_name: str | None,
     model_name: str,
     schema_name: str,
     repository_name: str,
@@ -246,7 +246,7 @@ def _generate_crud_endpoints(
     include_validation: bool,
     id_type: str,
     security: Optional[list[dict[str, Any]]] = None,
-    endpoint_config: Optional[Dict[str, Dict[str, Any]]] = None,
+    endpoint_config: Optional[dict[str, dict[str, Any]]] = None,
 ) -> str:
     """Generate CRUD endpoint definitions.
 
@@ -399,7 +399,7 @@ def _generate_get_all_endpoint(
     include_pagination: bool,
     include_filtering: bool,
     security: Optional[list[dict[str, Any]]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """Generate GET all endpoint.
 
@@ -496,7 +496,7 @@ def _generate_get_by_id_endpoint(
     include_docstrings: bool,
     id_type: str,
     security: Optional[list[dict[str, Any]]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """Generate GET by ID endpoint.
 
@@ -562,7 +562,7 @@ def _generate_create_endpoint(
     include_docstrings: bool,
     include_validation: bool,
     security: Optional[list[dict[str, Any]]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """Generate POST (create) endpoint.
 
@@ -626,7 +626,7 @@ def _generate_update_endpoint(
     include_validation: bool,
     id_type: str,
     security: Optional[list[dict[str, Any]]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """Generate PUT (update) endpoint.
 
@@ -699,7 +699,7 @@ def _generate_delete_endpoint(
     include_docstrings: bool,
     id_type: str,
     security: Optional[list[dict[str, Any]]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """Generate DELETE endpoint.
 

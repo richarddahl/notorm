@@ -131,10 +131,10 @@ class ProductCreate(BaseModel):
 class ProductUpdate(BaseModel):
     """Model for updating a product."""
 
-    name: Optional[str] = Field(None, description="Product name")
-    description: Optional[str] = Field(None, description="Product description")
+    name: str | None = Field(None, description="Product name")
+    description: str | None = Field(None, description="Product description")
     price: Optional[float] = Field(None, gt=0, description="Product price")
-    category: Optional[str] = Field(None, description="Product category")
+    category: str | None = Field(None, description="Product category")
 
 
 class ProductSearchResult(BaseModel):

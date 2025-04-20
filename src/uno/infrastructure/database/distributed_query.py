@@ -142,7 +142,7 @@ class DBNode:
     shard_range: Optional[Tuple[Any, Any]] = None
 
     # Metrics
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
     def can_execute(self, query_type: QueryType) -> bool:
         """
@@ -288,7 +288,7 @@ class QueryContext:
 
     # Query info
     query: Union[str, Executable]
-    params: Optional[Dict[str, Any]] = None
+    params: dict[str, Any] | None = None
     query_type: QueryType = QueryType.READ
     shard_key_value: Optional[Any] = None
 
@@ -358,7 +358,7 @@ class QueryResult:
     row_count: int = 0
 
     # Additional context
-    error: Optional[Exception] = None
+    error: Exception | None = None
     query_context: Optional[QueryContext] = None
 
     # Performance stats
@@ -372,7 +372,7 @@ class QueryResult:
         """Check if the result is an error."""
         return not self.success or self.error is not None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
@@ -403,7 +403,7 @@ class DistributedQueryMetrics:
     failed_queries: int = 0
 
     # Node distribution
-    queries_by_node: Dict[str, int] = field(default_factory=dict)
+    queries_by_node: dict[str, int] = field(default_factory=dict)
     queries_by_type: Dict[QueryType, int] = field(default_factory=dict)
 
     # Performance metrics
@@ -471,7 +471,7 @@ class DistributedQueryMetrics:
         if retries > 0 and result.success and len(result.tried_nodes) > 1:
             self.successful_failovers += 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert metrics to dictionary representation.
 
@@ -517,7 +517,7 @@ class DistributedQueryManager:
         self.logger = logger or logging.getLogger(__name__)
 
         # Node registry
-        self.nodes: Dict[str, DBNode] = {}
+        self.nodes: dict[str, DBNode] = {}
 
         # Node selection state
         self._current_node_index = 0
@@ -559,7 +559,7 @@ class DistributedQueryManager:
             return True
         return False
 
-    async def initialize_nodes(self) -> Dict[str, bool]:
+    async def initialize_nodes(self) -> dict[str, bool]:
         """
         Initialize all registered nodes.
 
@@ -573,7 +573,7 @@ class DistributedQueryManager:
 
         return results
 
-    async def check_node_health(self, node_id: str | None = None) -> Dict[str, bool]:
+    async def check_node_health(self, node_id: str | None = None) -> dict[str, bool]:
         """
         Check the health of nodes.
 
@@ -1072,7 +1072,7 @@ class DistributedQueryManager:
     async def execute_query(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
         shard_key_value: Optional[Any] = None,
         fetch_all: bool = True,
@@ -1117,7 +1117,7 @@ class DistributedQueryManager:
     async def execute_on_all_nodes(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
         node_filter: Optional[Callable[[DBNode], bool]] = None,
         parallel: bool = True,
@@ -1199,7 +1199,7 @@ class DistributedQueryManager:
     async def execute_query_with_optimization(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
         shard_key_value: Optional[Any] = None,
     ) -> QueryResult:
@@ -1250,7 +1250,7 @@ class DistributedQueryManager:
             shard_key_value=shard_key_value,
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics for distributed query execution.
 
@@ -1259,7 +1259,7 @@ class DistributedQueryManager:
         """
         return self.metrics.to_dict()
 
-    def get_node_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_node_status(self) -> dict[str, dict[str, Any]]:
         """
         Get status information for all nodes.
 
@@ -1286,7 +1286,7 @@ class DistributedQueryManager:
 
 # Helper function to create a distributed query manager
 async def create_distributed_query_manager(
-    connection_strings: Dict[str, str],
+    connection_strings: dict[str, str],
     config: Optional[DistributedQueryConfig] = None,
 ) -> DistributedQueryManager:
     """
@@ -1327,8 +1327,8 @@ async def create_distributed_query_manager(
 # Helper function to execute a distributed query
 async def execute_distributed_query(
     query: Union[str, Executable],
-    connection_strings: Dict[str, str],
-    params: Optional[Dict[str, Any]] = None,
+    connection_strings: dict[str, str],
+    params: dict[str, Any] | None = None,
     query_type: QueryType = QueryType.READ,
     config: Optional[DistributedQueryConfig] = None,
 ) -> QueryResult:
@@ -1375,7 +1375,7 @@ class DistributedQueryExecutor:
     async def execute(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
         shard_key_value: Optional[Any] = None,
     ) -> Any:
@@ -1411,9 +1411,9 @@ class DistributedQueryExecutor:
     async def execute_all(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute a query on all nodes.
 
@@ -1442,7 +1442,7 @@ class DistributedQueryExecutor:
     async def execute_optimized(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         query_type: QueryType = QueryType.READ,
         shard_key_value: Optional[Any] = None,
     ) -> Any:
@@ -1475,7 +1475,7 @@ class DistributedQueryExecutor:
 
         return result.data
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get execution metrics.
 
@@ -1484,7 +1484,7 @@ class DistributedQueryExecutor:
         """
         return self.manager.get_metrics()
 
-    def get_node_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_node_status(self) -> dict[str, dict[str, Any]]:
         """
         Get node status information.
 

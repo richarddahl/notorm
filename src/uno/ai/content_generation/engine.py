@@ -279,7 +279,7 @@ class ContentEngine:
         content: str,
         entity_id: str,
         entity_type: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         graph_nodes: Optional[list[dict[str, Any]]] = None,
         graph_relationships: Optional[list[dict[str, Any]]] = None,
     ) -> Any:
@@ -336,7 +336,7 @@ class ContentEngine:
         content: str,
         entity_id: str,
         entity_type: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         additional_nodes: Optional[list[dict[str, Any]]] = None,
         relationships: Optional[list[dict[str, Any]]] = None,
     ) -> None:
@@ -440,7 +440,7 @@ class ContentEngine:
         context_entity_types: list[str] | None = None,
         rag_strategy: Optional[RAGStrategy] = None,
         max_context_items: int = 5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate content using retrieval augmented generation.
 
@@ -513,7 +513,7 @@ class ContentEngine:
         format: ContentFormat = ContentFormat.PLAIN,
         mode: ContentMode = ContentMode.BALANCED,
         bullet_points: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Summarize text content.
 
@@ -822,7 +822,7 @@ class ContentEngine:
             logger.error(f"Error executing graph query: {e}")
             return []
 
-    def _parse_agtype(self, agtype_value: str) -> Dict[str, Any]:
+    def _parse_agtype(self, agtype_value: str) -> dict[str, Any]:
         """
         Parse AGE agtype value to Python dictionary.
 

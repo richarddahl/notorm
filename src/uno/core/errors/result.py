@@ -87,6 +87,36 @@ class Result(Generic[T, E]):
     results, service operation results, or any operation that can fail.
     """
     
+    @classmethod
+    def success(cls, value: T, metadata: dict[str, Any] | None = None) -> 'Result[T, E]':
+        """
+        Create a successful Result.
+        
+        Args:
+            value: The success value
+            metadata: Additional metadata
+            
+        Returns:
+            A successful Result instance
+        """
+        return cls(value=value, metadata=metadata)
+    
+    @classmethod
+    def failure(cls, error: E | list[E], metadata: dict[str, Any] | None = None) -> 'Result[T, E]':
+        """
+        Create a failed Result.
+        
+        Args:
+            error: The error or list of errors
+            metadata: Additional metadata
+            
+        Returns:
+            A failed Result instance
+        """
+        if isinstance(error, list):
+            return cls(errors=error, metadata=metadata)
+        return cls(error=error, metadata=metadata)
+    
     def __init__(
         self, 
         value: T | None = None, 
@@ -336,47 +366,7 @@ class Result(Generic[T, E]):
                 fn(self._errors)
         return self
     
-    @staticmethod
-    def success(value: T, metadata: dict[str, Any] | None = None) -> 'Result[T, Any]':
-        """
-        Create a successful result.
-        
-        Args:
-            value: The success value
-            metadata: Additional metadata about the result
-            
-        Returns:
-            A successful Result with the given value
-        """
-        return Result(value=value, metadata=metadata)
     
-    @staticmethod
-    def failure(error: E, metadata: dict[str, Any] | None = None) -> 'Result[Any, E]':
-        """
-        Create a failed result.
-        
-        Args:
-            error: The error
-            metadata: Additional metadata about the result
-            
-        Returns:
-            A failed Result with the given error
-        """
-        return Result(error=error, metadata=metadata)
-    
-    @staticmethod
-    def failures(errors: list[E], metadata: dict[str, Any] | None = None) -> 'Result[Any, E]':
-        """
-        Create a failed result with multiple errors.
-        
-        Args:
-            errors: The list of errors
-            metadata: Additional metadata about the result
-            
-        Returns:
-            A failed Result with the given errors
-        """
-        return Result(errors=errors, metadata=metadata)
     
     @staticmethod
     def from_exception(e: Exception, metadata: dict[str, Any] | None = None) -> 'Result[Any, Exception]':

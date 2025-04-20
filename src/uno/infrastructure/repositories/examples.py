@@ -129,7 +129,7 @@ class ProductByCategorySpecification(Specification[ProductEntity]):
 class ProductSpecificationTranslator:
     """Translates product specifications into SQL filter conditions."""
 
-    def translate(self, spec: Specification[ProductEntity]) -> Dict[str, Any]:
+    def translate(self, spec: Specification[ProductEntity]) -> dict[str, Any]:
         """Translate a specification into a filter dictionary."""
         if isinstance(spec, ProductByPriceRangeSpecification):
             return {"price__gte": spec.min_price, "price__lte": spec.max_price}

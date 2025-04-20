@@ -27,17 +27,17 @@ class QueryPathCreate(BaseModel):
     target_meta_type_id: str = Field(..., description="The ID of the target meta type")
     cypher_path: str = Field(..., description="The Cypher path expression")
     data_type: str = Field(..., description="The data type of the path result")
-    path_name: Optional[str] = Field(None, description="The name of the path")
+    path_name: str | None = Field(None, description="The name of the path")
 
 
 class QueryPathUpdate(BaseModel):
     """Schema for updating a query path."""
 
-    source_meta_type_id: Optional[str] = Field(None, description="The ID of the source meta type")
-    target_meta_type_id: Optional[str] = Field(None, description="The ID of the target meta type")
-    cypher_path: Optional[str] = Field(None, description="The Cypher path expression")
-    data_type: Optional[str] = Field(None, description="The data type of the path result")
-    path_name: Optional[str] = Field(None, description="The name of the path")
+    source_meta_type_id: str | None = Field(None, description="The ID of the source meta type")
+    target_meta_type_id: str | None = Field(None, description="The ID of the target meta type")
+    cypher_path: str | None = Field(None, description="The Cypher path expression")
+    data_type: str | None = Field(None, description="The data type of the path result")
+    path_name: str | None = Field(None, description="The name of the path")
 
 
 class QueryPathResponse(BaseModel):
@@ -48,7 +48,7 @@ class QueryPathResponse(BaseModel):
     target_meta_type_id: str = Field(..., description="The ID of the target meta type")
     cypher_path: str = Field(..., description="The Cypher path expression")
     data_type: str = Field(..., description="The data type of the path result")
-    path_name: Optional[str] = Field(None, description="The name of the path")
+    path_name: str | None = Field(None, description="The name of the path")
 
 
 class QueryPathGenerateRequest(BaseModel):
@@ -70,10 +70,10 @@ class QueryValueCreate(BaseModel):
 class QueryValueUpdate(BaseModel):
     """Schema for updating a query value."""
 
-    query_path_id: Optional[str] = Field(None, description="The ID of the query path")
+    query_path_id: str | None = Field(None, description="The ID of the query path")
     include: Optional[Include] = Field(None, description="Whether to include or exclude matches")
     match: Optional[Match] = Field(None, description="AND/OR match type")
-    lookup: Optional[str] = Field(None, description="The lookup type (equal, contains, etc.)")
+    lookup: str | None = Field(None, description="The lookup type (equal, contains, etc.)")
     values: Optional[list[Any]] = Field(None, description="The values to filter by")
 
 
@@ -93,7 +93,7 @@ class QueryCreate(BaseModel):
 
     name: str = Field(..., description="The name of the query")
     query_meta_type_id: str = Field(..., description="The ID of the meta type")
-    description: Optional[str] = Field(None, description="A description of the query")
+    description: str | None = Field(None, description="A description of the query")
     include_values: Include = Field(Include.INCLUDE, description="Whether to include or exclude values")
     match_values: Match = Field(Match.AND, description="Whether to match any or all values")
     include_queries: Include = Field(Include.INCLUDE, description="Whether to include or exclude queries")
@@ -104,9 +104,9 @@ class QueryCreate(BaseModel):
 class QueryUpdate(BaseModel):
     """Schema for updating a query."""
 
-    name: Optional[str] = Field(None, description="The name of the query")
-    query_meta_type_id: Optional[str] = Field(None, description="The ID of the meta type")
-    description: Optional[str] = Field(None, description="A description of the query")
+    name: str | None = Field(None, description="The name of the query")
+    query_meta_type_id: str | None = Field(None, description="The ID of the meta type")
+    description: str | None = Field(None, description="A description of the query")
     include_values: Optional[Include] = Field(None, description="Whether to include or exclude values")
     match_values: Optional[Match] = Field(None, description="Whether to match any or all values")
     include_queries: Optional[Include] = Field(None, description="Whether to include or exclude queries")
@@ -120,7 +120,7 @@ class QueryResponse(BaseModel):
     id: str = Field(..., description="The ID of the query")
     name: str = Field(..., description="The name of the query")
     query_meta_type_id: str = Field(..., description="The ID of the meta type")
-    description: Optional[str] = Field(None, description="A description of the query")
+    description: str | None = Field(None, description="A description of the query")
     include_values: Include = Field(..., description="Whether to include or exclude values")
     match_values: Match = Field(..., description="Whether to match any or all values")
     include_queries: Include = Field(..., description="Whether to include or exclude queries")
@@ -131,7 +131,7 @@ class QueryResponse(BaseModel):
 class QueryExecuteRequest(BaseModel):
     """Schema for executing a query."""
 
-    filters: Optional[Dict[str, Any]] = Field(None, description="Additional filters to apply")
+    filters: dict[str, Any] | None = Field(None, description="Additional filters to apply")
     force_refresh: bool = Field(False, description="Whether to bypass the cache")
 
 
@@ -164,7 +164,7 @@ class QueryCheckRecordResponse(BaseModel):
 class QueryCacheInvalidateRequest(BaseModel):
     """Schema for invalidating the query cache."""
 
-    meta_type_id: Optional[str] = Field(None, description="The ID of the meta type to invalidate cache for")
+    meta_type_id: str | None = Field(None, description="The ID of the meta type to invalidate cache for")
 
 
 class QueryCacheInvalidateResponse(BaseModel):
@@ -177,7 +177,7 @@ class QueryWithFiltersRequest(BaseModel):
     """Schema for executing a query with filters."""
 
     entity_type: str = Field(..., description="The type of entity to filter")
-    filters: Dict[str, Any] = Field(default_factory=dict, description="The filters to apply")
+    filters: dict[str, Any] = Field(default_factory=dict, description="The filters to apply")
 
 
 class QueryWithFiltersResponse(BaseModel):
@@ -244,7 +244,7 @@ async def create_query(
 
 @query_router.get("", response_model=list[QueryResponse])
 async def list_queries(
-    meta_type_id: Optional[str] = QueryParam(None, description="Filter by meta type ID"),
+    meta_type_id: str | None = QueryParam(None, description="Filter by meta type ID"),
     query_service: QueryService = Depends(get_query_service),
 ):
     """List all queries with values."""

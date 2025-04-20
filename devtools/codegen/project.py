@@ -590,7 +590,7 @@ class {name.capitalize()}Repository(BaseRepository):
         self,
         limit: int = 100,
         offset: int = 0,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{name.capitalize()}]]:
         \"\"\"
         List {name.lower()}s with optional filtering
@@ -689,7 +689,7 @@ class {name.capitalize()}Service:
         self,
         limit: int = 100,
         offset: int = 0,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> Result[list[{name.capitalize()}]]:
         \"\"\"
         List {name.lower()}s with optional filtering

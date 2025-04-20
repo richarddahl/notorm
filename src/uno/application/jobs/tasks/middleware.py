@@ -28,7 +28,7 @@ class TaskMiddleware:
         """
         self.logger = logger or logging.getLogger(__name__)
     
-    async def before_task(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, job: Dict[str, Any]) -> tuple:
+    async def before_task(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, job: dict[str, Any]) -> tuple:
         """Called before a task is executed.
         
         This method can modify the arguments passed to the task.
@@ -44,7 +44,7 @@ class TaskMiddleware:
         """
         return args, kwargs
     
-    async def after_task(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, result: T, job: Dict[str, Any]) -> T:
+    async def after_task(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, result: T, job: dict[str, Any]) -> T:
         """Called after a task is successfully executed.
         
         This method can modify the result of the task.
@@ -61,7 +61,7 @@ class TaskMiddleware:
         """
         return result
     
-    async def on_error(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, error: Exception, job: Dict[str, Any]) -> Exception:
+    async def on_error(self, task_func: Callable[..., Any], args: tuple, kwargs: dict, error: Exception, job: dict[str, Any]) -> Exception:
         """Called when a task raises an exception.
         
         This method can modify the exception or perform cleanup actions.

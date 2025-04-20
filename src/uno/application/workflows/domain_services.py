@@ -301,7 +301,7 @@ class WorkflowTriggerService(UnoEntityService[WorkflowTrigger]):
         workflow_id: str,
         entity_type: str,
         operation: str,
-        field_conditions: Dict[str, Any] = None,
+        field_conditions: dict[str, Any] = None,
         priority: int = 100,
         is_active: bool = True,
     ) -> Result[WorkflowTrigger]:
@@ -391,7 +391,7 @@ class WorkflowConditionService(UnoEntityService[WorkflowCondition]):
         self,
         workflow_id: str,
         condition_type,
-        condition_config: Dict[str, Any] = None,
+        condition_config: dict[str, Any] = None,
         query_id: str | None = None,
         name: str = "",
         description: str | None = None,
@@ -490,12 +490,12 @@ class WorkflowActionService(UnoEntityService[WorkflowAction]):
         self,
         workflow_id: str,
         action_type,
-        action_config: Dict[str, Any] = None,
+        action_config: dict[str, Any] = None,
         name: str = "",
         description: str | None = None,
         order: int = 0,
         is_active: bool = True,
-        retry_policy: Optional[Dict[str, Any]] = None,
+        retry_policy: dict[str, Any] | None = None,
     ) -> Result[WorkflowAction]:
         """
         Create a new workflow action.
@@ -641,7 +641,7 @@ class WorkflowRecipientService(UnoEntityService[WorkflowRecipient]):
         recipient_id: str,
         name: str | None = None,
         action_id: str | None = None,
-        notification_config: Dict[str, Any] = None,
+        notification_config: dict[str, Any] = None,
     ) -> Result[WorkflowRecipient]:
         """
         Create a new workflow recipient.
@@ -757,7 +757,7 @@ class WorkflowExecutionService(UnoEntityService[WorkflowExecutionRecord]):
         workflow_id: str,
         trigger_event_id: str,
         status: WorkflowExecutionStatus = WorkflowExecutionStatus.PENDING,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> Result[WorkflowExecutionRecord]:
         """
         Create a new workflow execution record.
@@ -801,7 +801,7 @@ class WorkflowExecutionService(UnoEntityService[WorkflowExecutionRecord]):
         self,
         execution_id: str,
         status: WorkflowExecutionStatus,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         error: str | None = None,
     ) -> Result[WorkflowExecutionRecord]:
         """

@@ -56,17 +56,17 @@ class ActionExecutionContext(BaseModel):
     workflow_name: str
     action_id: str
     action_name: str | None = None
-    event_data: Dict[str, Any]
+    event_data: dict[str, Any]
     execution_id: str
     timestamp: datetime = datetime.now(timezone.utc)
-    variables: Dict[str, Any] = {}
+    variables: dict[str, Any] = {}
     tenant_id: str | None = None
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """Get a variable from the context by name with optional default value"""
         return self.variables.get(name, default)
 
-    def add_variables(self, variables: Dict[str, Any]) -> None:
+    def add_variables(self, variables: dict[str, Any]) -> None:
         """Add variables to the context"""
         self.variables.update(variables)
 
@@ -99,7 +99,7 @@ class ActionExecutor(Protocol):
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a workflow action"""
         ...
 
@@ -123,7 +123,7 @@ class NotificationExecutor:
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a notification action"""
         try:
             config = action.action_config
@@ -237,7 +237,7 @@ class EmailExecutor:
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute an email action"""
         try:
             config = action.action_config
@@ -378,7 +378,7 @@ class WebhookExecutor:
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a webhook action"""
         try:
             config = action.action_config
@@ -497,7 +497,7 @@ class DatabaseExecutor:
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a database action"""
         try:
             config = action.action_config
@@ -641,7 +641,7 @@ class CustomExecutor:
     def __init__(
         self,
         logger: logging.Logger | None = None,
-        custom_executors: Dict[str, Callable] = None,
+        custom_executors: dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         self.custom_executors = custom_executors or {}
@@ -657,7 +657,7 @@ class CustomExecutor:
         action: WorkflowAction,
         context: ActionExecutionContext,
         recipients: list[User],
-    ) -> Result[Dict[str, Any]]:
+    ) -> Result[dict[str, Any]]:
         """Execute a custom action"""
         try:
             config = action.action_config

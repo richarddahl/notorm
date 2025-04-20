@@ -41,7 +41,7 @@ class GraphContext(BaseModel):
     text: str
     relevance: float
     source: str
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
 
 class GraphRAGService(Generic[T]):
@@ -384,7 +384,7 @@ class GraphRAGService(Generic[T]):
 
         return text
 
-    def _format_knowledge_node_for_context(self, node: Dict[str, Any]) -> str:
+    def _format_knowledge_node_for_context(self, node: dict[str, Any]) -> str:
         """Format a knowledge graph node as context text."""
         node_type = node.get("labels", ["Unknown"])[0] if "labels" in node else "Entity"
         props = node.get("properties", {})
@@ -442,7 +442,7 @@ class GraphRAGService(Generic[T]):
         max_depth: int = 3,
         relationship_types: list[str] | None = None,
         strategy: str = "hybrid",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Create a RAG prompt with graph-enhanced context.
 
@@ -499,7 +499,7 @@ My question is: {query}"""
         threshold: float = 0.7,
         max_depth: int = 3,
         relationship_types: list[str] | None = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Create a RAG prompt combining vector search and graph-based context.
 

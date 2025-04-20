@@ -37,7 +37,7 @@ class User(AggregateRoot):
     role: UserRole = Field(default=UserRole.CUSTOMER)
     is_active: bool = Field(default=True)
     addresses: list[Address] = Field(default_factory=list)
-    preferences: Dict[str, Any] = Field(default_factory=dict)
+    preferences: dict[str, Any] = Field(default_factory=dict)
     last_login: Optional[datetime] = None
 
     @field_validator("username")
@@ -162,7 +162,7 @@ class UserEmailChangedEvent(Event):
     """Event fired when a user's email is changed."""
 
     user_id: str
-    old_email: Optional[str]
+    old_email: str | None
     new_email: str
 
 

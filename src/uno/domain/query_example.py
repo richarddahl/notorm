@@ -44,16 +44,16 @@ class ProductRepository(Repository[Product]):
 
     async def list(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         order_by: list[str] | None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
     ) -> list[Product]:
         """List products matching filters."""
         # Implementation would interact with the database
         pass
 
-    async def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+    async def count(self, filters: dict[str, Any] | None = None) -> int:
         """Count products matching filters."""
         # Implementation would interact with the database
         pass

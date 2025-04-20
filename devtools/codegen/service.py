@@ -14,7 +14,7 @@ from uno.devtools.codegen.formatter import format_code
 def generate_service(
     name: str,
     module_path: str,
-    fields: Optional[Dict[str, str]] = None,
+    fields: Optional[dict[str, str]] = None,
     methods: Optional[list[dict[str, Any]]] = None,
     dependencies: list[str] | None = None,
     base_class: str = "BaseService",
@@ -153,7 +153,7 @@ def generate_service(
                 "args": [
                     "limit: int = 100",
                     "offset: int = 0",
-                    "filters: Optional[Dict[str, Any]] = None",
+                    "filters: dict[str,Any] | None = None",
                 ],
                 "return_type": f"Result[list[{name}]]",
                 "body": [

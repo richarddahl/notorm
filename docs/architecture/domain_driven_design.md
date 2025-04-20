@@ -513,7 +513,7 @@ class OrderApplicationService(ApplicationService):
         self, 
         customer_id: UUID, 
         items: list[dict[str, Any]],
-        payment_details: Dict[str, Any]
+        payment_details: dict[str, Any]
     ) -> Result[Order, str]:
         """Place an order with payment."""
         

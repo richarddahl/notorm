@@ -25,15 +25,15 @@ class QueryMetric:
     duration: float
     timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     source: str | None = None
-    params: Optional[Dict[str, Any]] = None
+    params: dict[str, Any] | None = None
     stacktrace: list[str] | None = None
     db_name: str | None = None
     success: bool = True
     error: str | None = None
-    rows_affected: Optional[int] = None
-    rows_returned: Optional[int] = None
+    rows_affected: int | None = None
+    rows_returned: int | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "query": self.query,
@@ -61,13 +61,13 @@ class EndpointMetric:
     timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     user_id: str | None = None
     request_id: str | None = None
-    params: Optional[Dict[str, Any]] = None
-    query_count: Optional[int] = None
+    params: dict[str, Any] | None = None
+    query_count: int | None = None
     query_time: Optional[float] = None
-    response_size: Optional[int] = None
+    response_size: int | None = None
     client_ip: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "path": self.path,
@@ -95,11 +95,11 @@ class MemoryMetric:
     used: int
     free: int
     timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
-    process_rss: Optional[int] = None
-    process_vms: Optional[int] = None
+    process_rss: int | None = None
+    process_vms: int | None = None
     process_percent: Optional[float] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "total": self.total,
@@ -125,7 +125,7 @@ class CPUMetric:
     idle: Optional[float] = None
     process_percent: Optional[float] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "percent": self.percent,
@@ -146,12 +146,12 @@ class FunctionMetric:
     timestamp: datetime = field(default_factory=lambda: datetime.now(datetime.UTC))
     module: str | None = None
     args: Optional[list[Any]] = None
-    kwargs: Optional[Dict[str, Any]] = None
+    kwargs: dict[str, Any] | None = None
     result: Optional[Any] = None
     error: str | None = None
     stacktrace: list[str] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "name": self.name,
@@ -178,7 +178,7 @@ class MetricCollector:
         self,
         name: str,
         capacity: int = 1000,
-        report_interval: Optional[int] = None,
+        report_interval: int | None = None,
         report_callback: Optional[Callable[[list[Any]], None]] = None,
     ):
         """
@@ -277,7 +277,7 @@ class QueryCollector(MetricCollector):
     def __init__(
         self,
         capacity: int = 1000,
-        report_interval: Optional[int] = None,
+        report_interval: int | None = None,
         report_callback: Optional[Callable[[list[QueryMetric]], None]] = None,
         slow_query_threshold: float = 1.0,
     ):
@@ -292,8 +292,8 @@ class QueryCollector(MetricCollector):
         """
         super().__init__("query-collector", capacity, report_interval, report_callback)
         self.slow_query_threshold = slow_query_threshold
-        self.query_patterns: Dict[str, list[float]] = {}
-        self.similar_queries: Dict[str, Set[str]] = {}
+        self.query_patterns: dict[str, list[float]] = {}
+        self.similar_queries: dict[str, Set[str]] = {}
 
     def add_query(self, query: str, duration: float, **kwargs) -> QueryMetric:
         """
@@ -381,7 +381,7 @@ class QueryCollector(MetricCollector):
         with self.lock:
             return [m for m in self.metrics if m.duration >= threshold]
 
-    def get_query_patterns(self) -> Dict[str, Dict[str, Any]]:
+    def get_query_patterns(self) -> dict[str, dict[str, Any]]:
         """
         Get query patterns with statistics.
 
@@ -411,7 +411,7 @@ class QueryCollector(MetricCollector):
 
         return result
 
-    def analyze_queries(self) -> Dict[str, Any]:
+    def analyze_queries(self) -> dict[str, Any]:
         """
         Analyze queries for patterns and issues.
 
@@ -521,7 +521,7 @@ class EndpointCollector(MetricCollector):
     def __init__(
         self,
         capacity: int = 1000,
-        report_interval: Optional[int] = None,
+        report_interval: int | None = None,
         report_callback: Optional[Callable[[list[EndpointMetric]], None]] = None,
         slow_endpoint_threshold: float = 1.0,
     ):
@@ -538,7 +538,7 @@ class EndpointCollector(MetricCollector):
             "endpoint-collector", capacity, report_interval, report_callback
         )
         self.slow_endpoint_threshold = slow_endpoint_threshold
-        self.endpoint_stats: Dict[str, Dict[str, Any]] = {}
+        self.endpoint_stats: dict[str, dict[str, Any]] = {}
 
     def add_endpoint_metric(
         self, path: str, method: str, duration: float, status_code: int, **kwargs
@@ -614,7 +614,7 @@ class EndpointCollector(MetricCollector):
                 stats["status_codes"][status_str] = 0
             stats["status_codes"][status_str] += 1
 
-    def get_endpoint_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_endpoint_stats(self) -> dict[str, dict[str, Any]]:
         """
         Get endpoint statistics.
 
@@ -672,7 +672,7 @@ class EndpointCollector(MetricCollector):
 
         return result
 
-    def analyze_endpoints(self) -> Dict[str, Any]:
+    def analyze_endpoints(self) -> dict[str, Any]:
         """
         Analyze endpoints for patterns and issues.
 
@@ -723,7 +723,7 @@ class ResourceCollector(MetricCollector):
     def __init__(
         self,
         capacity: int = 1000,
-        report_interval: Optional[int] = None,
+        report_interval: int | None = None,
         report_callback: Optional[
             Callable[[list[Union[MemoryMetric, CPUMetric]]], None]
         ] = None,
@@ -827,7 +827,7 @@ class ResourceCollector(MetricCollector):
         with self.lock:
             return [m for m in self.metrics if isinstance(m, CPUMetric)]
 
-    def analyze_resources(self) -> Dict[str, Any]:
+    def analyze_resources(self) -> dict[str, Any]:
         """
         Analyze resource metrics.
 
@@ -899,7 +899,7 @@ class FunctionCollector(MetricCollector):
     def __init__(
         self,
         capacity: int = 1000,
-        report_interval: Optional[int] = None,
+        report_interval: int | None = None,
         report_callback: Optional[Callable[[list[FunctionMetric]], None]] = None,
         slow_function_threshold: float = 0.1,
     ):
@@ -916,7 +916,7 @@ class FunctionCollector(MetricCollector):
             "function-collector", capacity, report_interval, report_callback
         )
         self.slow_function_threshold = slow_function_threshold
-        self.function_stats: Dict[str, Dict[str, Any]] = {}
+        self.function_stats: dict[str, dict[str, Any]] = {}
 
     def add_function_metric(
         self, name: str, duration: float, **kwargs
@@ -976,7 +976,7 @@ class FunctionCollector(MetricCollector):
             if len(stats["durations"]) > 100:
                 stats["durations"] = stats["durations"][-100:]
 
-    def get_function_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_function_stats(self) -> dict[str, dict[str, Any]]:
         """
         Get function statistics.
 
@@ -1034,7 +1034,7 @@ class FunctionCollector(MetricCollector):
 
         return result
 
-    def analyze_functions(self) -> Dict[str, Any]:
+    def analyze_functions(self) -> dict[str, Any]:
         """
         Analyze functions for patterns and issues.
 

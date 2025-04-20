@@ -57,8 +57,8 @@ class ProductVariantDTO(BaseModel):
     inventory_quantity: int = 0
     inventory_reserved: int = 0
     inventory_backorderable: bool = False
-    inventory_restock_threshold: Optional[int] = None
-    attributes: Dict[str, Any] = Field(default_factory=dict)
+    inventory_restock_threshold: int | None = None
+    attributes: dict[str, Any] = Field(default_factory=dict)
     is_active: bool = True
 
 
@@ -119,7 +119,7 @@ class ProductCreateCommand(BaseModel):
     inventory_quantity: int = 0
     inventory_reserved: int = 0
     inventory_backorderable: bool = False
-    inventory_restock_threshold: Optional[int] = None
+    inventory_restock_threshold: int | None = None
 
     # Physical attributes
     weight: Optional[ProductWeightDTO] = None
@@ -129,7 +129,7 @@ class ProductCreateCommand(BaseModel):
     category_ids: list[str] = Field(default_factory=list)
 
     # Attributes and metadata
-    attributes: Dict[str, Any] = Field(default_factory=dict)
+    attributes: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
     seo_title: str | None = None
     seo_description: str | None = None
@@ -153,10 +153,10 @@ class ProductUpdateCommand(BaseModel):
     status: Optional[ProductStatus] = None
 
     # Inventory
-    inventory_quantity: Optional[int] = None
-    inventory_reserved: Optional[int] = None
+    inventory_quantity: int | None = None
+    inventory_reserved: int | None = None
     inventory_backorderable: Optional[bool] = None
-    inventory_restock_threshold: Optional[int] = None
+    inventory_restock_threshold: int | None = None
 
     # Physical attributes
     weight: Optional[ProductWeightDTO] = None
@@ -166,7 +166,7 @@ class ProductUpdateCommand(BaseModel):
     category_ids: list[str] | None = None
 
     # Attributes and metadata
-    attributes: Optional[Dict[str, Any]] = None
+    attributes: dict[str, Any] | None = None
     tags: list[str] | None = None
     seo_title: str | None = None
     seo_description: str | None = None
@@ -184,10 +184,10 @@ class ProductListQuery(BaseModel):
     search_term: str | None = None
     min_price: Optional[Decimal] = None
     max_price: Optional[Decimal] = None
-    limit: Optional[int] = None
-    offset: Optional[int] = None
+    limit: int | None = None
+    offset: int | None = None
     sort_by: str | None = None
-    sort_direction: Optional[str] = "asc"
+    sort_direction: str | None = "asc"
 
 
 class ProductDetailQuery(BaseModel):
@@ -218,7 +218,7 @@ class CategoryUpdateCommand(BaseModel):
     parent_id: str | None = None
     image_url: str | None = None
     is_active: Optional[bool] = None
-    sort_order: Optional[int] = None
+    sort_order: int | None = None
 
 
 class CategoryListQuery(BaseModel):
@@ -226,8 +226,8 @@ class CategoryListQuery(BaseModel):
 
     parent_id: str | None = None
     is_active: Optional[bool] = None
-    limit: Optional[int] = None
-    offset: Optional[int] = None
+    limit: int | None = None
+    offset: int | None = None
 
 
 # ----- Domain Services -----

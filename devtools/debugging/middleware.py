@@ -187,7 +187,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
         self,
         request: Request,
         call_next: RequestResponseEndpoint,
-        debug_info: Dict[str, Any],
+        debug_info: dict[str, Any],
     ) -> Response:
         """Process the request and capture debug information.
 
@@ -298,7 +298,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
             # Re-raise if error enhancement is disabled
             raise
 
-    def _enhance_error(self, exc: Exception) -> Dict[str, Any]:
+    def _enhance_error(self, exc: Exception) -> dict[str, Any]:
         """Enhance error information with additional context.
 
         Args:
@@ -340,7 +340,7 @@ class DebugMiddleware(BaseHTTPMiddleware):
 
         return error_info
 
-    def _log_debug_info(self, debug_info: Dict[str, Any], response: Response) -> None:
+    def _log_debug_info(self, debug_info: dict[str, Any], response: Response) -> None:
         """Log debug information for a request.
 
         Args:

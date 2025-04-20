@@ -179,7 +179,7 @@ class WorkflowTriggerModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default=WorkflowDBEvent.INSERT,
         doc="The database operation that triggers the workflow",
     )
-    field_conditions: Mapped[Dict[str, Any]] = mapped_column(
+    field_conditions: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         default={},
         doc="Field conditions that must be met to trigger (e.g., {'status': 'approved'})",
@@ -222,7 +222,7 @@ class WorkflowConditionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default=WorkflowConditionType.FIELD_VALUE,
         doc="Type of condition to evaluate",
     )
-    condition_config: Mapped[Dict[str, Any]] = mapped_column(
+    condition_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         default={},
         doc="Configuration for the condition",
@@ -238,7 +238,7 @@ class WorkflowConditionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default="",
         doc="Optional name for the condition",
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         nullable=True,
         doc="Description of what this condition checks",
     )
@@ -276,7 +276,7 @@ class WorkflowActionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default=WorkflowActionType.NOTIFICATION,
         doc="Type of action to perform",
     )
-    action_config: Mapped[Dict[str, Any]] = mapped_column(
+    action_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         default={},
         doc="Configuration for the action",
@@ -285,7 +285,7 @@ class WorkflowActionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default="",
         doc="Optional name for the action",
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         nullable=True,
         doc="Description of what this action does",
     )
@@ -297,7 +297,7 @@ class WorkflowActionModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         default=True,
         doc="Whether this action is active",
     )
-    retry_policy: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    retry_policy: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         doc="Policy for retrying failed actions",
@@ -335,7 +335,7 @@ class WorkflowRecipientModel(ModelMixin, BaseModel, RecordAuditModelMixin):
     recipient_id: Mapped[str] = mapped_column(
         doc="ID of the recipient (user ID, role name, group ID, etc.)",
     )
-    name: Mapped[Optional[str]] = mapped_column(
+    name: Mapped[str | None] = mapped_column(
         nullable=True,
         doc="Optional descriptive name for this recipient",
     )
@@ -345,7 +345,7 @@ class WorkflowRecipientModel(ModelMixin, BaseModel, RecordAuditModelMixin):
         index=True,
         doc="If specified, this recipient is only for a specific action",
     )
-    notification_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    notification_config: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         doc="Additional notification configuration for this recipient",
@@ -395,16 +395,16 @@ class WorkflowExecutionLog(ModelMixin, BaseModel, RecordAuditModelMixin):
         nullable=True,
         doc="When the workflow execution completed",
     )
-    result: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    result: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         doc="Results of the workflow execution",
     )
-    error: Mapped[Optional[str]] = mapped_column(
+    error: Mapped[str | None] = mapped_column(
         nullable=True,
         doc="Error message if execution failed",
     )
-    context: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    context: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         doc="Context data for this execution",

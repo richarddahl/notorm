@@ -93,7 +93,7 @@ class QueryPlan:
 
     # Analysis
     table_scans: list[str] = field(default_factory=list)
-    index_usage: Dict[str, str] = field(default_factory=dict)
+    index_usage: dict[str, str] = field(default_factory=dict)
     join_types: list[str] = field(default_factory=list)
 
     # Metrics
@@ -180,7 +180,7 @@ class IndexRecommendation:
         self._creation_sql = sql
         return sql
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
@@ -220,7 +220,7 @@ class QueryRewrite:
     # Context
     reason: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
@@ -310,7 +310,7 @@ class QueryStatistics:
 
         return self.execution_count / hours
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
@@ -400,22 +400,22 @@ class QueryOptimizer:
         self.logger = logger or logging.getLogger(__name__)
 
         # Query statistics
-        self._query_stats: Dict[str, QueryStatistics] = {}
+        self._query_stats: dict[str, QueryStatistics] = {}
 
         # Index recommendations
         self._index_recommendations: list[IndexRecommendation] = []
 
         # Query rewrites
-        self._query_rewrites: Dict[str, QueryRewrite] = {}
+        self._query_rewrites: dict[str, QueryRewrite] = {}
 
         # Schema information
-        self._table_info: Dict[str, Dict[str, Any]] = {}
-        self._existing_indexes: Dict[str, list[dict[str, Any]]] = {}
+        self._table_info: dict[str, dict[str, Any]] = {}
+        self._existing_indexes: dict[str, list[dict[str, Any]]] = {}
 
     async def analyze_query(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> QueryPlan:
         """
         Analyze a query and extract its execution plan.
@@ -506,7 +506,7 @@ class QueryOptimizer:
                 estimated_rows=0,
             )
 
-    def _extract_operations(self, plan_node: Dict[str, Any]) -> list[dict[str, Any]]:
+    def _extract_operations(self, plan_node: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Extract operations from a plan node recursively.
 
@@ -540,7 +540,7 @@ class QueryOptimizer:
 
         return operations
 
-    def _extract_table_scans(self, plan_node: Dict[str, Any]) -> list[str]:
+    def _extract_table_scans(self, plan_node: dict[str, Any]) -> list[str]:
         """
         Extract sequential table scans from a plan node.
 
@@ -570,7 +570,7 @@ class QueryOptimizer:
 
         return scans
 
-    def _extract_index_usage(self, plan_node: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_index_usage(self, plan_node: dict[str, Any]) -> dict[str, str]:
         """
         Extract index usage from a plan node.
 
@@ -603,7 +603,7 @@ class QueryOptimizer:
 
         return index_usage
 
-    def _extract_join_types(self, plan_node: Dict[str, Any]) -> list[str]:
+    def _extract_join_types(self, plan_node: dict[str, Any]) -> list[str]:
         """
         Extract join types from a plan node.
 
@@ -775,7 +775,7 @@ class QueryOptimizer:
     async def rewrite_query(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> OpResult[QueryRewrite]:
         """
         Rewrite a query for better performance.
@@ -1039,7 +1039,7 @@ class QueryOptimizer:
     async def execute_optimized_query(
         self,
         query: Union[str, Executable],
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> Any:
         """
         Execute a query with optimization.
@@ -1275,7 +1275,7 @@ class QueryOptimizer:
         except Exception as e:
             self.logger.error(f"Error loading schema information: {e}")
 
-    def get_statistics(self) -> Dict[str, QueryStatistics]:
+    def get_statistics(self) -> dict[str, QueryStatistics]:
         """
         Get collected query statistics.
 
@@ -1407,7 +1407,7 @@ class QueryOptimizer:
 
 async def optimize_query(
     query: Union[str, Executable],
-    params: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
     session: AsyncSession | None = None,
     engine: Optional[AsyncEngine] = None,
     config: Optional[OptimizationConfig] = None,

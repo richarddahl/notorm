@@ -59,7 +59,7 @@ class KnowledgeImportConfig(BaseModel):
     auto_index: bool = True
     create_embeddings: bool = True
     parse_relationships: bool = True
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("source_path")
     def validate_source_path(cls, v, values, **kwargs):
@@ -80,8 +80,8 @@ class KnowledgeItem(BaseModel):
     definition: str | None = None
     content: str | None = None
     synonyms: list[str] = Field(default_factory=list)
-    relationships: Dict[str, list[str]] = Field(default_factory=dict)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    relationships: dict[str, list[str]] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     embedding: Optional[list[float]] = None
     importance: float = 1.0  # 0.0 to 1.0
     created_at: str | None = None
@@ -99,7 +99,7 @@ class PromptEnhancementConfig(BaseModel):
     include_relationships: bool = False
     template: str | None = None
     custom_formatter: str | None = None
-    metadata_filters: Dict[str, Any] = Field(default_factory=dict)
+    metadata_filters: dict[str, Any] = Field(default_factory=dict)
 
 
 class DomainKnowledgeManager:
@@ -135,9 +135,9 @@ class DomainKnowledgeManager:
         self.pool = None
 
         # In-memory cache
-        self.knowledge_cache: Dict[str, Dict[str, KnowledgeItem]] = {}
-        self.domain_glossaries: Dict[str, Dict[str, str]] = {}
-        self.domain_taxonomies: Dict[str, Dict[str, list[str]]] = {}
+        self.knowledge_cache: dict[str, dict[str, KnowledgeItem]] = {}
+        self.domain_glossaries: dict[str, dict[str, str]] = {}
+        self.domain_taxonomies: dict[str, dict[str, list[str]]] = {}
 
         # Initialization flag
         self.initialized = False
@@ -207,7 +207,7 @@ class DomainKnowledgeManager:
 
         self.initialized = True
 
-    async def import_knowledge(self, config: KnowledgeImportConfig) -> Dict[str, Any]:
+    async def import_knowledge(self, config: KnowledgeImportConfig) -> dict[str, Any]:
         """
         Import domain knowledge from a source.
 
@@ -1051,7 +1051,7 @@ class DomainKnowledgeManager:
 
         return results
 
-    async def get_domain_glossary(self, domain: str) -> Dict[str, str]:
+    async def get_domain_glossary(self, domain: str) -> dict[str, str]:
         """
         Get a glossary for a specific domain.
 
@@ -1105,7 +1105,7 @@ class DomainKnowledgeManager:
 
         return glossary
 
-    async def get_domain_taxonomy(self, domain: str) -> Dict[str, list[str]]:
+    async def get_domain_taxonomy(self, domain: str) -> dict[str, list[str]]:
         """
         Get a taxonomy for a specific domain.
 
@@ -1368,7 +1368,7 @@ async def create_domain_knowledge_manager(
     connection_string: str | None = None,
     embedding_service=None,
     logger: logging.Logger | None = None,
-) -> Tuple[DomainKnowledgeManager, Dict[str, Any]]:
+) -> Tuple[DomainKnowledgeManager, dict[str, Any]]:
     """
     Create a domain knowledge manager and load domain knowledge.
 

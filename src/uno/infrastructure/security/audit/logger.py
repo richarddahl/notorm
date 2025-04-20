@@ -33,8 +33,8 @@ class AuditLogStorage(Protocol):
         end_time: Optional[float] = None,
         event_types: list[str] | None = None,
         user_id: str | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[SecurityEvent]:
         """
         Get security events.
@@ -99,8 +99,8 @@ class FileLogStorage:
         end_time: Optional[float] = None,
         event_types: list[str] | None = None,
         user_id: str | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[SecurityEvent]:
         """
         Get security events.
@@ -240,8 +240,8 @@ class DatabaseLogStorage:
         end_time: Optional[float] = None,
         event_types: list[str] | None = None,
         user_id: str | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[SecurityEvent]:
         """
         Get security events.
@@ -349,8 +349,8 @@ class AuditLogger:
         end_time: Optional[float] = None,
         event_types: list[str] | None = None,
         user_id: str | None = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[SecurityEvent]:
         """
         Get security events.

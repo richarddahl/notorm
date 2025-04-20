@@ -41,7 +41,7 @@ class {{ feature_name|pascal_case }}Service:
         self, 
         skip: int = 0, 
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str,Any] | None = None
     ) -> list[{{ feature_name|pascal_case }}Entity]:
         """
         List {{ feature_name|pascal_case }} entities.
@@ -56,7 +56,7 @@ class {{ feature_name|pascal_case }}Service:
         """
         return await self.repository.list(skip=skip, limit=limit, filters=filters)
     
-    async def create(self, data: Dict[str, Any]) -> {{ feature_name|pascal_case }}Entity:
+    async def create(self, data: dict[str, Any]) -> {{ feature_name|pascal_case }}Entity:
         """
         Create a new {{ feature_name|pascal_case }} entity.
         
@@ -75,7 +75,7 @@ class {{ feature_name|pascal_case }}Service:
         # Save to repository
         return await self.repository.create(entity)
     
-    async def update(self, id: UUID, data: Dict[str, Any]) -> Optional[{{ feature_name|pascal_case }}Entity]:
+    async def update(self, id: UUID, data: dict[str, Any]) -> Optional[{{ feature_name|pascal_case }}Entity]:
         """
         Update an existing {{ feature_name|pascal_case }} entity.
         

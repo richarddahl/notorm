@@ -129,7 +129,7 @@ class ConditionEvaluator(Protocol):
         self,
         condition: "WorkflowCondition",
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a condition against an event."""
         ...
@@ -146,7 +146,7 @@ class FieldValueEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a field value condition."""
         try:
@@ -238,7 +238,7 @@ class FieldValueEvaluator:
                 ConditionError(f"Error evaluating field value condition: {str(e)}")
             )
 
-    def _get_value_from_path(self, data: Dict[str, Any], path: str) -> Any:
+    def _get_value_from_path(self, data: dict[str, Any], path: str) -> Any:
         """Get a value from a nested object using dot notation."""
         if "." not in path:
             return data.get(path)
@@ -281,7 +281,7 @@ class TimeBasedEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a time-based condition."""
         try:
@@ -414,7 +414,7 @@ class TimeBasedEvaluator:
                 ConditionError(f"Error evaluating time-based condition: {str(e)}")
             )
 
-    def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(self, dt_str: str | None) -> Optional[datetime]:
         """Parse a datetime string to a datetime object with UTC timezone."""
         if not dt_str:
             return None
@@ -483,7 +483,7 @@ class RoleBasedEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a role-based condition."""
         try:
@@ -642,7 +642,7 @@ class QueryMatchEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """
         Evaluate a query match condition.
@@ -711,7 +711,7 @@ class CustomEvaluator:
     def __init__(
         self,
         logger: logging.Logger | None = None,
-        custom_evaluators: Dict[str, Callable] = None,
+        custom_evaluators: dict[str, Callable] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         self.custom_evaluators = custom_evaluators or {}
@@ -726,7 +726,7 @@ class CustomEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a custom condition."""
         try:
@@ -785,7 +785,7 @@ class CompositeEvaluator:
         self,
         condition: WorkflowCondition,
         event: WorkflowEventModel,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> Result[bool]:
         """Evaluate a composite condition."""
         try:

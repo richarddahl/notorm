@@ -54,12 +54,12 @@ class SubscriptionUpdateRequest(BaseModel):
     description: str | None = None
     is_active: Optional[bool] = None
     is_async: Optional[bool] = None
-    max_retries: Optional[int] = None
-    retry_delay_ms: Optional[int] = None
-    timeout_ms: Optional[int] = None
+    max_retries: int | None = None
+    retry_delay_ms: int | None = None
+    timeout_ms: int | None = None
     filter_expression: str | None = None
-    batch_size: Optional[int] = None
-    batch_interval_ms: Optional[int] = None
+    batch_size: int | None = None
+    batch_interval_ms: int | None = None
     requires_permissions: list[str] | None = None
     alert_on_failure: Optional[bool] = None
     alert_threshold: Optional[float] = None
@@ -87,7 +87,7 @@ class SubscriptionResponse(BaseModel):
     requires_permissions: list[str]
     alert_on_failure: bool
     alert_threshold: float
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
 
 
 class SubscriptionListResponse(BaseModel):
@@ -102,8 +102,8 @@ class EventTypeResponse(BaseModel):
 
     name: str
     description: str
-    schema: Dict[str, Any]
-    example: Optional[Dict[str, Any]] = None
+    schema: dict[str, Any]
+    example: dict[str, Any] | None = None
     deprecated: bool
     domain: str | None = None
 
@@ -122,7 +122,7 @@ class MetricsResponse(BaseModel):
     active_subscriptions: int
     event_types_count: int
     handlers_count: int
-    invocations: Dict[str, Any]
+    invocations: dict[str, Any]
     avg_processing_time_ms: float
     by_event_type: list[dict[str, Any]]
     by_handler: list[dict[str, Any]]
@@ -203,7 +203,7 @@ def create_subscription_router(subscription_manager: SubscriptionManager) -> API
 
     @router.get("/subscriptions", response_model=SubscriptionListResponse)
     async def get_subscriptions(
-        event_type: Optional[str] = Query(
+        event_type: str | None = Query(
             None, description="Filter subscriptions by event type"
         ),
         active_only: bool = Query(

@@ -66,8 +66,8 @@ class JobInfo(BaseModel):
     max_retries: int
     is_scheduled: bool
     result: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    error: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
     tags: Optional[Set[str]] = None
 
 
@@ -80,7 +80,7 @@ class WorkerInfo(BaseModel):
     current_job_id: str | None = None
     jobs_processed: int
     is_healthy: bool
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class ScheduleInfo(BaseModel):
@@ -113,14 +113,14 @@ class CreateJobRequest(BaseModel):
 
     task_name: str
     args: Optional[list[Any]] = Field(default_factory=list)
-    kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    kwargs: dict[str, Any] | None = Field(default_factory=dict)
     queue_name: str = "default"
     priority: str = "NORMAL"
     scheduled_at: Optional[datetime] = None
     max_retries: int = 3
     retry_delay_seconds: int = 60
-    timeout_seconds: Optional[int] = None
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    timeout_seconds: int | None = None
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
     tags: Optional[Set[str]] = Field(default_factory=set)
 
 
@@ -130,22 +130,22 @@ class CreateScheduleRequest(BaseModel):
     name: str
     task_name: str
     schedule_type: str
-    schedule_params: Dict[str, Any]
+    schedule_params: dict[str, Any]
     args: Optional[list[Any]] = Field(default_factory=list)
-    kwargs: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    kwargs: dict[str, Any] | None = Field(default_factory=dict)
     queue_name: str = "default"
     priority: str = "NORMAL"
     max_retries: int = 3
     retry_delay_seconds: int = 60
-    timeout_seconds: Optional[int] = None
-    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    timeout_seconds: int | None = None
+    metadata: dict[str, Any] | None = Field(default_factory=dict)
     enabled: bool = True
 
 
 class MetricsResponse(BaseModel):
     """Response with metrics data."""
 
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
     timestamp: datetime
 
 
@@ -154,7 +154,7 @@ class HealthCheckResponse(BaseModel):
 
     status: str
     message: str
-    checks: Dict[str, Any]
+    checks: dict[str, Any]
     timestamp: datetime
 
 
@@ -389,7 +389,7 @@ async def get_queue(
     )
 
 
-@router.post("/queues/{queue_name}/clear", response_model=Dict[str, Any])
+@router.post("/queues/{queue_name}/clear", response_model=dict[str, Any])
 async def clear_queue(
     queue_name: str = Path(..., description="Name of the queue"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -409,7 +409,7 @@ async def clear_queue(
     }
 
 
-@router.post("/queues/{queue_name}/pause", response_model=Dict[str, Any])
+@router.post("/queues/{queue_name}/pause", response_model=dict[str, Any])
 async def pause_queue(
     queue_name: str = Path(..., description="Name of the queue"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -429,7 +429,7 @@ async def pause_queue(
     }
 
 
-@router.post("/queues/{queue_name}/resume", response_model=Dict[str, Any])
+@router.post("/queues/{queue_name}/resume", response_model=dict[str, Any])
 async def resume_queue(
     queue_name: str = Path(..., description="Name of the queue"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -451,8 +451,8 @@ async def resume_queue(
 
 @router.get("/jobs", response_model=list[JobInfo])
 async def get_jobs(
-    status: Optional[str] = Query(None, description="Filter by job status"),
-    queue_name: Optional[str] = Query(None, description="Filter by queue name"),
+    status: str | None = Query(None, description="Filter by job status"),
+    queue_name: str | None = Query(None, description="Filter by queue name"),
     limit: int = Query(100, description="Maximum number of jobs to return"),
     offset: int = Query(0, description="Offset for pagination"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -501,7 +501,7 @@ async def get_job(
     return _job_to_info(result.value)
 
 
-@router.post("/jobs", response_model=Dict[str, Any])
+@router.post("/jobs", response_model=dict[str, Any])
 async def create_job(
     job_data: CreateJobRequest,
     job_manager: JobManager = Depends(get_job_manager),
@@ -550,7 +550,7 @@ async def create_job(
     }
 
 
-@router.post("/jobs/{job_id}/cancel", response_model=Dict[str, Any])
+@router.post("/jobs/{job_id}/cancel", response_model=dict[str, Any])
 async def cancel_job(
     job_id: str = Path(..., description="ID of the job"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -570,7 +570,7 @@ async def cancel_job(
     }
 
 
-@router.post("/jobs/{job_id}/retry", response_model=Dict[str, Any])
+@router.post("/jobs/{job_id}/retry", response_model=dict[str, Any])
 async def retry_job(
     job_id: str = Path(..., description="ID of the job"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -660,7 +660,7 @@ async def get_schedule(
     return _schedule_to_info(result.value)
 
 
-@router.post("/schedules", response_model=Dict[str, Any])
+@router.post("/schedules", response_model=dict[str, Any])
 async def create_schedule(
     schedule_data: CreateScheduleRequest,
     job_manager: JobManager = Depends(get_job_manager),
@@ -730,7 +730,7 @@ async def create_schedule(
     }
 
 
-@router.post("/schedules/{schedule_id}/enable", response_model=Dict[str, Any])
+@router.post("/schedules/{schedule_id}/enable", response_model=dict[str, Any])
 async def enable_schedule(
     schedule_id: str = Path(..., description="ID of the schedule"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -756,7 +756,7 @@ async def enable_schedule(
     }
 
 
-@router.post("/schedules/{schedule_id}/disable", response_model=Dict[str, Any])
+@router.post("/schedules/{schedule_id}/disable", response_model=dict[str, Any])
 async def disable_schedule(
     schedule_id: str = Path(..., description="ID of the schedule"),
     job_manager: JobManager = Depends(get_job_manager),
@@ -782,7 +782,7 @@ async def disable_schedule(
     }
 
 
-@router.delete("/schedules/{schedule_id}", response_model=Dict[str, Any])
+@router.delete("/schedules/{schedule_id}", response_model=dict[str, Any])
 async def delete_schedule(
     schedule_id: str = Path(..., description="ID of the schedule"),
     job_manager: JobManager = Depends(get_job_manager),

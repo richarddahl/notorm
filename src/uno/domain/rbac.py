@@ -142,8 +142,8 @@ class RbacService:
         self.authorization_service = (
             authorization_service or get_authorization_service()
         )
-        self._roles: Dict[str, Role] = {}
-        self._users: Dict[str, User] = {}
+        self._roles: dict[str, Role] = {}
+        self._users: dict[str, User] = {}
         self._logger = logging.getLogger(__name__)
 
     def create_role(self, name: str, permissions: list[str] | None = None) -> Role:

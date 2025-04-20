@@ -217,7 +217,7 @@ def scaffold_project(
 
 
 def _create_model(
-    name: str, project_dir: Path, env: Environment, context: Dict[str, Any]
+    name: str, project_dir: Path, env: Environment, context: dict[str, Any]
 ) -> Path:
     """Create a database model file."""
     models_dir = (
@@ -467,7 +467,7 @@ def scaffold_feature(
 
 # Helper functions
 def _create_project_directories(
-    project_dir: Path, template_dir: Path, context: Dict[str, Any]
+    project_dir: Path, template_dir: Path, context: dict[str, Any]
 ) -> None:
     """Create project directories based on the template."""
     # Get directories from template
@@ -505,7 +505,7 @@ def _create_project_directories(
 
 
 def _create_project_files(
-    project_dir: Path, template_dir: Path, env: Environment, context: Dict[str, Any]
+    project_dir: Path, template_dir: Path, env: Environment, context: dict[str, Any]
 ) -> None:
     """Create project files based on the template."""
     # Get files from template
@@ -622,7 +622,7 @@ def _get_project_name(project_dir: Path) -> str:
 
 
 def _create_entity(
-    name: str, domain_dir: Path, env: Environment, context: Dict[str, Any]
+    name: str, domain_dir: Path, env: Environment, context: dict[str, Any]
 ) -> Path:
     """Create an entity model file."""
     output_file = domain_dir / f"{name.lower()}_entity.py"
@@ -648,7 +648,7 @@ def _create_entity(
 
 
 def _create_repository(
-    name: str, domain_dir: Path, env: Environment, context: Dict[str, Any]
+    name: str, domain_dir: Path, env: Environment, context: dict[str, Any]
 ) -> Path:
     """Create a repository file."""
     output_file = domain_dir / f"{name.lower()}_repository.py"
@@ -674,7 +674,7 @@ def _create_repository(
 
 
 def _create_service(
-    name: str, domain_dir: Path, env: Environment, context: Dict[str, Any]
+    name: str, domain_dir: Path, env: Environment, context: dict[str, Any]
 ) -> Path:
     """Create a service file."""
     output_file = domain_dir / f"{name.lower()}_service.py"
@@ -700,7 +700,7 @@ def _create_service(
 
 
 def _create_endpoint(
-    name: str, project_dir: Path, env: Environment, context: Dict[str, Any]
+    name: str, project_dir: Path, env: Environment, context: dict[str, Any]
 ) -> Path:
     """Create an API endpoint file."""
     api_dir = project_dir / "src" / context["project_name"] / "api"
@@ -728,10 +728,10 @@ def _create_endpoint(
 
 def _create_tests(
     name: str,
-    domain: Optional[str],
+    domain: str | None,
     project_dir: Path,
     env: Environment,
-    context: Dict[str, Any],
+    context: dict[str, Any],
 ) -> list[Path]:
     """Create test files."""
     test_files = []
@@ -824,9 +824,7 @@ if TYPER_AVAILABLE:
     @scaffold_app.command("feature")
     def feature_command(
         name: str = typer.Argument(..., help="Feature name"),
-        domain: Optional[str] = typer.Option(
-            None, "--domain", "-d", help="Domain name"
-        ),
+        domain: str | None = typer.Option(None, "--domain", "-d", help="Domain name"),
         no_entity: bool = typer.Option(
             False, "--no-entity", help="Skip entity creation"
         ),

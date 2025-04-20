@@ -44,10 +44,10 @@ class ProfileResult:
     cumtime: float = 0.0
     percall: float = 0.0
     filename: str | None = None
-    lineno: Optional[int] = None
+    lineno: int | None = None
     function_type: str = "function"
-    callers: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    callees: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    callers: dict[str, dict[str, Any]] = field(default_factory=dict)
+    callees: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 class Profiler:
@@ -79,7 +79,7 @@ class Profiler:
         elif self.use_yappi:
             self.profiler = yappi
 
-        self.results: Dict[str, ProfileResult] = {}
+        self.results: dict[str, ProfileResult] = {}
         self.current_run: str | None = None
 
     def __call__(self, func: F) -> F:
@@ -216,7 +216,7 @@ class Profiler:
 
     def get_stats(
         self, name: str | None = None
-    ) -> Union[Dict[str, ProfileResult], Optional[ProfileResult]]:
+    ) -> Union[dict[str, ProfileResult], Optional[ProfileResult]]:
         """Get profiling statistics.
 
         Args:

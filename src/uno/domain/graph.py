@@ -432,7 +432,7 @@ class AttributeGraphQuery:
             )
 
     async def _execute_cypher_query(
-        self, cypher_query: str, params: Dict[str, Any], session: AsyncSession
+        self, cypher_query: str, params: dict[str, Any], session: AsyncSession
     ) -> list[str]:
         """
         Execute a cypher query and return the results.

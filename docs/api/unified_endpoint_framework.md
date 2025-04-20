@@ -75,7 +75,7 @@ from uno.api.endpoint.integration import create_api
 
 # Define your models
 class ProductSearchQuery(BaseModel):
-    name: Optional[str] = Field(None, description="Product name contains")
+    name: str | None = Field(None, description="Product name contains")
     min_price: Optional[float] = Field(None, description="Minimum price")
 
 class ProductSearchResult(BaseModel):
@@ -313,13 +313,13 @@ class DataResponse(BaseModel, Generic[T]):
     """Standard response format for data."""
     
     data: T = Field(..., description="Response data")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")
 
 class ErrorResponse(BaseModel):
     """Standard response format for errors."""
     
     error: ErrorDetail = Field(..., description="Error details")
-    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+    meta: dict[str, Any] | None = Field(None, description="Response metadata")
 
 class PaginatedResponse(BaseModel, Generic[T]):
     """Standard response format for paginated data."""

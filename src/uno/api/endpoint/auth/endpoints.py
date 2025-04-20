@@ -234,8 +234,8 @@ class SecureCqrsEndpoint(CqrsEndpoint):
         self,
         *,
         auth_backend: AuthenticationBackend,
-        query_permissions: Optional[Dict[str, list[str]]] = None,
-        command_permissions: Optional[Dict[str, list[str]]] = None,
+        query_permissions: Optional[dict[str, list[str]]] = None,
+        command_permissions: Optional[dict[str, list[str]]] = None,
         **kwargs,
     ):
         """

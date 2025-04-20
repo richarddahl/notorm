@@ -31,7 +31,7 @@ class Vulnerability:
         severity: str,
         scanner: str,
         file_path: str | None = None,
-        line: Optional[int] = None,
+        line: int | None = None,
         cvss_score: Optional[float] = None,
         recommendation: str | None = None,
         external_references: list[str] | None = None,
@@ -62,7 +62,7 @@ class Vulnerability:
         self.recommendation = recommendation
         self.external_references = external_references or []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the vulnerability to a dictionary.
 
@@ -83,7 +83,7 @@ class Vulnerability:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Vulnerability":
+    def from_dict(cls, data: dict[str, Any]) -> "Vulnerability":
         """
         Create a vulnerability from a dictionary.
 
@@ -164,7 +164,7 @@ class SecurityScanner:
             except ImportError:
                 self.logger.warning("Penetration testing not available")
 
-    def scan(self, target: str) -> Dict[str, Any]:
+    def scan(self, target: str) -> dict[str, Any]:
         """
         Scan a target for security vulnerabilities.
 
@@ -227,7 +227,7 @@ class SecurityScanner:
             "should_fail": len(fail_conditions) > 0,
         }
 
-    def save_report(self, results: Dict[str, Any], filename: str) -> None:
+    def save_report(self, results: dict[str, Any], filename: str) -> None:
         """
         Save scan results to a file.
 

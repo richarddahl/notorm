@@ -50,13 +50,13 @@ class MemorySnapshot:
     """Snapshot of memory usage."""
 
     timestamp: float = 0.0
-    rss: Optional[int] = None  # Resident Set Size
-    vms: Optional[int] = None  # Virtual Memory Size
-    python_total: Optional[int] = None  # Total Python memory usage
-    gc_objects: Optional[Dict[str, int]] = None  # Object counts from gc
+    rss: int | None = None  # Resident Set Size
+    vms: int | None = None  # Virtual Memory Size
+    python_total: int | None = None  # Total Python memory usage
+    gc_objects: Optional[dict[str, int]] = None  # Object counts from gc
     tracemalloc_snapshot: Optional[Any] = None  # tracemalloc snapshot
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Convert the snapshot to a dictionary.
 
         Returns:
@@ -82,10 +82,10 @@ class MemoryProfileResult:
     name: str
     start_snapshot: MemorySnapshot
     end_snapshot: MemorySnapshot
-    delta: Dict[str, Any] = field(default_factory=dict)
+    delta: dict[str, Any] = field(default_factory=dict)
     peak: Optional[MemorySnapshot] = None
     snapshots: list[MemorySnapshot] = field(default_factory=list)
-    tracked_objects: Dict[str, Any] = field(default_factory=dict)
+    tracked_objects: dict[str, Any] = field(default_factory=dict)
 
 
 class MemoryProfiler:
@@ -111,7 +111,7 @@ class MemoryProfiler:
         self.use_tracemalloc = use_tracemalloc and TRACEMALLOC_AVAILABLE
         self.interval = interval
 
-        self.results: Dict[str, MemoryProfileResult] = {}
+        self.results: dict[str, MemoryProfileResult] = {}
         self.current_run: str | None = None
         self.tracking_thread = None
 
@@ -220,7 +220,7 @@ class MemoryProfiler:
 
     def _calculate_delta(
         self, start: MemorySnapshot, end: MemorySnapshot
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate the difference between two memory snapshots.
 
         Args:
@@ -421,7 +421,7 @@ class MemoryProfiler:
 
     def get_stats(
         self, name: str | None = None
-    ) -> Union[Dict[str, MemoryProfileResult], Optional[MemoryProfileResult]]:
+    ) -> Union[dict[str, MemoryProfileResult], Optional[MemoryProfileResult]]:
         """Get memory profiling statistics.
 
         Args:

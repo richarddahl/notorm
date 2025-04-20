@@ -31,7 +31,7 @@ class DetectorConfigRequest(BaseModel):
     min_data_points: int = Field(
         default=100, description="Minimum data points required for training"
     )
-    params: Dict[str, Any] = Field(
+    params: dict[str, Any] = Field(
         default_factory=dict, description="Additional parameters"
     )
 
@@ -40,10 +40,10 @@ class DataPointRequest(BaseModel):
     """Request model for processing a data point."""
 
     timestamp: Optional[datetime.datetime] = None
-    metrics: Dict[str, float]
+    metrics: dict[str, float]
     entity_id: str | None = None
     entity_type: str | None = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class BatchDataRequest(BaseModel):
@@ -56,7 +56,7 @@ class TrainRequest(BaseModel):
     """Request model for training detectors."""
 
     detector_ids: list[str] | None = None
-    historical_data: Optional[Dict[str, list[dict[str, Any]]]] = None
+    historical_data: Optional[dict[str, list[dict[str, Any]]]] = None
     use_stored_data: bool = True
     days: int = Field(default=30, description="Days of historical data to use")
 
@@ -73,11 +73,11 @@ class AnomalyAlertResponse(BaseModel):
     entity_type: str | None = None
     metric_name: str
     metric_value: float
-    expected_range: Dict[str, float]
+    expected_range: dict[str, float]
     deviation_factor: float
     description: str
     suggestion: str | None = None
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     is_critical: bool
 
 
@@ -96,7 +96,7 @@ def create_anomaly_detection_router(
     """
     router = APIRouter(prefix=path_prefix, tags=["anomaly-detection"])
 
-    @router.post("/detectors", response_model=Dict[str, str])
+    @router.post("/detectors", response_model=dict[str, str])
     async def create_detector(request: DetectorConfigRequest):
         """Create a new anomaly detector."""
         try:
@@ -150,7 +150,7 @@ def create_anomaly_detection_router(
                 status_code=500, detail=f"Failed to create detector: {str(e)}"
             )
 
-    @router.delete("/detectors/{detector_id}", response_model=Dict[str, bool])
+    @router.delete("/detectors/{detector_id}", response_model=dict[str, bool])
     async def delete_detector(detector_id: str):
         """Unregister an anomaly detector."""
         try:
@@ -170,7 +170,7 @@ def create_anomaly_detection_router(
                 status_code=500, detail=f"Failed to delete detector: {str(e)}"
             )
 
-    @router.get("/detectors", response_model=Dict[str, Dict[str, Any]])
+    @router.get("/detectors", response_model=dict[str, dict[str, Any]])
     async def get_detectors():
         """Get metrics for all registered detectors."""
         try:
@@ -276,7 +276,7 @@ def create_anomaly_detection_router(
                 status_code=500, detail=f"Failed to process batch: {str(e)}"
             )
 
-    @router.post("/train", response_model=Dict[str, bool])
+    @router.post("/train", response_model=dict[str, bool])
     async def train_detectors(request: TrainRequest, background_tasks: BackgroundTasks):
         """Train detectors on historical data."""
         try:
@@ -354,7 +354,7 @@ def create_anomaly_detection_router(
 async def _train_detectors_task(
     engine: AnomalyDetectionEngine,
     detector_ids: list[str] | None,
-    historical_data: Optional[Dict[str, list[dict[str, Any]]]],
+    historical_data: Optional[dict[str, list[dict[str, Any]]]],
     use_stored_data: bool,
     days: int,
 ):

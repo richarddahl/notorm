@@ -41,8 +41,8 @@ class DashboardWidget(BaseModel):
     title: str
     report_id: str
     data_key: str
-    config: Dict[str, Any] = {}
-    position: Dict[str, int] = {"x": 0, "y": 0, "w": 3, "h": 3}
+    config: dict[str, Any] = {}
+    position: dict[str, int] = {"x": 0, "y": 0, "w": 3, "h": 3}
 
 
 class DashboardConfig(BaseModel):
@@ -50,7 +50,7 @@ class DashboardConfig(BaseModel):
     description: str | None = None
     report_ids: list[str]
     widgets: list[DashboardWidget]
-    default_date_range: Dict[str, str] = {
+    default_date_range: dict[str, str] = {
         "start": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
         "end": datetime.now().strftime("%Y-%m-%d"),
     }
@@ -75,7 +75,7 @@ async def get_data_aggregator(
 
 
 # Dashboard endpoints
-@router.post("/", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def create_dashboard(
     dashboard: DashboardConfig,
     session: AsyncSession = Depends(get_db_session),
@@ -114,7 +114,7 @@ async def create_dashboard(
     return {"id": dashboard_id, **dashboard_dict}
 
 
-@router.get("/{dashboard_id}", response_model=Dict[str, Any])
+@router.get("/{dashboard_id}", response_model=dict[str, Any])
 async def get_dashboard(
     dashboard_id: str = Path(..., description="The ID of the dashboard to retrieve")
 ):
@@ -176,7 +176,7 @@ async def get_dashboard(
         )
 
 
-@router.put("/{dashboard_id}", response_model=Dict[str, Any])
+@router.put("/{dashboard_id}", response_model=dict[str, Any])
 async def update_dashboard(
     dashboard: DashboardConfig,
     dashboard_id: str = Path(..., description="The ID of the dashboard to update"),
@@ -226,12 +226,12 @@ async def delete_dashboard(
     return None
 
 
-@router.get("/{dashboard_id}/data", response_model=Dict[str, Any])
+@router.get("/{dashboard_id}/data", response_model=dict[str, Any])
 async def get_dashboard_data(
     dashboard_id: str = Path(..., description="The ID of the dashboard"),
-    date_start: Optional[str] = Query(None, description="Start date for report data"),
-    date_end: Optional[str] = Query(None, description="End date for report data"),
-    filters: Optional[str] = Query(None, description="JSON string of filters"),
+    date_start: str | None = Query(None, description="Start date for report data"),
+    date_end: str | None = Query(None, description="End date for report data"),
+    filters: str | None = Query(None, description="JSON string of filters"),
     force_refresh: bool = Query(False, description="Force data refresh"),
     data_aggregator: ReportDataAggregator = Depends(get_data_aggregator),
 ):
@@ -291,9 +291,9 @@ async def get_dashboard_data(
 async def export_dashboard(
     dashboard_id: str = Path(..., description="The ID of the dashboard"),
     format: str = Query(..., description="Export format (pdf or xlsx)"),
-    date_start: Optional[str] = Query(None, description="Start date for report data"),
-    date_end: Optional[str] = Query(None, description="End date for report data"),
-    filters: Optional[str] = Query(None, description="JSON string of filters"),
+    date_start: str | None = Query(None, description="Start date for report data"),
+    date_end: str | None = Query(None, description="End date for report data"),
+    filters: str | None = Query(None, description="JSON string of filters"),
     data_aggregator: ReportDataAggregator = Depends(get_data_aggregator),
 ):
     """Export dashboard data in specified format."""

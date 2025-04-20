@@ -124,12 +124,10 @@ class EncryptionConfig(BaseModel):
         default_factory=lambda: ["password", "ssn", "credit_card", "api_key"],
         description="Fields to encrypt",
     )
-    key_vault_url: Optional[str] = Field(
+    key_vault_url: str | None = Field(
         None, description="URL for key vault (if using external key management)"
     )
-    key_identifier: Optional[str] = Field(
-        None, description="Key identifier for key vault"
-    )
+    key_identifier: str | None = Field(None, description="Key identifier for key vault")
 
 
 class PasswordPolicyConfig(BaseModel):
@@ -235,7 +233,7 @@ class AuthenticationConfig(BaseModel):
     sso_provider: SSOProvider = Field(
         SSOProvider.NONE, description="Single sign-on provider"
     )
-    sso_config: Dict[str, Any] = Field(
+    sso_config: dict[str, Any] = Field(
         default_factory=dict, description="Single sign-on configuration"
     )
     session_timeout_minutes: int = Field(60, description="Session timeout in minutes")
@@ -249,8 +247,8 @@ class AuthenticationConfig(BaseModel):
     )
     jwt_secret_key: str = Field("", description="Secret key for signing JWTs")
     jwt_algorithm: str = Field("HS256", description="Algorithm for signing JWTs")
-    jwt_issuer: Optional[str] = Field(None, description="Issuer claim for the JWT")
-    jwt_audience: Optional[str] = Field(None, description="Audience claim for the JWT")
+    jwt_issuer: str | None = Field(None, description="Issuer claim for the JWT")
+    jwt_audience: str | None = Field(None, description="Audience claim for the JWT")
     enable_jwt_middleware: bool = Field(
         True, description="Enable JWT middleware for FastAPI"
     )
@@ -277,7 +275,7 @@ class AuditingConfig(BaseModel):
     storage: AuditLogStorage = Field(
         AuditLogStorage.DATABASE, description="Audit log storage"
     )
-    storage_path: Optional[str] = Field(
+    storage_path: str | None = Field(
         None, description="Path for audit log storage (if file or remote)"
     )
     retention_days: int = Field(365, description="Audit log retention in days")
@@ -331,7 +329,7 @@ class WebSecurityConfig(BaseModel):
     content_security_policy_level: ContentSecurityPolicyLevel = Field(
         ContentSecurityPolicyLevel.STRICT, description="Content Security Policy level"
     )
-    custom_csp_directives: Dict[str, str] = Field(
+    custom_csp_directives: dict[str, str] = Field(
         default_factory=dict, description="Custom Content Security Policy directives"
     )
     allowed_hosts: list[str] = Field(

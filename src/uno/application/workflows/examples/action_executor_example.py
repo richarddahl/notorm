@@ -240,7 +240,7 @@ async def create_custom_workflow() -> str:
 
 async def track_order_analytics(
     action: WorkflowAction, context: ActionExecutionContext, recipients: list[User]
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Custom executor function for order analytics.
 

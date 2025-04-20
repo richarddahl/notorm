@@ -26,9 +26,9 @@ class MetricsConfig:
     export_interval: float = 60.0
     prometheus_enabled: bool = True
     metrics_path: str = "/metrics"
-    default_labels: Dict[str, str] = field(default_factory=dict)
+    default_labels: dict[str, str] = field(default_factory=dict)
     excluded_paths: list[str] = field(default_factory=list)
-    histogram_buckets: Dict[str, list[float]] = field(default_factory=dict)
+    histogram_buckets: dict[str, list[float]] = field(default_factory=dict)
 
     def __post_init__(self):
         """Set default values."""

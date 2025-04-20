@@ -79,7 +79,7 @@ class AnalyzeCodebase:
         if not self.project_path.exists():
             raise ValueError(f"Project path {project_path} does not exist")
 
-    def analyze(self, model_type: ModelType = ModelType.ALL) -> Dict[str, Any]:
+    def analyze(self, model_type: ModelType = ModelType.ALL) -> dict[str, Any]:
         """
         Analyze the codebase and extract data models.
 
@@ -284,7 +284,7 @@ class AnalyzeCodebase:
         return value_name
 
     def _extract_relationships(
-        self, domain_dir: Path, entity_map: Dict[str, str]
+        self, domain_dir: Path, entity_map: dict[str, str]
     ) -> list[Relationship]:
         """
         Extract relationships from a domain directory.
@@ -310,7 +310,7 @@ class AnalyzeCodebase:
         return relationships
 
     def _extract_relationships_from_file(
-        self, file_path: Path, entity_map: Dict[str, str]
+        self, file_path: Path, entity_map: dict[str, str]
     ) -> list[Relationship]:
         """
         Extract relationships from a Python file.

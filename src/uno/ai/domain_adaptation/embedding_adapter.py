@@ -74,8 +74,8 @@ class EmbeddingAdapterConfig(BaseModel):
     cache_dir: str | None = None
     output_dir: str
     description: str | None = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    tokenizer_params: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    tokenizer_params: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("output_dir")
     def validate_output_dir(cls, v):
@@ -180,7 +180,7 @@ class DomainEmbeddingAdapter:
         self,
         positive_pairs: list[Tuple[str, str]],
         negative_pairs: Optional[list[Tuple[str, str]]] = None,
-        hard_negatives: Optional[Dict[str, list[str]]] = None,
+        hard_negatives: Optional[dict[str, list[str]]] = None,
     ) -> None:
         """
         Prepare data for contrastive learning.
@@ -330,7 +330,7 @@ class DomainEmbeddingAdapter:
             self.dev_dataset = None
             self.evaluator = None
 
-    async def fine_tune(self) -> Dict[str, Any]:
+    async def fine_tune(self) -> dict[str, Any]:
         """
         Fine-tune the embedding model for the specific domain.
 
@@ -481,7 +481,7 @@ class DomainEmbeddingAdapter:
         test_pairs: list[Tuple[str, str]],
         test_scores: list[float],
         batch_size: int = 32,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Evaluate the model on a test set.
 

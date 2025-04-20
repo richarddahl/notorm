@@ -34,7 +34,7 @@ class Product(Entity):
     """
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     price: Money
     category: ProductCategory = Field(...)
     sku: str = Field(..., min_length=3, max_length=20)

@@ -112,7 +112,7 @@ class PgOptimizationStrategies:
         self.optimizer = optimizer
         self.logger = optimizer.logger
 
-    async def analyze_table(self, table_name: str) -> OpResult[Dict[str, Any]]:
+    async def analyze_table(self, table_name: str) -> OpResult[dict[str, Any]]:
         """
         Run ANALYZE on a table to update statistics.
 
@@ -143,7 +143,7 @@ class PgOptimizationStrategies:
             self.logger.error(error_msg)
             return Failure(error_msg)
 
-    async def get_table_statistics(self, table_name: str) -> OpResult[Dict[str, Any]]:
+    async def get_table_statistics(self, table_name: str) -> OpResult[dict[str, Any]]:
         """
         Get statistics for a table.
 
@@ -258,7 +258,7 @@ class PgOptimizationStrategies:
 
     async def recommend_table_maintenance(
         self, table_name: str
-    ) -> OpResult[Dict[str, Any]]:
+    ) -> OpResult[dict[str, Any]]:
         """
         Recommend maintenance operations for a table.
 
@@ -621,7 +621,7 @@ class PgOptimizationStrategies:
 
     def _extract_partial_index_condition(
         self, table_name: str, where_clauses: list[str]
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Extract a condition suitable for a partial index.
 

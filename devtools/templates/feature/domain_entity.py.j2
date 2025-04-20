@@ -95,7 +95,7 @@ class {{ feature_name|pascal_case }}Details(ValueObject):
     
     category: str
     tags: list[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     def add_tag(self, tag: str) -> None:
         """Add a tag if it doesn't already exist."""

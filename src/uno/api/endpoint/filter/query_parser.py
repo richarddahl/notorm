@@ -142,7 +142,7 @@ class QueryParser:
         return criteria
 
     @staticmethod
-    def parse_json_filter(filter_json: Dict[str, Any]) -> FilterCriteria:
+    def parse_json_filter(filter_json: dict[str, Any]) -> FilterCriteria:
         """
         Parse filter criteria from JSON.
 

@@ -34,7 +34,7 @@ class DomainValidator(Validator[T]):
     validate domain objects according to domain invariants and business rules.
     """
 
-    def __init__(self, field_validators: Optional[Dict[str, list[FieldRule]]] = None):
+    def __init__(self, field_validators: Optional[dict[str, list[FieldRule]]] = None):
         """
         Initialize a domain validator.
 
@@ -170,7 +170,7 @@ class ValueObjectValidator(DomainValidator[V]):
 
 def domain_validator(
     cls: Type[T],
-    field_validators: Optional[Dict[str, list[FieldRule]]] = None,
+    field_validators: Optional[dict[str, list[FieldRule]]] = None,
     invariant_validator: Optional[Callable[[T, ValidationContext], None]] = None,
 ) -> DomainValidator[T]:
     """

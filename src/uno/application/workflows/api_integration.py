@@ -61,7 +61,7 @@ def register_workflow_definition_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     workflow_service: Optional[WorkflowService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for workflow definitions.
 
     Args:
@@ -146,9 +146,9 @@ def register_workflow_definition_endpoints(
         summary="List workflows",
     )
     async def list_workflows(
-        name: Optional[str] = Query(None, description="Filter by name"),
-        status: Optional[str] = Query(None, description="Filter by status"),
-        entity_type: Optional[str] = Query(
+        name: str | None = Query(None, description="Filter by name"),
+        status: str | None = Query(None, description="Filter by status"),
+        entity_type: str | None = Query(
             None, description="Filter by entity type (triggers)"
         ),
         skip: int = Query(0, description="Number of records to skip"),
@@ -244,12 +244,12 @@ def register_workflow_definition_endpoints(
     # Process workflow event
     @router.post(
         "/events",
-        response_model=Dict[str, Any],
+        response_model=dict[str, Any],
         summary="Process a workflow event",
     )
     async def process_event(
         event: WorkflowEventDto = Body(...),
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process a workflow event."""
         result = await workflow_service.process_event(event.dict())
         if result.is_failure:
@@ -267,7 +267,7 @@ def register_workflow_definition_endpoints(
     )
     async def get_workflow_executions(
         workflow_id: str = Path(..., description="The ID of the workflow"),
-        status: Optional[str] = Query(None, description="Filter by status"),
+        status: str | None = Query(None, description="Filter by status"),
         limit: int = Query(100, description="Maximum number of records to return"),
         offset: int = Query(0, description="Number of records to skip"),
     ) -> list[WorkflowExecutionRecordViewDto]:
@@ -295,7 +295,7 @@ def register_workflow_component_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     workflow_service: Optional[WorkflowService] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Register API endpoints for workflow components (triggers, conditions, etc.).
 
     Args:
@@ -329,7 +329,7 @@ def register_workflow_endpoints(
     dependencies: list[Any] = None,
     include_auth: bool = True,
     workflow_service: Optional[WorkflowService] = None,
-) -> Dict[str, Dict[str, Any]]:
+) -> dict[str, dict[str, Any]]:
     """Register all workflow module API endpoints.
 
     Args:

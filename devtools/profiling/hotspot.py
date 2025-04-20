@@ -27,7 +27,7 @@ def find_hotspots(
     depth: int = 10,
     min_percent: float = 1.0,
     exclude_builtins: bool = True,
-) -> list[Tuple[str, Dict[str, Any]]]:
+) -> list[Tuple[str, dict[str, Any]]]:
     """Find performance hotspots in a module.
 
     Args:
@@ -178,7 +178,7 @@ def find_hotspots(
     return []
 
 
-def analyze_performance(func: Callable, *args, **kwargs) -> Dict[str, Any]:
+def analyze_performance(func: Callable, *args, **kwargs) -> dict[str, Any]:
     """Analyze the performance of a function.
 
     Args:

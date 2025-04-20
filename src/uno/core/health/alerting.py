@@ -86,7 +86,7 @@ class AlertConfig(BaseModel):
     smtp_password: str | None = None
     smtp_use_tls: bool = True
     webhook_urls: list[str] = Field(default_factory=list)
-    webhook_custom_headers: Dict[str, str] = Field(default_factory=dict)
+    webhook_custom_headers: dict[str, str] = Field(default_factory=dict)
     alert_history_size: int = 100
 
 
@@ -98,7 +98,7 @@ class Alert(BaseModel):
     level: AlertLevel
     title: str
     message: str
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
     source: str
     check_id: str | None = None
     check_name: str | None = None
@@ -117,7 +117,7 @@ class Alert(BaseModel):
         },
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert alert to dictionary.
 
@@ -152,7 +152,7 @@ class AlertRule(BaseModel):
     last_alert_time: Optional[float] = None
 
     def matches(
-        self, check_id: str, check: Dict[str, Any], result: HealthCheckResult
+        self, check_id: str, check: dict[str, Any], result: HealthCheckResult
     ) -> bool:
         """
         Check if this rule matches a health check result.
@@ -519,7 +519,7 @@ class AlertManager:
         async with self._lock:
             self.actions.append(action)
 
-    async def process_health_report(self, report: Dict[str, Any]) -> None:
+    async def process_health_report(self, report: dict[str, Any]) -> None:
         """
         Process a health report and generate alerts.
 
@@ -627,7 +627,7 @@ class AlertManager:
             )
 
     async def _process_check(
-        self, check_id: str, check_info: Dict[str, Any], result: HealthCheckResult
+        self, check_id: str, check_info: dict[str, Any], result: HealthCheckResult
     ) -> None:
         """
         Process a single health check against alert rules.

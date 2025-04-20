@@ -405,7 +405,7 @@ class AsyncWorker(Worker):
                 self.logger.error(f"Error in health check loop: {e}")
                 await asyncio.sleep(self.healthcheck_interval)
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Check the health of the worker.
 
         Returns:
@@ -444,7 +444,7 @@ class AsyncWorker(Worker):
 
         return health
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """Get performance metrics for the worker.
 
         Returns:

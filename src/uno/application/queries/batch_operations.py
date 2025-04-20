@@ -650,7 +650,7 @@ class BatchOperations(Generic[T]):
         self,
         id_values: list[Any],
         load_relations: Optional[Union[bool, list[str]]] = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> list[T]:
         """
@@ -700,7 +700,7 @@ class BatchOperations(Generic[T]):
         self,
         records: list[dict[str, Any]],
         return_models: bool = False,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> Union[int, list[T]]:
         """
@@ -756,7 +756,7 @@ class BatchOperations(Generic[T]):
         id_field: str = "id",
         fields_to_update: list[str] | None = None,
         return_models: bool = False,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> Union[int, list[T]]:
         """
@@ -847,7 +847,7 @@ class BatchOperations(Generic[T]):
         constraint_columns: list[str],
         update_columns: list[str] | None = None,
         return_models: bool = False,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> Union[int, list[T]]:
         """
@@ -906,7 +906,7 @@ class BatchOperations(Generic[T]):
         self,
         id_values: list[Any],
         return_models: bool = False,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> Union[int, list[T]]:
         """
@@ -961,7 +961,7 @@ class BatchOperations(Generic[T]):
         id_values: list[Any],
         compute_fn: Callable[[T], Any],
         load_relations: Optional[Union[bool, list[str]]] = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> list[Any]:
         """
@@ -1021,7 +1021,7 @@ class BatchOperations(Generic[T]):
         self,
         sql_template: str,
         parameters: list[dict[str, Any]],
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
     ) -> list[Any]:
         """
@@ -1119,10 +1119,10 @@ class BatchOperations(Generic[T]):
         unique_fields: list[str],
         update_on_conflict: bool = True,
         return_stats: bool = True,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         parallel: bool = False,
         pre_process_fn: Optional[Callable] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Import data in batch with duplicate handling.
 
@@ -1262,7 +1262,7 @@ class BatchOperations(Generic[T]):
 
         return results
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """
         Get metrics from all batch operations.
 

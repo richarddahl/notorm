@@ -68,7 +68,7 @@ class SubscriptionConfig(BaseModel):
     timeout_ms: int = 30000  # 30 seconds
 
     # Advanced settings
-    filter_expression: Optional[str] = (
+    filter_expression: str | None = (
         None  # Optional JSONATA or similar expression to filter events
     )
     batch_size: int = 1  # For batch handlers
@@ -98,8 +98,8 @@ class EventTypeInfo(BaseModel):
 
     name: str
     description: str = ""
-    schema: Dict[str, Any] = Field(default_factory=dict)
-    example: Optional[Dict[str, Any]] = None
+    schema: dict[str, Any] = Field(default_factory=dict)
+    example: dict[str, Any] | None = None
     deprecated: bool = False
     domain: str | None = None
 
@@ -121,8 +121,8 @@ class SubscriptionRepository(Generic[EventProtocol]):
         """
         self.logger = structlog.get_logger("uno.events.subscriptions")
         self.config_path = config_path
-        self._subscriptions: Dict[str, SubscriptionInfo] = {}
-        self._event_types: Dict[str, EventTypeInfo] = {}
+        self._subscriptions: dict[str, SubscriptionInfo] = {}
+        self._event_types: dict[str, EventTypeInfo] = {}
         self._lock = asyncio.Lock()
 
     async def initialize(self):
@@ -437,9 +437,9 @@ class SubscriptionManager(Disposable):
         self.logger = structlog.get_logger("uno.events.subscription_manager")
 
         # Runtime tracking of handlers and metrics
-        self._handlers: Dict[str, EventHandler] = {}
-        self._metrics_counters: Dict[str, Counter] = {}
-        self._metrics_timers: Dict[str, Timer] = {}
+        self._handlers: dict[str, EventHandler] = {}
+        self._metrics_counters: dict[str, Counter] = {}
+        self._metrics_timers: dict[str, Timer] = {}
 
         # Monitoring
         self._subscription_gauge = Gauge(
@@ -849,7 +849,7 @@ class SubscriptionManager(Disposable):
         subscriptions = await self.repository.get_subscriptions()
         return [sub for sub in subscriptions if sub.is_active]
 
-    async def get_metrics(self) -> Dict[str, Any]:
+    async def get_metrics(self) -> dict[str, Any]:
         """
         Get overall metrics for all subscriptions.
 

@@ -161,7 +161,7 @@ class Settings(BaseSettings, ConfigProtocol):
         """Get a configuration value by key."""
         return getattr(self, key, default)
     
-    def all(self) -> Dict[str, Any]:
+    def all(self) -> dict[str, Any]:
         """Get all configuration values."""
         return self.dict()
 
@@ -652,7 +652,7 @@ class TaskRepository(SQLAlchemyRepository[Task, UUID, TaskModel]):
         
         return [self._mapper.to_entity(model) for model in models]
     
-    async def find_by_filter(self, filters: Dict[str, Any]) -> list[Task]:
+    async def find_by_filter(self, filters: dict[str, Any]) -> list[Task]:
         """Find tasks matching filter criteria."""
         conditions = []
         
@@ -930,7 +930,7 @@ class TaskService(DomainService[Task, UUID]):
         
         return Success(task)
     
-    async def find_tasks(self, filters: Dict[str, Any]) -> list[Task]:
+    async def find_tasks(self, filters: dict[str, Any]) -> list[Task]:
         """Find tasks matching filter criteria."""
         return await self._repository.find_by_filter(filters)
     
@@ -1056,8 +1056,8 @@ class TaskFilterDTO(BaseModel):
     due_after: Optional[datetime] = None
     tags: list[str] | None = None
     search: str | None = None
-    order_by: Optional[str] = "updated_at"
-    order_dir: Optional[str] = "desc"
+    order_by: str | None = "updated_at"
+    order_dir: str | None = "desc"
     limit: Optional[int] = 20
     offset: Optional[int] = 0
 ```
@@ -1451,8 +1451,8 @@ async def list_tasks(
     creator_id: str | None = None,
     assignee_id: str | None = None,
     search: str | None = None,
-    order_by: Optional[str] = "updated_at",
-    order_dir: Optional[str] = "desc",
+    order_by: str | None = "updated_at",
+    order_dir: str | None = "desc",
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),

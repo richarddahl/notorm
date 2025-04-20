@@ -56,7 +56,7 @@ class ValidationContext:
         path: str | None = None,
         code: str | None = None,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         """
         Add an error to the context.
@@ -188,11 +188,11 @@ class Validator(Generic[T]):
 
 # Field validation rules
 
-FieldRule = Callable[[Any], Optional[str]]
-ObjectRule = Callable[[Any], Optional[str]]
+FieldRule = Callable[[Any], str | None]
+ObjectRule = Callable[[Any], str | None]
 
 
-def required(value: Any) -> Optional[str]:
+def required(value: Any) -> str | None:
     """
     Validate that a value is not None or empty.
 
@@ -222,7 +222,7 @@ def min_length(min_length: int) -> FieldRule:
         A validator function
     """
 
-    def validator(value: Any) -> Optional[str]:
+    def validator(value: Any) -> str | None:
         if value is None:
             return None
 
@@ -245,7 +245,7 @@ def max_length(max_length: int) -> FieldRule:
         A validator function
     """
 
-    def validator(value: Any) -> Optional[str]:
+    def validator(value: Any) -> str | None:
         if value is None:
             return None
 
@@ -272,7 +272,7 @@ def pattern(pattern_str: str, message: str | None = None) -> FieldRule:
 
     compiled_pattern = re.compile(pattern_str)
 
-    def validator(value: Any) -> Optional[str]:
+    def validator(value: Any) -> str | None:
         if value is None:
             return None
 
@@ -284,7 +284,7 @@ def pattern(pattern_str: str, message: str | None = None) -> FieldRule:
     return validator
 
 
-def email(value: Any) -> Optional[str]:
+def email(value: Any) -> str | None:
     """
     Validate that a value is a valid email address.
 
@@ -313,7 +313,7 @@ def range_rule(min_value: float, max_value: float) -> FieldRule:
         A validator function
     """
 
-    def validator(value: Any) -> Optional[str]:
+    def validator(value: Any) -> str | None:
         if value is None:
             return None
 

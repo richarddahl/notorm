@@ -35,7 +35,7 @@ class EntityFactory(Generic[T]):
         """
         return self.entity_class(**kwargs)
 
-    def create_from_dict(self, data: Dict[str, Any]) -> T:
+    def create_from_dict(self, data: dict[str, Any]) -> T:
         """
         Create a new entity from a dictionary.
 

@@ -75,10 +75,10 @@ class RelationshipCacheConfig:
     auto_invalidate: bool = True
 
     # Entity-specific TTLs
-    entity_ttls: Dict[str, float] = field(default_factory=dict)
+    entity_ttls: dict[str, float] = field(default_factory=dict)
 
     # Relationship-specific TTLs
-    relationship_ttls: Dict[str, float] = field(default_factory=dict)
+    relationship_ttls: dict[str, float] = field(default_factory=dict)
 
     def get_ttl_for_entity(self, entity_class_name: str) -> float:
         """Get the TTL for a specific entity type."""
@@ -380,7 +380,7 @@ class RelationshipLoader:
         # Initialize cache
         self.cache = cache or RelationshipCache(config=cache_config, logger=self.logger)
 
-    def _get_relationships(self) -> Dict[str, Dict[str, Any]]:
+    def _get_relationships(self) -> dict[str, dict[str, Any]]:
         """
         Get the relationship metadata for the model.
 

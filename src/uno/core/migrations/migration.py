@@ -128,7 +128,7 @@ class Migration(ABC):
         self.base.applied_at = value
 
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> str | None:
         """Get the migration version."""
         return self.base.version
 

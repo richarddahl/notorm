@@ -35,7 +35,7 @@ class UserBehaviorIntegration:
         engine: AnomalyDetectionEngine,
         data_source: str = "database",  # database, kafka, logs, etc.
         poll_interval: int = 300,  # seconds (5 minutes)
-        user_metrics_mapping: Optional[Dict[str, str]] = None,
+        user_metrics_mapping: Optional[dict[str, str]] = None,
         alert_handlers: Optional[list[callable]] = None,
         logger: logging.Logger | None = None,
         db_connection: str | None = None,
@@ -534,7 +534,7 @@ class UserBehaviorIntegration:
         except Exception as e:
             self.logger.error(f"Error training detectors: {e}")
 
-    async def _fetch_historical_data(self, days: int) -> Dict[str, pd.DataFrame]:
+    async def _fetch_historical_data(self, days: int) -> dict[str, pd.DataFrame]:
         """
         Fetch historical user behavior data.
 
@@ -570,7 +570,7 @@ class UserBehaviorIntegration:
 
     async def _fetch_db_historical(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Fetch historical data from database.
 
@@ -608,7 +608,7 @@ class UserBehaviorIntegration:
 
     def _generate_synthetic_historical(
         self, start_time: datetime.datetime, end_time: datetime.datetime
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Generate synthetic historical data for user behavior.
 

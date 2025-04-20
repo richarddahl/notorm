@@ -151,7 +151,7 @@ class WorkflowTriggerRepository(UnoDBRepository[WorkflowTrigger]):
         workflow_id: str,
         entity_type: str,
         operation: str,
-        field_conditions: Dict[str, Any] = None,
+        field_conditions: dict[str, Any] = None,
         **kwargs,
     ) -> Result[WorkflowTrigger]:
         """
@@ -222,7 +222,7 @@ class WorkflowConditionRepository(UnoDBRepository[WorkflowCondition]):
         self,
         workflow_id: str,
         condition_type,
-        condition_config: Dict[str, Any] = None,
+        condition_config: dict[str, Any] = None,
         **kwargs,
     ) -> Result[WorkflowCondition]:
         """
@@ -289,7 +289,7 @@ class WorkflowActionRepository(UnoDBRepository[WorkflowAction]):
         self,
         workflow_id: str,
         action_type,
-        action_config: Dict[str, Any] = None,
+        action_config: dict[str, Any] = None,
         **kwargs,
     ) -> Result[WorkflowAction]:
         """
@@ -487,7 +487,7 @@ class WorkflowExecutionRepository(UnoDBRepository[WorkflowExecutionRecord]):
         self,
         execution_id: str,
         status,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         error: str | None = None,
     ) -> Result[WorkflowExecutionRecord]:
         """

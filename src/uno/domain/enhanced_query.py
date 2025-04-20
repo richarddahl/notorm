@@ -52,7 +52,7 @@ class QueryMetadata:
     and optimization hints.
     """
 
-    def __init__(self, query_path: str, filters: Optional[Dict[str, Any]] = None):
+    def __init__(self, query_path: str, filters: dict[str, Any] | None = None):
         """
         Initialize query metadata.
 
@@ -65,7 +65,7 @@ class QueryMetadata:
         self.execution_time: Optional[float] = None
         self.execution_started: Optional[datetime] = None
         self.execution_completed: Optional[datetime] = None
-        self.record_count: Optional[int] = None
+        self.record_count: int | None = None
         self.query_source: str | None = None
         self.optimizations: list[str] = []
         self.cache_hit: Optional[bool] = None
@@ -107,7 +107,7 @@ class QueryMetadata:
         """
         self.cache_hit = is_hit
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "query_path": self.query_path,
@@ -162,7 +162,7 @@ class EnhancedQueryExecutor(Generic[T, Q]):
         self.cache = cache or QueryResultCache()
         self.optimizer = optimizer or GraphQueryOptimizer()
         self.logger = logger or logging.getLogger(__name__)
-        self.materialized_views: Dict[str, MaterializedQueryView] = {}
+        self.materialized_views: dict[str, MaterializedQueryView] = {}
 
     def _generate_cache_key(self, query: Q) -> str:
         """
@@ -428,7 +428,7 @@ class EnhancedQueryExecutor(Generic[T, Q]):
             self.logger.error(f"Error executing graph query: {e}")
             raise
 
-    def _build_cypher_where_clauses(self, filters: Optional[Dict[str, Any]]) -> str:
+    def _build_cypher_where_clauses(self, filters: dict[str, Any] | None) -> str:
         """
         Build cypher WHERE clauses from filters.
 
@@ -606,8 +606,8 @@ class GraphPathQuery:
     async def execute_path_query(
         self,
         path: str,
-        params: Dict[str, Any] = None,
-        limit: Optional[int] = None,
+        params: dict[str, Any] = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
     ) -> Tuple[list[str], QueryMetadata]:
         """
@@ -680,8 +680,8 @@ class GraphPathQuery:
     def _build_path_query(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None,
+        params: dict[str, Any] | None = None,
+        limit: int | None = None,
         offset: Optional[int] = 0,
     ) -> str:
         """

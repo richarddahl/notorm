@@ -106,7 +106,7 @@ class StreamingCursor(Generic[T]):
         self._closed = False
         self._row_count = 0
         self._start_time = time.time()
-        self._metadata: Dict[str, Any] = {}
+        self._metadata: dict[str, Any] = {}
 
     async def __aenter__(self) -> "StreamingCursor[T]":
         """
@@ -159,7 +159,7 @@ class StreamingCursor(Generic[T]):
         )
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """
         Get cursor metadata.
 
@@ -215,7 +215,7 @@ class StreamingCursor(Generic[T]):
 
         return row
 
-    async def fetchmany(self, size: Optional[int] = None) -> list[T]:
+    async def fetchmany(self, size: int | None = None) -> list[T]:
         """
         Fetch multiple rows from the cursor.
 
@@ -355,9 +355,9 @@ class ResultChunk(Generic[T]):
         self,
         items: list[T],
         chunk_index: int,
-        total_chunks: Optional[int] = None,
+        total_chunks: int | None = None,
         is_last_chunk: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize the result chunk.
@@ -385,7 +385,7 @@ class ResultChunk(Generic[T]):
         """
         return self.item_count
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the chunk to a dictionary.
 

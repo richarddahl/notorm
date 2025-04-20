@@ -38,7 +38,7 @@ class VectorStorage(Generic[T], ABC):
         entity_id: str,
         entity_type: str,
         embedding: np.ndarray,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> T:
         """
         Store a vector embedding for an entity.
@@ -226,7 +226,7 @@ class PGVectorStorage(VectorStorage[int]):
         entity_id: str,
         entity_type: str,
         embedding: np.ndarray,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         """
         Store a vector embedding for an entity.

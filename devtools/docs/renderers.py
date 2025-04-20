@@ -23,8 +23,8 @@ class BaseRenderer:
         self.warnings: list[str] = []
 
     def render(
-        self, data: Dict[str, Any], output_dir: Union[str, Path]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any], output_dir: Union[str, Path]
+    ) -> dict[str, str]:
         """
         Render documentation to the specified output format.
 
@@ -42,8 +42,8 @@ class MarkdownRenderer(BaseRenderer):
     """Renderer for Markdown documentation."""
 
     def render(
-        self, data: Dict[str, Any], output_dir: Union[str, Path]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any], output_dir: Union[str, Path]
+    ) -> dict[str, str]:
         """
         Render documentation to Markdown.
 
@@ -147,7 +147,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return result
 
-    def _render_index(self, data: Dict[str, Any]) -> str:
+    def _render_index(self, data: dict[str, Any]) -> str:
         """
         Render the documentation index.
 
@@ -186,7 +186,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_module_index(self, module_data: Dict[str, Any]) -> str:
+    def _render_module_index(self, module_data: dict[str, Any]) -> str:
         """
         Render a module index.
 
@@ -242,7 +242,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_class(self, class_data: Dict[str, Any]) -> str:
+    def _render_class(self, class_data: dict[str, Any]) -> str:
         """
         Render class documentation.
 
@@ -375,7 +375,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_function(self, function_data: Dict[str, Any]) -> str:
+    def _render_function(self, function_data: dict[str, Any]) -> str:
         """
         Render function documentation.
 
@@ -518,7 +518,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_endpoint(self, endpoint_data: Dict[str, Any]) -> str:
+    def _render_endpoint(self, endpoint_data: dict[str, Any]) -> str:
         """
         Render endpoint documentation.
 
@@ -725,7 +725,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_model(self, model_data: Dict[str, Any]) -> str:
+    def _render_model(self, model_data: dict[str, Any]) -> str:
         """
         Render model documentation.
 
@@ -861,7 +861,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _render_example(self, example_data: Dict[str, Any]) -> str:
+    def _render_example(self, example_data: dict[str, Any]) -> str:
         """
         Render example documentation.
 
@@ -905,7 +905,7 @@ class MarkdownRenderer(BaseRenderer):
 
         return "\n".join(lines)
 
-    def _generate_search_index(self, data: Dict[str, Any]) -> list[dict[str, Any]]:
+    def _generate_search_index(self, data: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Generate search index.
 
@@ -1014,8 +1014,8 @@ class OpenAPIRenderer(BaseRenderer):
     """Renderer for OpenAPI documentation."""
 
     def render(
-        self, data: Dict[str, Any], output_dir: Union[str, Path]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any], output_dir: Union[str, Path]
+    ) -> dict[str, str]:
         """
         Render documentation to OpenAPI.
 
@@ -1045,7 +1045,7 @@ class OpenAPIRenderer(BaseRenderer):
 
         return result
 
-    def _generate_openapi_schema(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_openapi_schema(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Generate OpenAPI schema.
 
@@ -1099,8 +1099,8 @@ class OpenAPIRenderer(BaseRenderer):
         return schema
 
     def _convert_endpoint_to_openapi(
-        self, endpoint_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, endpoint_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Convert endpoint data to OpenAPI operation object.
 
@@ -1190,7 +1190,7 @@ class OpenAPIRenderer(BaseRenderer):
 
         return operation
 
-    def _convert_model_to_openapi(self, model_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_model_to_openapi(self, model_data: dict[str, Any]) -> dict[str, Any]:
         """
         Convert model data to OpenAPI schema object.
 
@@ -1268,8 +1268,8 @@ class HTMLRenderer(BaseRenderer):
     """Renderer for HTML documentation."""
 
     def render(
-        self, data: Dict[str, Any], output_dir: Union[str, Path]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any], output_dir: Union[str, Path]
+    ) -> dict[str, str]:
         """
         Render documentation to HTML.
 
@@ -1736,8 +1736,8 @@ class PlaygroundRenderer(BaseRenderer):
     """Renderer for interactive code playgrounds."""
 
     def render(
-        self, data: Dict[str, Any], output_dir: Union[str, Path]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any], output_dir: Union[str, Path]
+    ) -> dict[str, str]:
         """
         Render documentation with interactive code playgrounds.
 

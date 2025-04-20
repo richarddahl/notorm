@@ -111,7 +111,7 @@ class HealthCheckResult(BaseModel):
 
     status: HealthStatus
     message: str
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
     timestamp: float = Field(default_factory=time.time)
     check_duration_ms: Optional[float] = None
 
@@ -123,7 +123,7 @@ class HealthCheckResult(BaseModel):
         },
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the result to a dictionary.
 
@@ -247,7 +247,7 @@ class HealthCheck:
                 self.last_check_time = now
                 return result
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the health check to a dictionary.
 
@@ -288,8 +288,8 @@ class HealthRegistry:
         """
         self.config = config or HealthConfig()
         self.logger = logger or get_logger("uno.health")
-        self._checks: Dict[str, HealthCheck] = {}
-        self._groups: Dict[str, Set[str]] = {}
+        self._checks: dict[str, HealthCheck] = {}
+        self._groups: dict[str, Set[str]] = {}
         self._lock = asyncio.Lock()
 
     async def register(self, check: HealthCheck) -> None:
@@ -331,7 +331,7 @@ class HealthRegistry:
                 del self._checks[check_id]
                 self.logger.debug(f"Unregistered health check: {check_id}")
 
-    async def check_all(self, force: bool = False) -> Dict[str, HealthCheckResult]:
+    async def check_all(self, force: bool = False) -> dict[str, HealthCheckResult]:
         """
         Run all health checks.
 
@@ -389,7 +389,7 @@ class HealthRegistry:
 
     async def check_group(
         self, group: str, force: bool = False
-    ) -> Dict[str, HealthCheckResult]:
+    ) -> dict[str, HealthCheckResult]:
         """
         Run health checks for a specific group.
 
@@ -492,7 +492,7 @@ class HealthRegistry:
         else:
             return HealthStatus.UNKNOWN
 
-    async def get_health_report(self, force: bool = False) -> Dict[str, Any]:
+    async def get_health_report(self, force: bool = False) -> dict[str, Any]:
         """
         Get a health report.
 
@@ -576,7 +576,7 @@ class HealthRegistry:
             "groups": list(groups.values()) if groups else [],
         }
 
-    async def get_resource_health(self) -> Dict[str, Any]:
+    async def get_resource_health(self) -> dict[str, Any]:
         """
         Get health from resource monitor.
 

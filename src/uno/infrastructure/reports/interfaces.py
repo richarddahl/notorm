@@ -47,7 +47,7 @@ class ReportTemplateRepositoryProtocol(Protocol):
 
     async def list_templates(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         session: AsyncSession | None = None,
     ) -> Result[list[ReportTemplate]]:
         """List report templates, optionally filtered."""
@@ -311,13 +311,13 @@ class ReportTemplateServiceProtocol(Protocol):
     """Protocol for report template services."""
 
     async def create_template(
-        self, template_data: Dict[str, Any]
+        self, template_data: dict[str, Any]
     ) -> Result[ReportTemplate]:
         """Create a new report template."""
         ...
 
     async def update_template(
-        self, template_id: str, template_data: Dict[str, Any]
+        self, template_id: str, template_data: dict[str, Any]
     ) -> Result[ReportTemplate]:
         """Update an existing report template."""
         ...
@@ -331,7 +331,7 @@ class ReportTemplateServiceProtocol(Protocol):
         ...
 
     async def list_templates(
-        self, filters: Optional[Dict[str, Any]] = None
+        self, filters: dict[str, Any] | None = None
     ) -> Result[list[ReportTemplate]]:
         """List report templates, optionally filtered."""
         ...
@@ -348,13 +348,13 @@ class ReportFieldServiceProtocol(Protocol):
     """Protocol for report field services."""
 
     async def add_field(
-        self, template_id: str, field_data: Dict[str, Any]
+        self, template_id: str, field_data: dict[str, Any]
     ) -> Result[ReportFieldDefinition]:
         """Add a field to a report template."""
         ...
 
     async def update_field(
-        self, field_id: str, field_data: Dict[str, Any]
+        self, field_id: str, field_data: dict[str, Any]
     ) -> Result[ReportFieldDefinition]:
         """Update a field definition."""
         ...
@@ -370,7 +370,7 @@ class ReportFieldServiceProtocol(Protocol):
         ...
 
     async def validate_field_config(
-        self, field_type: str, field_config: Dict[str, Any]
+        self, field_type: str, field_config: dict[str, Any]
     ) -> Result[bool]:
         """Validate a field configuration."""
         ...
@@ -395,14 +395,14 @@ class ReportExecutionServiceProtocol(Protocol):
     async def execute_report(
         self,
         template_id: str,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
         trigger_type: str = "manual",
         user_id: str | None = None,
     ) -> Result[ReportExecution]:
         """Execute a report with optional parameters."""
         ...
 
-    async def get_execution_status(self, execution_id: str) -> Result[Dict[str, Any]]:
+    async def get_execution_status(self, execution_id: str) -> Result[dict[str, Any]]:
         """Get the status of a report execution."""
         ...
 
@@ -432,13 +432,13 @@ class ReportTriggerServiceProtocol(Protocol):
     """Protocol for report trigger services."""
 
     async def create_trigger(
-        self, template_id: str, trigger_data: Dict[str, Any]
+        self, template_id: str, trigger_data: dict[str, Any]
     ) -> Result[ReportTrigger]:
         """Create a new trigger for a report template."""
         ...
 
     async def update_trigger(
-        self, trigger_id: str, trigger_data: Dict[str, Any]
+        self, trigger_id: str, trigger_data: dict[str, Any]
     ) -> Result[ReportTrigger]:
         """Update an existing trigger."""
         ...
@@ -456,7 +456,7 @@ class ReportTriggerServiceProtocol(Protocol):
         ...
 
     async def handle_event(
-        self, event_type: str, event_data: Dict[str, Any]
+        self, event_type: str, event_data: dict[str, Any]
     ) -> Result[list[str]]:
         """Handle an event that might trigger reports (returns execution IDs)."""
         ...
@@ -475,13 +475,13 @@ class ReportOutputServiceProtocol(Protocol):
     """Protocol for report output services."""
 
     async def create_output_config(
-        self, template_id: str, output_data: Dict[str, Any]
+        self, template_id: str, output_data: dict[str, Any]
     ) -> Result[ReportOutput]:
         """Create a new output configuration for a report template."""
         ...
 
     async def update_output_config(
-        self, output_id: str, output_data: Dict[str, Any]
+        self, output_id: str, output_data: dict[str, Any]
     ) -> Result[ReportOutput]:
         """Update an existing output configuration."""
         ...

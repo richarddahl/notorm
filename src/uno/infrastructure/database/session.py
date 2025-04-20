@@ -38,8 +38,8 @@ class AsyncSessionFactory(DatabaseSessionFactoryProtocol):
         """Initialize the session factory."""
         self.engine_factory = engine_factory or AsyncEngineFactory(logger=logger)
         self.logger = logger or logging.getLogger(__name__)
-        self._sessionmakers: Dict[str, async_sessionmaker] = {}
-        self._scoped_sessions: Dict[str, async_scoped_session] = {}
+        self._sessionmakers: dict[str, async_sessionmaker] = {}
+        self._scoped_sessions: dict[str, async_scoped_session] = {}
 
     def create_sessionmaker(self, config: ConnectionConfig) -> async_sessionmaker:
         """Create or retrieve a cached async sessionmaker."""
@@ -118,7 +118,7 @@ class AsyncSessionContext(DatabaseSessionContextProtocol):
         db_name: str = uno_settings.DB_NAME,
         db_user_pw: str = uno_settings.DB_USER_PW,
         db_role: str = f"{uno_settings.DB_NAME}_login",
-        db_host: Optional[str] = uno_settings.DB_HOST,
+        db_host: str | None = uno_settings.DB_HOST,
         db_port: Optional[int] = uno_settings.DB_PORT,
         factory: Optional[DatabaseSessionFactoryProtocol] = None,
         logger: logging.Logger | None = None,
@@ -174,7 +174,7 @@ async def async_session(
     db_name: str = uno_settings.DB_NAME,
     db_user_pw: str = uno_settings.DB_USER_PW,
     db_role: str = f"{uno_settings.DB_NAME}_login",
-    db_host: Optional[str] = uno_settings.DB_HOST,
+    db_host: str | None = uno_settings.DB_HOST,
     db_port: Optional[int] = uno_settings.DB_PORT,
     factory: Optional[DatabaseSessionFactoryProtocol] = None,
     logger: logging.Logger | None = None,

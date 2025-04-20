@@ -266,7 +266,7 @@ class UserService:
 
     def __init__(self, event_publisher: EventPublisher):
         """Initialize the user service."""
-        self.users: Dict[str, Dict[str, Any]] = {}
+        self.users: dict[str, dict[str, Any]] = {}
         self.logger = logging.getLogger("user_service")
         self.event_publisher = event_publisher
 
@@ -369,7 +369,7 @@ class OrderService:
 
     def __init__(self, event_publisher: EventPublisher):
         """Initialize the order service."""
-        self.orders: Dict[str, Dict[str, Any]] = {}
+        self.orders: dict[str, dict[str, Any]] = {}
         self.logger = logging.getLogger("order_service")
         self.event_publisher = event_publisher
 

@@ -291,7 +291,7 @@ async def setup_dynamic_recipient_resolver():
     print("Registered custom category manager recipient resolver")
 
 
-async def resolve_category_manager(context: Dict[str, Any]) -> list[User]:
+async def resolve_category_manager(context: dict[str, Any]) -> list[User]:
     """
     Custom dynamic resolver function that returns category managers.
 

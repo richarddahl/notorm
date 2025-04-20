@@ -50,7 +50,7 @@ class CodeGenerator:
 
     def generate(
         self, entities: list[Entity], relationships: list[Relationship]
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> dict[str, dict[str, str]]:
         """
         Generate code from a data model.
 
@@ -89,7 +89,7 @@ class CodeGenerator:
         self,
         entity: Entity,
         relationships: list[Relationship],
-        entity_map: Dict[str, Entity],
+        entity_map: dict[str, Entity],
     ) -> str:
         """
         Generate code for an entity model.
@@ -125,7 +125,7 @@ class CodeGenerator:
         self,
         entity: Entity,
         relationships: list[Relationship],
-        entity_map: Dict[str, Entity],
+        entity_map: dict[str, Entity],
     ) -> str:
         """
         Generate code for a repository.
@@ -161,7 +161,7 @@ class CodeGenerator:
         self,
         entity: Entity,
         relationships: list[Relationship],
-        entity_map: Dict[str, Entity],
+        entity_map: dict[str, Entity],
     ) -> str:
         """
         Generate code for a service.
@@ -197,7 +197,7 @@ class CodeGenerator:
         self,
         entity: Entity,
         relationships: list[Relationship],
-        entity_map: Dict[str, Entity],
+        entity_map: dict[str, Entity],
     ) -> list[dict[str, Any]]:
         """
         Find relationships for an entity.

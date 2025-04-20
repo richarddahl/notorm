@@ -152,7 +152,7 @@ class MetaRecordRepository(UnoDBRepository[MetaRecord]):
 
         return meta_record
 
-    async def _convert_to_entity(self, data: Dict[str, Any]) -> MetaRecord:
+    async def _convert_to_entity(self, data: dict[str, Any]) -> MetaRecord:
         """Override to handle the specific meta record properties."""
         entity = await super()._convert_to_entity(data)
 

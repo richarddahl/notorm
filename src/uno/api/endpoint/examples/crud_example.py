@@ -25,7 +25,7 @@ from uno.domain.entity.service import CrudService
 
 class ProductResponse(BaseModel):
     """Product response model."""
-    
+
     id: str = Field(..., description="Product ID")
     name: str = Field(..., description="Product name")
     description: str = Field(..., description="Product description")
@@ -36,7 +36,7 @@ class ProductResponse(BaseModel):
 
 class CreateProductRequest(BaseModel):
     """Create product request model."""
-    
+
     name: str = Field(..., description="Product name")
     description: str = Field(..., description="Product description")
     price: float = Field(..., description="Product price")
@@ -46,9 +46,9 @@ class CreateProductRequest(BaseModel):
 
 class UpdateProductRequest(BaseModel):
     """Update product request model."""
-    
-    name: Optional[str] = Field(None, description="Product name")
-    description: Optional[str] = Field(None, description="Product description")
+
+    name: str | None = Field(None, description="Product name")
+    description: str | None = Field(None, description="Product description")
     price: Optional[float] = Field(None, description="Product price")
     stock: Optional[int] = Field(None, description="Product stock")
     is_active: Optional[bool] = Field(None, description="Whether the product is active")
@@ -62,16 +62,16 @@ def create_product_service() -> CrudService:
 def create_product_endpoints(app: FastAPI) -> CrudEndpoint:
     """
     Create and register product endpoints.
-    
+
     Args:
         app: The FastAPI application to register endpoints with.
-        
+
     Returns:
         The created CrudEndpoint instance.
     """
     # Create the product service
     service = create_product_service()
-    
+
     # Create the endpoint
     endpoint = CrudEndpoint(
         service=service,
@@ -81,17 +81,17 @@ def create_product_endpoints(app: FastAPI) -> CrudEndpoint:
         tags=["Products"],
         path="/api/products",
     )
-    
+
     # Register the endpoint
     endpoint.register(app)
-    
+
     return endpoint
 
 
 def create_app() -> FastAPI:
     """
     Create a FastAPI application with product endpoints.
-    
+
     Returns:
         A FastAPI application with product endpoints.
     """
@@ -101,15 +101,15 @@ def create_app() -> FastAPI:
         description="API for managing products",
         version="1.0.0",
     )
-    
+
     # Create and register product endpoints
     create_product_endpoints(app)
-    
+
     return app
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     app = create_app()
     uvicorn.run(app, host="0.0.0.0", port=8000)

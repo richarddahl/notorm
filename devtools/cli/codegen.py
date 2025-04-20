@@ -43,9 +43,9 @@ if TYPER_AVAILABLE:
             Optional[Path], typer.Option(help="JSON file with field definitions")
         ] = None,
         fields_json: Annotated[
-            Optional[str], typer.Option(help="JSON string with field definitions")
+            str | None, typer.Option(help="JSON string with field definitions")
         ] = None,
-        table_name: Annotated[Optional[str], typer.Option(help="Table name")] = None,
+        table_name: Annotated[str | None, typer.Option(help="Table name")] = None,
         output_file: Annotated[
             Optional[Path], typer.Option(help="Output file path")
         ] = None,
@@ -53,7 +53,7 @@ if TYPER_AVAILABLE:
             bool, typer.Option(help="Include schema class")
         ] = True,
         schema_name: Annotated[
-            Optional[str], typer.Option(help="Schema class name")
+            str | None, typer.Option(help="Schema class name")
         ] = None,
         timestamps: Annotated[
             bool, typer.Option(help="Include timestamp fields")
@@ -156,17 +156,17 @@ if TYPER_AVAILABLE:
         name: Annotated[str, typer.Argument(help="Router name")],
         model_name: Annotated[str, typer.Argument(help="Model class name")],
         schema_name: Annotated[
-            Optional[str], typer.Option(help="Schema class name")
+            str | None, typer.Option(help="Schema class name")
         ] = None,
         repository_name: Annotated[
-            Optional[str], typer.Option(help="Repository class name")
+            str | None, typer.Option(help="Repository class name")
         ] = None,
         output_file: Annotated[
             Optional[Path], typer.Option(help="Output file path")
         ] = None,
         id_type: Annotated[str, typer.Option(help="ID field type")] = "str",
-        prefix: Annotated[Optional[str], typer.Option(help="API path prefix")] = None,
-        tag: Annotated[Optional[str], typer.Option(help="API tag")] = None,
+        prefix: Annotated[str | None, typer.Option(help="API path prefix")] = None,
+        tag: Annotated[str | None, typer.Option(help="API tag")] = None,
         include_crud: Annotated[
             bool, typer.Option(help="Include CRUD endpoints")
         ] = True,

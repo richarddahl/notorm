@@ -28,7 +28,7 @@ def run_command(
     check: bool = True,
     shell: bool = True,
     capture_output: bool = False,
-    env: Optional[Dict[str, str]] = None,
+    env: Optional[dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     """
     Run a shell command and handle errors.

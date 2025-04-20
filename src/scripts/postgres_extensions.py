@@ -29,7 +29,7 @@ def run_command(
     check: bool = True,
     shell: bool = True,
     capture_output: bool = False,
-    env: Optional[Dict[str, str]] = None,
+    env: Optional[dict[str, str]] = None,
     cwd: str | None = None,
 ) -> subprocess.CompletedProcess:
     """

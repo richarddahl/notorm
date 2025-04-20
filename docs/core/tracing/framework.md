@@ -235,7 +235,7 @@ Control which spans are collected with custom sampling:
 ```python
 from uno.core.tracing import get_tracer
 
-def my_sampler(trace_id: str, parent_id: Optional[str], name: str) -> bool:
+def my_sampler(trace_id: str, parent_id: str | None, name: str) -> bool:
     # Always sample errors
     if "error" in name.lower():
         return True

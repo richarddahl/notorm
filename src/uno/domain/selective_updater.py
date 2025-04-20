@@ -94,7 +94,7 @@ class SelectiveGraphUpdater:
         """
         self.logger = logger or logging.getLogger(__name__)
         self.batch_size = 100
-        self.relationship_cache: Dict[str, list[dict[str, Any]]] = {}
+        self.relationship_cache: dict[str, list[dict[str, Any]]] = {}
 
     async def handle_entity_change(self, event: GraphChangeEvent) -> None:
         """
@@ -352,7 +352,7 @@ class SelectiveGraphUpdater:
             self.logger.error(f"Error getting entity relationships: {e}")
             return []
 
-    def _prepare_node_properties(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_node_properties(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Prepare node properties for storage in the graph.
 
@@ -377,7 +377,7 @@ class SelectiveGraphUpdater:
         return props
 
     async def _execute_cypher(
-        self, query: str, params: Dict[str, Any] = None
+        self, query: str, params: dict[str, Any] = None
     ) -> list[dict[str, Any]]:
         """
         Execute a cypher query against the graph database.

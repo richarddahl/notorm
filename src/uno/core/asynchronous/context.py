@@ -224,7 +224,7 @@ class _AsyncContextManager(AsyncContextManager[T]):
         self,
         func: Callable[..., Coroutine[Any, Any, AsyncIterator[T]]],
         args: Tuple[Any, ...],
-        kwargs: Dict[str, Any],
+        kwargs: dict[str, Any],
     ):
         """
         Initialize an _AsyncContextManager.

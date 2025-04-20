@@ -500,7 +500,7 @@ class MonitoringDashboard:
                 if websocket in self._active_connections:
                     self._active_connections.remove(websocket)
 
-    async def _get_overview_data(self) -> Dict[str, Any]:
+    async def _get_overview_data(self) -> dict[str, Any]:
         """
         Get simplified overview data for updates.
 

@@ -123,7 +123,7 @@ class JobSchemaManager:
             pages=pages,
         )
 
-    def create_dto_to_params(self, dto: CreateJobDto) -> Dict[str, Any]:
+    def create_dto_to_params(self, dto: CreateJobDto) -> dict[str, Any]:
         """Convert a create DTO to parameters for the domain service."""
         # Convert string enum to domain enum
         priority = JobPriority.NORMAL
@@ -156,7 +156,7 @@ class JobSchemaManager:
 
         return params
 
-    def filter_params_to_query_params(self, params: JobFilterParams) -> Dict[str, Any]:
+    def filter_params_to_query_params(self, params: JobFilterParams) -> dict[str, Any]:
         """Convert filter parameters to query parameters for the repository."""
         query_params = {}
 
@@ -197,7 +197,7 @@ class JobSchemaManager:
 
         return query_params
 
-    def stats_to_dto(self, stats: Dict[str, Any]) -> JobStatsDto:
+    def stats_to_dto(self, stats: dict[str, Any]) -> JobStatsDto:
         """Convert job statistics to a DTO."""
         dto = JobStatsDto(
             total_jobs=stats.get("total_jobs", 0),
@@ -220,7 +220,7 @@ class JobSchemaManager:
 
         return dto
 
-    def run_sync_dto_to_params(self, dto: RunSyncJobDto) -> Dict[str, Any]:
+    def run_sync_dto_to_params(self, dto: RunSyncJobDto) -> dict[str, Any]:
         """Convert a run sync DTO to parameters for the domain service."""
         params = {
             "task_name": dto.task_name,
@@ -311,7 +311,7 @@ class ScheduleSchemaManager:
             pages=pages,
         )
 
-    def create_dto_to_params(self, dto: CreateScheduleDto) -> Dict[str, Any]:
+    def create_dto_to_params(self, dto: CreateScheduleDto) -> dict[str, Any]:
         """Convert a create DTO to parameters for the domain service."""
         # Convert string enum to domain enum
         priority = JobPriority.NORMAL
@@ -352,7 +352,7 @@ class ScheduleSchemaManager:
 
         return params
 
-    def update_dto_to_params(self, dto: UpdateScheduleDto) -> Dict[str, Any]:
+    def update_dto_to_params(self, dto: UpdateScheduleDto) -> dict[str, Any]:
         """Convert an update DTO to parameters for the domain service."""
         params = {}
 
@@ -407,7 +407,7 @@ class ScheduleSchemaManager:
 
     def filter_params_to_query_params(
         self, params: ScheduleFilterParams
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Convert filter parameters to query parameters for the repository."""
         query_params = {}
 
@@ -426,7 +426,7 @@ class ScheduleSchemaManager:
 class TaskSchemaManager:
     """Schema manager for task information."""
 
-    def task_to_dto(self, task: Dict[str, Any]) -> TaskInfoDto:
+    def task_to_dto(self, task: dict[str, Any]) -> TaskInfoDto:
         """Convert a task definition to a DTO."""
         timeout = None
         if (
